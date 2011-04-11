@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4. UNIX Domain Socket IPC</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch37.html" title="第 37 章 socket编程" /><link rel="prev" href="ch37s03.html" title="3. 基于UDP协议的网络程序" /><link rel="next" href="ch37s05.html" title="5. 练习：实现简单的Web服务器" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">4. UNIX Domain Socket IPC</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch37s03.html">上一页</a> </td><th width="60%" align="center">第 37 章 socket编程</th><td width="20%" align="right"> <a accesskey="n" href="ch37s05.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2904243"></a>4. UNIX Domain Socket IPC</h2></div></div></div><p>socket API原本是为网络通讯设计的，但后来在socket的框架上发展出一种IPC机制，就是UNIX Domain Socket。虽然网络socket也可用于同一台主机的进程间通讯（通过loopback地址127.0.0.1），但是UNIX Domain Socket用于IPC更有效率：不需要经过网络协议栈，不需要打包拆包、计算校验和、维护序号和应答等，只是将应用层数据从一个进程拷贝到另一个进程。这是因为，IPC机制本质上是可靠的通讯，而网络协议是为不可靠的通讯设计的。UNIX Domain Socket也提供面向流和面向数据包两种API接口，类似于TCP和UDP，但是面向消息的UNIX Domain Socket也是可靠的，消息既不会丢失也不会顺序错乱。</p><p>UNIX Domain Socket是全双工的，API接口语义丰富，相比其它IPC机制有明显的优越性，目前已成为使用最广泛的IPC机制，比如X Window服务器和GUI程序之间就是通过UNIX Domain Socket通讯的。</p><p>使用UNIX Domain Socket的过程和网络socket十分相似，也要先调用socket()创建一个socket文件描述符，address family指定为AF_UNIX，type可以选择SOCK_DGRAM或SOCK_STREAM，protocol参数仍然指定为0即可。</p><p>UNIX Domain Socket与网络socket编程最明显的不同在于地址格式不同，用结构体sockaddr_un表示，网络编程的socket地址是IP地址加端口号，而UNIX Domain Socket的地址是一个socket类型的文件在文件系统中的路径，这个socket文件由bind()调用创建，如果调用bind()时该文件已存在，则bind()错误返回。</p><p>以下程序将UNIX Domain socket绑定到一个地址。</p><pre class="programlisting">#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stddef.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/un.h&gt;
+
+int main(void)
+{
+	int fd, size;
+	struct sockaddr_un un;
+
+	memset(&amp;un, 0, sizeof(un));
+	un.sun_family = AF_UNIX;
+	strcpy(un.sun_path, "foo.socket");
+	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) &lt; 0) {
+		perror("socket error");
+		exit(1);
+	}
+	size = offsetof(struct sockaddr_un, sun_path) + strlen(un.sun_path);
+	if (bind(fd, (struct sockaddr *)&amp;un, size) &lt; 0) {
+		perror("bind error");
+		exit(1);
+	}
+	printf("UNIX domain socket bound\n");
+	exit(0);
+}</pre><p>注意程序中的offsetof宏，它在stddef.h头文件中定义：</p><pre class="programlisting">#define offsetof(TYPE, MEMBER) ((int)&amp;((TYPE *)0)-&gt;MEMBER)</pre><p>offsetof(struct sockaddr_un, sun_path)就是取sockaddr_un结构体的sun_path成员在结构体中的偏移，也就是从结构体的第几个字节开始是sun_path成员。想一想，这个宏是如何实现这一功能的？</p><p>该程序的运行结果如下。</p><pre class="screen">$ ./a.out
+UNIX domain socket bound
+$ ls -l foo.socket
+srwxrwxr-x 1 user        0 Aug 22 12:43 foo.socket
+$ ./a.out
+bind error: Address already in use
+$ rm foo.socket
+$ ./a.out
+UNIX domain socket bound</pre><p>以下是服务器的listen模块，与网络socket编程类似，在bind之后要listen，表示通过bind的地址（也就是socket文件）提供服务。</p><pre class="programlisting">#include &lt;stddef.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/un.h&gt;
+#include &lt;errno.h&gt;
+
+#define QLEN 10
+
+/*
+ * Create a server endpoint of a connection.
+ * Returns fd if all OK, &lt;0 on error.
+ */
+int serv_listen(const char *name)
+{
+	int                 fd, len, err, rval;
+	struct sockaddr_un  un;
+
+	/* create a UNIX domain stream socket */
+	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) &lt; 0)
+		return(-1);
+	unlink(name);   /* in case it already exists */
+
+	/* fill in socket address structure */
+	memset(&amp;un, 0, sizeof(un));
+	un.sun_family = AF_UNIX;
+	strcpy(un.sun_path, name);
+	len = offsetof(struct sockaddr_un, sun_path) + strlen(name);
+
+	/* bind the name to the descriptor */
+	if (bind(fd, (struct sockaddr *)&amp;un, len) &lt; 0) {
+		rval = -2;
+		goto errout;
+	}
+	if (listen(fd, QLEN) &lt; 0) { /* tell kernel we're a server */
+		rval = -3;
+		goto errout;
+	}
+	return(fd);
+
+errout:
+	err = errno;
+	close(fd);
+	errno = err;
+	return(rval);
+}</pre><p>以下是服务器的accept模块，通过accept得到客户端地址也应该是一个socket文件，如果不是socket文件就返回错误码，如果是socket文件，在建立连接后这个文件就没有用了，调用unlink把它删掉，通过传出参数uidptr返回客户端程序的user id。</p><pre class="programlisting">#include &lt;stddef.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/un.h&gt;
+#include &lt;errno.h&gt;
+
+int serv_accept(int listenfd, uid_t *uidptr)
+{
+	int                 clifd, len, err, rval;
+	time_t              staletime;
+	struct sockaddr_un  un;
+	struct stat         statbuf;
+
+	len = sizeof(un);
+	if ((clifd = accept(listenfd, (struct sockaddr *)&amp;un, &amp;len)) &lt; 0)
+		return(-1);     /* often errno=EINTR, if signal caught */
+
+	/* obtain the client's uid from its calling address */
+	len -= offsetof(struct sockaddr_un, sun_path); /* len of pathname */
+	un.sun_path[len] = 0;           /* null terminate */
+
+	if (stat(un.sun_path, &amp;statbuf) &lt; 0) {
+		rval = -2;
+		goto errout;
+	}
+
+	if (S_ISSOCK(statbuf.st_mode) == 0) {
+		rval = -3;      /* not a socket */
+		goto errout;
+	}
+
+	if (uidptr != NULL)
+		*uidptr = statbuf.st_uid;   /* return uid of caller */
+	unlink(un.sun_path);        /* we're done with pathname now */
+	return(clifd);
+
+errout:
+	err = errno;
+	close(clifd);
+	errno = err;
+	return(rval);
+}</pre><p>以下是客户端的connect模块，与网络socket编程不同的是，UNIX Domain Socket客户端一般要显式调用bind函数，而不依赖系统自动分配的地址。客户端bind一个自己指定的socket文件名的好处是，该文件名可以包含客户端的pid以便服务器区分不同的客户端。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stddef.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/un.h&gt;
+#include &lt;errno.h&gt;
+
+#define CLI_PATH    "/var/tmp/"      /* +5 for pid = 14 chars */
+
+/*
+ * Create a client endpoint and connect to a server.
+ * Returns fd if all OK, &lt;0 on error.
+ */
+int cli_conn(const char *name)
+{
+	int                fd, len, err, rval;
+	struct sockaddr_un un;
+
+	/* create a UNIX domain stream socket */
+	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) &lt; 0)
+		return(-1);
+
+	/* fill socket address structure with our address */
+	memset(&amp;un, 0, sizeof(un));
+	un.sun_family = AF_UNIX;
+	sprintf(un.sun_path, "%s%05d", CLI_PATH, getpid());
+	len = offsetof(struct sockaddr_un, sun_path) + strlen(un.sun_path);
+
+	unlink(un.sun_path);        /* in case it already exists */
+	if (bind(fd, (struct sockaddr *)&amp;un, len) &lt; 0) {
+		rval = -2;
+		goto errout;
+	}
+
+	/* fill socket address structure with server's address */
+	memset(&amp;un, 0, sizeof(un));
+	un.sun_family = AF_UNIX;
+	strcpy(un.sun_path, name);
+	len = offsetof(struct sockaddr_un, sun_path) + strlen(name);
+	if (connect(fd, (struct sockaddr *)&amp;un, len) &lt; 0) {
+		rval = -4;
+		goto errout;
+	}
+	return(fd);
+
+errout:
+	err = errno;
+	close(fd);
+	errno = err;
+	return(rval);
+}</pre><p>下面是自己动手时间，请利用以上模块编写完整的客户端/服务器通讯的程序。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch37s03.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch37.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch37s05.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">3. 基于UDP协议的网络程序 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 5. 练习：实现简单的Web服务器</td></tr></table></div></body></html>

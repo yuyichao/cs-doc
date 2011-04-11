@@ -1,0 +1,798 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The Mutt E-Mail Client: Advanced Usage</TITLE>
+ <LINK HREF="manual-5.html" REL=next>
+ <LINK HREF="manual-3.html" REL=previous>
+ <LINK HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc4" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="manual-5.html">Next</A>
+<A HREF="manual-3.html">Previous</A>
+<A HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc4">Contents</A>
+<HR>
+<H2><A NAME="s4">4. Advanced Usage</A></H2>
+
+<H2><A NAME="regexp"></A> <A NAME="ss4.1">4.1 Regular Expressions</A>
+</H2>
+
+<P>All string patterns in Mutt including those in more complex
+<A HREF="manual-4.html#patterns">patterns</A> must be specified
+using regular expressions (regexp) in the ``POSIX extended'' syntax (which
+is more or less the syntax used by egrep and GNU awk).  For your
+convenience, we have included below a brief description of this syntax.
+<P>The search is case sensitive if the pattern contains at least one upper
+case letter, and case insensitive otherwise. Note that ``\''
+must be quoted if used for a regular expression in an initialization
+command: ``\\''.
+<P>A regular expression is a pattern that describes a set of strings.
+Regular expressions are constructed analogously to arithmetic
+expressions, by using various operators to combine smaller expressions.
+<P>Note that the regular expression can be enclosed/delimited by either &quot;
+or ' which is useful if the regular expression includes a white-space
+character.  See 
+<A HREF="manual-3.html#muttrc-syntax">Syntax of Initialization Files</A>
+for more information on &quot; and ' delimiter processing.  To match a
+literal &quot; or ' you must preface it with \ (backslash).
+<P>The fundamental building blocks are the regular expressions that match
+a single character.  Most characters, including all letters and digits,
+are regular expressions that match themselves.  Any metacharacter with
+special meaning may be quoted by preceding it with a backslash.
+<P>The period ``.'' matches any single character.  The caret ``^'' and
+the dollar sign ``$'' are metacharacters that respectively match
+the empty string at the beginning and end of a line.
+<P>A list of characters enclosed by ``['' and ``]'' matches any
+single character in that list; if the first character of the list
+is a caret ``^'' then it matches any character <B>not</B> in the
+list.  For example, the regular expression <B>[0123456789]</B>
+matches any single digit.  A range of ASCII characters may be specified
+by giving the first and last characters, separated by a hyphen
+``&hyphen;''.  Most metacharacters lose their special meaning inside
+lists.  To include a literal ``]'' place it first in the list.
+Similarly, to include a literal ``^'' place it anywhere but first.
+Finally, to include a literal hyphen ``&hyphen;'' place it last.
+<P>Certain named classes of characters are predefined.  Character classes
+consist of ``[:'', a keyword denoting the class, and ``:]''.
+The following classes are defined by the POSIX standard:
+<P>
+<DL>
+<DT><B>[:alnum:]</B><DD><P>Alphanumeric characters.
+<DT><B>[:alpha:]</B><DD><P>Alphabetic characters.
+<DT><B>[:blank:]</B><DD><P>Space or tab characters.
+<DT><B>[:cntrl:]</B><DD><P>Control characters.
+<DT><B>[:digit:]</B><DD><P>Numeric characters.
+<DT><B>[:graph:]</B><DD><P>Characters that are both printable and visible.  (A space is printable,
+but not visible, while an ``a'' is both.)
+<DT><B>[:lower:]</B><DD><P>Lower-case alphabetic characters.
+<DT><B>[:print:]</B><DD><P>Printable characters (characters that are not control characters.)
+<DT><B>[:punct:]</B><DD><P>Punctuation characters (characters that are not letter, digits, control
+characters, or space characters).
+<DT><B>[:space:]</B><DD><P>Space characters (such as space, tab and formfeed, to name a few).
+<DT><B>[:upper:]</B><DD><P>Upper-case alphabetic characters.
+<DT><B>[:xdigit:]</B><DD><P>Characters that are hexadecimal digits.
+</DL>
+<P>A character class is only valid in a regular expression inside the
+brackets of a character list.  Note that the brackets in these
+class names are part of the symbolic names, and must be included
+in addition to the brackets delimiting the bracket list.  For
+example, <B>[[:digit:]]</B> is equivalent to
+<B>[0-9]</B>.
+<P>Two additional special sequences can appear in character lists.  These
+apply to non-ASCII character sets, which can have single symbols (called
+collating elements) that are represented with more than one character,
+as well as several characters that are equivalent for collating or
+sorting purposes:
+<P>
+<DL>
+<DT><B>Collating Symbols</B><DD><P>A collating symbols is a multi-character collating element enclosed in
+``[.'' and ``.]''.  For example, if ``ch'' is a collating
+element, then <B>[[.ch.]]</B> is a regexp that matches
+this collating element, while <B>[ch]</B> is a regexp that
+matches either ``c'' or ``h''.
+<DT><B>Equivalence Classes</B><DD><P>An equivalence class is a locale-specific name for a list of
+characters that are equivalent. The name is enclosed in ``[=''
+and ``=]''.  For example, the name ``e'' might be used to
+represent all of ``&egrave;'' ``&eacute;'' and ``e''.  In this case,
+<B>[[=e=]]</B> is a regexp that matches any of
+``&egrave;'', ``&eacute;'' and ``e''.
+</DL>
+<P>A regular expression matching a single character may be followed by one
+of several repetition operators:
+<P>
+<DL>
+<DT><B>?</B><DD><P>The preceding item is optional and matched at most once.
+<DT><B>*</B><DD><P>The preceding item will be matched zero or more times.
+<DT><B>+</B><DD><P>The preceding item will be matched one or more times.
+<DT><B>{n}</B><DD><P>The preceding item is matched exactly <EM>n</EM> times.
+<DT><B>{n,}</B><DD><P>The preceding item is matched <EM>n</EM> or more times.
+<DT><B>{,m}</B><DD><P>The preceding item is matched at most <EM>m</EM> times.
+<DT><B>{n,m}</B><DD><P>The preceding item is matched at least <EM>n</EM> times, but no more than
+<EM>m</EM> times.
+</DL>
+<P>Two regular expressions may be concatenated; the resulting regular
+expression matches any string formed by concatenating two substrings
+that respectively match the concatenated subexpressions.
+<P>Two regular expressions may be joined by the infix operator ``|'';
+the resulting regular expression matches any string matching either
+subexpression.
+<P>Repetition takes precedence over concatenation, which in turn takes
+precedence over alternation.  A whole subexpression may be enclosed in
+parentheses to override these precedence rules.
+<P><B>Note:</B> If you compile Mutt with the GNU <EM>rx</EM> package, the
+following operators may also be used in regular expressions:
+<P>
+<DL>
+<DT><B>\\y</B><DD><P>Matches the empty string at either the beginning or the end of a word.
+<DT><B>\\B</B><DD><P>Matches the empty string within a word.
+<DT><B>\\&lt;</B><DD><P>Matches the empty string at the beginning of a word.
+<DT><B>\\&gt;</B><DD><P>Matches the empty string at the end of a word.
+<DT><B>\\w</B><DD><P>Matches any word-constituent character (letter, digit, or underscore).
+<DT><B>\\W</B><DD><P>Matches any character that is not word-constituent.
+<DT><B>\\`</B><DD><P>Matches the empty string at the beginning of a buffer (string).
+<DT><B>\\'</B><DD><P>Matches the empty string at the end of a buffer.
+</DL>
+<P>Please note however that these operators are not defined by POSIX, so
+they may or may not be available in stock libraries on various systems.
+<P>
+<H2><A NAME="patterns"></A> <A NAME="ss4.2">4.2 Patterns</A>
+</H2>
+
+<P>Many of Mutt's commands allow you to specify a pattern to match
+(limit, tag-pattern, delete-pattern, etc.).  There are several ways to select
+messages:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+~A              all messages
+~b EXPR         messages which contain EXPR in the message body
+~B EXPR         messages which contain EXPR in the whole message
+~c USER         messages carbon-copied to USER
+~C EXPR         message is either to: or cc: EXPR
+~D              deleted messages
+~d [MIN]-[MAX]  messages with ``date-sent'' in a Date range
+~E              expired messages
+~e EXPR         message which contains EXPR in the ``Sender'' field
+~F              flagged messages
+~f USER         messages originating from USER
+~g              PGP signed messages
+~G              PGP encrypted messages
+~h EXPR         messages which contain EXPR in the message header
+~k              message contains PGP key material
+~i ID           message which match ID in the ``Message-ID'' field
+~L EXPR         message is either originated or received by EXPR
+~l              message is addressed to a known mailing list
+~m [MIN]-[MAX]  message in the range MIN to MAX *)
+~n [MIN]-[MAX]  messages with a score in the range MIN to MAX *)
+~N              new messages
+~O              old messages
+~p              message is addressed to you (consults $alternates)
+~P              message is from you (consults $alternates)
+~Q              messages which have been replied to
+~R              read messages
+~r [MIN]-[MAX]  messages with ``date-received'' in a Date range
+~S              superseded messages
+~s SUBJECT      messages having SUBJECT in the ``Subject'' field.
+~T              tagged messages
+~t USER         messages addressed to USER
+~U              unread messages
+~v              message is part of a collapsed thread.
+~x EXPR         messages which contain EXPR in the `References' field
+~y EXPR         messages which contain EXPR in the `X-Label' field
+~z [MIN]-[MAX]  messages with a size in the range MIN to MAX *)
+~=              duplicated messages (see $duplicate_threads)
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Where EXPR, USER, ID, and SUBJECT are 
+<A HREF="manual-4.html#regexp">regular expressions</A>.
+<P>*) The forms <CODE>&lt;[MAX]</CODE>, <CODE>&gt;[MIN]</CODE>,
+<CODE>[MIN]-</CODE> and <CODE>-[MAX]</CODE>
+are allowed, too.
+<P>
+<H3>Pattern Modifier</H3>
+
+<P>
+<P>Note that patterns matching 'lists' of addresses (notably c,C,p,P and t)
+match if there is at least one match in the whole list. If you want to
+make sure that all elements of that list match, you need to prefix your
+pattern with ^.
+This example matches all mails which only has recipients from Germany.
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+^~C \.de$
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H3>Complex Patterns</H3>
+
+<P>
+<P>Logical AND is performed by specifying more than one criterion.  For
+example:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+~t mutt ~f elkins
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>would select messages which contain the word ``mutt'' in the list of
+recipients <B>and</B> that have the word ``elkins'' in the ``From'' header
+field.
+<P>Mutt also recognizes the following operators to create more complex search
+patterns:
+<P>
+<UL>
+<LI>! -- logical NOT operator</LI>
+<LI>| -- logical OR operator</LI>
+<LI>() -- logical grouping operator</LI>
+</UL>
+<P>Here is an example illustrating a complex search pattern.  This pattern will
+select all messages which do not contain ``mutt'' in the ``To'' or ``Cc''
+field and which are from ``elkins''.
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+!(~t mutt|~c mutt) ~f elkins
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Here is an example using white space in the regular expression (note
+the ' and &quot; delimiters).  For this to match, the mail's subject must
+match the ``^Junk +From +Me$'' and it must be from either ``Jim +Somebody''
+or ``Ed +SomeoneElse'':
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+ '~s "^Junk +From +Me$" ~f ("Jim +Somebody"|"Ed +SomeoneElse")'
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H3>Searching by Date</H3>
+
+<P>Mutt supports two types of dates, <EM>absolute</EM> and <EM>relative</EM>.
+<P><B>Absolute</B>.  Dates <B>must</B> be in DD/MM/YY format (month and year are
+optional, defaulting to the current month and year).  An example of a valid
+range of dates is:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+Limit to messages matching: ~d 20/1/95-31/10
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>If you omit the minimum (first) date, and just specify ``-DD/MM/YY'', all
+messages <EM>before</EM> the given date will be selected.  If you omit the maximum
+(second) date, and specify ``DD/MM/YY-'', all messages <EM>after</EM> the given
+date will be selected.  If you specify a single date with no dash (``-''),
+only messages sent on the given date will be selected. 
+<P><B>Error Margins</B>.  You can add error margins to absolute dates.
+An error margin is a sign (+ or -), followed by a digit, followed by
+one of the following units:
+<PRE>
+y       years
+m       months
+w       weeks
+d       days
+</PRE>
+
+As a special case, you can replace the sign by a ``*'' character,
+which is equivalent to giving identical plus and minus error margins.
+<P>Example: To select any messages two weeks around January 15, 2001,
+you'd use the following pattern: 
+<BLOCKQUOTE><CODE>
+<PRE>
+ 
+Limit to messages matching: ~d 15/1/2001*2w
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<P><B>Relative</B>.  This type of date is relative to the current date, and may
+be specified as:
+<UL>
+<LI>&gt;<EM>offset</EM> (messages older than <EM>offset</EM> units)</LI>
+<LI>&lt;<EM>offset</EM> (messages newer than <EM>offset</EM> units)</LI>
+<LI>=<EM>offset</EM> (messages exactly <EM>offset</EM> units old)</LI>
+</UL>
+<P><EM>offset</EM> is specified as a positive number with one of the following
+units:
+<PRE>
+y       years
+m       months
+w       weeks
+d       days
+</PRE>
+<P>Example: to select messages less than 1 month old, you would use
+<BLOCKQUOTE><CODE>
+<PRE>
+Limit to messages matching: ~d &lt;1m
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<P>
+<P><B>Note:</B> all dates used when searching are relative to the
+<B>local</B> time zone, so unless you change the setting of your 
+<A HREF="manual-6.html#index_format">$index_format</A> to include a
+<CODE>%[...]</CODE> format, these are <B>not</B> the dates shown
+in the main index.
+<P>
+<H2><A NAME="ss4.3">4.3 Using Tags</A>
+</H2>
+
+<P>
+<P>Sometimes it is desirable to perform an operation on a group of
+messages all at once rather than one at a time.  An example might be
+to save messages to a mailing list to a separate folder, or to
+delete all messages with a given subject.  To tag all messages
+matching a pattern, use the tag-pattern function, which is bound to
+``shift-T'' by default.  Or you can select individual messages by
+hand using the ``tag-message'' function, which is bound to ``t'' by
+default.  See 
+<A HREF="manual-4.html#patterns">patterns</A> for Mutt's pattern
+matching syntax.
+<P>Once you have tagged the desired messages, you can use the
+``tag-prefix'' operator, which is the ``;'' (semicolon) key by default.
+When the ``tag-prefix'' operator is used, the <B>next</B> operation will
+be applied to all tagged messages if that operation can be used in that
+manner.  If the 
+<A HREF="manual-6.html#auto_tag">$auto_tag</A>
+variable is set, the next operation applies to the tagged messages
+automatically, without requiring the ``tag-prefix''.
+<P>
+<H2><A NAME="hooks"></A> <A NAME="ss4.4">4.4 Using Hooks</A>
+</H2>
+
+<P>A <EM>hook</EM> is a concept borrowed from the EMACS editor which allows you to
+execute arbitrary commands before performing some operation.  For example,
+you may wish to tailor your configuration based upon which mailbox you are
+reading, or to whom you are sending mail.  In the Mutt world, a <EM>hook</EM>
+consists of a 
+<A HREF="manual-4.html#regexp">regular expression</A> or
+<A HREF="manual-4.html#patterns">pattern</A> along with a
+configuration option/command.  See
+<UL>
+<LI>
+<A HREF="manual-3.html#folder-hook">folder-hook</A></LI>
+<LI>
+<A HREF="manual-3.html#send-hook">send-hook</A></LI>
+<LI>
+<A HREF="manual-3.html#message-hook">message-hook</A></LI>
+<LI>
+<A HREF="manual-3.html#save-hook">save-hook</A></LI>
+<LI>
+<A HREF="manual-3.html#mbox-hook">mbox-hook</A></LI>
+<LI>
+<A HREF="manual-3.html#fcc-hook">fcc-hook</A></LI>
+<LI>
+<A HREF="manual-3.html#fcc-save-hook">fcc-save-hook</A></LI>
+</UL>
+
+for specific details on each type of <EM>hook</EM> available.
+<P><B>Note:</B> if a hook changes configuration settings, these changes remain
+effective until the end of the current mutt session. As this is generally
+not desired, a default hook needs to be added before all other hooks to
+restore configuration defaults. Here is an example with send-hook and the
+my_hdr directive:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+send-hook . 'unmy_hdr From:'
+send-hook ~Cb@b.b my_hdr from: c@c.c
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H3><A NAME="pattern_hook"></A> Message Matching in Hooks</H3>
+
+<P>Hooks that act upon messages (<CODE>send-hook, save-hook, fcc-hook,
+message-hook</CODE>) are evaluated in a slightly different manner.  For the other
+types of hooks, a 
+<A HREF="manual-4.html#regexp">regular expression</A> is
+sufficient.  But in dealing with messages a finer grain of control is
+needed for matching since for different purposes you want to match
+different criteria.
+<P>Mutt allows the use of the 
+<A HREF="manual-4.html#patterns">search pattern</A>
+language for matching messages in hook commands.  This works in
+exactly the same way as it would when <EM>limiting</EM> or
+<EM>searching</EM> the mailbox, except that you are restricted to those
+operators which match information mutt extracts from the header of
+the message (i.e.  from, to, cc, date, subject, etc.).
+<P>For example, if you wanted to set your return address based upon sending
+mail to a specific address, you could do something like:
+<BLOCKQUOTE><CODE>
+<PRE>
+send-hook '~t ^me@cs\.hmc\.edu$' 'my_hdr From: Mutt User &lt;user@host>'
+</PRE>
+</CODE></BLOCKQUOTE>
+
+which would execute the given command when sending mail to
+<EM>me@cs.hmc.edu</EM>.
+<P>However, it is not required that you write the pattern to match using the
+full searching language.  You can still specify a simple <EM>regular
+expression</EM> like the other hooks, in which case Mutt will translate your
+pattern into the full language, using the translation specified by the 
+<A HREF="manual-6.html#default_hook">$default_hook</A> variable.  The
+pattern is translated at the time the hook is declared, so the value of 
+<A HREF="manual-6.html#default_hook">$default_hook</A> that is in effect
+at that time will be used.
+<P>
+<H2><A NAME="query"></A> <A NAME="ss4.5">4.5 External Address Queries</A>
+</H2>
+
+<P>Mutt supports connecting to external directory databases such as LDAP,
+ph/qi, bbdb, or NIS through a wrapper script which connects to mutt
+using a simple interface.  Using the 
+<A HREF="manual-6.html#query_command">$query_command</A> variable, you specify the wrapper
+command to use.  For example:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+set query_command = "mutt_ldap_query.pl '%s'"
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>The wrapper script should accept the query on the command-line.  It
+should return a one line message, then each matching response on a
+single line, each line containing a tab separated address then name then
+some other optional information.  On error, or if there are no matching
+addresses, return a non-zero exit code and a one line error message.
+<P>An example multiple response output:
+<BLOCKQUOTE><CODE>
+<PRE>
+Searching database ... 20 entries ... 3 matching:
+me@cs.hmc.edu           Michael Elkins  mutt dude
+blong@fiction.net       Brandon Long    mutt and more
+roessler@guug.de        Thomas Roessler mutt pgp
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>There are two mechanisms for accessing the query function of mutt.  One
+is to do a query from the index menu using the query function (default: Q).
+This will prompt for a query, then bring up the query menu which will
+list the matching responses.  From the query menu, you can select
+addresses to create aliases, or to mail.  You can tag multiple messages
+to mail, start a new query, or have a new query appended to the current
+responses.
+<P>The other mechanism for accessing the query function is for address
+completion, similar to the alias completion.  In any prompt for address
+entry, you can use the complete-query function (default: ^T) to run a
+query based on the current address you have typed.  Like aliases, mutt
+will look for what you have typed back to the last space or comma.  If
+there is a single response for that query, mutt will expand the address
+in place.  If there are multiple responses, mutt will activate the query
+menu.  At the query menu, you can select one or more addresses to be
+added to the prompt.
+<P>
+<H2><A NAME="ss4.6">4.6 Mailbox Formats</A>
+</H2>
+
+<P>Mutt supports reading and writing of four different mailbox formats:
+mbox, MMDF, MH and Maildir.  The mailbox type is autodetected, so there
+is no need to use a flag for different mailbox types.  When creating new
+mailboxes, Mutt uses the default specified with the 
+<A HREF="manual-6.html#mbox_type">$mbox_type</A> variable.
+<P><B>mbox</B>.  This is the most widely used mailbox format for UNIX.  All
+messages are stored in a single file.  Each message has a line of the form:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+From me@cs.hmc.edu Fri, 11 Apr 1997 11:44:56 PST
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>to denote the start of a new message (this is often referred to as the
+``From_'' line).
+<P><B>MMDF</B>.  This is a variant of the <EM>mbox</EM> format.  Each message is
+surrounded by lines containing ``^A^A^A^A'' (four control-A's).
+<P><B>MH</B>. A radical departure from <EM>mbox</EM> and <EM>MMDF</EM>, a mailbox
+consists of a directory and each message is stored in a separate file.
+The filename indicates the message number (however, this is may not
+correspond to the message number Mutt displays). Deleted messages are
+renamed with a comma (,) prepended to the filename. <B>Note:</B> Mutt
+detects this type of mailbox by looking for either <CODE>.mh_sequences</CODE>
+or <CODE>.xmhcache</CODE> (needed to distinguish normal directories from MH
+mailboxes).
+<P><B>Maildir</B>.  The newest of the mailbox formats, used by the Qmail MTA (a
+replacement for sendmail).  Similar to <EM>MH</EM>, except that it adds three
+subdirectories of the mailbox: <EM>tmp</EM>, <EM>new</EM> and <EM>cur</EM>.  Filenames
+for the messages are chosen in such a way they are unique, even when two
+programs are writing the mailbox over NFS, which means that no file locking
+is needed.
+<P>
+<H2><A NAME="shortcuts"></A> <A NAME="ss4.7">4.7 Mailbox Shortcuts</A>
+</H2>
+
+<P>There are a number of built in shortcuts which refer to specific mailboxes.
+These shortcuts can be used anywhere you are prompted for a file or mailbox
+path.
+<P>
+<UL>
+<LI>! -- refers to your 
+<A HREF="manual-6.html#spoolfile">$spoolfile</A> (incoming) mailbox</LI>
+<LI>&gt; -- refers to your 
+<A HREF="manual-6.html#mbox">$mbox</A> file</LI>
+<LI>&lt; -- refers to your 
+<A HREF="manual-6.html#record">$record</A> file</LI>
+<LI>- or !! -- refers to the file you've last visited</LI>
+<LI>~ -- refers to your home directory</LI>
+<LI>= or + -- refers to your 
+<A HREF="manual-6.html#folder">$folder</A> directory</LI>
+<LI>@<EM>alias</EM> -- refers to the 
+<A HREF="manual-3.html#save-hook">default save folder</A> as determined by the address of the alias</LI>
+</UL>
+<P>
+<H2><A NAME="using_lists"></A> <A NAME="ss4.8">4.8 Handling Mailing Lists</A>
+</H2>
+
+<P>
+<P>Mutt has a few configuration options that make dealing with large
+amounts of mail easier.  The first thing you must do is to let Mutt
+know what addresses you consider to be mailing lists (technically
+this does not have to be a mailing list, but that is what it is most
+often used for), and what lists you are subscribed to.  This is
+accomplished through the use of the 
+<A HREF="manual-3.html#lists">lists and subscribe</A> commands in your muttrc.
+<P>Now that Mutt knows what your mailing lists are, it can do several
+things, the first of which is the ability to show the name of a list
+through which you received a message (i.e., of a subscribed list) in
+the <EM>index</EM> menu display.  This is useful to distinguish between
+personal and list mail in the same mailbox.  In the 
+<A HREF="manual-6.html#index_format">$index_format</A> variable, the escape ``%L''
+will return the string ``To &lt;list&gt;'' when ``list'' appears in the
+``To'' field, and ``Cc &lt;list&gt;'' when it appears in the ``Cc''
+field (otherwise it returns the name of the author).
+<P>Often times the ``To'' and ``Cc'' fields in mailing list messages
+tend to get quite large. Most people do not bother to remove the
+author of the message they are reply to from the list, resulting in
+two or more copies being sent to that person.  The ``list-reply''
+function, which by default is bound to ``L'' in the <EM>index</EM> menu
+and <EM>pager</EM>, helps reduce the clutter by only replying to the
+known mailing list addresses instead of all recipients (except as
+specified by <CODE>Mail-Followup-To</CODE>, see below).
+<P>Mutt also supports the <CODE>Mail-Followup-To</CODE> header.  When you send
+a message to a list of recipients which includes one or several
+subscribed mailing lists, and if the 
+<A HREF="manual-6.html#followup_to">$followup_to</A> option is set, mutt will generate
+a Mail-Followup-To header which contains all the recipients to whom
+you send this message, but not your address. This indicates that
+group-replies or list-replies (also known as ``followups'') to this
+message should only be sent to the original recipients of the
+message, and not separately to you - you'll receive your copy through
+one of the mailing lists you are subscribed to.
+<P>Conversely, when group-replying or list-replying to a message which
+has a <CODE>Mail-Followup-To</CODE> header, mutt will respect this header if
+the 
+<A HREF="manual-6.html#honor_followup_to">$honor_followup_to</A> configuration
+variable is set.  Using list-reply will in this case also make sure
+that the reply goes to the mailing list, even if it's not specified
+in the list of recipients in the <CODE>Mail-Followup-To</CODE>.
+<P>Note that, when header editing is enabled, you can create a
+<CODE>Mail-Followup-To</CODE> header manually.  Mutt will only auto-generate
+this header if it doesn't exist when you send the message.
+<P>
+<P>The other method some mailing list admins use is to generate a
+``Reply-To'' field which points back to the mailing list address rather
+than the author of the message.  This can create problems when trying
+to reply directly to the author in private, since most mail clients
+will automatically reply to the address given in the ``Reply-To''
+field.  Mutt uses the 
+<A HREF="manual-6.html#reply_to">$reply_to</A>
+variable to help decide which address to use.  If set, you will be
+prompted as to whether or not you would like to use the address given in
+the ``Reply-To'' field, or reply directly to the address given in the
+``From'' field.  When unset, the ``Reply-To'' field will be used when
+present.
+<P>The ``X-Label:'' header field can be used to further identify mailing
+lists or list subject matter (or just to annotate messages
+individually).  The 
+<A HREF="manual-6.html#index_format">$index_format</A> variable's ``%y'' and
+``%Y'' escapes can be used to expand ``X-Label:'' fields in the
+index, and Mutt's pattern-matcher can match regular expressions to
+``X-Label:'' fields with the ``&nbsp;y'' selector.  ``X-Label:'' is not a
+standard message header field, but it can easily be inserted by procmail
+and other mail filtering agents.
+<P>Lastly, Mutt has the ability to 
+<A HREF="manual-6.html#sort">sort</A> the mailbox into
+<A HREF="manual-2.html#threads">threads</A>.  A thread is a group of messages which all relate to the same
+subject.  This is usually organized into a tree-like structure where a
+message and all of its replies are represented graphically.  If you've ever
+used a threaded news client, this is the same concept.  It makes dealing
+with large volume mailing lists easier because you can easily delete
+uninteresting threads and quickly find topics of value.
+<P>
+<H2><A NAME="ss4.9">4.9 Delivery Status Notification (DSN) Support</A>
+</H2>
+
+<P>RFC1894 defines a set of MIME content types for relaying information
+about the status of electronic mail messages.  These can be thought of as
+``return receipts.'' Berkeley sendmail 8.8.x currently has some command
+line options in which the mail client can make requests as to what type
+of status messages should be returned.
+<P>To support this, there are two variables. 
+<A HREF="manual-6.html#dsn_notify">$dsn_notify</A> is used to request receipts for
+different results (such as failed message, message delivered, etc.).
+<A HREF="manual-6.html#dsn_return">$dsn_return</A> requests how much
+of your message should be returned with the receipt (headers or full
+message).  Refer to the man page on sendmail for more details on DSN.
+<P>
+<H2><A NAME="ss4.10">4.10 POP3 Support (OPTIONAL)</A>
+</H2>
+
+<P>
+<P>If Mutt was compiled with POP3 support (by running the <EM>configure</EM>
+script with the <EM>--enable-pop</EM> flag), it has the ability to work
+with mailboxes located on a remote POP3 server and fetch mail for local
+browsing.
+<P>You can access the remote POP3 mailbox by selecting the folder
+<CODE>pop://popserver/</CODE>.
+<P>You can select an alternative port by specifying it with the server, ie:
+<CODE>pop://popserver:port/</CODE>.
+<P>You can also specify different username for each folder, ie:
+<CODE>pop://username@popserver[:port]/</CODE>.
+<P>Polling for new mail is more expensive over POP3 than locally. For this
+reason the frequency at which Mutt will check for mail remotely can be
+controlled by the
+<A HREF="manual-6.html#pop_checkinterval">$pop_checkinterval</A>
+variable, which defaults to every 60 seconds.
+<P>If Mutt was compiled with SSL support (by running the <EM>configure</EM>
+script with the <EM>--with-ssl</EM> flag), connections to POP3 servers
+can be encrypted. This naturally requires that the server supports
+SSL encrypted connections. To access a folder with POP3/SSL, you should
+use pops: prefix, ie:
+<CODE>pops://[username@]popserver[:port]/</CODE>.
+<P>Another way to access your POP3 mail is the <EM>fetch-mail</EM> function
+(default: G).  It allows to connect to 
+<A HREF="manual-6.html#pop_host">pop_host</A>, fetch all your new mail and place it in the
+local 
+<A HREF="manual-6.html#spoolfile">spoolfile</A>.  After this
+point, Mutt runs exactly as if the mail had always been local.
+<P><B>Note:</B> If you only need to fetch all messages to local mailbox
+you should consider using a specialized program, such as 
+<A HREF="http://www.ccil.org/~esr/fetchmail">fetchmail</A><P>
+<H2><A NAME="ss4.11">4.11 IMAP Support (OPTIONAL)</A>
+</H2>
+
+<P>
+<P>If Mutt was compiled with IMAP support (by running the <EM>configure</EM>
+script with the <EM>--enable-imap</EM> flag), it has the ability to work
+with folders located on a remote IMAP server.
+<P>You can access the remote inbox by selecting the folder
+<CODE>imap://imapserver/INBOX</CODE>, where <CODE>imapserver</CODE> is the name of the
+IMAP server and <CODE>INBOX</CODE> is the special name for your spool mailbox on
+the IMAP server. If you want to access another mail folder at the IMAP
+server, you should use <CODE>imap://imapserver/path/to/folder</CODE> where
+<CODE>path/to/folder</CODE> is the path of the folder you want to access.
+<P>You can select an alternative port by specifying it with the server, ie:
+<CODE>imap://imapserver:port/INBOX</CODE>.
+<P>You can also specify different username for each folder, ie:
+<CODE>imap://username@imapserver[:port]/INBOX</CODE>.
+<P>If Mutt was compiled with SSL support (by running the <EM>configure</EM>
+script with the <EM>--with-ssl</EM> flag), connections to IMAP servers
+can be encrypted. This naturally requires that the server supports
+SSL encrypted connections. To access a folder with IMAP/SSL, you should
+use <CODE>imaps://[username@]imapserver[:port]/path/to/folder</CODE> as your 
+folder path.
+<P>Pine-compatible notation is also supported, ie
+<CODE>{[username@]imapserver[:port][/ssl]}path/to/folder</CODE>
+<P>Note that not all servers use / as the hierarchy separator.  Mutt should
+correctly notice which separator is being used by the server and convert
+paths accordingly.
+<P>When browsing folders on an IMAP server, you can toggle whether to look
+at only the folders you are subscribed to, or all folders with the
+<EM>toggle-subscribed</EM> command.  See also the 
+<A HREF="manual-6.html#imap_list_subscribed">$imap_list_subscribed</A> variable.
+<P>Polling for new mail on an IMAP server can cause noticeable delays. So, you'll
+want to carefully tune the
+<A HREF="manual-6.html#mail_check">$mail_check</A>
+and
+<A HREF="manual-6.html#timeout">$timeout</A>
+variables. Personally I use
+<BLOCKQUOTE><CODE>
+<PRE>
+set mail_check=90
+set timeout=15
+</PRE>
+</CODE></BLOCKQUOTE>
+
+with relatively good results over my slow modem line.
+<P>Note that if you are using mbox as the mail store on UW servers prior to
+v12.250, the server has been reported to disconnect a client if another client
+selects the same folder.
+<P>
+<H3>The Folder Browser</H3>
+
+<P>
+<P>As of version 1.2, mutt supports browsing mailboxes on an IMAP
+server. This is mostly the same as the local file browser, with the
+following differences:
+<UL>
+<LI>In lieu of file permissions, mutt displays the string "IMAP",
+possibly followed by the symbol "+", indicating
+that the entry contains both messages and subfolders. On
+Cyrus-like servers folders will often contain both messages and
+subfolders. </LI>
+<LI>For the case where an entry can contain both messages and
+subfolders, the selection key (bound to <CODE>enter</CODE> by default)
+will choose to descend into the subfolder view. If you wish to view
+the messages in that folder, you must use <CODE>view-file</CODE> instead
+(bound to <CODE>space</CODE> by default).</LI>
+<LI>You can delete mailboxes with the <CODE>delete-mailbox</CODE>
+command (bound to <CODE>d</CODE> by default. You may also
+<CODE>subscribe</CODE> and <CODE>unsubscribe</CODE> to mailboxes (normally
+these are bound to <CODE>s</CODE> and <CODE>u</CODE>, respectively).</LI>
+</UL>
+<P>
+<H3>Authentication</H3>
+
+<P>
+<P>Mutt supports four authentication methods with IMAP servers: SASL,
+GSSAPI, CRAM-MD5, and LOGIN (there is a patch by Grant Edwards to add
+NTLM authentication for you poor exchange users out there, but it has
+yet to be integrated into the main tree). There is also support for
+the pseudo-protocol ANONYMOUS, which allows you to log in to a public
+IMAP server without having an account. To use ANONYMOUS, simply make
+your username blank or "anonymous".
+<P>SASL is a special super-authenticator, which selects among several protocols
+(including GSSAPI, CRAM-MD5, ANONYMOUS, and DIGEST-MD5) the most secure
+method available on your host and the server. Using some of these methods
+(including DIGEST-MD5 and possibly GSSAPI), your entire session will be
+encrypted and invisible to those teeming network snoops. It is the best
+option if you have it. To use it, you must have the Cyrus SASL library
+installed on your system and compile mutt with the <EM>--with-sasl</EM> flag.
+<P>Mutt will try whichever methods are compiled in and available on the server,
+in the following order: SASL, ANONYMOUS, GSSAPI, CRAM-MD5, LOGIN.
+<P>There are a few variables which control authentication: 
+<UL>
+<LI>
+<A HREF="manual-6.html#imap_user">$imap_user</A> - controls
+the username under which you request authentication on the IMAP server,
+for all authenticators. This is overridden by an explicit username in
+the mailbox path (ie by using a mailbox name of the form
+<CODE>{user@host}</CODE>).</LI>
+<LI>
+<A HREF="manual-6.html#imap_pass">$imap_pass</A> - a
+password which you may preset, used by all authentication methods where
+a password is needed.</LI>
+<LI>
+<A HREF="manual-6.html#imap_authenticators">$imap_authenticators</A> - a colon-delimited list of IMAP
+authentication methods to try, in the order you wish to try them. If
+specified, this overrides mutt's default (attempt everything, in the order
+listed above).</LI>
+</UL>
+<P>
+<H2><A NAME="account-hook"></A> <A NAME="ss4.12">4.12 Managing multiple IMAP/POP accounts (OPTIONAL)</A>
+</H2>
+
+<P>
+<P>If you happen to have accounts on multiple IMAP and/or POP servers,
+you may find managing all the authentication settings inconvenient and
+error-prone.  The account-hook command may help. This hook works like
+folder-hook but is invoked whenever you access a remote mailbox
+(including inside the folder browser), not just when you open the
+mailbox.
+<P>Some examples:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+account-hook . 'unset imap_user; unset imap_pass; unset tunnel'
+account-hook imap://host1/ 'set imap_user=me1 imap_pass=foo'
+account-hook imap://host2/ 'set tunnel="ssh host2 /usr/libexec/imapd"'
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="urlview"></A> <A NAME="ss4.13">4.13 Start a WWW Browser on URLs (EXTERNAL)</A>
+</H2>
+
+<P>If a message contains URLs (<EM>unified ressource locator</EM> = address in the
+WWW space like <EM>http://www.mutt.org/</EM>), it is efficient to get
+a menu with all the URLs and start a WWW browser on one of them.  This
+functionality is provided by the external urlview program which can be
+retrieved at 
+<A HREF="ftp://ftp.guug.de/pub/mutt/contrib/">ftp://ftp.guug.de/pub/mutt/contrib/</A> and the configuration commands:
+<BLOCKQUOTE><CODE>
+<PRE>
+macro index \cb |urlview\n
+macro pager \cb |urlview\n
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<HR>
+<A HREF="manual-5.html">Next</A>
+<A HREF="manual-3.html">Previous</A>
+<A HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc4">Contents</A>
+</BODY>
+</HTML>

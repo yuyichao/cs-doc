@@ -1,0 +1,273 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>常用的范围函数</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="范围构件 Range Widgets"
+HREF="c696.html"><LINK
+REL="PREVIOUS"
+TITLE="比例构件 Scale Widgets"
+HREF="x708.html"><LINK
+REL="NEXT"
+TITLE="键盘和鼠标绑定"
+HREF="x788.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x708.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>范围构件 Range Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x788.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-COMMONRANGEFUNCTIONS">常用的范围函数</H1
+><P
+>范围构件本质上来说都是相当复杂的，不过，像所有“基本类”构件一样，绝大部分复杂性只有当你想彻底了解它时才吸引人。同样,几乎所有它定义的函数和信号都只在用它们写派生构件时才真正用到。然而，在<TT
+CLASS="LITERAL"
+>&#60;gtk/gtkrange.h&#62;</TT
+>中还是有一些很有用的函数，它们对所有范围构件都起作用。</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN751">设置更新方式</H2
+><P
+>范围构件的“更新方式”定义了用户与构件交互时的它的调整对象的<TT
+CLASS="LITERAL"
+>value</TT
+>值如何变化，以及如何引发 "value_changed" 信号给调整对象。更新方式在<TT
+CLASS="LITERAL"
+>&#60;gtk/gtkenums.h&#62;</TT
+>中定义为<TT
+CLASS="LITERAL"
+>enum GtkUpdateType</TT
+>类型，有以下取值：</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_UPDATE_CONTINUOUS</TT
+></DT
+><DD
+><P
+>这是默认值。"value_changed" 信号是连续引发，例如，每当滑块移动，甚至移动最小数量时都会引发。</P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_UPDATE_DISCONTINUOUS</TT
+></DT
+><DD
+><P
+>只有滑块停止移动，用户释放鼠标键时才引发 "value_changed" 信号。</P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_UPDATE_DELAYED</TT
+></DT
+><DD
+><P
+>当用户释放鼠标键，或者滑块短期停止移动时才引发 "value_changed" 信号。</P
+></DD
+></DL
+></DIV
+><P
+>范围构件的更新方式可以用以下方法设置：用<TT
+CLASS="LITERAL"
+>GTK_RANGE(widget)</TT
+>宏将构件转换，并将它传递给这个函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_range_set_update_policy( GtkRange      *range,
+	                          GtkUpdateType  policy);</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN776">获得和设置调整对象</H2
+><P
+>猜得出，用以下函数"快速"取得和设置调整对象：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkAdjustment* gtk_range_get_adjustment( GtkRange *range );
+
+void gtk_range_set_adjustment( GtkRange      *range,
+                               GtkAdjustment *adjustment );</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>gtk_range_get_adjustment()</TT
+>返回一个指向<TT
+CLASS="LITERAL"
+>range</TT
+>所连接的调整对象的指针。</P
+><P
+>如果将<TT
+CLASS="LITERAL"
+>range</TT
+>正在使用的调整对象传递给<TT
+CLASS="LITERAL"
+>gtk_range_set_adjustment()</TT
+>函数，什么也不会发生，不管是否改变了其内部的值。如果是将一个新的调整对象传递给它，它会将旧的调整对象(如果存在)解除引用(unreference)(可能会销毁它)，将适当的信号连接到新的调整对象，并且调用私有函数<TT
+CLASS="LITERAL"
+>gtk_range_adjustment_changed()</TT
+>，该函数将(或至少假装会...)重新计算滑块的尺寸和/或位置，并在需要时重新绘出该构件。正如在调整对象部分所提到的，如果想重新使用同一个调整对象，当直接修改它的值时，应该引发一个 "changed" 信号给它，像这样：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>g_signal_emit_by_name (G_OBJECT (adjustment), "changed");</PRE
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x708.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x788.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>比例构件 Scale Widgets</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c696.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>键盘和鼠标绑定</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

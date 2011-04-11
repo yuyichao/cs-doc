@@ -1,0 +1,123 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>3.5.&#160;open 和 release-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch03.html" title="第&#160;3&#160;章&#160;字符驱动">
+<link rel="prev" href="ch03s04.html" title="3.4.&#160;字符设备注册">
+<link rel="next" href="ch03s06.html" title="3.6.&#160;scull 的内存使用">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">3.5.&#160;open 和 release</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch03s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;3&#160;章&#160;字符驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch03s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="openandrelease.sect"></a>3.5.&#160;open 和 release</h2></div></div></div>
+<p>到此我们已经快速浏览了这些成员, 我们开始在真实的 scull 函数中使用它们.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheopenMethod.sect"></a>3.5.1.&#160;open 方法</h3></div></div></div>
+<p>open 方法提供给驱动来做任何的初始化来准备后续的操作. 在大部分驱动中, open 应当进行下面的工作:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>检查设备特定的错误(例如设备没准备好, 或者类似的硬件错误</p></li>
+<li><p>如果它第一次打开, 初始化设备</p></li>
+<li><p>如果需要, 更新 f_op 指针.</p></li>
+<li><p>分配并填充要放进 filp-&gt;private_data 的任何数据结构</p></li>
+</ul></div>
+<p>但是, 事情的第一步常常是确定打开哪个设备. 记住 open 方法的原型是:</p>
+<pre class="programlisting">
+int (*open)(struct inode *inode, struct file *filp);
+</pre>
+<p>inode 参数有我们需要的信息,以它的 i_cdev 成员的形式, 里面包含我们之前建立的 cdev 结构. 唯一的问题是通常我们不想要 cdev 结构本身, 我们需要的是包含 cdev 结构的 scull_dev 结构. C 语言使程序员玩弄各种技巧来做这种转换; 但是, 这种技巧编程是易出错的, 并且导致别人难于阅读和理解代码. 幸运的是, 在这种情况下, 内核 hacker 已经为我们实现了这个技巧, 以 container_of 宏的形式, 在 &lt;linux/kernel.h&gt; 中定义:</p>
+<pre class="programlisting">
+container_of(pointer, container_type, container_field); 
+</pre>
+<p>这个宏使用一个指向 container_field 类型的成员的指针, 它在一个 container_type 类型的结构中, 并且返回一个指针指向包含结构. 在 scull_open, 这个宏用来找到适当的设备结构:</p>
+<pre class="programlisting">
+struct scull_dev *dev; /* device information */ 
+dev = container_of(inode-&gt;i_cdev, struct scull_dev, cdev);
+filp-&gt;private_data = dev; /* for other methods */
+</pre>
+<p>一旦它找到 scull_dev 结构, scull 在文件结构的 private_data 成员中存储一个它的指针, 为以后更易存取.</p>
+<p>识别打开的设备的另外的方法是查看存储在 inode 结构的次编号. 如果你使用 register_chrdev 注册你的设备, 你必须使用这个技术. 确认使用 iminor 从 inode 结构中获取次编号, 并且确定它对应一个你的驱动真正准备好处理的设备.</p>
+<p>scull_open 的代码(稍微简化过)是:</p>
+<pre class="programlisting">
+int scull_open(struct inode *inode, struct file *filp)
+{
+        struct scull_dev *dev; /* device information */
+        dev = container_of(inode-&gt;i_cdev, struct scull_dev, cdev);
+        filp-&gt;private_data = dev; /* for other methods */
+
+        /* now trim to 0 the length of the device if open was write-only */
+        if ( (filp-&gt;f_flags &amp; O_ACCMODE) == O_WRONLY)
+        {
+                scull_trim(dev); /* ignore errors */
+        }
+        return 0; /* success */
+}
+</pre>
+<p>代码看来相当稀疏, 因为在调用 open 时它没有做任何特别的设备处理. 它不需要, 因为 scull 设备设计为全局的和永久的. 特别地, 没有如"在第一次打开时初始化设备"等动作, 因为我们不为 scull 保持打开计数.</p>
+<p>唯一在设备上的真实操作是当设备为写而打开时将它截取为长度为 0. 这样做是因为, 在设计上, 用一个短的文件覆盖一个 scull 设备导致一个短的设备数据区. 这类似于为写而打开一个常规文件, 将其截短为 0. 如果设备为读而打开, 这个操作什么都不做.</p>
+<p>在我们查看其他 scull 特性的代码时将看到一个真实的初始化如何起作用的.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ThereleaseMethod.sect"></a>3.5.2.&#160;release 方法</h3></div></div></div>
+<p>release 方法的角色是 open 的反面. 有时你会发现方法的实现称为 device_close, 而不是 device_release. 任一方式, 设备方法应当进行下面的任务:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>释放 open 分配在 filp-&gt;private_data 中的任何东西</p></li>
+<li><p>在最后的 close 关闭设备</p></li>
+</ul></div>
+<p>scull 的基本形式没有硬件去关闭, 因此需要的代码是最少的:<sup>[<a name="id415980" href="ch03s05.html#ftn.id415980">12</a>]</sup></p>
+<pre class="programlisting">
+int scull_release(struct inode *inode, struct file *filp)
+{
+ return 0;
+}
+</pre>
+<p>你可能想知道当一个设备文件关闭次数超过它被打开的次数会发生什么. 毕竟, dup 和 fork 系统调用不调用 open 来创建打开文件的拷贝; 每个拷贝接着在程序终止时被关闭. 例如, 大部分程序不打开它们的 stdin 文件(或设备), 但是它们都以关闭它结束. 当一个打开的设备文件已经真正被关闭时驱动如何知道?</p>
+<p>答案简单: 不是每个 close 系统调用引起调用 release 方法. 只有真正释放设备数据结构的调用会调用这个方法 -- 因此得名. 内核维持一个文件结构被使用多少次的计数. fork 和 dup 都不创建新文件(只有 open 这样); 它们只递增正存在的结构中的计数. close 系统调用仅在文件结构计数掉到 0 时执行 release 方法, 这在结构被销毁时发生. release 方法和 close 系统调用之间的这种关系保证了你的驱动一次 open 只看到一次 release.</p>
+<p>注意, flush 方法在每次应用程序调用 close 时都被调用. 但是, 很少驱动实现 flush, 因为常常在 close 时没有什么要做, 除非调用 release.</p>
+<p>如你会想到的, 前面的讨论即便是应用程序没有明显地关闭它打开的文件也适用: 内核在进程 exit 时自动关闭了任何文件, 通过在内部使用 close 系统调用.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id415980" href="ch03s05.html#id415980">12</a>] </sup>其他风味的设备由不同的函数关闭, 因为 scull_open 为每个设备替换了不同的 filp-&gt;f_op. 我们在介绍每种风味时再讨论它们.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch03s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch03.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch03s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">3.4.&#160;字符设备注册&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;3.6.&#160;scull 的内存使用</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

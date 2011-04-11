@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 作业控制</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch34.html" title="第 34 章 终端、作业控制与守护进程" /><link rel="prev" href="ch34s01.html" title="1. 终端" /><link rel="next" href="ch34s03.html" title="3. 守护进程" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 作业控制</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch34s01.html">上一页</a> </td><th width="60%" align="center">第 34 章 终端、作业控制与守护进程</th><td width="20%" align="right"> <a accesskey="n" href="ch34s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2892066"></a>2. 作业控制</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2892071"></a>2.1. Session与进程组</h3></div></div></div><p>在<a class="xref" href="ch33s01.html#signal.intro">第 1 节 “信号的基本概念”</a>中我说过“<span class="quote">Shell可以同时运行一个前台进程和任意多个后台进程</span>”其实是不全面的，现在我们来研究更复杂的情况。事实上，Shell分前后台来控制的不是进程而是作业（Job）<a id="id2892093" class="indexterm"></a>或者进程组（Process Group）<a id="id2892100" class="indexterm"></a>。一个前台作业可以由多个进程组成，一个后台作业也可以由多个进程组成，Shell可以同时运行一个前台作业和任意多个后台作业，这称为作业控制（Job Control）<a id="id2892111" class="indexterm"></a>。例如用以下命令启动5个进程（这个例子出自<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>）：</p><pre class="screen">$ proc1 | proc2 &amp;
+$ proc3 | proc4 | proc5</pre><p>其中<code class="literal">proc1</code>和<code class="literal">proc2</code>属于同一个后台进程组，<code class="literal">proc3</code>、<code class="literal">proc4</code>、<code class="literal">proc5</code>属于同一个前台进程组，Shell进程本身属于一个单独的进程组。这些进程组的控制终端相同，它们属于同一个Session<a id="id2892166" class="indexterm"></a>。当用户在控制终端输入特殊的控制键（例如Ctrl-C）时，内核会发送相应的信号（例如<code class="literal">SIGINT</code>）给前台进程组的所有进程。各进程、进程组、Session的关系如下图所示。</p><div class="figure"><a id="id2892183"></a><p class="title"><b>图 34.4. Session与进程组</b></p><div class="figure-contents"><div><img src="images/jobs.pg.png" alt="Session与进程组" /></div></div></div><br class="figure-break" /><p>现在我们从Session和进程组的角度重新来看登录和执行命令的过程。</p><div class="orderedlist"><ol type="1"><li><p><code class="literal">getty</code>或<code class="literal">telnetd</code>进程在打开终端设备之前调用<code class="literal">setsid</code>函数创建一个新的Session，该进程称为Session Leader<a id="id2892229" class="indexterm"></a>，该进程的id也可以看作Session的id，然后该进程打开终端设备作为这个Session中所有进程的控制终端。在创建新Session的同时也创建了一个新的进程组，该进程是这个进程组的Process Group Leader<a id="id2892241" class="indexterm"></a>，该进程的id也是进程组的id。</p></li><li><p>在登录过程中，<code class="literal">getty</code>或<code class="literal">telnetd</code>进程变成<code class="literal">login</code>，然后变成Shell，但仍然是同一个进程，仍然是Session Leader。</p></li><li><p>由Shell进程<code class="literal">fork</code>出的子进程本来具有和Shell相同的Session、进程组和控制终端，但是Shell调用<code class="literal">setpgid</code>函数将作业中的某个子进程指定为一个新进程组的Leader，然后调用<code class="literal">setpgid</code>将该作业中的其它子进程也转移到这个进程组中。如果这个进程组需要在前台运行，就调用<code class="literal">tcsetpgrp</code>函数将它设置为前台进程组，由于一个Session只能有一个前台进程组，所以Shell所在的进程组就自动变成后台进程组。</p><p>在上面的例子中，<code class="literal">proc3</code>、<code class="literal">proc4</code>、<code class="literal">proc5</code>被Shell放到同一个前台进程组，其中有一个进程是该进程组的Leader，Shell调用<code class="literal">wait</code>等待它们运行结束。一旦它们全部运行结束，Shell就调用<code class="literal">tcsetpgrp</code>函数将自己提到前台继续接受命令。但是注意，如果<code class="literal">proc3</code>、<code class="literal">proc4</code>、<code class="literal">proc5</code>中的某个进程又<code class="literal">fork</code>出子进程，子进程也属于同一进程组，但是Shell并不知道子进程的存在，也不会调用<code class="literal">wait</code>等待它结束。换句话说，<code class="literal">proc3 | proc4 | proc5</code>是Shell的作业，而这个子进程不是，这是作业和进程组在概念上的区别。一旦作业运行结束，Shell就把自己提到前台，如果原来的前台进程组还存在（如果这个子进程还没终止），则它自动变成后台进程组（回顾一下<a class="xref" href="ch30s03.html#process.simplefork">例 30.3 “fork”</a>）。</p></li></ol></div><p>下面看两个例子。</p><pre class="screen">$ ps -o pid,ppid,pgrp,session,tpgid,comm | cat
+  PID  PPID  PGRP  SESS TPGID COMMAND
+ 6994  6989  6994  6994  8762 bash
+ 8762  6994  8762  6994  8762 ps
+ 8763  6994  8762  6994  8762 cat</pre><p>这个作业由<code class="literal">ps</code>和<code class="literal">cat</code>两个进程组成，在前台运行。从<code class="literal">PPID</code>列可以看出这两个进程的父进程是<code class="literal">bash</code>。从<code class="literal">PGRP</code>列可以看出，<code class="literal">bash</code>在id为6994的进程组中，这个id等于<code class="literal">bash</code>的进程id，所以它是进程组的Leader，而两个子进程在id为8762的进程组中，<code class="literal">ps</code>是这个进程组的Leader。从<code class="literal">SESS</code>可以看出三个进程都在同一Session中，<code class="literal">bash</code>是Session Leader。从<code class="literal">TPGID</code>可以看出，前台进程组的id是8762，也就是两个子进程所在的进程组。</p><pre class="screen">$ ps -o pid,ppid,pgrp,session,tpgid,comm | cat &amp;
+[1] 8835
+$   PID  PPID  PGRP  SESS TPGID COMMAND
+ 6994  6989  6994  6994  6994 bash
+ 8834  6994  8834  6994  6994 ps
+ 8835  6994  8834  6994  6994 cat</pre><p>这个作业由<code class="literal">ps</code>和<code class="literal">cat</code>两个进程组成，在后台运行，<code class="literal">bash</code>不等作业结束就打印提示信息<code class="literal">[1] 8835</code>然后给出提示符接受新的命令，<code class="literal">[1]</code>是作业的编号，如果同时运行多个作业可以用这个编号区分，8835是该作业中某个进程的id。请读者自己分析<code class="literal">ps</code>命令的输出结果。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2892541"></a>2.2. 与作业控制有关的信号</h3></div></div></div><p>我们通过实验来理解与作业控制有关的信号。</p><pre class="screen">$ cat &amp;
+[1] 9386
+$ （再次回车） 
+
+[1]+  Stopped                 cat</pre><p>将<code class="literal">cat</code>放到后台运行，由于<code class="literal">cat</code>需要读标准输入（也就是终端输入），而后台进程是不能读终端输入的，因此内核发<code class="literal">SIGTTIN</code>信号给进程，该信号的默认处理动作是使进程停止。</p><pre class="screen">$ jobs
+[1]+  Stopped                 cat
+$ fg %1
+cat
+hello（回车）
+hello
+^Z
+[1]+  Stopped                 cat</pre><p><code class="literal">jobs</code>命令可以查看当前有哪些作业。<code class="literal">fg</code>命令可以将某个作业提至前台运行，如果该作业的进程组正在后台运行则提至前台运行，如果该作业处于停止状态，则给进程组的每个进程发<code class="literal">SIGCONT</code>信号使它继续运行。参数<code class="literal">%1</code>表示将第1个作业提至前台运行。<code class="literal">cat</code>提到前台运行后，挂起等待终端输入，当输入<code class="literal">hello</code>并回车后，<code class="literal">cat</code>打印出同样的一行，然后继续挂起等待输入。如果输入Ctrl-Z则向所有前台进程发<code class="literal">SIGTSTP</code>信号，该信号的默认动作是使进程停止。</p><pre class="screen">$ bg %1
+[1]+ cat &amp;
+
+[1]+  Stopped                 cat</pre><p><code class="literal">bg</code>命令可以让某个停止的作业在后台继续运行，也需要给该作业的进程组的每个进程发<code class="literal">SIGCONT</code>信号。<code class="literal">cat</code>进程继续运行，又要读终端输入，然而它在后台不能读终端输入，所以又收到<code class="literal">SIGTTIN</code>信号而停止。</p><pre class="screen">$ ps
+  PID TTY          TIME CMD
+ 6994 pts/0    00:00:05 bash
+11022 pts/0    00:00:00 cat
+11023 pts/0    00:00:00 ps
+$ kill 11022
+$ ps
+  PID TTY          TIME CMD
+ 6994 pts/0    00:00:05 bash
+11022 pts/0    00:00:00 cat
+11024 pts/0    00:00:00 ps
+$ fg %1
+cat
+Terminated</pre><p>用<code class="literal">kill</code>命令给一个停止的进程发<code class="literal">SIGTERM</code>信号，这个信号并不会立刻处理，而要等进程准备继续运行之前处理，默认动作是终止进程。但如果给一个停止的进程发<code class="literal">SIGKILL</code>信号就不同了。</p><pre class="screen">$ cat &amp;
+[1] 11121
+$ ps
+  PID TTY          TIME CMD
+ 6994 pts/0    00:00:05 bash
+11121 pts/0    00:00:00 cat
+11122 pts/0    00:00:00 ps
+
+[1]+  Stopped                 cat
+$ kill -KILL 11121
+[1]+  Killed                  cat</pre><p><code class="literal">SIGKILL</code>信号既不能被阻塞也不能被忽略，也不能用自定义函数捕捉，只能按系统的默认动作立刻处理。与此类似的还有<code class="literal">SIGSTOP</code>信号，给一个进程发<code class="literal">SIGSTOP</code>信号会使进程停止，这个默认的处理动作不能改变。这样保证了不管什么样的进程都能用<code class="literal">SIGKILL</code>终止或者用<code class="literal">SIGSTOP</code>停止，当系统出现异常时管理员总是有办法杀掉有问题的进程或者暂时停掉怀疑有问题的进程。</p><p>上面讲了如果后台进程试图从控制终端读，会收到<code class="literal">SIGTTIN</code>信号而停止，如果试图向控制终端写呢？通常是允许写的。如果觉得后台进程向控制终端输出信息干扰了用户使用终端，可以设置一个终端选项禁止后台进程写。</p><pre class="screen">$ cat testfile &amp;
+[1] 11426
+$ hello
+
+[1]+  Done                    cat testfile
+$ stty tostop
+$ cat testfile &amp;
+[1] 11428
+
+[1]+  Stopped                 cat testfile
+$ fg %1
+cat testfile
+hello</pre><p>首先用<code class="literal">stty</code>命令设置终端选项，禁止后台进程写，然后启动一个后台进程准备往终端写，这时进程收到一个<code class="literal">SIGTTOU</code>信号，默认处理动作也是停止进程。</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch34s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch34.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch34s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 终端 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 守护进程</td></tr></table></div></body></html>

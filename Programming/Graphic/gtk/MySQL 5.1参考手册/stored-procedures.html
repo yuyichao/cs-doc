@@ -1,0 +1,2747 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:st1="urn:schemas-microsoft-com:office:smarttags" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Chapter&nbsp;20.&nbsp;Stored Procedures and Functions</title>
+  <link rel="start" href="index.html" title="MySQL 5.1 Reference Manual">
+  <link rel="up" href="index.html" title="MySQL 5.1 Reference Manual">
+  <link rel="prev" href="spatial-extensions-in-mysql.html" title="Chapter&nbsp;19.&nbsp;Spatial Extensions in MySQL">
+  <link rel="next" href="triggers.html" title="Chapter&nbsp;21.&nbsp;Triggers">
+</head>
+<body>
+<div class="Section1">
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h2><a name="stored-procedures"></a><span>
+第20章：存储程序和函数</span></h2>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<p><b><span>目录</span></b></p>
+
+
+
+<p><span class="section"><span><a href="#stored-procedure-privileges">20.1. 
+存储程序和授权表</a></span></span></p>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<p><span class="section"><span><a href="#stored-procedure-syntax">20.2.   
+存储程序的语法</a></span></span></p>
+
+
+
+<div>
+
+<div>
+
+<p><span class="section"><span><a href="#create-procedure">20.2.1. CREATE PROCEDURE和CREATE FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#alter-procedure">20.2.2. ALTER PROCEDURE和ALTER FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#drop-procedure">20.2.3. DROP PROCEDURE和和DROP FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#show-create-procedure">20.2.4. SHOW CREATE   
+PROCEDURE和SHOW CREATE FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#show-procedure-status">20.2.5. SHOW   
+PROCEDURE STATUS和SHOW FUNCTION STATUS</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#call">20.2.6.   
+CALL语句</a></span></span><span><o:p></o:p></span></p>
+
+
+
+<p><span class="section"><span><a href="#begin-end">20.2.7.   
+BEGIN ... END复合语句</a></span></span></p>
+
+
+
+<p><span class="section"><span><a href="#declare">20.2.8.   
+DECLARE语句</a></span></span></p>
+
+
+
+<p><span class="section"><span><a href="#variables-in-stored-procedures">20.2.9. 
+存储程序中的变量</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#conditions-and-handlers">20.2.10. 条件和处理程序</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#cursors">20.2.11.   
+光标</a></span></span><span><o:p></o:p></span></p>
+
+
+
+<p><span class="section"><span><a href="#flow-control-constructs">20.2.12. 
+流程控制构造</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#stored-procedure-replication-faq">20.3.   
+存储程序、函数、触发程序和复制：常见问题</a></span></span><span><o:p></o:p></span></p>
+
+
+
+<p><span class="section"><span><a href="#stored-procedure-logging">20.4. 
+存储子程序和触发程序的二进制日志功能</a></span></span></p>   
+
+
+
+</div>
+
+
+
+<p><a name="id2991946"></a><a name="id2991953"></a>MySQL<span> 
+5.1版支持存</span><span>储程序和函数。一个存储程序是可以被存储在服务器中的一套</span><span>SQL语句。一旦它被存储了，客户端不需要再重新发布单独的语句，而是可以引用存储程序来替代</span><span>。 <o:p></o:p></span></p>   
+
+
+
+<p><span>下面一些情况下存储程序尤其有用： <o:p></o:p></span></p>
+
+
+
+<div>
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>
+当用不同语言编写多客户应用程序，或多客户应用程序在不同平台上运行且需要执行相同的数据库操作之时。</span></p>   
+
+
+
+<p><span><span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>
+<span>
+安全极为重要之时。比如，银行对所有普通操作使用存储程序。这提供一个坚固而安全的环境，程序可以确保每一个操作都被妥善记入日志。在这样一个设置中，应用程序和用户不可能直接访问数据库表，但是仅可以执行指定的存储程序</span></span><span>。 <o:p></o:p></span></p>
+
+
+
+</div>
+
+
+
+<p><span>存</span><span>储程序可以提供改良后的性能，因为只有较少的信息需要在服务器和客户算之间传送。代价是增加数据库服务器系统的负荷，因为更多的工作在服务器这边完成，更少的在客户端（应用程序）那边完成上。如果许多客户端机器（比如网页服务器）只由一个或少数几个数据库服务器提供服务，可以考虑一下存储程序。</span></p>
+
+
+
+<p><span>
+存储程序也允许你在数据库服务器上有函数库。这是一个被现代应用程序语言共享的特征，它允许这样的内部设计，比如通过使用类。使用这些客户端应用程序语言特征</span><span>对甚至于数据库使用范围以外的</span><span>编程人员都有好处。</span></p>
+
+
+
+<p><span>MySQL为存储程序遵循SQL:2003语法，这个语法也被用在</span><span>IBM的DB2数据库上。</span><span> <o:p></o:p></span></p>
+
+
+
+<p><span>MySQL对存储程序的实现还在进度中。所有本章叙述的语法都被支持，在有限制或扩展的地方会恰当地指出来。有关使用
+存储程序的限制的更多讨论在<a href="restrictions.html" title="Appendix&nbsp;I.&nbsp;Feature Restrictions">附录&nbsp;I,   
+<i>特性限制</i></a>里提到。 <o:p></o:p></span></p>   
+
+
+
+<p><span>如<a href="#stored-procedure-logging" title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers">20.4节，“<span>存储子程序和触发程序的二进制日志功能&rdquo;</span></a>里所说的，
+存储子程序的二进制日志功能已经完成。 <o:p></o:p></span></p>   
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h2><a name="stored-procedure-privileges"></a><span>20.1.&nbsp;存储程序和授权表</span></h2>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+<p><span>存储程序需要在mysql数据库中有proc表。这个表在MySQL    
+5.1安装过程中创建。如果你从早期的版本升级到MySQL 5.1 ，请确定更新你的授权表以确保proc表的存在。请参阅<a href="installing.html#upgrading-grant-tables" title="2.10.2.&nbsp;Upgrading the Grant Tables">2.10.2节 <span>&ldquo;升级授权表&rdquo;</span></a>。 <o:p></o:p></span></p>   
+
+
+
+<p><span>在MySQL 5.1中，授权系统如下考虑存储子程序： <o:p></o:p></span></p>   
+
+
+
+<div>
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>
+创建存储子程序需要CREATE   
+ROUTINE权限。</span></p>
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>
+提醒或移除存储子程序需要ALTER   
+ROUTINE权限。这个权限自动授予子程序的创建者。 <o:p></o:p></span></p>   
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>执行子程序需要EXECUTE权限。然而，这个权限自动授予
+子程序的创建者。同样，子程序默认的SQL
+SECURITY 特征是DEFINER，它允许用该子程序访问数据库的用户与执行子程序联系到一起。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h2><a name="stored-procedure-syntax"></a><span>20.2.&nbsp;存储程序的语法</span></h2>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<p><span class="section"><span><a href="#create-procedure">20.2.1. CREATE   
+PROCEDURE和CREATE FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#alter-procedure">20.2.2. ALTER   
+PROCEDURE和ALTER FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#drop-procedure">20.2.3. DROP   
+PROCEDURE和DROP FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#show-create-procedure">20.2.4. SHOW   
+CREATE PROCEDURE和SHOW CREATE FUNCTION</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#show-procedure-status">20.2.5. SHOW   
+PROCEDURE STATUS和SHOW FUNCTION STATUS</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span><a href="#call">20.2.6. CALL语句</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#begin-end">20.2.7. BEGIN ... END复合语句</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#declare">20.2.8. DECLARE语句</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#variables-in-stored-procedures">20.2.9.   
+存储程序中的变量</a></span></span></p>
+
+
+
+<p><span class="section"><span><a href="#conditions-and-handlers">20.2.10.   
+条件和处理程序</a></span></span></p>
+
+
+
+<p><span class="section"><span><a href="#cursors">20.2.11. 光标</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#flow-control-constructs">20.2.12. 
+流程控制构造</a></span></span></p>   
+
+
+
+</div>
+
+
+
+<p><span>存储程序和函数是用CREATE PROCEDURE和CREATE
+FUNCTION语句创建的子程序。一个子程序要么是一个程序要么是一个函数。使用CALL</span><span>语句</span><span>来调用
+程序，程序只能用输出变量传回值。就像别其它函数调用一样，函数可以被从语句外调用（即通过引用函数名），函数能返回标量值。
+存储子程序也可以调用其它存储子程序。 <o:p></o:p></span></p>
+
+
+
+<p><span>在MySQL 5.1中，一个存储子程序或函数与特定的数据库相联系。这里有几个意思：</span></p>   
+
+
+
+<div>
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>
+当一个子程序被调用时，一个隐含的USE <i>db_name</i> 被执行（当子程序终止时停止执行）。</span><span>存储子程序内的</span><span>USE语句时不允许的。</span></p>   
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>
+你可以使用数据库名限定子程序名。这可以被用来引用一个不在当前数据库中的子程序。比如，要引用一个与test</span><span>数据库关联的</span><span>存储程序p或函数f，你可以说CALL test.p()或test.f()。</span></p>   
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>
+数据库移除的时候，与它关联的所有存储子程序也都被移除。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<p><span>MySQL 支持非常有用的扩展，即它允许在存储程序中使用常规的SELECT语句（那就是说，不使用光标或
+局部变量）。这个一个查询的结果包被简单地直接送到客户端。多SELECT语句生成多个结果包，所以客户端必须使用支持多结果包的MySQL客户端库。这意味这客户端必须
+使用至少</span><span>MySQL    
+4.1以来的近期版本上的客户端库。</span></p>
+
+
+
+<p><span>下面一节描述用来创建，改变，移除和查询存储程序和函数的语法。</span></p>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="create-procedure"></a><st1:chsdate year="1899" month="12" day="30" islunardate="False" isrocdate="False" w:st="on"><span>20.2.1</span></st1:chsdate><span>.&nbsp;</span><span>CREATE PROCEDURE</span><span>和</span><span>CREATE FUNCTION</span><span><o:p></o:p></span></h3>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2992284"></a><a name="id2992293"></a><span>CREATE PROCEDURE <i>sp_name</i> ([<i>proc_parameter</i>[,...]])<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[<i>characteristic</i> ...] <i>routine_body</i><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>CREATE FUNCTION <i>sp_name</i> ([<i>func_parameter</i>[,...]])<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>RETURNS <i>type</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[<i>characteristic</i> ...] <i>routine_body</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><i>proc_parameter</i>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[ IN | OUT | INOUT ] <i>param_name</i> <i>type</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><i>func_parameter</i>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><i>param_name</i> <i>type</i><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><i><span>type</span></i><span>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><i>Any valid MySQL data type</i><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><i><span>characteristic</span></i><span>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>LANGUAGE SQL<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| [NOT] DETERMINISTIC<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| { CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| SQL SECURITY { DEFINER | INVOKER }<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| COMMENT '<i>string</i>'<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><i><span>routine_body</span></i><span>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><i>Valid SQL procedure statement or statements</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这些语句创建存储子程序。要在</span><span>MySQL    
+5.1中创建子程序，必须具有</span><span>CREATE   
+ROUTINE权限，并且ALTER ROUTINE和EXECUTE</span><span>权限被自动授予它的创建者。如果二进制日志功能被允许，你也可能需要</span><span>SUPER</span><span>权限，请参阅</span><a href="#stored-procedure-logging" title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers"><span>20.4节</span><span>，</span><span style>“存储子程序和触发程序的二进制日志功能&rdquo;</span></a><span>。 <o:p></o:p></span></p>   
+
+
+
+<p><span>
+默认地，子程序与当前数据库关联。要明确地把子程序与一个给定数据库关联起来，可以在创建子程序的时候指定其名字为<i>db_name.sp_name</i>。</span></p>
+
+
+
+<p><span>如果子程序名和内建的</span><span>SQL函数名一样，定义子程序时，你需要在这个名字和随后括号中间插入一个空格，否则发生语法错误。当你随后调用子程序的时候也要插入。为此，即使有可能出现这种情况，我们还是建议最好避免给你自己的
+存储子程序取与存在的SQL函数一样的名字。</span></p>
+
+
+
+<p><span>由括号包围的参数列必须总是存在。如果没有参数，也该使用一个空参数列()。每个参数
+默认都是一个IN参数。要指定为其它参数，可在参数名之前使用关键词 OUT或INOUT</span></p>   
+
+
+
+<p><strong><span>注意</span></strong><span>: 指定参数为IN,   
+OUT, 或INOUT 只对PROCEDURE是合法的。（FUNCTION参数总是被认为是IN参数） <o:p></o:p></span></p>   
+
+
+
+<p>
+<span>RETURNS字句只能对FUNCTION</span>做<span>指定，对函数而言这是强制的。它用来指定函数的返回类型，而且函数体必须包含一个</span><span>RETURN value语句。 <o:p></o:p></span></p>   
+
+
+
+<p>
+<span><i>routine_body</i>
+包含合法的SQL过程语句。可以使用复合语句语法，请参阅<a href="#begin-end" title="20.2.7.&nbsp;BEGIN ... END Compound Statement">20.2.7节，“BEGIN ... END复合语句<span>&rdquo;</span></a>。复合语句可以包含
+声明，循环和其它控制结构语句。这些语句的语法在本章后免介绍，举例，请参阅<a href="#declare" title="20.2.8.&nbsp;DECLARE Statement">20.2.8节，“DECLARE语句<span>&rdquo;</span></a>和<a href="#flow-control-constructs" title="20.2.12.&nbsp;Flow Control Constructs">20.2.12节，“<span>流程控制构造”</span></a>。 <o:p></o:p></span></p>   
+
+
+
+<p>
+<span>CREATE FUNCTION语句被用在更早的MySQL版本上</span><span>以</span><span>支持UDF （自定义函数）。请参阅<a href="extending-mysql.html#adding-functions" title="27.2.&nbsp;Adding New Functions to MySQL">27.2节，“<span>给MySQL添加新函数&rdquo;</span></a>。 UDF继续被支持，即使现在
+有了存储函数。UDF会被认为一个外部存储函数。然而，不要让存储函数与</span><span>UDF函数共享名字空间。</span><span> <o:p></o:p></span></p>   
+
+
+
+<p>
+<span>外部存储程序的框架将在不久的将来引入。这将允许你用</span><span>SQL之外的语言编写存储程序。最可能的是，第一个被支持语言是PHP，因为核心PHP引擎很小，线程安全，且可以被方便地嵌入。因为框架是公开的，它希望许多其它语言也能被支持。</span></p>
+
+
+
+<p>
+<span>
+如果程序或线程总是对同样的输入参数产生同样的结果，则被认为它是&ldquo;确定的&rdquo;，否则就是&ldquo;非确定&rdquo;的。如果既没有给定DETERMINISTIC也没有给定NOT
+DETERMINISTIC，默认的就是NOT DETERMINISTIC。 <o:p></o:p> </span></p>   
+
+
+
+<p><span>为进行复制，使用NOW()函数（或它的同义词）或<st1:place w:st="on">RAND</st1:place>()函数会不必要地使得一个子程序非确定。对NOW()而言，二进制日志包括时间戳并被正确复制。<st1:place w:st="on">RAND</st1:place>() 
+只要在一个子程序被内应用一次也会被正确复制。（你可以把子程序执行时间戳和随机数种子认为强制输入，它们在主从上是同样的。） <o:p></o:p></span></p>   
+
+
+
+<p><span>当前来讲，DETERMINISTIC特征被接受，但还没有被优化程序所使用。然而如果二进制日志功能被允许了，这个特征影响到</span><span>MySQL是否会接受子程序定义。</span><span>请参阅<a href="#stored-procedure-logging" title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers">20.4</a></span><a href="#stored-procedure-logging" title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers"><span>节</span><span>，“<span>存储子程序和触发程序的二进制日志功能&rdquo;</span></span></a><span>。 <o:p></o:p></span></p>   
+
+
+
+<p><span>一些特征提供子程序使用数据的内在信息。CONTAINS SQL表示子程序不包含读或写数据的语句。NO SQL表示子程序不包含SQL语句。READS
+SQL DATA表示子程序包含读数据的语句，但不包含写数据的语句。MODIFIES SQL DATA</span><span>表示</span><span>子程序包含写数据的语句。如果</span><span>这些特征没有明确给定，</span><span>默认的是CONTAINS SQL。 <o:p></o:p></span></p>   
+
+
+
+<p>
+<span>SQL SECURITY</span><span>特征可以用来指定
+子程序该用创建子程序者的许可来执行，还是使用调用者的许可来执行。默认值是</span><span>DEFINER。在SQL:2003中者是一个新特性。创建者或调用者必须由访问
+子程序关联的数据库的许可。在MySQL 5.1中，必须有EXECUTE权限才能执行子程序。必须拥有这个权限的用户要么是定义者，要么是调用者，这取决于SQL SECURITY特征是如何设置的。 <o:p></o:p></span></p>   
+
+
+
+<p><span>MySQL存储sql_mode系统变量设置，这个设置在子程序被创建的时候起作用，MySQL总是强制使用这个设置来执行
+子程序。 <o:p></o:p></span></p>   
+
+
+
+<p><span>COMMENT子句是一个MySQL的扩展，它可以被用来描述
+存储程序。这个信息被SHOW CREATE PROCEDURE和 SHOW CREATE   
+FUNCTION语句来显示。 <o:p></o:p></span></p>   
+
+
+
+<p><span>MySQL允许子程序包含DDL语句，如CREATE和DROP。MySQL也允许存储程序（但不是
+存储函数）包含SQL 交互语句，如COMMIT。存储函数不可以包含那些做明确的和绝对的提交或者做回滚的语。SQL标准不要求对这些语句的支持，SQL标准声明每个DBMS提供商可以决定是否允许支持这些语句。 <o:p></o:p></span></p>   
+
+
+
+<p><span>存储子程序不能使用LOAD DATA   
+INFILE。 <o:p></o:p></span></p>   
+
+
+
+<p><span>返回结果包的语句不能被用在存储函数种。这包括不使用INTO给变量读取
+列值的SELECT语句，SHOW
+语句，及其它诸如EXPLAIN这样的语句。对于可在函数定义时间被决定要返回一个结果包的语句，发生一个允许从函数错误返回结果包的Not（ER_SP_NO_RETSET_IN_FUNC）。对于只可在运行时决定要返回一个结果包的语句，  
+发生一个不能在给定上下文错误返回结果包的PROCEDURE %s 
+（ER_SP_BADSELECT)。 <o:p></o:p></span></p>   
+
+
+
+<p><span>下面是一个使用OUT参数的简单的存储程序的例子。例子为，在
+程序被定义的时候，用<strong><span>mysql</span></strong>客户端delimiter命令来把语句定界符从 ;变为//。这就允许用在
+程序体中的;定界符被传递到服务器而不是被<strong><span>mysql</span></strong>自己来解释。<o:p></o:p></span></p> 
+
+
+
+<pre><span>mysql&gt; <b>delimiter //</b><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CREATE PROCEDURE simpleproc (OUT param1 INT)</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>BEGIN</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>SELECT COUNT(*) INTO param1 FROM t;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>END</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>//</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>delimiter ;</b><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CALL simpleproc(@a);</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>SELECT @a;</b><o:p></o:p></span></pre>
+
+<pre><span>+------+<o:p></o:p></span></pre>
+
+<pre><span>| @a<span>&nbsp;&nbsp; </span>|<o:p></o:p></span></pre>
+
+<pre><span>+------+<o:p></o:p></span></pre>
+
+<pre><span>| 3<span>&nbsp;&nbsp;&nbsp; </span>|<o:p></o:p></span></pre>
+
+<pre><span>+------+<o:p></o:p></span></pre>
+
+<pre><span>1 row in set (0.00 sec)<o:p></o:p></span></pre>
+
+
+
+<p><span>当使用delimiter命令时，你应该避免使用反斜杠(</span><span>&lsquo;<span>\</span>&rsquo;<span>)</span></span><span>字符，因为那是MySQL的
+转义字符。 <o:p></o:p></span></p>  
+
+
+
+<p><span>下列是一个例子，一个采用参数的函数使用一个SQL函数执行一个操作，并返回结果： <o:p></o:p></span></p>  
+
+
+
+<pre><span>mysql&gt; <b>delimiter //</b><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CREATE FUNCTION hello (s CHAR(20)) RETURNS CHAR(50)</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>RETURN CONCAT('Hello, ',s,'!');</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>//</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>delimiter ;</b><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>SELECT hello('world');</b><o:p></o:p></span></pre>
+
+<pre><span>+----------------+<o:p></o:p></span></pre>
+
+<pre><span>| hello('world') |<o:p></o:p></span></pre>
+
+<pre><span>+----------------+<o:p></o:p></span></pre>
+
+<pre><span>| Hello, world!<span>&nbsp; </span>|<o:p></o:p></span></pre>
+
+<pre><span>+----------------+<o:p></o:p></span></pre>
+
+<pre><span>1 row in set (0.00 sec)<o:p></o:p></span></pre>
+
+
+
+<p><span>如果在存储函数中的RETURN语句返回一个类型不同于在函数的</span><span>RETURNS子句中指定类型的值，返回值被强制为恰当的类型。比如，如果一个函数返回一个ENUM或SET值，但是RETURN语句返回一个整数，对于SET成员集的相应的ENUM成员，从函数返回的值是字符串。 <o:p></o:p></span></p>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="alter-procedure"></a><span>20.2.2.&nbsp;</span><span>ALTER PROCEDURE</span><span>和</span><span>ALTER FUNCTION</span><span><o:p></o:p></span></h3>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2992984"></a><a name="id2992993"></a><span>ALTER {PROCEDURE | FUNCTION} <i>sp_name</i> [<i>characteristic</i> ...]<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><i><span>characteristic</span></i><span>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>{ CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA }<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| SQL SECURITY { DEFINER | INVOKER }<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| COMMENT '<i>string</i>'<o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句可以被用来改变一个存储程序或函数的特征。在MySQL  
+5.1中，你必须用ALTER ROUTINE权限才可用此子程序。这个权限被自动授予子程序的创建者。如<a href="#stored-procedure-logging" title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers">20.4节，“</a></span><a href="#stored-procedure-logging" title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers"><span>存储子程序和触发程序的二进制日志功能&rdquo;</span></a><span>中所述，</span><span> 
+如果二进制日志功能被允许了，你可能也需要SUPER权限。<o:p></o:p></span></p>  
+
+
+
+<p><span>在ALTER PROCEDURE和ALTER FUNCTION语句中，可以指定超过一个的改变。</span></p>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="drop-procedure"></a><span>20.2.3.&nbsp;</span><span>DROP PROCEDURE</span>和<span>DROP FUNCTION</span><span><o:p></o:p></span></h3>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993080"></a><a name="id2993089"></a><span>DROP {PROCEDURE | FUNCTION} [IF EXISTS] <i>sp_name</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句被用来移除一个存储程序或函数。即，从服务器移除一个制定的子程序。在MySQL  
+5.1中，你必须有ALTER ROUTINE权限才可用此子程序。这个权限被自动授予子程序的创建者。 <o:p></o:p></span></p>  
+
+
+
+<p><span> IF EXISTS  子句是一个MySQL的扩展。如果程序或函数不存储，它防止发生错误。产生一个可以用SHOW 
+WARNINGS查看的警告。 <o:p></o:p></span></p>  
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="show-create-procedure"></a><span>20.2.4.&nbsp;</span><span>SHOW CREATE PROCEDURE</span><span>和</span><span>SHOW CREATE FUNCTION</span><span><o:p></o:p></span></h3>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993148"></a><a name="id2993158"></a><span>SHOW CREATE {PROCEDURE | FUNCTION} <i>sp_name</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句是一个MySQL的扩展。类似于SHOW CREATE TABLE，它返回一个可用来重新创建已命名
+子程序的确切字符串。 <o:p></o:p></span></p>  
+
+
+
+<pre><span>mysql&gt; <b>SHOW CREATE FUNCTION test.hello\G</b><o:p></o:p></span></pre>
+
+<pre><span>*************************** 1. row ***************************<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Function: hello<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>sql_mode:<o:p></o:p></span></pre>
+
+<pre><span>Create Function: CREATE FUNCTION `test`.`hello`(s CHAR(20)) RETURNS CHAR(50)<o:p></o:p></span></pre>
+
+<pre><span>RETURN CONCAT('Hello, ',s,'!')<o:p></o:p></span></pre>
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="show-procedure-status"></a><span>20.2.5.&nbsp;</span><span>SHOW PROCEDURE STATUS</span><span>和</span><span>SHOW FUNCTION STATUS</span><span><o:p></o:p></span></h3>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993212"></a><a name="id2993221"></a><span>SHOW {PROCEDURE | FUNCTION} STATUS [LIKE '<i>pattern</i>']<o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句是一个MySQL的扩展。它返回子程序的特征，如数据库，名字，类型，创建者及创建和修改日期。如果没有指定样式，根据你使用的语句，所有
+存储程序和所有存储函数的信息都被列出。<o:p></o:p></span></p>
+
+
+
+<pre><span>mysql&gt; <b>SHOW FUNCTION STATUS LIKE 'hello'\G</b><o:p></o:p></span></pre>
+
+<pre><span>*************************** 1. row ***************************<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Db: test<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Name: hello<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Type: FUNCTION<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Definer: testuser@localhost<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp; </span>Modified: 2004-08-03 15:29:37<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Created: 2004-08-03 15:29:37<o:p></o:p></span></pre>
+
+<pre><span>Security_type: DEFINER<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Comment:<o:p></o:p></span></pre>
+
+
+
+<p><span>你可以从INFORMATION_SCHEMA中的ROUTINES表获得有关存储子程序的信息。请参阅<a href="information-schema.html#routines-table" title="23.1.14.&nbsp;The INFORMATION_SCHEMA ROUTINES Table">23.1.14节，“INFORMATION_SCHEMA  
+ROUTINES  表<span>&rdquo;</span></a>。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="call"></a><span>20.2.6.&nbsp;</span><span>CALL</span><span>语句</span></h3>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993290"></a><span>CALL <i>sp_name</i>([<i>parameter</i>[,...]])<o:p></o:p></span></pre>
+
+
+
+<p>
+<span>CALL语句调用一个先前用CREATE 
+PROCEDURE创建的程序。 <o:p></o:p></span></p>   
+
+
+
+<p><span>CALL</span><span>语句</span><span>可以用
+声明为OUT或的INOUT参数的参数给它的调用者传回值。它也&ldquo;返回&rdquo;受影响的行数，客户端程序可以在</span><span>SQL级别通过调用<span>ROW_COUNT()</span></span><span>函数</span><span>获得这个数，从C中是调用the    
+mysql_affected_rows() </span><span>C API函数</span>来<span>获得。</span></p>   
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="begin-end"></a><span>20.2.7.&nbsp;</span><span>BEGIN ... END</span><span>复合</span><span>语句</span></h3>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993366"></a><a name="id2993375"></a><span>[<i>begin_label</i>:] BEGIN<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[<i>statement_list</i>]<o:p></o:p></span></pre>
+
+<pre><span>END [<i>end_label</i>]<o:p></o:p></span></pre>
+
+
+
+<p><span>存储子程序可以使用</span><span>BEGIN ... END复合语句来包含多个语句。<i>statement_list</i>   
+代表一个或多个语句的列表。<i>statement_list</i>之内每个语句都必须用分号（；）来结尾。 <o:p></o:p></span></p>   
+
+
+
+<p><span>复合语句可以被标记。除非<i>begin_label</i>存在,否则<i>end_label</i>不能被给出,并且如果二者都存在,他们必须是同样的。 <o:p></o:p></span></p>   
+
+
+
+<p><span>请注意，可选的[NOT] 
+ATOMIC子句现在还不被支持。这意味着在指令块的开始没有交互的存储点被设置，并且在上下文中用到的BEGIN子句对当前交互动作没有影响。</span></p>
+
+
+
+<p><span>使用多重语句需要客户端能发送包含语句定界符;的查询字符串。这个符号在命令行客户端被用delimiter命令来处理。改变查询结尾定界符;（比如改变为//）使得; 
+可被用在子程序体中。</span></p> 
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="declare"></a><span>20.2.8.&nbsp;</span><span>DECLARE</span><span>语句</span></h3>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<p><a name="id2993493"></a><span>DECLARE语句被用来把不同项目局域到一个
+子程序：局部变量（请参阅<a href="#variables-in-stored-procedures" title="20.2.9.&nbsp;Variables in Stored Procedures">20.2.9节，“</a></span><a href="#variables-in-stored-procedures" title="20.2.9.&nbsp;Variables in Stored Procedures"><span>存储程序中的变量&rdquo;</span></a><span>)，条件和
+处理程序（请参阅<a href="#conditions-and-handlers" title="20.2.10.&nbsp;Conditions and Handlers">20.2.10节，“</a></span><a href="#conditions-and-handlers" title="20.2.10.&nbsp;Conditions and Handlers"><span>条件和处理程序&rdquo;</span></a><span>)  
+及光标（请参阅<a href="#cursors" title="20.2.11.&nbsp;Cursors">20.2.11节，“</a></span><a href="#cursors" title="20.2.11.&nbsp;Cursors"><span>光标&rdquo;</span></a><span>)。SIGNAL和RESIGNAL语句当前还不被支持。 <o:p></o:p></span></p>   
+
+
+
+<p><span>DECLARE仅被用在BEGIN ... END复合语句里，并且必须在复合语句的开头，在任何其它语句之前。 <o:p></o:p></span></p>  
+
+
+
+<p><span>光标必须在声明处理程序之前被声明，并且变量和条件必须在声明光标或处理程序之前被声明。</span></p>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="variables-in-stored-procedures"></a><span>20.2.9.&nbsp;存储程序中的变量</span></h3>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<p><span class="section"><a href="#declare-local-variables"><span>20.2.9.1. DECLARE</span><span>局部变量</span></a></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#set-statement">20.2.9.2. 变量SET语句</a></span></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#select-into-statement">20.2.9.3. SELECT ...   
+INTO语句</a></span></span></p>
+
+
+
+</div>
+
+
+
+<p><span>你可以在子程序中声明并使用变量。</span></p>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="declare-local-variables"></a><span>
+20.2.9.1.&nbsp;DECLARE局部变量<o:p></o:p></span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><span>DECLARE <i>var_name</i>[,...] <i>type</i> [DEFAULT <i>value</i>]<o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句被用来声明局部变量。要给变量提供一个默认值，请包含一个DEFAULT子句。值可以被指定为一个表达式，不需要为一个常数。如果没有DEFAULT子句，初始值为NULL。 
+<o:p></o:p></span></p> 
+
+
+
+<p><span>局部变量的作用范围在它被声明的BEGIN ... END块内。它可以被用在嵌套的块中，除了那些用相同名字
+声明变量的块。 <o:p></o:p></span></p>  
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="set-statement"></a><span>20.2.9.2. 变量SET语句<o:p></o:p></span></h4>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993642"></a><span>SET <i>var_name</i> = <i>expr</i> [, <i>var_name</i> = <i>expr</i>] ...<o:p></o:p></span></pre>
+
+
+
+<p><span>在存储程序中的SET语句是一般SET语句的扩展版本。被参考变量可能是子程序内声明的变量，或者是全局服务器变量。 <o:p></o:p></span></p>  
+
+
+
+<p><span>在存储程序中的SET语句作为预先存在的SET语法的一部分来实现。这允许SET a=x, b=y, ...这样的扩展语法。其中不同的变量类型（局域
+声明变量及全局和集体变量）可以被混合起来。这也允许把局部变量和一些只对系统变量有意义的选项合并起来。在那种情况下，此选项被识别，但是被忽略了。</span></p>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="select-into-statement"></a><span>20.2.9.3.&nbsp;SELECT
+... INTO语句<o:p></o:p></span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993719"></a><span>SELECT <i>col_name</i>[,...] INTO <i>var_name</i>[,...] <i>table_expr</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个SELECT语法把选定的列直接存储到变量。因此，只有单一的行可以被取回。 <o:p></o:p></span></p>  
+
+
+
+<pre><span>SELECT id,data INTO x,y FROM test.t1 LIMIT 1;<o:p></o:p></span></pre>
+
+
+
+<p><span>注意，用户变量名在MySQL 5.1中是对大小写不敏感的。请参阅<a href="language-structure.html#variables" title="9.3.&nbsp;User Variables">9.3节，“</a></span><a href="language-structure.html#variables" title="9.3.&nbsp;User Variables"><span>用户变量&rdquo;</span></a><span>。   
+<o:p></o:p></span></p>
+
+
+
+<p><strong><span>重要</span></strong><span>: SQL变量名不能和列名一样。如果SELECT ... INTO这样的SQL语句包含一个对列的参考，并包含一个与列相同名字的
+局部变量，MySQL当前把参考解释为一个变量的名字。例如，在下面的语句中，xname   
+被解释为到xname <em><span>variable</span></em>  
+的参考而不是到xname <em><span>column</span></em>的： <o:p></o:p></span></p>  
+
+
+
+<pre><span>CREATE PROCEDURE sp1 (x VARCHAR(5))<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>BEGIN<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>DECLARE xname VARCHAR(5) DEFAULT 'bob';<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>DECLARE newname VARCHAR(5);<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>DECLARE xid INT;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;</span>SELECT xname,id INTO newname,xid <o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>FROM table1 WHERE xname = xname;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>SELECT newname;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>END;<o:p></o:p></span></pre>
+
+
+
+<p><span>当这个程序被调用的时候，无论table.xname列的值是什么，变量newname将返回值&lsquo;bob&rsquo;。 <o:p></o:p></span></p>   
+
+
+
+<p><span>请参阅<a href="restrictions.html#routine-restrictions" title="I.1.&nbsp;Restrictions on Stored Routines and Triggers">I.1节，“<span>存储子程序和触发程序的限制&rdquo;</span></a>。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="conditions-and-handlers"></a><span>20.2.10.&nbsp;条件和处理程序</span></h3>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<p><span class="section"><a href="#declare-conditions"><span>20.2.10.1. DECLARE</span><span>条件</span></a></span></p>   
+
+
+
+<p><span class="section"><a href="#declare-handlers"><span>20.2.10.2. DECLARE</span><span>处理程序</span></a></span></p>   
+
+
+
+</div>
+
+
+
+<p><span>特定条件需要特定处理。这些条件可以联系到错误，以及子程序中的一般流程控制。 <o:p></o:p></span></p>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="declare-conditions"></a><span>20.2.10.1.&nbsp;DECLARE条件</span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993872"></a><span>DECLARE <i>condition_name</i> CONDITION FOR <i>condition_value</i><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><i><span>condition_value</span></i><span>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>SQLSTATE [VALUE] <i>sqlstate_value</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| <i>mysql_error_code</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句指定需要特殊处理的条件。它将一个名字和指定的错误条件关联起来。这个名字可以随后被用在DECLARE HANDLER语句中。请参阅<a href="#declare-handlers" title="20.2.10.2.&nbsp;DECLARE Handlers">20.2.10.2节，“DECLARE处理程序<span>&rdquo;</span></a>。 <o:p></o:p></span></p>   
+
+
+
+<p><span>除了SQLSTATE值，也支持MySQL错误代码。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="declare-handlers"></a><span>20.2.10.2.&nbsp;DECLARE</span><span>处理程序</span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2993936"></a><span>DECLARE <i>handler_type</i> HANDLER FOR <i>condition_value</i>[,...] <i>sp_statement</i><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><i><span>handler_type</span></i><span>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>CONTINUE<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| EXIT<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| UNDO<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><i><span>condition_value</span></i><span>:<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>SQLSTATE [VALUE] <i>sqlstate_value</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| <i>condition_name</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| SQLWARNING<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| NOT FOUND<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| SQLEXCEPTION<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>| <i>mysql_error_code</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句指定每个可以处理一个或多个条件的处理程序。如果产生一个或多个条件，指定的语句被执行。 <o:p></o:p></span></p>  
+
+
+
+<p><span>对一个CONTINUE处理程序，当前子程序的执行在执行
+处理程序语句之后继续。对于EXIT处理程序，当前BEGIN...END复合语句的执行被终止。UNDO  
+处理程序类型语句还不被支持。</span></p> 
+
+
+
+<div>
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>SQLWARNING</span><span>是对所有以01开头的SQLSTATE代码的速记。</span></p>
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>NOT FOUND</span><span>是对所有以02开头的SQLSTATE代码的速记。</span></p> 
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>SQLEXCEPTION</span><span>是对所有没有被SQLWARNING或NOT 
+FOUND捕获的SQLSTATE代码的速记。</span></p>
+
+
+
+</div>
+
+
+
+<p><span>除了SQLSTATE值，MySQL错误代码也不被支持。</span></p>
+
+
+
+<p><span>例如: <o:p></o:p></span></p>  
+
+
+
+<pre><span>mysql&gt; <b>CREATE TABLE test.t (s1 int,primary key (s1));</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>delimiter //</b><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CREATE PROCEDURE handlerdemo ()</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>BEGIN</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>DECLARE CONTINUE HANDLER FOR SQLSTATE '23000' SET @x2 = 1;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>SET @x = 1;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>INSERT INTO test.t VALUES (1);</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>SET @x = 2;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>INSERT INTO test.t VALUES (1);</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>SET @x = 3;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>END;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>//</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CALL handlerdemo()//</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>SELECT @x//</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>+------+<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>| @x<span>&nbsp;&nbsp; </span>|<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>+------+<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>| 3<span>&nbsp;&nbsp;&nbsp; </span>|<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>+------+<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>1 row in set (0.00 sec)<o:p></o:p></span></pre>
+
+
+
+<p><span>注意到，@x是3，这表明MySQL被执行到程序的末尾。如果DECLARE 
+CONTINUE HANDLER FOR SQLSTATE '23000' SET @x2 = 1;  这一行不在，第二个INSERT因PRIMARY KEY强制而失败之后,MySQL可能已经采取
+默认(EXIT)路径，并且SELECT @x可能已经返回2。 <o:p></o:p></span></p>  
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="cursors"></a><span>20.2.11.&nbsp;</span><span>光标</span></h3>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<p><span class="section"><span>
+<a href="#declare-cursors">20.2.11.1.声明光标</a></span></span></p>   
+
+
+
+<p><span class="section"><a href="#open"><span>20.2.11.2. 光标OPEN</span><span>语句</span></a></span></p>   
+
+
+
+<p><span class="section"><span><a href="#fetch">20.2.11.3. 光标FETCH语句</a></span></span></p>   
+
+
+
+<p><span class="section"><span><a href="#close">20.2.11.4. 光标CLOSE语句</a></span></span></p>   
+
+
+
+</div>
+
+
+
+<p><a name="id2994183"></a><span>简单光标在存储程序和函数内被支持。语法如同在嵌入的SQL中。光标当前是不敏感的，只读的及不滚动的。不敏感意为服务器可以活不可以复制它的结果表。 <o:p></o:p></span></p>   
+
+
+
+<p><span>光标必须在声明处理程序之前被声明，并且变量和条件必须在声明光标或处理程序之前被声明。</span></p>
+
+
+
+<p><span>例如：</span></p>
+
+
+
+<pre><span>CREATE PROCEDURE curdemo()<o:p></o:p></span></pre>
+
+<pre><span>BEGIN<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>DECLARE done INT DEFAULT 0;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>DECLARE a CHAR(16);<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>DECLARE b,c INT;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>DECLARE cur1 CURSOR FOR SELECT id,data FROM test.t1;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>DECLARE cur2 CURSOR FOR SELECT i FROM test.t2;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET done = 1;<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>OPEN cur1;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>OPEN cur2;<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>REPEAT<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>FETCH cur1 INTO a, b;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>FETCH cur2 INTO c;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>IF NOT done THEN<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>IF b &lt; c THEN<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>INSERT INTO test.t3 VALUES (a,b);<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>ELSE<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>INSERT INTO test.t3 VALUES (a,c);<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>END IF;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>END IF;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>UNTIL done END REPEAT;<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>CLOSE cur1;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>CLOSE cur2;<o:p></o:p></span></pre>
+
+<pre><span>END<o:p></o:p></span></pre>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="declare-cursors"></a><span>
+20.2.11.1.声明光标</span></h4>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><span>DECLARE <i>cursor_name</i> CURSOR FOR <i>select_statement</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句声明一个光标。也可以在子程序中定义多个光标，但是一个块中的每一个光标必须有唯一的名字。<o:p></o:p></span></p>
+
+
+
+<p><span>SELECT语句不能有INTO子句。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="open"></a><span>20.2.11.2.&nbsp;光标OPEN语句</span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994279"></a><span>OPEN <i>cursor_name</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句打开先前声明的光标。</span></p>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="fetch"></a><span>20.2.11.3.&nbsp;光标FETCH语句</span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994315"></a><span>FETCH <i>cursor_name</i> INTO <i>var_name</i> [, <i>var_name</i>] ...<o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句用指定的打开光标读取下一行（如果有下一行的话），并且前进光标指针。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="close"></a><span>20.2.11.4.&nbsp;光标CLOSE语句</span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994359"></a><span>CLOSE <i>cursor_name</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句关闭先前打开的光标。 <o:p></o:p></span></p>   
+
+
+
+<p><span>如果未被明确地关闭，光标在它被声明的复合语句的末尾被关闭。 <o:p></o:p></span></p>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h3><a name="flow-control-constructs"></a><span>20.2.12. 流程控制构造<o:p></o:p></span></h3>   
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<p><span class="section"><span>
+<a href="#if-statement">20.2.12.1. IF语句</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#case-statement">20.2.12.2. CASE语句</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#loop-statement">20.2.12.3. LOOP语句</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#leave-statement">20.2.12.4. LEAVE语句</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#iterate-statement">20.2.12.5. ITERATE语句</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#repeat-statement">20.2.12.6. REPEAT语句</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+<p><span class="section"><span>
+<a href="#while-statement">20.2.12.7. WHILE语句</a></span></span><span><o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<p><span>IF, CASE, LOOP,   
+WHILE, ITERATE, 及 LEAVE 构造被完全实现。 <o:p></o:p></span></p>   
+
+
+
+<p><span>这些构造可能每个包含要么一个单独语句，要么是使用BEGIN ... END复合语句的一块语句。构造可以被嵌套。 <o:p></o:p></span></p>   
+
+
+
+<p><span>目前还不支持FOR循环。 <o:p></o:p></span></p>   
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="if-statement"></a><span>20.2.12.1.&nbsp;IF</span><span>语句</span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994454"></a><span>IF <i>search_condition</i> THEN <i>statement_list</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[ELSEIF <i>search_condition</i> THEN <i>statement_list</i>] ...<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[ELSE <i>statement_list</i>]<o:p></o:p></span></pre>
+
+<pre><span>END IF<o:p></o:p></span></pre>
+
+
+
+<p><span>IF</span><span>实现了一个基本的条件构造。如果<i>search_condition</i>求值为真，相应的SQL语句列表被执行。如果没有<i>search_condition</i>匹配，在ELSE子句里的语句列表被执行。<i>statement_list</i>可以包括一个或多个语句。</span></p>
+
+
+
+<p><span>请注意，也有一个IF() 
+ 函数，它不同于这里描述的IF语句。请参阅<a href="functions.html#control-flow-functions" title="12.2.&nbsp;Control Flow Functions">12.2节，“</a></span><a href="functions.html#control-flow-functions" title="12.2.&nbsp;Control Flow Functions"><span>控制流程函数&rdquo;</span></a><span>。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="case-statement"></a><span>20.2.12.2.&nbsp;CASE语句</span></h4> 
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994550"></a><span>CASE <i>case_value</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>WHEN <i>when_value</i> THEN <i>statement_list</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[WHEN <i>when_value</i> THEN <i>statement_list</i>] ...<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[ELSE <i>statement_list</i>]<o:p></o:p></span></pre>
+
+<pre><span>END CASE<o:p></o:p></span></pre>
+
+
+
+<p><span>Or: <o:p></o:p></span></p>
+
+
+
+<pre><span>CASE<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>WHEN <i>search_condition</i> THEN <i>statement_list</i><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[WHEN <i>search_condition</i> THEN <i>statement_list</i>] ...<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>[ELSE <i>statement_list</i>]<o:p></o:p></span></pre>
+
+<pre><span>END CASE<o:p></o:p></span></pre>
+
+
+
+<p><span>存储程序的CASE语句实现一个复杂的条件构造。如果<i>search_condition</i>
+ 求值为真，相应的SQL被执行。如果没有搜索条件匹配，在ELSE子句里的语句被执行。</span></p> 
+
+
+
+<p><strong><span>注意：</span></strong><span>这里介绍的用在
+存储程序里的CASE语句与<a href="functions.html#control-flow-functions" title="12.2.&nbsp;Control Flow Functions">12.2节，“</a></span><a href="functions.html#control-flow-functions" title="12.2.&nbsp;Control Flow Functions"><span>控制流程函数”</span></a><span>里描述的SQL CASE表达式的CASE语句有轻微不同。这里的CASE语句不能有ELSE   
+NULL子句，并且用END CASE替代END来终止。  
+<o:p></o:p></span></p> 
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="loop-statement"></a><span>20.2.12.3.&nbsp;LOOP语句</span></h4> 
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994692"></a><span>[<i>begin_label</i>:] LOOP<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><i>statement_list</i><o:p></o:p></span></pre>
+
+<pre><span>END LOOP [<i>end_label</i>]<o:p></o:p></span></pre>
+
+
+
+<p><span>LOOP</span><span>允许某特定语句或语句群的重复执行，实现一个简单的循环构造。在循环内的语句一直重复直循环被退出，退出通常伴随着一个</span><span>LEAVE  
+语句。</span></p> 
+
+
+
+<p><span> LOOP语句可以被标注。除非<i>begin_label</i>存在，否则<i>end_label</i>不能被给出，并且如果两者都出现，它们必须是同样的。 <o:p></o:p></span></p>  
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="leave-statement"></a><span>20.2.12.4.&nbsp;LEAVE语句</span></h4> 
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994761"></a><span>LEAVE <i>label</i><o:p></o:p></span></pre>
+
+
+
+<p><span>这个语句被用来退出任何被标注的流程控制构造。它和BEGIN ... END或循环一起被使用。 <o:p></o:p></span></p>  
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="iterate-statement"></a><span>20.2.12.5.&nbsp;ITERATE语句<o:p></o:p></span></h4>  
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994800"></a><span>ITERATE <i>label</i><o:p></o:p></span></pre>
+
+
+
+<p><span>ITERATE只可以出现在LOOP, REPEAT, 
+和WHILE语句内。ITERATE意思为：</span><span>&ldquo;再次循环。&rdquo; <span><o:p></o:p></span></span></p> 
+
+
+
+<p><span>例如：</span></p>
+
+
+
+<pre><span>CREATE PROCEDURE doiterate(p1 INT)<o:p></o:p></span></pre>
+
+<pre><span>BEGIN<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>label1: LOOP<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>SET p1 = p1 + 1;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>IF p1 &lt; 10 THEN ITERATE label1; END IF;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>LEAVE label1;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>END LOOP label1;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>SET @x = p1;<o:p></o:p></span></pre>
+
+<pre><span>END<o:p></o:p></span></pre>
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="repeat-statement"></a><span>20.2.12.6.&nbsp;REPEAT语句</span></h4>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994867"></a><a name="id2994876"></a><span>[<i>begin_label</i>:] REPEAT<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><i>statement_list</i><o:p></o:p></span></pre>
+
+<pre><span>UNTIL <i>search_condition</i><o:p></o:p></span></pre>
+
+<pre><span>END REPEAT [<i>end_label</i>]<o:p></o:p></span></pre>
+
+
+
+<p><span> REPEAT语句内的语句或语句群被重复，直至<i>search_condition</i> 
+为真。</span></p>
+
+
+
+<p><span> REPEAT 
+语句可以被标注。 除非<i>begin_label</i>也存在，<i>end_label</i>才能被用，如果两者都存在，它们必须是一样的。 <o:p></o:p></span></p> 
+
+
+
+<p>
+<span>例如</span><span>： <o:p></o:p></span></p>
+
+
+
+<pre><span>mysql&gt; <b>delimiter //</b><o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CREATE PROCEDURE dorepeat(p1 INT)</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>BEGIN</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>SET @x = 0;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>REPEAT SET @x = @x + 1; UNTIL @x &gt; p1 END REPEAT;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>END</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>//</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CALL dorepeat(1000)//</b><o:p></o:p></span></pre>
+
+<pre><span>Query OK, 0 rows affected (0.00 sec)<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span>mysql&gt; <b>SELECT @x//</b><o:p></o:p></span></pre>
+
+<pre><span>+------+<o:p></o:p></span></pre>
+
+<pre><span>| @x<span>&nbsp;&nbsp; </span>|<o:p></o:p></span></pre>
+
+<pre><span>+------+<o:p></o:p></span></pre>
+
+<pre><span>| 1001 |<o:p></o:p></span></pre>
+
+<pre><span>+------+<o:p></o:p></span></pre>
+
+<pre><span>1 row in set (0.00 sec)<o:p></o:p></span></pre>
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h4><a name="while-statement"></a><span>20.2.12.7.&nbsp;WHILE语句</span></h4>  
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<pre><a name="id2994994"></a><span>[<i>begin_label</i>:] WHILE <i>search_condition</i> DO<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span><i>statement_list</i><o:p></o:p></span></pre>
+
+<pre><span>END WHILE [<i>end_label</i>]<o:p></o:p></span></pre>
+
+
+
+<p><span> WHILE语句内的语句或语句群被重复，直至<i>search_condition</i> 
+为真。</span></p>
+
+
+
+<p><span> WHILE语句可以被标注。 
+除非<i>begin_label</i>也存在，<i>end_label</i>才能被用，如果两者都存在，它们必须是一样的。<o:p></o:p></span></p>
+
+
+
+<p><span>例如：</span></p>
+
+
+
+<pre><span>CREATE PROCEDURE dowhile()<o:p></o:p></span></pre>
+
+<pre><span>BEGIN<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>DECLARE v1 INT DEFAULT 5;<o:p></o:p></span></pre>
+
+<pre><span><o:p>&nbsp;</o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>WHILE v1 &gt; 0 DO<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>...<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>SET v1 = v1 - 1;<o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp; </span>END WHILE;<o:p></o:p></span></pre>
+
+<pre><span>END<o:p></o:p></span></pre>
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h2><a name="stored-procedure-replication-faq"></a><span>20.3.&nbsp;存储程序
+、函数、触发程序及复制：常见问题</span></h2>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<ul type="disc"><li><span>MySQL 5.1存储程序和函数对复制起作用吗？&nbsp;</span><p>
+	<span style>是的，在存储程序和函数中被执行标准行为被从主MySQL服务器复制到从服务器。有少数限制，它们在<a title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers" href="#stored-procedure-logging">20.4节，“</a></span><a title="20.4.&nbsp;Binary Logging of Stored Routines and Triggers" href="#stored-procedure-logging"><span>存储子程序和
+	触发程序二进制日志功能”</span></a><span>中详述。</span><span style>
+	</span></li><li><span>在主服务器上创建的存储程序和函数可以被复制到从服务器上么？ </span>
+	<p><span style>是的，通过一般DDL语句执行的存储程序和函数，其在主服务器上的创建被复制到从服务器，所以目标将存在两个服务器上。对存储程序和函数的ALTER 
+	和DROP语句也被复制。</span></li><li><span>
+	行为如何在已复制的存储程序和函数里发生？ </span>
+	<p><span style>MySQL纪录每个发生在存储程序和函数里的DML事件，并复制这些单独的行为到从服务器。执行存储程序和函数的切实调用不被复制。</span></li><li>
+	<span>对一起使用存储程序，函数和复制有什么特别的安全要求么？ </span>
+	<p><span style>
+	是的，因为一个从服务器有权限来执行任何读自主服务器的二进制日志的语句，指定的安全约束因与复制一起使用的存储程序和函数而存在。如果复制或二进制日志大体上是激活的（为point-in-time恢复的目的），那么MySQL 
+	DBA 有两个安全选项可选： </span><ul type="circle"><li><span>
+		任何想创建存储程序的用户必须被赋予SUPER权限。</span></li><li>
+		<span style>作为选择，一个DBA可以设置log_bin_trust_routine_creators系统变量为1，它将会允许有标准CREATE 
+		ROUTINE权限的人来创建一个存储程序和函数。</span></li></ul>
+	<div>
+&nbsp;</div>
+	</li><li><span>对复制存储程序和函数的行为有什么限制？</span><p><span style>
+	嵌入到存储程序中的不确定（随机）或时基行不能适当地复制。随机产生的结果，仅因其本性，是你可预测的和不能被确实克隆的。因此，复制到从服务器的随机行为将不会镜像那些产生在主服务器上的。注意，
+	声明存储程序或函数为DETERMINISTIC或者在log_bin_trust_routine_creators中设置系统变量为0 
+	将会允许随即值操作被调用。</span></p>
+	<p><span style>
+	此外，时基行为不能在从服务器上重新产生，因为在存储程序中通过对复制使用的二进制日志来计时这样的时基行为是不可重新产生的，因为该二进制日志仅纪录DML事件且不包括计时约束。 
+	</span></p>
+	<p><span style>最后，在大型DML行为（如大批插入）中非交互表发生错误，该非交互表可能经历复制，在复制版的非交互表中主服务器可以被部分地从DML行为更新。但是因为发生的那个错误，对从服务器没有更新。 
+	对函数的DML行为，工作区将被用IGNORE关键词来执行，以便于在主服务器上导致错误的更新被忽略，并且不会导致错误的更新被复制到从服务器。</span></p>
+	<p>
+          &nbsp;</p></li><li><span>上述的限制会影响MySQL作 point-in-time恢复的能力吗？</span><p>
+	<span style>影响复制的同一限制会影响point-in-time恢复。</span></li><li>
+	<span>
+	&nbsp;</span><span>MySQL要做什么来改正前述的限制呢？</span><p>
+	<span style>将来发行的MySQL预期有一个功能去选择复制该如何被处理：</span></p>
+	<div class="itemizedlist"><ul type="circle"><li>
+		<span>&nbsp;</span><span>基于语句的复制（当前实现）。</span></li><li><span>行级别复制（它将解决所有早先描述的限制）。</span></li></ul></div></li><li>
+	<span>触发程序对复制起作用么？</span><p><span>MySQL 
+	5.1中的触发程序和复制象在大多数其它数据库引擎中一样工作，在那些引擎中，通过触发程序在主服务器上执行的行为不被复制到从服务器。取而代之的是，位于主MySQL服务器的表中的
+	触发程序需要在那些存在于任何MySQL从服务器上的表内被创建，以便于触发程序可以也可以在从服务器上被激活。</span></p>
+	<p><span>&nbsp;</span></li><li>
+	<span>
+	&nbsp;</span><span>一个行为如何通过从主服务器上复制到从服务器上的触发程序来执行呢？ </span>
+	<p><span style>首先，主服务器上的触发程序必须在从服务器上重建。一旦重建了，复制流程就象其它参与到复制中的标准DML语句一样工作。例如：考虑一个已经插入触发程序AFTER的EMP表，它位于主MySQL服务器上。同样的EMP表和AFTER插入
+	触发程序也存在于从服务器上。复制流程可能是：</span></li></ul>
+
+
+
+</div>
+
+
+
+<div>
+
+<p><span>1.<span>&nbsp;&nbsp;&nbsp; 
+</span></span><span>对EMP做一个INSERT语句。 <o:p></o:p></span></p>   
+
+
+
+<p><span><span>2.<span>&nbsp;&nbsp;&nbsp;</span></span>EMP上的AFTER触发程序激活。<o:p></o:p></span></p>  
+
+
+
+<p><span>3.<span>&nbsp;&nbsp;&nbsp; 
+</span></span><span>INSERT语句被写进二进制日志。</span></p>  
+
+
+
+<p><span>4.<span>&nbsp;&nbsp;&nbsp; 
+</span></span><span>从服务器上的复制拾起INSERT语句给EMP表，并在从服务器上执行它。 <o:p></o:p></span></p>   
+
+
+
+<p><span>5.<span>&nbsp;&nbsp;&nbsp; 
+</span>位于从服务器EMP</span><span>上的</span><span>AFTER触发程序激活。</span></p>  
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<div>
+
+<div>
+
+<div>
+
+<h2><a name="stored-procedure-logging"></a><span>20.4.&nbsp;存储子程序和触发程序的二进制日志功能</span></h2>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<p><span>，这一节介绍MySQL 5.1如何考虑二进制日志功能来处理存储子程序（程序和函数） 
+。这一节也适用于触发程序。 <o:p></o:p></span></p>   
+
+
+
+<p><span>二进制日志包含修改数据库内容的SQL语句的信息。这个信息以描述修改的事件的形式保存起来。 <o:p></o:p></span></p> 
+
+
+
+<p><span>二进制日志有两个重要目的：</span></p>
+
+
+
+<div>
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>复制的基础是主服务器发送包含在二进制日志里的事件到从服务器，从服务器执行这些事件来造成与对主服务器造成的同样的数据改变，请参阅<a href="replication.html#replication-implementation" title="6.2.&nbsp;Replication Implementation Overview">6.2节，“</a></span><a href="replication.html#replication-implementation" title="6.2.&nbsp;Replication Implementation Overview"><span>复制概述&rdquo;</span></a><span>。 <o:p></o:p></span></p>   
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>特定的数据恢复操作许要使用二进制日志。备份的文件被恢复之后，备份后纪录的二进制日志里的事件被重新执行。这些事件把数据库带从备份点的日子带到当前。请参阅<a href="database-administration.html#backup-recovery" title="5.9.2.2.&nbsp;Using Backups for Recovery">5.9.2.2节，“</a></span><a href="database-administration.html#backup-recovery" title="5.9.2.2.&nbsp;Using Backups for Recovery"><span>使用备份恢复&rdquo;</span></a><span>。 <o:p></o:p></span></p>   
+
+
+
+</div>
+
+
+
+<p><span>MySQL中，以存储子程序的二进制日志功能引发了很多问题，这些在下面讨论中列出，作为参考信息。</span></p>
+
+
+
+<p><span>除了要另外注意的之外，这些谈论假设你已经通过用--log-bin选项启动服务器允许了二进制日志功能。（如果二进制日志功能不被允许，复制将不可能，为数据恢复的二进制日志也不存在。）请参阅<a href="database-administration.html#binary-log" title="5.11.3.&nbsp;The Binary Log">5.11.3节，“</a></span><a href="database-administration.html#binary-log" title="5.11.3.&nbsp;The Binary Log"><span>二进制日志&rdquo;</span></a><span>。 <o:p></o:p></span></p>   
+
+
+
+<p><span>对存储子程序语句的二进制日志功能的特征在下面列表中描述。一些条目指出你应该注意到的问题。但是在一些情况下，有你可以更改的妇五七设置或你可以用来处理它们的工作区。</span></p>
+
+
+
+<div>
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>CREATE   
+PROCEDURE, CREATE FUNCTION, ALTER PROCEDURE,和ALTER FUNCTION  
+语句被写进二进制日志，CALL, DROP PROCEDURE, 
+和DROP FUNCTION 也一样。   
+<o:p></o:p></span></p>
+
+
+
+<p><span>尽管如此，对复制有一个安全暗示：要创建一个子程序，用户必须有CREATE ROUTINE权限,但有这个权限的用户不能写一个
+子程序在从服务器上执行任何操作。因为在从服务器上的SQL线程用完全权限来运行。例如，如果主服务器和从服务器分别有服务器ID值1和2，在主服务器上的用户可能创建并调用如下一个
+程序： <o:p></o:p></span></p> 
+
+
+
+<pre><span>mysql&gt; <b>delimiter //</b><o:p></o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CREATE PROCEDURE mysp ()</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>BEGIN</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt;<span>&nbsp;&nbsp; </span><b>IF @@server_id=2 THEN DROP DATABASE accounting; END IF;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>END;</b><o:p></o:p></span></pre>
+
+<pre><span><span>&nbsp;&nbsp;&nbsp; </span>-&gt; <b>//</b><o:p></o:p></span></pre>
+
+<pre><span>mysql&gt; <b>delimiter ;</b><o:p></o:p></span></pre>
+
+<pre><span>mysql&gt; <b>CALL mysp();</b><o:p></o:p></span></pre>
+
+
+
+<p><span> CREATE PROCEDURE和CALL语句将被写进二进制日志，所以从服务器将执行它们。因为从SQL线程有完全权限，它将移除accounting数据库。 <o:p></o:p></span></p> 
+
+
+
+<p><span>要使允许二进制日志功能的服务器避免这个危险，MySQL 5.1已经要求
+存储程序和函数的创建者除了通常需要的CREATE ROUTINE的权限外，还必须有SUPER  
+权限。类似地，要使用ALTER PROCEDURE或ALTER FUNCTION，除了ALTER ROUTINE权限外你必须有SUPER权限。没有SUPER权限，将会发生一个错误：</span></p>
+
+
+
+<pre><span>ERROR 1419 (HY000): You do not have the SUPER privilege and<o:p></o:p></span></pre>
+
+<pre><span>binary logging is enabled (you *might* want to use the less safe<o:p></o:p></span></pre>
+
+<pre><span>log_bin_trust_routine_creators variable)<o:p></o:p></span></pre>
+
+
+
+<p><span>你可能不想强制要求子程序创建者必须有SUPER权限。例如，你系统上所有有CREATE ROUTINE权限的用户可能是有经验的应用程序开发者。要禁止掉对SUPER权限的要求，设置log_bin_trust_routine_creators
+ 全局系统变量为1。默认地，这个变量值为0，但你可以象这样改变这样：</span></p>
+
+
+
+<pre><span>mysql&gt; <b>SET GLOBAL log_bin_trust_routine_creators = 1;</b><o:p></o:p></span></pre>
+
+
+
+<p><span>你也可以在启动服务器之时用--log-bin-trust-routine-creators选项来设置允许这个变量。<o:p></o:p></span></p>
+
+
+
+<p><span>如果二进制日志功能不被允许，log_bin_trust_routine_creators
+ 没有被用上，子程序创建需要SUPER权限。 <o:p></o:p></span></p> 
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>一个执行更新的非确定子程序是不可重复的，它能有两个不如意的影响： <o:p></o:p></span></p>   
+
+
+
+<div>
+
+<p><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+</span></span>它会使得从服务器不同于主服务器<span>。</span></p>  
+
+
+
+<p>
+-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+</span></span><span>恢复的数据与原始数据不同。</span></p>  
+
+
+
+</div>
+
+
+
+<p><span>要解决这些问题，MySQL强制做下面要求：在主服务器上，除非子程序被声明为确定性的或者不更改数据，否则创建或者替换子程序将被拒绝。这意味着当你创建一个子程序的时候，你必须要么声明它是确定性的，要么它不改变数据。两套子程序特征在这里适用： <o:p></o:p></span></p> 
+
+
+
+<div>
+
+<p>
+-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+</span></span><span>DETERMINISTIC</span><span>和NOT 
+DETERMINISTIC指出一个子程序是否对给定的输入总是产生同样的结果。如果没有给定任一特征，默认是NOT DETERMINISTIC，所以你必须明确指定DETERMINISTIC来
+声明一个
+子程序是确定性的。 <o:p></o:p></span></p> 
+
+
+
+<p><span>使用NOW()  
+函数（或它的同义）或者RAND() 
+函数不是必要地使也一个子程序非确定性。对NOW()而言，二进制日志包括时间戳并正确复制。RAND()只要在一个
+子程序内被调用一次也可以正确复制。（你可以认为子程序执行时间戳和随机数种子作为毫无疑问地输入，它们在主服务器和从服务器上是一样的。） <o:p></o:p></span></p> 
+
+
+
+<p>
+-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+</span></span><span>CONTAINS SQL</span><span>, NO   
+SQL, READS SQL DATA, 和 MODIFIES SQL数据提供子程序是读还是写数据的信息。无论NO 
+SQL  还是READS SQL DATA  i都指出，子程序没有改变数据，但你必须明白地指明这些中的一个，因为如果任何这些特征没有被给出，
+默认的特征是CONTAINS SQL。 
+<o:p></o:p></span></p>
+
+
+
+</div>
+
+
+
+<p><span>默认地，要一个CREATE PROCEDURE 
+ 或 CREATE FUNCTION  语句被接受，DETERMINISTIC
+ 或 NO SQL与READS SQL DATA  
+中的一个必须明白地指定，否则会产生如下错误：</span></p>
+
+
+
+<pre><span>ERROR 1418 (HY000): This routine has none of DETERMINISTIC, NO SQL,<o:p></o:p></span></pre>
+
+<pre><span>or READS SQL DATA in its declaration and binary logging is enabled<o:p></o:p></span></pre>
+
+<pre><span>(you *might* want to use the less safe log_bin_trust_routine_creators<o:p></o:p></span></pre>
+
+<pre><span>variable)<o:p></o:p></span></pre>
+
+
+
+<p><span>如果设置log_bin_trust_routine_creators 
+为1, 移除对子程序必须是确定的或不修改数据的要求。 <o:p></o:p></span></p> 
+
+
+
+<p><span>注意，子程序本性的评估是基于创建者的</span><span>&ldquo;诚实度&rdquo;<span> 
+：MySQL不检查声明为确定性的子程序是否不含产生非确定性结果的语句。<o:p></o:p></span></span></p>
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+</span></span><span>如果子程序返回无错，CALL语句被写进二进制日志，否则就不写。当一个子程序修改数据失败了，你会得到这样的警告：</span></p>  
+
+
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>ERROR 1417 (HY000): A routine failed and has neither NO SQL nor<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>READS SQL DATA in its declaration and binary logging is enabled; if<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>non-transactional tables were updated, the binary log will miss their<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>changes<o:p></o:p></span></pre>
+
+
+
+<p><span>这个记日志行为潜在地导致问题.如果一个子程序部分地修改一个非交互表（比如一个MyISAM表able）并且返回一个错误，二进制日志将反映这些变化。要防止这种情况，你应该在
+子程序中使用交互表并且在交互动作内修改表。 <o:p></o:p></span></p> 
+
+
+
+<p><span>在一个子程序内，如果你在INSERT, DELETE, 
+或者UPDATE里使用IGNORE关键词来忽略错误，可能发生一个部分更新，但没有错误产生。这样的语句被记录日志，且正常复制。</span></p>
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>如果一个存储函数在一个如SELECT这样不修改数据的语句内被调用，即使函数本身更改数据，函数的执行也将不被写进二进制日志里。这个记录日志的行为潜在地导致问题。假设函数myfunc()如下定义：</span></p>  
+
+
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE FUNCTION myfunc () RETURNS INT<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>BEGIN<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><span>&nbsp;&nbsp;</span>INSERT INTO t (i) VALUES(1);<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><span>&nbsp;&nbsp;</span>RETURN 0;<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>END;<o:p></o:p></span></pre>
+
+
+
+<p><span>按照上面定义，</span>下面的语句修改<span>表t，因为myfunc()修改表t, 
+但是语句不被写进二进制日志，因为它是一个SELECT语句： 
+<o:p></o:p></span></p>
+
+
+
+<pre><span>SELECT myfunc();<o:p></o:p></span></pre>
+
+
+
+<p><span>对这个问题的工作区将调用在做更新的语句里做更新的函数。注意，虽然DO语句有时为了其估算表达式的副效应而被执行，DO在这里不是一个工作区，因为它不被写进二进制日志。</span></p>
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>在一个子程序内执行的语句不被写进二进制日志。假如你发布下列语句： <o:p></o:p></span></p>   
+
+
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE PROCEDURE mysp INSERT INTO t VALUES(1);<o:p></o:p></span></pre>
+
+<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CALL mysp;<o:p></o:p></span></pre>
+
+
+
+<p><span>对于这个例子来说，CREATE
+PROCEDURE 和CALL语句出现在二进制日志里，但INSERT语句并未出现。 <o:p></o:p></span></p>   
+
+
+
+<p>
+<span>&middot;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span>在从服务器上，当决定复制哪个来自主服务器的事件时，下列限制被应用：--replicate-*-table规则不适用于CALL语句或子程序内的语句：在这些情况下，总是返回</span><span>“复制！&rdquo; <span><o:p></o:p></span></span></p>   
+
+
+
+</div>
+
+
+
+<p><span>触发程序类似于存储函数，所以前述的评论也适用于触发程序，除了下列情况： CREATE 
+TRIGGER没有可选的DETERMINISTIC特征，所以触发程序被假定为总是确定性的。然而，这个假设在一些情况下是非法的。比如，UUID()函数是非确定性的（不能复制）。你应该小心在
+触发程序中使用这个函数。 <o:p></o:p></span></p> 
+
+
+
+<p><span>触发程序目前不能更新表，但是在将来会支持。因为这个原因，如果你没有SUPER权限且log_bin_trust_routine_creators 被设为0，得到的错误信息类似于存储子程序与CREATE TRIGGER产生的错误信息。 <o:p></o:p></span></p> 
+
+
+
+<p><span>在本节中叙述的问题来自发生在SQL语句级别的二进制日志记录的事实。未来发行的MySQL期望能实现行级的二进制日志记录，记录发生在更
+细致的级别并且指出哪个改变作为执行SQL的结果对单个记录而做。 <o:p></o:p></span></p> 
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+<div>
+
+<div align="center"><span>
+
+<hr align="center" size="2" width="100%">
+
+</span></div>
+
+
+
+</div>
+
+
+
+<p><span>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a href="http://dev.mysql.com/doc/mysql/en" target="_top">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</span></p>
+
+
+
+<div>
+
+<div align="center"><span>
+
+<hr align="center" size="2" width="100%">
+
+</span></div>
+
+
+
+<p align="center"><span><o:p>&nbsp;</o:p></span></p>
+<p><span ><o:p>&nbsp;</o:p></span></p>
+</div>
+</div>
+</body>
+</html>

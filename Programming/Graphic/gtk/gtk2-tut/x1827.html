@@ -1,0 +1,371 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>提供选中区</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="操作选中区"
+HREF="c1788.html"><LINK
+REL="PREVIOUS"
+TITLE="获取选中区信息"
+HREF="x1804.html"><LINK
+REL="NEXT"
+TITLE="拖放"
+HREF="c1853.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1804.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>操作选中区</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c1853.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-SUPPLYINGTHESELECTION">提供选中区</H1
+><P
+>提供选中区要复杂一点。你必须注册当选中区被要求时将调用的处理函数。每处理一对选中区/目标，你就要调用一次下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_selection_add_target (GtkWidget           *widget, 
+                               GdkAtom              selection,
+                               GdkAtom              target,
+                               guint                info);</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>widget</TT
+>，<TT
+CLASS="LITERAL"
+>selection</TT
+>和<TT
+CLASS="LITERAL"
+>target</TT
+>标识了这个处理函数要操作的要求。当对选中区的一个要求被接收，"selection_get" 信号将被调用。<TT
+CLASS="LITERAL"
+>info</TT
+>能用来标识回调函数里的指定目标。</P
+><P
+>回调函数形式如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void  "selection_get" (GtkWidget          *widget,
+                       GtkSelectionData   *selection_data,
+                       guint               info,
+                       guint               time);</PRE
+></TD
+></TR
+></TABLE
+><P
+>GtkSelectionData和上面介绍的一样，但这次，我们要负责提供<TT
+CLASS="LITERAL"
+>type</TT
+>，<TT
+CLASS="LITERAL"
+>format</TT
+>，<TT
+CLASS="LITERAL"
+>data</TT
+>和<TT
+CLASS="LITERAL"
+>length</TT
+>值(<TT
+CLASS="LITERAL"
+>format</TT
+>值在这里很重要－X服务器根据它来确定数据是否要以字节为单位处理。通常它的值为8 -<I
+CLASS="EMPHASIS"
+>如</I
+>字符型 -或 32-<I
+CLASS="EMPHASIS"
+>如</I
+>整型)。调用下面的函数来设置这些值：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_selection_data_set( GtkSelectionData *selection_data,
+                             GdkAtom           type,
+                             gint              format,
+                             guchar           *data,
+                             gint              length );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个函数会适当地将数据复制一份这样你就不必为保留这些数据操心了。(不要手工填充GtkSelectionData结构里的值。)</P
+><P
+>用户做了某个操作后，你可以通过下面的函数声称选中区的所有权。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gboolean gtk_selection_owner_set( GtkWidget *widget,
+                                  GdkAtom    selection,
+                                  guint32    time );</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果其它应用程序要求得到选中区,你将接收到"selection_clear_event"信号。</P
+><P
+>下面是一个提供选中区的示例，它给开关按钮加了选中区功能。当开关按钮被按下，程序要求得到主选中区。它只支持"STRING"目标(除了 GTK 自身已支持的"TARGETS"等目标)。当这个目标被要求时，一个描叙时间的字符串被返回。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdlib.h&#62;
+#include &#60;gtk/gtk.h&#62;
+#include &#60;time.h&#62;
+
+GtkWidget *selection_button;
+GtkWidget *selection_widget;
+
+/* 当用户触发选中区时的回调 */
+void selection_toggled( GtkWidget *widget,
+                        gint      *have_selection )
+{
+  if (GTK_TOGGLE_BUTTON (widget)-&#62;active)
+    {
+      *have_selection = gtk_selection_owner_set (selection_widget,
+						 GDK_SELECTION_PRIMARY,
+						 GDK_CURRENT_TIME);
+      /* 如果声称选中区失败，则使按钮返回未选中状态 */
+      if (!*have_selection)
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), FALSE);
+    }
+  else
+    {
+      if (*have_selection)
+	{
+	  /* 在设置所有者为NULL来清空选中区前，
+	   * 先检测自己是不是真正的所有者 */
+	  if (gdk_selection_owner_get (GDK_SELECTION_PRIMARY) == widget-&#62;window)
+	    gtk_selection_owner_set (NULL, GDK_SELECTION_PRIMARY,
+				     GDK_CURRENT_TIME);
+	  *have_selection = FALSE;
+	}
+    }
+}
+
+/* 当其它应用程序声称选中区时调用 */
+gint selection_clear( GtkWidget         *widget,
+                      GdkEventSelection *event,
+                      gint              *have_selection )
+{
+  *have_selection = FALSE;
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (selection_button), FALSE);
+
+  return TRUE;
+}
+
+/* 将当前时间作为选中区内容提供。 */
+void selection_handle( GtkWidget        *widget, 
+                       GtkSelectionData *selection_data,
+                       guint             info,
+                       guint             time_stamp,
+                       gpointer          data )
+{
+  gchar *timestr;
+  time_t current_time;
+
+  current_time = time (NULL);
+  timestr = asctime (localtime (&#38;current_time)); 
+  /* 当我们返回单独一个字符串时，它不必以NULL结尾。
+     它将被自动完成 */
+
+  gtk_selection_data_set (selection_data, GDK_SELECTION_TYPE_STRING,
+			  8, timestr, strlen (timestr));
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+  GtkWidget *window;
+
+  static int have_selection = FALSE;
+  
+  gtk_init (&#38;argc, &#38;argv);
+
+  /* 创建顶级窗口 */
+
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title (GTK_WINDOW (window), "Event Box");
+  gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+
+  g_signal_connect (G_OBJECT (window), "destroy",
+		    G_CALLBACK (exit), NULL);
+
+  /* 创建一个开关按钮作为选中区 */
+
+  selection_widget = gtk_invisible_new ();
+  selection_button = gtk_toggle_button_new_with_label ("Claim Selection");
+  gtk_container_add (GTK_CONTAINER (window), selection_button);
+  gtk_widget_show (selection_button);
+
+  g_signal_connect (G_OBJECT (selection_button), "toggled",
+		    G_CALLBACK (selection_toggled), &#38;have_selection);
+  g_signal_connect (G_OBJECT (selection_widget), "selection_clear_event",
+		    G_CALLBACK (selection_clear), &#38;have_selection);
+
+  gtk_selection_add_target (selection_widget,
+			    GDK_SELECTION_PRIMARY,
+			    GDK_SELECTION_TYPE_STRING,
+		            1);
+  g_signal_connect (G_OBJECT (selection_widget), "selection_get",
+		    G_CALLBACK (selection_handle), &#38;have_selection);
+
+  gtk_widget_show (selection_button);
+  gtk_widget_show (window);
+  
+  gtk_main ();
+  
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1804.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c1853.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>获取选中区信息</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1788.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>拖放</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

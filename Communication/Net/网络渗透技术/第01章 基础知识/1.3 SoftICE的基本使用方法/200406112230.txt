@@ -1,0 +1,141 @@
+2.1 在VMware中配置远程SoftICE的另一种办法
+
+Q: 小四的<<将VMware与SoftICE基于网络的远程调试功能相结合>>还是太复杂，而且
+   不适用于2000及其以下版本。有没有更省事的办法在VMware中配置远程SoftICE。
+
+A: tk <tombkeeper@nsfocus.com> 2004-06-11 17:32
+
+tk果然是妇科圣手，找到了更省事、更稳定也更广泛适用的办法，我替他整理一下全
+过程。总共有四个关键步骤。
+
+第一步:
+
+使用VMware Workstation 3.2或者更高版本，其上安装了中文版Windows 2000 SP4。
+启动到VMware的初始界面，为2000 SP4虚拟机(VMware Guest)只设置一个串口，设置
+如下:
+
+--------------------------------------------------------------------------
+Device status  : Connect at power on
+Connection     : Use named pipe
+Use named pipe : \\.\pipe\com_1
+               : This end is the server
+               : The other end is an application (这里无所谓，二者均可)
+                 or
+                 The other end is a virtual machine
+I/O Mode       : Yield CPU on poll
+--------------------------------------------------------------------------
+
+必须让虚拟机以轮询方式使用串口，而非中断方式。3.0版没有这个设置，无法成功
+达到本篇目的，推荐使用最新版本VMware。
+
+第二步:
+
+在2000 SP4/SoftICE图形化设置界面里进入"Serial Debugging"，设置如下:
+
+--------------------------------------------------------------------------
+COM1
+115200
+Auto Connect (via null modem) (注意这里)
+--------------------------------------------------------------------------
+
+第三步:
+
+搞一个4.3.1.1722版SoftICE客户端工具siremote.exe，以及它的引入库3.3.0.5版的
+cws3xw32.dll。这个版本的siremote.exe开始支持命名管道，但是，它有一些毛病。
+现在输入:
+
+siremote.exe pipe com_1
+
+如果你没有license(比如这个siremote.exe是单独复制到当前机器上的)，就会看到
+错误信息"Invalid, missing, or trial expired license."。
+
+假设你修理掉了这个检查，会发现siremote.exe自动在com_1前增加"\\.\pipe\"，使
+之变成"\\.\pipe\com_1"。显然，如果你的VMware Host就是当前机器，这样没有问
+题。可既然想远程调试，很可能VMware Host不是当前机器，而是网络上另一台机器，
+此时我们需要的是"\\<target>\pipe\com_1"。错误信息如下:
+
+Attempting direct link connection over named pipe to \\.\pipe\com_1
+ERROR:  Pipe (\\.\pipe\com_1) not found.  Validate pipe name in Server App
+The desired point to point connection could not be initialized
+
+假设你修理掉了这个自以为是的增加操作。现在输入:
+
+siremote.exe pipe \\<target>\pipe\com_1
+
+你会得到错误信息"ERROR: Specify only the named portion of the pipe."，也就
+是说siremote.exe要求你只输入com_1，而不允许你指定全称命名管道。tk用IDA Pro
+察看了此处的检查，也就仅仅简单检查了第一个字节是否是0x5C，如果是则转错误处
+理。验证一下:
+
+> siremote.exe pipe <target>\pipe\com_1
+Attempting direct link connection over named pipe to <target>\pipe\com_1
+ERROR:  Pipe (<target>\pipe\com_1) not found.  Validate pipe name in Server App
+The desired point to point connection could not be initialized
+
+可是最终被调用的Win32 API CreateFile()第一形参支持全称命名管道。
+
+至此如何修改这个版本的siremote.exe跃然纸上，为了大家省事，将最终修改的地方
+列于此间:
+
+> fc /b old_siremote.exe new_siremote.exe
+00000E44: 5C 00
+00000E45: 5C 00
+00000E46: 2E 00
+00000E47: 5C 00
+00000E48: 70 00
+00000E49: 69 00
+00000E4A: 70 00
+00000E4B: 65 00
+00000E4C: 5C 00
+00002616: 75 EB
+000030E3: 75 EB
+
+可以看出，"\\.\pipe\"清成空串""，0x2616处的jmp用于对付0x5C检查，0x30E3处的
+jmp用于对付license检查。现在输入:
+
+new_siremote.exe pipe \\<target>\pipe\com_1
+
+这里<target>指VMware Host，而非VMware Guest，对于VMware Guest，只有物理串
+口COM1可言。不幸的是，可能你将看到错误信息:
+
+Attempting direct link connection over named pipe to \\<target>\pipe\com_1
+ERROR:  Pipe (\\<target>\pipe\com_1) not found.  Validate pipe name in Server App
+The desired point to point connection could not be initialized
+
+第四步:
+
+为访问远程命名管道，需要一条拥有相应权限的SMB会话存在。一般来说，空会话不
+足以打开\\<target>\pipe\com_1，可能可以通过注册表中的设置达到目的，我指的
+是这里:
+
+HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\lanmanserver\parameters
+
+NullSessionPipes    REG_MULTI_SZ    COMNAP
+                                    COMNODE
+                                    SQL\QUERY
+                                    SPOOLSS
+                                    LLSRPC
+                                    EPMAPPER
+                                    LOCATOR
+                                    TrkWks
+                                    TrkSvr
+
+如果在VMware Host注册表中增加com_1，空会话有可能被允许访问\pipe\com_1，不
+过我未尝试。无论如何，管理员级的SMB会话总是可以访问\pipe\com_1的。可用如下
+命令建立SMB会话:
+
+net use \\<target>\ipc$ "<password>" /user:"<username>"
+
+再次输入:
+
+new_siremote.exe pipe \\<target>\pipe\com_1
+
+已经可以用SoftICE进行远程调试了。注意，虽然new_siremote.exe源自4.3.1版，但
+远端SoftICE可以是4.2.7版，我们只需要高版本的客户端工具。这个办法显然比小四
+的办法简单，也更稳定，最主要的是适用于Windows 2000。Hume测试过Windows 2003，
+同样适用。
+
+以前没有支持命名管道的siremote.exe。为了通过串口使用VMware中的SoftICE，可
+能需要虚拟串口驱动程序的介入，这事我没干过，现在也没必要折腾。不过这个办法
+与小四的办法相比，有个缺陷，要求VMware Host是支持命名管道的Windows系统，而
+小四的办法没有这个限制。

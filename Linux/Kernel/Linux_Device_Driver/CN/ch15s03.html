@@ -1,0 +1,203 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>15.3.&#160;进行直接 I/O-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch15.html" title="第&#160;15&#160;章&#160;内存映射和 DMA ">
+<link rel="prev" href="ch15s02.html" title="15.2.&#160;mmap 设备操作">
+<link rel="next" href="ch15s04.html" title="15.4.&#160;直接内存存取">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">15.3.&#160;进行直接 I/O</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch15s02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;15&#160;章&#160;内存映射和 DMA </th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch15s04.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="PerformingDirectIO.sect1"></a>15.3.&#160;进行直接 I/O</h2></div></div></div>
+<p>大部分 I/O 操作是通过内核缓冲的. 一个内核空间缓冲区的使用允许一定程度的用户空间和实际设备的分离; 这种分离能够使编程容易并且还可以在许多情况下有性能的好处. 但是, 有这样的情况它对于进行 I/O 直接到或从一个用户空间缓冲区是有好处的. 如果正被传输的数据量大, 不使用一个额外的拷贝直接通过内核空间传输数据可以加快事情进展.</p>
+<p>2.6 内核中一个直接 I/O 使用的例子是 SCSI 磁带驱动. 流动的磁带能够传送大量数据通过系统, 并且磁带传送常常是面向记录的, 因此在内核中缓冲数据没有好处. 因此, 当条件正确(用户空间缓冲区是页对齐的, 例如), SCSI 磁带驱动进行它的 I/O 而不拷贝数据.</p>
+<p>就是说, 重要的是认识到直接 I/O 不是一直提供人们期望的性能提高. 设置直接 I/O (它调用出错换入并且除下相关的用户空间)的开销可能是不小的, 并且被缓冲的 I/O 的好处丢失了. 例如, 直接 I/O 的使用要求 write 系统调用同步操作; 否则应用程序不能知道什么时间它可以重新使用它的 I/O 缓冲. 停止应用程序直到每个 write 完成可能拖慢事情, 这是为什么使用直接 I/O 的应用程序也常常使用异步 I/O 操作的原因.</p>
+<p>事情的真正内涵是, 在任何情况下, 在一个字符驱动实现直接 I/O 常常是不必要并且可能是有害的. 你应当只在你确定缓冲的 I/O 的开销确实拖慢了系统的情况下采取这个步骤. 还要注意, 块和网络驱动不必担心实现直接 I/O; 这 2 种情况下, 内核中的高级的代码在需要时建立和使用直接 I/O, 并且驱动级别的代码甚至不需要知道直接 I/O 在被进行中.</p>
+<p>实现直接 I/O 的关键是一个称为 get_user_pages 的函数, 它在 &lt;linux/mm.h&gt; 中定义使用下列原型:</p>
+<pre class="programlisting">
+int get_user_pages(struct task_struct *tsk,
+ struct mm_struct *mm,
+ unsigned long start,
+ int len,
+ int write,
+ int force,
+ struct page **pages,
+ struct vm_area_struct **vmas); 
+</pre>
+<p>这个函数有几个参数:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>tsk </span></span></dt>
+<dd><p>一个指向进行 I/O 的任务的指针; 它的主要目的是告知内核谁应当负责任何一个当设置缓冲时导致的页错. 这个参数几乎一直作为 current 传递.</p></dd>
+<dt><span class="term"><span>mm</span></span></dt>
+<dd><p>一个内存管理结构的指针, 描述被映射的地址空间. mm_struct 结构是捆绑一个进程的虚拟地址空间所有的部分在一起的. 对于驱动的使用, 这个参数应当一直是 current-&gt;mm.</p></dd>
+<dt><span class="term"><span>start len</span></span></dt>
+<dd><p>start 是(页对齐的)用户空间缓冲的地址, 并且 len 是缓冲的长度以页计.</p></dd>
+<dt><span class="term"><span>write force </span></span></dt>
+<dd><p>如果 write 是非零, 这些页被映射来写(当然, 隐含着用户空间在进行一个读操作). force 标志告知 get_user_pages 来覆盖在给定页上的保护, 来提供要求的权限; 驱动应当一直传递 0 在这里.</p></dd>
+<dt><span class="term"><span>pages vmas </span></span></dt>
+<dd><p>输出参数. 在成功完成后, 页包含一系列指向 struct page 结构的指针来描述用户空间缓冲, 并且 vmas 包含指向被关联的 VMA 的指针. 这些参数应当, 显然, 指向能够持有至少 len 个指针的数组. 任一个参数可能是 NULL, 但是你需要, 至少, struct page 指针来实际对缓冲操作.</p></dd>
+</dl></div>
+<p>get_user_pages 是一个低级内存管理函数, 带一个相称的复杂的接口. 它还要求给这个地址空间的 mmap 读者/写者 旗标在调用前被以读模式获得. 结果是, 对 get_user_pages 常常看来象:</p>
+<pre class="programlisting">
+down_read(&amp;current-&gt;mm-&gt;mmap_sem);
+
+result = get_user_pages(current, current-&gt;mm, ...);
+up_read(&amp;current-&gt;mm-&gt;mmap_sem);
+</pre>
+<p>返回值是实际映射的页数, 它可能小于请求的数目(但是大于 0).</p>
+<p>一旦成功完成, 调用者有一个页数组指向用户空间缓冲, 它被锁入内存. 为直接在缓冲上操作, 内核空间代码必须将每个 struct page 指针转换为一个内核虚拟地址, 使用 kmap 或者 kmap_atomic. 常常地, 但是, 对于可以使用直接 I/O 的设备在使用 DMA 操作, 因此你的驱动将可能想从 struct page 指针数组创建一个发散/汇聚列表. 我们在 "发散/汇聚映射"一节中讨论如何做这个.</p>
+<p>一旦你的直接 I/O 操作完成了, 你必须释放用户页. 在这样做之前, 但是, 你必须通知内核如果你改变了这些页的内容. 否则, 内核可能认为这些页是"干净"的, 意味着它们匹配一个在交换设备中发现的一个拷贝, 并且释放它们不写出它们到备份存储. 因此, 如果你已改变了这些页(响应一个用户空间写请求), 你必须标志每个被影响到的页为脏, 使用一个调用:</p>
+<pre class="programlisting">
+void SetPageDirty(struct page *page); 
+</pre>
+<p>(这个宏定义在 &lt;linux/page-flags.h&gt;). 进行这个操作的代码首先检查来保证页不在内存映射的保留部分, 这部分从不被换出. 因此, 代码常常看来如此:</p>
+<pre class="programlisting">
+if (! PageReserved(page))
+ SetPageDirty(page);
+</pre>
+<p>因为用户空间内存正常地不置为保留的, 这个检查严格地不应当是必要的, 但是当你深入内存管理子系统时, 最好全面并且仔细.</p>
+<p>不管这些页是否已被改变, 它们必须从页缓存中释放, 或者它们一直留在那里. 这个调用是:</p>
+<pre class="programlisting">
+void page_cache_release(struct page *page); 
+</pre>
+<p>这个调用应当, 当然, 在页已被标识为脏之后进行, 如果需要.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AsynchronousIO.sect2"></a>15.3.1.&#160;异步 I/O</h3></div></div></div>
+<p>增加到 2.6 内核的一个新的特性是异步 I/O 能力. 异步 I/O 允许用户空间来初始化操作而不必等待它们的完成; 因此, 一个应用程序可以在它的 I/O 在进行中时做其他的处理. 一个复杂的, 高性能的应用程序还可使用异步 I/O 来使多个操作在同一个时间进行.</p>
+<p>异步 I/O 的实现是可选的, 并且很少几个驱动作者关心; 大部分设备不会从这个能力中受益. 如同我们将在接下来的章节中见到的, 块和网络驱动在整个时间是完全异步的, 因此只有字符驱动对于明确的异步 I/O 支持是候选的. 一个字符设备能够从这个支持中受益, 如果有好的理由来使多个 I/O 操作在任一给定时间同时进行. 一个好例子是流化磁带驱动, 这里这个驱动可停止并且明显慢下来如果 I/O 操作没有尽快到达. 一个应用程序试图从一个流驱动中获得最好的性能, 可以使用异步 I/O 来使多个操作在任何时间准备好进行.</p>
+<p>对于少见的需要实现异步 I/O 的驱动作者, 我们提供一个快速的关于它如何工作的概观. 我们涉及异步 I/O 在本章, 因为它的实现几乎一直也包括直接 I/O 操作(如果你在内核中缓冲数据, 你可能常常实现异步动作而不必在用户空间出现不必要的复杂性).</p>
+<p>支持异步 I/O 的驱动应当包含 &lt;linux/aio.h&gt;. 有 3 个 file_operation 方法给异步 I/O 实现:</p>
+<pre class="programlisting">
+ssize_t (*aio_read) (struct kiocb *iocb, char *buffer,
+ size_t count, loff_t offset);
+ssize_t (*aio_write) (struct kiocb *iocb, const char *buffer,
+ size_t count, loff_t offset);
+int (*aio_fsync) (struct kiocb *iocb, int datasync);
+</pre>
+<p>aio_fsync 操作只对文件系统代码感兴趣, 因此我们在此不必讨论它. 其他 2 个, aio_read 和 aio_write, 看起来非常象常规的 read 和 write 方法, 但是有几个例外. 一个是 offset 参数由值传递; 异步操作从不改变文件位置, 因此没有理由传一个指针给它. 这些方法还使用 iocb ("I/O 控制块")参数, 这个我们一会儿就到.</p>
+<p>aio_read 和 aio_write 方法的目的是初始化一个读或写操作, 在它们返回时可能完成或者可能没完成. 如果有可能立刻完成操作, 这个方法应当这样做并且返回通常的状态: 被传输的字节数或者一个负的错误码. 因此, 如果你的驱动有一个称为 my_read 的读方法, 下面的 aio_read 方法是全都正确的(尽管特别无意义):</p>
+<pre class="programlisting">
+static ssize_t my_aio_read(struct kiocb *iocb, char *buffer, ssize_t count, loff_t offset)
+{
+ return my_read(iocb-&gt;ki_filp, buffer, count, &amp;offset);
+}
+</pre>
+<p>注意,  struct file 指针在 kocb 结构的 ki_filp 成员中.</p>
+<p>如果你支持异步 I/O, 你必须知道这个事实, 内核可能, 偶尔, 创建"异步 IOCB". 它们是, 本质上, 必须实际上被同步执行的异步操作. 有人可能非常奇怪为什么要这样做, 但是最好只做内核要求做的. 同步操作在 IOCB 中标识; 你的驱动应当询问状态, 使用:</p>
+<pre class="programlisting">
+int is_sync_kiocb(struct kiocb *iocb); 
+</pre>
+<p>如果这个函数返回一个非零值, 你的驱动必须同步执行这个操作.</p>
+<p>但是, 最后, 所有这个结构的意义在于使能异步操作. 如果你的驱动能够初始化这个操作(或者, 简单地, 将它排队到它能够被执行时), 它必须做两件事情: 记住它需要知道的关于这个操作的所有东西, 并且返回 -EIOCBQUEUED 给调用者. 记住操作信息包括安排对用户空间缓冲的存取; 一旦你返回, 你将不再有机会来存取缓冲, 当再调用进程的上下文运行时. 通常, 那意味着你将可能不得不建立一个直接内核映射( 使用 get_user_pages ) 或者一个 DMA 映射. -EIOCBQUEUED 错误码指示操作还没有完成, 并且它最终的状态将之后传递.</p>
+<p>当"之后"到来时, 你的驱动必须通知内核操作已经完成. 那通过调用 aio_complete 来完成:</p>
+<pre class="programlisting">
+int aio_complete(struct kiocb *iocb, long res, long res2);
+</pre>
+<p>这里, iocb 是起初传递给你的同一个 IOCB, 并且 res 是这个操作的通常的结果状态. res2 是将被返回给用户空间的第 2 个结果码; 大部分的异步 I/O 实现作为 0 传递 res2. 一旦你调用 aio_complete, 你不应当再碰 IOCB 或者用户缓冲.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="AnasynchronousIOexample.sect3"></a>15.3.1.1.&#160;一个异步 I/O 例子</h4></div></div></div>
+<p>例子代码中的面向页的 scullp 驱动实现异步 I/O. 实现是简单的, 但是足够来展示异步操作应当如何被构造.</p>
+<p>aio_read 和 aio_write 方法实际上不做太多:</p>
+<pre class="programlisting">
+static ssize_t scullp_aio_read(struct kiocb *iocb, char *buf, size_t count, loff_t pos)
+{
+        return scullp_defer_op(0, iocb, buf, count, pos);
+}
+
+static ssize_t scullp_aio_write(struct kiocb *iocb, const char *buf, size_t count, loff_t pos)
+{
+        return scullp_defer_op(1, iocb, (char *) buf, count, pos);
+}
+</pre>
+<p>这些方法仅仅调用一个普通的函数:</p>
+<pre class="programlisting">
+struct async_work
+{
+        struct kiocb *iocb;
+        int result;
+        struct work_struct work;
+
+};
+
+static int scullp_defer_op(int write, struct kiocb *iocb, char *buf, size_t count, loff_t pos)
+{
+        struct async_work *stuff;
+        int result;
+
+        /* Copy now while we can access the buffer */
+        if (write)
+                result = scullp_write(iocb-&gt;ki_filp, buf, count, &amp;pos);
+        else
+                result = scullp_read(iocb-&gt;ki_filp, buf, count, &amp;pos);
+
+        /* If this is a synchronous IOCB, we return our status now. */
+        if (is_sync_kiocb(iocb))
+                return result;
+
+        /* Otherwise defer the completion for a few milliseconds. */
+        stuff = kmalloc (sizeof (*stuff), GFP_KERNEL);
+        if (stuff == NULL)
+
+                return result; /* No memory, just complete now */
+        stuff-&gt;iocb = iocb;
+        stuff-&gt;result = result;
+        INIT_WORK(&amp;stuff-&gt;work, scullp_do_deferred_op, stuff);
+        schedule_delayed_work(&amp;stuff-&gt;work, HZ/100);
+        return -EIOCBQUEUED;
+}
+</pre>
+<p>一个更加完整的实现应当使用 get_user_pages 来映射用户缓冲到内核空间. 我们选择来使生活简单些, 通过只拷贝在 outset 的数据. 接着调用 is_sync_kiocb 来看是否这个操作必须同步完成; 如果是, 结果状态被返回, 并且我们完成了. 否则我们记住相关的信息在一个小结构, 通过一个工作队列来为"完成"而安排, 并且返回 -EIOCBQUEUED. 在这点上, 控制返回到用户空间.</p>
+<p>之后, 工作队列执行我们的完成函数:</p>
+<pre class="programlisting">
+static void scullp_do_deferred_op(void *p) 
+{
+ struct async_work *stuff = (struct async_work *) p;
+ aio_complete(stuff-&gt;iocb, stuff-&gt;result, 0);
+ kfree(stuff); 
+} 
+</pre>
+<p>这里, 只是用我们保存的信息调用 aio_complete 的事情. 一个真正的驱动的异步 I/O 实现是有些复杂, 当然, 但是它遵循这类结构.</p>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch15s02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch15.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch15s04.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">15.2.&#160;mmap 设备操作&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;15.4.&#160;直接内存存取</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

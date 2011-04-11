@@ -1,0 +1,140 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.14.&#160;多播-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s13.html" title="17.13.&#160;统计信息">
+<link rel="next" href="ch17s15.html" title="17.15.&#160;几个其他细节">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.14.&#160;多播</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s13.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s15.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="Multicast"></a>17.14.&#160;多播</h2></div></div></div>
+<p>一个多播报文是一个会被多个主机接收的网络报文, 但不是所有主机. 这个功能通过给一组主机分配特殊的硬件地址来获得. 发向一个特殊地址的报文应当被那个组当中的所有主机接收. 在以太网的情况下, 一个多播地址在目的地址的第一个字节的最低位为 1, 而每个设备板在它自己的硬件地址的这一位上为 0.</p>
+<p>处理主机组和硬件地址的技巧由应用程序和内核处理, 接口驱动不必处理这个问题.</p>
+<p>多播报文的传送是一个简单问题, 因为它们看起来就如同其他的报文. 接口发送它们通过通讯媒介, 不查看目的地址. 内核必须要安排一个正确的硬件目的地址; hard_header 设备方法, 如果定义了, 不必查看它安排的数据.</p>
+<p>内核来跟踪在任何给定时间对哪些多播地址感兴趣. 这个列表可能经常改变, 因为它是在任何给定时间和按照用户意愿运行的应用程序的功能. 驱动的工作是接收感兴趣的多播地址列表并递交给内核任何发向这些地址的报文. 驱动如何实现多播列表是依赖于底层硬件是如何工作的. 典型地, 在多播的角度上, 硬件属于 3 类中的 1 种:</p>
+<div class="itemizedlist"><ul type="disc">
+<li>
+<p>不能处理多播的接口. 这样的接口要么接收特别地发向它们的硬件地址(加上广播报文)的报文, 要么接收每一个报文. 它们只能通过接收每一个报文来接收多播报文, 因此, 潜在地压垮操作系统, 使用大量的"不感兴趣"报文. 你不经常认为这样的接口是有多播能力的, 驱动不会在 dev-&gt;flags 设置 IFF_MULTICAST.</p>
+<p>点对点接口是特殊情况, 因为它们一直接收每个报文, 不进行任何硬件过滤.</p>
+</li>
+<li><p>能够区别多播报文和其他报文(主机到主机, 或者广播). 这些接口能够被命令来接收每个多播报文, 让软件决定地址是否是主机感兴趣的. 这种情况下的开销是可接受的, 因为在一个典型网络上的多播报文的数目是少的.</p></li>
+<li><p>可以进行硬件检测多播地址的接口. 可以传递一个多播地址的列表给这些接口, 这些地址的报文接收, 并忽略其他多播地址的报文. 对内核这是优化的情况, 因为它不浪费处理器时间来丢弃接口收到的"不感兴趣"的报文.</p></li>
+</ul></div>
+<p>内核尽力利用高级接口的能力, 通过支持第 3 种设备类型, 它是最通用的. 因此, 内核通知驱动, 在任何有效多播地址列表发生改变时, 并且它传递新的列表给驱动, 因此它能够根据新的信息来更新硬件过滤器.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="KernelSupportforMulticasting"></a>17.14.1.&#160;多播的内核支持</h3></div></div></div>
+<p>对多播报文的支持有几项组成:一个设备方法, 一个数据结构, 以及设备标识:</p>
+<div class="variablelist"><dl>
+<dt><span class="term">void (*dev-&gt;set_multicast_list)(struct net_device *dev);<span></span></span></dt>
+<dd><p>设备方法, 在与设备相关的机器地址改变时调用. 它也在 dev-&gt;flags 被修改时调用, 因为一些标志(例如, IFF_PROMISC) 可能也要求你重新编程硬件过滤器. 这个方法接收一个 struct net_device 指针作为一个参数, 并返回 void. 一个对实现这个方法不感兴趣的驱动可以听任它为 NULL.</p></dd>
+<dt><span class="term"><span>struct dev_mc_list *dev-&gt;mc_list;</span></span></dt>
+<dd><p>所有设备相关的多播地址的列表. 这个结构的实际定义在本节的末尾介绍.</p></dd>
+<dt><span class="term"><span>int dev-&gt;mc_count;</span></span></dt>
+<dd><p>链表里的项数. 这个信息有些重复, 但是用 0 来检查 mc_count 是检查这个列表的有用的方法.</p></dd>
+<dt><span class="term"><span>IFF_MULTICAST </span></span></dt>
+<dd><p>除非驱动在 dev-&gt;flags 中设置这个标志, 接口不会被要求来处理多播报文. 然而, 内核调用驱动的 set_multicast_list 方法, 当 dev-&gt;flags 改变时, 因为多播列表可能在接口未激活时改变了.</p></dd>
+<dt><span class="term"><span>IFF_ALLMULTI</span></span></dt>
+<dd><p>在 dev-&gt;flags 中设置的标志, 网络软件来告知驱动从网络上接收所有多播报文. 这发生在当多播路由激活时. 如果标志设置了, dev-&gt;ma_list 不该用来过滤多播报文.</p></dd>
+<dt><span class="term"><span>IFF_PROMISC</span></span></dt>
+<dd>
+<p></p>在 dev-&gt;flags 中设置的标志, 当接口在混杂模式下. 接口应当接收每个报文, 不管 dev-&gt;ma_list.</dd>
+</dl></div>
+<p>驱动开发者需要的最后一点信息是 struct dev_mc_list 的定义, 在 &lt;linux/netdevice.h&gt;:</p>
+<pre class="programlisting">
+struct dev_mc_list { struct dev_mc_list *next; /* Next address in list */
+    __u8 dmi_addr[MAX_ADDR_LEN]; /* Hardware address */
+    unsigned char  dmi_addrlen;  /* Address length */
+    int  dmi_users;  /* Number of users */
+    int  dmi_gusers;  /* Number of groups */
+};
+</pre>
+<p>因为多播和硬件地址是独立于真正的报文发送, 这个结构在网络实现中是可移植的, 每个地址由一个字符串和一个长度标识, 就像 dev-&gt;dev_addr.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ATypicalImplementation"></a>17.14.2.&#160;典型实现</h3></div></div></div>
+<p>描述 set_multicast_list 的设计的最好方法是给你看一些伪码.</p>
+<p>下面的函数是一个典型函数实现在一个全特性(ff)驱动中. 这个驱动是全模式的, 它控制的接口有一个复杂的硬件报文过滤器, 它能够持有一个主机要接收的多播地址表. 表的最大尺寸是 FF_TABLE_SIZE.</p>
+<p>所有以 ff_ 前缀的函数是给特定硬件操作的占位者:</p>
+<pre class="programlisting">
+void ff_set_multicast_list(struct net_device *dev) { struct dev_mc_list *mcptr;
+    if (dev-&gt;flags &amp; IFF_PROMISC) {
+        ff_get_all_packets();
+        return;
+
+    }
+    /* If there's more addresses than we handle, get all multicast
+    packets and sort them out in software. */
+    if (dev-&gt;flags &amp; IFF_ALLMULTI || dev-&gt;mc_count &gt; FF_TABLE_SIZE) {
+
+        ff_get_all_multicast_packets();
+        return;
+    }
+    /* No multicast? Just get our own stuff */
+    if (dev-&gt;mc_count == 0) {
+        ff_get_only_own_packets();
+        return;
+    }
+    /* Store all of the multicast addresses in the hardware filter */
+    ff_clear_mc_list();
+    for (mc_ptr = dev-&gt;mc_list; mc_ptr; mc_ptr = mc_ptr-&gt;next)
+        ff_store_mc_address(mc_ptr-&gt;dmi_addr);
+    ff_get_packets_in_multicast_list();
+}
+</pre>
+<p>这个实现可以简化, 如果接口不能为进入报文存储多播表在硬件过滤器中. 这种情况下, FF_TABLE_SIZE 减为 0, 并且代码的最后 4 行不需要了.</p>
+<p>如同前面提过的, 不能处理多播报文的接口不需要实现 set_multicast_list 方法来获取 dev-&gt;flags 改变的通知. 这个办法可能被称为一个"非特性的"(nf)实现. 实现非常简单, 如下面代码所示:</p>
+<pre class="programlisting">
+void nf_set_multicast_list(struct net_device *dev)
+{
+    if (dev-&gt;flags &amp; IFF_PROMISC)
+        nf_get_all_packets();
+    else
+        nf_get_only_own_packets();
+}
+</pre>
+<p>实现 IFF_PROMISC 是非常重要的, 因为不这样用户就不能运行 tcpdump 或任何其他网络分析器. 如果接口运行一个点对点连接, 另一方面, 根本没有必要实现 set_multicast_list, 因为用户接收每个报文.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s13.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s15.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.13.&#160;统计信息&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.15.&#160;几个其他细节</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

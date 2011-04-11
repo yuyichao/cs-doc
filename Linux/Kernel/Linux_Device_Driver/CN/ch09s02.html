@@ -1,0 +1,187 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>9.2.&#160;使用 I/O 端口-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch09.html" title="第&#160;9&#160;章&#160;与硬件通讯">
+<link rel="prev" href="ch09.html" title="第&#160;9&#160;章&#160;与硬件通讯">
+<link rel="next" href="ch09s03.html" title="9.3.&#160;一个 I/O 端口例子">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">9.2.&#160;使用 I/O 端口</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch09.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;9&#160;章&#160;与硬件通讯</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch09s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="UsingIOPort.sect"></a>9.2.&#160;使用 I/O 端口</h2></div></div></div>
+<p>I/O 端口是驱动用来和很多设备通讯的方法, 至少部分时间. 这节涉及可用的各种函数来使用 I/O 端口; 我们也触及一些可移植性问题.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="IOPortAllocation.sect"></a>9.2.1.&#160;I/O 端口分配</h3></div></div></div>
+<p>如同你可能希望的, 你不应当离开并开始抨击 I/O 端口而没有首先确认你对这些端口有唯一的权限. 内核提供了一个注册接口以允许你的驱动来声明它需要的端口. 这个接口中的核心的函数是 request_region:</p>
+<pre class="programlisting">
+#include &lt;linux/ioport.h&gt;
+struct resource *request_region(unsigned long first, unsigned long n, const char *name);
+</pre>
+<p>这个函数告诉内核, 你要使用 n 个端口, 从 first 开始. name 参数应当是你的设备的名子. 如果分配成功返回值是非 NULL. 如果你从 request_region 得到 NULL, 你将无法使用需要的端口. </p>
+<p>所有的的端口分配显示在 /proc/ioports 中. 如果你不能分配一个需要的端口组, 这是地方来看看谁先到那里了.</p>
+<p>当你用完一组 I/O 端口(在模块卸载时, 也许), 应当返回它们给系统, 使用:</p>
+<pre class="programlisting">
+void release_region(unsigned long start, unsigned long n); 
+</pre>
+<p>还有一个函数以允许你的驱动来检查是否一个给定的 I/O 端口组可用:</p>
+<pre class="programlisting">
+int check_region(unsigned long first, unsigned long n); 
+</pre>
+<p>这里, 如果给定的端口不可用, 返回值是一个负错误码. 这个函数是不推荐的, 因为它的返回值不保证是否一个分配会成功; 检查和后来的分配不是一个原子的操作. 我们列在这里因为几个驱动仍然在使用它, 但是你调用一直使用 request_region, 它进行要求的加锁来保证分配以一个安全的原子的方式完成.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ManipulatingIOports.sect"></a>9.2.2.&#160;操作 I/O 端口</h3></div></div></div>
+<p>在驱动硬件请求了在它的活动中需要使用的 I/O 端口范围之后, 它必须读且/或写到这些端口. 为此, 大部分硬件区别8-位, 16-位, 和 32-位端口. 常常你无法混合它们, 象你正常使用系统内存存取一样.<sup>[<a name="id455968" href="ch09s02.html#ftn.id455968">33</a>]</sup></p>
+<p>一个 C 程序, 因此, 必须调用不同的函数来存取不同大小的端口. 如果在前一节中建议的, 只支持唯一内存映射 I/O 寄存器的计算机体系伪装端口 I/O , 通过重新映射端口地址到内存地址, 并且内核向驱动隐藏了细节以便易于移植. Linux 内核头文件(特别地, 体系依赖的头文件 &lt;asm/io.h&gt;) 定义了下列内联函数来存取 I/O 端口:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>unsigned inb(unsigned port);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void outb(unsigned char byte, unsigned port);</span></span></dt>
+<dd><p>读或写字节端口( 8 位宽 ). port 参数定义为 unsigned long 在某些平台以及 unsigned short 在其他的上. inb 的返回类型也是跨体系而不同的.</p></dd>
+<dt><span class="term"><span>unsigned inw(unsigned port);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void outw(unsigned short word, unsigned port);</span></span></dt>
+<dd><p>这些函数存取 16-位 端口( 一个字宽 ); 在为 S390 平台编译时它们不可用, 它只支持字节 I/O.</p></dd>
+<dt><span class="term"><span>unsigned inl(unsigned port);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void outl(unsigned longword, unsigned port);</span></span></dt>
+<dd><p>这些函数存取 32-位 端口. longword 声明为或者 unsigned long 或者 unsigned int, 根据平台. 如同字 I/O, "Long" I/O 在 S390 上不可用.</p></dd>
+</dl></div>
+<p>从现在开始, 当我们使用 unsigned 没有进一步类型规定时, 我们指的是一个体系相关的定义, 它的确切特性是不相关的. 函数几乎一直是可移植的, 因为编译器自动转换值在赋值时 -- 它们是 unsigned 有助于阻止编译时的警告. 这样的转换不丢失信息, 只要程序员安排明智的值来避免溢出. 我们坚持这个"未完成的类型"传统贯串本章.</p>
+<p>注意, 没有定义 64-位 端口 I/O 操作. 甚至在 64-位 体系中, 端口地址空间使用一个32-位(最大)的数据通路.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="IOPortAccessfromUserSpace.sect"></a>9.2.3.&#160;从用户空间的 I/O 存取</h3></div></div></div>
+<p>刚刚描述的这些函数主要打算被设备驱动使用, 但它们也可从用户空间使用, 至少在 PC-类 的计算机. GNU C 库在 &lt;sys/io.h&gt; 中定义它们. 下列条件应当应用来对于 inb 及其友在用户空间代码中使用:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>程序必须使用 -O 选项编译来强制扩展内联函数.</p></li>
+<li><p>ioperm 和 iopl 系统调用必须用来获得权限来进行对端口的 I/O 操作. ioperm 为单独端口获取许可, 而 iopl 为整个 I/O 空间获取许可. 这 2 个函数都是 x86 特有的.</p></li>
+<li><p>程序必须作为 root 来调用 ioperm 或者 iopl.<sup>[<a name="id456132" href="ch09s02.html#ftn.id456132">34</a>]</sup> 可选地, 一个它的祖先必须已赢得作为 root 运行的端口权限.</p></li>
+</ul></div>
+<p>如果主机平台没有 ioperm 和 iopl 系统调用, 用户空间仍然可以存取 I/O 端口, 通过使用 /dev/prot 设备文件. 注意, 但是, 这个文件的含义是非常平台特定的, 并且对任何东西除了 PC 不可能有用.</p>
+<p>例子源码 misc-progs/inp.c 和 misc-progs/outp.c 是一个从命令行读写端口的小工具, 在用户空间. 它们希望被安装在多个名子下(例如, inb, inw, 和 inl 并且操作字节, 字, 或者长端口依赖于用户调用哪个名子). 它们使用 ioperm 或者 iopl 在 x86下, 在其他平台是 /dev/port.</p>
+<p>程序可以做成 setuid root, 如果你想过危险生活并且在不要求明确的权限的情况下使用你的硬件. 但是, 请不要在产品系统上以 set-uid 安装它们; 它们是设计上的安全漏洞.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="StringOperations.sect"></a>9.2.4.&#160;字串操作</h3></div></div></div>
+<p>除了单发地输入和输出操作, 一些处理器实现了特殊的指令来传送一系列字节, 字, 或者 长字 到和自一个单个 I/O 端口或者同样大小. 这是所谓的字串指令, 并且它们完成任务比一个 C 语言循环能做的更快. 下列宏定义实现字串处理的概念或者通过使用一个单个机器指令或者通过执行一个紧凑的循环, 如果目标处理器没有进行字串 I/O 的指令. 当编译为 S390 平台时这些宏定义根本不定义. 这应当不是个移植性问题, 因为这个平台通常不与其他平台共享设备驱动, 因为它的外设总线是不同的.</p>
+<p>字串函数的原型是:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>void insb(unsigned port, void *addr, unsigned long count);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void outsb(unsigned port, void *addr, unsigned long count);</span></span></dt>
+<dd><p>读或写从内存地址 addr 开始的 count 字节. 数据读自或者写入单个 port 端口.</p></dd>
+<dt><span class="term"><span>void insw(unsigned port, void *addr, unsigned long count);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void outsw(unsigned port, void *addr, unsigned long count);</span></span></dt>
+<dd><p>读或写 16-位 值到一个单个 16-位 端口.</p></dd>
+<dt><span class="term"><span>void insl(unsigned port, void *addr, unsigned long count);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void outsl(unsigned port, void *addr, unsigned long count);</span></span></dt>
+<dd><p>读或写 32-位 值到一个单个 32-位 端口.</p></dd>
+</dl></div>
+<p>有件事要记住, 当使用字串函数时: 它们移动一个整齐的字节流到或自端口. 当端口和主系统有不同的字节对齐规则, 结果可能是令人惊讶的. 使用 inw 读取一个端口交换这些字节, 如果需要, 来使读取的值匹配主机字节序. 字串函数, 相反, 不进行这个交换.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="PausingIO.sect"></a>9.2.5.&#160;暂停 I/O</h3></div></div></div>
+<p>一些平台 - 最有名的 i386 - 可能有问题当处理器试图太快传送数据到或自总线. 当处理器对于外设总线被过度锁定时可能引起问题( 想一下 ISA )并且可能当设备单板太慢时表现出来. 解决方法是插入一个小的延时在每个 I/O 指令后面, 如果跟随着另一个指令. 在 x86 上, 这个暂停是通过进行一个 outb 指令到端口 0x80 ( 正常地不是常常用到 )实现的, 或者通过忙等待. 细节见你的平台的 asm 子目录的 io.h 文件.</p>
+<p>如果你的设备丢失一些数据, 或者如果你担心它可能丢失一些, 你可以使用暂停函数代替正常的那些. 暂停函数正如前面列出的, 但是它们的名子以 _p 结尾; 它们称为 inb_p, outb_p, 等等. 这些函数定义给大部分被支持的体系, 尽管它们常常扩展为与非暂停 I/O 同样的代码, 因为没有必要额外暂停, 如果体系使用一个合理的现代外设总线.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="PlatformDependencies.sect"></a>9.2.6.&#160;平台依赖性</h3></div></div></div>
+<p>I/O 指令, 由于它们的特性, 是高度处理器依赖的. 因为它们使用处理器如何处理移进移出的细节, 是非常难以隐藏系统间的不同. 作为一个结果, 大部分的关于端口 I/O 的源码是平台依赖的.</p>
+<p>你可以看到一个不兼容, 数据类型, 通过回看函数的列表, 这里参数是不同的类型, 基于平台间的体系不同点. 例如, 一个端口是 unsigned int 在 x86 (这里处理器支持一个 64-KB I/O 空间), 但是在别的平台是 unsiged long, 这里的端口只是同内存一样的同一个地址空间中的特殊位置.</p>
+<p>其他的平台依赖性来自处理器中的基本的结构性不同, 并且, 因此, 无可避免地. 我们不会进入这个依赖性的细节, 因为我们假定你不会给一个特殊的系统编写设备驱动而没有理解底层的硬件. 相反, 这是一个内核支持的体系的能力的概括:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>IA-32 (x86)</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>x86_64 </span></span></dt>
+<dd><p>这个体系支持所有的本章描述的函数. 端口号是 unsigned short 类型.</p></dd>
+<dt><span class="term"><span>IA-64 (Itanium)</span></span></dt>
+<dd><p>支持所有函数; 端口是 unsigned long(以及内存映射的)). 字串函数用 C 实现.</p></dd>
+<dt><span class="term"><span>Alpha </span></span></dt>
+<dd><p>支持所有函数, 并且端口是内存映射的. 端口 I/O 的实现在不同 Alpha 平台上是不同的, 根据它们使用的芯片组. 字串函数用 C 实现并且定义在 arch/alpha/lib/io.c 中定义. 端口是 unsigned long.</p></dd>
+<dt><span class="term"><span>ARM </span></span></dt>
+<dd><p>端口是内存映射的, 并且支持所有函数; 字串函数用 C 实现. 端口是 unsigned int 类型.</p></dd>
+<dt><span class="term"><span>Cris </span></span></dt>
+<dd><p>这个体系不支持 I/O 端口抽象, 甚至在一个模拟模式; 各种端口操作定义成什么不做.</p></dd>
+<dt><span class="term"><span>M68k</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>M68k</span></span></dt>
+<dd><p>端口是内存映射的. 支持字串函数, 并且端口类型是 unsigned char.</p></dd>
+<dt><span class="term"><span>MIPS</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>MIPS64 </span></span></dt>
+<dd><p>MIPS 端口支持所有的函数. 字串操作使用紧凑汇编循环来实现, 因为处理器缺乏机器级别的字串 I/O. 端口是内存映射的; 它们是 unsigned long.</p></dd>
+<dt><span class="term"><span>PA</span></span></dt>
+<dd><p>支持所有函数; 端口是 int 在基于 PCI 的系统上以及 unsigned short 在 EISA 系统, 除了字串操作, 它们使用 unsigned long 端口号.</p></dd>
+<dt><span class="term"><span>PowerPC</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>PowerPC64 </span></span></dt>
+<dd><p>支持所有函数; 端口有 unsigned char * 类型在 32-位 系统上并且 unsigned long 在 64-位 系统上.</p></dd>
+<dt><span class="term"><span>S390 </span></span></dt>
+<dd>类似于 M68k, 这个平台的头文件只支持字节宽的端口 I/O, 而没有字串操作. 端口是 char 指针并且是内存映射的.<p></p>
+</dd>
+<dt><span class="term"><span>Super</span></span></dt>
+<dd><p>端口是 unsigned int ( 内存映射的 ), 并且支持所有函数.</p></dd>
+<dt><span class="term"><span>SPARC SPARC64 </span></span></dt>
+<dd><p>再一次, I/O 空间是内存映射的. 端口函数的版本定义来使用 unsigned long 端口.</p></dd>
+</dl></div>
+<p>好奇的读者能够从 io.h 文件中获得更多信息, 这个文件有时定义几个结构特定的函数, 加上我们在本章中描述的那些. 但是, 警告有些这些文件是相当难读的.</p>
+<p>有趣的是注意没有 x86 家族之外的处理器具备一个不同的地址空间给端口, 尽管几个被支持的家族配备有 ISA 和/或 PCI 插槽 ( 并且 2 种总线实现分开的 I/O 和地址空间 ).</p>
+<p>更多地, 有些处理器(最有名的是早期的 Alphas)缺乏一次移动一个或 2 个字节的指令.<sup>[<a name="id456626" href="ch09s02.html#ftn.id456626">35</a>]</sup> 因此, 它们的外设芯片组模拟 8-位 和 16-位 I/O 存取, 通过映射它们到内存地址空间的特殊的地址范围. 因此, 操作同一个端口的一个 inb 和 一个 inw 指令, 通过 2 个操作不同地址的 32-位内存读来实现. 幸运的是, 所有这些都对设备驱动编写者隐藏了, 通过本节中描述的宏的内部, 但是我们觉得它是一个要注意的有趣的特性. 如果你想深入探究, 查找在 include/asm-alpha/core_lca.h 中的例子.</p>
+<p>在每个平台的程序员手册中充分描述了I/O 操作如何在每个平台上进行; 这些手册常常在 WEB 上作为 PDF 下载.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id455968" href="ch09s02.html#id455968">33</a>] </sup>有时 I/O 端口象内存一样安排, 并且你可(例如)绑定 2 个 8-位 写为一个单个 16-位 操作. 例如, 这应用于 PC 视频板. 但是通常, 你不能指望这个特色.</p></div>
+<div class="footnote"><p><sup>[<a name="ftn.id456132" href="ch09s02.html#id456132">34</a>] </sup>技术上, 它必须有 CAP_SYS_RAWIO 能力, 但是在大部分当前系统中这是与作为 root 运行是同样的.</p></div>
+<div class="footnote"><p><sup>[<a name="ftn.id456626" href="ch09s02.html#id456626">35</a>] </sup>单字节 I/O 不是一个人可能想象的那么重要, 因为它是一个稀少的操作. 为读/写一个单字节到任何地址空间, 你需要实现一个数据通道, 连接寄存器组的数据总线的低位到外部数据总线的任意字节位置. 这些数据通道需要额外的逻辑门在每个数据传输的通道上. 丢掉字节宽的载入和存储能够使整个系统性能受益.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch09.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch09.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch09s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;9&#160;章&#160;与硬件通讯&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;9.3.&#160;一个 I/O 端口例子</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

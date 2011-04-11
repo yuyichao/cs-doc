@@ -1,0 +1,306 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>比例构件 Scale Widgets</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="范围构件 Range Widgets"
+HREF="c696.html"><LINK
+REL="PREVIOUS"
+TITLE="范围构件 Range Widgets"
+HREF="c696.html"><LINK
+REL="NEXT"
+TITLE="常用的范围函数"
+HREF="x747.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c696.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>范围构件 Range Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x747.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-SCALEWIDGETS">比例构件 Scale Widgets</H1
+><P
+>比例构件(Scale widgets)一般用于允许用户在一个指定的取值范围你可视地选择和操纵一个值。例如，在图片的缩放预览中调整放大倍数，或控制一种颜色的亮度，或在指定屏幕保护启动之前不活动的时间间隔时，可能需要用到比例构件。</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN711">创建一个比例构件</H2
+><P
+>像滚动条一样，有水平和垂直两种不同类型的比例构件。(大多数程序员似乎喜欢水平的比例构件。)既然在本质上它们的工作方式是相同的，那么不需要对它们分别对待。下面的函数分别创建垂直和水平的比例构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_vscale_new( GtkAdjustment *adjustment );
+
+GtkWidget *gtk_vscale_new_with_range( gdouble min,
+                                      gdouble max,
+                                      gdouble step );
+
+GtkWidget *gtk_hscale_new( GtkAdjustment *adjustment );
+
+GtkWidget *gtk_hscale_new_with_range( gdouble min,
+                                      gdouble max,
+                                      gdouble step );</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>adjustment</TT
+> 参数可以是一个已经用 gtk_adjustment_new() 创建了的调整对象，或 NULL，此时,会创建一个匿名的调整对象，所有的值都设为<TT
+CLASS="LITERAL"
+>0.0</TT
+>(在此处用处不大)。为了避免把自己搞糊涂，你可能想要创建一个 <TT
+CLASS="LITERAL"
+>page_size</TT
+> 值设为 <TT
+CLASS="LITERAL"
+>0.0</TT
+> 的调整对象，让它的 <TT
+CLASS="LITERAL"
+>upper</TT
+> 值与用户能选择的最高值相对应。而 _new_with_range() 函数会照顾到创建一个适当的调整对象。(如果你<I
+CLASS="EMPHASIS"
+>已经</I
+>彻底困惑了，看看<A
+HREF="c628.html"
+>调整对象</A
+>这一章，它解释了调整对象的作用和怎样创建和操作它们。)</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN723">函数和信号(至少讲了函数)</H2
+><P
+>比例构件可以在滑槽的旁边以数字形式显示其当前值。默认行为是显示值,但是可以用下面这个函数改变其行为：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_scale_set_draw_value( GtkScale *scale,
+                               gboolean draw_value );</PRE
+></TD
+></TR
+></TABLE
+><P
+>可以猜到，<TT
+CLASS="LITERAL"
+>draw_value</TT
+>取值为 <TT
+CLASS="LITERAL"
+>TRUE</TT
+> 或 <TT
+CLASS="LITERAL"
+>FALSE</TT
+>，结果是显示或不显示。</P
+><P
+>缺省情况下，比例构件显示的值，也就是在它的调整对象定义中的<TT
+CLASS="LITERAL"
+>value</TT
+>域，圆整到一位小数。可以用以下函数改变显示的小数位：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_scale_set_digits( GtkScale *scale,
+                            gint     digits );</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>digits</TT
+>是要显示的小数位数。可以将<TT
+CLASS="LITERAL"
+>digits</TT
+>设置为任意位数，但是实际上屏幕上最多只能显示13位小数。</P
+><P
+>最后，显示的值可以放在滑槽附近的不同位置：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_scale_set_value_pos( GtkScale        *scale,
+                              GtkPositionType  pos );</PRE
+></TD
+></TR
+></TABLE
+><P
+>参数<TT
+CLASS="LITERAL"
+>pos</TT
+>是<TT
+CLASS="LITERAL"
+>GtkPositionType</TT
+>类型，可以取以下值之一：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  GTK_POS_LEFT
+  GTK_POS_RIGHT
+  GTK_POS_TOP
+  GTK_POS_BOTTOM</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果将值显示在滑槽的“侧面”(例如，在水平比例构件的滑槽的顶部和底部)，显示的值将跟随滑块上下移动。</P
+><P
+>所有前面讲的函数都在<TT
+CLASS="LITERAL"
+>&#60;gtk/gtkscale.h&#62;</TT
+>里定义。当你包含了<TT
+CLASS="LITERAL"
+>&#60;gtk/gtk.h&#62;</TT
+>文件时，所有 GTK 构件的头文件都自动包含了。但你应该去察看一下所有你感兴趣的构件的头文件，这样才能学到它们的更多的功能和特性。</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c696.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x747.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>范围构件 Range Widgets</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c696.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>常用的范围函数</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

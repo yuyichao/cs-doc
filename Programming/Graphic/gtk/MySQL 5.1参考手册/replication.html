@@ -1,0 +1,1541 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 6. Replication in MySQL</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="database-administration.html" title="Chapter 5. Database Administration"><link rel="next" href="optimization.html" title="Chapter 7. Optimization">
+<style>
+<!--
+span.GramE
+	{}
+span.quote
+	{}
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="replication"></a>
+	第6章：MySQL中的复制</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="replication.html#replication-intro">
+			6.1. 复制介绍</a></span></dt><dt><span class="section"><a href="replication.html#replication-implementation">
+			6.2. 复制实施概述</a></span></dt><dt><span class="section"><a href="replication.html#replication-implementation-details">
+			6.3. 复制实施细节</a></span></dt><dd><dl><dt><span class="section"><a href="replication.html#master-thread-states">
+				6.3.1. 复制主线程状态</a></span></dt><dt><span class="section"><a href="replication.html#slave-io-thread-states">
+				6.3.2. 复制从I/O线程状态</a></span></dt><dt><span class="section"><a href="replication.html#slave-sql-thread-states">
+				6.3.3. 复制从SQL线程状态</a></span></dt><dt><span class="section"><a href="replication.html#slave-logs">
+				6.3.4. 复制传递和状态文件</a></span></dt></dl></dd><dt><span class="section"><a href="replication.html#replication-howto">
+			6.4. 如何设置复制</a></span></dt><dt><span class="section"><a href="replication.html#replication-compatibility">
+			6.5. 不同MySQL版本之间的复制兼容性</a></span></dt><dt><span class="section"><a href="replication.html#replication-upgrade">
+			6.6. 升级复制设置</a></span></dt><dd><dl><dt><span class="section"><a href="replication.html#replication-upgrade-5-0">
+				6.6.1. 将复制升级到5.0版</a></span></dt></dl></dd><dt><span class="section"><a href="replication.html#replication-features">
+			6.7. 复制特性和已知问题</a></span></dt><dt><span class="section"><a href="replication.html#replication-options">
+			6.8. 复制启动选项</a></span></dt><dt><span class="section"><a href="replication.html#replication-faq">
+			6.9. 复制FAQ</a></span></dt><dt><span class="section"><a href="replication.html#replication-problems">
+			6.10. 复制故障诊断与排除</a></span></dt><dt><span class="section"><a href="replication.html#replication-bugs">
+			6.11. 通报复制缺陷</a></span></dt><dt><span class="section"><a href="replication.html#replication-auto-increment">
+			6.12. 多服务器复制中的Auto-Increment</a></span></dt></dl></div><a class="indexterm" name="id2790876"></a><a class="indexterm" name="id2790882"></a><a class="indexterm" name="id2790892"></a><a class="indexterm" name="id2790903"></a>
+	<p>本章描述了<span>MySQL</span>提供的各种复制特性。引入了复制概念，显示如何设置复制服务器和服务以指导相应的复制选项。还提供了<span>FAQ(</span>以及答案<span>)
+	</span>列表，以及解决复制问题的排错建议。</p>
+	<p>关于复制相关的<span>SQL</span>语句的语法描述，参见<a href="sql-syntax.html#replication-sql" title="13.6. Replication Statements">13.6节，“复制语句”</a>。</p>
+	<p>我们建议你经常访问我们的网址<span>http://www.mysql.com</span>，并检查对本章的修改。复制在不断地得到改进，我们用最新的信息定期更新本手册。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-intro"></a>
+		6.1.&nbsp;复制介绍</h2></div></div></div>
+		<p><span>MySQL</span>支持单向、异步复制，复制过程中一个服务器充当主服务器，而一个或多个其它服务器充当从服务器。<span>(</span>这与<em><span>同步</span></em>复制可以进行对比，<em><span style="font-family:
+宋体">同步</span></em>复制是<span>MySQL</span>簇的一个特征—参见<a href="ndbcluster.html">第17章：</a><a href="ndbcluster.html" title="Chapter 17. MySQL Cluster"><i>MySQL簇</i></a>）<span>。</span>主服务器将更新写入二进制日志文件，并维护文件的一个索引以跟踪日志循环。这些日志可以记录发送到从服务器的更新。当一个从服务器连接主服务器时，它通知主服务器从服务器在日志中读取的最后一次成功更新的位置。从服务器接收从那时起发生的任何更新，然后封锁并等待主服务器通知新的更新。</p>
+		<p>如果你想要设置链式复制服务器，从服务器本身也可以充当主服务器。</p>
+		<p>
+		请注意当你进行复制时，所有对复制中的表的更新必须在主服务器上进行。否则，你必须要小心，以避免用户对主服务器上的表进行的更新与对从服务器上的表所进行的更新之间的冲突。</p>
+		<p>单向复制有利于健壮性、速度和系统管理：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>主服务器<span>/</span>从服务器设置增加了健壮性。主服务器出现问题时，你可以切换到从服务器作为备份。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>通过在主服务器和从服务器之间切分处理客户查询的负荷，可以得到更好的客户响应时间。<span>SELECT</span>查询可以发送到从服务器以降低主服务器的查询处理负荷。但修改数据的语句仍然应发送到主服务器，以便主服务器和从服务器保持同步。如果非更新查询为主，该负载均衡策略很有效，但一般是更新查询。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>使用复制的另一个好处是可以使用一个从服务器执行备份，而不会干扰主服务器。在备份过程中主服务器可以继续处理更新。参见<a href="database-administration.html#backup" title="5.9.1. Database Backups">5.9.1节，“数据库备份”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-implementation"></a>
+		6.2.&nbsp;复制实施概述</h2></div></div></div><a class="indexterm" name="id2791064"></a>
+		<p><span>MySQL</span>复制基于主服务器在二进制日志中跟踪所有对数据库的更改<span>(</span>更新、删除等等<span>)</span>。因此，要进行复制，必须在主服务器上启用二进制日志。参见<a href="database-administration.html#binary-log" title="5.11.3. The Binary Log">5.11.3节，“二进制日志”</a>。</p>
+		<p>每个从服务器从主服务器接收主服务器已经记录到其二进制日志的保存的更新，以便从服务器可以对其数据拷贝执行相同的更新。</p>
+		<p>认识到二进制日志只是一个从启用二进制日志的固定时间点开始的记录<em><span>非常</span></em>重要。任何设置的从服务器需要主服务器上的<em><span>在主服务器上启用二进制日志时的</span></em>数据库拷贝。如果启动从服务器时，其数据库与主服务器上的启动二进制日志时的状态不相同，从服务器很可能失败。</p>
+		<p>将主服务器的数据拷贝到从服务器的一个途径是使用<span>LOAD 
+		DATA FROM MASTER</span>语句。请注意<span>LOAD 
+		DATA FROM MASTER</span>目前只在所有表使用<span>MyISAM</span>存储引擎的主服务器上工作。并且，该语句将获得全局读锁定，因此当表正复制到从服务器上时，不可能在主服务器上进行更新。当我们执行表的无锁热备份时，则不再需要全局读锁定。</p>
+		<p>由于这些限制，我们建议只有主服务器上的数据集相对较小，或者主服务器上延迟读锁定已经被接受，才可以使用<span>LOAD 
+		DATA FROM MASTER</span>。而<span>LOAD 
+		DATA FROM MASTER</span>的实际速度随系统的不同而不同，对于执行时间，最好的规则是每<span>1MB</span>的数据用<span>1</span>秒钟。这是一个粗略的估计，但你会发现如果主服务器和从服务器的性能上等价于<span>700MHz 
+		Pentium CPU</span>，通过<span>100Mbps</span>的网络进行连接，则该估计相当准确。</p>
+		<p>
+		从服务器设置为复制主服务器的数据后，它连接主服务器并等待更新过程。如果主服务器失败，或者从服务器失去与主服务器之间的连接，从服务器保持定期尝试连接，直到它能够继续帧听更新。由<span>--master-connect-retry</span>选项控制重试间隔。
+		默认为<span>60</span>秒。</p>
+		<p>每个从服务器跟踪复制时间。主服务器不知道有多少个从服务器或在某一时刻有哪些被更新了。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-implementation-details"></a>
+		6.3.&nbsp;复制实施细节</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="replication.html#master-thread-states">
+			6.3.1. 复制主线程状态</a></span></dt><dt><span class="section"><a href="replication.html#slave-io-thread-states">
+			6.3.2. 复制从I/O线程状态</a></span></dt><dt><span class="section"><a href="replication.html#slave-sql-thread-states">
+			6.3.3. 复制从SQL线程状态</a></span></dt><dt><span class="section"><a href="replication.html#slave-logs">
+			6.3.4. 复制传递和状态文件</a></span></dt></dl></div>
+		<p><span>MySQL</span>使用<span>3</span>个线程来执行复制功能<span>(</span>其中<span>1</span>个在主服务器上，另两个在从服务器上。当发出<span>START 
+		SLAVE</span>时，从服务器创建一个<span>I/O</span>线程，以连接主服务器并让它发送记录在其二进制日志中的语句。主服务器创建一个线程将二进制日志中的内容发送到从服务器。该线程可以识别为主服务器上<span>SHOW 
+		PROCESSLIST</span>的输出中的<span>Binlog 
+		Dump</span>线程。从服务器<span>I/O</span>线程读取主服务器<span>Binlog 
+		Dump</span>线程发送的内容并将该数据拷贝到从服务器数据目录中的本地文件中，即<em><span>中继日志</span></em>。第<span>3</span>个线程是<span>SQL</span>线程，是从服务器创建用于读取中继日志并执行日志中包含的更新。</p>
+		<p>在前面的描述中，每个从服务器有<span>3</span>个线程。有多个从服务器的主服务器创建为每个当前连接的从服务器创建一个线程；每个从服务器有自己的<span>I/O</span>和<span>SQL</span>线程。</p>
+		<p>
+		这样读取和执行语句被分成两个独立的任务。如果语句执行较慢则语句读取任务没有慢下来。例如，如果从服务器有一段时间没有运行了，当从服务器启动时，其<span>I/O</span>线程可以很快地从主服务器索取所有二进制日志内容，即使<span>SQL</span>线程远远滞后。如果从服务器在<span>SQL</span>线程执行完所有索取的语句前停止，<span>I/O
+		</span>
+		线程至少已经索取了所有内容，以便语句的安全拷贝保存到本地从服务器的中继日志中，供从服务器下次启动时执行。这样允许清空主服务器上的二进制日志，因为不再需要等候从服务器来索取其内容。</p>
+		<p>
+		<span>SHOW PROCESSLIST</span>语句可以提供在主服务器上和从服务器上发生的关于复制的信息。</p>
+		<p>下面的例子说明了这<span>3</span>个线程在<span>SHOW PROCESSLIST</span>中的显示。</p>
+		<p>在主服务器上，<span>SHOW PROCESSLIST</span>的输出看上去应为：</p>
+		<pre><span>mysql&gt; </span><span><b><span >SHOW PROCESSLIST\G</span></b></span></pre>
+		<pre><span>*************************** 1. row ***************************</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; Id: 2</span></pre>
+		<pre><span>&nbsp; &nbsp;User: root</span></pre>
+		<pre><span>&nbsp;&nbsp; Host: localhost:32931</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; db: NULL</span></pre>
+		<pre><span>Command: Binlog Dump</span></pre>
+		<pre><span>&nbsp;&nbsp; Time: 94</span></pre>
+		<pre><span>&nbsp; State: Has sent all binlog to slave; waiting for binlog to</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; be updated</span></pre>
+		<pre><span>&nbsp;&nbsp; Info: NULL</span></pre>
+		<p>这儿，线程<span>2</span>是一个连接从服务器的复制线程。该信息表示所有主要更新已经被发送到从服务器，主服务器正等待更多的更新出现。</p>
+		<p>在从服务器上，<span>SHOW PROCESSLIST</span>的输出看上去应为：</p>
+		<pre><span>mysql&gt; </span><span><b><span >SHOW PROCESSLIST\G</span></b></span></pre>
+		<pre><span>*************************** 1. row ***************************</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; Id: 10</span></pre>
+		<pre><span>&nbsp;&nbsp; User: system user</span></pre>
+		<pre><span>&nbsp;&nbsp; Host:</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; db: NULL</span></pre>
+		<pre><span>Command: Connect</span></pre>
+		<pre><span>&nbsp;&nbsp; Time: 11</span></pre>
+		<pre><span>&nbsp; State: Waiting for master to send event</span></pre>
+		<pre><span>&nbsp;&nbsp; Info: NULL</span></pre>
+		<pre><span>*************************** 2. row ***************************</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; Id: 11</span></pre>
+		<pre><span>&nbsp;&nbsp; User: system user</span></pre>
+		<pre><span>&nbsp;&nbsp; Host:</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; db: NULL</span></pre>
+		<pre><span>Command: Connect</span></pre>
+		<pre><span>&nbsp;&nbsp; Time: 11</span></pre>
+		<pre><span>&nbsp; State: Has read all relay log; waiting for the slave I/O</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; thread to update it</span></pre>
+		<pre><span>&nbsp;&nbsp; Info: NULL</span></pre>
+		<p>该信息表示线程<span>10</span>是同主服务器通信的<span>I/O</span>线程，线程<span>11</span>是处理保存在中继日志中的更新的<span>SQL</span>线程。<span>SHOW 
+		PROCESSLIST</span>运行时，两个线程均空闲，等待其它更新。</p>
+		<p>请注意<span>Time</span>列的值可以显示从服务器比主服务器滞后多长时间。参见<a href="replication.html#replication-faq" title="6.9. Replication FAQ">6.9节，“复制FAQ”</a>。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="master-thread-states"></a>
+			6.3.1.&nbsp;复制主线程状态</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			下面列出了主服务器的<span>Binlog 
+			Dump</span>线程的<span>State</span>列的最常见的状态。如果你没有在主服务器上看见任何<span>Binlog 
+			Dump</span>线程，这说明复制没有在运行—即，目前没有连接任何从服务器。<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Sending binlog event to 
+			slave</span></p>
+			<p>
+			二进制日志由各种事件组成，一个事件通常为一个更新加一些其它信息。线程已经从二进制日志读取了一个事件并且正将它发送到从服务器。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Finished reading one 
+			binlog; switching to next binlog</span></p>
+			<p>线程已经读完二进制日志文件并且正打开下一个要发送到从服务器的日志文件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Has sent all binlog to 
+			slave; waiting for binlog to be updated</span></p>
+			<p>
+			线程已经从二进制日志读取所有主要的更新并已经发送到了从服务器。线程现在正空闲，等待由主服务器上新的更新导致的出现在二进制日志中的新事件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Waiting to finalize 
+			termination</span></p>
+			<p>线程停止时发生的一个很简单的状态。</p>
+			<h3 class="title"><a name="slave-io-thread-states"></a>
+			6.3.2.&nbsp;复制从I/O线程状态</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			下面列出了从服务器的<span>I/O</span>线程的<span>State</span>列的最常见的状态。该状态也出现在<span>Slave_IO_State</span>列，由<span>SHOW 
+			SLAVE STATUS</span>显示。这说明你可以只通过该语句仔细浏览所发生的事情。<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Connecting to master</span></p>
+			<p>线程正试图连接主服务器。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Checking master version</span></p>
+			<p>建立同主服务器之间的连接后立即临时出现的状态。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Registering slave on 
+			master</span></p>
+			<p>建立同主服务器之间的连接后立即临时出现的状态。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Requesting binlog dump</span></p>
+			<p>
+			建立同主服务器之间的连接后立即临时出现的状态。线程向主服务器发送一条请求，索取从请求的二进制日志文件名和位置开始的二进制日志的内容。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Waiting to reconnect after 
+			a failed binlog dump request</span></p>
+			<p>如果二进制日志转储请求失败<span>(</span>由于没有连接<span>)</span>，线程进入睡眠状态，然后定期尝试重新连接。可以使用<span>--master-connect-retry</span>选项指定重试之间的间隔。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Reconnecting after a 
+			failed binlog dump request</span></p>
+			<p>线程正尝试重新连接主服务器。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Waiting for master to send 
+			event</span></p>
+			<p>
+			线程已经连接上主服务器，正等待二进制日志事件到达。如果主服务器正空闲，会持续较长的时间。如果等待持续<span>slave_read_timeout</span>秒，则发生超时。此时，线程认为连接被中断并企图重新连接。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Queueing master event to 
+			the relay log</span></p>
+			<p>线程已经读取一个事件，正将它复制到中继日志供<span>SQL</span>线程来处理。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Waiting to reconnect after 
+			a failed master event read</span></p>
+			<p>读取时<span>(</span>由于没有连接<span>)</span>出现错误。线程企图重新连接前将睡眠<span>master-connect-retry</span>秒。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Reconnecting after a 
+			failed master event read</span></p>
+			<p>线程正尝试重新连接主服务器。当连接重新建立后，状态变为<span>Waiting 
+			for master to send event</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Waiting for the slave SQL 
+			thread to free enough relay log space</span></p>
+			<p>正使用一个非零<span>relay_log_space_limit</span>值，中继日志已经增长到其组合大小超过该值。<span>I/O</span>线程正等待直到<span>SQL</span>线程处理中继日志内容并删除部分中继日志文件来释放足够的空间。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Waiting for slave mutex on 
+			exit</span></p>
+			<p>线程停止时发生的一个很简单的状态。</p>
+			<h3 class="title"><a name="slave-sql-thread-states"></a>
+			6.3.3.&nbsp;复制从SQL线程状态</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			下面列出了从服务器的<span>SQL</span>线程的<span>State</span>列的最常见的状态。<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Reading event from the 
+			relay log</span></p>
+			<p>线程已经从中继日志读取一个事件，可以对事件进行处理了。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Has read all relay log; 
+			waiting for the slave I/O thread to update it</span></p>
+			<p>线程已经处理了中继日志文件中的所有事件，现在正等待<span>I/O</span>线程将新事件写入中继日志。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>Waiting for slave mutex on 
+			exit</span></p>
+			<p>线程停止时发生的一个很简单的状态。</p>
+			<p><span>I/O</span>线程的<span>State</span>列也可以显示语句的文本。这说明线程已经从中继日志读取了一个事件，从中提取了语句，并且正在执行语句。</p>
+			<h3 class="title"><a name="slave-logs"></a>
+			6.3.4.&nbsp;复制传递和状态文件</h3></div></div></div>
+			<p>默认情况，中继日志使用<span><i><span>host_name-relay-bin.nnnnnn</span></i></span>形式的文件名，其中<span><i><span>host_name</span></i></span>是从服务器主机名，<span><i><span>nnnnnn</span></i></span>是序列号。用连续序列号来创建连续中继日志文件，从<span>000001</span>开始<span>。</span>从服务器跟踪索引文件中目前正使用的中继日志。
+			默认中继日志索引文件名为<span><i><span>host_name-relay-bin.index</span></i></span>。默认情况，在从服务器的数据目录中创建这些文件。可以用<span>--relay-log</span>和<span>--relay-log-index</span>服务器选项覆盖
+			默认文件名。参见<a href="replication.html#replication-options" title="6.8. Replication Startup Options">6.8节，“复制启动选项”</a>。</p>
+			<p>中继日志与二进制日志的格式相同，并且可以用<strong><span>mysqlbinlog</span></strong>读取。<span>SQL</span>线程执行完中继日志中的所有事件并且不再需要之后，立即自动删除它。没有直接的删除中继日志的机制，因为<span>SQL</span>线程可以负责完成。然而，<span>FLUSH 
+			LOGS</span>可以循环中继日志，当<span>SQL</span>线程删除日志时会有影响。</p>
+			<p>在下面的条件下创建新的中继日志：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>每次<span>I/O</span>线程启动时创建一个新的中继日志。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当日志被刷新时；例如，用<span>FLUSH 
+			LOGS</span>或<strong><span>mysqladmin 
+			flush-logs</span></strong>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当当前的中继日志文件变得太大时。“<span class="quote">太大</span>”含义的确定方法：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>max_relay_log_size</span>，如果<span>max_relay_log_size</span><span> 
+			&gt; 0</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>max_binlog_size</span>，如果<span>max_relay_log_size</span><span> 
+			= 0</span></p>
+			<p>从属复制服务器在数据目录中另外创建两个小文件。这些<em><span>状态文件</span></em>默认名为主<span>master.info</span>和<span>relay-log.info</span>。它们包含<span>SHOW 
+			SLAVE STATUS</span>语句的输出所显示的信息<span>(</span>关于该语句的描述参见<a href="sql-syntax.html#replication-slave-sql" title="13.6.2. SQL Statements for Controlling Slave Servers">13.6.2节，“用于控制从服务器的SQL语句”</a><span>)</span>。状态文件保存在硬盘上，从服务器关闭时不会丢失。下次从服务器启动时，读取这些文件以确定它已经从主服务器读取了多少二进制日志，以及处理自己的中继日志的程度。</p>
+			<p>由<span>I/O</span>线程更新<span>master.info</span>文件。文件中的行和<span>SHOW 
+			SLAVE STATUS</span>显示的列的对应关系为：</p>
+			<table border="1" cellpadding="0" id="table1">
+				<tr>
+					<td>
+					<p><strong><span>行</span></strong></td>
+					<td>
+					<p><strong><span>描述</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>1</span></td>
+					<td>
+					<p>文件中的行号</td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>2</span></td>
+					<td>
+					<p>
+					<span>Master_Log_File</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>3</span></td>
+					<td>
+					<p>
+					<span>
+					Read_Master_Log_Pos</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>4</span></td>
+					<td>
+					<p>
+					<span>Master_Host</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>5</span></td>
+					<td>
+					<p>
+					<span>Master_User</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>6</span></td>
+					<td>
+					<p>密码<span>(</span>不由<span>SHOW 
+					SLAVE STATUS</span>显示<span>)</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>7</span></td>
+					<td>
+					<p>
+					<span>Master_Port</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>8</span></td>
+					<td>
+					<p>
+					<span>Connect_Retry</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>9</span></td>
+					<td>
+					<p>
+					<span>
+					Master_SSL_Allowed</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>10</span></td>
+					<td>
+					<p>
+					<span>
+					Master_SSL_CA_File</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>11</span></td>
+					<td>
+					<p>
+					<span>
+					Master_SSL_CA_Path</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>12</span></td>
+					<td>
+					<p>
+					<span>Master_SSL_Cert</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>13</span></td>
+					<td>
+					<p>
+					<span>
+					Master_SSL_Cipher</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>14</span></td>
+					<td>
+					<p>
+					<span>Master_SSL_Key</span></td>
+				</tr>
+			</table>
+			<p>由<span>SQL</span>线程更新<span>relay-log.info</span>文件。文件中的行和<span>SHOW 
+			SLAVE STATUS</span>显示的列的对应关系为：</p>
+			<table border="1" cellpadding="0" id="table2">
+				<tr>
+					<td>
+					<p><strong><span>行</span></strong></td>
+					<td>
+					<p><strong><span>描述</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>1</span></td>
+					<td>
+					<p>
+					<span>Relay_Log_File</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>2</span></td>
+					<td>
+					<p>
+					<span>Relay_Log_Pos</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>3</span></td>
+					<td>
+					<p>
+					<span>
+					Relay_Master_Log_File</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>4</span></td>
+					<td>
+					<p>
+					<span>
+					Exec_Master_Log_Pos</span></td>
+				</tr>
+			</table>
+			<p>
+			当备份从服务器的数据时，你还应备份这两个小文件以及中继日志文件。它们用来在恢复从服务器的数据后继续进行复制。如果丢失了中继日志但仍然有<span>relay-log.info</span>文件，你可以通过检查该文件来确定<span>SQL</span>线程已经执行的主服务器中二进制日志的程度。然后可以用<span>Master_Log_File</span>和<span>Master_LOG_POS</span>选项执行<span>CHANGE 
+			MASTER TO</span>来告诉从服务器重新从该点读取二进制日志。当然，要求二进制日志仍然在主服务器上。</p>
+			<p>如果从服务器正复制<span>LOAD 
+			DATA INFILE</span>语句，你应也备份该目录内从服务器用于该目的的任何<span>SQL_LOAD-*</span>文件。从服务器需要这些文件继续复制任何中断的<span>LOAD 
+			DATA INFILE</span>操作。用<span>--slave-load-tmpdir</span>选项来指定目录的位置。如果未指定，
+			默认值为<span>tmpdir</span>变量的值。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-howto"></a>
+		6.4.&nbsp;如何设置复制</h2></div></div></div>
+		<p>这里简单描述了如何为你当前的<span>MySQL</span>服务器设置完整的复制。假设你想要复制主服务器上的所有数据库，并且还没有配置的复制。你需要关闭主服务器来完成下面所列的步骤。</p>
+		<p>下面的程序针对设置一个从服务器，你可以用来设置多个从服务器。</p>
+		<p>虽然该方法是设置从服务器的最直接的途径，它并不是唯一的一个。例如，如果你有一个主服务器的数据快照，并且主服务器已经设置了服务器<span>ID</span>，启用了二进制日志，不需要关闭主服务器或停止对它的更新也可以设置从服务器。详情请参见<a href="replication.html#replication-faq" title="6.9. Replication FAQ">6.9节，“复制FAQ”</a>。</p>
+		<p>如果想要管理<span>MySQL</span>复制设置，我们建议你通读本章，并尝试<a href="sql-syntax.html#replication-master-sql" title="13.6.1. SQL Statements for Controlling Master Servers">13.6.1节，“用于控制主服务器的SQL语句”</a>和<a href="sql-syntax.html#replication-slave-sql" title="13.6.2. SQL Statements for Controlling Slave Servers">13.6.2节，“用于控制从服务器的SQL语句”</a>中的所有语句。还应熟悉<a href="replication.html#replication-options" title="6.8. Replication Startup Options">6.8节，“复制启动选项”</a>中描述的复制启动选项。</p>
+		<p><strong><span>注释：</span></strong>该程序和后面章节所示的复制<span>SQL</span>语句需要<span>SUPER</span>权限。</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>确保在服务器和从服务器上安装的<span>MySQL</span>版本与<a href="replication.html#replication-compatibility" title="6.5. Replication Compatibility Between MySQL Versions">6.5节，“不同MySQL版本之间的复制兼容性”</a>所示的表兼容。理想情况，应在主服务器和从服务器上使用最近版本的<span>MySQL</span>。</p>
+		<p>请先证实问题不是出现在最新的<span>MySQL</span>版本中再通报<span>bug</span>。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>在主服务器上为服务器设置一个连接账户。该账户必须授予<span>REPLICATION 
+		SLAVE</span>权限。如果账户仅用于复制<span>(</span>推荐这样做<span>)</span>，则不需要再授予任何其它权限。<span>(</span>关于设置用户
+		账户和权限的信息，参见<a href="database-administration.html#user-account-management" title="5.8. MySQL User Account Management">5.8节，“MySQL用户账户管理”</a>）<span>。</span></p>
+		<p>假定你的域为<span>mydomain.com</span><span>,</span>想要创建用户名为<span>repl</span>的一个账户，从服务器可以使用该账户从你的域内的任何主机使用密码<span>slavepass</span>来访问主服务器。要创建该
+		账户，可使用<span>GRANT</span>语句：</p>
+		<pre ><span>mysql&gt; </span><span><b><span >GRANT REPLICATION SLAVE ON *.*</span></b></span></pre>
+		<pre ><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span >TO &#39;repl&#39;@&#39;%.mydomain.com&#39; IDENTIFIED BY &#39;slavepass&#39;;</span></b></span></pre>
+		<p>如果你计划从从属服务器主机使用<span>LOAD 
+		TABLE FROM MASTER</span>或<span>LOAD 
+		DATA FROM MASTER</span>语句，你需要授予该账户其它权限：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>授予账户<span>SUPER</span>和<span>RELOAD</span>全局权限。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>为所有想要装载的表授予<span>SELECT</span>权限。任何该
+		账户不能<span>SELECT</span>的主服务器上的表被<span>LOAD 
+		DATA FROM MASTER</span>忽略掉。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>执行<span>FLUSH 
+		TABLES WITH READ LOCK</span>语句清空所有表和块写入语句：</p>
+		<pre><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>mysql&gt; </span><span><b><span>FLUSH TABLES WITH READ LOCK</span><span>；</span></b></span></pre>
+		<p>对于<span>InnoDB</span>表，请注意：<span>FLUSH 
+		TABLES WITH READ LOCK</span>还锁定<span>COMMIT</span>操作。当获得全局读锁定后，可以开始<span>InnoDB</span>表的文件系统快照。快照不能保证内部<span>(</span>在<span>InnoDB</span>存储引擎内部<span>)</span>一致性<span>(</span>因为<span>InnoDB</span>缓存没有刷新<span>)</span>，但并不需要关心该问题，因为<span>InnoDB</span>可以在启动时解决该问题并给出一致的结果。这说明<span>InnoDB</span>在启动快照时可以进行崩溃恢复，而不会破坏。然而，当保证一致的<span>InnoDB</span>表快照时，还没有途径来停止<span>MySQL</span>服务器。</p>
+		<p>让客户程序保持运行，发出<span>FLUSH 
+		TABLES</span>语句让读锁定保持有效。<span>(</span>如果退出客户程序，锁被释放）<span>。</span>然后对主服务器上的数据进行快照。</p>
+		<p>
+		创建快照最简单的途径是使用归档程序对主服务器上的数据目录中的数据库进行二进制备份。例如，在<span>Unix</span>中使用<strong><span>tar</span></strong>，或者在<span>Windows</span>中使用<strong><span>PowerArchiver</span><span>、<span>WinRAR</span></span></strong>、<strong><span>WinZip</span></strong>或者类似的软件。要使用<strong><span>tar</span></strong>来创建包括所有数据库的归档文件，进入主服务器的数据目录，然后执行命令：</p>
+		<pre ><span>shell&gt; </span><span><b><span>tar -cvf /tmp/mysql-snapshot.tar </span><span >.</span></b></span></pre>
+		<p>如果你想让归档只包括<span>this_db</span>数据库，应使用命令：</p>
+		<pre ><span>shell&gt; </span><span><b><span>tar -cvf /tmp/mysql-snapshot.tar </span><span >.</span><span>/this_db</span></b></span></pre>
+		<p>然后将归档文件复制到从服务器主机的<span>/tmp</span>目录。在该机器上，进入从服务器的数据目录，并使用下述命令解压缩归档文件：</p>
+		<pre ><span>shell&gt; </span><span><b><span>tar -xvf /tmp/mysql-snapshot.tar</span></b></span></pre>
+		<p>如果从服务器的用户账户与主服务器的不同，你可能不想复制<span>mysql</span>数据库。在这种情况下，应从归档中排除该数据库。你也不需要在归档中包括任何日志文件或者<span>master.info</span>或<span>relay-log.info</span>文件。</p>
+		<p>
+		<span>当<span>FLUSH TABLES WITH READ 
+		LOCK</span></span>所置读锁定有效时，读取主服务器上当前的二进制日志名和偏移量值：</p>
+		<pre ><span>mysql &gt; SHOW MASTER STATUS;</span></pre>
+		<pre ><span>+---------------+----------+--------------+------------------+</span></pre>
+		<pre ><span>| File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Position | Binlog_Do_DB | Binlog_Ignore_DB |</span></pre>
+		<pre ><span>+---------------+----------+--------------+------------------+</span></pre>
+		<pre ><span>| mysql-bin.003 | 73&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | test&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | manual,mysql&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre ><span>+---------------+----------+--------------+------------------+</span></pre>
+		<p>
+		<span>File</span>列显示日志名，而<span>Position</span>显示偏移量。在该例子中，二进制日志值为<span>mysql-bin.003</span>，偏移量为<span>73</span>。记录该值。以后设置从服务器时需要使用这些值。它们表示复制坐标，从服务器应从该点开始从主服务器上进行新的更新。</p>
+		<p>取得快照并记录日志名和偏移量后，可以在主服务器上重新启用写活动：</p>
+		<pre ><span>mysql&gt; </span><span><b><span>UNLOCK TABLES</span><span>；</span></b></span></pre>
+		<p>如果你正使用<span>InnoDB</span>表，理想情况应使用<span><b><span>InnoDB 
+		Hot Backup</span></b></span>工具，使用该工具可以获得一致的快照而不需要在主服务器上进行锁定，并且可以对应从服务器上使用的快照来记录日志名和偏移量。<strong><span>Hot 
+		Backup</span></strong>是一个附加的非免费<span>(</span>商业<span>)</span>工具，没有包含在标准<span> 
+		MySQL</span>分发中。详细信息参见<span><a target="_top"  href="http://www.innodb.com/manual.php">http://www.innodb.com/manual.php</a></span>的<span><b><span>InnoDB 
+		Hot Backup</span></b></span>主页。</p>
+		<p>不使用<strong><span>Hot 
+		Backup</span></strong>工具，最快捷的途径是使用<span>InnoDB</span>表的二进制快照来关闭主服务器并复制<span>InnoDB</span>数据文件、日志文件和表定义文件<span>(</span><span>.frm</span>文件<span>)</span>。要记录当前的日志文件名和偏移量，关闭服务器之前应发出下面的语句：</p>
+		<pre ><span>mysql&gt; </span><span><b><span >FLUSH TABLES WITH READ LOCK;</span></b></span></pre>
+		<pre ><span>mysql&gt; </span><span><b><span >SHOW MASTER STATUS;</span></b></span></pre>
+		<p>然后记录前面所示的<span>SHOW MASTER 
+		STATUS</span>的输出中显示的日志名和偏移量。记录日志名和偏移量后，<i>不</i>解锁表关闭服务器以确保<span>&nbsp;
+		</span>服务器关闭时的快照与当前的日志文件和偏移量相对应：</p>
+		<pre ><span>shell&gt; </span><span><b><span >mysqladmin -u root shutdown</span></b></span></pre>
+		<p>适合<span>MyISAM</span>和<span>InnoDB</span>表的另一个方法是对主服务器上的<span>SQL</span>进行转储而不是对前面讨论的二进制复制进行转储。为了实现，可以在主服务器上使用<strong><span>mysqldump 
+		--master-data</span></strong>，以后将<span>SQL</span>转储文件装入从服务器。但是，这样比二进制复制要慢一些。</p>
+		<p>如果主服务器运行时没有启用<span>--logs-bin</span>，<span>SHOW 
+		MASTER STATUS</span>或<strong><span>mysqldump 
+		--master-data</span></strong>显示的日志名和位置值为空。在这种情况下，当以后指定从服务器的日志文件和位置时需要使用的值为空字符串<span>(</span><span>&#39;&#39;</span><span>)</span>和<span>4.</span></p>
+		<p><span>5.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>确保主服务器主机上<span>my.cnf</span>文件的<span>[mysqld]</span>部分包括一个<span>log-bin</span>选项。该部分还应有一个<span><span>server-id</span><span>=Master_id</span></span>选项，其中<span>master_id</span>必须为<span>1</span>到<span>2<sup>32</sup></span>–<span>1</span>之间的一个正整数值。例如：</p>
+		<pre><span>6.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>[mysqld]</span></pre>
+		<pre><span>7.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>log-bin=mysql-bin</span></pre>
+		<pre><span>8.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>server-id=1</span></pre>
+		<p>如果没有提供那些选项，应添加它们并重启服务器。</p>
+		<p><span>9.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>停止用于从服务器的服务器并在其<span>my.cnf</span>文件中添加下面的行：</p>
+		<pre><span>10.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>[mysqld]</span></pre>
+		<pre><span>11.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>server-id=slave_id</span></pre>
+		<p>
+		<span>slave_id</span>值同<span>Master_</span><span>id</span>值一样，必须为<span>1</span>到<span>2<sup>32</sup></span>–<span>1</span>之间的一个正整数值。并且，从服务器的<span>ID</span>必须与主服务器的<span>ID</span>不相同。例如：</p>
+		<pre ><span>[mysqld]</span></pre>
+		<pre ><span>server-id=2</span></pre>
+		<p>如果设置多个从服务器，每个从服务器必须有一个唯一的<span>server-id</span>值，必须与主服务器的以及其它从服务器的不相同。可以认为<span>server-id</span>值类似于<span>IP</span>地址：这些<span>ID</span>值能唯一识别复制服务器群集中的每个服务器实例。</p>
+		<p>如果不指定一个<span>server-id</span>值，如果没有定义<span>master-host</span>，则将它设置为<span>1</span>；否则设置为<span>2</span>。请注意如果<span>server-id</span>太长，主服务器 
+		拒绝所有来自从服务器的连接，并且从服务器拒绝连接到主服务器。这样，省略<span>server-id</span>只适合用二进制日志备份。</p>
+		<p><span>12.</span>如果对主服务器的数据进行二进制备份，启动从服务器之前将它复制到从服务器的数据目录中。确保对这些文件和目录的权限正确。服务器<span> 
+		MySQL</span>运行的用户必须能够读写文件，如同在主服务器上一样。</p>
+		<p>如果使用<strong><span>mysqldum</span></strong>备份，先启动从服务器<span>(</span>看下一步<span>)</span>。</p>
+		<p><span>13.</span>启动从服务器。如果前面已经复制了，用<span>--skip-slave-start</span>选项启动从服务器，以便它不立即尝试连接主服务器。你也可能想要用<span>--logs-warnings</span>选项启动从服务器<span>(</span>默认设置启用<span>)</span>，以便在错误日志中显示更多的问题相关的信息<span>(</span>例如，网络或连接问题<span>)</span>。放弃的连接将记入错误日志，除非其值大于<span>1</span>。</p>
+		<p><span>14.</span>如果使用<strong><span>mysqldump</span></strong>备份主服务器的数据，将转储文件装载到从服务器：</p>
+		<pre><span>15.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>shell&gt; </span><span><b><span>mysql -u root -p &lt; dump_file.sql</span></b></span></pre>
+		<pre><span>16.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>在从服务器上执行下面的语句，用你的系统的实际值替换选项值：</span></pre>
+		<pre><span>17.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>mysql&gt; </span><span><b><span >CHANGE MASTER TO</span></b></span></pre>
+		<pre><span>18.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_HOST=&#39;master_host_name&#39;,</span></b></span></pre>
+		<pre><span>19.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_USER=&#39;replication_user_name&#39;,</span></b></span></pre>
+		<pre><span>20.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_PASSWORD=&#39;replication_password&#39;,</span></b></span></pre>
+		<pre><span>21.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_LOG_FILE=&#39;recorded_log_file_name&#39;,</span></b></span></pre>
+		<pre><span>22.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_LOG_POS=recorded_log_position;</span></b></span></pre>
+		<p>下面的表显示了字符串选项的最大长度：</p>
+		<table border="1" cellpadding="0" id="table3">
+			<tr>
+				<td>
+				<p>
+				<span>Master_Host</span></td>
+				<td>
+				<p><span>60</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>Master_USER</span></td>
+				<td>
+				<p><span>16</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>Master_PASSWORD</span></td>
+				<td>
+				<p><span>32</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>Master_Log_File</span></td>
+				<td>
+				<p><span>255</span></td>
+			</tr>
+		</table>
+		<p><span>23.</span>启动从服务器线程：</p>
+		<pre><span>24.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>mysql&gt; </span><span><b><span>START SLAVE</span><span>；</span></b></span></pre>
+		<p>执行这些程序后，从服务器应连接主服务器，并补充自从快照以来发生的任何更新。</p>
+		<p>如果你忘记设置主服务器的<span>server-id</span>值，从服务器不能连接主服务器。</p>
+		<p>如果你忘记设置从服务器的<span>server-id</span>值，在从服务器的错误日志中会出现下面的错误：</p>
+		<pre><span>Warning: You should set server-id to a non-0 value if master_host is set;</span></pre>
+		<pre><span>we will force server id to 2, but this MySQL server will not act as a slave.</span></pre>
+		<p>如果由于其它原因不能复制，从服务器的错误日志中也会出现错误消息。</p>
+		<p>从服务器复制时，会在其数据目录中发现文件<span>dmaster.info</span>和<span>relay-log.info</span>。从服务器使用这两个文件跟踪已经处理了多少主服务器的二进制日志。不要移除或编辑这些文件，除非你确切知你正在做什么并完全理解其意义。即使这样，最好是使用<span>CHANGE 
+		MASTER TO</span>语句。</p>
+		<p><strong><span>注释：</span></strong><span>master.info</span><strong><span>的</span></strong>内容会覆盖命令行或<span>in
+		</span>
+		<span>my.cnf</span>中指定的部分选项。详情参见<a href="replication.html#replication-options" title="6.8. Replication Startup Options">6.8节，“复制启动选项”</a>。</p>
+		<p>有了一个快照，你可以用它根据刚刚描述的从服务器部分来设置其它从服务器。你不需要主服务器的另一个快照；每个从服务器可以使用相同的快照。</p>
+		<p>注释：为了保证事务<span>InnoDB</span>复制设置的最大可能的耐受性和一致性，应在主服务器的<span>my.cnf</span>文件中使用<span>innodb_flush_log_at_trx_commit=1</span>和<span>sync-binlog=1</span>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-compatibility"></a>
+		6.5.&nbsp;不同MySQL版本之间的复制兼容性</h2></div></div></div>
+		<p><span>MySQL 5.1</span>中使用的二进制日志格式与以前的版本中所使用的大大不同，特别是在字符集处理、<span>LOAD 
+		DATA INFILE</span>以及时区方面。</p>
+		<p><strong><span>注释：</span></strong>你不能从使用新二进制日志格式的主服务器向使用旧二进制日志格式的从服务器复制<span>(</span>例如，从<span>MySQL 
+		5.0</span>到<span>MySQL 4.1</span>）<span>。</span>。这样操作在复制设置升级服务器时后果严重，参见<a href="replication.html#replication-upgrade" title="6.6. Upgrading a Replication Setup">6.6节，“升级复制设置”</a>。</p>
+		<p>我们推荐使用最近的<span>MySQL</span>版本，因为复制功能在不断地改进中。我们还推荐主服务器和从服务器使用相同的版本。我们建议升级主服务器和从服务器，运行<span>alpha</span>或<span>beta</span>版本到新的<span>(</span>产品<span>)</span>版本。在许多情况下，从新的主服务器向旧的从服务器复制将会失败。一般原则，运行<span>MySQL 
+		5.1.x</span>的从服务器可以与旧的主服务器<span>(</span>可以运行<span>MySQL 
+		3.23</span>、<span>4.0</span>或者<span>4.1)</span>一起使用，但不能反过来。</p>
+		<p>前面的信息适合协议级复制兼容性。然而，还会有一个约束条件，例如<span>SQL</span>级兼容性问题。例如，<span> 
+		5.1</span>版本的主服务器不能复制到<span>5.0</span>版本的从服务器，如果复制语句使用<span>5.1</span>版本的<span>SQL</span>特性而不是<span>5.0</span>版本。这些问题和其它问题均在<a href="replication.html#replication-features" title="6.7. Replication Features and Known Problems">6.7节，“复制特性和已知问题”</a>中讨论。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-upgrade"></a>
+		6.6.&nbsp;升级复制设置</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="replication.html#replication-upgrade-5-0">
+			6.6.1. 将复制升级到5.0版</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+			当在复制设置中升级服务器时，升级过程取决于当前的服务器版本和要升级的服务器版本。<h3 class="title"><a name="replication-upgrade-5-0"></a>
+			6.6.1.&nbsp;将复制升级到5.0版</h3></div></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		该节适用于将复制从<span>MySQL 3.23</span>、<span>4.0</span>或者<span>4.1</span>升级到<span>5.1</span>。<span>4.0</span>服务器应为<span>4.0.3</span>或更新版。<p>
+		当将早期<span>MySQL</span>版本系列主服务器升级到<span>5.1</span>时，应先确保该主服务器的所有从服务器使用了相同的<span>5.1.x</span>版本。如果不是这样，你应先升级从服务器。升级从服务器时，应先关闭从服务器，升级到相应<span>5.1.x</span>版本，然后重启从服务器并重新开始复制。<span>5.1</span>版本的从服务器能够读取升级前写入的旧的中继日志并执行日志中包含的语句。升级后从服务器创建的中继日志为<span>5.1</span>格式。</p>
+		<p>从服务器升级后，关闭主服务器，将它升级到与从服务器相同的<span>5.1.x</span>版本并重启它。<span>5.1</span>主服务器能够读取升级前写入的旧的二进制日志并将它们发送到<span>5.1</span>从服务器。从服务器可以识别旧的格式并正确处理它。升级后主服务器创建的二进制日志采用<span>5.1</span>格式。这样也可以由<span>5.1</span>从服务器识别。</p>
+		<p>换句话说，当升级到<span>5.1</span>时没有什么措施，只有将主服务器升级到<span>5.1</span>之前先将从服务器升级到<span>5.1</span>。请注意从<span>5.1</span>降级到旧版本不会如此简单：必须确保已经完全处理所有<span>5.1</span>版本的二进制日志或中继日志，以便在降级前可以移除它们。</p>
+		<h2 class="title"><a name="replication-features"></a>
+		6.7.&nbsp;复制特性和已知问题</h2></div></div></div><a class="indexterm" name="id2793525"></a><a class="indexterm" name="id2793535"></a><a class="indexterm" name="id2793542"></a><a class="indexterm" name="id2793552"></a><a class="indexterm" name="id2793559"></a><a class="indexterm" name="id2793568"></a>
+		<p>一般原则，<span>SQL</span>级复制兼容性要求主服务器和从服务器均支持使用的特性。例如，在<span>MySQL 
+		5.0.0</span>中开始使用<span>TIMESTAMPADD()</span>函数。如果在主服务器上使用该函数，不能复制到<span>MySQL 
+		5.0.0</span>之前的从服务器。如果你计划在<span>5.1</span>和以前版本的<span>MySQL</span>之间进行复制，你应查阅对应以前版本系列的<span>MySQL</span>参考手册，查询该系列复制特征相关信息。</p>
+		<p>下面列出了关于支持什么和不支持什么的详细信息。关于复制的其它<span>InnoDB</span>具体信息参见<a href="storage-engines.html#innodb-and-mysql-replication" title="15.2.6.5. InnoDB and MySQL Replication">15.2.6.5节，“InnoDB和MySQL复制”</a>。</p>
+		<p>关于保存的程序和触发器的复制问题在<a href="stored-procedures.html#stored-procedure-logging" title="20.4. Binary Logging of Stored Routines and Triggers">20.4节，“存储子程序和触发程序的二进制日志功能”</a>中讨论。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>用<span>AUTO_INCREMENT</span>、<span>LAST_INSERT_ID()</span>和<span>TIMESTAMP</span>值正确实现复制。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>USER()</span>、<span>UUID()</span>和<span>LOAD_FILE()</span>函数毫无改变地被，这样不能可靠地在从服务器上工作。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>
+		下面的限制只适合基于语句的复制，而不是基于行的复制。</span></em>处理用户级锁定的函数<span>GET_LOCK()</span>、<span>RELEASE_LOCK()</span>、<span>IS_FREE_LOCK()</span>、<span>IS_USED_LOCK()</span>复制时从服务器不知道在主服务器上同时进行的相关文本；因此如果从服务器上的内容不同，这些函数不用来插入到主服务器的表中<span>(</span>例如不执行<span>INSERT 
+		INTO mytable VALUES</span><span>(GET_LOCK(...))</span><span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在<span>MySQL 5.1</span>中<span>FOREIGN_KEY_CHECKS</span>、<span>SQL_MODE</span>、<span>UNIQUE_CHECKS</span>和<span>SQL_AUTO_IS_NULL</span>变量均复制。但<span>TABLE_TYPE</span>，即<span>STORAGE_ENGINE</span>变量 
+		不复制，有利于在不同的存储引擎之间进行复制。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>即使主服务器和从服务器有不同的全局字符集变量，以及即使有不同的全局时区变量仍可以复制。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>下面适合使用不同字符集的<span>MySQL</span>服务器之间的复制：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>必须在主服务器和从服务器上<strong><span style="font-family:
+宋体">总是</span></strong>使用相同的<strong><span>全局</span></strong>字符集和校对规则<span>(</span><span>--default-character-set</span>、<span>--default-collation</span><span>)</span>。否则，会在从服务器上遇到复制键值错误，因为在主服务器的字符集中被认为是唯一的键值在从服务器的字符集中可能不是唯一的。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>如果主服务器早于<span>MySQL 4.1.3</span>，则会话中的字符集不应与其全局值不同<span>(</span>换句话说，不要使用<span>SET 
+		NAMES</span>、<span>SET 
+		CHARACTER SET</span>等等<span>)</span>，因为从服务器不知道该字符集的更改。如果主服务器和从服务器均为<span>4.1.3</span>或更新版，可以随便将会话的字符集变量设置为本地值<span>(</span>例如<span>NAMES</span>、<span>CHARACTER 
+		SET</span>、<span>COLLATION_CLIENT</span>和<span>COLLATION_SERVER</span><span>)</span>，因为这些设定值被写入二进制日志，因此从服务器知道。然而，禁止更改会话中这些变量的<strong><span>全局</span></strong>值；如前面所述，主服务器和从服务器必须具有唯一的全局字符集值。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>如果在主服务器上的数据库的字符集与全局<span>collation_server</span>值不同，则应设计<span>CREATE 
+		TABLE</span>语句，以便它们不隐含依赖数据库的默认字符集<span>(<a target="_top"  href="http://bugs.mysql.com/2326">Bug 
+		#2326</a>)</span>；一个好的解决办法是在<span>CREATE 
+		TABLE</span>中明显说明字符集和校对规则。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>应在主服务器和从服务器上设置相同的系统时区。否则一些语句，例如使用<span>NOW()</span>或<span>FROM_UNIXTIME()</span>函数的语句，将不会正确复制。可以使用脚本<span>mysqld_safe</span>的<span>--timezone=<i>timezone_name</i></span>选项或通过设置<span>TZ</span>环境变量设置<span>MySQL</span>服务器运行的系统的时区。主服务器和从服务器还应有相同的默认连接时区设置；即主服务器和从服务器应有相同的<span>--default-time-zone</span>参数值。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>CONVERT_TZ(...,...,@global.time_zone)</span>不能正确复制。只有主服务器和从服务器均为<span>5.0.4</span>或更新版才能正确复制<span>CONVERT_TZ(...,...,@session.time_zone)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>会话变量只有在更新表的语句中使用时才能正确复制；例如：<span><span>SET 
+		MAX_JOIN_SIZE=1000</span><span>；<span>INSERT 
+		INTO mytable VALUES(@MAX_JOIN_SIZE)</span></span></span>不能将相同的数据插入到主服务器上和从服务器上。不适用于通用的<span><span>SET 
+		TIME_ZONE=...</span><span>；<span>INSERT 
+		INTO mytable VALUES(CONVERT_TZ(...,...,@time_zone))</span></span></span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>可以将从服务器上的非事务表复为主服务器上的事务表。例如，可以将主服务器上的<span>InnoDB</span>表复制为从服务器上的<span>MyISAM</span>表。然而，复制过程中，如果从服务器在<span>BEGIN</span><span>/</span><span>COMMIT</span>块过程中停止则会产生问题，因为从服务器在<span>BEGIN</span>块开始时会重启。该问题出现在<span>TODO</span>中，不久将会得到修复。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在<span>MySQL 5.1</span>中可以正确复制引用用户变量<span>(</span>即<span>@<i>var_name</i></span>形式的变量<span>)</span>的更新语句；但在<span>4.1</span>以前的版本中却不可能。请注意从<span>MySQL 
+		5.1</span>开始对用户变量名的大小写不再敏感；当在<span>5.1</span>和旧版本之间设置复制时应考虑该问题。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>从服务器可以使用<span>SSL</span>连接到主服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>有一个全局系统变量<span>slave_transaction_retries</span>：如果因为某个<span>InnoDB</span>死锁或超过<span> 
+		InnoDB</span>的<span>innodb_lock_wait_timeout</span>或<span>NDB</span>簇的<span>TransactionDeadlockDetectionTimeout</span>或<span>TransactionInactiveTimeout</span>，<span>REPLICATION 
+		SLAVESQL</span>线程未能执行某个事务，在给出错误停止前自动重试<span>slave_transaction_retries</span>次。
+		默认值是<span>10</span>。从<span>MySQL 
+		5.0.4</span>开始，可以从<span>SHOW STATUS</span>的输出中看到重试总次数；参见<a href="database-administration.html#server-status-variables" title="5.3.4. Server Status Variables">5.3.4节，“服务器状态变量”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果在主服务器上的<span>CREATE 
+		TABLE</span>语句中使用了<span>DATA 
+		DIRECTORY</span>或<span>INDEX 
+		DIRECTORY</span>子句，子句也可以在从服务器上使用。如果在从服务器主机文件系统中不存在一致的目录或虽然存在但不能被从服务器访问，则会带来问题。<span>MySQL 
+		5.1</span>支持一个称为<span>NO_DIR_IN_CREATE</span>的<span>sql_mode</span>选项。如果从服务器运行时将<span>SQL</span>模式设置为包括该选项，复制<span>CREATE 
+		TABLE</span>语句时将忽略这些子句。结果是在表的数据库目录中创建了<span>MyISAM</span>数据和索引文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>下面的限制只适合</span></em><i>基于</i><em><span>语句的复制，而不是基于行的复制</span></em>：如果在查询中数据修改不确定，主服务器和从服务器上的数据可以不同；也就是由查询优化器确定。<span>(</span>这是常用的但不是很好的习惯，即使不是在复制中也不好）<span>。</span>关于该问题的详细解释，参见<a href="problems.html#open-bugs" title="A.8.1. Open Issues in MySQL">A.8.1节，“MySQL中的打开事宜”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>带<span>READ 
+		LOCK</span>的<span>FLUSH 
+		LOGS</span>、<span>FLUSH 
+		MASTER</span>、<span>FLUSH 
+		SLAVE</span>和<span>FLUSH 
+		TABLES</span>不记入日志，因为如果复制到从服务器会造成问题。关于语法示例，参见<a href="sql-syntax.html#flush" title="13.5.5.2. FLUSH Syntax">13.5.5.2节，“FLUSH语法”</a>。<span>FLUSH 
+		TABLES</span>、<span>ANALYZE 
+		TABLE</span>、<span>OPTIMIZE 
+		TABLE</span>和<span>REPAIR 
+		TABLE</span>语句被写入二进制日志并会复制到从服务器。一般情况不会造成问题，因为这些语句不修改表的数据。但是在某些情况下会带来问题。如果你复制<span>mysql</span>数据库中的授权表并且不使用<span>GRANT</span>直接更新那些表，必须在从服务器上执行<span>FLUSH 
+		PRIVILEGES</span>使新的权限生效。并且，如果使用<span>FLUSH 
+		TABLES</span>重新命名<span>MERGE</span>表的<span>MyISAM</span>表，必须手动在从服务器上执行<span>FLUSH 
+		TABLES</span>。如果不指定<span>NO_WRITE_TO_BINLOG</span>或其别名<span><span>LOCAL</span><span>，则</span></span>这些语句被写入二进制日志。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MySQL</span>只支持一个主服务器和多个从服务器。我们计划将来添加一个投票算法，当前的主服务器出现问题时自动切换。我们还计划引入代理过程通过向不同的从服务器发送<span>SELECT</span>查询以帮助进行负载均衡。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>当服务器关闭、重启时，其<span>MEMORY</span>表将变为空。主服务器按下述方法复制该结果：启动后第<span>1</span>次主服务器使用每个<span>MEMORY</span>表，它通知从服务器需要向表写入<span>DELETE 
+		FROM</span>语句来清空二进制日志的表。详细信息参见<a href="storage-engines.html#memory-storage-engine" title="15.4. The MEMORY (HEAP) Storage Engine">15.4节，“MEMORY (HEAP)存储引擎”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>除了关闭从服务器<span>(</span>而不仅仅是从服务器线程<span>)
+		</span>
+		临时表都被复制，并且还没有在从服务器上执行的更新所使用的临时表也已经复制。如果关闭从服务器，从服务器重启后更新需要的那些临时表不可再用。为了避免该问题，临时表打开时不要关闭从服务器。而应遵照下面的程序：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>执行<span>STOP 
+		SLAVE</span>语句。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>使用<span>SHOW 
+		STATUS</span>检查<span>slave_</span><span>open_temp_tables</span>变量的值。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>如果值为<span>0</span>，使用<strong><span>mysqladmin 
+		shutdown</span></strong>命令关闭从服务器。</p>
+		<p><span>4.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>如果值不为<span>0</span>，用<span>START 
+		SLAVE</span>重启从服务器线程。</p>
+		<p><span>5.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>后面再重复该程序看下次的运气是否好一些。</p>
+		<p>我们计划在不久的将来修复该问题。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>可以很安全地连接用<span>--logs-slave-updates</span>选项指定的循环主服务器<span>/</span>从服务器关系中的服务器。但请注意许多语句在这种设置中不能正确工作，除非你的客户代码关注了潜在的在不同的服务器不同顺序的更新中可能发生的这类问题。</p>
+		<p>这说明你可以象这样创建设置：</p>
+		<pre ><span>A -&gt; B -&gt; C -&gt; A</span></pre>
+		<p>服务器<span>ID</span>被编码在二进制日志事件中，因此服务器<span>A</span>知道何时自己首次创建它读取的事件并且不执行事件<span>(</span>除非用<span>--replicate-same-server-id</span>选项启动了服务器<span>A</span>，只在很少情况下有意义<span>)</span>。这样，没有无限循环。只有对表执行没有冲突的更新时该类循环设置才能工作。换句话说，如果在<span>A</span>和<span>C</span>中插入数据，绝对不应在<span>A</span>中插入键值可能与插入到<span>C</span>中的行相冲突的一行。如果更新的顺序很重要，还不应更新两个服务器上相同的行。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果从服务器上的某个语句产生错误，则从服务器上的<span>SQL</span>线程终止，并且从服务器向错误日志写入一条消息。此时应手动连接从服务器，修复该问题<span>(</span>例如，一个不存在的表<span>)</span>，然后运行<span>START 
+		SLAVE</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		可以很安全地关闭主服务器并在以后重启。如果某个从服务器丢失与主服务器的连接，从服务器尝试立即重新连接。如果失败，从服务器定期重试。<span>(</span>默认设置是每<span>60</span>秒重试一次。可以通过<span>--master-connect-retry</span>选项更改）<span>。</span>从服务器也能够处理网络连接中断。但是，只有从服务器超过<span>slave_net_timeout</span>秒没有从主服务器收到数据才通知网络中断。如果中断时间短，可以降低<span>slave_</span><span>net_timeout</span>。参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		关闭从服务器（净关闭）也很安全，因为它可以跟踪它离开的地点。不纯净的关闭操作会产生问题，特别是系统关闭前硬盘缓存未刷新到硬盘上时。如果有不间断电源，可以大大提高系统容错能力。不纯净的关闭主服务器会造成主服务器上的表和二进制日志内容之间的不一致性；在主服务器上使用<span>InnoDB</span>表和<span>--innodb-safe-binlog</span>选项可以避免该问题。参见<a href="database-administration.html#binary-log" title="5.11.3. The Binary Log">5.11.3节，“二进制日志”</a>。<span>(</span><strong><span>注释：</span></strong><span>MySQL 
+		5.1</span>中不需要<span>--innodb-safe-binlog</span>，由于引入了<span>XA</span>事务支持已经作废了）<span>。
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>由于<span>MyISAM</span>表的非事务属性，可以有一个语句只是更新一个表并返回错误代码。例如，多行插入时有一个行超过键值约束，或者如果长的更新语句更新部分行后被杀掉了。如果发生在主服务器上，除非错误代码合法并且语句执行产生相同的错误代码，从服务器线程将退出并等待数据库管理员决定如何做。如果该错误代码验证行为不理想，可以用<span>--slave-skip-errors</span>选项掩盖<span>(</span>忽视<span>)</span>部分或全部错误。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果从<span>BEGIN</span><span>/</span><span>COMMIT</span>系列的非事务表更新事务表，如果提交事务前更新非事务表，对二进制日志的更新可能会不同步。这是因为事务提交后才被写入二进制日志。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>事务混合更新事务表和非事务表时，二进制日志中语句的顺序是正确的，即使在<span>ROLLBACK</span>时，所有需要的语句也会写入二进制日志。但是如果在第<span>1</span>个连接的事务完成前，第<span>2</span>个连接更新非事务表，语句记入日志时会出现顺序错误，因为第<span>2</span>个连接的更新执行完后立即写入日志，而不管第<span>1</span>个连接执行的事务的状态如何。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-options"></a>
+		6.8.&nbsp;复制启动选项</h2></div></div></div>
+		<p>在主服务器和从服务器上，均必须使用<span>server-id</span>选项为每个服务器建立唯一的复制<span>ID</span>。你应为每个主服务器和从服务器从<span>1</span>到<span>2<sup>32</sup></span>–<span>1</span>的范围挑一个唯一的正整数。例如：<span>server-id=3</span></p>
+		<p>用于主服务器上控制二进制日志的选项的相关描述见<a href="database-administration.html#binary-log" title="5.11.3. The Binary Log">5.11.3节，“二进制日志”</a>。</p>
+		<p>下表描述了可以用于<span>MySQL 5.1</span>从属复制服务器的选项。你可以在命令行中或在选项文件中指定这些选项。</p>
+		<p>某些从服务器复制选项按特殊方式处理，当从服务器启动时如果<span>master.info</span>文件存在并且包含选项值，它们将被忽略掉。下面的选项按这种方式处理：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-host</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-user</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-password</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-port</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-connect-retry</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-ssl</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-ssl-ca</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-ssl-capath</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-ssl-cert</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-ssl-cipher</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-ssl-key</span></p>
+		<p><span>5.1</span>中的<span>master.info</span>文件格式包括对应<span>SSL</span>选项的值。并且，文件格式包括文件中的行号，如同第<span>1</span>行。如果你将旧的服务器升级到新的版本，新服务器启动时自动将<span>smaster.info</span>文件升级到新的格式。然而，如果将新服务器降级到旧的版本，首次启动旧版本的服务器之前应删除第<span>1</span>行。</p>
+		<p>如果从服务器启动时<span>master.info</span>文件不存在，选项采用选项文件或命令行中指定的值。首次将服务器作为从服务器启动时，或者已经运行<span>RESET 
+		SLAVE</span>然后已经关闭并重启从服务器时会发生。</p>
+		<p>如果从服务器启动时<span>master.info</span>文件存在，服务器忽略那些选项。使用<span>master.info</span>文件中发现的值。</p>
+		<p>如果你使用与<span>master.info</span>文件中相对应的启动选项的不同的值重启从服务器，启动选项的不同的值不会生效，因为服务器继续使用<span>master.info</span>文件。要想使用启动选项的不同的值，必须删除<span>master.info</span>文件并重启从服务器，或<span>(</span>最好是<span>)</span>在从服务器运行时使用<span>CHANGE 
+		MASTER TO</span>语句重新设置值。</p>
+		<p>假定在<span>my.cnf</span>文件中指定该选项：</p>
+		<pre><span>[mysqld]</span></pre>
+		<pre><span>master-host=some_host</span></pre>
+		<p>第<span>1</span>次作为复制从服务器启动服务器时，从<span>my.cnf</span>文件读取并使用选项。服务器然后记录<span>master.info</span>文件中的值。下次启动服务器时，它只从服务器的<span>master.info</span>文件读取主服务器主机值并忽略选项文件中的值。如果你修改<span>my.cnf</span>文件为<span>some_other_host</span>指定其它主服务器主机，更改仍然不会生效。你应使用<span>CHANGE 
+		MASTER TO</span>。</p>
+		<p>因为服务器给已有<span>master.info</span>文件的优先权高于刚刚描述的启动选项，可以选择不使用这些值的启动选项，而是使用<span>CHANGE 
+		MASTER TO</span>语句来指定。参见<a href="sql-syntax.html#change-master-to" title="13.6.2.1. CHANGE MASTER TO Syntax">13.6.2.1节，“CHANGE 
+		MASTER TO语法”</a>。</p>
+		<p>下面的例子显示了如何更广泛地使用启动选项来配置从服务器：</p>
+		<pre><span>[mysqld]</span></pre>
+		<pre><span>server-id=2</span></pre>
+		<pre><span>master-host=db-master.mycompany.com</span></pre>
+		<pre><span>master-port=3306</span></pre>
+		<pre><span>master-user=pertinax</span></pre>
+		<pre><span>master-password=freitag</span></pre>
+		<pre><span>master-connect-retry=60</span></pre>
+		<pre><span>report-host=db-slave.mycompany.com</span></pre>
+		<p>下面列出了控制复制的启动选项：许多选项可以在服务器运行时通过<span>CHANGE 
+		MASTER TO</span>语句重新进行设置。其它选项，例如<span>--replicate-*</span>选项，只能在从服务器启动时进行设置。我们计划将修复该问题。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--logs-slave-updates</span></p>
+		<p>
+		通常情况，从服务器从主服务器接收到的更新不记入它的二进制日志。该选项告诉从服务器将其<span>SQL</span>线程执行的更新记入到从服务器自己的二进制日志。为了使该选项生效，还必须用<span>--logs-bin</span>选项启动从服务器以启用二进制日志。如果想要应用链式复制服务器，应使用<span>--logs-slave-updates</span>。例如，可能你想要这样设置：</p>
+		<pre ><span>A -&gt; B -&gt; C</span></pre>
+		<p>也就是说，<span>A</span>为从服务器<span>B</span>的主服务器，<span>B</span>为从服务器<span>C</span>的主服务器。为了能工作，<span>B</span>必须既为主服务器又为从服务器。你必须用<span>--logs-bin</span>启动<span>A</span>和<span>B</span>以启用二进制日志，并且用<span>--logs-slave-updates</span>选项启动<span>B</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--logs-warnings</span></p>
+		<p>让从服务器向错误日志输出更详细的关于其执行操作的消息。例如，通知你网络<span>/</span>连接失败后已经成功重新连接，并通知你每个从服务器线程如何启动。该选项默认启用；要想禁用它，使用<span>--skip-logs-warnings</span>。放弃的连接不记入错误日志，除非该值大于<span>1</span>。</p>
+		<p>请注意该选项的效果不限于复制。可以对服务器的部分动作产生警告。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-connect-retry=<i>seconds</i></span></p>
+		<p>
+		在主服务器宕机或连接丢失的情况下，从服务器线程重新尝试连接主服务器之前睡眠的秒数。如果主服务器<span>.info</span>文件中的值可以读取则优先使用。如果未设置，
+		默认值为<span>60</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-host=<i>host</i></span></p>
+		<p>主复制服务器的主机名或<span>IP</span>地址。如果没有给出该选项，从服务器线程不启动。如果主服务器<span>.info</span>文件中的值可以读取则优先使用。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-info-file=<i>file_name</i></span></p>
+		<p>从服务器用于记录主服务器的相关信息使用的文件名。默认名为数据目录中的<span>mysql.info</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-password=<i>password</i></span></p>
+		<p>连接主服务器时从服务器线程用于鉴定的账户的密码。如果主服务器<span>.info</span>文件中的值可以读取则优先使用。如果未设置，假定
+		密码为空。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-port=<i>port_number</i></span></p>
+		<p>主服务器正帧听的<span>TCP/IP</span>端口号。如果主服务器<span>.info</span>文件中的值可以读取则优先使用。如果未设置，假定使用编译进来的设定值。如果你未曾用<strong><span>configure</span></strong>选项进行修改，该值应为<span>3306</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-ssl</span>、<span>--master-ssl-ca=<i>file_name</i></span>、<span>--master-ssl-capath=<i>directory_name</i></span>、<span>--master-ssl-cert=<i>file_name</i></span>、<span>--master-ssl-cipher=<i>cipher_list</i></span>、<span>--master-ssl-key=<i>file_name</i></span></p>
+		<p>这些选项用于使用<span>SSL</span>设置与主服务器的安全复制连接。它们的含义与<a href="database-administration.html#ssl-options" title="5.8.7.6. SSL Command-Line Options">5.8.7.6节，“SSL命令行选项”</a>中描述的相应<span><span>—</span><span>ssl</span></span>、<span>--ssl-ca</span>、<span>--ssl-capath</span>、<span>--ssl-cert</span>、<span>--ssl-cipher</span>、<span>--ssl-key</span>选项相同。如果主服务器<span>.info</span>文件中的值可以读取则优先使用。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-user=<i>username</i></span></p>
+		<p>连接主服务器时从服务器线程用于鉴定的账户的用户名。该账户必须具有<span>REPLICATION 
+		SLAVE</span>权限。如果主服务器<span>.info</span>文件中的值可以读取则优先使用。如果未设置主服务器用户，假定使用用户<span>test</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--max-relay-logs-size=<i>size</i></span></p>
+		<p>自动循环中继日志。参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--read-only</span></p>
+		<p>该选项让从服务器只允许来自从服务器线程或具有<span>SUPER</span>权限的用户的更新。可以确保从服务器不接受来自客户的更新。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--relay-log=<i>file_name</i></span></p>
+		<p>中继日志名。默认名为<span><i><span>host_name-relay-bin.nnnnnn</span></i></span>，其中<span><i><span>host_name</span></i></span>是从服务器主机的名，<span><i><span>nnnnnn</span></i></span>表示中继日志在编号序列中创建。如果中继日志太大<span>(</span>并且你不想降低<span>max_relay_log_size</span><span>)</span>，需要将它们放到数据目录之外的其它地方，或者如果想要通过硬盘之间的负载均衡提高速度，可以指定选项创建与主机名无关的中继日志名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--relay-log-index=<i>file_name</i></span></p>
+		<p>中继日志索引文件使用的位置和名称。默认名为<span><i><span>host_name-relay-bin.index</span></i></span>，其中<span><i><span>host_name</span></i></span>为从服务器名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--relay-log-info-file=<i>file_name</i></span></p>
+		<p>从服务器用于记录中继日志相关信息的文件名。默认名为数据目录中的<span>relay-log.info</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--relay-log-purge={0|1}</span></p>
+		<p>禁用或启用不再需要中继日志时是否自动清空它们。默认值为<span>1(</span>启用<span>)</span>。这是一个全局变量，可以用<span>SET 
+		GLOBAL Relay_log_purge</span>动态更改。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--relay-log-space-limit=<i>size</i></span></p>
+		<p>限制所有中继日志在从服务器上所占用空间的上限<span>(0</span>值表示“<span class="quote">无限制</span>”<span>)</span>。从服务器主机硬盘空间有限时很有用。达到限制后，<span>I/O</span>线程停止从主服务器读取二进制日志中的事件，直到<span>SQL</span>线程被闭锁并且删除了部分未使用的中继日志。请注意该限制并不是绝对的：有可能<span>SQL</span>线程删除中继日志前需要更多的事件。在这种情况下，<span>I/O</span>线程将超过限制，直到<span>SQL</span>线程可以删除部分中继日志。<span>(</span>不这样做将会造成死锁）<span>。</span><span>--relay-log-space-limit</span>的值不能小于<span>--max-relay-logs-size</span><span>(</span>或如果<span>--max-relay-logs-size</span>为<span>0</span>，选<span>--max-binlog-size</span><span>)</span>的值的两倍。在这种情况下，有可能<span>I/O</span>线程等待释放空间，因为超过了<span>--relay-log-space-limit</span>，但<span>SQL</span>线程没有要清空的中继日志，不能满足<span>I/O</span>线程的需求。强制<span>I/O</span>线程临时忽视<span>--relay-log-space-limit</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-do-db=<i>db_name</i></span></p>
+		<p>告诉从服务器限制默认数据库<span>(</span>由<span>USE</span>所选择<span>)</span>为<span><i><span>db_name</span></i></span>的语句的复制。要指定多个数据库，应多次使用该选项，每个数据库使用一次。请注意不复制跨数据库的语句，例如当已经选择了其它数据库或没有数据库时执行<span>UPDATE
+		<i>some_db.some_table</i> SET foo=&#39;bar&#39;</span>。如果需要跨数据库进行更新，使用<span>--replicate-wild-do-table=<i>db_name</i>.%</span>。请读取该选项列表后面的注意事项。</p>
+		<p>一个不能按照期望工作的例子：如果用<span>--replicate-do-db=sales</span>启动从服务器，并且在主服务器上执行下面的语句，<span>UPDATE</span>语句不会复制：</p>
+		<pre ><span>USE prices;</span></pre>
+		<pre ><span>UPDATE sales.january SET amount=amount+1000;</span></pre>
+		<p>如果需要跨数据库进行更新，应使用<span>--replicate-wild-do-table=<i>db_name</i>.%</span>。</p>
+		<p>“<span class="quote">只检查默认数据库</span>”行为的主要原因是语句自己很难知道它是否应被复制<span>(</span>例如，如果你正使用跨数据库的多表<span>DELETE</span>语句或多表<span>UPDATE</span>语句<span>)</span>。如果不需要，只检查默认数据库比检查所有数据库要快得多。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-do-table=<i>db_name.tbl_name</i></span></p>
+		<p>
+		告诉从服务器线程限制对指定表的复制。要指定多个表，应多次使用该选项，每个表使用一次。同<span>--replicate-do-db</span>对比，允许跨数据库更新。请读取该选项列表后面的注意事项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-ignore-db=<i>db_name</i></span></p>
+		<p>告诉从服务器不要复制默认数据库<span>(</span>由<span>USE</span>所选择<span>)</span>为<span><i><span>db_name</span></i></span>的语句。要想忽略多个数据库，应多次使用该选项，每个数据库使用一次。如果正进行跨数据库更新并且不想复制这些更新，不应使用该选项。请读取该选项后面的注意事项。</p>
+		<p>一个不能按照期望工作的例如：如果用<span>--replicate-ignore-db=sales</span>启动从服务器，并且在主服务器上执行下面的语句，<span>UPDATE</span>语句不会复制：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>USE prices;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>UPDATE sales.january SET amount=amount+1000;</span></pre>
+		<p>如果需要跨数据库更新，应使用<span>--replicate-wild-ignore-table=<i>db_name</i>.%</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-ignore-table=<i>db_name.tbl_name</i></span><span>
+		</span></p>
+		<p>告诉从服务器线程不要复制更新指定表的任何语句<span>(</span>即使该语句可能更新其它的表<span>)</span>。要想忽略多个表，应多次使用该选项，每个表使用一次。同<span>--replicate-ignore-db</span>对比，该选项可以跨数据库进行更新。请读取该选项后面的注意事项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-wild-do-table=<i>db_name.tbl_name</i></span></p>
+		<p>告诉从服务器线程限制复制更新的表匹配指定的数据库和表名模式的语句。模式可以包含‘<span>%</span>’和‘<span>_</span>’通配符，与<span>LIKE</span>模式匹配操作符具有相同的含义。要指定多个表，应多次使用该选项，每个表使用一次。该选项可以跨数据库进行更新。请读取该选项后面的注意事项。</p>
+		<p>例如：<span>--replicate-wild-do-table=foo%.bar%</span>只复制数据库名以<span>foo</span>开始和表名以<span>bar</span>开始的表的更新。</p>
+		<p>如果表名模式为<span>%</span>，可匹配任何表名，选项也适合数据库级语句<span>(</span><span>CREATE 
+		DATABASE</span>、<span>DROP 
+		DATABASE</span>和<span>ALTER 
+		DATABASE</span><span>)</span>。例如，如果使用<span>--replicate-wild-do-table=foo%.%</span>，如果数据库名匹配模式<span>foo%</span>，则复制数据库级语句。</p>
+		<p>要想在数据库或表名模式中包括通配符，用反斜线对它们进行转义。例如，要复制名为<span>my_own%db</span>的数据库的所有表，但不复制<span>my1ownAABCdb</span>数据库的表，应这样转义‘<span>_</span>’和‘<span>%</span>’字符：<span>--replicate-wild-do-table=my\_own\%db</span>。如果在命令行中使用选项，可能需要双反斜线或将选项值引起来，取决于命令解释符。例如，用<strong><span>bash</span></strong>外壳则需要输入<span>--replicate-wild-do-table=my\\_own\\%db</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-wild-ignore-table=<i>db_name.tbl_name</i></span></p>
+		<p>
+		告诉从服务器线程不要复制表匹配给出的通配符模式的语句。要想忽略多个表，应多次使用该选项，每个表使用一次。该选项可以跨数据库进行更新。请读取该选项后面的注意事项。</p>
+		<p>例如：<span>--replicate-wild-ignore-table=foo%.bar%</span>不复制数据库名以<span>foo</span>开始和表名以<span>bar</span>开始的表的更新。</p>
+		<p>关于匹配如何工作的信息，参见<span>--replicate-wild-do-table</span>选项的描述。在选项值中包括通配符的规则与<span>--replicate-wild-ignore-table</span>相同。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-rewrite-db=<i>from_name</i>-&gt;<i>to_name</i></span></p>
+		<p>告诉从服务器如果默认数据库<span>(</span>由<span>USE</span>所选择<span>)</span>为主服务器上的<span><i><span>from_name</span></i></span>，则翻译为<span><i><span>to_name</span></i></span>。只影响含有表的语句<span>(</span>不是类似<span>CREATE 
+		DATABASE</span>、<span>DROP 
+		DATABASE</span>和<span>ALTER 
+		DATABASE</span>的语句<span>)</span>，并且只有<span><i><span>from_name</span></i></span>为主服务器上的默认数据库时。该选项不可以跨数据库进行更新。请注意在测试<span>--replicate-*</span>规则之前翻译数据库名。</p>
+		<p>如果在命令行中使用该选项， ‘<span>&gt;</span>’字符专用于命令解释符，应将选项值引起来。例如：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqld --replicate-rewrite-db=&quot;<i>olddb</i>-&gt;<i>newdb</i>&quot;</span></b></span></pre>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replicate-same-server-id</span></p>
+		<p>将用于从服务器上。通常可以默认设置为<span>0</span>以防止循环复制中的无限循环。如果设置为<span>1</span>，该从服务器不跳过有自己的服务器<span>id</span>的事件；通常只在有很少配置的情况下有用。如果使用<span>--logs-slave-updates</span>不能设置为<span>1</span>。请注意默认情况下如果有从服务器的<span>id</span>，服务器<span>I/O</span>线程不将二进制日志事件写入中继日志<span>(</span>该优化可以帮助节省硬盘的使用<span>)</span>。因此如果想要使用<span>--replicate-same-server-id</span>，让从服务器读取自己的<span>SQL</span>线程执行的事件前，一定要用该选项启动。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--report-host=<i>slave_name</i></span></p>
+		<p>从服务器注册过程中报告给主服务器的主机名或<span>IP</span>地址。该值出现在主服务器上<span>SHOW 
+		SLAVE HOSTS</span>的输出中。如果不想让从服务器自己在主服务器上注册，则不设置该值。请注意从服务器连接后，主服务器仅仅从<span>TCP/IP</span>套接字读取从服务器的<span>IP</span>号是不够的。由于 
+		 
+		<span>
+		NAT</span>和其它路由问题，<span>IP</span>可能不合法，不能从主服务器或其它主机连接从服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--report-port=<i>slave_port</i></span></p>
+		<p>连接从服务器的<span>TCP/IP</span>端口号，从服务器注册过程中报告给主服务器。只有从服务器帧听非默认端口或如果有一个特殊隧道供主服务器或其它客户连接从服务器时才设置它。如果你不确定，不设置该选项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--skip-slave-start</span></p>
+		<p>告诉从服务器当服务器启动时不启动从服务器线程。使用<span>START 
+		SLAVE</span>语句在以后启动线程。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--slave_compressed_protocol={0|1}</span></p>
+		<p>如果该选项设置为<span> 1</span>，如果从服务器和主服务器均支持，使用压缩从服务器<span>/</span>主服务器协议。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--slave-load-tmpdir=<i>file_name</i></span></p>
+		<p>从服务器创建临时文件的目录名。该选项默认等于<span>tmpdir</span>系统变量的值。当从服务器<span>SQL</span>线程复制<span>LOAD 
+		DATA INFILE</span>语句时，从中继日志将待装载的文件提取到临时文件，然后将这些文件装入到表中。如果装载到主服务器上的文件很大，从服务器上的临时文件也很大。因此，建议使用该选项告诉从服务器将临时文件放到文件系统中有大量可用空间的目录下。在这种情况下，也可以使用<span>--relay-log</span>选项将中继日志放到该文件系统中，因为中继日志也很大。<span>--slave-load-tmpdir</span>应指向基于硬盘的文件系统，而非基于内存的文件系统：从服务器需要用临时文件在机器重启时用于复制<span>LOAD 
+		DATA INFILE</span>。系统启动过程中操作系统也不能清除该目录。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--slave-net-timeout=<i>seconds</i></span></p>
+		<p>
+		放弃读之前从主服务器等候更多数据的秒数，考虑到连接中断和尝试重新连接。超时后立即开始第<span>1</span>次重试。由<span>--master-connect-retry</span>选项控制重试之间的间隔。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--slave-skip-errors=[<i>err_code1</i>,<i>err_code2</i>,... 
+		| all]</span></p>
+		<p>
+		通常情况，当出现错误时复制停止，这样给你一个机会手动解决数据中的不一致性问题。该选项告诉从服务器<span>SQL</span>线程当语句返回任何选项值中所列的错误时继续复制。</p>
+		<p>如果你不能完全理解为什么发生错误，则不要使用该选项。如果复制设置和客户程序中没有<span>bug</span>，并且<span>MySQL</span>自身也没有<span>bug</span>，应不会发生停止复制的错误。滥用该选项会使从服务器与主服务器不能保存同步，并且你找不到原因。</p>
+		<p>对于错误代码，你应使用从服务器错误日志中错误消息提供的编号和<span>SHOW 
+		SLAVE STATUS</span>的输出。服务器错误代码列于<a href="error-handling.html">附录B：</a><a href="error-handling.html" title="Appendix B. Error Codes and Messages"><i>错误代码和消息</i></a>。</p>
+		<p>你也可以<span>(</span>但不应<span>)</span>使用不推荐的<span>all</span>值忽略所有错误消息，不考虑所发生的错误。无需而言，如果使用该值，我们不能保证数据的完整性。在这种情况下，如果从服务器的数据与主服务器上的不相近请不要抱怨<span>(</span>或编写<span>bug</span>报告<span>)</span>。<em><span>已经警告你了</span></em>。</p>
+		<p>例如：</p>
+		<pre ><span>--slave-skip-errors=1062,1053</span></pre>
+		<pre ><span>--slave-skip-errors=all</span></pre>
+		<p>从服务器按下面评估<span>--replicate-*</span>规则，确定是否执行或忽视语句：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>是否有<span>--replicate-do-db</span>或<span>--replicate-ignore-db</span>规则？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>有</span></em>：测试<span>--binlog-do-db</span>和<span>--binlog-ignore-db</span><span>(</span>参见<a href="database-administration.html#binary-log" title="5.11.3. The Binary Log">5.11.3节，“二进制日志”</a><span>)</span>。测试结果是什么？</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>忽视语句：忽视并退出。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>许可语句：不立即执行语句。推迟决策；继续下一步。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>没有</span></em>：继续下一步。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>我们目前正执行保存的程序或函数吗？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>是</span></em>：执行查询并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>否</span></em>：继续下一步。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>是否有<span>--replicate-*-table</span>规则？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>没有</span></em>：执行查询并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>有</span></em>：继续下一步并开始按所示顺序评估表规则<span>(</span>首先是非通配规则，然后是通配规则<span>)</span>。只有待更新的表根据这些规则进行比较<span>(</span><span>INSERT 
+		INTO sales SELECT * FROM prices</span><span>:</span>只有<span>sales</span>根据这些规则进行比较<span>)</span>。如果要更新几个表<span>(</span>多表语句<span>)</span>，第<span>1</span>个匹配的表<span>(</span>匹配“<span class="quote"><span>do</span></span>”或“<span class="quote"><span>ignore</span></span>”<span>)</span>获赢。也就是说，根据这些规则比较第<span>1</span>个表。然后，如果不能进行决策，根据这些规则比较第<span>2</span>个表等等。</p>
+		<p><span>4.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>是否有<span>--replicate-do-table</span>规则？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>有</span></em>：表匹配吗？</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>是</span></em>：执行查询并退出。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>否</span></em>：继续下一步。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>没有</span></em>：继续下一步。</p>
+		<p><span>5.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>是否有<span>--replicate-ignore-table</span>规则？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>有</span></em>：表匹配吗？</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>是</span></em>：忽视查询并退出。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>否</span></em>：继续下一步。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>没有</span></em>：继续下一步。</p>
+		<p><span>6.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>是否有<span>--replicate-wild-do-table</span>规则？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>有</span></em>：表匹配吗？</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>是</span></em>：执行查询并退出。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>否</span></em>：继续下一步。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>没有</span></em>：继续下一步。</p>
+		<p><span>7.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>是否有<span>--replicate-wild-ignore-table</span>规则？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>有</span></em>：表匹配吗？</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>是</span></em>：忽视查询并退出。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>否</span></em>：继续下一步。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>没有</span></em>：继续下一步。</p>
+		<p><span>8.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>没有匹配的<span>--replicate-*-table</span>规则。要根据这些规则测试其它表吗？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>是</span></em>：执行循环。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>否</span></em>：我们现在已经测试了所有待更新的表，结果不能匹配任何规则。是否有<span>--replicate-do-table</span>或<span>--replicate-wild-do-table</span>规则？</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>有</span></em>：有“<span class="quote"><span>do</span></span>”规则但不匹配。忽视查询并退出。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><em><span>没有</span></em>：执行查询并退出。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-faq"></a>
+		6.9.&nbsp;复制FAQ</h2></div></div></div>
+		<p><strong><span>Q</span></strong>：如果主服务器正在运行并且不想停止主服务器，怎样配置一个从服务器？</p>
+		<p><strong><span>A</span></strong>：有多种方法。如果你在某时间点做过主服务器备份并且记录了相应快照的二进制日志名和偏移量<span>(</span>通过<span>SHOW 
+		MASTER STATUS</span>命令的输出<span>)</span>，采用下面的步骤：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>确保从服务器分配了一个唯一的服务器<span>ID</span>号。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>在从服务器上执行下面的语句，为每个选项填入适当的值：</p>
+		<p>
+		<span>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>mysql&gt; </span>
+		<span><b><span>CHANGE MASTER TO</span></b></span></p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_HOST=&#39;master_host_name&#39;,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_USER=&#39;master_user_name&#39;,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_PASSWORD=&#39;master_pass&#39;,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_LOG_FILE=&#39;recorded_log_file_name&#39;,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span >MASTER_LOG_POS=recorded_log_position;</span></b></span></pre>
+		<p>
+		<span >3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>在从服务器上执行<span >START 
+		SLAVE</span>语句。</p>
+		<p>如果你没有备份主服务器，这里是一个创建备份的快速程序。所有步骤都应该在主服务器主机上执行。</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>发出该语句：</p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; mysql&gt; </span><span><b><span>FLUSH TABLES WITH READ LOCK</span><span>；</span></b></span></pre>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>仍然加锁时，执行该命令（或它的变体）：</p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; shell&gt; </span><span><b><span>tar zcf /tmp/</span><span >backup.</span><span>tar.gz /var/lib/mysql</span></b></span></pre>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>发出该语句并且确保记录了以后用到的输出：</p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; mysql&gt;SHOW MASTER STATUS</span><span><b><span>；</span></b></span></pre>
+		<p><span>4.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>释放锁：</p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; mysql&gt; </span><span><b><span>UNLOCK TABLES</span><span>；</span></b></span></pre>
+		<p>一个可选择的方法是，转储主服务器的<span>SQL</span>来代替前面步骤中的二进制复制。要这样做，你可以在主服务器上使用<strong><span>mysqldump 
+		--master-data</span></strong><b>，</b>以后装载<span>SQL</span>转储到到你的从服务器。然而，这比进行二进制复制速度慢。</p>
+		<p>不管你使用这两种方法中的那一个，当你有一个快照和记录了日志名与偏移量时<span>，后来根据说明操作。</span>你可以使用相同的快照建立多个从服务器。一旦你拥有主服务器的一个快照，可以等待创建一个从服务器，只要主服务器的二进制日志完整。两个能够等待的时间实际的限制是指在主服务器上保存二进制日志的可用硬盘空间和从服务器同步所用的时间。</p>
+		<p>你也可以使用<span>LOAD 
+		DATA FROM MASTER</span>。这是一个方便的语句，它传输一个快照到从服务器并且立即调整日志名和偏移量。将来，<span>LOAD 
+		DATA FROM MASTER</span>将成为创建从服务器的推荐方法。然而需要注意，它只工作在<span>MyISAM</span><span>
+		</span>表上并且可能长时间持有读锁定。它并不象我们希望的那样高效率地执行。如果你有大表，执行<span>FLUSH 
+		TABLES WITH READ LOCK</span>语句后，这时首选方法仍然是在主服务器上制作二进制快照。</p>
+		<p><strong><span>Q</span></strong>：从服务器需要始终连接到主服务器吗？</p>
+		<p><strong><span>A</span></strong>：不，不需要。从服务器可以宕机或断开连接几个小时甚至几天，重新连接后获得更新信息。例如，你可以在通过拨号的链接上设置主服务器<span>/</span>从服务器关系，其中只是偶尔短时间内进行连接。这意味着，在任何给定时间，从服务器不能保证与主服务器同步除非你执行某些特殊的方法。将来，我们将使用选项来阻塞主服务器直到有一个从服务器同步。</p>
+		<p><strong><span>Q</span></strong>：我怎样知道从服务器与主服务器的最新比较<span>?
+		</span>换句话说，我怎样知道从服务器复制的最后一个查询的日期？</p>
+		<p><strong><span>A</span></strong>：你可以查看<span>SHOW 
+		SLAVE STATUS</span>语句的<span>Seconds_Behind_Master</span>列的结果。参见<a href="replication.html#replication-implementation-details" title="6.3. Replication Implementation Details">6.3节，“复制实施细节”</a>。</p>
+		<p>当从服务器<span>SQL</span>线程执行从主服务器读取的事件时，它根据事件时间戳修改自己的时间（这是<span>TIMESTAMP</span>能够很好复制的原因）。在<span>SHOW 
+		PROCESSLIST</span>语句输出的<span>Time</span>列内，为从服务器<span>SQL</span>线程显示的秒数是最后一个复制事件的时间戳和从服务器主机的实际时间之间相差的秒数。你可以使用它来确定最后一个复制事件的日期。注意，如果你的从服务器与主服务器连接断开一个小时，然后重新连接，在<span>SHOW 
+		PROCESSLIST</span>结果中，你可以立即看到从服务器<span>SQL</span>线程的<span>Time</span>值为<span>3600</span>。这可能是因为从服务器执行的语句是一个一小时之前的。</p>
+		<p><strong><span>Q</span></strong>：我怎样强制主服务器阻塞更新直到从服务器同步？</p>
+		<p><strong><span>A</span></strong>：使用下面的步骤：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>在主服务器上，执行这些语句：</p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; </span><span >mysql&gt; </span><b><span >FLUSH TABLES WITH READ LOCK;</span></b></pre>
+		<p><span>&nbsp;&nbsp;&nbsp;&nbsp; 
+		mysql&gt; <b>SHOW MASTER STATUS;</b></span></p>
+		<pre><span>&nbsp;</span></pre>
+		<p>记录<span>SHOW</span>语句的输出的日志名和偏移量。这些是复制坐标。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>在从服务器上，发出下面的语句，其中<span>Master_</span><span>POS_WAIT()</span>函数的参量是前面步骤中的得到的复制坐标值：</p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; mysql&gt; </span><span><b><span >SELECT MASTER_POS_WAIT(&#39;log_name&#39;, log_offset);</span></b></span></pre>
+		<p>
+		<span>SELECT</span>语句阻塞直到从服务器达到指定的日志文件和偏移量。此时，从服务器与主服务器同步，语句返回。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>在主服务器上，发出下面的语句允许主服务器重新开始处理更新：</p>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; mysql&gt; </span><span><b><span>UNLOCK TABLES</span><span>；</span></b></span></pre>
+		<p><strong><span>Q</span></strong>：当设置双向复制时我应该知道发出那些语句？</p>
+		<p><strong><span>A</span></strong>：<span>MySQL</span>复制目前不支持主服务器和从服务器之间的任何锁定协议来保证分布式<span>(</span>跨服务器<span>)</span>更新的原子性。换句话说，这样做是可能的：客户<span>A</span>根据协作<span>-</span>主服务器<span>1</span>更新，同时，在它传给协作<span>-</span>主服务器<span>2</span>之前，客户<span>B</span>能够根据协作<span>-</span>主服务器<span>2</span>更新，这样客户<span>A</span>的更新与它在协作<span>-</span>主服务器<span>1</span>的更新不同。这样，当客户<span>A</span>根据协作<span>-</span>主服务器<span>2</span>更新时，它产生的表与在协作<span>-</span>主服务器<span>1</span>上的不<span>同，即使所有根据协作<span>-</span>主服务器<span>2</span>的更新已经传过来。这</span>意味着，在双向复制关系中，你不应该把两个服务器串连在一起，除非你确信任何顺序的更新是安全的，或者除非你在客户端代码中注意怎样避免更新顺序错误。</p>
+		<p>
+		你还必须认识到从更新角度，双向复制实际上并不能显著地提高性能（或者根本不能提高性能）。两个服务器都需要做相同数量的更新，如同在一个服务器做的那样。唯一的差别是锁竞争要少，这因为源于另一个服务器的更新在一个从线程中序列化。即使这个益处可能被网络延迟抵消。</p>
+		<p><strong><span>Q</span></strong>：怎样通过复制来提高系统的性能？</p>
+		<p><strong><span>A</span></strong>：你应将一个服务器设置为主服务器并且将所有写指向该服务器。然后根据预算配置尽可能多的从服务器以及栈空间，并且在主服务器和从服务器之间分发读取操作。你也可以用<span>--skip-innodb</span>、<span><span>--skip-bdb</span><span>、<span>--low-priority-updates</span></span></span>以及<span>--delay-key-write=ALL</span>选项启动从服务器，以便在从服务器端提高速度。在这种情况下，为了提高速度，从服务器使用非事务<span>MyISAM</span>表来代替<span>InnoDB</span>和<span>BDB</span>表。</p>
+		<p><strong><span>Q</span></strong>：为了使用高性能的复制，我应该在自己的应用程序中怎样准备客户端代码？</p>
+		<p><strong><span>A</span></strong>：如果你的代码中数据库访问部分已经正确地模块化，应该能够平滑和容易地转换为在复制步骤中运行的代码。仅需要更改数据库访问执行部分，以便发送所有的写操作到主服务器，以及发送读操作到主服务器或某个从服务器。如果你的代码没有这个级别，设置一个复制系统以便清除。应先通过下面的函数创建一个包装库或模块：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>safe_writer_connect()</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>safe_reader_connect()</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>safe_reader_statement()</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>safe_writer_statement()</span></p>
+		<p>每个函数名的<span>safe_</span>意味着函数比较小心地处理所有错误。你可以使用不同名的函数。重要是对于读连接、写连接、读和写有一个统一的接口。</p>
+		<p><span>
+		然后，你应该转换客户端代码使用包装库。刚开始这可能是痛苦和恐慌的过程，但从长远来看是值得的。使用刚才讨论的方法的所有应用程序都能够利用主服务器<span>/</span>从服务器配置的优越性，即使是含有多个从服务器的配置。代码非常容易维护，并且添加排错选项也很容易。你仅需要修改一两个函数；例如，记录每个语句执行的时间，或者你的上千个语句中哪个语句发生了错误。</span></p>
+		<p><span>如果你已经编写了许多代码，你可能想使用<strong><span>replace</span></strong>工具自动进行转换，该工具随标准<span>MySQL</span>一起发布，或可以自己编写转换脚本。理想情况，你的代码使用一致的程序转换风格。否则，可能最好重新编写代码，或者至少手工对其进行规则化以使用一致的风格。</span></p>
+		<p><strong><span >Q</span></strong><span>：<span>MySQL</span>复制能够何时和多大程度提高系统性能？</span></p>
+		<p><strong><span>A</span></strong>：<span>MySQL</span>复制对于频繁读和频繁写的系统具有最大好处。理论上，通过使用单个主服务器<span>/</span>多从服务器设置，可以通过添加更多的从服务器来扩充系统，直到用完网络带宽，或者你的更新负载已经增长到主服务器不能处理的点。</p>
+		<p>
+		在获得的收益开始吃平之前，为了确定可以有多少从服务器，以及可以将你的站点的性能提高多少，需要知道查询模式，并且要通过基准测试并根据经验确定一个典型的主服务器和从服务器中的读取（每秒钟读取量，或者<span>max_reads</span>）吞吐量和写（<span>max_writes</span>）吞吐量的关系。通过一个假设的带有复制的系统，本例给出了一个非常简单的计算结果。</p>
+		<p>假设系统负载包括<span>10%</span>的写和<span>90%</span>的读取，并且我们通过基准测试确定<span>max_reads</span>是<span>1200
+		</span>–<span>2 </span>× 
+		<span>max_writes</span>。换句话说，如果没有写操作，系统每秒可以进行<span>1,200</span>次读取操作，平均写操作是平均读操作所用时间的两倍，并且关系是线性的。我们假定主服务器和每个从服务器具有相同的性能，并且我们有一个主服务器和<span><i><span>N</span></i></span>个从服务器。那么，对于每个服务器（主服务器或从服务器），我们有：</p>
+		<p><span>
+		<span>reads = 1200 </span>
+		<span>–</span><span> 
+		2 </span>
+		<span>×</span><span> 
+		writes</span></span></p>
+		<p><span>
+		<span>reads = 9 </span>
+		<span>×</span><span> 
+		writes / (<i>N</i> + 1)</span></span><span> (</span>读取是分离的<span>,
+		</span>但是写入所有服务器<span>)</span></p>
+		<p><span>
+		<span>9 </span>
+		<span>×</span><span> 
+		writes / (<i>N</i> + 1) + 2 </span>
+		<span>×</span><span> 
+		writes = 1200</span></span></p>
+		<p>
+		<span>writes = 1200 / (2 + 9/(<i>N</i>+1))</span></p>
+		<p>最后的等式表明了<span><i><span>N</span></i></span>个从服务器的最大写操作数，假设最大可能的读取速率是每分钟<span>1,200</span>次，读操作与写操作的比率是<span>9</span>。</p>
+		<p>如上分析可以得到下面的结论：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果<span><i><span>N</span></i></span><span> 
+		= 0</span>（这表明没有复制），系统每秒可以处理大约<span>1200/11 = 109</span>个写操作。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果<span><i><span>N</span></i></span><span> 
+		= 1</span>，每秒得到<span>184</span>个写操作。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果<span><i><span>N</span></i></span><span> 
+		= 8</span>，每秒得到<span>400</span>个写操作。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果<span><i><span>N</span></i></span><span> 
+		= 17</span>，每秒得到<span>480</span>个写操作。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>最后，当 <span><i>
+		<span>N</span></i></span><span>
+		</span>趋于无穷大（以及我们预算的负无穷大）时，可以得到非常接近每秒<span>600</span>个写操作，系统吞吐量增加将近<span>5.5</span>倍。然而，如果只用<span>8</span>个服务器，增加接近<span>4</span>倍。</p>
+		<p>
+		请注意，这些计算假设网络带宽无穷大并忽略掉了其它一些因素，那些因素可能对系统产生重要的影响。在许多情况下，不能执行与刚才类似的计算，即如果添加<span><i><span>N</span></i></span>台复制从服务器，应该准确预报系统将发生哪些影响。回答下面的问题应能够帮助你确定复制是否和在多大程度上能够提高系统的性能：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>系统上的读取<span>/</span>写比例是什么<span>?
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果减少读取操作，一个服务器可以多处理多少写负载？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>网络带宽可满足多少从服务器的需求<span>? </span></p>
+		<p><strong><span>Q</span></strong>：如何使用复制来提供冗余<span>/</span>高可用性<span>?
+		</span></p>
+		<p><strong><span>A</span></strong>：利用目前的可用特性，必须设置一个主服务器和一个从服务器（或多个从服务器），以及写一个脚本来监视主服务器是否启动。如果主服务器失败，通知应用程序和从服务器切换主服务器。下面是一些建议：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>告知从服务器更改其主服务器，使用<span>CHANGE 
+		MASTER TO</span>语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>通知应用程序主服务器位置的一个很好的方法是对主服务器提供动态<span>DNS</span>入口。用<span>bind</span>可以使用<span  >nsupdate</span>动态更新<span>DNS</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>应该用<span>--logs-bin</span>选项而不用 
+		 
+		<span>
+		--logs-slave-updates</span>选项运行从服务器。这样，一旦你在其它从服务器上发出<span  >STOP 
+		SLAVE</span><span>; </span>
+		<span  >RESET MASTER</span><span>,
+		</span>以及<span  >CHANGE 
+		MASTER TO</span>语句<span >，</span>该从服务器可以切换为主服务器。例如，假设有下面的设置：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WC</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;WC----&gt; M</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ | \</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp; |&nbsp; \</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v&nbsp;&nbsp; v&nbsp;&nbsp; v</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;S1&nbsp;&nbsp; S2&nbsp; S3</span></pre>
+		<p><strong>
+		<span>M</span></strong>代表主服务器，<strong><span  style="font-family:
+宋体">S</span></strong>代表从服务器，<strong><span>WC</span></strong>代表发出数据库写和读取操作的客户；只发出数据库读取操作的客户没有给出，因为它们不需要切换。<strong><span>S1</span><span>、<span>S2</span></span></strong>以及<strong><span>S3</span></strong>是从服务器，用<span>--logs-bin</span>选项而没有用<span>--logs-slave-updates</span>运行。因为从服务器收到的主服务器的更新没有记录在二进制日志中，除非指定 
+		 
+		<span>
+		--logs-slave-updates</span>选项，每个从服务器上的二进制日志是空的。如果因为某些原因<strong><span>M
+		</span></strong>变得不可用，你可以选取一个从服务器变为新的主服务器。例如，如果你选取了<strong><span>S1</span></strong>，所有<strong><span>WC</span></strong>应该重新指向<strong><span>S1</span></strong>和<strong><span>S2</span></strong>，并且<strong><span>S3</span></strong>然后应从<strong><span>S1</span></strong>复制<strong><span>。</span></strong></p>
+		<p>确保所有从服务器已经处理了中继日志中的所有语句。在每个从服务器上，发出<span  >STOP 
+		SLAVE IO_THREAD</span>语句，然后检查<span  >SHOW 
+		PROCESSLIST</span>语句的输出，直到你看到<span  >Has 
+		read all relay log</span>。当所有从服务器都执行完这些，它们可以被重新配置为一个新的设置。在被提升为主服务器的从服务器<strong><span>S1</span></strong>上，发出<span>STOP 
+		SLAVE</span>和<span  >RESET 
+		MASTER</span>语句。</p>
+		<p>在其它从服务器<strong><span  style="font-family:
+宋体">S2</span></strong>和<strong><span>S3</span><span>上</span></strong>，使用<span>STOP 
+		SLAVE</span>和<span  >CHANGE 
+		MASTER TO MASTER_HOST=&#39;S1&#39;</span>（其中<span>&#39;S1&#39;</span>表示<strong><span>S1</span></strong>实际的主机名）。为<span>CHANGE 
+		MASTER</span>添加关于从<strong><span  style="font-family:
+宋体">S2</span></strong>或<strong><span>S3</span></strong>如何连接到<strong><span>S1</span><span>的</span></strong>所有信息（<i><span>user</span></i>、<i><span>password</span></i>、<i><span>port</span></i>）。在<span  >CHANGE 
+		MASTER</span>命令中，不需要指定从其读取的<strong><span>S1</span></strong>的二进制日志名或二进制日志位置：我们知道它是第<span>1</span>个二进制日志，位置是<span>4</span>，这是<span  >CHANGE 
+		MASTER</span>命令的默认值。最后，在<strong><span>S2</span></strong>和<strong><span>S3</span><span style="
+">上</span></strong>使用<span>START 
+		SLAVE </span>命令。</p>
+		<p>然后，指示所有<strong><span  style="font-family:
+宋体">WC</span></strong><span> </span>把它们的语句指向<strong><span>S1</span><span>。</span></strong>此后，<strong><span>WC</span></strong>发出的所有发送到<strong><span>S1</span><span style="
+">的</span></strong>更新语句被写入<strong><span>S1</span><span style="
+">的</span></strong>二进制日志，<strong><span>S1</span></strong>则包含<strong><span>M</span></strong>死掉之后的发送到 
+		<strong><span>S1</span></strong>的每一个更新语句。</p>
+		<p>结果是下面的配置：</p>
+		<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WC</span></pre>
+		<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /</span></pre>
+		<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre ><span> WC&nbsp;&nbsp; |&nbsp; M(unavailable)</span></pre>
+		<pre ><span>&nbsp; \&nbsp;&nbsp; |</span></pre>
+		<pre ><span>&nbsp;&nbsp; \&nbsp; |</span></pre>
+		<pre ><span>&nbsp;&nbsp;&nbsp; v v</span></pre>
+		<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp; S1&lt;--S2&nbsp; S3</span></pre>
+		<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; +-------+</span></pre>
+		<p>当<strong><span>
+		</span><span>M</span></strong>重新启动后，你必须在<strong><span>M</span><span>上</span></strong>发出相同的<span  >CHANGE 
+		MASTER</span>语句，与在<strong><span  style="font-family:
+宋体">S2</span></strong>和<strong><span>S3</span></strong>上发出的语句一样，以便<strong><span>M</span></strong>变为<strong><span>S1</span><span>的</span></strong>从服务器并且恢复在它宕机后丢失的所有<strong><span>WC</span></strong>写操作。要把<strong><span> 
+		M </span></strong>再次作为主服务器（例如，因为它是功能最强的机器），使用前面的步骤，好像<strong><span  style="font-family:
+宋体">S1</span></strong>不可用并且<strong><span style="font-family:
+宋体">M</span></strong>变为一个新的主服务器一样。在这个过程中，在<strong><span>S1</span><span>、<span>S2</span></span></strong>以及<strong><span>S3</span></strong>作为<strong><span>M</span><span>的</span></strong>从服务器之前，不要忘记在<strong><span>M</span><span>上</span></strong>运行<span  >RESET 
+		MASTER</span>。否则，它们可能拾取<strong><span>M</span></strong>变得不可用之前的旧<strong><span>WC</span></strong>写操作。</p>
+		<p>我们目前正在<span>MySQL</span>集成自动主服务器选择系统，但在准备好之前，你必须创建自己的监控工具。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-problems"></a>
+		6.10.&nbsp;复制故障诊断与排除</h2></div></div></div>
+		<p>如果你遵从了上述说明，复制设置仍然不工作，首先检查下面各项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>检查错误日志的消息</span></strong>。许多用户遇到问题后没有及时地这样做而浪费了时间。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>主服务器记录到了二进制日志？用<span>SHOW 
+		MASTER STATUS</span>检查。如果已经记录，<span  >Position</span>应为非零。如果没有记录，确认正用<span>log-bin</span>和<span>server-id</span>选项运行主服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>是否从服务器在运行？使用<span>SHOWSHOW 
+		SLAVE STATUS</span>检查是否<span>slave_</span><span>IO_Running</span>和<span>slave_SQL_Running</span>的值均为<span>Yes</span>。如果不是，验证当启动从服务器时使用的选项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果从服务器正在运行，建立了与主服务器的连接吗？使用<span>SHOW 
+		PROCESSLIST</span>，找出<span>I/O</span>和<span>SQL</span>线程并检查它们的<span  >State</span>列看它们如何显示。参见<a href="replication.html#replication-implementation-details" title="6.3. Replication Implementation Details">6.3节，“复制实施细节”</a>。如果<span>I/O</span>线程状态为<span  >Connecting 
+		to master</span>，验证主服务器上复制用户的权限、主服务器主机名、<span>DNS</span>设置，是否主服务器真正在运行，以及是否可以从从属服务器访问。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		如果从服务器以前在运行但是现在已经停止，原因通常是在主服务器上成功的部分语句在从服务器上失败了。如果你正确快照了主服务器，并且从来没有不通过服务器线程修改从服务器上的数据，这种现象不应发生。如果发生，应为一个<span>bug</span>或你遇到了一个<a href="replication.html#replication-features" title="6.7. Replication Features and Known Problems">6.7节，“复制特性和已知问题”</a><span> </span>描述的已知的复制限制。如果是一个<span>bug</span>，参见<a href="replication.html#replication-bugs" title="6.11. Reporting Replication Bugs">6.11节，“通报复制缺陷”</a>查阅如何通报的说明。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果某个在主服务器上成功的语句拒绝在从服务器上运行，并且不能执行完全的数据库重新同步<span>(</span>即删除从服务器的数据库并从主服务器复制新的快照<span>)</span>，尝试：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>确定是否从服务器的表与主服务器的不同。尽力了解发生的原因。然后让从服务器的表与主服务器的一样并运行<span>START 
+		SLAVE</span>。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>如果前面的步骤不工作或不适合，尽力了解手动更新是否安全<span>(</span>如果需要<span>)</span>，然后忽视来自主服务器的下一个语句。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>如果你确定可以跳过来自主服务器的下一个语句，执行下面的语句：</p>
+		<pre><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>mysql&gt; </span><span><b><span>SET GLOBAL SQL_slave_SKIP_COUNTER = <i>n</i></span><span>；</span></b></span></pre>
+		<pre><span>5.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>mysql&gt; </span><span><b><span>START SLAVE</span><span>；</span></b></span></pre>
+		<p>如果来自主服务器的下一个语句不使用<span>AUTO_INCREMENT</span>或<span>LAST_INSERT_ID()</span>，<span><i><span>n</span></i></span><span>
+		</span>值应为<span>1</span>。否则，值应为<span>2</span>。使用<span>AUTO_INCREMENT</span>或<span>LAST_INSERT_ID()</span>的语句使用值<span>2</span>的原因是它们从主服务器的二进制日志中取两个事件。</p>
+		<p><span>6.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>如果你确保从服务器启动时完好地与主服务器同步，并且没有更新从服务器线程之外的表，则大概诧异是由于<span>bug</span>。如果你正运行最近的版本，请通报该问题。如果你正运行旧版本<span>MySQL</span>，尽力升级到最新的产品版本。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-bugs"></a>
+		6.11.&nbsp;通报复制缺陷</h2></div></div></div>
+		<p>如果你确定没有用户错误，但复制仍然不工作或不稳定，则是向我们发送<span>bug</span>通报的时候了。我们需要尽可能从你那儿获得更多的信息已跟踪<span>bug</span>。请花一些时间和努力编写一份好的<span>bug</span>通报。</p>
+		<p>如果你有一个重复的测试案例来说明<span>bug</span>，请把它输入我们的<span>bug</span>数据库，位置为<span><a target="_top"  href="http://bugs.mysql.com/">http://bugs.mysql.com/</a></span>。如果你有一个“<span class="quote"><span>phantom</span></span>”问题<span>(</span>不能按照期望进行复制<span>)</span>，则使用下面的程序：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>
+		确认未包括用户错误。例如，如果你不用从服务器线程来更新从服务器，数据将不同步，并且会遇到唯一的键值违背更新。在这种情况下，从服务器线程停止并等待你手动清理表使它们同步。<em><span>这不是复制问题。这是一个外部接口问题造成复制失败。</span></em></p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>用<span>--logs-slave-updates</span>和<span>--logs-bin</span>选项运行从服务器。这些选项使从服务器将从主服务器接收的更新记入自己的二进制日志。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>重新设置复制状态之前保存所有的证据。如果我们没有信息或只有粗略的信息，则难以或不可能跟踪问题。应搜集的证据为：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>所有主服务器的二进制日志</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>所有从服务器的二进制日志</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>你发现问题时主服务器的<span  >SHOW 
+		MASTER STATUS</span>的输出</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>你发现问题时主服务器的<span  >SHOW 
+		SLAVE STATUS</span>的输出</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>主服务器和从服务器的错误日志</p>
+		<p><span>4.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>使用<strong><span>mysqlbinlog</span></strong>检查二进制日志。下面命令应有助于发现有问题的查询，例如：</p>
+		<pre><span>5.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span >shell&gt; </span><b><span  >mysqlbinlog -j pos_from_slave_status \</span></b></pre>
+		<pre><span>6.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><b><i><span  >/path/to/log_from_slave_status</span></i><span  > | head</span></b></pre>
+		<p>搜集了问题的证据后，首先作为一个测试案例隔离开。然后将问题输入我们的<span>bug</span>数据库，位置为<span><a target="_top"  href="http://bugs.mysql.com/">http://bugs.mysql.com/</a></span>，应提供尽可能多的信息。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="replication-auto-increment"></a>
+		6.12.&nbsp;多服务器复制中的Auto-Increment</h2></div></div></div>
+		<p>当将多个服务器配置为复制主服务器时，使用<span>auto_increment</span>时应采取特殊步骤以防止键值冲突，否则插入行时多个主服务器会试图使用相同的<span>auto_increment</span>值。</p>
+		<p>服务器变量<span>auto_increment_increment</span>和<span  >auto_increment_offset</span>可以帮助协调多主服务器复制和<span>AUTO_INCREMENT</span>列。每个变量有一个默认的<span>(</span>并且是最小的<span>)</span>值<span>1</span>，最大值为<span>65,535</span>。</p>
+		<p>将这些变量设置为非冲突的值，当在同一个表主插入新行时，多主服务器配置主的服务器将不会与<span>AUTO_INCREMENT</span>值冲突。</p>
+		<p>这两个变量这样影响<span>AUTO_INCREMENT</span>列：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>auto_increment_increment</span>控制列值增加的间隔。例如：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>SHOW VARIABLES LIKE &#39;auto_inc%&#39;;</span></b></span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+--------------------------+-------+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>| Variable_name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Value |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+--------------------------+-------+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>| auto_increment_increment | 1&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>| auto_increment_offset&nbsp;&nbsp;&nbsp; | 1&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+--------------------------+-------+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>2 rows in set (0.00 sec)</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>CREATE TABLE autoinc1 (col INT NOT NULL AUTO_INCREMENT PRIMARY KEY);</span></b></span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Query OK, 0 rows affected (0.04 sec)</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>SET @auto_increment_increment=10;</span></b></span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>SHOW VARIABLES LIKE &#39;auto_inc%&#39;;</span></b></span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+--------------------------+-------+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>| Variable_name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Value |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+--------------------------+-------+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>| auto_increment_increment | 10&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>| auto_increment_offset&nbsp;&nbsp;&nbsp; | 1&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+--------------------------+-------+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>2 rows in set (0.01 sec)</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>INSERT INTO autoinc1 VALUES (NULL), (NULL), (NULL), (NULL);</span></b></span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Query OK, 4 rows affected (0.00 sec)</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Records: 4&nbsp; Duplicates: 0&nbsp; Warnings: 0</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>SELECT col FROM autoinc1;</span></b></span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+-----+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>| col |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+-----+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>|&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>|&nbsp; 11 |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>|&nbsp; 21 |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>|&nbsp; 31 |</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>+-----+</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>4 rows in set (0.00 sec)</span></pre>
+		<p><span>(</span>这里注明如何使用<span  >SHOW 
+		VARIABLES</span>以获得这些变量的当前值）<span>。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span  >
+		auto_increment_offset</span>确定<span>AUTO_INCREMENT</span>列值的起点。影响到在复制设置主可以有多少主服务器<span>(</span>例如将该值设置为<span>10</span>表示设置可以支持<span>10</span>个服务器<span>)</span>。</p>
+		<p>考虑下面的命令，假定在前面所示示例中的相同的会话中执行这些命令：</p>
+		<pre ><span>mysql&gt; </span><span><b><span>SET @auto_increment_offset=5;</span></b></span></pre>
+		<pre ><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre ><span>&nbsp;</span></pre>
+		<pre ><span>mysql&gt; </span><span><b><span>SHOW VARIABLES LIKE &#39;auto_inc%&#39;;</span></b></span></pre>
+		<pre ><span>+--------------------------+-------+</span></pre>
+		<pre ><span>| Variable_name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Value |</span></pre>
+		<pre ><span>+--------------------------+-------+</span></pre>
+		<pre ><span>| auto_increment_increment | 10&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre ><span>| auto_increment_offset&nbsp;&nbsp;&nbsp; | 5&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre ><span>+--------------------------+-------+</span></pre>
+		<pre ><span>2 rows in set (0.00 sec)</span></pre>
+		<pre ><span>&nbsp;</span></pre>
+		<pre ><span>mysql&gt; </span><span><b><span>CREATE TABLE autoinc2 (col INT NOT NULL AUTO_INCREMENT PRIMARY KEY);</span></b></span></pre>
+		<pre ><span>Query OK, 0 rows affected (0.06 sec)</span></pre>
+		<pre ><span>&nbsp;</span></pre>
+		<pre ><span>mysql&gt; </span><span><b><span>INSERT INTO autoinc2 VALUES (NULL), (NULL), (NULL), (NULL);</span></b></span></pre>
+		<pre ><span>Query OK, 4 rows affected (0.00 sec)</span></pre>
+		<pre ><span>Records: 4 &nbsp;Duplicates: 0&nbsp; Warnings: 0</span></pre>
+		<pre ><span>&nbsp;</span></pre>
+		<pre ><span>mysql&gt; </span><span><b><span>SELECT col FROM autoinc2;</span></b></span></pre>
+		<pre ><span>+-----+</span></pre>
+		<pre ><span>| col |</span></pre>
+		<pre ><span>+-----+</span></pre>
+		<pre ><span>|&nbsp;&nbsp; 5 |</span></pre>
+		<pre ><span>|&nbsp; 15 |</span></pre>
+		<pre ><span>|&nbsp; 25 |</span></pre>
+		<pre ><span>|&nbsp; 35 |</span></pre>
+		<pre ><span>+-----+</span></pre>
+		<pre ><span>4 rows in set (0.02 sec)</span></pre>
+		<p>详细信息参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</div></div><div><hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，<span class="GramE">请访问</span><a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。 
+		原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</p></div>
+</body></html>

@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 基于TCP协议的网络程序</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch37.html" title="第 37 章 socket编程" /><link rel="prev" href="ch37s01.html" title="1. 预备知识" /><link rel="next" href="ch37s03.html" title="3. 基于UDP协议的网络程序" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 基于TCP协议的网络程序</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch37s01.html">上一页</a> </td><th width="60%" align="center">第 37 章 socket编程</th><td width="20%" align="right"> <a accesskey="n" href="ch37s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2903028"></a>2. 基于TCP协议的网络程序</h2></div></div></div><p>下图是基于TCP协议的客户端/服务器程序的一般流程：</p><div class="figure"><a id="id2903037"></a><p class="title"><b>图 37.2. TCP协议通讯流程</b></p><div class="figure-contents"><div><img src="images/socket.tcpflowchart.png" alt="TCP协议通讯流程" /></div></div></div><br class="figure-break" /><p>服务器调用socket()、bind()、listen()完成初始化后，调用accept()阻塞等待，处于监听端口的状态，客户端调用socket()初始化后，调用connect()发出SYN段并阻塞等待服务器应答，服务器应答一个SYN-ACK段，客户端收到后从connect()返回，同时应答一个ACK段，服务器收到后从accept()返回。</p><p>数据传输的过程：</p><p>建立连接后，TCP协议提供全双工的通信服务，但是一般的客户端/服务器程序的流程是由客户端主动发起请求，服务器被动处理请求，一问一答的方式。因此，服务器从accept()返回后立刻调用read()，读socket就像读管道一样，如果没有数据到达就阻塞等待，这时客户端调用write()发送请求给服务器，服务器收到后从read()返回，对客户端的请求进行处理，在此期间客户端调用read()阻塞等待服务器的应答，服务器调用write()将处理结果发回给客户端，再次调用read()阻塞等待下一条请求，客户端收到后从read()返回，发送下一条请求，如此循环下去。</p><p>如果客户端没有更多的请求了，就调用close()关闭连接，就像写端关闭的管道一样，服务器的read()返回0，这样服务器就知道客户端关闭了连接，也调用close()关闭连接。注意，任何一方调用close()后，连接的两个传输方向都关闭，不能再发送数据了。如果一方调用shutdown()则连接处于半关闭状态，仍可接收对方发来的数据。</p><p>在学习socket API时要注意应用程序和TCP协议层是如何交互的：
+*应用程序调用某个socket函数时TCP协议层完成什么动作，比如调用connect()会发出SYN段
+*应用程序如何知道TCP协议层的状态变化，比如从某个阻塞的socket函数返回就表明TCP协议收到了某些段，再比如read()返回0就表明收到了FIN段</p><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2902690"></a>2.1. 最简单的TCP网络程序</h3></div></div></div><p>下面通过最简单的客户端/服务器程序的实例来学习socket API。</p><p>server.c的作用是从客户端读字符，然后将每个字符转换为大写并回送给客户端。</p><pre class="programlisting">/* server.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+
+#define MAXLINE 80
+#define SERV_PORT 8000
+
+int main(void)
+{
+	struct sockaddr_in servaddr, cliaddr;
+	socklen_t cliaddr_len;
+	int listenfd, connfd;
+	char buf[MAXLINE];
+	char str[INET_ADDRSTRLEN];
+	int i, n;
+
+	listenfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port = htons(SERV_PORT);
+    
+	bind(listenfd, (struct sockaddr *)&amp;servaddr, sizeof(servaddr));
+
+	listen(listenfd, 20);
+
+	printf("Accepting connections ...\n");
+	while (1) {
+		cliaddr_len = sizeof(cliaddr);
+		connfd = accept(listenfd, 
+				(struct sockaddr *)&amp;cliaddr, &amp;cliaddr_len);
+	  
+		n = read(connfd, buf, MAXLINE);
+		printf("received from %s at PORT %d\n",
+		       inet_ntop(AF_INET, &amp;cliaddr.sin_addr, str, sizeof(str)),
+		       ntohs(cliaddr.sin_port));
+    
+		for (i = 0; i &lt; n; i++)
+			buf[i] = toupper(buf[i]);
+		write(connfd, buf, n);
+		close(connfd);
+	}
+}</pre><p>下面介绍程序中用到的socket API，这些函数都在<code class="literal">sys/socket.h</code>中。</p><pre class="programlisting">int socket(int family, int type, int protocol);</pre><p>socket()打开一个网络通讯端口，如果成功的话，就像open()一样返回一个文件描述符，应用程序可以像读写文件一样用read/write在网络上收发数据，如果socket()调用出错则返回-1。对于IPv4，family参数指定为AF_INET。对于TCP协议，type参数指定为SOCK_STREAM，表示面向流的传输协议。如果是UDP协议，则type参数指定为SOCK_DGRAM，表示面向数据报的传输协议。protocol参数的介绍从略，指定为0即可。</p><pre class="programlisting">int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen);</pre><p>服务器程序所监听的网络地址和端口号通常是固定不变的，客户端程序得知服务器程序的地址和端口号后就可以向服务器发起连接，因此服务器需要调用bind绑定一个固定的网络地址和端口号。bind()成功返回0，失败返回-1。</p><p>bind()的作用是将参数sockfd和myaddr绑定在一起，使sockfd这个用于网络通讯的文件描述符监听myaddr所描述的地址和端口号。前面讲过，struct sockaddr *是一个通用指针类型，myaddr参数实际上可以接受多种协议的sockaddr结构体，而它们的长度各不相同，所以需要第三个参数addrlen指定结构体的长度。我们的程序中对myaddr参数是这样初始化的：</p><pre class="programlisting">bzero(&amp;servaddr, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+servaddr.sin_port = htons(SERV_PORT);</pre><p>首先将整个结构体清零，然后设置地址类型为AF_INET，网络地址为INADDR_ANY，这个宏表示本地的任意IP地址，因为服务器可能有多个网卡，每个网卡也可能绑定多个IP地址，这样设置可以在所有的IP地址上监听，直到与某个客户端建立了连接时才确定下来到底用哪个IP地址，端口号为SERV_PORT，我们定义为8000。</p><pre class="programlisting">int listen(int sockfd, int backlog);</pre><p>典型的服务器程序可以同时服务于多个客户端，当有客户端发起连接时，服务器调用的accept()返回并接受这个连接，如果有大量的客户端发起连接而服务器来不及处理，尚未accept的客户端就处于连接等待状态，listen()声明sockfd处于监听状态，并且最多允许有backlog个客户端处于连接待状态，如果接收到更多的连接请求就忽略。listen()成功返回0，失败返回-1。</p><pre class="programlisting">int accept(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen);</pre><p>三方握手完成后，服务器调用accept()接受连接，如果服务器调用accept()时还没有客户端的连接请求，就阻塞等待直到有客户端连接上来。cliaddr是一个传出参数，accept()返回时传出客户端的地址和端口号。addrlen参数是一个传入传出参数（value-result argument），传入的是调用者提供的缓冲区cliaddr的长度以避免缓冲区溢出问题，传出的是客户端地址结构体的实际长度（有可能没有占满调用者提供的缓冲区）。如果给cliaddr参数传NULL，表示不关心客户端的地址。</p><p>我们的服务器程序结构是这样的：</p><pre class="programlisting">while (1) {
+	cliaddr_len = sizeof(cliaddr);
+	connfd = accept(listenfd, 
+			(struct sockaddr *)&amp;cliaddr, &amp;cliaddr_len);
+	n = read(connfd, buf, MAXLINE);
+	...
+	close(connfd);
+}</pre><p>整个是一个while死循环，每次循环处理一个客户端连接。由于cliaddr_len是传入传出参数，每次调用accept()之前应该重新赋初值。accept()的参数listenfd是先前的监听文件描述符，而accept()的返回值是另外一个文件描述符connfd，之后与客户端之间就通过这个connfd通讯，最后关闭connfd断开连接，而不关闭listenfd，再次回到循环开头listenfd仍然用作accept的参数。accept()成功返回一个文件描述符，出错返回-1。</p><p>client.c的作用是从命令行参数中获得一个字符串发给服务器，然后接收服务器返回的字符串并打印。</p><pre class="programlisting">/* client.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+
+#define MAXLINE 80
+#define SERV_PORT 8000
+
+int main(int argc, char *argv[])
+{
+	struct sockaddr_in servaddr;
+	char buf[MAXLINE];
+	int sockfd, n;
+	char *str;
+    
+	if (argc != 2) {
+		fputs("usage: ./client message\n", stderr);
+		exit(1);
+	}
+	str = argv[1];
+    
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	inet_pton(AF_INET, "127.0.0.1", &amp;servaddr.sin_addr);
+	servaddr.sin_port = htons(SERV_PORT);
+    
+	connect(sockfd, (struct sockaddr *)&amp;servaddr, sizeof(servaddr));
+
+	write(sockfd, str, strlen(str));
+
+	n = read(sockfd, buf, MAXLINE);
+	printf("Response from server:\n");
+	write(STDOUT_FILENO, buf, n);
+
+	close(sockfd);
+	return 0;
+}</pre><p>由于客户端不需要固定的端口号，因此不必调用bind()，客户端的端口号由内核自动分配。注意，客户端不是不允许调用bind()，只是没有必要调用bind()固定一个端口号，服务器也不是必须调用bind()，但如果服务器不调用bind()，内核会自动给服务器分配监听端口，每次启动服务器时端口号都不一样，客户端要连接服务器就会遇到麻烦。</p><pre class="programlisting">int connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);</pre><p>客户端需要调用connect()连接服务器，connect和bind的参数形式一致，区别在于bind的参数是自己的地址，而connect的参数是对方的地址。connect()成功返回0，出错返回-1。</p><p>先编译运行服务器: </p><pre class="screen">$ ./server
+ Accepting connections ...</pre><p>然后在另一个终端里用netstat命令查看：</p><pre class="screen">$ netstat -apn|grep 8000
+ tcp        0      0 0.0.0.0:8000            0.0.0.0:*               LISTEN     8148/server</pre><p>可以看到server程序监听8000端口，IP地址还没确定下来。现在编译运行客户端：</p><pre class="screen">$ ./client abcd
+Response from server:
+ABCD</pre><p>回到server所在的终端，看看server的输出：</p><pre class="screen">$ ./server
+ Accepting connections ...
+ received from 127.0.0.1 at PORT 59757</pre><p>可见客户端的端口号是自动分配的。现在把客户端所连接的服务器IP改为其它主机的IP，试试两台主机的通讯。</p><p>再做一个小实验，在客户端的connect()代码之后插一个while(1);死循环，使客户端和服务器都处于连接中的状态，用netstat命令查看：</p><pre class="screen">$ ./server &amp;
+[1] 8343
+$ Accepting connections ...
+./client abcd &amp;
+[2] 8344
+$ netstat -apn|grep 8000
+tcp        0      0 0.0.0.0:8000            0.0.0.0:*               LISTEN     8343/server         
+tcp        0      0 127.0.0.1:44406         127.0.0.1:8000          ESTABLISHED8344/client         
+tcp        0      0 127.0.0.1:8000          127.0.0.1:44406         ESTABLISHED8343/server</pre><p>应用程序中的一个socket文件描述符对应一个socket pair，也就是源地址:源端口号和目的地址:目的端口号，也对应一个TCP连接。</p><div class="table"><a id="id2903589"></a><p class="title"><b>表 37.1. client和server的socket状态</b></p><div class="table-contents"><table summary="client和server的socket状态" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>socket文件描述符</th><th>源地址:源端口号</th><th>目的地址:目的端口号</th><th>状态</th></tr></thead><tbody><tr><td>server.c中的listenfd</td><td>0.0.0.0:8000</td><td>0.0.0.0:*</td><td>LISTEN</td></tr><tr><td>server.c中的connfd</td><td>127.0.0.1:8000</td><td>127.0.0.1:44406</td><td>ESTABLISHED</td></tr><tr><td>client.c中的sockfd</td><td>127.0.0.1:44406</td><td>127.0.0.1:8000</td><td>ESTABLISHED</td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2903656"></a>2.2. 错误处理与读写控制</h3></div></div></div><p>上面的例子不仅功能简单，而且简单到几乎没有什么错误处理，我们知道，系统调用不能保证每次都成功，必须进行出错处理，这样一方面可以保证程序逻辑正常，另一方面可以迅速得到故障信息。</p><p>为使错误处理的代码不影响主程序的可读性，我们把与socket相关的一些系统函数加上错误处理代码包装成新的函数，做成一个模块wrap.c：</p><pre class="programlisting">#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/socket.h&gt;
+
+void perr_exit(const char *s)
+{
+	perror(s);
+	exit(1);
+}
+
+int Accept(int fd, struct sockaddr *sa, socklen_t *salenptr)
+{
+	int n;
+
+again:
+	if ( (n = accept(fd, sa, salenptr)) &lt; 0) {
+		if ((errno == ECONNABORTED) || (errno == EINTR))
+			goto again;
+		else
+			perr_exit("accept error");
+	}
+	return n;
+}
+
+void Bind(int fd, const struct sockaddr *sa, socklen_t salen)
+{
+	if (bind(fd, sa, salen) &lt; 0)
+		perr_exit("bind error");
+}
+
+void Connect(int fd, const struct sockaddr *sa, socklen_t salen)
+{
+	if (connect(fd, sa, salen) &lt; 0)
+		perr_exit("connect error");
+}
+
+void Listen(int fd, int backlog)
+{
+	if (listen(fd, backlog) &lt; 0)
+		perr_exit("listen error");
+}
+
+int Socket(int family, int type, int protocol)
+{
+	int n;
+
+	if ( (n = socket(family, type, protocol)) &lt; 0)
+		perr_exit("socket error");
+	return n;
+}
+
+ssize_t Read(int fd, void *ptr, size_t nbytes)
+{
+	ssize_t n;
+
+again:
+	if ( (n = read(fd, ptr, nbytes)) == -1) {
+		if (errno == EINTR)
+			goto again;
+		else
+			return -1;
+	}
+	return n;
+}
+
+ssize_t Write(int fd, const void *ptr, size_t nbytes)
+{
+	ssize_t n;
+
+again:
+	if ( (n = write(fd, ptr, nbytes)) == -1) {
+		if (errno == EINTR)
+			goto again;
+		else
+			return -1;
+	}
+	return n;
+}
+
+void Close(int fd)
+{
+	if (close(fd) == -1)
+		perr_exit("close error");
+}</pre><p>慢系统调用accept、read和write被信号中断时应该重试。connect虽然也会阻塞，但是被信号中断时不能立刻重试。对于accept，如果errno是ECONNABORTED，也应该重试。详细解释见参考资料。</p><p>TCP协议是面向流的，read和write调用的返回值往往小于参数指定的字节数。对于read调用，如果接收缓冲区中有20字节，请求读100个字节，就会返回20。对于write调用，如果请求写100个字节，而发送缓冲区中只有20个字节的空闲位置，那么write会阻塞，直到把100个字节全部交给发送缓冲区才返回，但如果socket文件描述符有O_NONBLOCK标志，则write不阻塞，直接返回20。为避免这些情况干扰主程序的逻辑，确保读写我们所请求的字节数，我们实现了两个包装函数readn和writen，也放在wrap.c中：</p><pre class="programlisting">ssize_t Readn(int fd, void *vptr, size_t n)
+{
+	size_t  nleft;
+	ssize_t nread;
+	char   *ptr;
+
+	ptr = vptr;
+	nleft = n;
+	while (nleft &gt; 0) {
+		if ( (nread = read(fd, ptr, nleft)) &lt; 0) {
+			if (errno == EINTR)
+				nread = 0;
+			else
+				return -1;
+		} else if (nread == 0)
+			break;
+
+		nleft -= nread;
+		ptr += nread;
+	}
+	return n - nleft;
+}
+
+ssize_t Writen(int fd, const void *vptr, size_t n)
+{
+	size_t nleft;
+	ssize_t nwritten;
+	const char *ptr;
+
+	ptr = vptr;
+	nleft = n;
+	while (nleft &gt; 0) {
+		if ( (nwritten = write(fd, ptr, nleft)) &lt;= 0) {
+			if (nwritten &lt; 0 &amp;&amp; errno == EINTR)
+				nwritten = 0;
+			else
+				return -1;
+		}
+
+		nleft -= nwritten;
+		ptr += nwritten;
+	}
+	return n;
+}</pre><p>如果应用层协议的各字段长度固定，用readn来读是非常方便的。例如设计一种客户端上传文件的协议，规定前12字节表示文件名，超过12字节的文件名截断，不足12字节的文件名用'\0'补齐，从第13字节开始是文件内容，上传完所有文件内容后关闭连接，服务器可以先调用readn读12个字节，根据文件名创建文件，然后在一个循环中调用read读文件内容并存盘，循环结束的条件是read返回0。</p><p>字段长度固定的协议往往不够灵活，难以适应新的变化。比如，以前DOS的文件名是8字节主文件名加“.”加3字节扩展名，不超过12字节，但是现代操作系统的文件名可以长得多，12字节就不够用了。那么制定一个新版本的协议规定文件名字段为256字节怎么样？这样又造成很大的浪费，因为大多数文件名都很短，需要用大量的'\0'补齐256字节，而且新版本的协议和老版本的程序无法兼容，如果已经有很多人在用老版本的程序了，会造成遵循新协议的程序与老版本程序的互操作性（Interoperability）问题。如果新版本的协议要添加新的字段，比如规定前12字节是文件名，从13到16字节是文件类型说明，从第17字节开始才是文件内容，同样会造成和老版本的程序无法兼容的问题。</p><p>现在重新看看上一节的TFTP协议是如何避免上述问题的：TFTP协议的各字段是可变长的，以'\0'为分隔符，文件名可以任意长，再看blksize等几个选项字段，TFTP协议并没有规定从第m字节到第n字节是blksize的值，而是把选项的描述信息“blksize”与它的值“512”一起做成一个可变长的字段，这样，以后添加新的选项仍然可以和老版本的程序兼容（老版本的程序只要忽略不认识的选项就行了）。</p><p>因此，常见的应用层协议都是带有可变长字段的，字段之间的分隔符用换行的比用'\0'的更常见，例如本节后面要介绍的HTTP协议。可变长字段的协议用readn来读就很不方便了，为此我们实现一个类似于fgets的readline函数，也放在wrap.c中：</p><pre class="programlisting">static ssize_t my_read(int fd, char *ptr)
+{
+	static int read_cnt;
+	static char *read_ptr;
+	static char read_buf[100];
+
+	if (read_cnt &lt;= 0) {
+	again:
+		if ( (read_cnt = read(fd, read_buf, sizeof(read_buf))) &lt; 0) {
+			if (errno == EINTR)
+				goto again;
+			return -1;
+		} else if (read_cnt == 0)
+			return 0;
+		read_ptr = read_buf;
+	}
+	read_cnt--;
+	*ptr = *read_ptr++;
+	return 1;
+}
+
+ssize_t Readline(int fd, void *vptr, size_t maxlen)
+{
+	ssize_t n, rc;
+	char    c, *ptr;
+
+	ptr = vptr;
+	for (n = 1; n &lt; maxlen; n++) {
+		if ( (rc = my_read(fd, &amp;c)) == 1) {
+			*ptr++ = c;
+			if (c  == '\n')
+				break;
+		} else if (rc == 0) {
+			*ptr = 0;
+			return n - 1;
+		} else
+			return -1;
+	}
+	*ptr  = 0;
+	return n;
+}</pre><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2903831"></a>习题</h4></div></div></div><p>1、请读者自己写出wrap.c的头文件wrap.h，后面的网络程序代码都要用到这个头文件。</p><p>2、修改server.c和client.c，添加错误处理。</p></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2903862"></a>2.3. 把client改为交互式输入</h3></div></div></div><p>目前实现的client每次运行只能从命令行读取一个字符串发给服务器，再从服务器收回来，现在我们把它改成交互式的，不断从终端接受用户输入并和server交互。 </p><pre class="programlisting">/* client.c */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;netinet/in.h&gt;
+#include "wrap.h"
+
+#define MAXLINE 80
+#define SERV_PORT 8000
+
+int main(int argc, char *argv[])
+{
+	struct sockaddr_in servaddr;
+	char buf[MAXLINE];
+	int sockfd, n;
+    
+	sockfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	inet_pton(AF_INET, "127.0.0.1", &amp;servaddr.sin_addr);
+	servaddr.sin_port = htons(SERV_PORT);
+    
+	Connect(sockfd, (struct sockaddr *)&amp;servaddr, sizeof(servaddr));
+
+	while (fgets(buf, MAXLINE, stdin) != NULL) {
+		Write(sockfd, buf, strlen(buf));
+		n = Read(sockfd, buf, MAXLINE);
+		if (n == 0)
+			printf("the other side has been closed.\n");
+		else
+			Write(STDOUT_FILENO, buf, n);
+	}
+
+	Close(sockfd);
+	return 0;
+}</pre><p>编译并运行server和client，看看是否达到了你预想的结果。 </p><pre class="screen">$ ./client
+haha1
+HAHA1 
+haha2
+the other side has been closed.
+haha3
+$</pre><p>这时server仍在运行，但是client的运行结果并不正确。原因是什么呢？仔细查看server.c可以发现，server对每个请求只处理一次，应答后就关闭连接，client不能继续使用这个连接发送数据。但是client下次循环时又调用write发数据给server，write调用只负责把数据交给TCP发送缓冲区就可以成功返回了，所以不会出错，而server收到数据后应答一个RST段，client收到RST段后无法立刻通知应用层，只把这个状态保存在TCP协议层。client下次循环又调用write发数据给server，由于TCP协议层已经处于RST状态了，因此不会将数据发出，而是发一个SIGPIPE信号给应用层，SIGPIPE信号的缺省处理动作是终止程序，所以看到上面的现象。</p><p>为了避免client异常退出，上面的代码应该在判断对方关闭了连接后break出循环，而不是继续write。另外，有时候代码中需要连续多次调用write，可能还来不及调用read得知对方已关闭了连接就被SIGPIPE信号终止掉了，这就需要在初始化时调用sigaction处理SIGPIPE信号，如果SIGPIPE信号没有导致进程异常退出，write返回-1并且errno为EPIPE。</p><p>另外，我们需要修改server，使它可以多次处理同一客户端的请求。</p><pre class="programlisting">/* server.c */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;netinet/in.h&gt;
+#include "wrap.h"
+
+#define MAXLINE 80
+#define SERV_PORT 8000
+
+int main(void)
+{
+	struct sockaddr_in servaddr, cliaddr;
+	socklen_t cliaddr_len;
+	int listenfd, connfd;
+	char buf[MAXLINE];
+	char str[INET_ADDRSTRLEN];
+	int i, n;
+
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port = htons(SERV_PORT);
+    
+	Bind(listenfd, (struct sockaddr *)&amp;servaddr, sizeof(servaddr));
+
+	Listen(listenfd, 20);
+
+	printf("Accepting connections ...\n");
+	while (1) {
+		cliaddr_len = sizeof(cliaddr);
+		connfd = Accept(listenfd, 
+				(struct sockaddr *)&amp;cliaddr, &amp;cliaddr_len);
+		while (1) {
+			n = Read(connfd, buf, MAXLINE);
+			if (n == 0) {
+				printf("the other side has been closed.\n");
+				break;
+			}
+			printf("received from %s at PORT %d\n",
+			       inet_ntop(AF_INET, &amp;cliaddr.sin_addr, str, sizeof(str)),
+			       ntohs(cliaddr.sin_port));
+    
+			for (i = 0; i &lt; n; i++)
+				buf[i] = toupper(buf[i]);
+			Write(connfd, buf, n);
+		}
+		Close(connfd);
+	}
+}</pre><p>经过上面的修改后，客户端和服务器可以进行多次交互了。我们知道，服务器通常是要同时服务多个客户端的，运行上面的server和client之后，再开一个终端运行client试试，新的client能得到服务吗？想想为什么。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2903959"></a>2.4. 使用fork并发处理多个client的请求</h3></div></div></div><p>怎么解决这个问题？网络服务器通常用fork来同时服务多个客户端，父进程专门负责监听端口，每次accept一个新的客户端连接就fork出一个子进程专门服务这个客户端。但是子进程退出时会产生僵尸进程，父进程要注意处理SIGCHLD信号和调用wait清理僵尸进程。</p><p>以下给出代码框架，完整的代码请读者自己完成。</p><pre class="programlisting">listenfd = socket(...);
+bind(listenfd, ...);
+listen(listenfd, ...); 
+while (1) {
+	connfd = accept(listenfd, ...);
+	n = fork();
+	if (n == -1) {
+		perror("call to fork");
+		exit(1);
+	} else if (n == 0) {
+		close(listenfd);
+		while (1) {
+			read(connfd, ...);
+			...
+			write(connfd, ...);
+		}
+		close(connfd);
+		exit(0);
+	} else
+		close(connfd);
+}</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2904007"></a>2.5. setsockopt</h3></div></div></div><p>现在做一个测试，首先启动server，然后启动client，然后用Ctrl-C使server终止，这时马上再运行server，结果是：</p><pre class="screen">$ ./server
+ bind error: Address already in use</pre><p>这是因为，虽然server的应用程序终止了，但TCP协议层的连接并没有完全断开，因此不能再次监听同样的server端口。我们用netstat命令查看一下：</p><pre class="screen">$ netstat -apn |grep 8000
+ tcp        1      0 127.0.0.1:33498         127.0.0.1:8000          CLOSE_WAIT 10830/client        
+ tcp        0      0 127.0.0.1:8000          127.0.0.1:33498         FIN_WAIT2  -</pre><p>server终止时，socket描述符会自动关闭并发FIN段给client，client收到FIN后处于CLOSE_WAIT状态，但是client并没有终止，也没有关闭socket描述符，因此不会发FIN给server，因此server的TCP连接处于FIN_WAIT2状态。</p><p>现在用Ctrl-C把client也终止掉，再观察现象：</p><pre class="screen">$ netstat -apn |grep 8000
+ tcp        0      0 127.0.0.1:8000          127.0.0.1:44685         TIME_WAIT  -
+ $ ./server
+ bind error: Address already in use</pre><p>client终止时自动关闭socket描述符，server的TCP连接收到client发的FIN段后处于TIME_WAIT状态。TCP协议规定，主动关闭连接的一方要处于TIME_WAIT状态，等待两个MSL（maximum segment lifetime）的时间后才能回到CLOSED状态，因为我们先Ctrl-C终止了server，所以server是主动关闭连接的一方，在TIME_WAIT期间仍然不能再次监听同样的server端口。MSL在RFC1122中规定为两分钟，但是各操作系统的实现不同，在Linux上一般经过半分钟后就可以再次启动server了。至于为什么要规定TIME_WAIT的时间请读者参考UNP 2.7节。</p><p>在server的TCP连接没有完全断开之前不允许重新监听是不合理的，因为，TCP连接没有完全断开指的是connfd（127.0.0.1:8000）没有完全断开，而我们重新监听的是listenfd（0.0.0.0:8000），虽然是占用同一个端口，但IP地址不同，connfd对应的是与某个客户端通讯的一个具体的IP地址，而listenfd对应的是wildcard address。解决这个问题的方法是使用setsockopt()设置socket描述符的选项SO_REUSEADDR为1，表示允许创建端口号相同但IP地址不同的多个socket描述符。在server代码的socket()和bind()调用之间插入如下代码：</p><pre class="programlisting">int opt = 1;
+setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt));</pre><p>有关setsockopt可以设置的其它选项请参考UNP第7章。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2904122"></a>2.6. 使用select</h3></div></div></div><p>select是网络程序中很常用的一个系统调用，它可以同时监听多个阻塞的文件描述符（例如多个网络连接），哪个有数据到达就处理哪个，这样，不需要fork和多进程就可以实现并发服务的server。</p><pre class="programlisting">/* server.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;netinet/in.h&gt;
+#include "wrap.h"
+
+#define MAXLINE 80
+#define SERV_PORT 8000
+
+int main(int argc, char **argv)
+{
+	int i, maxi, maxfd, listenfd, connfd, sockfd;
+	int nready, client[FD_SETSIZE];
+	ssize_t n;
+	fd_set rset, allset;
+	char buf[MAXLINE];
+	char str[INET_ADDRSTRLEN];
+	socklen_t cliaddr_len;
+	struct sockaddr_in	cliaddr, servaddr;
+
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Bind(listenfd, (struct sockaddr *)&amp;servaddr, sizeof(servaddr));
+
+	Listen(listenfd, 20);
+
+	maxfd = listenfd;		/* initialize */
+	maxi = -1;			/* index into client[] array */
+	for (i = 0; i &lt; FD_SETSIZE; i++)
+		client[i] = -1;	/* -1 indicates available entry */
+	FD_ZERO(&amp;allset);
+	FD_SET(listenfd, &amp;allset);
+
+	for ( ; ; ) {
+		rset = allset;	/* structure assignment */
+		nready = select(maxfd+1, &amp;rset, NULL, NULL, NULL);
+		if (nready &lt; 0)
+			perr_exit("select error");
+
+		if (FD_ISSET(listenfd, &amp;rset)) { /* new client connection */
+			cliaddr_len = sizeof(cliaddr);
+			connfd = Accept(listenfd, (struct sockaddr *)&amp;cliaddr, &amp;cliaddr_len);
+
+			printf("received from %s at PORT %d\n",
+			       inet_ntop(AF_INET, &amp;cliaddr.sin_addr, str, sizeof(str)),
+			       ntohs(cliaddr.sin_port));
+
+			for (i = 0; i &lt; FD_SETSIZE; i++)
+				if (client[i] &lt; 0) {
+					client[i] = connfd; /* save descriptor */
+					break;
+				}
+			if (i == FD_SETSIZE) {
+				fputs("too many clients\n", stderr);
+				exit(1);
+			}
+
+			FD_SET(connfd, &amp;allset);	/* add new descriptor to set */
+			if (connfd &gt; maxfd)
+				maxfd = connfd; /* for select */
+			if (i &gt; maxi)
+				maxi = i;	/* max index in client[] array */
+
+			if (--nready == 0)
+				continue;	/* no more readable descriptors */
+		}
+
+		for (i = 0; i &lt;= maxi; i++) {	/* check all clients for data */
+			if ( (sockfd = client[i]) &lt; 0)
+				continue;
+			if (FD_ISSET(sockfd, &amp;rset)) {
+				if ( (n = Read(sockfd, buf, MAXLINE)) == 0) {
+					/* connection closed by client */
+					Close(sockfd);
+					FD_CLR(sockfd, &amp;allset);
+					client[i] = -1;
+				} else {
+					int j;
+					for (j = 0; j &lt; n; j++)
+						buf[j] = toupper(buf[j]);
+					Write(sockfd, buf, n);
+				}
+
+				if (--nready == 0)
+					break;	/* no more readable descriptors */
+			}
+		}
+	}
+}</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch37s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch37.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch37s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 预备知识 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 基于UDP协议的网络程序</td></tr></table></div></body></html>

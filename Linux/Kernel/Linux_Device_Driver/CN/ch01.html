@@ -1,0 +1,84 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;1&#160;章&#160;第一章 设备驱动简介-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="next" href="ch01s02.html" title="1.2.&#160;划分内核">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;1&#160;章&#160;第一章 设备驱动简介</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="index.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch01s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="AnIntroductiontoDeviceDrivers.chap"></a>第&#160;1&#160;章&#160;第一章 设备驱动简介</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch01.html#TheRoleoftheDeviceDriver.sect1">1.1. 驱动程序的角色</a></span></dt>
+<dt><span class="sect1"><a href="ch01s02.html">1.2. 划分内核</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch01s02.html#LoadableModules.sect2">1.2.1. 可加载模块</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch01s03.html">1.3. 设备和模块的分类</a></span></dt>
+<dt><span class="sect1"><a href="ch01s04.html">1.4. 安全问题</a></span></dt>
+<dt><span class="sect1"><a href="ch01s05.html">1.5. 版本编号</a></span></dt>
+<dt><span class="sect1"><a href="ch01s06.html">1.6. 版权条款</a></span></dt>
+<dt><span class="sect1"><a href="ch01s07.html">1.7. 加入内核开发社团</a></span></dt>
+<dt><span class="sect1"><a href="ch01s08.html">1.8. 本书的内容</a></span></dt>
+</dl>
+</div>
+<p>以 Linux 为代表的自由操作系统的很多优点之一, 是它们的内部是开放给所有人看的. 操作系统, 曾经是一个隐藏的神秘的地方, 它的代码只局限于少数的程序员, 现在已准备好让任何具备必要技能的人来检查, 理解以及修改. Linux 已经帮助使操作系统民主化. Linux 内核保留有大量的复杂的代码, 但是, 那些想要成为内核 hacker 的人需要一个入口点, 这样他们可以进入代码中, 不会被代码的复杂性压倒. 通常, 设备驱动提供了这样的门路.</p>
+<p>驱动程序在 Linux 内核里扮演着特殊的角色. 它们是截然不同的"黑盒子", 使硬件的特殊的一部分响应定义好的内部编程接口. 它们完全隐藏了设备工作的细节. 用户的活动通过一套标准化的调用来进行, 这些调用与特别的驱动是独立的; 设备驱动的角色就是将这些调用映射到作用于实际硬件的和设备相关的操作上. 这个编程接口是这样, 驱动可以与内核的其他部分分开建立, 并在需要的时候在运行时"插入". 这种模块化使得 Linux 驱动易写, 以致于目前有几百个驱动可用.</p>
+<p>编写 Linux 设备驱动有许多理由让人感兴趣. 可用的新硬件出现的速率(以及陈旧的速率)就确保了驱动编写者在可见的将来内是忙碌的. 个别人可能需要了解驱动以便存取一个他们感兴趣的特殊设备. 硬件供应商, 通过为他们的产品开发 Linux 驱动, 可以给他们的潜在市场增加大量的正在扩张的 Linux 用户基数. 还有 Linux 系统的开放源码性质意味着如果驱动编写者愿意, 驱动源码能够快速地散布到几百万用户.</p>
+<p>本书指导你如何编写你自己的驱动, 以及如何利用内核相关的部分. 我们采用一种设备-独立的方法; 编程技术和接口, 在任何可能的时候, 不会捆绑到任何特定的设备. 每一个驱动都是不同的; 作为一个驱动编写者, 你需要深入理解你的特定设备. 但是大部分的原则和基本技术对所有驱动都是一样的. 本书无法教你关于你的设备的东西, 但是它给予你所需要的使你的设备运行起来的背景知识的指导.</p>
+<p>在你学习编写驱动时, 你通常会发现大量有关 Linux 内核的东西. 这也许会帮助你理解你的机器是如何工作的, 以及为什么事情不是如你所愿的快, 或者不是如你所要的进行. 我们会逐步介绍新概念, 由非常简单的驱动开始并建立它们; 每一个新概念都伴有例子代码, 这样的代码不需要特别的硬件来测试.</p>
+<p>本章不会真正进入编写代码. 但是, 我们介绍一些 Linux 内核的背景概念, 这样在以后我们动手编程时, 你会感到乐于知道这些.</p>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="TheRoleoftheDeviceDriver.sect1"></a>1.1.&#160;驱动程序的角色</h2></div></div></div>
+<p>作为一个程序员, 你能够对你的驱动作出你自己的选择, 并且在所需的编程时间和结果的灵活性之间, 选择一个可接受的平衡. 尽管说一个驱动是"灵活"的, 听起来有些奇怪, 但是我们喜欢这个字眼, 因为它强调了一个驱动程序的角色是提供机制, 而不是策略.</p>
+<p>机制和策略的区分是其中一个在 Unix 设计背后的最好观念. 大部分的编程问题其实可以划分为 2 部分:" 提供什么能力"(机制) 和 "如何使用这些能力"(策略). 如果这两方面由程序的不同部分来表达, 或者甚至由不同的程序共同表达, 软件包是非常容易开发和适应特殊的需求.</p>
+<p>例如, 图形显示的 Unix 管理划分为 X 服务器, 它理解硬件以及提供了统一的接口给用户程序, 还有窗口和会话管理器, 它实现了一个特别的策略, 而对硬件一无所知. 人们可以在不同的硬件上使用相同的窗口管理器, 而且不同的用户可以在同一台工作站上运行不同的配置. 甚至完全不同的桌面环境, 例如 KDE 和 GNOME, 可以在同一系统中共存. 另一个例子是 TCP/IP 网络的分层结构: 操作系统提供 socket 抽象层, 它对要传送的数据而言不实现策略, 而不同的服务器负责各种服务( 以及它们的相关策略). 而且, 一个服务器, 例如 ftpd 提供文件传输机制, 同时用户可以使用任何他们喜欢的客户端; 无论命令行还是图形客户端都存在, 并且任何人都能编写一个新的用户接口来传输文件.</p>
+<p>在驱动相关的地方, 机制和策略之间的同样的区分都适用. 软驱驱动是不含策略的--它的角色仅仅是将磁盘表现为一个数据块的连续阵列. 系统的更高级部分提供了策略, 例如谁可以存取软驱驱动, 这个软驱是直接存取还是要通过一个文件系统, 以及用户是否可以加载文件系统到这个软驱. 因为不同的环境常常需要不同的使用硬件的方式, 尽可能对策略透明是非常重要的.</p>
+<p>在编写驱动时, 程序员应当特别注意这个基础的概念: 编写内核代码来存取硬件, 但是不能强加特别的策略给用户, 因为不同的用户有不同的需求. 驱动应当做到使硬件可用, 将所有关于如何使用硬件的事情留给应用程序. 一个驱动, 这样, 就是灵活的, 如果它提供了对硬件能力的存取, 没有增加约束. 然而, 有时必须作出一些策略的决定. 例如, 一个数字 I/O 驱动也许只提供对硬件的字符存取, 以便避免额外的代码处理单个位. </p>
+<p>你也可以从不同的角度看你的驱动: 它是一个存在于应用程序和实际设备间的软件层. 驱动的这种特权的角色允许驱动程序员y严密地选择设备应该如何表现: 不同的驱动可以提供不同的能力, 甚至是同一个设备. 实际的驱动设计应当是在许多不同考虑中的平衡. 例如, 一个单个设备可能由不同的程序并发使用, 驱动程序员有完全的自由来决定如何处理并发性. 你能在设备上实现内存映射而不依赖它的硬件能力, 或者你能提供一个用户库来帮助应用程序员在可用的原语之上实现新策略, 等等. 一个主要的考虑是在展现给用户尽可能多的选项, 和你不得不花费的编写驱动的时间之间做出平衡, 还有需要保持事情简单以避免错误潜入.</p>
+<p>对策略透明的驱动有一些典型的特征. 这些包括支持同步和异步操作, 可以多次打开的能力, 利用硬件全部能力, 没有软件层来"简化事情"或者提供策略相关的操作. 这样的驱动不但对他们的最终用户好用, 而且证明也是易写易维护的. 成为策略透明的实际是一个共同的目标, 对软件设计者来说.</p>
+<p>许多设备驱动, 确实, 是与用户程序一起发行的, 以便帮助配置和存取目标设备. 这些程序包括简单的工具到完全的图形应用. 例子包括 tunelp 程序, 它调整并口打印机驱动如何操作, 还有图形的 cardctl 工具, 它是 PCMCIA 驱动包的一部分. 经常会提供一个客户库, 它提供了不需要驱动自身实现的功能.</p>
+<p>本书的范围是内核, 因此我们尽力不涉及策略问题, 应用程序, 以及支持库. 有时我们谈论不同的策略以及如何支持他们, 但是我们不会进入太多有关使用设备的程序的细节, 或者是他们强加的策略的细节. 但是, 你应当理解, 用户程序是一个软件包的构成部分, 并且就算是对策略透明的软件包在发行时也会带有配置文件, 来对底层的机制应用缺省的动作.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="index.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch01s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">Linux 设备驱动 Edition 3&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;1.2.&#160;划分内核</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,155 @@
+<html>
+<head>
+<title>中文TeX系统安装说明</title>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="tex.css" media="screen">
+</head>
+
+<body bgcolor="#FFF4FF">
+<H1>中文TeX系统安装说明</H1>
+
+<div class=ok>最新更新 2005.1.8
+
+<a href="http://learn.tsinghua.edu.cn:8080/2001315450/tex/src/tex/texlive-config2004.tar.gz">TeXLive 2004 中文配置包</a>
+
+<p>根据最新的 TeXLive 2004, 我做了一个中文系统安装包。同时适用于 UNIX 和 Windows 系统。使用时只需要把里面的文件全部拷贝到相应目录就行。latex, dvips, dvipdfm, dvipdfx, pdftex 均经过测试通过。由于空间有限，这个包里还是没有字体。如果有问题请联系我。
+
+<p>存在的问题：目前的配置在 Windows 下 dvipdfmx 不能找到 cid-x.map 文件，从而不能生成可拷贝粘贴的PDF文件。欢迎喜欢折腾的朋友告诉我是怎么回事。
+
+<p>不幸的是 TeXLive 2004 没有提供 Windows 安装程序，而且不再能够直接拷贝使用。Windows 用户目前可以适用 cygwin 或者 UNIX 系统安装。欢迎有兴趣提供高速ftp空间的朋友合作存储我做的直接拷贝就可以用的“傻瓜TeX”，或者“花生TeX” :)
+
+
+较老版本的 TeXLive 配置在这里下载:
+<a
+href="http://learn.tsinghua.edu.cn:8080/2001315450/tex/src/tex-config.tar.gz">
+TeX 系统配置文件下载</a> &mdash; 这个包里含有我机器上 TeX 系
+统的中文配置文件。把它们解开拷贝到 texlive 的 TEXMFLOCAL 就
+能用了。没有包含字体，因为字体太大了。当我在一台新的机器上设
+置 TeX 时，我发现除了这个包里的东西，你只需要修改一下
+texmf.cnf 里的 TTF 路径了。
+
+</div>
+
+
+<p>下面我们就介绍一下为了使用中文，你需要进行那些设置。下面的内容只适用于 TeXLive 2002 及其以前的版本。TeXLive 2004 的系统目录作了一些调整，你可以灵活变通一下吗？否则就用我上面提供的安装包吧。
+
+<h2>生成中文字体和配置文件</h2>
+
+<p>很多程序需要 Type1 字体，你可以用energy大哥写的，后来由我改写，移植的<a href="http://learn.tsinghua.edu.cn:8080/2001315450/tex/programs.html">gbkfonts程序</a>来把 TrueType 的中文字体转化成 Type1 的。TrueType 的字体也是矢量字体，Windows 下有几个这样的字体，推荐使用那个宋体，你还可以另外下载免费的中文字体，或者购买商业版本的字体。
+
+<p>gbkfonts 还帮助生成很多我们以后配置需要的配置文件。这样你可以省去自己写配置的麻烦。
+
+<p>gbkfonts 的使用方法，在 Linux 下很简单，运行：
+<pre class=example>
+gbkfonts /mnt/windows/c/Fonts/simsun.ttf song
+</pre>
+
+<p>在 Windows 下的 gbkfonts 用起来稍为麻烦一点点，你需要把你的字体的各种参数先写到一个叫 gbkfonts.ini 的配置文件里。具体怎么改看一下那个文件就知道了。然后运行：
+
+<pre class=example>
+gbkfonts c:\windows\fonts\simsun.ttf song
+</pre>
+
+<p>大约2分种之后，当前目录下就可以得到很多目录: dvips, pdftex, fonts, ... 你如果像继续造其它字体就再次运行 gbkfonts, 你也可以把调用 gbkfonts 的命令都写到一个脚本里运行，这样你就可以抽空去喝杯茶了。
+
+<p>最后你把这些目录都拷贝到 /usr/local/texlive/texmf-local/. 如果你没有这个目录就创建一个。以后这个目录被叫做 $TEXMFLOCAL.
+
+<p>需要注意的是，你每次增加了文件在 TeX 的目录树里都需要运行 mktexlsr 来刷新文件名数据库，这样 TeX 的程序才能顺利找到各种文件。
+
+
+<H2>让 dvips 使用 Type1 中文字体</H2> 
+<p>TeX 首先生成 dvi 文件，然后 dvi 可以被 dvips 这样的程序转成 PostScript (*.ps) 或者被 dvipdfm 转换成 PDF. 
+
+<p>我们先说说 dvips 怎样使用汉字, 如果你不用 dvips 就可以跳过这一节。有一个需要注意的是：LaTeX 在生成的 dvi 文件里记录的汉字名称叫做 gbksong01, gbksong02, ... 而不是你在 \begin{CJK}{song} 里指定的那个 "song"，这是很容易混淆的。"song" 根据你使用的汉字不同，被CJK的fd文件映射为了 gbksong01, gbksong02...
+
+<p>使 dvips 能够使用汉字，只需要让 dvips 知道 Type1 字体在哪里。我们只需要修改 config.ps, cjk.map, 两步完成！注意以后的 pdfTeX 和 dvipdfm-CJK 的配置有惊人的相似之处。
+<OL>
+<LI>让 dvips 使用 cjk.map 来找到字体
+<p>我们造出了字体，可是 dvips 并不知道你把字体放在哪里了。如果你照上一步那样做了，现在那些字体应该在 $TEXMFLOCAL/fonts/type1/chinese/gbk* 的目录下，是一些 *.pfb 文件。
+
+<p>dvips 是依靠 $TEXMFMAIN/dvips/config/config.ps 来知道字体信息的。我们可以创建一个 $TEXMFLOCAL/dvips/config/config.ps 文件, 这样 TeX 会首先找到 $TEXMFLOCAL 目录里的 config.ps 文件使用它，而不使用 $TEXMFMAIN里的 config.ps. 这样我们避免了修改系统的文件，如果重新安装 TeX，就不用重新修改文件了。
+
+<p>你可以把 $TEXMFMAIN/dvips/config/config.ps 拷贝到  $TEXMFLOCAL/dvips/config/config.ps, 然后加入一行：
+
+<pre>
+p +cjk.map
+</pre>
+
+让它从 cjk.map 这个文件得到字体映射信息。
+
+
+<LI>把字体信息附加到 cjk.map
+<p>cjk.map 记录了 TeX 字体名字和字体文件名字之间的对应关系。它里面有这样一些行：
+
+<pre>
+gbksong01 SimSun01 &lt;gbksong01.pfb
+gbksongsl01 SimSun01 " .167 SlantFont " &lt; gbksong01.pfb
+gbksong02 SimSun02 &lt;gbksong02.pfb
+gbksongsl02 SimSun02 " .167 SlantFont " &lt; gbksong02.pfb
+
+...................
+</pre>
+
+<p>这说明，如果 dvi 文件要求用 "gbkfong01" 这个字体，就去找 gbksong01.pfb 这个文件。你应该把 gbkfonts 生成的 cjk.map 拷贝到 $TEXMFLOCAL/dvips/ 下，如果你以前已经有了这个文件，就把 gbkfonts 生成的文件里新的内容附加在这个文件末尾。
+
+<p>至此，dvips 已经可以使用汉字了。
+</OL>
+
+<H2>让 pdfTeX 直接使用 TrueType 中文字体</H2> 
+<p>需要注意的是 pdfTeX 需要由 gbkfonts 产生的 .enc 文件, 他们在生成的 pdftex 目录里。
+
+<OL>
+<LI>设置TTF字体路径
+
+<p>你需要告诉 TeX 系统你的 TTF 字体都放在哪里了。这个信息记录在 $TEXMFMAIN/web2c/texmf.cnf 文件里：
+
+<p>在下面两行中加入你的TTF字体路径就行了。目录后的两根//表示寻找的时候搜索这个目录及其子目录。
+<pre>
+TTFONTS = .;$TEXMF/fonts/{truetype,ttf}//;/usr3/fonts//;/usr2/texlive/texmf-local/fonts/TTF//
+TTF2TFMINPUTS = .;$TEXMF/ttf2pk//;/usr3/fonts//;/usr2/texlive/texmf-local/fonts/TTF//
+</pre>
+
+<LI>让 pdfTeX 找到字体
+<p>pdfTeX还需要一些映射文件来决定字体文件的名字。这些映射文件都已经由 gbkfonts 生成了: gbksong.map, gbkkai.map,... 它们应该已经被你拷贝到了 $TEXMFLOCAL/pdftex/config.它们里面的内容类似这样：
+<pre>
+gbksong01 &lt;gbksong01.enc &lt;simsun.ttf
+gbksongsl01 &lt;gbksong01.enc &lt;simsun.ttf
+gbksong02 &lt;gbksong02.enc &lt;simsun.ttf
+gbksongsl02 &lt;gbksong02.enc &lt;simsun.ttf
+......
+</pre>
+
+<p>你还需要告诉 pdfTeX 使用那些 map 文件。这个信息记录在 $TEXMFLOCAL/pdftex/config/pdftex.cfg. 如果没有这个文件，就把 $TEXMFMAIN下对应的文件拷贝过来，注意保持目录结构一样，然后把 gbkfonts 生成的 pdftex.cfg 的内容附加在末尾。
+
+config 里的这些行
+<pre>
+map gbksong.map
+map +gbkhei.map
+map +gbkkai.map
+</pre>
+</OL>
+
+就是表示使用那些映射文件的。
+
+<H2>让 dvipdfm-CJK 使用 TrueType 中文字体</H2> 
+<p>dvipdfm-CJK 是支持中日韩字体的 dvipdfm. dvipdfm-CJK 其实也是依靠 $TEXMFMAIN/web2c/texmf.cnf 来找到TTF字体。所以你需要像 pdfTeX 那样做一次。
+
+<p>另外，dvipdfm 需要通过映射文件来找到名字对应的字体文件，需要哪些映射文件是在 $TEXMFLOCAL/dvipdfm/config/config 指定的。这和dvips, pdfTeX 相似。如果你没有，就把 $TEXMFMAIN下对应的文件拷贝过来，注意保持目录结构一样。
+
+<p>在 config 文件里应该有这样一行：
+<pre>
+f cid-x.map
+</pre>
+
+它告诉 dvipdfm 去找 cid-x.map. 这个文件一般在 $TEXMFMAIN/dvipdfm/config/, 如果没有的话你就创建一个。它里面有类似以下内容：
+
+<pre>
+gbksong@UGBK@           UniGB-UCS2-H    :0:simsun.ttf
+gbksongsl@UGBK@         UniGB-UCS2-H    :0:simsun.ttf,Italic
+
+................
+</pre>
+
+<p>你可以把 gbkfonts 生成的 cid-x.map 附加到这个文件的末尾。
+
+<p>常用的程序就是这些了。其它程序请参考另外的说明。

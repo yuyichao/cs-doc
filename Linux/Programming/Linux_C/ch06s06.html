@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>6. goto语句和标号</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch06.html" title="第 6 章 循环语句" /><link rel="prev" href="ch06s05.html" title="5. 嵌套循环" /><link rel="next" href="ch07.html" title="第 7 章 结构体" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">6. goto语句和标号</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s05.html">上一页</a> </td><th width="60%" align="center">第 6 章 循环语句</th><td width="20%" align="right"> <a accesskey="n" href="ch07.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2727710"></a>6. goto语句和标号</h2></div></div></div><p>分支、循环都讲完了，现在只剩下最后一种影响控制流程的语句了，就是<code class="literal">goto</code>语句，实现无条件跳转。我们知道<code class="literal">break</code>只能跳出最内层的循环，如果在一个嵌套循环中遇到某个错误条件需要立即跳出最外层循环做出错处理，就可以用<code class="literal">goto</code>语句，例如：</p><pre class="programlisting">for (...)
+	for (...) {
+		...
+		if (出现错误条件)
+			goto error;
+	}
+error:
+	出错处理;</pre><p>这里的<code class="literal">error:</code>叫做标号（Label）<a id="id2727755" class="indexterm"></a>，任何语句前面都可以加若干个标号，每个标号的命名也要遵循标识符的命名规则。</p><p><code class="literal">goto</code>语句过于强大了，从程序中的任何地方都可以无条件跳转到任何其它地方，只要在那个地方定义一个标号就行，唯一的限制是<code class="literal">goto</code>只能跳转到同一个函数中的某个标号处，而不能跳到别的函数中<sup>[<a id="id2727782" href="#ftn.id2727782" class="footnote">11</a>]</sup>。<span class="emphasis"><em>滥用<code class="literal">goto</code>语句会使程序的控制流程非常复杂，可读性很差</em></span>。著名的计算机科学家Edsger W. Dijkstra最早指出编程语言中<code class="literal">goto</code>语句的危害，提倡取消<code class="literal">goto</code>语句。<code class="literal">goto</code>语句不是必须存在的，显然可以用别的办法替代，比如上面的代码段可以改写为：</p><pre class="programlisting">int cond = 0; /* bool variable indicating error condition */
+for (...) {
+	for (...) {
+		...
+		if (出现错误条件) {
+			cond = 1;
+			break;
+		}
+	}
+	if (cond)
+		break;
+}
+if (cond)
+	出错处理;</pre><p>通常<code class="literal">goto</code>语句只用于这种场合，一个函数中任何地方出现了错误条件都可以立即跳转到函数末尾做出错处理（例如释放先前分配的资源、恢复先前改动过的全局变量等），处理完之后函数返回。比较用<code class="literal">goto</code>和不用<code class="literal">goto</code>的两种写法，用<code class="literal">goto</code>语句还是方便很多。但是除此之外，在任何其它场合都不要轻易考虑使用<code class="literal">goto</code>语句。有些编程语言（如C++）中有异常（Exception）<a id="id2727950" class="indexterm"></a>处理的语法，可以代替<code class="literal">goto</code>和<code class="literal">setjmp/longjmp</code>的这种用法。</p><p>回想一下，我们在<a class="xref" href="ch04s04.html#cond.switch">第 4 节 “switch语句”</a>学过<code class="literal">case</code>和<code class="literal">default</code>后面也要跟冒号（:号，Colon）<a id="id2727991" class="indexterm"></a>，事实上它们是两种特殊的标号。和标号有关的语法规则如下：</p><div class="literallayout"><p>语句 → 标识符: 语句<br />
+语句 → case 常量表达式: 语句<br />
+语句 → default: 语句</p></div><p>反复应用这些语法规则进行组合可以在一条语句前面添加多个标号，例如在<a class="xref" href="ch04s04.html#cond.switch2">例 4.2 “缺break的switch语句”</a>的代码中，有些语句前面有多个<code class="literal">case</code>标号。现在我们再看<code class="literal">switch</code>语句的格式：</p><div class="literallayout"><p>switch (控制表达式) {<br />
+case 常量表达式： 语句列表<br />
+case 常量表达式： 语句列表<br />
+...<br />
+default： 语句列表<br />
+}</p></div><p>{}里面是一组语句列表，其中每个分支的第一条语句带有<code class="literal">case</code>或<code class="literal">default</code>标号，从语法上来说，<code class="literal">switch</code>的语句块和其它分支、循环结构的语句块没有本质区别：</p><div class="literallayout"><p>语句 → switch (控制表达式) 语句<br />
+语句 → { 语句列表 }</p></div><p>有兴趣的读者可以在网上查找有关Duff's Device<a id="id2728083" class="indexterm"></a>的资料，Duff's Device是一段很有意思的代码，正是利用“<span class="quote"><code class="literal">switch</code>的语句块和循环结构的语句块没有本质区别</span>”这一点实现了一个巧妙的代码优化。</p><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2727782" href="#id2727782" class="para">11</a>] </sup>C标准库函数<code class="literal">setjmp</code>和<code class="literal">longjmp</code>配合起来可以实现函数间的跳转，但只能从被调用的函数跳回到它的直接或间接调用者（同时从栈空间弹出一个或多个栈帧），而不能从一个函数跳转到另一个和它毫不相干的函数中。<code class="literal">setjmp/longjmp</code>函数主要也是用于出错处理，比如函数<code class="literal">A</code>调用函数<code class="literal">B</code>，函数<code class="literal">B</code>调用函数<code class="literal">C</code>，如果在<code class="literal">C</code>中出现某个错误条件，使得函数<code class="literal">B</code>和<code class="literal">C</code>继续执行下去都没有意义了，可以利用<code class="literal">setjmp/longjmp</code>机制快速返回到函数<code class="literal">A</code>做出错处理，本书不详细介绍这种机制，有兴趣的读者可参考<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s05.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">5. 嵌套循环 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 第 7 章 结构体</td></tr></table></div></body></html>

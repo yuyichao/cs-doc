@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5. 多维数组</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch08.html" title="第 8 章 数组" /><link rel="prev" href="ch08s04.html" title="4. 字符串" /><link rel="next" href="ch09.html" title="第 9 章 编码风格" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">5. 多维数组</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch08s04.html">上一页</a> </td><th width="60%" align="center">第 8 章 数组</th><td width="20%" align="right"> <a accesskey="n" href="ch09.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2734861"></a>5. 多维数组</h2></div></div></div><p>就像结构体可以嵌套一样，数组也可以嵌套，一个数组的元素可以是另外一个数组，这样就构成了多维数组（Multi-dimensional Array）<a id="id2734876" class="indexterm"></a>。例如定义并初始化一个二维数组：</p><pre class="programlisting">int a[3][2] = { 1, 2, 3, 4, 5 };</pre><p>数组<code class="literal">a</code>有3个元素，<code class="literal">a[0]</code>、<code class="literal">a[1]</code>、<code class="literal">a[2]</code>。每个元素也是一个数组，例如<code class="literal">a[0]</code>是一个数组，它有两个元素<code class="literal">a[0][0]</code>、<code class="literal">a[0][1]</code>，这两个元素的类型是<code class="literal">int</code>，值分别是1、2，同理，数组<code class="literal">a[1]</code>的两个元素是3、4，数组<code class="literal">a[2]</code>的两个元素是5、0。如下图所示：</p><div class="figure"><a id="id2734954"></a><p class="title"><b>图 8.3. 多维数组</b></p><div class="figure-contents"><div><img src="images/array.multidim.png" alt="多维数组" /></div></div></div><br class="figure-break" /><p>从概念模型上看，这个二维数组是三行两列的表格，元素的两个下标分别是行号和列号。从物理模型上看，这六个元素在存储器中仍然是连续存储的，就像一维数组一样，相当于把概念模型的表格一行一行接起来拼成一串，C语言的这种存储方式称为Row-major<a id="id2734980" class="indexterm"></a>方式，而有些编程语言（例如FORTRAN）是把概念模型的表格一列一列接起来拼成一串存储的，称为Column-major<a id="id2734990" class="indexterm"></a>方式。</p><p>多维数组也可以像嵌套结构体一样用嵌套Initializer初始化，例如上面的二维数组也可以这样初始化：</p><pre class="programlisting">int a[][2] = { { 1, 2 },
+		{ 3, 4 },
+		{ 5, } };</pre><p>注意，除了第一维的长度可以由编译器自动计算而不需要指定，其余各维都必须明确指定长度。利用C99的新特性也可以做Memberwise Initialization，例如：</p><pre class="programlisting">int a[3][2] = { [0][1] = 9, [2][1] = 8 };</pre><p>结构体和数组嵌套的情况也可以做Memberwise Initialization，例如：</p><pre class="programlisting">struct complex_struct {
+	double x, y;
+} a[4] = { [0].x = 8.0 };
+
+struct {
+	double x, y;
+	int count[4];
+} s = { .count[2] = 9 };</pre><p>如果是多维字符数组，也可以嵌套使用字符串字面值做Initializer，例如：</p><div class="example"><a id="id2735038"></a><p class="title"><b>例 8.4. 多维字符数组</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void print_day(int day)
+{
+	char days[8][10] = { "", "Monday", "Tuesday",
+			     "Wednesday", "Thursday", "Friday",
+			     "Saturday", "Sunday" };
+
+	if (day &lt; 1 || day &gt; 7)
+		printf("Illegal day number!\n");
+	printf("%s\n", days[day]);
+}
+
+int main(void)
+{
+	print_day(2);
+	return 0;
+}</pre></div></div><br class="example-break" /><div class="figure"><a id="id2735044"></a><p class="title"><b>图 8.4. 多维字符数组</b></p><div class="figure-contents"><div><img src="images/array.multichar.png" alt="多维字符数组" /></div></div></div><br class="figure-break" /><p>这个程序中定义了一个多维字符数组<code class="literal">char days[8][10];</code>，为了使1~7刚好映射到<code class="literal">days[1]~days[7]</code>，我们把<code class="literal">days[0]</code>空出来不用，所以第一维的长度是8，为了使最长的字符串<code class="literal">"Wednesday"</code>能够保存到一行，末尾还能多出一个Null字符的位置，所以第二维的长度是10。</p><p>这个程序和<a class="xref" href="ch04s04.html#cond.switch1">例 4.1 “switch语句”</a>的功能其实是一样的，但是代码简洁多了。简洁的代码不仅可读性强，而且维护成本也低，像<a class="xref" href="ch04s04.html#cond.switch1">例 4.1 “switch语句”</a>那样一堆<code class="literal">case</code>、<code class="literal">printf</code>和<code class="literal">break</code>，如果漏写一个<code class="literal">break</code>就要出Bug。这个程序之所以简洁，是因为用数据代替了代码。具体来说，通过下标访问字符串组成的数组可以代替一堆<code class="literal">case</code>分支判断，这样就可以把每个<code class="literal">case</code>里重复的代码（<code class="literal">printf</code>调用）提取出来，从而又一次达到了“<span class="quote">提取公因式</span>”的效果。这种方法称为数据驱动的编程（Data-driven Programming）<a id="id2735162" class="indexterm"></a>，写代码最重要的是选择正确的数据结构来组织信息，设计控制流程和算法尚在其次，只要数据结构选择得正确，其它代码自然而然就变得容易理解和维护了，就像这里的<code class="literal">printf</code>自然而然就被提取出来了。<a class="xref" href="bi01.html#bibli.manmonth" title="The Mythical Man-Month: Essays on Software Engineering">[<abbr class="abbrev">人月神话</abbr>]</a>中说过：“<span class="quote">Show me your flowcharts and conceal your tables, and I shall continue to be mystified. Show me your tables, and I won't usually need your flowcharts; they'll be obvious.</span>”</p><p>最后，综合本章的知识，我们来写一个最简单的小游戏－－剪刀石头布：</p><div class="example"><a id="id2735200"></a><p class="title"><b>例 8.5. 剪刀石头布</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+
+int main(void)
+{
+	char gesture[3][10] = { "scissor", "stone", "cloth" };
+	int man, computer, result, ret;
+
+	srand(time(NULL));
+	while (1) {
+		computer = rand() % 3;
+	  	printf("\nInput your gesture (0-scissor 1-stone 2-cloth):\n");
+		ret = scanf("%d", &amp;man);
+	  	if (ret != 1 || man &lt; 0 || man &gt; 2) {
+			printf("Invalid input! Please input 0, 1 or 2.\n");
+			continue;
+		}
+		printf("Your gesture: %s\tComputer's gesture: %s\n", 
+			gesture[man], gesture[computer]);
+
+		result = (man - computer + 4) % 3 - 1;
+		if (result &gt; 0)
+			printf("You win!\n");
+		else if (result == 0)
+			printf("Draw!\n");
+		else
+			printf("You lose!\n");
+	}
+	return 0;
+}</pre></div></div><br class="example-break" /><p>0、1、2三个整数分别是剪刀石头布在程序中的内部表示，用户也要求输入0、1或2，然后和计算机随机生成的0、1或2比胜负。这个程序的主体是一个死循环，需要按Ctrl-C退出程序。以往我们写的程序都只有打印输出，在这个程序中我们第一次碰到处理用户输入的情况。我们简单介绍一下<code class="literal">scanf</code>函数的用法，到<a class="xref" href="ch25s02.html#stdlib.formatio">第 2.9 节 “格式化I/O函数”</a>再详细解释。<code class="literal">scanf("%d", &amp;man)</code>这个调用的功能是等待用户输入一个整数并回车，这个整数会被<code class="literal">scanf</code>函数保存在<code class="literal">man</code>这个整型变量里。如果用户输入合法（输入的确实是数字而不是别的字符），则<code class="literal">scanf</code>函数返回1，表示成功读入一个数据。但即使用户输入的是整数，我们还需要进一步检查是不是在0~2的范围内，写程序时对用户输入要格外小心，用户有可能输入任何数据，他才不管游戏规则是什么。</p><p>和<code class="literal">printf</code>类似，<code class="literal">scanf</code>也可以用<code class="literal">%c</code>、<code class="literal">%f</code>、<code class="literal">%s</code>等转换说明。如果在传给<code class="literal">scanf</code>的第一个参数中用<code class="literal">%d</code>、<code class="literal">%f</code>或<code class="literal">%c</code>表示读入一个整数、浮点数或字符，则第二个参数的形式应该是&amp;运算符加相应类型的变量名，表示读进来的数保存到这个变量中，&amp;运算符的作用是得到一个指针类型，到<a class="xref" href="ch23s01.html#pointer.intro">第 1 节 “指针的基本概念”</a>再详细解释；如果在第一个参数中用<code class="literal">%s</code>读入一个字符串，则第二个参数应该是数组名，数组名前面不加&amp;，因为数组类型做右值时自动转换成指针类型，在<a class="xref" href="ch10s02.html#gdb.bp">第 2 节 “断点”</a>有<code class="literal">scanf</code>读入字符串的例子。</p><p>留给读者思考的问题是：<code class="literal">(man - computer + 4) % 3 - 1</code>这个神奇的表达式是如何比较出0、1、2这三个数字在“<span class="quote">剪刀石头布</span>”意义上的大小的？</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch08s04.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch08.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch09.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">4. 字符串 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 第 9 章 编码风格</td></tr></table></div></body></html>

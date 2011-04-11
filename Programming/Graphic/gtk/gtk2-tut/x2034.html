@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>字符串处理</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="GLib"
+HREF="c1977.html"><LINK
+REL="PREVIOUS"
+TITLE="计时器"
+HREF="x2030.html"><LINK
+REL="NEXT"
+TITLE="实用程序和错误处理函数"
+HREF="x2047.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2030.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>GLib</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2047.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-STRINGHANDLING">字符串处理</H1
+><P
+>GLib 定义了一个叫做 GString 的新类型，该类型相似于标准 C 中的string，但可以自动增长。字符串数据以null结尾。该类型可以防止程序中的缓冲区溢出错误。这是一个非常重要的特性，因此我推荐使用 GString。GString 有一简单定义：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct GString 
+{
+  gchar *str; /* 指向当前以‘\0’结尾的字符串。 */
+  gint len; /* 当前长度 */
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>如你所预想的，有许多对一个 GString 型字符串的操作。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GString *g_string_new( gchar *init );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个函数构造一个 GString 型字符串，它把 init指向的字符串值复制到 GString 型字符串中，返回一个指向它的指针。建一个初始为空的 GString 型字符串则传递一个 NULL 作为参数。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void g_string_free( GString *string,
+                    gint     free_segment );</PRE
+></TD
+></TR
+></TABLE
+><P
+>该函数释放给定的 GString 型字符串的存储空间。如果参数 free_segment 为 TRUE，也释放其字符数据。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+> GString *g_string_assign( GString     *lval,
+                          const gchar *rval );</PRE
+></TD
+></TR
+></TABLE
+><P
+>该函数将 rval 中的字符复制到 lval 中，覆盖 lval 中以前的内容。注意为装下复制的字符串，lval 会变长，这是和标准的 strcpy() 数不一样的。</P
+><P
+>以下函数的功能是相当明显的(带有_c的版本接受一个字符而不是一个字符串)：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+> GString *g_string_truncate( GString *string,
+                            gint     len );
+			     
+GString *g_string_append( GString *string,
+                          gchar   *val );
+			    
+GString *g_string_append_c( GString *string,
+                            gchar    c );
+	
+GString *g_string_prepend( GString *string,
+                           gchar   *val );
+			     
+GString *g_string_prepend_c( GString *string,
+                             gchar    c );
+	
+void g_string_sprintf( GString *string,
+                       gchar   *fmt,
+                       ...);
+	
+void g_string_sprintfa ( GString *string,
+                         gchar   *fmt,
+                         ... );</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2030.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2047.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>计时器</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1977.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>实用程序和错误处理函数</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

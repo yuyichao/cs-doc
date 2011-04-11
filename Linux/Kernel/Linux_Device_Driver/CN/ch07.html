@@ -1,0 +1,187 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;7&#160;章&#160;时间, 延时, 和延后工作-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch06s07.html" title="6.7.&#160;快速参考">
+<link rel="next" href="ch07s02.html" title="7.2.&#160;获知当前时间">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;7&#160;章&#160;时间, 延时, 和延后工作</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch06s07.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch07s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="TimeDelayandDeferredWork.chap"></a>第&#160;7&#160;章&#160;时间, 延时, 和延后工作</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch07.html#MeasuringTimeLapes.sect">7.1. 测量时间流失</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07.html#UsingthejiffesCounter.sect">7.1.1. 使用 jiffies 计数器</a></span></dt>
+<dt><span class="sect2"><a href="ch07.html#PorcessorSpecificRegisters.sect">7.1.2. 处理器特定的寄存器</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch07s02.html">7.2. 获知当前时间</a></span></dt>
+<dt><span class="sect1"><a href="ch07s03.html">7.3. 延后执行</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07s03.html#LongDelays.sect">7.3.1. 长延时</a></span></dt>
+<dt><span class="sect2"><a href="ch07s03.html#ShortDelays.sect">7.3.2. 短延时</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch07s04.html">7.4. 内核定时器</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07s04.html#TheTimerAPI.sect">7.4.1. 定时器 API</a></span></dt>
+<dt><span class="sect2"><a href="ch07s04.html#TheImplementaionofKernelTimers.sect">7.4.2. 内核定时器的实现</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch07s05.html">7.5. Tasklets 机制</a></span></dt>
+<dt><span class="sect1"><a href="ch07s06.html">7.6. 工作队列</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch07s06.html#TheSharedQueue.sect">7.6.1. 共享队列</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch07s07.html">7.7. 快速参考</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07s07.html#Timekeeping.sect">7.7.1. 时间管理</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#Delays.sect">7.7.2. 延迟</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#KernelTimers.sect">7.7.3. 内核定时器</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#Taskletsqr.sect">7.7.4. Tasklets 机制</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#workqueueskr.sect">7.7.5. 工作队列</a></span></dt>
+</dl></dd>
+</dl>
+</div>
+<p>到此, 我们知道了如何编写一个全特性字符模块的基本知识. 真实世界的驱动, 然而, 需要做比实现控制一个设备的操作更多的事情; 它们不得不处理诸如定时, 内存管理, 硬件存取, 等更多. 幸运的是, 内核输出了许多设施来简化驱动编写者的任务. 在下几章中, 我们将描述一些你可使用的内核资源. 这一章引路, 通过描述定时问题是如何阐述. 处理时间问题包括下列任务, 按照复杂度上升的顺序:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>测量时间流失和比较时间</p></li>
+<li><p>知道当前时间</p></li>
+<li><p>指定时间量的延时操作</p></li>
+<li><p>调度异步函数在之后的时间发生</p></li>
+</ul></div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="MeasuringTimeLapes.sect"></a>7.1.&#160;测量时间流失</h2></div></div></div>
+<p>内核通过定时器中断来跟踪时间的流动. 中断在第 10 章详细描述.</p>
+<p>定时器中断由系统定时硬件以规律地间隔产生; 这个间隔在启动时由内核根据 HZ 值来编程, HZ 是一个体系依赖的值, 在 &lt;linux/param.h&gt;中定义或者它所包含的一个子平台文件中. 在发布的内核源码中的缺省值在真实硬件上从 50 到 1200 嘀哒每秒, 在软件模拟器中往下到 24. 大部分平台运行在 100 或者 1000 中断每秒; 流行的 x86 PC 缺省是 1000, 尽管它在以前版本上(向上直到并且包括 2.4)常常是 100. 作为一个通用的规则, 即便如果你知道 HZ 的值, 在编程时你应当从不依赖这个特定值.</p>
+<p>可能改变 HZ 的值, 对于那些要系统有一个不同的时钟中断频率的人. 如果你在头文件中改变 HZ 的值, 你需要使用新的值重编译内核和所有的模块. 如果你愿意付出额外的时间中断的代价来获得你的目标, 你可能想提升 HZ 来得到你的异步任务的更细粒度的精度. 实际上, 提升 HZ 到 1000 在使用 2.4 或 2.2 内核版本的 x86 工业系统中是相当普遍的. 但是, 对于当前版本, 最好的方法是保持 HZ 的缺省值, 由于我们完全信任内核开发者, 他们肯定已经选择了最好的值. 另外, 一些内部计算当前实现为只为从 12 到 1535 范围的 HZ (见 &lt;linux/timex.h&gt; 和 RFC-1589).</p>
+<p>每次发生一个时钟中断, 一个内核计数器的值递增. 这个计数器在系统启动时初始化为 0, 因此它代表从最后一次启动以来的时钟嘀哒的数目. 这个计数器是一个 64-位 变量( 即便在 32-位的体系上)并且称为 jiffies_64. 但是, 驱动编写者正常地存取 jiffies 变量, 一个 unsigned long, 或者和 jiffies_64 是同一个或者它的低有效位. 使用 jiffies 常常是首选, 因为它更快, 并且再所有的体系上存取 64-位的 jiffies_64 值不必要是原子的. </p>
+<p>除了低精度的内核管理的 jiffy 机制, 一些 CPU 平台特有一个高精度的软件可读的计数器. 尽管它的实际使用有些在各个平台不同, 它有时是一个非常有力的工具.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="UsingthejiffesCounter.sect"></a>7.1.1.&#160;使用 jiffies 计数器</h3></div></div></div>
+<p>这个计数器和来读取它的实用函数位于 &lt;linux/jiffies.h&gt;, 尽管你会常常只是包含 &lt;linux/sched.h&gt;, 它会自动地将 jiffies.h 拉进来. 不用说, jiffies 和 jiffies_64 必须当作只读的.</p>
+<p>无论何时你的代码需要记住当前的 jiffies 值, 可以简单地存取这个 unsigned long 变量, 它被声明做 volatile 来告知编译器不要优化内存读. 你需要读取当前的计数器, 无论何时你的代码需要计算一个将来的时间戳, 如下面例子所示:</p>
+<pre class="programlisting">
+#include &lt;linux/jiffies.h&gt;
+unsigned long j, stamp_1, stamp_half, stamp_n;
+
+j = jiffies; /* read the current value */
+stamp_1 = j + HZ; /* 1 second in the future */
+stamp_half = j + HZ/2; /* half a second */
+stamp_n = j + n * HZ / 1000; /* n milliseconds */
+</pre>
+<p>这个代码对于 jiffies 回绕没有问题, 只要不同的值以正确的方式进行比较. 尽管在 32-位 平台上当 HZ 是 1000 时, 计数器只是每 50 天回绕一次, 你的代码应当准备面对这个事件. 为比较你的被缓存的值( 象上面的 stamp_1 ) 和当前值, 你应当使用下面一个宏定义:</p>
+<pre class="programlisting">
+#include &lt;linux/jiffies.h&gt;
+int time_after(unsigned long a, unsigned long b);
+int time_before(unsigned long a, unsigned long b);
+int time_after_eq(unsigned long a, unsigned long b);
+int time_before_eq(unsigned long a, unsigned long b);
+</pre>
+<p>第一个当 a, 作为一个 jiffies 的快照, 代表 b 之后的一个时间时, 取值为真, 第二个当 时间 a 在时间 b 之前时取值为真, 以及最后 2 个比较"之后或相同"和"之前或相同". 这个代码工作通过转换这个值为 signed long, 减它们, 并且比较结果. 如果你需要以一种安全的方式知道 2 个 jiffies 实例之间的差, 你可以使用同样的技巧: diff = (long)t2 - (long)t1;.</p>
+<p>你可以转换一个 jiffies 差为毫秒, 一般地通过:</p>
+<pre class="programlisting">
+msec = diff * 1000 / HZ; 
+</pre>
+<p>有时, 但是, 你需要与用户空间程序交换时间表示, 它们打算使用 struct timeval 和 struct timespec 来表示时间. 这 2 个结构代表一个精确的时间量, 使用 2 个成员: seconds 和 microseconds 在旧的流行的 struct timeval 中使用, seconds 和 nanoseconds 在新的 struct timespec 中使用. 内核输出 4 个帮助函数来转换以 jiffies 表达的时间值, 到和从这些结构:</p>
+<pre class="programlisting">
+#include &lt;linux/time.h&gt; 
+unsigned long timespec_to_jiffies(struct timespec *value);
+void jiffies_to_timespec(unsigned long jiffies, struct timespec *value);
+unsigned long timeval_to_jiffies(struct timeval *value);
+void jiffies_to_timeval(unsigned long jiffies, struct timeval *value);
+</pre>
+<p>存取这个 64-位 jiffy 计数值不象存取 jiffies 那样直接. 而在 64-位 计算机体系上, 这 2 个变量实际上是一个, 存取这个值对于 32-位 处理器不是原子的. 这意味着你可能读到错误的值如果这个变量的两半在你正在读取它们时被更新. 极不可能你会需要读取这个 64-位 计数器, 但是万一你需要, 你会高兴地得知内核输出了一个特别地帮助函数, 为你完成正确地加锁:</p>
+<pre class="programlisting">
+#include &lt;linux/jiffies.h&gt; 
+u64 get_jiffies_64(void);
+</pre>
+<p>在上面的原型中, 使用了 u64 类型. 这是一个定义在 &lt;linux/types.h&gt; 中的类型, 在 11 章中讨论, 并且表示一个 unsigned 64-位 类型.</p>
+<p>如果你在奇怪 32-位 平台如何同时更新 32-位 和 64-位 计数器, 读你的平台的连接脚本( 查找一个文件, 它的名子匹配 valinux*.lds*). 在那里, jiffies 符号被定义来存取这个 64-位 值的低有效字, 根据平台是小端或者大端. 实际上, 同样的技巧也用在 64-位 平台上, 因此这个 unsigned long 和 u64 变量在同一个地址被存取.</p>
+<p>最后, 注意实际的时钟频率几乎完全对用户空间隐藏. 宏 HZ 一直扩展为 100 当用户空间程序包含 param.h, 并且每个报告给用户空间的计数器都对应地被转换. 这应用于 clock(3), times(2), 以及任何相关的函数. 对 HZ 值的用户可用的唯一证据是时钟中断多快发生, 如在 /proc/interrupts 所显示的. 例如, 你可以获得 HZ, 通过用在 /proc/uptime 中报告的系统 uptime 除这个计数值.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="PorcessorSpecificRegisters.sect"></a>7.1.2.&#160;处理器特定的寄存器</h3></div></div></div>
+<p>如果你需要测量非常短时间间隔, 或者你需要非常高精度, 你可以借助平台依赖的资源, 一个要精度不要移植性的选择.</p>
+<p>在现代处理器中, 对于经验性能数字的迫切需求被大部分 CPU 设计中内在的指令定时不确定性所阻碍, 这是由于缓存内存, 指令调度, 以及分支预测引起. 作为回应, CPU 制造商引入一个方法来计数时钟周期, 作为一个容易并且可靠的方法来测量时间流失. 因此, 大部分现代处理器包含一个计数器寄存器, 它在每个时钟周期固定地递增一次. 现在, 资格时钟计数器是唯一可靠的方法来进行高精度的时间管理任务.</p>
+<p>细节每个平台不同: 这个寄存器可以或者不可以从用户空间可读, 它可以或者不可以写, 并且它可能是 64 或者 32 位宽. 在后一种情况, 你必须准备处理溢出, 就象我们处理 jiffy 计数器一样. 这个寄存器甚至可能对你的平台来说不存在, 或者它可能被硬件设计者在一个外部设备实现, 如果 CPU 缺少这个特性并且你在使用一个特殊用途的计算机.</p>
+<p>无论是否寄存器可以被清零, 我们强烈不鼓励复位它, 即便当硬件允许时. 毕竟, 在任何给定时间你可能不是这个计数器的唯一用户; 在一些支持 SMP 的平台上, 例如, 内核依赖这样一个计数器来在处理器之间同步. 因为你可以一直测量各个值的差, 只要差没有超过溢出时间, 你可以通过修改它的当前值来做这个事情不用声明独自拥有这个寄存器.</p>
+<p>最有名的计数器寄存器是 TSC ( timestamp counter), 在 x86 处理器中随 Pentium 引入的并且在所有从那之后的 CPU 中出现 -- 包括 x86_64 平台. 它是一个 64-位 寄存器计数 CPU 的时钟周期; 它可从内核和用户空间读取.</p>
+<p>在包含了 &lt;asm/msr.h&gt; (一个 x86-特定的头文件, 它的名子代表"machine-specific registers"), 你可使用一个这些宏:</p>
+<pre class="programlisting">
+rdtsc(low32,high32);
+rdtscl(low32);
+rdtscll(var64);
+</pre>
+<p>第一个宏自动读取 64-位 值到 2 个 32-位 变量; 下一个("read low half") 读取寄存器的低半部到一个 32-位 变量, 丢弃高半部; 最后一个读 64-位 值到一个 long long 变量, 由此得名. 所有这些宏存储数值到它们的参数中.</p>
+<p>对大部分的 TSC 应用, 读取这个计数器的的低半部足够了. 一个 1-GHz 的 CPU 只在每 4.2 秒溢出一次, 因此你不会需要处理多寄存器变量, 如果你在使用的时间流失确定地使用更少时间. 但是, 随着 CPU 频率不断上升以及定时需求的提高, 将来你会几乎可能需要常常读取 64-位 计数器.</p>
+<p>作为一个只使用寄存器低半部的例子, 下面的代码行测量了指令自身的执行:</p>
+<pre class="programlisting">
+unsigned long ini, end;
+rdtscl(ini); rdtscl(end);
+printk("time lapse: %li\n", end - ini);
+</pre>
+<p>一些其他的平台提供相似的功能, 并且内核头文件提供一个体系独立的功能, 你可用来代替 rdtsc. 它称为 get_cycles, 定义在 &lt;asm/timex.h&gt;( 由 &lt;linux/timex.h&gt; 包含). 它的原型是:</p>
+<pre class="programlisting">
+ #include &lt;linux/timex.h&gt;
+ cycles_t get_cycles(void); 
+</pre>
+<p>这个函数为每个平台定义, 并且它一直返回 0 在没有周期-计数器寄存器的平台上. cycles_t 类型是一个合适的 unsigned 类型来持有读到的值.</p>
+<p>不论一个体系独立的函数是否可用, 我们最好利用机会来展示一个内联汇编代码的例子. 为此, 我们实现一个 rdtscl 函数给 MIPS 处理器, 它与在 x86 上同样的方式工作.</p>
+<p>拖尾的 nop 指令被要求来阻止编译器在 mfc0 之后马上存取指令中的目标寄存器. 这种内部锁在 RISC 处理器中是典型的, 并且编译器仍然可以在延迟时隙中调度有用的指令. 在这个情况中, 我们使用 nop 因为内联汇编对编译器是一个黑盒并且不会进行优化.<sup>[<a name="id443760" href="ch07.html#ftn.id443760">26</a>]</sup></p>
+<pre class="programlisting">
+#define rdtscl(dest) \
+ __asm__ __volatile__("mfc0 %0,$9; nop" : "=r" (dest))
+</pre>
+<p>有这个宏在, MIPS 处理器可以执行同样的代码, 如同前面为 x86 展示的一样的代码.</p>
+<p>使用 gcc 内联汇编, 通用寄存器的分配留给编译器. 刚刚展示的这个宏使用 %0 作为"参数 0"的一个占位符, 之后它被指定为"任何用作输出( = )的寄存器( r )". 这个宏还声明输出寄存器必须对应 C 表达式 dest. 内联函数的语法是非常强大但是有些复杂, 特别对于那些有限制每个寄存器可以做什么的体系上(就是说, x86 家族). 这个用法在 gcc 文档中描述, 常常在 info 文档目录树中有.</p>
+<p>本节已展示的这个简短的 C-代码片段已在一个 K7-级 x86 处理器 和一个 MIPS VR4181 ( 使用刚刚描述过的宏 )上运行. 前者报告了一个 11 个时钟嘀哒的时间流失而后者只是 2 个时钟嘀哒. 小的数字是期望的, 因为 RISC 处理器常常每个时钟周期执行一条指令.</p>
+<p>有另一个关于时戳计数器的事情值得知道: 它们在一个 SMP 系统中不必要跨处理器同步. 为保证得到一个一致的值, 你应当为查询这个计数器的代码禁止抢占.</p>
+</div>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id443760" href="ch07.html#id443760">26</a>] </sup>我们在 MIPS 上建立这例子, 因为大部分的 MIPS 处理器特有一个 32-位 计数器作为它们内部"协处理器 0"的寄存器 9. 为存取这个寄存器, 仅仅从内核空间可读, 你可以定义下列的宏来执行一条"从协处理器 0 转移"的汇编指令:</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch06s07.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch07s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">6.7.&#160;快速参考&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;7.2.&#160;获知当前时间</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

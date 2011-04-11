@@ -1,0 +1,95 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.4.&#160;打开与关闭-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s03.html" title="17.3.&#160;net_device 结构的详情">
+<link rel="next" href="ch17s05.html" title="17.5.&#160;报文传送">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.4.&#160;打开与关闭</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="OpeningandClosing"></a>17.4.&#160;打开与关闭</h2></div></div></div>
+<p>我们的驱动可以在模块加载时或者内核启动时探测接口. 在接口能够承载报文前, 但是, 内核必须打开它并分配一个地址给它. 内核打开或者关闭一个接口对应 ifconfig 命令.</p>
+<p>当 ifconfig 用来给接口安排一个地址, 它做 2 个任务. 第一, 它通过 ioctl(SIOCSIFADDR)( Socket I/O Control Set Interface Address) 来安排地址. 接着它设置 dev-&gt;flag 的 IFF_UP 位, 通过 ioctl(SIOCSIFFLAGS) ( Socket I/O Control Set Interface Flags) 来打开接口.</p>
+<p>目前为止, ioctl(SIOCSIFADDR) 不做任何事. 没有驱动函数被调用 -- 这个任务是独立于设备的, 并且是内核实现它. 后面的命令 (ioctl(SIOCSIFFLAGS)), 但是, 为设备调用 open 方法.</p>
+<p>相似地, 当接口关闭, ifconfig 使用 ioctl(SIOCSIFFLAGS) 来清除 IFF_UP, 并且 stop 方法被调用.</p>
+<p>2 个设备方法都返回 0 在成功时, 并且出错时返回负值.</p>
+<p>目前为止的实际代码, 驱动不得不进行许多与字符和块驱动同样的任务. open 请求任何它需要的系统资源并且告知接口启动; stop 关闭接口并释放系统资源. 网络驱动必须进行一些附加的步骤在 open 时, 但是.</p>
+<p>第一, 硬件 (MAC) 地址需要从硬件设备拷贝到 dev-&gt;dev_addr, 在接口可以和外部世界通讯之前. 硬件地址接着在 open 时拷贝到设备. snull 软件接口在 open 里面安排它; 它只是使用了一个长为 ETH_ALEN 的字符串伪造了一个硬件号, ETH_ALEN 是以太网硬件地址长度.</p>
+<p>open 方法应当也启动接口的发送队列( 允许它接受发送报文 ), 一旦它准备好启动发送数据. 内核提供了一个函数来启动队列:</p>
+<pre class="programlisting">
+void netif_start_queue(struct net_device *dev); 
+</pre>
+<p>snull 的 open 代码看来如下:</p>
+<pre class="programlisting">
+int snull_open(struct net_device *dev)
+{
+
+        /* request_region(), request_irq( ), ....  (like fops-&gt;open) */
+        /*
+        * Assign the hardware address of the board: use "\0SNULx", where
+        * x is 0 or 1. The first byte is '\0' to avoid being a multicast
+        * address (the first byte of multicast addrs is odd).
+        */
+        memcpy(dev-&gt;dev_addr, "\0SNUL0", ETH_ALEN);
+        if (dev == snull_devs[1])
+
+                dev-&gt;dev_addr[ETH_ALEN-1]++; /* \0SNUL1 */
+        netif_start_queue(dev);
+        return 0;
+}
+</pre>
+<p>如你所见, 在缺乏真实硬件的情况下, 在 <span class="emphasis"><em>open</em></span> 方法中没什么可做. stop 方法也一样; 它只是反转 open 的操作. 因此, 实现 stop 的函数常常称为 close 或者 release.</p>
+<pre class="programlisting">
+int snull_release(struct net_device *dev)
+{
+    /* release ports, irq and such -- like fops-&gt;close */
+    netif_stop_queue(dev); /* can't transmit any more */
+    return 0;
+}
+</pre>
+<p>函数:</p>
+<pre class="programlisting">
+void netif_stop_queue(struct net_device *dev); 
+</pre>
+<p>是 netif_start_queue 的对立面; 它标志设备为不能再发送任何报文. 这个函数必须在接口关闭( 在 stop 方法中 )时调用, 但以可用于暂时停止发送, 如下一节中解释的.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.3.&#160;net_device 结构的详情&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.5.&#160;报文传送</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

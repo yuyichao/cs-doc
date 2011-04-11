@@ -1,0 +1,155 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;9&#160;章&#160;与硬件通讯-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch08s06.html" title="8.6.&#160;快速参考">
+<link rel="next" href="ch09s02.html" title="9.2.&#160;使用 I/O 端口">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;9&#160;章&#160;与硬件通讯</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch08s06.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch09s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="CommunicationwithHardware.chap"></a>第&#160;9&#160;章&#160;与硬件通讯</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch09.html#IOPortsandIOMemor.sect">9.1. I/O 端口和 I/O 内存</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch09.html#IORegistersandConventionalMemory.sect">9.1.1. I/O 寄存器和常规内存</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch09s02.html">9.2. 使用 I/O 端口</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch09s02.html#IOPortAllocation.sect">9.2.1. I/O 端口分配</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#ManipulatingIOports.sect">9.2.2. 操作 I/O 端口</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#IOPortAccessfromUserSpace.sect">9.2.3. 从用户空间的 I/O 存取</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#StringOperations.sect">9.2.4. 字串操作</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#PausingIO.sect">9.2.5. 暂停 I/O</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#PlatformDependencies.sect">9.2.6. 平台依赖性</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch09s03.html">9.3. 一个 I/O 端口例子</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch09s03.html#AnOverviewoftheParallelPort.sect">9.3.1. 并口纵览</a></span></dt>
+<dt><span class="sect2"><a href="ch09s03.html#ASampleDriver.sect">9.3.2. 一个例子驱动</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch09s04.html">9.4. 使用 I/O 内存</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch09s04.html#IOMemoryAllocationandMapping.sect">9.4.1. I/O 内存分配和映射</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#AccessingIOMemory.sect">9.4.2. 存取 I/O 内存</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#PortsasIOMemory.sect">9.4.3. 作为 I/O 内存的端口</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#ReusingshortforIOMemory.sect">9.4.4. 重用 short 为 I/O 内存</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#ISAMemoryBelow1MB.sect">9.4.5. 在 1 MB 之下的 ISA 内存</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#isareadbandFriends.sect">9.4.6. isa_readb 和其友</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch09s05.html">9.5. 快速参考</a></span></dt>
+</dl>
+</div>
+<p>尽管摆弄 scull 和类似的玩具是对于 Linux 设备驱动的软件接口一个很好的入门, 但是实现一个真正的设备需要硬件. 驱动是软件概念和硬件电路之间的抽象层; 如同这样, 需要与两者沟通. 直到现在, 我们已经检查了软件概念的内部; 本章完成这个图像通过向你展示一个驱动如何存取 I/O 端口和 I/O 内存, 同时在各种 Linux 平台是可移植的.</p>
+<p>本章继续尽可能保持独立于特殊的硬件的传统. 但是, 在需要一个特殊例子的地方, 我们使用简单的数字 I/O 端口(例如标准的 PC 并口)来展示 I/O 指令如何工作, 以及正常的帧缓存视频内存来展示内存映射的I/O.</p>
+<p>我们选择简单的数字 I/O, 因为它是一个输入/输出打开的最简单形式. 同样, 并口实现原始 I/O 并且在大部分计算机都有: 写到设备的数据位出现在输出管脚上, 并且处理器可直接存取到输入管脚上的电平. 实际上, 你不得不连接 LED 或者一个打印机到端口上来真正地看到一个数组 I/O 操作的结果, 但是底层硬件非常易于使用.</p>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="IOPortsandIOMemor.sect"></a>9.1.&#160;I/O 端口和 I/O 内存</h2></div></div></div>
+<p>每个外设都是通过读写它的寄存器来控制. 大部分时间一个设备有几个寄存器, 并且在连续地址存取它们, 或者在内存地址空间或者在 I/O 地址空间.</p>
+<p>在硬件级别上, 内存区和 I/O 区域没有概念上的区别: 它们都是通过在地址总线和控制总线上发出电信号来存取(即, 读写信号)<sup>[<a name="id455522" href="ch09.html#ftn.id455522">32</a>]</sup>并且读自或者写到数据总线.</p>
+<p>但是一些 CPU 制造商在他们的芯片上实现了一个单个地址空间, 有人认为外设不同于内存, 因此, 应该有一个分开的地址空间. 一些处理器(最有名的是 x86 家族)有分开的读和写电线给 I/O 端口和特殊的 CPU 指令来存取端口.</p>
+<p>因为外设被建立来适合一个外设总线, 并且大部分流行的 I/O 总线成型在个人计算机上, 即便那些没有单独地址空间给 I/O 端口的处理器, 也必须在存取一些特殊设备时伪装读写端口, 常常利用外部的芯片组或者 CPU 核的额外电路. 后一个方法在用在嵌入式应用的小处理器中常见.</p>
+<p>由于同样的理由, Linux 在所有它运行的计算机平台上实现了 I/O 端口的概念, 甚至在那些 CPU 实现一个单个地址空间的平台上. 端口存取的实现有时依赖特殊的主机制造和型号( 因为不同的型号使用不同的芯片组来映射总线传送到内存地址空间).</p>
+<p>即便外设总线有一个单独的地址空间给 I/O 端口, 不是所有的设备映射它们的寄存器到 I/O 端口. 虽然对于 ISA 外设板使用 I/O 端口是普遍的, 大部分 PCI 设备映射寄存器到一个内存地址区. 这种 I/O 内存方法通常是首选的, 因为它不需要使用特殊目的处理器指令; CPU 核存取内存更加有效, 并且编译器当存取内存时有更多自由在寄存器分配和寻址模式的选择上.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="IORegistersandConventionalMemory.sect"></a>9.1.1.&#160;I/O 寄存器和常规内存</h3></div></div></div>
+<p>不管硬件寄存器和内存之间的强相似性, 存取 I/O 寄存器的程序员必须小心避免被 CPU(或者编译器)优化所戏弄, 它可能修改希望的 I/O 行为.</p>
+<p>I/O 寄存器和 RAM 的主要不同是 I/O 操作有边际效果, 而内存操作没有: 一个内存写的唯一效果是存储一个值到一个位置, 并且一个内存读返回最近写到那里的值. 因为内存存取速度对 CPU 性能是至关重要的, 这种无边际效果的情况已被多种方式优化: 值被缓存, 并且 读/写指令被重编排.</p>
+<p>编译器能够缓存数据值到 CPU 寄存器而不写到内存, 并且即便它存储它们, 读和写操作都能够在缓冲内存中进行而不接触物理 RAM. 重编排也可能在编译器级别和在硬件级别都发生: 常常一个指令序列能够执行得更快, 如果它以不同于在程序文本中出现的顺序来执行, 例如, 为避免在 RISC 流水线中的互锁. 在CISC 处理器, 要花费相当数量时间的操作能够和其他的并发执行, 更快的.</p>
+<p>当应用于传统内存时(至少在单处理器系统)这些优化是透明和有益的, 但是它们可能对正确的 I/O 操作是致命的, 因为它们干扰了那些"边际效果", 这是主要的原因为什么一个驱动存取 I/O 寄存器. 处理器无法预见这种情形, 一些其他的操作(在一个独立处理器上运行, 或者发生在一个 I/O 控制器的事情)依赖内存存取的顺序. 编译器或者 CPU 可能只尽力胜过你并且重编排你请求的操作; 结果可能是奇怪的错误而非常难于调试. 因此, 一个驱动必须确保没有进行缓冲并且在存取寄存器时没有发生读或写的重编排.</p>
+<p>硬件缓冲的问题是最易面对的:底层的硬件已经配置(或者自动地或者通过 Linux 初始化代码)成禁止任何硬件缓冲, 当存取 I/O 区时(不管它们是内存还是端口区域).</p>
+<p>对编译器优化和硬件重编排的解决方法是安放一个内存屏障在必须以一个特殊顺序对硬件(或者另一个处理器)可见的操作之间. Linux 提供 4 个宏来应对可能的排序需要:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>#include &lt;linux/kernel.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void barrier(void)</span></span></dt>
+<dd><p>这个函数告知编译器插入一个内存屏障但是对硬件没有影响. 编译的代码将所有的当前改变的并且驻留在 CPU 寄存器的值存储到内存, 并且后来重新读取它们当需要时. 对屏障的调用阻止编译器跨越屏障的优化, 而留给硬件自由做它的重编排.</p></dd>
+<dt><span class="term"><span>#include &lt;asm/system.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void rmb(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void read_barrier_depends(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void wmb(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void mb(void);</span></span></dt>
+<dd>
+<p>这些函数插入硬件内存屏障在编译的指令流中; 它们的实际实例是平台相关的. 一个 rmb ( read memory barrier) 保证任何出现于屏障前的读在执行任何后续读之前完成. wmb 保证写操作中的顺序, 并且 mb 指令都保证. 每个这些指令是一个屏障的超集.</p>
+<p>read_barrier_depends 是读屏障的一个特殊的, 弱些的形式. 而 rmb 阻止所有跨越屏障的读的重编排, read_barrier_depends 只阻止依赖来自其他读的数据的读的重编排. 区别是微小的, 并且它不在所有体系中存在. 除非你确切地理解做什么, 并且你有理由相信, 一个完整的读屏障确实是一个过度地性能开销, 你可能应当坚持使用 rmb.</p>
+</dd>
+<dt><span class="term"><span>void smp_rmb(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void smp_read_barrier_depends(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void smp_wmb(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void smp_mb(void);</span></span></dt>
+<dd><p>屏障的这些版本仅当内核为 SMP 系统编译时插入硬件屏障; 否则, 它们都扩展为一个简单的屏障调用.</p></dd>
+</dl></div>
+<p>在一个设备驱动中一个典型的内存屏障的用法可能有这样的形式:</p>
+<pre class="programlisting">
+writel(dev-&gt;registers.addr, io_destination_address);
+writel(dev-&gt;registers.size, io_size);
+writel(dev-&gt;registers.operation, DEV_READ);
+wmb();
+writel(dev-&gt;registers.control, DEV_GO);
+</pre>
+<p>在这种情况, 是重要的, 确保所有的控制一个特殊操作的设备寄存器在告诉它开始前已被正确设置. 内存屏障强制写以需要的顺序完成.</p>
+<p>因为内存屏障影响性能, 它们应当只用在确实需要它们的地方. 屏障的不同类型也有不同的性能特性, 因此值得使用最特定的可能类型. 例如, 在 x86 体系上, wmb() 目前什么都不做, 因为写到处理器外不被重编排.  但是, 读被重编排, 因此 mb() 被 wmb() 慢.</p>
+<p>值得注意大部分的其他的处理同步的内核原语, 例如自旋锁和原子的 _t 操作, 如同内存屏障一样是函数. 还值得注意的是一些外设总线(例如 PCI 总线)有它们自己的缓冲问题; 我们在以后章节遇到时讨论它们.</p>
+<p>一些体系允许一个赋值和一个内存屏障的有效组合. 内核提供了几个宏来完成这个组合; 在缺省情况下, 它们如下定义:</p>
+<pre class="programlisting">
+#define set_mb(var, value) do {var = value; mb();}  while 0
+#define set_wmb(var, value) do {var = value; wmb();} while 0
+#define set_rmb(var, value) do {var = value; rmb();} while 0
+</pre>
+<p>在合适的地方, &lt;asm/system.h&gt; 定义这些宏来使用体系特定的指令来很快完成任务. 注意 set_rmb 只在少量体系上定义. (一个 do...while 结构的使用是一个标准 C 用语, 来使被扩展的宏作为一个正常的 C 语句可在所有上下文中工作).</p>
+</div>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id455522" href="ch09.html#id455522">32</a>] </sup>不是所有的计算机平台使用一个读和一个写信号; 有些有不同的方法来寻址外部电路. 这个不同在软件层次是无关的, 但是, 我们将假设全部有读和写来简化讨论.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch08s06.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch09s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">8.6.&#160;快速参考&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;9.2.&#160;使用 I/O 端口</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

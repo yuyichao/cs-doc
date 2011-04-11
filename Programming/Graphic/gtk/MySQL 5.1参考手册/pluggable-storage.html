@@ -1,0 +1,155 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 14. Pluggable Storage Engine Architecture</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="sql-syntax.html" title="Chapter 13. SQL Statement Syntax"><link rel="next" href="storage-engines.html" title="Chapter 15. Storage Engines and Table Types">
+<style>
+<!--
+ div.MsoNormal
+	{mso-style-parent:"";
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	
+	; margin-left:0cm; margin-right:0cm; margin-top:0cm}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="pluggable-storage"></a>
+	第14章：插件式存储引擎体系结构</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-introduction">
+			14.1. 前言</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-overview">
+			14.2. 概述</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-common-layer">
+			14.3. 公共MySQL数据库服务器层</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-choosing">
+			14.4. 选择存储引擎</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-assigning">
+			14.5. 将存储引擎指定给表</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-transactions">
+			14.6. 存储引擎和事务</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-plugging">
+			14.7. 插入存储引擎</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-unplugging">
+			14.8. 拔出存储引擎</a></span></dt><dt><span class="section"><a href="pluggable-storage.html#pluggable-storage-security">
+			14.9. 插件式存储器的安全含义</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="pluggable-storage-introduction"></a>
+		14.1.&nbsp;前言</h2></div></div></div>
+		<p>在<span>MySQL 5.1</span>中，<span>MySQL AB</span>引入了新的插件式存储引擎体系结构，允许将存储引擎加载到正在运新的<span>MySQL</span>服务器中。</p>
+		<p>本章介绍了插件式存储引擎体系结构，概要介绍了与<span>MySQL</span>一起提供的各种存储引擎，介绍了将存储引擎赋给表的方法，以及插入和拔出存储引擎的方法。</p>
+		<div class="titlepage">
+			<div>
+				<div>
+					<h2 class="title">
+					<a name="pluggable-storage-overview"></a>14.2.&nbsp;概述</h2>
+				</div></div></div>
+		<p>使用<span>MySQL</span>插件式存储引擎体系结构，允许数据库专业人员为特定的应用需求选择专门的存储引擎，完全不需要管理任何特殊的应用编码要求。采用<span>MySQL</span>服务器体系结构，由于在存储级别上提供了一致和简单的应用模型和<span>API</span>，应用程序编程人员和<span>DBA</span>可不再考虑所有的底层实施细节。因此，尽管不同的存储引擎具有不同的能力，应用程序是与之分离的。</p>
+		<p>在下图中，以图形方式介绍了<span>MySQL</span>插件式存储引擎体系结构：</p>
+		<div class="figure">
+			<p class="title"><b>图14.1：MySQL插件式存储引擎的体系结构</b></p>
+			<div class="mediaobject">
+				<img src="images/pluggable-storage-overview.png" alt="The MySQL pluggable storage engine
+          architecture"></div></div>
+		<p>
+		插件式存储引擎体系结构提供了标准的管理和支持服务集合，它们对所有的基本存储引擎来说是共同的。存储引擎本身是数据库服务器的组件，负责对在物理服务器层面上维护的基本数据进行实际操作。</p>
+		<p>
+		这是一种高效的模块化体系结构，它为那些希望专注于特定应用需求的人员提供了巨大的便利和益处，这类特殊应用需求包括数据仓储、事务处理、高可用性情形等，同时还能利用独立于任何存储引擎的一组接口和服务。</p>
+		<p>应用程序编程人员和<span>DBA</span>通过位于存储引擎之上的连接器<span>API</span>和服务层来处理<span>MySQL</span>数据库。如果应用程序的变化需要改变底层存储引擎，或需要增加<span>1</span>个或多个额外的存储引擎以支持新的需求，不需要进行大的编码或进程更改就能实现这类要求。<span>MySQL</span>服务器体系结构提供了一致和易于使用的<span>API</span>，这类<span>API</span>适用于多种存储引擎，通过该方式，该结构将应用程序与存储引擎的底层复杂性隔离开来。</p>
+		<div class="titlepage">
+			<div>
+				<div>
+					<h2 class="title">
+					<a name="pluggable-storage-common-layer"></a>14.3.&nbsp;公共MySQL数据库服务器层</h2>
+				</div></div></div>
+		<p><span>MySQL</span>插件式存储引擎是<span>MySQL</span>数据库服务器中的组件，负责为数据库执行实际的数据<span>I/O</span>操作，并能允许和强制执行面向特殊应用需求的特定特性集合。使用特殊存储引擎的主要优点之一在于，仅需提供特殊应用所需的特性，因此，数据库中的系统开销较小，最终结果具有更有效和更高的数据库性能。这也是<span>MySQL</span>被始终视为具有高性能的原因之一，在行业标准基准方面，它能匹敌或击败专有的整体式数据库。</p>
+		<p>从技术角度上看，在存储引擎中，一些独特的支持底层结构的组件是什么呢？一些关键差别包括：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>并发性：</span>某些应用程序比其他应用程序具有很多的颗粒级锁定要求（如行级锁定）。选择正确的锁定策略能够减少开销，并有助于整体性能的提升。它还包括对多种能力的支持，如多版本并发性控制或“快照”读取等。</p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>事务支持：并非所有的应用程序都需要事务，但对的确需要事务的应用程序来说，有着定义良好的需求，如<span>ACID</span>兼容等。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>引用完整性：</span>通过<span>DDDL</span>定义的
+		外键，服务器需要强制保持关联数据库的引用完整性。</p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>物理存储：它包括各种各样的事项，从表和索引的总的页大小，到存储数据所需的格式，到物理磁盘。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>索引支持：不同的应用程序</span>倾向于采用不同的索引策略，每种存储引擎通常有自己的编制索引方法，但某些索引方法（如<span>B-tree</span>索引）对几乎所有的存储引擎来说是共同的。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>内存高速缓冲：与其他应用程序相比，不同的应用程序</span>对某些内存高速缓冲策略的响应更好，因此，尽管某些内存高速缓冲对所有存储引擎来说是共同的（如用于用户连接的高速缓冲，<span>MySQL</span>的高速查询高速缓冲等），其他高速缓冲策略仅当使用特殊的存储引擎时才唯一定义。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>性能帮助：</span>包括针对并行操作的多<span>I/O</span>线程，线程并发性，数据库检查点，成批插入处理等。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>其他目标特性：</span>可能包括对地理空间操作的支持，对特定数据处理操作的安全限制等。</p>
+		<p>
+		每组插件式存储引擎基本组件均采用了相应的设计，能够为特定应用提供可选择的特性集合。从反面角度看，避免使用组件特性集合有助于避免不必要的开销。因此，显而易见，应理解特定应用程序的需求集合，并选择恰当的能大幅度改善系统整体效率和性能的<span>MySQL</span>存储引擎。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="pluggable-storage-choosing"></a>
+		14.4.&nbsp;选择存储引擎</h2></div></div></div>
+		<p>与<span>MySQL</span>一起提供的各种存储引擎在设计时考虑了不同的使用情况。为了更有效地使用插件式存储体系结构，最好了解各种存储引擎的优点和缺点。</p>
+		<p>在下面的表格中，概要介绍了与<span>MySQL</span>一起提供的存储引擎：</p>
+		<div class="figure"><a name="id2931830"></a><p class="title"><b>图14.2：存储引擎比较</b></p><div class="mediaobject"><img src="images/pluggable-storage-choosing.png" alt="Storage engine comparison"></div></div>
+		<p>下述存储引擎是最常用的：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MyISAM</span>：默认的<span>MySQL</span>插件式存储引擎，它是在<span>Web</span>、数据仓储和其他应用环境下最常使用的存储引擎之一。注意，通过更改<span>STORAGE_ENGINE</span>配置变量，能够方便地更改<span>MySQL</span>服务器的默认存储引擎。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>InnoDB</span>：用于事务处理应用程序，具有众多特性，包括<span>ACID</span>事务支持。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>BDB</span>：可替代<span>InnoDB</span>的事务引擎，支持<span>COMMIT</span>、<span>ROLLBACK</span>和其他事务特性。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Memory</span>：将所有数据保存在<span>RAM</span>中，在需要快速查找引用和其他类似数据的环境下，可提供极快的访问。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Merge</span>：允许<span>MySQL 
+		DBA</span>或开发人员将一系列等同的<span>MyISAM</span>表以逻辑方式组合在一起，并作为<span>1</span>个对象引用它们。对于诸如数据仓储等<span>VLDB</span>环境十分适合。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Archive</span>：为大量很少引用的历史、归档、或安全审计信息的存储和检索提供了完美的解决方案。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Federated</span>：能够将多个分离的<span>MySQL</span>服务器链接起来，从多个物理服务器创建一个逻辑数据库。十分适合于分布式环境或数据集市环境。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Cluster/NDB</span>：<span>MySQL</span>的簇式数据库引擎，尤其适合于具有高性能查找要求的应用程序，这类查找需求还要求具有最高的正常工作时间和可用性。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Other</span>：其他存储引擎包括<span>CSV</span>（引用由逗号隔开的用作数据库表的文件），<span>Blackhole</span>（用于临时禁止对数据库的应用程序输入），以及<span>Example</span>引擎（可为快速创建定制的插件式存储引擎提供帮助）。</p>
+		<p>请记住，对于整个服务器或方案，你并不一定要使用相同的存储引擎，你可以为方案中的每个表使用不同的存储引擎，这点很重要。</p>
+		<p>关于<span>MySQL</span>中所包含存储引擎的详细信息，请参见<a href="pluggable-storage.html#pluggable-storage-choosing" title="14.4. Choosing a Storage Engine">14.4节，“选择存储引擎”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="pluggable-storage-assigning"></a>
+		14.5.&nbsp;将存储引擎指定给表</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		可以在创建新表时指定存储引擎，或通过使用<span><span>ALTER 
+		TABLE</span>语句指定</span>存储引擎。<p>要想在创建表时指定存储引擎，可使用<span>ENGINE</span>参数：</p>
+		<pre><span>CREATE TABLE engineTest(</span></pre>
+		<pre><span>id INT</span></pre>
+		<pre><span>) ENGINE = MyISAM;</span></pre>
+		<p>要想更改已有表的存储引擎，可使用<span>ALTER 
+		TABLE</span>语句：</p>
+		<pre><span>ALTER TABLE <span><i>engineTest</i></span> ENGINE = <span><i>ARCHIVE</i></span>;</span></pre>
+		<h2 class="title"><a name="pluggable-storage-transactions"></a>
+		14.6.&nbsp;存储引擎和事务</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		下述存储引擎支持事务：<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>InnoDB</span>：通过<span>MVCC</span>支持事务，允许<span>COMMIT</span>、<span>ROLLBACK</span>和保存点。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>NDB</span>：通过<span>MVCC</span>支持事务，允许<span>COMMIT</span>和<span>ROLLBACK</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>BDB</span>：支持事务，允许<span>COMMIT</span>和<span>ROLLBACK</span>。</p>
+		<h2 class="title"><a name="pluggable-storage-plugging"></a>
+		14.7.&nbsp;插入存储引擎</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		能够使用存储引擎之前，必须使用<span><span>INSTALL 
+		PLUGIN</span>语句将存储引擎</span><span>plugin</span>（插件）装载到<span>mysql</span>。例如，要想加载<span>example</span>引擎，首先应加载<span>ha_example.so</span>模块：<pre><span>INSTALL PLUGIN <span><i>ha_example</i></span> SONAME &#39;<span><i>ha_example.so</i></span>&#39;;</span></pre>
+		<p>文件<span><span>.so</span>必须位于</span><span>MySQL</span>服务器库目录下（典型情况下是<span>installdir/lib</span>）。</p>
+		<h2 class="title"><a name="pluggable-storage-unplugging"></a>
+		14.8.&nbsp;拔出存储引擎</h2></div></div></div>
+		<p>要想拔出存储引擎，可使用<span>UNINSTALL 
+		PLUGIN</span>语句：</p>
+		<pre><span>UNINSTALL PLUGIN <span><i>ha_example</i></span>;</span></pre>
+		<p>如果拔出了正被已有表使用的存储引擎，这些表将成为不可访问的。拔出存储引擎之前，请确保没有任何表使用该存储引擎。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="pluggable-storage-security"></a>
+		14.9.&nbsp;插件式存储器的安全含义</h2></div></div></div>
+		<p>为了安装插件式存储引擎，<span>plugin</span>文件必须位于恰当的<span>MySQL</span>库目录下，而且发出<span><span>INSTALL 
+		PLUGIN</span>语句的用户必须具有<span>SUPER</span>权限。</span></p>
+		<div align="center">
+			<span><hr size="2" width="100%" align="center"></span>
+		</div>
+		<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div></div>
+</body></html>

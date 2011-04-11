@@ -1,0 +1,420 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>18.8. The tty_struct Structure in Detail</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-18-sect-7.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-18-sect-9.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-18-sect-8"></a>
+<H3 class="docSection1Title">18.8. The tty_struct Structure in Detail</H3>
+
+<p class="docText">The <tt>tty_struct</tt> variable is<a name="chp-18-ITERM-8006"></a>
+<a name="chp-18-ITERM-8007"></a> <a name="chp-18-ITERM-8008"></a>
+<a name="chp-18-ITERM-8009"></a>
+used by the tty core to keep the current state of a specific tty
+port. Almost all of its fields are to be used only by the tty core,
+with a few exceptions. The fields that a tty driver can use are
+described here:</p>
+
+<dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long flags;</span></span> </span></dt></p>
+<dd>
+<p class="docList">The current state of the tty device. This is a bitfield variable and
+is accessed through the following macros:</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_THROTTLED</span></span> </span></dt></P>
+<dd>
+<p class="docList">Set when the driver has had the <span class="docEmphasis">throttle</span>
+function called. Should not be set by a tty driver, only the tty
+core.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_IO_ERROR</span></span> </span></dt></p>
+<dd>
+<p class="docList">Set by the driver when it does not want any data to be read from or
+written to the driver. If a user program attempts to do this, it
+receives an -EIO error from the kernel. This is usually set as the
+device is shutting down.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_OTHER_CLOSED</span></span> </span></dt></p>
+<dd>
+<p class="docList">Used only by the pty driver to notify when the port has been closed.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_EXCLUSIVE</span></span> </span></dt></p>
+<dd>
+<p class="docList">Set by the tty core to indicate that a port is in exclusive mode and
+can only be accessed by one user at a time.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_DEBUG</span></span> </span></dt></p>
+<dd>
+<p class="docList">Not used anywhere in the kernel.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_DO_WRITE_WAKEUP</span></span> </span></dt></p>
+<dd>
+<p class="docList">If this is set, the line discipline's
+<span class="docEmphasis">write_wakeup</span> function is allowed to be called.
+This is usually called at the same time the
+<span class="docEmphasis">wake_up_interruptible</span> function is called by the
+tty driver.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_PUSH</span></span> </span></dt></p>
+<dd>
+<p class="docList">Used only internally by the default tty line discipline.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_CLOSING</span></span> </span></dt></P>
+<dd>
+<p class="docList">Used by the tty core to keep track if a port is in the process of
+closing at that moment in time or not.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_DONT_FLIP</span></span> </span></dt></p>
+<dd>
+<p class="docList">Used by the default tty line discipline to notify the tty core that
+it should not change the flip buffer when it is set.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_HW_COOK_OUT</span></span> </span></dt></P>
+<dd>
+<p class="docList">If set by a tty driver, it notifies the line discipline that it will
+"cook" the output sent to it. If it
+is not set, the line discipline copies output of the driver in
+chunks; otherwise, it has to evaluate every byte sent individually
+for line changes. This flag should generally not be set by a tty
+driver.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_HW_COOK_IN</span></span> </span></dt></P>
+<dd>
+<p class="docList">Almost identical to setting the
+<tt>TTY_DRIVER_REAL_RAW</tt> flag in the driver flags
+variable. This flag should generally not be set by a tty driver.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_PTY_LOCK</span></span> </span></dt></p>
+<dd>
+<p class="docList">Used by the pty driver to lock and unlock a port.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_NO_WRITE_SPLIT</span></span> </span></dt></P>
+<dd>
+<p class="docList">If set, the tty core does not split up writes to the tty driver into
+normal-sized chunks. This value should not be used to prevent
+denial-of-service attacks on tty ports by sending large amounts of
+data to a port.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct tty_flip_buffer flip;</span></span> </span></dt></p>
+<dd>
+<p class="docList">The flip buffer for the tty device.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct tty_ldisc ldisc;</span></span> </span></dt></p>
+<dd>
+<p class="docList">The line discipline for the tty device.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wait_queue_head_t write_wait;</span></span> </span></dt></p>
+<dd>
+<p class="docList">The <span class="docEmphasis">wait_queue</span> for the tty writing function. A
+tty driver should wake this up to signal when it can receive more
+data.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct termios *termios;</span></span> </span></dt></p>
+<dd>
+<p class="docList">Pointer to the current termios settings for the tty device.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char stopped:1;</span></span> </span></dt></p>
+<dd>
+<p class="docList">Indicates whether the tty device is stopped. The tty driver can set
+this value.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char hw_stopped:1;</span></span> </span></dt></p>
+<dd>
+<p class="docList">Indicates whether or not the tty device's hardware
+is stopped. The tty driver can set this value.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char low_latency:1;</span></span> </span></dt></P>
+<dd>
+<p class="docList">Indicates whether the tty device is a low-latency device, capable of
+receiving data at a very high rate of speed. The tty driver can set
+this value.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char closing:1;</span></span> </span></dt></p>
+<dd>
+<p class="docList">Indicates whether the tty device is in the middle of closing the
+port. The tty driver can set this value.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct tty_driver driver;</span></span> </span></dt></P>
+<dd>
+<p class="docList">The current <tt>tty_driver</tt> structure that controls
+this tty device.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *driver_data;</span></span> </span></dt></P>
+<dd>
+<p class="docList">A pointer that the <tt>tty_driver</tt> can use to store
+data local to the tty driver. This variable is not modified by the
+tty core.</p>
+</dd>
+</dl>
+
+
+<ul></ul></td></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-18-sect-7.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-18-sect-9.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

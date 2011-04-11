@@ -1,0 +1,163 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+		<title>
+			Bran的内核开发指南：建立主程序main()、连接C源代码
+		</title>
+		<link href="layout.css" type="text/css" rel="stylesheet">
+	</head>
+
+	<body>
+		<h2><font face="Tahoma">建立主程序main()、连接C源代码</font></h2>
+
+		<p>
+			<font face="Tahoma">在一般的C语言编程实例中，main()函数是程序的入口。为了保持你的编程习惯，让你熟悉内核开发，本指南将仍旧将main()函数作为程序入口。正如上一章所提到的，我们尽力使汇编代码最少。但在后面的章节中，我们不得不回到汇编代码“start.asm”中去添加终端服务程序，以调用C函数。</font></p>
+		<p>
+			<font face="Tahoma">在这一章节中，我们将建立“main.c”和一个包含了公共函数原型的头文件——“system.h”。在“main.c”中，我们依然将使用一个main()函数以作为你的C程序入口。按照一个内核开发的规则，我们不需要从main()函数正常返回。许多操作系统使用main来初始化内核和子系统，加载外壳(shell)程序，最后main()函数将进入一个空闲循环中。当多任务系统中没有其它的任务要被运行的时候，空闲循环就会被使用。下面是一个含有最基本的main()函数和指南后面部分将用到的函数体的示例代码“main.c”</font></p>
+		<table border="1" width="100%" id="table8" style="border-collapse: collapse">
+			<tr>
+				<td><font size="2" face="Tahoma" color="#800000">#include &lt; system.h &gt;<br>
+				<br>
+				/* 你需要亲自将这些代码实践一遍&nbsp; */<br>
+				unsigned char *memcpy(unsigned char *dest, const unsigned char *src, int count)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 在这里添加代码，将count指定大小的数据从src复制到<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; dest，最后返回dest */<br>
+				}<br>
+				<br>
+				unsigned char *memset(unsigned char *dest, unsigned char val, int count)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 在这里添加代码，将在dest中count指定大小的空间用<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; val指定的字符代换。最后返回dest */<br>
+				}<br>
+				<br>
+				unsigned short *memsetw(unsigned short *dest, unsigned short val, int count)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 这里和上面的功能一样，<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; 在局部变量都是无符号短整型时，<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; 你可以把上面的代码完整地复制下来就行了。<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; */<br>
+				}<br>
+				<br>
+				int strlen(const char *str)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 这里需要添加一个遍历数列str的循环，<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; 当发现当前位是“\0”时，循环结束，这样通过循环计数器就可以得出一个字符串的长度。<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; 最后返回字符串的长度。 */<br>
+				}<br>
+				<br>
+				/* 我们在后面将使用这个函数来读取I/O端口以获得键盘等设备的数据。<br>
+				*&nbsp; 我们在这里实际上使用的是被称为“在线汇编”的开发方式。<br>
+				*&nbsp; */<br>
+				unsigned char inportb (unsigned short _port)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; unsigned char rv;<br>
+&nbsp;&nbsp;&nbsp; __asm__ __volatile__ (&quot;inb %1, %0&quot; : &quot;=a&quot; (rv) : &quot;dN&quot; (_port));<br>
+&nbsp;&nbsp;&nbsp; return rv;<br>
+				}<br>
+				<br>
+				/* 我们将使用这个函数来写I/O端口以向设备发送数据。<br>
+				*&nbsp; 这将在下一章中被用来改变字符模式光标位置。<br>
+				*&nbsp; 我们将再次使用在线汇编，因为有些工作是用C语言实现不了的。<br>
+				*&nbsp; */<br>
+				void outportb (unsigned short _port, unsigned char _data)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; __asm__ __volatile__ (&quot;outb %1, %0&quot; : : &quot;dN&quot; (_port), &quot;a&quot; (_data));<br>
+				}<br>
+				<br>
+				/* 下面是一个非常简单的main()函数。它所做的仅仅是一个死循环。<br>
+				*&nbsp; 这就像我们的“空闲”循环。*/<br>
+				void main()<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 你能在这后面添加命令 */<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 保留这个回环入口。如果你不小心删除了下面这个循环语句，<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; 这在“start.asm”中也是一个死循环。*/<br>
+&nbsp;&nbsp;&nbsp; for (;;);<br>
+				}</font></td>
+			</tr>
+			<tr>
+				<td><span style="font-style: normal; font-weight:700">
+				<font size="2" face="Tahoma">main.c:我们内核虽小但重要的开始</font></span></td>
+			</tr>
+		</table>
+		
+		<p>
+			<font face="Tahoma">在编译之前，我们需要在“start.asm”中添加两行。我们需要让NASM知道main()函数在一个外部文件中，并且我们需要在汇编文件中调用main()函数。打开“start.asm”，找到“stublet”所在的行。就在这行的后面，添加如下内容：</font></p>
+		<table border="1" width="100%" id="table7" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" size="2" face="Tahoma">    extern _main<br>
+				call _main</font></td>
+			</tr>
+		</table>
+		<p>
+			<font face="Tahoma">我们停下想想。在C语言中，我们描述为“main”，为什么在这里main前面要加下划线呢？这是因为GCC编译器在编译时要在所有函数和变量名前加一个下划线。而当我们在汇编代码中引用一个C中的函数或变量时，我们必须在其前加上一个下划线。</font></p>
+		<p>
+			<font face="Tahoma">现在似乎可以编译了吧，但我们还没有弄“system.h”呢。很简单，你只要创建一个空白的文本文件，取名为“system.h”。将所有函数(memcpy, 
+			memset, memsetw, strlen, inportb, 
+			outportb)的原型添加到其中。在这里使用宏定义来避免使用文件包含是明智的。这还能避免在头文件中多次使用#ifndef, 
+			#define, 
+			#endif来做申明。我们将在指南中每个C源程序中包含“system.h”，以便你能方便地按需使用内核中函数。你还可以按照实际情况，随意地扩充这个函数库。“system.h”的内容如下：</font></p>
+		<table border="1" width="100%" id="table6" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" size="2" face="Tahoma">#ifndef __SYSTEM_H<br>
+				#define __SYSTEM_H<br>
+				<br>
+				/* MAIN.C */<br>
+				extern unsigned char *memcpy(unsigned char *dest, const unsigned 
+				char *src, int count);<br>
+				extern unsigned char *memset(unsigned char *dest, unsigned char 
+				val, int count);<br>
+				extern unsigned short *memsetw(unsigned short *dest, unsigned 
+				short val, int count);<br>
+				extern int strlen(const char *str);<br>
+				extern unsigned char inportb (unsigned short _port);<br>
+				extern void outportb (unsigned short _port, unsigned char 
+				_data);<br>
+				<br>
+				#endif</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">我们的全局头文件: 'system.h'</font></b></td>
+			</tr>
+		</table>
+
+		<p>
+			<font face="Tahoma">下面，我们将学习怎么编译源代码。打开前面章节提到的“build.bat”，添加如下内容。注意，这里假定“system.h”文件在内核代码的“include”文件夹中。这个命令将执行gcc编译器。在这些传递的参数中，“-Wall”将给你一些关于代码的提示。“-nostdinc”和“-fno-builtin”的意思是我们使用的不是标准的C库函数。“-I./include”告诉编译器我们的头文件是在当前目录的“include”文件夹中。“-c”告诉编译器先别忙着连接。正如前面章节提到的，“-o 
+			main.o”是指定编译器产生的文件。简而言之，我们是在使用对内核开发最适宜的选项把“main.c”编译成“main.o”。</font></p>
+		<p><font face="Tahoma">小贴示：在windows系统中。右键单击批处理文件并选择“编辑”来编辑它。</font></p>
+		<table border="1" width="100%" id="table5" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" face="Tahoma">gcc -Wall -O -fstrength-reduce 
+				-fomit-frame-pointer -finline-functions -nostdinc -fno-builtin 
+				-I./include -c -o main.o main.c</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">把上面的内容添加到&quot;build.bat&quot;中</font></b></td>
+			</tr>
+		</table>
+		
+		<p>
+			<font face="Tahoma">不要忘记按照我们在“build.bat”中提到的指令！最后，你需要把“main.o”添加到需要连接起来构建内核的目标文件列表中。如果你正在奋力地编写像memcpy这样有实际效力的函数，可以看看这个示例的<a href="../Sources/main.c">解决方案</a>。</font></p>
+		
+		<table cols="200, *, 200" width="100%">
+			<tr>
+				<td align="left" width="200">
+					<font face="Tahoma">
+					<a href="basickernel.htm">&lt;&lt; 基本内核</a>
+				</font>
+				</td>
+				<td align="center" width="*">
+					<font face="Tahoma">
+					<a href="mailto:friesenb@gmail.com">联系 Brandon F.</a>
+				</font>
+				</td>
+				<td align="right" width="200">
+					<font face="Tahoma">
+					<a href="printing.htm">屏幕显示 &gt;&gt;</a>
+				</font>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

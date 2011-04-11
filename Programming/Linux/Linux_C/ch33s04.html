@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4. 捕捉信号</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch33.html" title="第 33 章 信号" /><link rel="prev" href="ch33s03.html" title="3. 阻塞信号" /><link rel="next" href="ch34.html" title="第 34 章 终端、作业控制与守护进程" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">4. 捕捉信号</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch33s03.html">上一页</a> </td><th width="60%" align="center">第 33 章 信号</th><td width="20%" align="right"> <a accesskey="n" href="ch34.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2885284"></a>4. 捕捉信号</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2885289"></a>4.1. 内核如何实现信号的捕捉</h3></div></div></div><p>如果信号的处理动作是用户自定义函数，在信号递达时就调用这个函数，这称为捕捉信号。由于信号处理函数的代码是在用户空间的，处理过程比较复杂，举例如下：</p><div class="orderedlist"><ol type="1"><li><p>用户程序注册了<code class="literal">SIGQUIT</code>信号的处理函数<code class="literal">sighandler</code>。</p></li><li><p>当前正在执行<code class="literal">main</code>函数，这时发生中断或异常切换到内核态。</p></li><li><p>在中断处理完毕后要返回用户态的<code class="literal">main</code>函数之前检查到有信号<code class="literal">SIGQUIT</code>递达。</p></li><li><p>内核决定返回用户态后不是恢复<code class="literal">main</code>函数的上下文继续执行，而是执行<code class="literal">sighandler</code>函数，<code class="literal">sighandler</code>和<code class="literal">main</code>函数使用不同的堆栈空间，它们之间不存在调用和被调用的关系，是两个独立的控制流程。</p></li><li><p><code class="literal">sighandler</code>函数返回后自动执行特殊的系统调用<code class="literal">sigreturn</code>再次进入内核态。</p></li><li><p>如果没有新的信号要递达，这次再返回用户态就是恢复<code class="literal">main</code>函数的上下文继续执行了。</p></li></ol></div><div class="figure"><a id="id2885414"></a><p class="title"><b>图 33.2. 信号的捕捉</b></p><div class="figure-contents"><div><img src="images/signal.catch.png" alt="信号的捕捉" /></div></div></div><br class="figure-break" /><p>上图出自<a class="xref" href="bi01.html#bibli.ulk" title="Understanding the Linux Kernel">[<abbr class="abbrev">ULK</abbr>]</a>。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2885439"></a>4.2. sigaction</h3></div></div></div><pre class="programlisting">#include &lt;signal.h&gt;
+
+int sigaction(int signo, const struct sigaction *act, struct sigaction *oact);</pre><p><code class="literal">sigaction</code>函数可以读取和修改与指定信号相关联的处理动作。调用成功则返回0，出错则返回-1。<code class="literal">signo</code>是指定信号的编号。若<code class="literal">act</code>指针非空，则根据<code class="literal">act</code>修改该信号的处理动作。若<code class="literal">oact</code>指针非空，则通过<code class="literal">oact</code>传出该信号原来的处理动作。<code class="literal">act</code>和<code class="literal">oact</code>指向<code class="literal">sigaction</code>结构体：</p><pre class="programlisting">struct sigaction {
+   void      (*sa_handler)(int);   /* addr of signal handler, */
+                                       /* or SIG_IGN, or SIG_DFL */
+   sigset_t sa_mask;               /* additional signals to block */
+   int      sa_flags;              /* signal options, Figure 10.16 */
+
+   /* alternate handler */
+   void     (*sa_sigaction)(int, siginfo_t *, void *);
+};</pre><p>将<code class="literal">sa_handler</code>赋值为常数<code class="literal">SIG_IGN</code>传给<code class="literal">sigaction</code>表示忽略信号，赋值为常数<code class="literal">SIG_DFL</code>表示执行系统默认动作，赋值为一个函数指针表示用自定义函数捕捉信号，或者说向内核注册了一个信号处理函数，该函数返回值为<code class="literal">void</code>，可以带一个<code class="literal">int</code>参数，通过参数可以得知当前信号的编号，这样就可以用同一个函数处理多种信号。显然，这也是一个回调函数，不是被<code class="literal">main</code>函数调用，而是被系统所调用。</p><p>当某个信号的处理函数被调用时，内核自动将当前信号加入进程的信号屏蔽字，当信号处理函数返回时自动恢复原来的信号屏蔽字，这样就保证了在处理某个信号时，如果这种信号再次产生，那么它会被阻塞到当前处理结束为止。如果在调用信号处理函数时，除了当前信号被自动屏蔽之外，还希望自动屏蔽另外一些信号，则用<code class="literal">sa_mask</code>字段说明这些需要额外屏蔽的信号，当信号处理函数返回时自动恢复原来的信号屏蔽字。</p><p><code class="literal">sa_flags</code>字段包含一些选项，本章的代码都把<code class="literal">sa_flags</code>设为0，<code class="literal">sa_sigaction</code>是实时信号的处理函数，本章不详细解释这两个字段，有兴趣的读者参考<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2885627"></a>4.3. pause</h3></div></div></div><pre class="programlisting">#include &lt;unistd.h&gt;
+
+int pause(void);</pre><p><code class="literal">pause</code>函数使调用进程挂起直到有信号递达。如果信号的处理动作是终止进程，则进程终止，<code class="literal">pause</code>函数没有机会返回；如果信号的处理动作是忽略，则进程继续处于挂起状态，<code class="literal">pause</code>不返回；如果信号的处理动作是捕捉，则调用了信号处理函数之后<code class="literal">pause</code>返回-1，<code class="literal">errno</code>设置为<code class="literal">EINTR</code>，所以<code class="literal">pause</code>只有出错的返回值（想想以前还学过什么函数只有出错返回值？）。错误码<code class="literal">EINTR</code>表示“<span class="quote">被信号中断</span>”。</p><p>下面我们用<code class="literal">alarm</code>和<code class="literal">pause</code>实现<code class="literal">sleep(3)</code>函数，称为<code class="literal">mysleep</code>。</p><div class="example"><a id="id2885725"></a><p class="title"><b>例 33.2. mysleep</b></p><div class="example-contents"><pre class="programlisting">#include &lt;unistd.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;stdio.h&gt;
+
+void sig_alrm(int signo)
+{
+	/* nothing to do */
+}
+
+unsigned int mysleep(unsigned int nsecs)
+{
+	struct sigaction newact, oldact;
+	unsigned int unslept;
+
+	newact.sa_handler = sig_alrm;
+	sigemptyset(&amp;newact.sa_mask);
+	newact.sa_flags = 0;
+	sigaction(SIGALRM, &amp;newact, &amp;oldact);
+
+	alarm(nsecs);
+	pause();
+
+	unslept = alarm(0);
+	sigaction(SIGALRM, &amp;oldact, NULL);
+
+	return unslept;
+}
+
+int main(void)
+{
+	while(1){
+		mysleep(2);
+		printf("Two seconds passed\n");
+	}
+	return 0;
+}</pre></div></div><br class="example-break" /><div class="orderedlist"><ol type="1"><li><p><code class="literal">main</code>函数调用<code class="literal">mysleep</code>函数，后者调用<code class="literal">sigaction</code>注册了<code class="literal">SIGALRM</code>信号的处理函数<code class="literal">sig_alrm</code>。</p></li><li><p>调用<code class="literal">alarm(nsecs)</code>设定闹钟。</p></li><li><p>调用<code class="literal">pause</code>等待，内核切换到别的进程运行。</p></li><li><p><code class="literal">nsecs</code>秒之后，闹钟超时，内核发<code class="literal">SIGALRM</code>给这个进程。</p></li><li><p>从内核态返回这个进程的用户态之前处理未决信号，发现有<code class="literal">SIGALRM</code>信号，其处理函数是<code class="literal">sig_alrm</code>。</p></li><li><p>切换到用户态执行<code class="literal">sig_alrm</code>函数，进入<code class="literal">sig_alrm</code>函数时<code class="literal">SIGALRM</code>信号被自动屏蔽，从<code class="literal">sig_alrm</code>函数返回时<code class="literal">SIGALRM</code>信号自动解除屏蔽。然后自动执行系统调用<code class="literal">sigreturn</code>再次进入内核，再返回用户态继续执行进程的主控制流程（<code class="literal">main</code>函数调用的<code class="literal">mysleep</code>函数）。</p></li><li><p><code class="literal">pause</code>函数返回-1，然后调用<code class="literal">alarm(0)</code>取消闹钟，调用<code class="literal">sigaction</code>恢复<code class="literal">SIGALRM</code>信号以前的处理动作。</p></li></ol></div><p>以下问题留给读者思考：</p><p>1、信号处理函数<code class="literal">sig_alrm</code>什么都没干，为什么还要注册它作为<code class="literal">SIGALRM</code>的处理函数？不注册信号处理函数可以吗？</p><p>2、为什么在<code class="literal">mysleep</code>函数返回前要恢复<code class="literal">SIGALRM</code>信号原来的<code class="literal">sigaction</code>？</p><p>3、<code class="literal">mysleep</code>函数的返回值表示什么含义？什么情况下返回非0值？。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2885983"></a>4.4. 可重入函数</h3></div></div></div><p>当捕捉到信号时，不论进程的主控制流程当前执行到哪儿，都会先跳到信号处理函数中执行，从信号处理函数返回后再继续执行主控制流程。信号处理函数是一个单独的控制流程，因为它和主控制流程是异步的，二者不存在调用和被调用的关系，并且使用不同的堆栈空间。引入了信号处理函数使得一个进程具有多个控制流程，如果这些控制流程访问相同的全局资源（全局变量、硬件资源等），就有可能出现冲突，如下面的例子所示。</p><div class="figure"><a id="id2886010"></a><p class="title"><b>图 33.3. 不可重入函数</b></p><div class="figure-contents"><div><img src="images/signal.reentrancy.png" alt="不可重入函数" /></div></div></div><br class="figure-break" /><p><code class="literal">main</code>函数调用<code class="literal">insert</code>函数向一个链表<code class="literal">head</code>中插入节点<code class="literal">node1</code>，插入操作分为两步，刚做完第一步的时候，因为硬件中断使进程切换到内核，再次回用户态之前检查到有信号待处理，于是切换到<code class="literal">sighandler</code>函数，<code class="literal">sighandler</code>也调用<code class="literal">insert</code>函数向同一个链表<code class="literal">head</code>中插入节点<code class="literal">node2</code>，插入操作的两步都做完之后从<code class="literal">sighandler</code>返回内核态，再次回到用户态就从<code class="literal">main</code>函数调用的<code class="literal">insert</code>函数中继续往下执行，先前做第一步之后被打断，现在继续做完第二步。结果是，<code class="literal">main</code>函数和<code class="literal">sighandler</code>先后向链表中插入两个节点，而最后只有一个节点真正插入链表中了。</p><p>像上例这样，<code class="literal">insert</code>函数被不同的控制流程调用，有可能在第一次调用还没返回时就再次进入该函数，这称为重入，<code class="literal">insert</code>函数访问一个全局链表，有可能因为重入而造成错乱，像这样的函数称为不可重入函数，反之，如果一个函数只访问自己的局部变量或参数，则称为可重入（<code class="literal">Reentrant</code>）函数。想一下，为什么两个不同的控制流程调用同一个函数，访问它的同一个局部变量或参数就不会造成错乱？</p><p>如果一个函数符合以下条件之一则是不可重入的：</p><div class="itemizedlist"><ul type="disc"><li><p>调用了<code class="literal">malloc</code>或<code class="literal">free</code>，因为<code class="literal">malloc</code>也是用全局链表来管理堆的。</p></li><li><p>调用了标准I/O库函数。标准I/O库的很多实现都以不可重入的方式使用全局数据结构。</p></li></ul></div><p>SUS规定有些系统函数必须以线程安全的方式实现，这里就不列了，请参考<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2886197"></a>4.5. sig_atomic_t类型与volatile限定符</h3></div></div></div><p>在上面的例子中，<code class="literal">main</code>和<code class="literal">sighandler</code>都调用<code class="literal">insert</code>函数则有可能出现链表的错乱，其根本原因在于，对全局链表的插入操作要分两步完成，不是一个原子操作，假如这两步操作必定会一起做完，中间不可能被打断，就不会出现错乱了。下一节线程会讲到如何保证一个代码段以原子操作完成。</p><p>现在想一下，如果对全局数据的访问只有一行代码，是不是原子操作呢？比如，<code class="literal">main</code>和<code class="literal">sighandler</code>都对一个全局变量赋值，会不会出现错乱呢？比如下面的程序：</p><pre class="programlisting">long long a;
+int main(void)
+{
+	a=5;
+	return 0;
+}</pre><p>带调试信息编译，然后带源代码反汇编：</p><pre class="screen">$ gcc main.c -g
+$ objdump -dS a.out</pre><p>其中main函数的指令中有：</p><pre class="screen">	a=5;
+ 8048352:       c7 05 50 95 04 08 05    movl   $0x5,0x8049550
+ 8048359:       00 00 00 
+ 804835c:       c7 05 54 95 04 08 00    movl   $0x0,0x8049554
+ 8048363:       00 00 00</pre><p>虽然C代码只有一行，但是在32位机上对一个64位的<code class="literal">long long</code>变量赋值需要两条指令完成，因此不是原子操作。同样地，读取这个变量到寄存器需要两个32位寄存器才放得下，也需要两条指令，不是原子操作。请读者设想一种时序，<code class="literal">main</code>和<code class="literal">sighandler</code>都对这个变量<code class="literal">a</code>赋值，最后变量<code class="literal">a</code>的值发生错乱。</p><p>如果上述程序在64位机上编译执行，则有可能用一条指令完成赋值，因而是原子操作。如果<code class="literal">a</code>是32位的<code class="literal">int</code>变量，在32位机上赋值是原子操作，在16位机上就不是。如果在程序中需要使用一个变量，要保证对它的读写都是原子操作，应该采用什么类型呢？为了解决这些平台相关的问题，C标准定义了一个类型<code class="literal">sig_atomic_t</code>，在不同平台的C语言库中取不同的类型，例如在32位机上定义<code class="literal">sig_atomic_t</code>为<code class="literal">int</code>类型。</p><p>在使用<code class="literal">sig_atomic_t</code>类型的变量时，还需要注意另一个问题。看如下的例子：</p><pre class="programlisting">#include &lt;signal.h&gt;
+
+sig_atomic_t a=0;
+int main(void)
+{
+	/* register a sighandler */
+	while(!a); /* wait until a changes in sighandler */
+	/* do something after signal arrives */
+	return 0;
+}</pre><p>为了简洁，这里只写了一个代码框架来说明问题。在<code class="literal">main</code>函数中首先要注册某个信号的处理函数<code class="literal">sighandler</code>，然后在一个<code class="literal">while</code>死循环中等待信号发生，如果有信号递达则执行<code class="literal">sighandler</code>，在<code class="literal">sighandler</code>中将<code class="literal">a</code>改为1，这样再次回到<code class="literal">main</code>函数时就可以退出<code class="literal">while</code>循环，执行后续处理。用上面的方法编译和反汇编这个程序，在<code class="literal">main</code>函数的指令中有：</p><pre class="screen">	/* register a sighandler */
+	while(!a); /* wait until a changes in sighandler */
+ 8048352:       a1 3c 95 04 08          mov    0x804953c,%eax
+ 8048357:       85 c0                   test   %eax,%eax
+ 8048359:       74 f7                   je     8048352 &lt;main+0xe&gt;</pre><p>将全局变量<code class="literal">a</code>从内存读到<code class="literal">eax</code>寄存器，对<code class="literal">eax</code>和<code class="literal">eax</code>做AND运算，若结果为0则跳回循环开头，再次从内存读变量<code class="literal">a</code>的值，可见这三条指令等价于C代码的<code class="literal">while(!a);</code>循环。如果在编译时加了优化选项，例如：</p><pre class="screen">$ gcc main.c -O1 -g
+$ objdump -dS a.out</pre><p>则<code class="literal">main</code>函数的指令中有：</p><pre class="screen"> 8048352:       83 3d 3c 95 04 08 00    cmpl   $0x0,0x804953c
+	/* register a sighandler */
+	while(!a); /* wait until a changes in sighandler */
+ 8048359:       74 fe                   je     8048359 &lt;main+0x15&gt;</pre><p>第一条指令将全局变量<code class="literal">a</code>的内存单元直接和0比较，如果相等，则第二条指令成了一个死循环，注意，这是一个真正的死循环：即使<code class="literal">sighandler</code>将<code class="literal">a</code>改为1，只要没有影响Zero标志位，回到<code class="literal">main</code>函数后仍然死在第二条指令上，因为不会再次从内存读取变量<code class="literal">a</code>的值。</p><p>是编译器优化得有错误吗？不是的。设想一下，如果程序只有单一的执行流程，只要当前执行流程没有改变<code class="literal">a</code>的值，<code class="literal">a</code>的值就没有理由会变，不需要反复从内存读取，因此上面的两条指令和<code class="literal">while(!a);</code>循环是等价的，并且优化之后省去了每次循环读内存的操作，效率非常高。所以不能说编译器做错了，只能说<span class="emphasis"><em>编译器无法识别程序中存在多个执行流程</em></span>。之所以程序中存在多个执行流程，是因为调用了特定平台上的特定库函数，比如<code class="literal">sigaction</code>、<code class="literal">pthread_create</code>，这些不是C语言本身的规范，不归编译器管，程序员应该自己处理这些问题。C语言提供了<code class="literal">volatile</code>限定符，如果将上述变量定义为<code class="literal">volatile sig_atomic_t a=0;</code>那么即使指定了优化选项，编译器也不会优化掉对变量a内存单元的读写。</p><p>对于程序中存在多个执行流程访问同一全局变量的情况，<code class="literal">volatile</code>限定符是必要的，此外，虽然程序只有单一的执行流程，但是变量属于以下情况之一的，也需要<code class="literal">volatile</code>限定：</p><div class="itemizedlist"><ul type="disc"><li><p>变量的内存单元中的数据不需要写操作就可以自己发生变化，每次读上来的值都可能不一样</p></li><li><p>即使多次向变量的内存单元中写数据，只写不读，也并不是在做无用功，而是有特殊意义的</p></li></ul></div><p>什么样的内存单元会具有这样的特性呢？肯定不是普通的内存，而是映射到内存地址空间的硬件寄存器，例如串口的接收寄存器属于上述第一种情况，而发送寄存器属于上述第二种情况。</p><p><span class="emphasis"><em><code class="literal">sig_atomic_t</code>类型的变量应该总是加上<code class="literal">volatile</code>限定符</em></span>，因为要使用<code class="literal">sig_atomic_t</code>类型的理由也正是要加<code class="literal">volatile</code>限定符的理由。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2886686"></a>4.6. 竞态条件与sigsuspend函数</h3></div></div></div><p>现在重新审视<a class="xref" href="ch33s04.html#signal.mysleep">例 33.2 “mysleep”</a>，设想这样的时序：</p><div class="orderedlist"><ol type="1"><li><p>注册<code class="literal">SIGALRM</code>信号的处理函数。</p></li><li><p>调用<code class="literal">alarm(nsecs)</code>设定闹钟。</p></li><li><p>内核调度优先级更高的进程取代当前进程执行，并且优先级更高的进程有很多个，每个都要执行很长时间</p></li><li><p><code class="literal">nsecs</code>秒钟之后闹钟超时了，内核发送<code class="literal">SIGALRM</code>信号给这个进程，处于未决状态。</p></li><li><p>优先级更高的进程执行完了，内核要调度回这个进程执行。<code class="literal">SIGALRM</code>信号递达，执行处理函数<code class="literal">sig_alrm</code>之后再次进入内核。</p></li><li><p>返回这个进程的主控制流程，<code class="literal">alarm(nsecs)</code>返回，调用<code class="literal">pause()</code>挂起等待。</p></li><li><p>可是<code class="literal">SIGALRM</code>信号已经处理完了，还等待什么呢？</p></li></ol></div><p>出现这个问题的根本原因是系统运行的时序（Timing）<a id="id2886805" class="indexterm"></a>并不像我们写程序时所设想的那样。虽然<code class="literal">alarm(nsecs)</code>紧接着的下一行就是<code class="literal">pause()</code>，但是无法保证<code class="literal">pause()</code>一定会在调用<code class="literal">alarm(nsecs)</code>之后的<code class="literal">nsecs</code>秒之内被调用。由于异步事件在任何时候都有可能发生（这里的异步事件指出现更高优先级的进程），如果我们写程序时考虑不周密，就可能由于时序问题而导致错误，这叫做竞态条件（Race Condition）<a id="id2886848" class="indexterm"></a>。</p><p>如何解决上述问题呢？读者可能会想到，在调用<code class="literal">pause</code>之前屏蔽<code class="literal">SIGALRM</code>信号使它不能提前递达就可以了。看看以下方法可行吗？</p><div class="orderedlist"><ol type="1"><li><p>屏蔽<code class="literal">SIGALRM</code>信号;</p></li><li><p><code class="literal">alarm(nsecs);</code></p></li><li><p>解除对<code class="literal">SIGALRM</code>信号的屏蔽;</p></li><li><p><code class="literal">pause();</code></p></li></ol></div><p>从解除信号屏蔽到调用<code class="literal">pause</code>之间存在间隙，<code class="literal">SIGALRM</code>仍有可能在这个间隙递达。要消除这个间隙，我们把解除屏蔽移到<code class="literal">pause</code>后面可以吗？</p><div class="orderedlist"><ol type="1"><li><p>屏蔽<code class="literal">SIGALRM</code>信号;</p></li><li><p><code class="literal">alarm(nsecs);</code></p></li><li><p><code class="literal">pause();</code></p></li><li><p>解除对<code class="literal">SIGALRM</code>信号的屏蔽;</p></li></ol></div><p>这样更不行了，还没有解除屏蔽就调用<code class="literal">pause</code>，<code class="literal">pause</code>根本不可能等到<code class="literal">SIGALRM</code>信号。要是“<span class="quote">解除信号屏蔽</span>”和“<span class="quote">挂起等待信号</span>”这两步能合并成一个原子操作就好了，这正是<code class="literal">sigsuspend</code>函数的功能。<code class="literal">sigsuspend</code>包含了<code class="literal">pause</code>的挂起等待功能，同时解决了竞态条件的问题，在对时序要求严格的场合下都应该调用<code class="literal">sigsuspend</code>而不是<code class="literal">pause</code>。</p><pre class="programlisting">#include &lt;signal.h&gt;
+
+int sigsuspend(const sigset_t *sigmask);</pre><p>和<code class="literal">pause</code>一样，<code class="literal">sigsuspend</code>没有成功返回值，只有执行了一个信号处理函数之后<code class="literal">sigsuspend</code>才返回，返回值为-1，<code class="literal">errno</code>设置为<code class="literal">EINTR</code>。</p><p>调用<code class="literal">sigsuspend</code>时，进程的信号屏蔽字由<code class="literal">sigmask</code>参数指定，可以通过指定<code class="literal">sigmask</code>来临时解除对某个信号的屏蔽，然后挂起等待，当<code class="literal">sigsuspend</code>返回时，进程的信号屏蔽字恢复为原来的值，如果原来对该信号是屏蔽的，从<code class="literal">sigsuspend</code>返回后仍然是屏蔽的。</p><p>以下用<code class="literal">sigsuspend</code>重新实现<code class="literal">mysleep</code>函数：</p><pre class="programlisting">unsigned int mysleep(unsigned int nsecs)
+{
+	struct sigaction    newact, oldact;
+	sigset_t            newmask, oldmask, suspmask;
+	unsigned int        unslept;
+
+	/* set our handler, save previous information */
+	newact.sa_handler = sig_alrm;
+	sigemptyset(&amp;newact.sa_mask);
+	newact.sa_flags = 0;
+	sigaction(SIGALRM, &amp;newact, &amp;oldact);
+
+	/* block SIGALRM and save current signal mask */
+	sigemptyset(&amp;newmask);
+	sigaddset(&amp;newmask, SIGALRM);
+	sigprocmask(SIG_BLOCK, &amp;newmask, &amp;oldmask);
+
+	alarm(nsecs);
+
+	suspmask = oldmask;
+	sigdelset(&amp;suspmask, SIGALRM);    /* make sure SIGALRM isn't blocked */
+	sigsuspend(&amp;suspmask);            /* wait for any signal to be caught */
+
+	/* some signal has been caught,   SIGALRM is now blocked */
+
+	unslept = alarm(0);
+	sigaction(SIGALRM, &amp;oldact, NULL);  /* reset previous action */
+
+	/* reset signal mask, which unblocks SIGALRM */
+	sigprocmask(SIG_SETMASK, &amp;oldmask, NULL);
+	return(unslept);
+}</pre><p>如果在调用<code class="literal">mysleep</code>函数时<code class="literal">SIGALRM</code>信号没有屏蔽：</p><div class="orderedlist"><ol type="1"><li><p>调用<code class="literal">sigprocmask(SIG_BLOCK, &amp;newmask, &amp;oldmask);</code>时屏蔽<code class="literal">SIGALRM</code>。</p></li><li><p>调用<code class="literal">sigsuspend(&amp;suspmask);</code>时解除对<code class="literal">SIGALRM</code>的屏蔽，然后挂起等待待。</p></li><li><p><code class="literal">SIGALRM</code>递达后<code class="literal">suspend</code>返回，自动恢复原来的屏蔽字，也就是再次屏蔽<code class="literal">SIGALRM</code>。</p></li><li><p>调用<code class="literal">sigprocmask(SIG_SETMASK, &amp;oldmask, NULL);</code>时再次解除对<code class="literal">SIGALRM</code>的屏蔽。</p></li></ol></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2887260"></a>4.7. 关于SIGCHLD信号</h3></div></div></div><p>进程一章讲过用<code class="literal">wait</code>和<code class="literal">waitpid</code>函数清理僵尸进程，父进程可以阻塞等待子进程结束，也可以非阻塞地查询是否有子进程结束等待清理（也就是轮询的方式）。采用第一种方式，父进程阻塞了就不能处理自己的工作了；采用第二种方式，父进程在处理自己的工作的同时还要记得时不时地轮询一下，程序实现复杂。</p><p>其实，子进程在终止时会给父进程发<code class="literal">SIGCHLD</code>信号，该信号的默认处理动作是忽略，父进程可以自定义<code class="literal">SIGCHLD</code>信号的处理函数，这样父进程只需专心处理自己的工作，不必关心子进程了，子进程终止时会通知父进程，父进程在信号处理函数中调用<code class="literal">wait</code>清理子进程即可。</p><p>请编写一个程序完成以下功能：父进程<code class="literal">fork</code>出子进程，子进程调用<code class="literal">exit(2)</code>终止，父进程自定义<code class="literal">SIGCHLD</code>信号的处理函数，在其中调用<code class="literal">wait</code>获得子进程的退出状态并打印。 </p><p>事实上，由于UNIX的历史原因，要想不产生僵尸进程还有另外一种办法：父进程调用<code class="literal">sigaction</code>将<code class="literal">SIGCHLD</code>的处理动作置为<code class="literal">SIG_IGN</code>，这样<code class="literal">fork</code>出来的子进程在终止时会自动清理掉，不会产生僵尸进程，也不会通知父进程。系统默认的忽略动作和用户用<code class="literal">sigaction</code>函数自定义的忽略通常是没有区别的，但这是一个特例。此方法对于Linux可用，但不保证在其它UNIX系统上都可用。请编写程序验证这样做不会产生僵尸进程。</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch33s03.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch33.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch34.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">3. 阻塞信号 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 第 34 章 终端、作业控制与守护进程</td></tr></table></div></body></html>

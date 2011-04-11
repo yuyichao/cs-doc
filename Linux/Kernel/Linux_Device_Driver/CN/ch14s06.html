@@ -1,0 +1,185 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>14.6.&#160;集成起来-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch14.html" title="第&#160;14&#160;章&#160;Linux 设备模型">
+<link rel="prev" href="ch14s05.html" title="14.5.&#160;类">
+<link rel="next" href="ch14s07.html" title="14.7.&#160;热插拔">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">14.6.&#160;集成起来</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch14s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;14&#160;章&#160;Linux 设备模型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch14s07.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="PuttingItAllTogether.sect1"></a>14.6.&#160;集成起来</h2></div></div></div>
+<p>为更好理解驱动模型做什么, 让我们通览一个设备在内核中的生命周期的阶段. 我们描述 PCI 子系统如何与驱动模型交互, 一个驱动如何被加入和去除的基本概念, 以及一个设备如何从系统中被加入和去除. 这些细节, 即便特别地描述 PCI 内核代码, 适用所有其他的使用驱动核心来管理它们的驱动和设备的子系统.</p>
+<p>PCI 核心, 驱动核心和单独的 PCI 驱动之间的交互是非常复杂, 如同图 <a href="ch14s06.html#ldd3-14-3.fig" title="图&#160;14.3.&#160;创建设备过程">创建设备过程</a>所示.</p>
+<div class="figure">
+<a name="ldd3-14-3.fig"></a><p class="title"><b>图&#160;14.3.&#160;创建设备过程</b></p>
+<div><img src="images/snagitldd3/ldd3-14-3.png" alt="创建设备过程"></div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AddaDevice.sect2"></a>14.6.1.&#160;添加一个设备</h3></div></div></div>
+<p>PCI 子系统声明一个单个 struct bus_type 称为 pci_bus_type, 它使用下列值初始化:</p>
+<pre class="programlisting">
+struct bus_type pci_bus_type = {
+ .name  = "pci", 
+ .match  = pci_bus_match, 
+ .hotplug  = pci_hotplug, 
+ .suspend  = pci_device_suspend, 
+ .resume  = pci_device_resume, 
+ .dev_attrs = pci_dev_attrs, };
+</pre>
+<p>这个 pci_bus_type 变量被注册到驱动内核, 当 PCI 子系统通过对 bus_register 的调用被加载入内核时. 当这个发生时, 驱动核心创建一个 sysfs 目录在 /sys/bus/pci 里, 它包含 2 个目录: devices 和 drivers.</p>
+<p>所有的 PCI 驱动必须定义一个 struct pci_driver 变量, 它定义了这个 PCI 驱动能够做的不同的功能(更多的关于 PCI 子系统和如何编写一个 PCI 驱动的信息, 见 12 章). 那个结构包含一个 struct device_driver, 它接着被 PCI 核心初始化, 当 PCI 驱动被注册时.</p>
+<pre class="programlisting">
+/* initialize common driver fields */
+drv-&gt;driver.name = drv-&gt;name;
+drv-&gt;driver.bus = &amp;pci_bus_type;
+drv-&gt;driver.probe = pci_device_probe;
+drv-&gt;driver.remove = pci_device_remove; 
+drv-&gt;driver.kobj.ktype = &amp;pci_driver_kobj_type;
+</pre>
+<p>这个代码为驱动建立总线来指向 pci_bus_type 以及使 probe 和 remove 函数来指向 PCI 核心内的函数. 驱动的 kobject 的 ktype 被设置为变量 pci_driver_kobj_type, 为使 PCI 驱动的属性文件正常工作. 接着 PCI 核心注册 PCI 驱动到驱动核心:</p>
+<pre class="programlisting">
+/* register with core */
+error = driver_register(&amp;drv-&gt;driver);
+</pre>
+<p>驱动现在准备好被绑定到任何一个它支持的 PCI 设备.</p>
+<p>PCI 核心, 在来自特定结构的实际和 PCI 总线交谈的代码的帮助下, 开始探测 PCI 地址空间, 查找所有的 PCI 设备. 当一个PCI 设备被发现, PCI 核心在内存中创建一个 struct pci_dev 类型的新变量. struct pci_dev 结构的一部分看来如下:</p>
+<pre class="programlisting">
+struct pci_dev {
+ /* ... */
+ unsigned int devfn;
+ unsigned short vendor;
+ unsigned short device;
+ unsigned short subsystem_vendor;
+ unsigned short subsystem_device;
+ unsigned int class;
+ /* ... */
+ struct pci_driver *driver;
+ /* ... */
+ struct device dev;
+ /* ... */
+
+}; 
+</pre>
+<p>这个 PCI 设备的总线特定的成员被 PCI 核心初始化( devfn, vendor, device, 和其他成员), 并且 struct device 变量的 parent 变量被设置为这个 PCI 设备所在的 PCI 总线设备. bus 变量被设置指向 pci_bus_type 结构. 接下来 name 和 bus_id 变量被设置, 根据读自 PCI 设备的 name 和 ID.</p>
+<p>在 PCI 设备结构被初始化之后, 设备被注册到驱动核心, 使用:</p>
+<pre class="programlisting">
+device_register(&amp;dev-&gt;dev); 
+</pre>
+<p>在 device_register 函数中, 驱动核心初始化设备的许多成员, 注册设备的 kobject 到 kobject 核心( 它导致一个热插拔事件产生, 但是我们在本章后面讨论), 接着添加设备到驱动的 parent 所持有的设备列表中. 完成这个使所有的设备可被以正确的顺序浏览, 一直知道每一个位于设备层次中哪里.</p>
+<p>设备接着被添加到所有设备的总线特定的列表中, 在本例中, pci_bus_type 列表. 接着注册到这个总线的所有驱动的列表被检查, 并且总线的匹配功能被调用给每个驱动, 指定这个设备. 对于 pci_bus_type 总线, 匹配函数被 PCI 核心设定为指向 pci_bus_match 函数, 在设备被提交给驱动核心前.</p>
+<p>pci_bus_match 函数转换驱动核心传递给它的 struct device 为一个 struct pci_dev. 它还转换 struct device_driver 为一个 struct pci_driver , 并接着查看设备的 PCI 设备特定信息和驱动, 看是否这个驱动声明它能够支持这类设备. 如果匹配不成功, 函数返回 0 给驱动核心, 并且驱动核心移向列表中的下一个驱动.</p>
+<p>如果匹配成功, 函数返回 1 给驱动核心. 这使驱动核心设置struct device 中的驱动指针指向这个驱动, 并且接着调用在 struct device_driver 中特定的 probe 函数.</p>
+<p>早些时候, 在 PCI 驱动注册到驱动核心之前, probe 变量被设为指向 pci_device_probe 函数. 这个函数转换(又一次) struct device 为一个struct pci_dev, 在设备中设置的 struct driver 为一个 struct pci_driver. 它再次验证这个驱动声明它可以支持这个设备( 这意味着一个重复的额外检查, 某些未知的原因), 递增设备的引用计数, 并且接着调用 PCI 驱动的 probe 函数, 用一个指向它应当被绑定到的 struct pci_dev 结构的指针.</p>
+<p>如果这个 PCI 驱动的 probe 函数认为它不能处理这个设备由于某些原因, 它返回一个负的错误值, 这个值被传递回驱动核心并且使它继续深入设备列表来和这个设备匹配一个. 如果这个 probe 函数能够认领这个设备, 它做所有的需要的初始化来正确处理这个设备, 并且接着它返回 0 给驱动核心. 这使驱动核心来添加设备到当前被这个特定驱动所绑定的所有设备列表, 并且创建一个符号连接到这个它现在控制的设备, 在这个驱动在 sysfs 的目录. 这个符号连接允许用户准确见到哪个设备被绑定到哪个设备. 这可被见到, 如:</p>
+<pre class="screen">
+$ tree /sys/bus/pci
+/sys/bus/pci/
+|-- devices
+|  |-- 0000:00:00.0 -&gt; ../../../devices/pci0000:00/0000:00:00.0  
+|  |-- 0000:00:00.1 -&gt; ../../../devices/pci0000:00/0000:00:00.1  
+|  |-- 0000:00:00.2 -&gt; ../../../devices/pci0000:00/0000:00:00.2  
+|  |-- 0000:00:02.0 -&gt; ../../../devices/pci0000:00/0000:00:02.0  
+|  |-- 0000:00:04.0 -&gt; ../../../devices/pci0000:00/0000:00:04.0  
+|  |-- 0000:00:06.0 -&gt; ../../../devices/pci0000:00/0000:00:06.0  
+|  |-- 0000:00:07.0 -&gt; ../../../devices/pci0000:00/0000:00:07.0  
+|  |-- 0000:00:09.0 -&gt; ../../../devices/pci0000:00/0000:00:09.0  
+|  |-- 0000:00:09.1 -&gt; ../../../devices/pci0000:00/0000:00:09.1  
+|  |-- 0000:00:09.2 -&gt; ../../../devices/pci0000:00/0000:00:09.2  
+|  |-- 0000:00:0c.0 -&gt; ../../../devices/pci0000:00/0000:00:0c.0  
+|  |-- 0000:00:0f.0 -&gt; ../../../devices/pci0000:00/0000:00:0f.0  
+|  |-- 0000:00:10.0 -&gt; ../../../devices/pci0000:00/0000:00:10.0  
+|  |-- 0000:00:12.0 -&gt; ../../../devices/pci0000:00/0000:00:12.0  
+|  |-- 0000:00:13.0 -&gt; ../../../devices/pci0000:00/0000:00:13.0  
+|  `-- 0000:00:14.0 -&gt; ../../../devices/pci0000:00/0000:00:14.0  
+`-- drivers
+ |-- ALI15x3_IDE
+ | `-- 0000:00:0f.0 -&gt; ../../../../devices/pci0000:00/0000:00:0f.0
+ |-- ehci_hcd
+ | `-- 0000:00:09.2 -&gt; ../../../../devices/pci0000:00/0000:00:09.2
+ |-- ohci_hcd
+ | |-- 0000:00:02.0 -&gt; ../../../../devices/pci0000:00/0000:00:02.0
+ | |-- 0000:00:09.0 -&gt; ../../../../devices/pci0000:00/0000:00:09.0
+ | `-- 0000:00:09.1 -&gt; ../../../../devices/pci0000:00/0000:00:09.1
+ |-- orinoco_pci
+ | `-- 0000:00:12.0 -&gt; ../../../../devices/pci0000:00/0000:00:12.0
+ |-- radeonfb
+ | `-- 0000:00:14.0 -&gt; ../../../../devices/pci0000:00/0000:00:14.0
+ |-- serial
+ `-- trident
+ `-- 0000:00:04.0 -&gt; ../../../../devices/pci0000:00/0000:00:04.0 
+</pre>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="RemoveaDevice.sect2"></a>14.6.2.&#160;去除一个设备</h3></div></div></div>
+<p>一个 PCI 可用多个不同的方法被从系统中去除. 所有的 card-bus 设备在一个不同的物理因素上是真正的 PCI 设备, 并且内核 PCI 核心不区分它们. 允许在机器运行时加减 PCI 设备的系统正变得更加普遍, 并且 Linux 支持它们. 还有一个伪 PCI 热插拔驱动允许开发者来测试看是否他们的 PCI 驱动正确处理系统运行中的设备去除. 这个模块称为 fakephp 并且使内核认为 PCI 设备已消失, 但是它不允许用户物理上从系统中去除一个 PCI 设备, 这个系统没有合适的硬件来这样做. 见这个驱动的文档来获取更多关于如何使用它测试你的 PCI 驱动的信息.</p>
+<p>PCI 核心发挥了不少于它增加设备的努力到去除它. 当一个 PCI 设备要被去除, pci_remove_bus_device 函数被调用. 这个函数做一些 PCI-特定 的清理和日常工作, 并且接着使用一个指向 struct pci_dev 的 struct device 成员的指针调用 device_unregister 函数.</p>
+<p>在 device_unregister 函数中, 驱动核心只从绑定到这个设备(如果有)的驱动解除连接 sysfs 文件, 从它的内部设备列表中去除这个设备, 并且使用指向包含在 struct device 结构中的 struct kobject 的指针调用 kobject_del. 这个函数用一个 hotplug 调用到用户空间来声明 kobject 现在被从系统中去除, 并且接着它删除所有的和 kobject 关联的 sysfs 文件以及这个 kobject 起初已创建的 sysfs 目录自身.</p>
+<p>kobject_del 函数也去除设备自身的 kobject 引用. 如果那个引用是最后一个( 意味着没有用户空间文件为这个 sysfs 的设备入口而打开 ), 接着是 PCI 设备自身的 release 函数, pci_release_dev, 被调用. 这个函数只释放 struct pci_dev 占用的内存.</p>
+<p>此后, 所有的和这个设备关联的 sysfs 入口被去除, 并且和这个设备关联的内存被释放. PCI 设备现在完全从系统中被去除.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AddaDriver.sect2"></a>14.6.3.&#160;添加一个驱动</h3></div></div></div>
+<p>一个 PCI 驱动被添加到 PCI 核心, 当它调用 pci_register_driver 函数时. 这个函数只初始化 struct device_driver 结构, 这个结构包含在 struct pci_driver 结构里面, 如同之前在关于添加设备的一节中提过的. 接着 PCI 核心使用指向包含在 struct pci_driver 结构中的 sturct device_driver 结构的指针调用在驱动核心的 driver_register 函数.</p>
+<p>driver_register 函数初始化在 struct device_driver 结构中的几个锁, 并且接着调用 bus_add_driver 函数. 这个函数进行下面的步骤:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>查找驱动要被关联的总线. 如果这个总线被发现, 函数立刻返回.</p></li>
+<li><p>驱动的 sysfs 目录被创建, 基于驱动的名子和它被关联的总线.</p></li>
+<li><p>总线的内部锁被获取, 接着所有的已经注册到总线的设备被检查, 匹配函数为它们被调用, 就象当一个新设备被添加时. 如果那个匹配函数成功, 接着剩下的绑定过程发生, 如同在前面章节描述过的.</p></li>
+</ul></div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="RemoveaDriver.sect2"></a>14.6.4.&#160;去除一个驱动</h3></div></div></div>
+<p>去除一个驱动是一个非常容易的动作. 对于一个 PCI 驱动, 驱动调用 pci_unregister_driver 函数. 这个函数只调用驱动核心函数 driver_unregister, 使用一个指向传递给它的 struct pci_driver 的 struct devie_driver 的指针.</p>
+<p>deiver_unregister 函数处理一些基本的日常工作, 通过清理某些在 sysfs 树中连接到这个驱动入口的 sysfs 属性. 它接着列举所有的连接到这个驱动的设备并且为它调用 release 函数. 发生这个恰好象前面提过的 release 函数, 当一个设备从系统中去除时.</p>
+<p>在所有的设备从驱动中被解绑定后, 驱动代码完成这个独特的逻辑:</p>
+<pre class="programlisting">
+down(&amp;drv-&gt;unload_sem);
+up(&amp;drv-&gt;unload_sem);
+</pre>
+<p>这就在返回函数的调用者之前完成. 这个锁被获取因为代码需要等待所有的对这个驱动的引用计数在它可安全返回前掉到 0. 需要这样是因为 driver_unregister 函数最普遍被作为一个要卸载的模块退出的路径来调用. 模块需要保留在内存只要驱动被设备引用并且等待这个锁被释放, 这允许内核知道当可以安全从内存去除驱动时.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch14s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch14.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch14s07.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">14.5.&#160;类&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;14.7.&#160;热插拔</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

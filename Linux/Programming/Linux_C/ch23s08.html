@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8. 函数类型和函数指针类型</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch23.html" title="第 23 章 指针" /><link rel="prev" href="ch23s07.html" title="7. 指向数组的指针与多维数组" /><link rel="next" href="ch23s09.html" title="9. 不完全类型和复杂声明" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">8. 函数类型和函数指针类型</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch23s07.html">上一页</a> </td><th width="60%" align="center">第 23 章 指针</th><td width="20%" align="right"> <a accesskey="n" href="ch23s09.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2813491"></a>8. 函数类型和函数指针类型</h2></div></div></div><p>在C语言中，函数也是一种类型，可以定义指向函数的指针。我们知道，指针变量的内存单元存放一个地址值，而函数指针存放的就是函数的入口地址（位于<code class="literal">.text</code>段）。下面看一个简单的例子：</p><div class="example"><a id="id2813509"></a><p class="title"><b>例 23.3. 函数指针</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void say_hello(const char *str)
+{
+	printf("Hello %s\n", str);
+}
+
+int main(void)
+{
+	void (*f)(const char *) = say_hello;
+	f("Guys");
+	return 0;
+}</pre></div></div><br class="example-break" /><p>分析一下变量<code class="literal">f</code>的类型声明<code class="literal">void (*f)(const char *)</code>，<code class="literal">f</code>首先跟<code class="literal">*</code>号结合在一起，因此是一个指针。<code class="literal">(*f)</code>外面是一个函数原型的格式，参数是<code class="literal">const char *</code>，返回值是<code class="literal">void</code>，所以<code class="literal">f</code>是指向这种函数的指针。而<code class="literal">say_hello</code>的参数是<code class="literal">const char *</code>，返回值是<code class="literal">void</code>，正好是这种函数，因此<code class="literal">f</code>可以指向<code class="literal">say_hello</code>。注意，<code class="literal">say_hello</code>是一种函数类型，而函数类型和数组类型类似，做右值使用时自动转换成函数指针类型，所以可以直接赋给<code class="literal">f</code>，当然也可以写成<code class="literal">void (*f)(const char *) = &amp;say_hello;</code>，把函数<code class="literal">say_hello</code>先取地址再赋给<code class="literal">f</code>，就不需要自动类型转换了。</p><p>可以直接通过函数指针调用函数，如上面的<code class="literal">f("Guys")</code>，也可以先用<code class="literal">*f</code>取出它所指的函数类型，再调用函数，即<code class="literal">(*f)("Guys")</code>。可以这么理解：函数调用运算符<code class="literal">()</code>要求操作数是函数指针，所以<code class="literal">f("Guys")</code>是最直接的写法，而<code class="literal">say_hello("Guys")</code>或<code class="literal">(*f)("Guys")</code>则是把函数类型自动转换成函数指针然后做函数调用。</p><p>下面再举几个例子区分函数类型和函数指针类型。首先定义函数类型F：</p><pre class="programlisting">typedef int F(void);</pre><p>这种类型的函数不带参数，返回值是<code class="literal">int</code>。那么可以这样声明<code class="literal">f</code>和<code class="literal">g</code>：</p><pre class="programlisting">F f, g;</pre><p>相当于声明：</p><pre class="programlisting">int f(void);
+int g(void);</pre><p>下面这个函数声明是错误的：</p><pre class="programlisting">F h(void);</pre><p>因为函数可以返回<code class="literal">void</code>类型、标量类型、结构体、联合体，但不能返回函数类型，也不能返回数组类型。而下面这个函数声明是正确的：</p><pre class="programlisting">F *e(void);</pre><p>函数<code class="literal">e</code>返回一个<code class="literal">F *</code>类型的函数指针。如果给<code class="literal">e</code>多套几层括号仍然表示同样的意思：</p><pre class="programlisting">F *((e))(void);</pre><p>但如果把<code class="literal">*</code>号也套在括号里就不一样了：</p><pre class="programlisting">int (*fp)(void);</pre><p>这样声明了一个函数指针，而不是声明一个函数。<code class="literal">fp</code>也可以这样声明：</p><pre class="programlisting">F *fp;</pre><p>通过函数指针调用函数和直接调用函数相比有什么好处呢？我们研究一个例子。回顾<a class="xref" href="ch07s03.html#struct.datatag">第 3 节 “数据类型标志”</a>的习题1，由于结构体中多了一个类型字段，需要重新实现<code class="literal">real_part</code>、<code class="literal">img_part</code>、<code class="literal">magnitude</code>、<code class="literal">angle</code>这些函数，你当时是怎么实现的？大概是这样吧：</p><pre class="programlisting">double real_part(struct complex_struct z)
+{
+	if (z.t == RECTANGULAR)
+		return z.a;
+	else
+		return z.a * cos(z.b);
+}</pre><p>现在类型字段有两种取值，<code class="literal">RECTANGULAR</code>和<code class="literal">POLAR</code>，每个函数都要<code class="literal">if ... else ...</code>，如果类型字段有三种取值呢？每个函数都要<code class="literal">if ... else if ... else</code>，或者<code class="literal">switch ... case ...</code>。这样维护代码是不够理想的，现在我用函数指针给出一种实现：</p><pre class="programlisting">double rect_real_part(struct complex_struct z)
+{
+	return z.a;
+}
+
+double rect_img_part(struct complex_struct z)
+{
+	return z.b;
+}
+
+double rect_magnitude(struct complex_struct z)
+{
+	return sqrt(z.a * z.a + z.b * z.b);
+}
+
+double rect_angle(struct complex_struct z)
+{
+	double PI = acos(-1.0);
+
+	if (z.a &gt; 0)
+		return atan(z.b / z.a);
+	else
+		return atan(z.b / z.a) + PI;
+}
+
+double pol_real_part(struct complex_struct z)
+{
+	return z.a * cos(z.b);
+}
+
+double pol_img_part(struct complex_struct z)
+{
+	return z.a * sin(z.b);
+}
+
+double pol_magnitude(struct complex_struct z)
+{
+	return z.a;
+}
+
+double pol_angle(struct complex_struct z)
+{
+	return z.b;
+}
+
+double (*real_part_tbl[])(struct complex_struct) = { rect_real_part, pol_real_part };
+double (*img_part_tbl[])(struct complex_struct) = { rect_img_part, pol_img_part };
+double (*magnitude_tbl[])(struct complex_struct) = { rect_magnitude, pol_magnitude };
+double (*angle_tbl[])(struct complex_struct) = { rect_angle, pol_angle };
+
+#define real_part(z) real_part_tbl[z.t](z)
+#define img_part(z) img_part_tbl[z.t](z)
+#define magnitude(z) magnitude_tbl[z.t](z)
+#define angle(z) angle_tbl[z.t](z)</pre><p>当调用<code class="literal">real_part(z)</code>时，用类型字段<code class="literal">z.t</code>做索引，从指针数组<code class="literal">real_part_tbl</code>中取出相应的函数指针来调用，也可以达到<code class="literal">if ... else ...</code>的效果，但相比之下这种实现更好，每个函数都只做一件事情，而不必用<code class="literal">if ... else ...</code>兼顾好几件事情，比如<code class="literal">rect_real_part</code>和<code class="literal">pol_real_part</code>各做各的，互相独立，而不必把它们的代码都耦合到一个函数中。“<span class="quote">低耦合，高内聚</span>”（Low Coupling, High Cohesion）<a id="id2813970" class="indexterm"></a>是程序设计的一条基本原则，这样可以更好地复用现有代码，使代码更容易维护。如果类型字段<code class="literal">z.t</code>又多了一种取值，只需要添加一组新的函数，修改函数指针数组，原有的函数仍然可以不加改动地复用。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch23s07.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch23.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch23s09.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">7. 指向数组的指针与多维数组 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 9. 不完全类型和复杂声明</td></tr></table></div></body></html>

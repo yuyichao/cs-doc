@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 标准I/O库函数</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch25.html" title="第 25 章 C标准库" /><link rel="prev" href="ch25s01.html" title="1. 字符串操作函数" /><link rel="next" href="ch25s03.html" title="3. 数值字符串转换函数" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 标准I/O库函数</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch25s01.html">上一页</a> </td><th width="60%" align="center">第 25 章 C标准库</th><td width="20%" align="right"> <a accesskey="n" href="ch25s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2829667"></a>2. 标准I/O库函数</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2829671"></a>2.1. 文件的基本概念</h3></div></div></div><p>我们已经多次用到了文件，例如源文件、目标文件、可执行文件、库文件等，现在学习如何用C标准库对文件进行读写操作，对文件的读写也属于I/O操作的一种，本节介绍的大部分函数在头文件<code class="literal">stdio.h</code>中声明，称为标准I/O库函数。</p><p>文件可分为文本文件（Text File）<a id="id2829693" class="indexterm"></a>和二进制文件（Binary File）<a id="id2829701" class="indexterm"></a>两种，源文件是文本文件，而目标文件、可执行文件和库文件是二进制文件。文本文件是用来保存字符的，文件中的字节都是字符的某种编码（例如ASCII或UTF-8），用<code class="literal">cat</code>命令可以查看其中的字符，用<code class="literal">vi</code>可以编辑其中的字符，而二进制文件不是用来保存字符的，文件中的字节表示其它含义，例如可执行文件中有些字节表示指令，有些字节表示各Section和Segment在文件中的位置，有些字节表示各Segment的加载地址。</p><p>在<a class="xref" href="ch18s05.html#asm.relocatable">第 5.1 节 “目标文件”</a>中我们用<code class="literal">hexdump</code>命令查看过一个二进制文件。我们再做一个小实验，用<code class="literal">vi</code>编辑一个文件<code class="literal">textfile</code>，在其中输入<code class="literal">5678</code>然后保存退出，用<code class="literal">ls -l</code>命令可以看到它的长度是5：</p><pre class="screen">$ ls -l textfile 
+-rw-r--r-- 1 akaedu akaedu 5 2009-03-20 10:58 textfile</pre><p><code class="literal">5678</code>四个字符各占一个字节，<code class="literal">vi</code>会自动在文件末尾加一个换行符，所以文件长度是5。用<code class="literal">od</code>命令查看该文件的内容：</p><pre class="screen">$ od -tx1 -tc -Ax textfile 
+000000 35 36 37 38 0a
+         5   6   7   8  \n
+000005</pre><p><code class="literal">-tx1</code>选项表示将文件中的字节以十六进制的形式列出来，每组一个字节，<code class="literal">-tc</code>选项表示将文件中的ASCII码以字符形式列出来。和<code class="literal">hexdump</code>类似，输出结果最左边的一列是文件中的地址，默认以八进制显示，<code class="literal">-Ax</code>选项要求以十六进制显示文件中的地址。这样我们看到，这个文件中保存了5个字符，以ASCII码保存。ASCII码的范围是0~127，所以ASCII码文本文件中每个字节只用到低7位，最高位都是0。以后我们会经常用到<code class="literal">od</code>命令。</p><p>文本文件是一个模糊的概念。有些时候说文本文件是指用<code class="literal">vi</code>可以编辑出来的文件，例如<code class="literal">/etc</code>目录下的各种配置文件，这些文件中只包含ASCII码中的可见字符，而不包含像<code class="literal">'\0'</code>这种不可见字符，也不包含最高位是1的非ASCII码字节。从广义上来说，只要是专门保存字符的文件都算文本文件，包含不可见字符的也算，采用其它字符编码（例如UTF-8编码）的也算。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2829869"></a>2.2. fopen/fclose</h3></div></div></div><p>在操作文件之前要用<code class="literal">fopen</code>打开文件，操作完毕要用<code class="literal">fclose</code>关闭文件。打开文件就是在操作系统中分配一些资源用于保存该文件的状态信息，并得到该文件的标识，以后用户程序就可以用这个标识对文件做各种操作，关闭文件则释放文件在操作系统中占用的资源，使文件的标识失效，用户程序就无法再操作这个文件了。 </p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+FILE *fopen(const char *path, const char *mode);
+返回值：成功返回文件指针，出错返回NULL并设置errno</pre><p><code class="literal">path</code>是文件的路径名，<code class="literal">mode</code>表示打开方式。如果文件打开成功，就返回一个<code class="literal">FILE *</code>文件指针来标识这个文件。以后调用其它函数对文件做读写操作都要提供这个指针，以指明对哪个文件进行操作。<code class="literal">FILE</code>是C标准库中定义的结构体类型，其中包含该文件在内核中标识（在<a class="xref" href="ch28s02.html#io.twoioflavors">第 2 节 “C标准I/O库函数与Unbuffered I/O函数”</a>将会讲到这个标识叫做文件描述符）、I/O缓冲区和当前读写位置等信息，但调用者不必知道<code class="literal">FILE</code>结构体都有哪些成员，我们很快就会看到，调用者只是把文件指针在库函数接口之间传来传去，而文件指针所指的<code class="literal">FILE</code>结构体的成员在库函数内部维护，调用者不应该直接访问这些成员，这种编程思想在面向对象方法论中称为封装（Encapsulation）<a id="id2829962" class="indexterm"></a>。像<code class="literal">FILE *</code>这样的指针称为不透明指针（Opaque Pointer）<a id="id2829976" class="indexterm"></a>或者叫句柄（Handle）<a id="id2829986" class="indexterm"></a>，<code class="literal">FILE *</code>指针就像一个把手（Handle），抓住这个把手就可以打开门或抽屉，但用户只能抓这个把手，而不能直接抓门或抽屉。</p><p>下面说说参数<code class="literal">path</code>和<code class="literal">mode</code>，<code class="literal">path</code>可以是相对路径也可以是绝对路径，<code class="literal">mode</code>表示打开方式是读还是写。比如<code class="literal">fp = fopen("/tmp/file2", "w");</code>表示打开绝对路径<code class="literal">/tmp/file2</code>，只做写操作，<code class="literal">path</code>也可以是相对路径，比如<code class="literal">fp = fopen("file.a", "r");</code>表示在当前工作目录下打开文件<code class="literal">file.a</code>，只做读操作，再比如<code class="literal">fp = fopen("../a.out", "r");</code>只读打开当前工作目录上一层目录下的<code class="literal">a.out</code>，<code class="literal">fp = fopen("Desktop/file3", "w");</code>只写打开当前工作目录下子目录<code class="literal">Desktop</code>下的<code class="literal">file3</code>。相对路径是相对于当前工作目录（Current Working Directory）<a id="id2830098" class="indexterm"></a>的路径，每个进程都有自己的当前工作目录，Shell进程的当前工作目录可以用<code class="literal">pwd</code>命令查看：</p><pre class="screen">$ pwd
+/home/akaedu</pre><p>通常Linux发行版都把Shell配置成在提示符前面显示当前工作目录，例如<code class="literal">~$</code>表示当前工作目录是主目录，<code class="literal">/etc$</code>表示当前工作目录是<code class="literal">/etc</code>。用<code class="literal">cd</code>命令可以改变Shell进程的当前工作目录。在Shell下敲命令启动新的进程，则该进程的当前工作目录继承自Shell进程的当前工作目录，该进程也可以调用<code class="literal">chdir(2)</code>函数改变自己的当前工作目录。</p><p><code class="literal">mode</code>参数是一个字符串，由<code class="literal">rwatb+</code>六个字符组合而成，<code class="literal">r</code>表示读，<code class="literal">w</code>表示写，<code class="literal">a</code>表示追加（Append）<a id="id2830188" class="indexterm"></a>，在文件末尾追加数据使文件的尺寸增大。<code class="literal">t</code>表示文本文件，<code class="literal">b</code>表示二进制文件，有些操作系统的文本文件和二进制文件格式不同，而在UNIX系统中，无论文本文件还是二进制文件都是由一串字节组成，<code class="literal">t</code>和<code class="literal">b</code>没有区分，用哪个都一样，也可以省略不写。如果省略<code class="literal">t</code>和<code class="literal">b</code>，<code class="literal">rwa+</code>四个字符有以下6种合法的组合： </p><div class="variablelist"><dl><dt><span class="term"><code class="literal">"r"</code></span></dt><dd><p>只读，文件必须已存在</p></dd><dt><span class="term">"w"</span></dt><dd><p>只写，如果文件不存在则创建，如果文件已存在则把文件长度截断（Truncate）<a id="id2830268" class="indexterm"></a>为0字节再重新写，也就是替换掉原来的文件内容</p></dd><dt><span class="term">"a"</span></dt><dd><p>只能在文件末尾追加数据，如果文件不存在则创建</p></dd><dt><span class="term">"r+"</span></dt><dd><p>允许读和写，文件必须已存在</p></dd><dt><span class="term">"w+"</span></dt><dd><p>允许读和写，如果文件不存在则创建，如果文件已存在则把文件长度截断为0字节再重新写</p></dd><dt><span class="term">"a+"</span></dt><dd><p>允许读和追加数据，如果文件不存在则创建</p></dd></dl></div><p>在打开一个文件时如果出错，<code class="literal">fopen</code>将返回<code class="literal">NULL</code>并设置<code class="literal">errno</code>，<code class="literal">errno</code>稍后介绍。在程序中应该做出错处理，通常这样写：</p><pre class="programlisting">if ( (fp = fopen("/tmp/file1", "r")) == NULL) {
+	printf("error open file /tmp/file1!\n");
+	exit(1);
+}</pre><p>比如<code class="literal">/tmp/file1</code>这个文件不存在，而<code class="literal">r</code>打开方式又不会创建这个文件，<code class="literal">fopen</code>就会出错返回。</p><p>再说说<code class="literal">fclose</code>函数。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int fclose(FILE *fp);
+返回值：成功返回0，出错返回EOF并设置errno</pre><p>把文件指针传给<code class="literal">fclose</code>可以关闭它所标识的文件，关闭之后该文件指针就无效了，不能再使用了。如果<code class="literal">fclose</code>调用出错（比如传给它一个无效的文件指针）则返回<code class="literal">EOF</code>并设置<code class="literal">errno</code>，<code class="literal">errno</code>稍后介绍，<code class="literal">EOF</code>在<code class="literal">stdio.h</code>中定义：</p><pre class="programlisting">/* End of file character.
+   Some things throughout the library rely on this being -1.  */
+#ifndef EOF
+# define EOF (-1)
+#endif</pre><p>它的值是-1。<code class="literal">fopen</code>调用应该和<code class="literal">fclose</code>调用配对，打开文件操作完之后一定要记得关闭。如果不调用<code class="literal">fclose</code>，在进程退出时系统会自动关闭文件，但是不能因此就忽略<code class="literal">fclose</code>调用，如果写一个长年累月运行的程序（比如网络服务器程序），打开的文件都不关闭，堆积得越来越多，就会占用越来越多的系统资源。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2830485"></a>2.3. stdin/stdout/stderr</h3></div></div></div><p>我们经常用<code class="literal">printf</code>打印到屏幕，也用过<code class="literal">scanf</code>读键盘输入，这些也属于I/O操作，但不是对文件做I/O操作而是对终端设备做I/O操作。所谓终端（Terminal）<a id="id2830507" class="indexterm"></a>是指人机交互的设备，也就是可以接受用户输入并输出信息给用户的设备。在计算机刚诞生的年代，终端是电传打字机和打印机，现在的终端通常是键盘和显示器。终端设备和文件一样也需要先打开后操作，终端设备也有对应的路径名，<code class="literal">/dev/tty</code>就表示和当前进程相关联的终端设备（在<a class="xref" href="ch34s01.html#jobs.intro">第 1.1 节 “终端的基本概念”</a>会讲到这叫进程的控制终端）。也就是说，<code class="literal">/dev/tty</code>不是一个普通的文件，它不表示磁盘上的一组数据，而是表示一个设备。用<code class="literal">ls</code>命令查看这个文件：</p><pre class="screen">$ ls -l /dev/tty
+crw-rw-rw- 1 root dialout 5, 0 2009-03-20 19:31 /dev/tty</pre><p>开头的<code class="literal">c</code>表示文件类型是字符设备。中间的<code class="literal">5, 0</code>是它的设备号，主设备号5，次设备号0，主设备号标识内核中的一个设备驱动程序，次设备号标识该设备驱动程序管理的一个设备。内核通过设备号找到相应的驱动程序，完成对该设备的操作。我们知道常规文件的这一列应该显示文件尺寸，而设备文件的这一列显示设备号，这表明设备文件是没有文件尺寸这个属性的，因为设备文件在磁盘上不保存数据，对设备文件做读写操作并不是读写磁盘上的数据，而是在读写设备。UNIX的传统是Everything is a file，键盘、显示器、串口、磁盘等设备在<code class="literal">/dev</code>目录下都有一个特殊的设备文件与之对应，这些设备文件也可以像普通文件一样打开、读、写和关闭，使用的函数接口是相同的。本书中不严格区分“<span class="quote">文件</span>”和“<span class="quote">设备</span>”这两个概念，遇到“<span class="quote">文件</span>”这个词，读者可以根据上下文理解它是指普通文件还是设备，如果需要强调是保存在磁盘上的普通文件，本书会用“<span class="quote">常规文件</span>”（Regular File）<a id="id2830622" class="indexterm"></a>这个词。</p><p>那为什么<code class="literal">printf</code>和<code class="literal">scanf</code>不用打开就能对终端设备进行操作呢？因为在程序启动时（在<code class="literal">main</code>函数还没开始执行之前）会自动把终端设备打开三次，分别赋给三个<code class="literal">FILE *</code>指针<code class="literal">stdin</code>、<code class="literal">stdout</code>和<code class="literal">stderr</code>，这三个文件指针是<code class="literal">libc</code>中定义的全局变量，在<code class="literal">stdio.h</code>中声明，<code class="literal">printf</code>向<code class="literal">stdout</code>写，而<code class="literal">scanf</code>从<code class="literal">stdin</code>读，后面我们会看到，用户程序也可以直接使用这三个文件指针。这三个文件指针的打开方式都是可读可写的，但通常<code class="literal">stdin</code>只用于读操作，称为标准输入（Standard Input）<a id="id2830724" class="indexterm"></a>，<code class="literal">stdout</code>只用于写操作，称为标准输出（Standard Output）<a id="id2830738" class="indexterm"></a>，<code class="literal">stderr</code>也只用于写操作，称为标准错误输出（Standard Error）<a id="id2830752" class="indexterm"></a>，通常程序的运行结果打印到标准输出，而错误提示（例如<code class="literal">gcc</code>报的警告和错误）打印到标准错误输出，所以<code class="literal">fopen</code>的错误处理写成这样更符合惯例：</p><pre class="programlisting">if ( (fp = fopen("/tmp/file1", "r")) == NULL) {
+	fputs("Error open file /tmp/file1\n", stderr);
+	exit(1);
+}</pre><p><code class="literal">fputs</code>函数将在稍后详细介绍。不管是打印到标准输出还是打印到标准错误输出效果是一样的，都是打印到终端设备（也就是屏幕）了，那为什么还要分成标准输出和标准错误输出呢？以后我们会讲到重定向操作，可以把标准输出重定向到一个常规文件，而标准错误输出仍然对应终端设备，这样就可以把正常的运行结果和错误提示分开，而不是混在一起打印到屏幕了。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2830807"></a>2.4. errno与perror函数</h3></div></div></div><p>很多系统函数在错误返回时将错误原因记录在<code class="literal">libc</code>定义的全局变量<code class="literal">errno</code>中，每种错误原因对应一个错误码，请查阅<code class="literal">errno(3)</code>的Man Page了解各种错误码，<code class="literal">errno</code>在头文件<code class="literal">errno.h</code>中声明，是一个整型变量，所有错误码都是正整数。</p><p>如果在程序中打印错误信息时直接打印<code class="literal">errno</code>变量，打印出来的只是一个整数值，仍然看不出是什么错误。比较好的办法是用<code class="literal">perror</code>或<code class="literal">strerror</code>函数将<code class="literal">errno</code>解释成字符串再打印。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void perror(const char *s);</pre><p><code class="literal">perror</code>函数将错误信息打印到标准错误输出，首先打印参数<code class="literal">s</code>所指的字符串，然后打印:号，然后根据当前<code class="literal">errno</code>的值打印错误原因。例如：</p><div class="example"><a id="id2830911"></a><p class="title"><b>例 25.4. perror</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+	FILE *fp = fopen("abcde", "r");
+	if (fp == NULL) {
+		perror("Open file abcde");
+		exit(1);
+	}
+	return 0;
+}</pre></div></div><br class="example-break" /><p>如果文件<code class="literal">abcde</code>不存在，<code class="literal">fopen</code>返回-1并设置<code class="literal">errno</code>为<code class="literal">ENOENT</code>，紧接着<code class="literal">perror</code>函数读取<code class="literal">errno</code>的值，将<code class="literal">ENOENT</code>解释成字符串<code class="literal">No such file or directory</code>并打印，最后打印的结果是<code class="literal">Open file abcde: No such file or directory</code>。虽然<code class="literal">perror</code>可以打印出错误原因，传给<code class="literal">perror</code>的字符串参数仍然应该提供一些额外的信息，以便在看到错误信息时能够很快定位是程序中哪里出了错，如果在程序中有很多个<code class="literal">fopen</code>调用，每个<code class="literal">fopen</code>打开不同的文件，那么在每个<code class="literal">fopen</code>的错误处理中打印文件名就很有帮助。</p><p>如果把上面的程序改成这样：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+
+int main(void)
+{
+	FILE *fp = fopen("abcde", "r");
+	if (fp == NULL) {
+		perror("Open file abcde");
+		printf("errno: %d\n", errno);
+		exit(1);
+	}
+	return 0;
+}</pre><p>则<code class="literal">printf</code>打印的错误号并不是<code class="literal">fopen</code>产生的错误号，而是<code class="literal">perror</code>产生的错误号。<code class="literal">errno</code>是一个全局变量，很多系统函数都会改变它，<code class="literal">fopen</code>函数Man Page中的<span class="emphasis"><em>ERRORS</em></span>部分描述了它可能产生的错误码，<code class="literal">perror</code>函数的Man Page中没有<code class="literal">ERRORS</code>部分，说明它本身不产生错误码，但它调用的其它函数也有可能改变<code class="literal">errno</code>变量。大多数系统函数都有一个Side Effect，就是有可能改变<code class="literal">errno</code>变量（当然也有少数例外，比如<code class="literal">strcpy</code>），所以一个系统函数错误返回后应该马上检查<code class="literal">errno</code>，在检查<code class="literal">errno</code>之前不能再调用其它系统函数。</p><p><code class="literal">strerror</code>函数可以根据错误号返回错误原因字符串。</p><pre class="programlisting">#include &lt;string.h&gt;
+
+char *strerror(int errnum);
+返回值：错误码errnum所对应的字符串</pre><p>这个函数返回指向静态内存的指针。以后学线程库时我们会看到，有些函数的错误码并不保存在<code class="literal">errno</code>中，而是通过返回值返回，就不能调用<code class="literal">perror</code>打印错误原因了，这时<code class="literal">strerror</code>就派上了用场：</p><pre class="programlisting">fputs(strerror(n), stderr);</pre><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2831166"></a>习题</h4></div></div></div><p>1、在系统头文件中找到各种错误码的宏定义。</p><p>2、做几个小练习，看看<code class="literal">fopen</code>出错有哪些常见的原因。</p><p>打开一个没有访问权限的文件。</p><pre class="programlisting">fp = fopen("/etc/shadow", "r");
+if (fp == NULL) {
+	perror("Open /etc/shadow");
+	exit(1);
+}</pre><p><code class="literal">fopen</code>也可以打开一个目录，传给<code class="literal">fopen</code>的第一个参数目录名末尾可以加<code class="literal">/</code>也可以不加<code class="literal">/</code>，但只允许以只读方式打开。试试如果以可写的方式打开一个存在的目录会怎么样呢？</p><pre class="programlisting">fp = fopen("/home/akaedu/", "r+");
+if (fp == NULL) {
+	perror("Open /home/akaedu");
+	exit(1);
+}</pre><p>请读者自己设计几个实验，看看你还能测试出哪些错误原因？</p></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2831236"></a>2.5. 以字节为单位的I/O函数</h3></div></div></div><p><code class="literal">fgetc</code>函数从指定的文件中读一个字节，<code class="literal">getchar</code>从标准输入读一个字节，调用<code class="literal">getchar()</code>相当于调用<code class="literal">fgetc(stdin)</code>。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int fgetc(FILE *stream);
+int getchar(void);
+返回值：成功返回读到的字节，出错或者读到文件末尾时返回EOF</pre><p>注意在Man Page的函数原型中<code class="literal">FILE *</code>指针参数有时会起名叫<code class="literal">stream</code>，这是因为标准I/O库操作的文件有时也叫做流（Stream）<a id="id2831293" class="indexterm"></a>，文件由一串字节组成，每次可以读或写其中任意数量的字节，以后介绍TCP协议时会对流这个概念做更详细的解释。</p><p>对于fgetc函数的使用有以下几点说明：</p><div class="itemizedlist"><ul type="disc"><li><p>要用<code class="literal">fgetc</code>函数读一个文件，该文件的打开方式必须是可读的。</p></li><li><p>系统对于每个打开的文件都记录着当前读写位置在文件中的地址（或者说距离文件开头的字节数），也叫偏移量（Offset）<a id="id2831331" class="indexterm"></a>。当文件打开时，读写位置是0，每调用一次<code class="literal">fgetc</code>，读写位置向后移动一个字节，因此可以连续多次调用<code class="literal">fgetc</code>函数依次读取多个字节。</p></li><li><p><code class="literal">fgetc</code>成功时返回读到一个字节，本来应该是<code class="literal">unsigned char</code>型的，但由于函数原型中返回值是<code class="literal">int</code>型，所以这个字节要转换成<code class="literal">int</code>型再返回，那为什么要规定返回值是<code class="literal">int</code>型呢？因为出错或读到文件末尾时<code class="literal">fgetc</code>将返回<code class="literal">EOF</code>，即-1，保存在<code class="literal">int</code>型的返回值中是0xffffffff，如果读到字节0xff，由<code class="literal">unsigned char</code>型转换为<code class="literal">int</code>型是0x000000ff，只有规定返回值是<code class="literal">int</code>型才能把这两种情况区分开，如果规定返回值是<code class="literal">unsigned char</code>型，那么当返回值是0xff时无法区分到底是<code class="literal">EOF</code>还是字节0xff。如果需要保存<code class="literal">fgetc</code>的返回值，一定要保存在<code class="literal">int</code>型变量中，如果写成<code class="literal">unsigned char c = fgetc(fp);</code>，那么根据<code class="literal">c</code>的值又无法区分<code class="literal">EOF</code>和0xff字节了。注意，<code class="literal">fgetc</code>读到文件末尾时返回<code class="literal">EOF</code>，只是用这个返回值表示已读到文件末尾，并不是说每个文件末尾都有一个字节是<code class="literal">EOF</code>（根据上面的分析，EOF并不是一个字节）。</p></li></ul></div><p><code class="literal">fputc</code>函数向指定的文件写一个字节，<code class="literal">putchar</code>向标准输出写一个字节，调用<code class="literal">putchar(c)</code>相当于调用<code class="literal">fputc(c, stdout)</code>。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int fputc(int c, FILE *stream);
+int putchar(int c);
+返回值：成功返回写入的字节，出错返回EOF</pre><p>对于<code class="literal">fputc</code>函数的使用也要说明几点： </p><div class="itemizedlist"><ul type="disc"><li><p>要用<code class="literal">fputc</code>函数写一个文件，该文件的打开方式必须是可写的（包括追加）。</p></li><li><p>每调用一次<code class="literal">fputc</code>，读写位置向后移动一个字节，因此可以连续多次调用<code class="literal">fputc</code>函数依次写入多个字节。但如果文件是以追加方式打开的，每次调用<code class="literal">fputc</code>时总是将读写位置移到文件末尾然后把要写入的字节追加到后面。</p></li></ul></div><p>下面的例子演示了这四个函数的用法，从键盘读入一串字符写到一个文件中，再从这个文件中读出这些字符打印到屏幕上。</p><div class="example"><a id="id2831583"></a><p class="title"><b>例 25.5. 用fputc/fget读写文件和终端</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+	FILE *fp;
+	int ch;
+
+	if ( (fp = fopen("file2", "w+")) == NULL) {
+		perror("Open file file2\n");
+		exit(1);
+	}
+	while ( (ch = getchar()) != EOF)
+		fputc(ch, fp);
+	rewind(fp);
+	while ( (ch = fgetc(fp)) != EOF)
+		putchar(ch);
+	fclose(fp);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>从终端设备读有点特殊。当调用<code class="literal">getchar()</code>或<code class="literal">fgetc(stdin)</code>时，如果用户没有输入字符，<code class="literal">getchar</code>函数就阻塞等待，所谓阻塞是指这个函数调用不返回，也就不能执行后面的代码，这个进程阻塞了，操作系统可以调度别的进程执行。从终端设备读还有一个特点，用户输入一般字符并不会使<code class="literal">getchar</code>函数返回，仍然阻塞着，只有当用户输入回车或者到达文件末尾时<code class="literal">getchar</code>才返回<sup>[<a id="id2831641" href="#ftn.id2831641" class="footnote">34</a>]</sup>。这个程序的执行过程分析如下：</p><pre class="screen">$ ./a.out
+hello（输入hello并回车，这时第一次调用getchar返回，读取字符h存到文件中，然后连续调用getchar五次，读取ello和换行符存到文件中，第七次调用getchar又阻塞了）
+hey（输入hey并回车，第七次调用getchar返回，读取字符h存到文件中，然后连续调用getchar三次，读取ey和换行符存到文件中，第11次调用getchar又阻塞了）
+（这时输入Ctrl-D，第11次调用getchar返回EOF，跳出循环，进入下一个循环，回到文件开头，把文件内容一个字节一个字节读出来打印，直到文件结束）
+hello
+hey</pre><p>从终端设备输入时有两种方法表示文件结束，一种方法是在一行的开头输入Ctrl-D（如果不在一行的开头则需要连续输入两次Ctrl-D），另一种方法是利用Shell的Heredoc<a id="id2831678" class="indexterm"></a>语法：</p><pre class="screen">$ ./a.out &lt;&lt;END
+&gt; hello
+&gt; hey
+&gt; END
+hello
+hey</pre><p><code class="literal">&lt;&lt;END</code>表示从下一行开始是标准输入，直到某一行开头出现<code class="literal">END</code>时结束。<code class="literal">&lt;&lt;</code>后面的结束符可以任意指定，不一定得是<code class="literal">END</code>，只要和输入的内容能区分开就行。</p><p>在上面的程序中，第一个<code class="literal">while</code>循环结束时<code class="literal">fp</code>所指文件的读写位置在文件末尾，然后调用<code class="literal">rewind</code>函数把读写位置移到文件开头，再进入第二个<code class="literal">while</code>循环从头读取文件内容。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2831750"></a>习题</h4></div></div></div><p>1、编写一个简单的文件复制程序。</p><pre class="screen">$ ./mycp dir1/fileA dir2/fileB</pre><p>运行这个程序可以把<code class="literal">dir1/fileA</code>文件拷贝到<code class="literal">dir2/fileB</code>文件。注意各种出错处理。</p><p>2、虽然我说<code class="literal">getchar</code>要读到换行符才返回，但上面的程序并没有提供证据支持我的说法，如果看成每敲一个键<code class="literal">getchar</code>就返回一次，也能解释程序的运行结果。请写一个小程序证明<code class="literal">getchar</code>确实是读到换行符才返回的。</p></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2831814"></a>2.6. 操作读写位置的函数</h3></div></div></div><p>我们在上一节的例子中看到<code class="literal">rewind</code>函数把读写位置移到文件开头，本节介绍另外两个操作读写位置的函数，<code class="literal">fseek</code>可以任意移动读写位置，<code class="literal">ftell</code>可以返回当前的读写位置。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int fseek(FILE *stream, long offset, int whence);
+返回值：成功返回0，出错返回-1并设置errno
+
+long ftell(FILE *stream);
+返回值：成功返回当前读写位置，出错返回-1并设置errno
+
+void rewind(FILE *stream);</pre><p><code class="literal">fseek</code>的<code class="literal">whence</code>和<code class="literal">offset</code>参数共同决定了读写位置移动到何处，<code class="literal">whence</code>参数的含义如下：</p><div class="variablelist"><dl><dt><span class="term"><code class="literal">SEEK_SET</code></span></dt><dd><p>从文件开头移动<code class="literal">offset</code>个字节</p></dd><dt><span class="term"><code class="literal">SEEK_CUR</code></span></dt><dd><p>从当前位置移动<code class="literal">offset</code>个字节</p></dd><dt><span class="term"><code class="literal">SEEK_END</code></span></dt><dd><p>从文件末尾移动<code class="literal">offset</code>个字节</p></dd></dl></div><p><code class="literal">offset</code>可正可负，负值表示向前（向文件开头的方向）移动，正值表示向后（向文件末尾的方向）移动，如果向前移动的字节数超过了文件开头则出错返回，如果向后移动的字节数超过了文件末尾，再次写入时将增大文件尺寸，从原来的文件末尾到<code class="literal">fseek</code>移动之后的读写位置之间的字节都是0。</p><p>先前我们创建过一个文件<code class="literal">textfile</code>，其中有五个字节，<code class="literal">5678</code>加一个换行符，现在我们拿这个文件做实验。</p><div class="example"><a id="id2831985"></a><p class="title"><b>例 25.6. fseek</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+	FILE* fp;
+	if ( (fp = fopen("textfile","r+")) == NULL) {
+		perror("Open file textfile");
+		exit(1);
+	}
+	if (fseek(fp, 10, SEEK_SET) != 0) {
+		perror("Seek file textfile");
+		exit(1);
+	}
+	fputc('K', fp);
+	fclose(fp);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>运行这个程序，然后查看文件<code class="literal">textfile</code>的内容：</p><pre class="screen">$ ./a.out 
+$ od -tx1 -tc -Ax textfile 
+000000 35 36 37 38 0a 00 00 00 00 00 4b
+         5   6   7   8  \n  \0  \0  \0  \0  \0   K
+00000b</pre><p><code class="literal">fseek(fp, 10, SEEK_SET)</code>将读写位置移到第10个字节处（其实是第11个字节，从0开始数），然后在该位置写入一个字符K，这样<code class="literal">textfile</code>文件就变长了，从第5到第9个字节自动被填充为0。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2832034"></a>2.7. 以字符串为单位的I/O函数</h3></div></div></div><p><code class="literal">fgets</code>从指定的文件中读一行字符到调用者提供的缓冲区中，<code class="literal">gets</code>从标准输入读一行字符到调用者提供的缓冲区中。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+char *fgets(char *s, int size, FILE *stream);
+char *gets(char *s);
+返回值：成功时s指向哪返回的指针就指向哪，出错或者读到文件末尾时返回NULL</pre><p><code class="literal">gets</code>函数无需解释，Man Page的<span class="emphasis"><em>BUGS</em></span>部分已经说得很清楚了：Never use gets()。<code class="literal">gets</code>函数的存在只是为了兼容以前的程序，我们写的代码都不应该调用这个函数。<code class="literal">gets</code>函数的接口设计得很有问题，就像<code class="literal">strcpy</code>一样，用户提供一个缓冲区，却不能指定缓冲区的大小，很可能导致缓冲区溢出错误，这个函数比<code class="literal">strcpy</code>更加危险，<code class="literal">strcpy</code>的输入和输出都来自程序内部，只要程序员小心一点就可以避免出问题，而<code class="literal">gets</code>读取的输入直接来自程序外部，用户可能通过标准输入提供任意长的字符串，程序员无法避免<code class="literal">gets</code>函数导致的缓冲区溢出错误，所以唯一的办法就是不要用它。</p><p>现在说说<code class="literal">fgets</code>函数，参数<code class="literal">s</code>是缓冲区的首地址，<code class="literal">size</code>是缓冲区的长度，该函数从<code class="literal">stream</code>所指的文件中读取以<code class="literal">'\n'</code>结尾的一行（包括<code class="literal">'\n'</code>在内）存到缓冲区<code class="literal">s</code>中，并且在该行末尾添加一个<code class="literal">'\0'</code>组成完整的字符串。</p><p>如果文件中的一行太长，<code class="literal">fgets</code>从文件中读了<code class="literal">size-1</code>个字符还没有读到<code class="literal">'\n'</code>，就把已经读到的<code class="literal">size-1</code>个字符和一个<code class="literal">'\0'</code>字符存入缓冲区，文件中剩下的半行可以在下次调用<code class="literal">fgets</code>时继续读。</p><p>如果一次<code class="literal">fgets</code>调用在读入若干个字符后到达文件末尾，则将已读到的字符串加上<code class="literal">'\0'</code>存入缓冲区并返回，如果再次调用<code class="literal">fgets</code>则返回<code class="literal">NULL</code>，可以据此判断是否读到文件末尾。</p><p>注意，对于<code class="literal">fgets</code>来说，<code class="literal">'\n'</code>是一个特别的字符，而<code class="literal">'\0'</code>并无任何特别之处，如果读到<code class="literal">'\0'</code>就当作普通字符读入。如果文件中存在<code class="literal">'\0'</code>字符（或者说0x00字节），调用<code class="literal">fgets</code>之后就无法判断缓冲区中的<code class="literal">'\0'</code>究竟是从文件读上来的字符还是由<code class="literal">fgets</code>自动添加的结束符，所以<code class="literal">fgets</code>只适合读文本文件而不适合读二进制文件，并且文本文件中的所有字符都应该是可见字符，不能有<code class="literal">'\0'</code>。</p><p><code class="literal">fputs</code>向指定的文件写入一个字符串，<code class="literal">puts</code>向标准输出写入一个字符串。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int fputs(const char *s, FILE *stream);
+int puts(const char *s);
+返回值：成功返回一个非负整数，出错返回EOF</pre><p>缓冲区<code class="literal">s</code>中保存的是以<code class="literal">'\0'</code>结尾的字符串，<code class="literal">fputs</code>将该字符串写入文件<code class="literal">stream</code>，但并不写入结尾的<code class="literal">'\0'</code>。与<code class="literal">fgets</code>不同的是，<code class="literal">fputs</code>并不关心的字符串中的<code class="literal">'\n'</code>字符，字符串中可以有<code class="literal">'\n'</code>也可以没有<code class="literal">'\n'</code>。<code class="literal">puts</code>将字符串<code class="literal">s</code>写到标准输出（不包括结尾的<code class="literal">'\0'</code>），然后自动写一个<code class="literal">'\n'</code>到标准输出。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2832450"></a>习题</h4></div></div></div><p>1、用<code class="literal">fgets</code>/<code class="literal">fputs</code>写一个拷贝文件的程序，根据本节对<code class="literal">fgets</code>函数的分析，应该只能拷贝文本文件，试试用它拷贝二进制文件会出什么问题。</p></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2832480"></a>2.8. 以记录为单位的I/O函数</h3></div></div></div><pre class="programlisting">#include &lt;stdio.h&gt;
+
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+返回值：读或写的记录数，成功时返回的记录数等于nmemb，出错或读到文件末尾时返回的记录数小于nmemb，也可能返回0</pre><p><code class="literal">fread</code>和<code class="literal">fwrite</code>用于读写记录，这里的记录是指一串固定长度的字节，比如一个<code class="literal">int</code>、一个结构体或者一个定长数组。参数<code class="literal">size</code>指出一条记录的长度，而<code class="literal">nmemb</code>指出要读或写多少条记录，这些记录在<code class="literal">ptr</code>所指的内存空间中连续存放，共占<code class="literal">size * nmemb</code>个字节，<code class="literal">fread</code>从文件<code class="literal">stream</code>中读出<code class="literal">size * nmemb</code>个字节保存到<code class="literal">ptr</code>中，而<code class="literal">fwrite</code>把<code class="literal">ptr</code>中的<code class="literal">size * nmemb</code>个字节写到文件<code class="literal">stream</code>中。</p><p><code class="literal">nmemb</code>是请求读或写的记录数，<code class="literal">fread</code>和<code class="literal">fwrite</code>返回的记录数有可能小于<code class="literal">nmemb</code>指定的记录数。例如当前读写位置距文件末尾只有一条记录的长度，调用<code class="literal">fread</code>时指定<code class="literal">nmemb</code>为2，则返回值为1。如果当前读写位置已经在文件末尾了，或者读文件时出错了，则<code class="literal">fread</code>返回0。如果写文件时出错了，则<code class="literal">fwrite</code>的返回值小于<code class="literal">nmemb</code>指定的值。下面的例子由两个程序组成，一个程序把结构体保存到文件中，另一个程序和从文件中读出结构体。</p><div class="example"><a id="id2832653"></a><p class="title"><b>例 25.7. fread/fwrite</b></p><div class="example-contents"><pre class="programlisting">/* writerec.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct record {
+	char name[10];
+	int age;
+};
+
+int main(void)
+{
+	struct record array[2] = {{"Ken", 24}, {"Knuth", 28}};
+	FILE *fp = fopen("recfile", "w");
+	if (fp == NULL) {
+		perror("Open file recfile");
+		exit(1);
+	}
+	fwrite(array, sizeof(struct record), 2, fp);
+	fclose(fp);
+	return 0;
+}</pre><pre class="programlisting">/* readrec.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct record {
+	char name[10];
+	int age;
+};
+
+int main(void)
+{
+	struct record array[2];
+	FILE *fp = fopen("recfile", "r");
+	if (fp == NULL) {
+		perror("Open file recfile");
+		exit(1);
+	}
+	fread(array, sizeof(struct record), 2, fp);
+	printf("Name1: %s\tAge1: %d\n", array[0].name, array[0].age);
+	printf("Name2: %s\tAge2: %d\n", array[1].name, array[1].age);
+	fclose(fp);
+	return 0;
+}</pre></div></div><br class="example-break" /><pre class="screen">$ gcc writerec.c -o writerec
+$ gcc readrec.c -o readrec
+$ ./writerec
+$ od -tx1 -tc -Ax recfile 
+000000 4b 65 6e 00 00 00 00 00 00 00 00 00 18 00 00 00
+         K   e   n  \0  \0  \0  \0  \0  \0  \0  \0  \0 030  \0  \0  \0
+000010 4b 6e 75 74 68 00 00 00 00 00 00 00 1c 00 00 00
+         K   n   u   t   h  \0  \0  \0  \0  \0  \0  \0 034  \0  \0  \0
+000020
+$ ./readrec 
+Name1: Ken	Age1: 24
+Name2: Knuth	Age2: 28</pre><p>我们把一个<code class="literal">struct record</code>结构体看作一条记录，由于结构体中有填充字节，每条记录占16字节，把两条记录写到文件中共占32字节。该程序生成的<code class="literal">recfile</code>文件是二进制文件而非文本文件，因为其中不仅保存着字符型数据，还保存着整型数据24和28（在<code class="literal">od</code>命令的输出中以八进制显示为030和034）。注意，直接在文件中读写结构体的程序是不可移植的，如果在一种平台上编译运行<code class="literal">writebin.c</code>程序，把生成的<code class="literal">recfile</code>文件拷到另一种平台并在该平台上编译运行<code class="literal">readbin.c</code>程序，则不能保证正确读出文件的内容，因为不同平台的大小端可能不同（因而对整型数据的存储方式不同），结构体的填充方式也可能不同（因而同一个结构体所占的字节数可能不同，<code class="literal">age</code>成员在<code class="literal">name</code>成员之后的什么位置也可能不同）。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2832755"></a>2.9. 格式化I/O函数</h3></div></div></div><p>现在该正式讲一下<code class="literal">printf</code>和<code class="literal">scanf</code>函数了，这两个函数都有很多种形式。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int printf(const char *format, ...);
+int fprintf(FILE *stream, const char *format, ...);
+int sprintf(char *str, const char *format, ...);
+int snprintf(char *str, size_t size, const char *format, ...);
+
+#include &lt;stdarg.h&gt;
+
+int vprintf(const char *format, va_list ap);
+int vfprintf(FILE *stream, const char *format, va_list ap);
+int vsprintf(char *str, const char *format, va_list ap);
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+
+返回值：成功返回格式化输出的字节数（不包括字符串的结尾'\0'），出错返回一个负值</pre><p><code class="literal">printf</code>格式化打印到标准输出，而<code class="literal">fprintf</code>打印到指定的文件<code class="literal">stream</code>中。<code class="literal">sprintf</code>并不打印到文件，而是打印到用户提供的缓冲区<code class="literal">str</code>中并在末尾加<code class="literal">'\0'</code>，由于格式化后的字符串长度很难预计，所以很可能造成缓冲区溢出，用<code class="literal">snprintf</code>更好一些，参数<code class="literal">size</code>指定了缓冲区长度，如果格式化后的字符串长度超过缓冲区长度，<code class="literal">snprintf</code>就把字符串截断到<code class="literal">size-1</code>字节，再加上一个<code class="literal">'\0'</code>写入缓冲区，也就是说<code class="literal">snprintf</code>保证字符串以<code class="literal">'\0'</code>结尾。<code class="literal">snprintf</code>的返回值是格式化后的字符串长度（不包括结尾的<code class="literal">'\0'</code>），如果字符串被截断，返回的是截断之前的长度，把它和实际缓冲区中的字符串长度相比较就可以知道是否发生了截断。</p><p>上面列出的后四个函数在前四个函数名的前面多了个<code class="literal">v</code>，表示可变参数不是以<code class="literal">...</code>的形式传进来，而是以<code class="literal">va_list</code>类型传进来。下面我们用<code class="literal">vsnprintf</code>包装出一个类似<code class="literal">printf</code>的带格式化字符串和可变参数的函数。</p><div class="example"><a id="id2832931"></a><p class="title"><b>例 25.8. 实现格式化打印错误的err_sys函数</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;string.h&gt;
+
+#define MAXLINE 80
+
+void err_sys(const char *fmt, ...)
+{
+	int err = errno;
+	char buf[MAXLINE+1];
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	vsnprintf(buf, MAXLINE, fmt, ap);
+	snprintf(buf+strlen(buf), MAXLINE-strlen(buf), ": %s", strerror(err));
+	strcat(buf, "\n");
+	fputs(buf, stderr);
+
+	va_end(ap);
+	exit(1);
+}
+
+int main(int argc, char *argv[])
+{
+	FILE *fp;
+	if (argc != 2) {
+		fputs("Usage: ./a.out pathname\n", stderr);
+		exit(1);
+	}
+	fp = fopen(argv[1], "r");
+
+	if (fp == NULL)
+		err_sys("Line %d - Open file %s", __LINE__, argv[1]);
+	printf("Open %s OK\n", argv[1]);
+	fclose(fp);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>有了<code class="literal">err_sys</code>函数，不仅简化了<code class="literal">main</code>函数的代码，而且可以把<code class="literal">fopen</code>的错误提示打印得非常清楚，有源代码行号，有打开文件的路径名，一看就知道哪里出错了。</p><p>现在总结一下<code class="literal">printf</code>格式化字符串中的转换说明的有哪些写法。在这里只列举几种常用的格式，其它格式请参考Man Page。每个转换说明以<code class="literal">%</code>号开头，以转换字符结尾，我们以前用过的转换说明仅包含<code class="literal">%</code>号和转换字符，例如<code class="literal">%d</code>、<code class="literal">%s</code>，其实在这两个字符中间还可以插入一些可选项。</p><div class="table"><a id="id2833014"></a><p class="title"><b>表 25.1. printf转换说明的可选项</b></p><div class="table-contents"><table summary="printf转换说明的可选项" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>选项</th><th>描述</th><th>举例</th></tr></thead><tbody><tr><td>#</td><td>八进制前面加0（转换字符为<code class="literal">o</code>），十六进制前面加0x（转换字符为<code class="literal">x</code>）或0X（转换字符为<code class="literal">X</code>）。</td><td><code class="literal">printf("%#x", 0xff)</code>打印<code class="literal">0xff</code>，<code class="literal">printf("%x", 0xff)</code>打印<code class="literal">ff</code>。</td></tr><tr><td>-</td><td>格式化后的内容居左，右边可以留空格。</td><td>见下面的例子</td></tr><tr><td>宽度</td><td>用一个整数指定格式化后的最小长度，如果格式化后的内容没有这么长，可以在左边留空格，如果前面指定了<code class="literal">-</code>号就在右边留空格。宽度有一种特别的形式，不指定整数值而是写成一个<code class="literal">*</code>号，表示取一个<code class="literal">int</code>型参数作为宽度。</td><td><code class="literal">printf("-%10s-", "hello")</code>打印<code class="literal">-␣␣␣␣␣hello-</code>，<code class="literal">printf("-%-*s-", 10, "hello")</code>打印<code class="literal">-hello␣␣␣␣␣-</code>。</td></tr><tr><td>.</td><td>用于分隔上一条提到的最小长度和下一条要讲的精度。</td><td>见下面的例子</td></tr><tr><td>精度</td><td>用一个整数表示精度，对于字符串来说指定了格式化后保留的最大长度，对于浮点数来说指定了格式化后小数点右边的位数，对于整数来说指定了格式化后的最小位数。精度也可以不指定整数值而是写成一个<code class="literal">*</code>号，表示取下一个<code class="literal">int</code>型参数作为精度。</td><td><code class="literal">printf("%.4s", "hello")</code>打印<code class="literal">hell</code>，<code class="literal">printf("-%6.4d-", 100)</code>打印<code class="literal">-␣␣0100-</code>，<code class="literal">printf("-%*.*f-", 8, 4, 3.14)</code>打印<code class="literal">-␣␣3.1400-</code>。</td></tr><tr><td>字长</td><td>对于整型参数，<code class="literal">hh</code>、<code class="literal">h</code>、<code class="literal">l</code>、<code class="literal">ll</code>分别表示是<code class="literal">char</code>、<code class="literal">short</code>、<code class="literal">long</code>、<code class="literal">long long</code>型的字长，至于是有符号数还是无符号数则取决于转换字符；对于浮点型参数，<code class="literal">L</code>表示<code class="literal">long double</code>型的字长。</td><td><code class="literal">printf("%hhd", 255)</code>打印<code class="literal">-1</code>。</td></tr></tbody></table></div></div><br class="table-break" /><p>常用的转换字符有：</p><div class="table"><a id="id2833311"></a><p class="title"><b>表 25.2. printf的转换字符</b></p><div class="table-contents"><table summary="printf的转换字符" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>转换字符</th><th>描述</th><th>举例</th></tr></thead><tbody><tr><td>d i</td><td>取<code class="literal">int</code>型参数格式化成有符号十进制表示，如果格式化后的位数小于指定的精度，就在左边补0。</td><td><code class="literal">printf("%.4d", 100)</code>打印<code class="literal">0100</code>。</td></tr><tr><td>o u x X</td><td>取<code class="literal">unsigned int</code>型参数格式化成无符号八进制（o）、十进制（u）、十六进制（x或X）表示，x表示十六进制数字用小写abcdef，X表示十六进制数字用大写ABCDEF，如果格式化后的位数小于指定的精度，就在左边补0。</td><td><code class="literal">printf("%#X", 0xdeadbeef)</code>打印<code class="literal">0XDEADBEEF</code>，<code class="literal">printf("%hhu", -1)</code>打印<code class="literal">255</code>。</td></tr><tr><td>c</td><td>取<code class="literal">int</code>型参数转换成<code class="literal">unsigned char</code>型，格式化成对应的ASCII码字符。</td><td><code class="literal">printf("%c", 256+'A')</code>打印<code class="literal">A</code>。</td></tr><tr><td>s</td><td>取<code class="literal">const char *</code>型参数所指向的字符串格式化输出，遇到<code class="literal">'\0'</code>结束，或者达到指定的最大长度（精度）结束。</td><td><code class="literal">printf("%.4s", "hello")</code>打印<code class="literal">hell</code>。</td></tr><tr><td>p</td><td>取<code class="literal">void *</code>型参数格式化成十六进制表示。相当于<code class="literal">%#x</code>。</td><td><code class="literal">printf("%p", main)</code>打印<code class="literal">main</code>函数的首地址<code class="literal">0x80483c4</code>。</td></tr><tr><td>f</td><td>取<code class="literal">double</code>型参数格式化成<code class="literal">[-]ddd.ddd</code>这样的格式，小数点后的默认精度是6位。</td><td><code class="literal">printf("%f", 3.14)</code>打印<code class="literal">3.140000</code>，<code class="literal">printf("%f", 0.00000314)</code>打印<code class="literal">0.000003</code>。</td></tr><tr><td>e E</td><td>取<code class="literal">double</code>型参数格式化成<code class="literal">[-]d.ddde±dd</code>（转换字符是e）或<code class="literal">[-]d.dddE±dd</code>（转换字符是E）这样的格式，小数点后的默认精度是6位，指数至少是两位。</td><td><code class="literal">printf("%e", 3.14)</code>打印<code class="literal">3.140000e+00</code>。</td></tr><tr><td>g G</td><td>取<code class="literal">double</code>型参数格式化，精度是指有效数字而非小数点后的数字，默认精度是6。如果指数小于-4或大于等于精度就按<code class="literal">%e</code>（转换字符是g）或<code class="literal">%E</code>（转换字符是G）格式化，否则按<code class="literal">%f</code>格式化。小数部分的末尾0去掉，如果没有小数部分，小数点也去掉。</td><td><code class="literal">printf("%g", 3.00)</code>打印<code class="literal">3</code>，<code class="literal">printf("%g", 0.00001234567)</code>打印<code class="literal">1.23457e-05</code>。</td></tr><tr><td>%</td><td>格式化成一个<code class="literal">%</code>。</td><td><code class="literal">printf("%%")</code>打印一个<code class="literal">%</code>。</td></tr></tbody></table></div></div><br class="table-break" /><p>我们在<a class="xref" href="ch24s06.html#interface.va">第 6 节 “可变参数”</a>讲过可变参数的原理，<code class="literal">printf</code>并不知道实际参数的类型，只能按转换说明指出的参数类型从栈帧上取参数，所以如果实际参数和转换说明的类型不符，结果可能会有些意外，上面也举过几个这样的例子。另外，如果<code class="literal">s</code>指向一个字符串，用<code class="literal">printf(s)</code>打印这个字符串可能得到错误的结果，因为字符串中可能包含<code class="literal">%</code>号而被<code class="literal">printf</code>当成转换说明，<code class="literal">printf</code>并不知道后面没有传其它参数，照样会从栈帧上取参数。所以比较保险的办法是<code class="literal">printf("%s", s)</code>。</p><p>下面看<code class="literal">scanf</code>函数的各种形式。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int scanf(const char *format, ...);
+int fscanf(FILE *stream, const char *format, ...);
+int sscanf(const char *str, const char *format, ...);
+
+#include &lt;stdarg.h&gt;
+
+int vscanf(const char *format, va_list ap);
+int vsscanf(const char *str, const char *format, va_list ap);
+int vfscanf(FILE *stream, const char *format, va_list ap);
+返回值：返回成功匹配和赋值的参数个数，成功匹配的参数可能少于所提供的赋值参数，返回0表示一个都不匹配，出错或者读到文件或字符串末尾时返回EOF并设置errno</pre><p><code class="literal">scanf</code>从标准输入读字符，按格式化字符串<code class="literal">format</code>中的转换说明解释这些字符，转换后赋给后面的参数，后面的参数都是传出参数，因此必须传地址而不能传值。<code class="literal">fscanf</code>从指定的文件<code class="literal">stream</code>中读字符，而<code class="literal">sscanf</code>从指定的字符串<code class="literal">str</code>中读字符。后面三个以<code class="literal">v</code>开头的函数的可变参数不是以<code class="literal">...</code>的形式传进来，而是以<code class="literal">va_list</code>类型传进来。</p><p>现在总结一下<code class="literal">scanf</code>的格式化字符串和转换说明，这里也只列举几种常用的格式，其它格式请参考Man Page。<code class="literal">scanf</code>用输入的字符去匹配格式化字符串中的字符和转换说明，如果成功匹配一个转换说明，就给一个参数赋值，如果读到文件或字符串末尾就停止，或者如果遇到和格式化字符串不匹配的地方（比如转换说明是<code class="literal">%d</code>却读到字符<code class="literal">A</code>）就停止。如果遇到不匹配的地方而停止，<code class="literal">scanf</code>的返回值可能小于赋值参数的个数，文件的读写位置指向输入中不匹配的地方，下次调用库函数读文件时可以从这个位置继续。</p><p>格式化字符串中包括：</p><div class="itemizedlist"><ul type="disc"><li><p>空格或Tab，在处理过程中被忽略。</p></li><li><p>普通字符（不包括<code class="literal">%</code>），和输入字符中的非空白字符相匹配。输入字符中的空白字符是指空格、Tab、<code class="literal">\r</code>、<code class="literal">\n</code>、<code class="literal">\v</code>、<code class="literal">\f</code>。</p></li><li><p>转换说明，以<code class="literal">%</code>开头，以转换字符结尾，中间也有若干个可选项。</p></li></ul></div><p>转换说明中的可选项有：</p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">*</code>号，表示这个转换说明只是用来匹配一段输入字符，但匹配结果并不赋给后面的参数。</p></li><li><p>用一个整数指定的宽度N。表示这个转换说明最多匹配N个输入字符，或者匹配到输入字符中的下一个空白字符结束。</p></li><li><p>对于整型参数可以指定字长，有<code class="literal">hh</code>、<code class="literal">h</code>、<code class="literal">l</code>、<code class="literal">ll</code>（也可以写成一个<code class="literal">L</code>），含义和<code class="literal">printf</code>相同。但<code class="literal">l</code>和<code class="literal">L</code>还有一层含义，当转换字符是<code class="literal">e</code>、<code class="literal">f</code>、<code class="literal">g</code>时，表示赋值参数的类型是<code class="literal">float *</code>而非<code class="literal">double *</code>，这一点跟<code class="literal">printf</code>不同（结合以前讲的类型转换规则思考一下为什么不同），这时前面加上<code class="literal">l</code>或<code class="literal">L</code>分别表示<code class="literal">double *</code>或<code class="literal">long double *</code>型。</p></li></ul></div><p>常用的转换字符有：</p><div class="table"><a id="id2834066"></a><p class="title"><b>表 25.3. scanf的转换字符</b></p><div class="table-contents"><table summary="scanf的转换字符" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>转换字符</th><th>描述</th></tr></thead><tbody><tr><td>d</td><td>匹配十进制整数（开头可以有负号），赋值参数的类型是<code class="literal">int *</code>。</td></tr><tr><td>i</td><td>匹配整数（开头可以有负号），赋值参数的类型是<code class="literal">int *</code>，如果输入字符以0x或0X开头则匹配十六进制整数，如果输入字符以0开头则匹配八进制整数。</td></tr><tr><td>o u x</td><td>匹配八进制、十进制、十六进制整数（开头可以有负号），赋值参数的类型是<code class="literal">unsigned int *</code>。</td></tr><tr><td>c</td><td>匹配一串字符，字符的个数由宽度指定，缺省宽度是1，赋值参数的类型是<code class="literal">char *</code>，末尾不会添加<code class="literal">'\0'</code>。如果输入字符的开头有空白字符，这些空白字符并不被忽略，而是保存到参数中，要想跳过开头的空白字符，可以在格式化字符串中用一个空格去匹配。</td></tr><tr><td>s</td><td>匹配一串非空白字符，从输入字符中的第一个非空白字符开始匹配到下一个空白字符之前，或者匹配到指定的宽度，赋值参数的类型是<code class="literal">char *</code>，末尾自动添加<code class="literal">'\0'</code>。</td></tr><tr><td>e f g</td><td>匹配符点数（开头可以有负号），赋值参数的类型是<code class="literal">float *</code>，也可以指定<code class="literal">double *</code>或<code class="literal">long double *</code>的字长。</td></tr><tr><td>%</td><td>转换说明<code class="literal">%%</code>匹配一个字符<code class="literal">%</code>，不做赋值。</td></tr></tbody></table></div></div><br class="table-break" /><p>下面几个例子出自<a class="xref" href="bi01.html#bibli.kr" title="The C Programming Language">[<abbr class="abbrev">K&amp;R</abbr>]</a>。第一个例子，读取用户输入的浮点数累加起来。</p><div class="example"><a id="id2834234"></a><p class="title"><b>例 25.9. 用scanf实现简单的计算器</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main(void)  /* rudimentary calculator */
+{
+	double sum, v;
+
+	sum = 0;
+	while (scanf("%lf", &amp;v) == 1)
+		printf("\t%.2f\n", sum += v);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>如果我们要读取<code class="literal">25 Dec 1988</code>这样的日期格式，可以这样写：</p><pre class="programlisting">char *str = "25 Dec 1988";
+int day, year;
+char monthname[20];
+
+sscanf(str, "%d %s %d", &amp;day, monthname, &amp;year);</pre><p>如果<code class="literal">str</code>中的空白字符再多一些，比如<code class="literal">"  25	Dec   1998"</code>，仍然可以正确读取。如果格式化字符串中的空格和Tab再多一些，比如<code class="literal">"%d   %s	%d  "</code>，也可以正确读取。<code class="literal">scanf</code>函数是很强大的，但是要用对了不容易，需要多练习，通过练习体会空白字符的作用。</p><p>如果要读取<code class="literal">12/25/1998</code>这样的日期格式，就需要在格式化字符串中用<code class="literal">/</code>匹配输入字符中的<code class="literal">/</code>：</p><pre class="programlisting">int day, month, year;
+
+scanf("%d/%d/%d", &amp;month, &amp;day, &amp;year);</pre><p><code class="literal">scanf</code>把换行符也看作空白字符，仅仅当作字段之间的分隔符，如果输入中的字段个数不确定，最好是先用<code class="literal">fgets</code>按行读取，然后再交给<code class="literal">sscanf</code>处理。如果我们的程序需要同时识别以上两种日期格式，可以这样写：</p><pre class="programlisting">while (fgets(line, sizeof(line), stdin) &gt; 0) {
+	if (sscanf(line, "%d %s %d", &amp;day, monthname, &amp;year) == 3)
+		printf("valid: %s\n", line); /* 25 Dec 1988 form */
+	else if (sscanf(line, "%d/%d/%d", &amp;month, &amp;day, &amp;year) == 3)
+		printf("valid: %s\n", line); /* mm/dd/yy form */
+	else
+		printf("invalid: %s\n", line); /* invalid form */
+}</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2834346"></a>2.10. C标准库的I/O缓冲区</h3></div></div></div><p>用户程序调用C标准I/O库函数读写文件或设备，而这些库函数要通过系统调用把读写请求传给内核（以后我们会看到与I/O相关的系统调用），最终由内核驱动磁盘或设备完成I/O操作。C标准库为每个打开的文件分配一个I/O缓冲区以加速读写操作，通过文件的<code class="literal">FILE</code>结构体可以找到这个缓冲区，用户调用读写函数大多数时候都在I/O缓冲区中读写，只有少数时候需要把读写请求传给内核。以<code class="literal">fgetc</code>/<code class="literal">fputc</code>为例，当用户程序第一次调用<code class="literal">fgetc</code>读一个字节时，<code class="literal">fgetc</code>函数可能通过系统调用进入内核读1K字节到I/O缓冲区中，然后返回I/O缓冲区中的第一个字节给用户，把读写位置指向I/O缓冲区中的第二个字符，以后用户再调<code class="literal">fgetc</code>，就直接从I/O缓冲区中读取，而不需要进内核了，当用户把这1K字节都读完之后，再次调用<code class="literal">fgetc</code>时，<code class="literal">fgetc</code>函数会再次进入内核读1K字节到I/O缓冲区中。在这个场景中用户程序、C标准库和内核之间的关系就像在<a class="xref" href="ch17s05.html#arch.memh">第 5 节 “Memory Hierarchy”</a>中CPU、Cache和内存之间的关系一样，C标准库之所以会从内核预读一些数据放在I/O缓冲区中，是希望用户程序随后要用到这些数据，C标准库的I/O缓冲区也在用户空间，直接从用户空间读取数据比进内核读数据要快得多。另一方面，用户程序调用<code class="literal">fputc</code>通常只是写到I/O缓冲区中，这样<code class="literal">fputc</code>函数可以很快地返回，如果I/O缓冲区写满了，<code class="literal">fputc</code>就通过系统调用把I/O缓冲区中的数据传给内核，内核最终把数据写回磁盘。有时候用户程序希望把I/O缓冲区中的数据立刻传给内核，让内核写回设备，这称为Flush<a id="id2834469" class="indexterm"></a>操作，对应的库函数是<code class="literal">fflush</code>，<code class="literal">fclose</code>函数在关闭文件之前也会做Flush操作。</p><p>下图以<code class="literal">fgets</code>/<code class="literal">fputs</code>示意了I/O缓冲区的作用，使用<code class="literal">fgets</code>/<code class="literal">fputs</code>函数时在用户程序中也需要分配缓冲区（图中的<code class="literal">buf1</code>和<code class="literal">buf2</code>），注意区分用户程序的缓冲区和C标准库的I/O缓冲区。</p><div class="figure"><a id="id2834531"></a><p class="title"><b>图 25.1. C标准库的I/O缓冲区</b></p><div class="figure-contents"><div><img src="images/stdlib.buffer.png" alt="C标准库的I/O缓冲区" /></div></div></div><br class="figure-break" /><p>C标准库的I/O缓冲区有三种类型：全缓冲、行缓冲和无缓冲。当用户程序调用库函数做写操作时，不同类型的缓冲区具有不同的特性。</p><div class="variablelist"><dl><dt><span class="term">全缓冲</span></dt><dd><p>如果缓冲区写满了就写回内核。常规文件通常是全缓冲的。</p></dd><dt><span class="term">行缓冲</span></dt><dd><p>如果用户程序写的数据中有换行符就把这一行写回内核，或者如果缓冲区写满了就写回内核。标准输入和标准输出对应终端设备时通常是行缓冲的。</p></dd><dt><span class="term">无缓冲</span></dt><dd><p>用户程序每次调库函数做写操作都要通过系统调用写回内核。标准错误输出通常是无缓冲的，这样用户程序产生的错误信息可以尽快输出到设备。</p></dd></dl></div><p>下面通过一个简单的例子证明标准输出对应终端设备时是行缓冲的。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main()
+{
+	printf("hello world");
+	while(1);
+	return 0;
+}</pre><p>运行这个程序，会发现<code class="literal">hello world</code>并没有打印到屏幕上。用Ctrl-C终止它，去掉程序中的<code class="literal">while(1);</code>语句再试一次：</p><pre class="screen">$ ./a.out
+hello world$</pre><p><code class="literal">hello world</code>被打印到屏幕上，后面直接跟Shell提示符，中间没有换行。</p><p>我们知道<code class="literal">main</code>函数被启动代码这样调用：<code class="literal">exit(main(argc, argv));</code>。<code class="literal">main</code>函数<code class="literal">return</code>时启动代码会调用<code class="literal">exit</code>，<code class="literal">exit</code>函数首先关闭所有尚未关闭的<code class="literal">FILE *</code>指针（关闭之前要做Flush操作），然后通过<code class="literal">_exit</code>系统调用进入内核退出当前进程<sup>[<a id="id2834688" href="#ftn.id2834688" class="footnote">35</a>]</sup>。</p><p>在上面的例子中，由于标准输出是行缓冲的，<code class="literal">printf("hello world");</code>打印的字符串中没有换行符，所以只把字符串写到标准输出的I/O缓冲区中而没有写回内核（写到终端设备），如果敲Ctrl-C，进程是异常终止的，并没有调用<code class="literal">exit</code>，也就没有机会Flush I/O缓冲区，因此字符串最终没有打印到屏幕上。如果把打印语句改成<code class="literal">printf("hello world\n");</code>，有换行符，就会立刻写到终端设备，或者如果把<code class="literal">while(1);</code>去掉也可以写到终端设备，因为程序退出时会调用<code class="literal">exit</code>Flush所有I/O缓冲区。在本书的其它例子中，<code class="literal">printf</code>打印的字符串末尾都有换行符，以保证字符串在<code class="literal">printf</code>调用结束时就写到终端设备。</p><p>我们再做个实验，在程序中直接调用<code class="literal">_exit</code>退出。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+
+int main()
+{
+	printf("hello world");
+	_exit(0);
+}</pre><p>结果也不会把字符串打印到屏幕上，如果把<code class="literal">_exit</code>调用改成<code class="literal">exit</code>就可以打印到屏幕上。</p><p>除了写满缓冲区、写入换行符之外，行缓冲还有一种情况会自动做Flush操作。如果：</p><div class="itemizedlist"><ul type="disc"><li><p>用户程序调用库函数从无缓冲的文件中读取</p></li><li><p>或者从行缓冲的文件中读取，并且这次读操作会引发系统调用从内核读取数据</p></li></ul></div><p>那么在读取之前会自动Flush所有行缓冲。例如：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+
+int main()
+{
+	char buf[20];
+	printf("Please input a line: ");
+	fgets(buf, 20, stdin);
+	return 0;
+}</pre><p>虽然调用<code class="literal">printf</code>并不会把字符串写到设备，但紧接着调用<code class="literal">fgets</code>读一个行缓冲的文件（标准输入），在读取之前会自动Flush所有行缓冲，包括标准输出。</p><p>如果用户程序不想完全依赖于自动的Flush操作，可以调<code class="literal">fflush</code>函数手动做Flush操作。</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int fflush(FILE *stream);
+返回值：成功返回0，出错返回EOF并设置errno</pre><p>对前面的例子再稍加改动：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main()
+{
+	printf("hello world");
+	fflush(stdout);
+	while(1);
+}</pre><p>虽然字符串中没有换行，但用户程序调用<code class="literal">fflush</code>强制写回内核，因此也能在屏幕上打印出字符串。<code class="literal">fflush</code>函数用于确保数据写回了内核，以免进程异常终止时丢失数据。作为一个特例，调用<code class="literal">fflush(NULL)</code>可以对所有打开文件的I/O缓冲区做Flush操作。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2834904"></a>2.11. 本节综合练习</h3></div></div></div><p>1、编程读写一个文件<code class="literal">test.txt</code>，每隔1秒向文件中写入一行记录，类似于这样：</p><pre class="programlisting">1 2009-7-30 15:16:42
+2 2009-7-30 15:16:43</pre><p>该程序应该无限循环，直到按Ctrl-C终止。下次再启动程序时在<code class="literal">test.txt</code>文件末尾追加记录，并且序号能够接续上次的序号，比如：</p><pre class="programlisting">1 2009-7-30 15:16:42
+2 2009-7-30 15:16:43
+3 2009-7-30 15:19:02
+4 2009-7-30 15:19:03
+5 2009-7-30 15:19:04</pre><p>这类似于很多系统服务维护的日志文件，例如在我的机器上系统服务进程<code class="literal">acpid</code>维护一个日志文件<code class="literal">/var/log/acpid</code>，就像这样：</p><pre class="programlisting">$ cat /var/log/acpid
+[Sun Oct 26 08:44:46 2008] logfile reopened
+[Sun Oct 26 10:11:53 2008] exiting
+[Sun Oct 26 18:54:39 2008] starting up
+...</pre><p>每次系统启动时<code class="literal">acpid</code>进程就以追加方式打开这个文件，当有事件发生时就追加一条记录，包括事件发生的时刻以及事件描述信息。</p><p>获取当前的系统时间需要调用<code class="literal">time(2)</code>函数，返回的结果是一个<code class="literal">time_t</code>类型，其实就是一个大整数，其值表示从UTC（Coordinated Universal Time）<a id="id2834997" class="indexterm"></a>时间1970年1月1日00:00:00（称为UNIX系统的Epoch<a id="id2835006" class="indexterm"></a>时间）到当前时刻的秒数。然后调用<code class="literal">localtime(3)</code>将<code class="literal">time_t</code>所表示的UTC时间转换为本地时间（我们是+8区，比UTC多8个小时）并转成<code class="literal">struct tm</code>类型，该类型的各数据成员分别表示年月日时分秒，具体用法请查阅Man Page。调用<code class="literal">sleep(3)</code>函数可以指定程序睡眠多少秒。</p><p>2、INI文件是一种很常见的配置文件，很多Windows程序都采用这种格式的配置文件，在Linux系统中Qt程序通常也采用这种格式的配置文件。比如：</p><pre class="programlisting">;Configuration of http
+[http]
+domain=www.mysite.com
+port=8080
+cgihome=/cgi-bin
+
+;Configuration of db
+[database]
+server = mysql
+user = myname
+password = toopendatabase</pre><p>一个配置文件由若干个Section组成，由[]括号括起来的是Section名。每个Section下面有若干个<code class="literal">key = value</code>形式的键值对（Key-value Pair）<a id="id2835069" class="indexterm"></a>，等号两边可以有零个或多个空白字符（空格或Tab），每个键值对占一行。以;号开头的行是注释。每个Section结束时有一个或多个空行，空行是仅包含零个或多个空白字符（空格或Tab）的行。INI文件的最后一行后面可能有换行符也可能没有。</p><p>现在XML兴起了，INI文件显得有点土。现在要求编程把INI文件转换成XML文件。上面的例子经转换后应该变成这样：</p><pre class="programlisting">&lt;!-- Configuration of http --&gt;
+&lt;http&gt;
+        &lt;domain&gt;www.mysite.com&lt;/domain&gt;
+        &lt;port&gt;8080&lt;/port&gt;
+        &lt;cgihome&gt;/cgi-bin&lt;/cgihome&gt;
+&lt;/http&gt;
+
+&lt;!-- Configuration of db --&gt;
+&lt;database&gt;
+        &lt;server&gt;mysql&lt;/server&gt;
+        &lt;user&gt;myname&lt;/user&gt;
+        &lt;password&gt;toopendatabase&lt;/password&gt;
+&lt;/database&gt;</pre><p>3、实现类似<code class="literal">gcc</code>的<code class="literal">-M</code>选项的功能，给定一个<code class="literal">.c</code>文件，列出它直接和间接包含的所有头文件，例如有一个<code class="literal">main.c</code>文件：</p><pre class="programlisting">#include &lt;errno.h&gt;
+#include "stack.h"
+
+int main()
+{
+	return 0;
+}</pre><p>你的程序读取这个文件，打印出其中包含的所有头文件的绝对路径：</p><pre class="screen">$ ./a.out main.c
+/usr/include/errno.h
+/usr/include/features.h
+/usr/include/bits/errno.h
+/usr/include/linux/errno.h
+...
+/home/akaedu/stack.h: cannot find</pre><p>如果有的头文件找不到，就像上面例子那样打印<code class="literal">/home/akaedu/stack.h: cannot find</code>。首先复习一下<a class="xref" href="ch20s02.html#link.header">第 2.2 节 “头文件”</a>讲过的头文件查找顺序，本题目不必考虑<code class="literal">-I</code>选项指定的目录，只在<code class="literal">.c</code>文件所在的目录以及系统目录<code class="literal">/usr/include</code>中查找。</p></div><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2831641" href="#id2831641" class="para">34</a>] </sup>这些特性取决于终端的工作模式，终端可以配置成一次一行的模式，也可以配置成一次一个字符的模式，默认是一次一行的模式（本书的实验都是在这种模式下做的），关于终端的配置可参考<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>。</p></div><div class="footnote"><p><sup>[<a id="ftn.id2834688" href="#id2834688" class="para">35</a>] </sup>其实在调<code class="literal">_exit</code>进内核之前还要调用户程序中通过<code class="literal">atexit(3)</code>注册的退出处理函数，本书不做详细介绍，读者可参考<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch25s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch25.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch25s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 字符串操作函数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 数值字符串转换函数</td></tr></table></div></body></html>

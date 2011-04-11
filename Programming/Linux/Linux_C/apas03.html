@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 在Linux C编程中使用Unicode和UTF-8</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="apa.html" title="附录 A. 字符编码" /><link rel="prev" href="apas02.html" title="2. Unicode和UTF-8" /><link rel="next" href="apb.html" title="附录 B. GNU Free Documentation License Version 1.3, 3 November 2008" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 在Linux C编程中使用Unicode和UTF-8</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apas02.html">上一页</a> </td><th width="60%" align="center">附录 A. 字符编码</th><td width="20%" align="right"> <a accesskey="n" href="apb.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2906750"></a>3. 在Linux C编程中使用Unicode和UTF-8</h2></div></div></div><p>目前各种Linux发行版都支持UTF-8编码，当前系统的语言和字符编码设置保存在一些环境变量中，可以通过<code class="literal">locale</code>命令查看：</p><pre class="screen">$ locale
+LANG=en_US.UTF-8
+LC_CTYPE="en_US.UTF-8"
+LC_NUMERIC="en_US.UTF-8"
+LC_TIME="en_US.UTF-8"
+LC_COLLATE="en_US.UTF-8"
+LC_MONETARY="en_US.UTF-8"
+LC_MESSAGES="en_US.UTF-8"
+LC_PAPER="en_US.UTF-8"
+LC_NAME="en_US.UTF-8"
+LC_ADDRESS="en_US.UTF-8"
+LC_TELEPHONE="en_US.UTF-8"
+LC_MEASUREMENT="en_US.UTF-8"
+LC_IDENTIFICATION="en_US.UTF-8"
+LC_ALL=</pre><p>常用汉字也都位于BMP中，所以一个汉字的存储通常占3个字节。例如编辑一个C程序：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	printf("你好\n");
+	return 0;
+}</pre><p>源文件是以UTF-8编码存储的：</p><pre class="screen">$ od -tc nihao.c 
+0000000   #   i   n   c   l   u   d   e       &lt;   s   t   d   i   o   .
+0000020   h   &gt;  \n  \n   i   n   t       m   a   i   n   (   v   o   i
+0000040   d   )  \n   {  \n  \t   p   r   i   n   t   f   (   " 344 275
+0000060 240 345 245 275   \   n   "   )   ;  \n  \t   r   e   t   u   r
+0000100   n       0   ;  \n   }  \n
+0000107</pre><p>其中八进制的<code class="literal">344 375 240</code>（十六进制<code class="literal">e4 bd a0</code>）就是“<span class="quote">你</span>”的UTF-8编码，八进制的<code class="literal">345 245 275</code>（十六进制<code class="literal">e5 a5 bd</code>）就是“<span class="quote">好</span>”。把它编译成目标文件，<code class="literal">"你好\n"</code>这个字符串就成了这样一串字节：<code class="literal">e4 bd a0 e5 a5 bd 0a 00</code>，汉字在其中仍然是UTF-8编码的，一个汉字占3个字节，这种字符在C语言中称为多字节字符（Multibyte Character）<a id="id2906864" class="indexterm"></a>。运行这个程序相当于把这一串字节<code class="literal">write</code>到当前终端的设备文件。如果当前终端的驱动程序能够识别UTF-8编码就能打印出汉字，如果当前终端的驱动程序不能识别UTF-8编码（比如一般的字符终端）就打印不出汉字。也就是说，像这种程序，识别汉字的工作既不是由C编译器做的也不是由<code class="literal">libc</code>做的，C编译器原封不动地把源文件中的UTF-8编码复制到目标文件中，<code class="literal">libc</code>只是当作以0结尾的字符串原封不动地<code class="literal">write</code>给内核，识别汉字的工作是由终端的驱动程序做的。</p><p>但是仅有这种程度的汉字支持是不够的，有时候我们需要在C程序中操作字符串里的字符，比如求字符串<code class="literal">"你好\n"</code>中有几个汉字或字符，用<code class="literal">strlen</code>就不灵了，因为<code class="literal">strlen</code>只看结尾的0字节而不管字符串里存的是什么，求出来的是字节数7。为了在程序中操作Unicode字符，C语言定义了宽字符（Wide Character）<a id="id2906938" class="indexterm"></a>类型<code class="literal">wchar_t</code>和一些库函数。在字符常量或字符串字面值前面加一个L就表示宽字符常量或宽字符串，例如定义<code class="literal">wchar_t c = L'你';</code>，变量<code class="literal">c</code>的值就是汉字“<span class="quote">你</span>”的31位UCS编码，而<code class="literal">L"你好\n"</code>就相当于<code class="literal">{L'你', L'好', L'\n', 0}</code>，<code class="literal">wcslen</code>函数就可以取宽字符串中的字符个数。看下面的程序：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;locale.h&gt;
+
+int main(void)
+{
+	if (!setlocale(LC_CTYPE, "")) {
+		fprintf(stderr, "Can't set the specified locale! "
+			"Check LANG, LC_CTYPE, LC_ALL.\n");
+		return 1;
+	}
+	printf("%ls", L"你好\n");
+	return 0;
+}</pre><p>宽字符串<code class="literal">L"你好\n"</code>在源代码中当然还是存成UTF-8编码的，但编译器会把它变成4个UCS编码<code class="literal">0x00004f60 0x0000597d 0x0000000a 0x00000000</code>保存在目标文件中，按小端存储就是<code class="literal">60 4f 00 00 7d 59 00 00 0a 00 00 00 00 00 00 00</code>，用<code class="literal">od</code>命令查看目标文件应该能找到这些字节。</p><pre class="screen">$ gcc hihao.c
+$ od -tx1 a.out</pre><p><code class="literal">printf</code>的<code class="literal">%ls</code>转换说明表示把后面的参数按宽字符串解释，不是见到0字节就结束，而是见到UCS编码为0的字符才结束，但是要<code class="literal">write</code>到终端仍然需要以多字节编码输出，这样终端驱动程序才能识别，所以<code class="literal">printf</code>在内部把宽字符串转换成多字节字符串再<code class="literal">write</code>出去。事实上，C标准并没有规定多字节字符必须以UTF-8编码，也可以使用其它的多字节编码，在运行时根据环境变量确定当前系统的编码，所以在程序开头需要调用<code class="literal">setlocale</code>获取当前系统的编码设置，如果当前系统是UTF-8的，<code class="literal">printf</code>就把UCS编码转换成UTF-8编码的多字节字符串再<code class="literal">write</code>出去。一般来说，程序在做内部计算时通常以宽字符编码，如果要存盘或者输出给别的程序，或者通过网络发给别的程序，则采用多字节编码。</p><p>关于Unicode和UTF-8本节只介绍了最基本的概念，部分内容出自<a class="xref" href="bi01.html#bibli.unicodefaq" title="UTF-8 and Unicode FAQ, http://www.cl.cam.ac.uk/~mgk25/unicode.html">[<abbr class="abbrev">Unicode FAQ</abbr>]</a>，读者可进一步参考这篇文章。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="apas02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="apa.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="apb.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. Unicode和UTF-8 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 附录 B. GNU Free Documentation License Version 1.3, 3 November 2008</td></tr></table></div></body></html>

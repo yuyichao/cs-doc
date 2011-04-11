@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 产生信号</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch33.html" title="第 33 章 信号" /><link rel="prev" href="ch33s01.html" title="1. 信号的基本概念" /><link rel="next" href="ch33s03.html" title="3. 阻塞信号" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 产生信号</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch33s01.html">上一页</a> </td><th width="60%" align="center">第 33 章 信号</th><td width="20%" align="right"> <a accesskey="n" href="ch33s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2884237"></a>2. 产生信号</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2884244"></a>2.1. 通过终端按键产生信号</h3></div></div></div><p>上一节讲过，<code class="literal">SIGINT</code>的默认处理动作是终止进程，<code class="literal">SIGQUIT</code>的默认处理动作是终止进程并且Core Dump，现在我们来验证一下。</p><p>首先解释什么是Core Dump。当一个进程要异常终止时，可以选择把进程的用户空间内存数据全部保存到磁盘上，文件名通常是<code class="literal">core</code>，这叫做Core Dump<a id="id2884282" class="indexterm"></a>。进程异常终止通常是因为有Bug，比如非法内存访问导致段错误，事后可以用调试器检查<code class="literal">core</code>文件以查清错误原因，这叫做Post-mortem Debug<a id="id2884298" class="indexterm"></a>。一个进程允许产生多大的<code class="literal">core</code>文件取决于进程的Resource Limit（这个信息保存在PCB中）。默认是不允许产生<code class="literal">core</code>文件的，因为<code class="literal">core</code>文件中可能包含用户密码等敏感信息，不安全。在开发调试阶段可以用<code class="literal">ulimit</code>命令改变这个限制，允许产生<code class="literal">core</code>文件。</p><p>首先用<code class="literal">ulimit</code>命令改变Shell进程的Resource Limit，允许<code class="literal">core</code>文件最大为1024K：</p><pre class="screen">$ ulimit -c 1024</pre><p>然后写一个死循环程序：</p><pre class="programlisting">#include &lt;unistd.h&gt;
+
+int main(void)
+{
+	while(1);
+	return 0;
+}</pre><p>前台运行这个程序，然后在终端键入Ctrl-C或Ctrl-\：</p><pre class="screen">$ ./a.out
+（按Ctrl-C）
+$ ./a.out
+（按Ctrl-\）Quit (core dumped)
+$ ls -l core*
+-rw------- 1 akaedu akaedu 147456 2008-11-05 23:40 core</pre><p><code class="literal">ulimit</code>命令改变了Shell进程的Resource Limit，<code class="literal">a.out</code>进程的PCB由Shell进程复制而来，所以也具有和Shell进程相同的Resource Limit值，这样就可以产生Core Dump了。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2884400"></a>2.2. 调用系统函数向进程发信号</h3></div></div></div><p>仍以上一节的死循环程序为例，首先在后台执行这个程序，然后用<code class="literal">kill</code>命令给它发<code class="literal">SIGSEGV</code>信号。</p><pre class="screen">$ ./a.out &amp;
+[1] 7940
+$ kill -SIGSEGV 7940
+$（再次回车）
+[1]+  Segmentation fault      (core dumped) ./a.out</pre><p>7940是<code class="literal">a.out</code>进程的id。之所以要再次回车才显示<code class="literal">Segmentation fault</code>，是因为在7940进程终止掉之前已经回到了Shell提示符等待用户输入下一条命令，Shell不希望<code class="literal">Segmentation fault</code>信息和用户的输入交错在一起，所以等用户输入命令之后才显示。指定某种信号的<code class="literal">kill</code>命令可以有多种写法，上面的命令还可以写成<code class="literal">kill -SEGV 7940</code>或<code class="literal">kill -11 7940</code>，11是信号<code class="literal">SIGSEGV</code>的编号。以往遇到的段错误都是由非法内存访问产生的，而这个程序本身没错，给它发<code class="literal">SIGSEGV</code>也能产生段错误。</p><p><code class="literal">kill</code>命令是调用<code class="literal">kill</code>函数实现的。<code class="literal">kill</code>函数可以给一个指定的进程发送指定的信号。<code class="literal">raise</code>函数可以给当前进程发送指定的信号（自己给自己发信号）。</p><pre class="programlisting">#include &lt;signal.h&gt;
+
+int kill(pid_t pid, int signo);
+int raise(int signo);</pre><p>这两个函数都是成功返回0，错误返回-1。</p><p><code class="literal">abort</code>函数使当前进程接收到<code class="literal">SIGABRT</code>信号而异常终止。</p><pre class="programlisting">#include &lt;stdlib.h&gt;
+
+void abort(void);</pre><p>就像<code class="literal">exit</code>函数一样，<code class="literal">abort</code>函数总是会成功的，所以没有返回值。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2884567"></a>2.3. 由软件条件产生信号</h3></div></div></div><p><code class="literal">SIGPIPE</code>是一种由软件条件产生的信号，在<a class="xref" href="ch30s04.html#process.pipe">例 30.7 “管道”</a>中已经介绍过了。本节主要介绍<code class="literal">alarm</code>函数和<code class="literal">SIGALRM</code>信号。</p><pre class="programlisting">#include &lt;unistd.h&gt;
+
+unsigned int alarm(unsigned int seconds);</pre><p>调用<code class="literal">alarm</code>函数可以设定一个闹钟，也就是告诉内核在<code class="literal">seconds</code>秒之后给当前进程发<code class="literal">SIGALRM</code>信号，该信号的默认处理动作是终止当前进程。这个函数的返回值是0或者是以前设定的闹钟时间还余下的秒数。打个比方，某人要小睡一觉，设定闹钟为30分钟之后响，20分钟后被人吵醒了，还想多睡一会儿，于是重新设定闹钟为15分钟之后响，“<span class="quote">以前设定的闹钟时间还余下的时间</span>”就是10分钟。如果<code class="literal">seconds</code>值为0，表示取消以前设定的闹钟，函数的返回值仍然是以前设定的闹钟时间还余下的秒数。</p><div class="example"><a id="id2884661"></a><p class="title"><b>例 33.1. alarm</b></p><div class="example-contents"><pre class="programlisting">#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	int counter;
+	alarm(1);
+	for(counter=0; 1; counter++)
+		printf("counter=%d ", counter);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>这个程序的作用是1秒钟之内不停地数数，1秒钟到了就被<code class="literal">SIGALRM</code>信号终止。</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch33s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch33.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch33s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 信号的基本概念 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 阻塞信号</td></tr></table></div></body></html>

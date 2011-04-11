@@ -1,0 +1,37 @@
+# SOURCES - for Test_ds7 application
+
+TARGETNAME=Test_ds7
+TARGETPATH=obj
+TARGETTYPE=PROGRAM
+UMTYPE=console
+UMBASE=0x01000000
+
+# Put Win2K DDK specific defines in this section.
+!IF "$(LATEST_WIN32_WINNT_VERSION)" == "0x0500" || "$(LATEST_WIN32_WINNT_VERSION)" == "0x0501"
+TARGETLIBS=	$(SDK_LIB_PATH)\setupapi.lib
+
+# Put NT4/Win98 DDK specific defines in this section.
+!ELSE
+TARGETLIBS=	$(BASEDIR)\lib\i386\$(DDKBUILDENV)\setupapi.lib
+
+# check for existence of output directory
+!  IF exist ($(TARGETPATH)\i386\$(DDKBUILDENV))
+# do nothing; the directory has already been created
+!  ELSE
+# Need to create the directory for the output in NT4/Win98
+!    IF [mkdir $(TARGETPATH)\i386\$(DDKBUILDENV)] > 1
+!      ERROR Failed to create output directory.
+!    ENDIF
+!  ENDIF
+!ENDIF
+
+BROWSER_INFO=1
+USE_NATIVE_EH=1
+
+!IF ("$(DDKBUILDENV)"=="fre") || ("$(DDKBUILDENV)"=="free")
+NTDEBUG=
+!ENDIF
+
+INCLUDES=..\.;$(DRIVERWORKS)\include
+
+SOURCES=Test_ds7.cpp openbyintf.cpp

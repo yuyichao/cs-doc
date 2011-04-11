@@ -1,0 +1,107 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;5&#160;章&#160;并发和竞争情况-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch04s06.html" title="4.6.&#160;调试器和相关工具">
+<link rel="next" href="ch05s02.html" title="5.2.&#160;并发和它的管理">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;5&#160;章&#160;并发和竞争情况</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch04s06.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch05s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="ConcurrencyandRaceContitions.chap"></a>第&#160;5&#160;章&#160;并发和竞争情况</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch05.html#Pitfallsinscull.sect">5.1. scull 中的缺陷</a></span></dt>
+<dt><span class="sect1"><a href="ch05s02.html">5.2. 并发和它的管理</a></span></dt>
+<dt><span class="sect1"><a href="ch05s03.html">5.3. 旗标和互斥体</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s03.html#TheLinuxSemaphoreImplementation.sect">5.3.1. Linux 旗标实现</a></span></dt>
+<dt><span class="sect2"><a href="ch05s03.html#UsingSemaphoresinscull.sect">5.3.2. 在 scull 中使用旗标</a></span></dt>
+<dt><span class="sect2"><a href="ch05s03.html#ReaderWriterSemphores.sect">5.3.3. 读者/写者旗标</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s04.html">5.4. Completions 机制</a></span></dt>
+<dt><span class="sect1"><a href="ch05s05.html">5.5. 自旋锁</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s05.html#IntroductiontotheSpinlockAPI.sect">5.5.1. 自旋锁 API 简介</a></span></dt>
+<dt><span class="sect2"><a href="ch05s05.html#SpinlocksandAtomicContext.sect">5.5.2. 自旋锁和原子上下文</a></span></dt>
+<dt><span class="sect2"><a href="ch05s05.html#TheSpinlockFunctions.sect">5.5.3. 自旋锁函数</a></span></dt>
+<dt><span class="sect2"><a href="ch05s05.html#ReaderWriterSpinlocks.sect">5.5.4. 读者/写者自旋锁</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s06.html">5.6. 锁陷阱</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s06.html#AmbiguousRules.sect">5.6.1. 模糊的规则</a></span></dt>
+<dt><span class="sect2"><a href="ch05s06.html#LockOrderingRules.sect">5.6.2. 加锁顺序规则</a></span></dt>
+<dt><span class="sect2"><a href="ch05s06.html#FineVersusCoarseGrainedLocking.sect">5.6.3. 细 -粗- 粒度加锁</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s07.html">5.7. 加锁的各种选择</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s07.html#LockFreeAlgorithms.sect">5.7.1. 不加锁算法</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#AtomicVariables.sect">5.7.2. 原子变量</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#BitOperations.sect">5.7.3. 位操作</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#seqlocks.sect">5.7.4. seqlock 锁</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#ReadCopyUpdate.sect">5.7.5. 读取-拷贝-更新</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s08.html">5.8. 快速参考</a></span></dt>
+</dl>
+</div>
+<p>迄今, 我们未曾关心并发的问题 -- 就是说, 当系统试图一次做多件事时发生的情况. 然而, 并发的管理是操作系统编程的核心问题之一. 并发相关的错误是一些最易出现又最难发现的问题. 即便是专家级 Linux 内核程序员偶尔也会出现并发相关的错误.</p>
+<p>早期的 Linux 内核, 较少有并发的源头. 内核不支持对称多处理器(SMP)系统, 并发执行的唯一原因是硬件中断服务. 那个方法提供了简单性, 但是在有越来越多处理器的系统上注重性能并且坚持系统要快速响应事件的世界中它不再可行了. 为响应现代硬件和应用程序的要求, Linux 内核已经发展为很多事情在同时进行. 这个进步已经产生了很大的性能和可扩展性. 然而, 它也很大地使内核编程任务复杂化. 设备启动程序员现在必须从一开始就将并发作为他们设计的要素, 并且他们必须对内核提供的并发管理设施有很强的理解.</p>
+<p>本章的目的是开始建立那种理解的过程. 为此目的, 我们介绍一些设施来立刻应用到第 3 章的 scull 驱动. 展示的其他设施暂时还不使用. 但是首先, 我们看一下我们的简单 scull 驱动可能哪里出问题并且如何避免这些潜在的问题.</p>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="Pitfallsinscull.sect"></a>5.1.&#160;scull 中的缺陷</h2></div></div></div>
+<p>让我们快速看一段 scull 内存管理代码. 在写逻辑的深处, scull 必须决定它请求的内存是否已经分配. 处理这个任务的代码是:</p>
+<pre class="programlisting">
+if (!dptr-&gt;data[s_pos]) {
+    dptr-&gt;data[s_pos] = kmalloc(quantum, GFP_KERNEL);
+    if (!dptr-&gt;data[s_pos])
+        goto out;
+}
+</pre>
+<p>假设有 2 个进程( 我们会称它们为"A"和"B" ) 独立地试图写入同一个 schull 设备的相同偏移. 每个进程同时到达上面片段的第一行的 if 测试. 如果被测试的指针是 NULL, 每个进程都会决定分配内存, 并且每个都会复制结果指针给 dptr-&gt;datat[s_pos]. 因为 2 个进程都在赋值给同一个位置, 显然只有一个赋值可以成功.</p>
+<p>当然, 发生的是第 2 个完成赋值的进程将"胜出". 如果进程 A 先赋值, 它的赋值将被进程 B 覆盖. 在此, scull 将完全忘记 A 分配的内存; 它只有指向 B 的内存的指针. A 所分配的指针, 因此, 将被丢掉并且不再返回给系统.</p>
+<p>事情的这个顺序是一个竞争情况的演示. 竞争情况是对共享数据的无控制存取的结果. 当错误的存取模式发生了, 产生了不希望的东西. 对于这里讨论的竞争情况, 结果是内存泄漏. 这已经足够坏了, 但是竞争情况常常导致系统崩溃和数据损坏. 程序员可能被诱惑而忽视竞争情况为相当低可能性的事件. 但是, 在计算机世界, 百万分之一的事件会每隔几秒发生, 并且后果会是严重的.</p>
+<p>很快我们将去掉 scull 的竞争情况, 但是首先我们需要对并发做一个更普遍的回顾.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch04s06.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch05s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">4.6.&#160;调试器和相关工具&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;5.2.&#160;并发和它的管理</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

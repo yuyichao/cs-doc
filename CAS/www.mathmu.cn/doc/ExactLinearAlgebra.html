@@ -1,0 +1,240 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>精确线性代数 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>精确线性代数
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="ExactLinearAlgebra.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="ExactLinearAlgebra.html#sec1">快速矩阵乘法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="ExactLinearAlgebra.html#sec2">基于向量内积算法的Winograd加速算法</a>
+      </dt>
+      <dt>
+	<a href="ExactLinearAlgebra.html#sec3">Strassen算法</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="ExactLinearAlgebra.html#sec4">线性方程组</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="ExactLinearAlgebra.html#sec5">基于中国剩余定理的模算法</a>
+      </dt>
+      <dt>
+	<a href="ExactLinearAlgebra.html#sec6"><img src="latex/latex2png-ExactLinearAlgebra_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">-adic算法</a>
+      </dt>
+      <dt>
+	<a href="ExactLinearAlgebra.html#sec7">数值算法求精确解</a>
+      </dt>
+      <dt>
+	<a href="ExactLinearAlgebra.html#sec8">Wiedemann算法与线性代数中的黑箱方法</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p>精确线性代数主要包含两个互相关联的方面:一是一般PID和域 (特别地如有限域<img src="latex/latex2png-ExactLinearAlgebra_205157396_-5.gif" alt="$F_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">)上的线性代数问题,二是作为特例,整数环<img src="latex/latex2png-ExactLinearAlgebra_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">和有理数域<img src="latex/latex2png-ExactLinearAlgebra_40916048_-3.gif" alt="$\mathbb{Q}$" class="latex-inline" style="vertical-align: -3px" width="13" height="15">上的线性代数问题.精确线性代数的很多问题同数值线性代数是相对应的,如线性方程组求解,矩阵的特征值与特征向量以及矩阵的各种标准型等.但由于精确计算与数值计算的本质不同,二者在算法设计思想等方面则有根本的不同.简单举例来说,如果对<img src="latex/latex2png-ExactLinearAlgebra_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">上的矩阵进行直接运算,为了保持计算的精确性,将不得不采用有理数的代数运算或引入Bezout等式进行消元.但两种方法随着计算规模的增长，都会出现矩阵元素的大小快速增加的现象，这将使得多数直接算法 (如通常的Gauss消元法)复杂度很高.尽管可以证明,在考虑了矩阵元素规模增长造成的计算复杂度增长之后,多数矩阵精确计算(包括求解线性方程组,计算行列式等)复杂度仍是多项式型的<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-1" name="cite-1">[1]</a></span>,但由于多项式指数相当大,对于实用计算造成很大的困难,难以直接应用.因此,在涉及整数与有理系数矩阵的计算中,一种典型的思路是借助整数的模运算,将主要的计算化归到有限域(<img src="latex/latex2png-ExactLinearAlgebra_146901167_-5.gif" alt="$\mathbb{Z}/p\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">,往往也不限于<img src="latex/latex2png-ExactLinearAlgebra_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为素数)上进行,再将结果恢复为整数或有理数的形式;另一种典型的思路是通过某种近似,将主要的计算视为数值型计算,通过数值运算得到主要结果后再恢复为精确结果.对于后者,由于数值型算法先于精确算法得到了比较充分的发展,故在精确线性代数中常常要借用数值线性代数的思想与方法,我们在本章中将多次遇到.</p>
+
+<p>本章集中介绍精确线性代数中有普遍应用的几个问题的算法:</p>
+
+<ol>
+<li>快速矩阵乘法,这是很多矩阵算法的基础,在数值线性代数中也有广泛的应用.</li>
+<li>线性方程组求解,包括系数矩阵非奇异的情形与一般系数矩阵下 (多相应于不定方程组)的Diophantine解.</li>
+<li>行列式的计算,这在计算矩阵的各种标准形时有广泛的应用.</li>
+<li>矩阵特征多项式与极小多项式的计算.</li>
+<li>矩阵的标准形式,包括Hermite标准形,Smith标准形与Jordan标准形等.</li>
+</ol>
+
+<p>由于精确线性代数的算法很多,且仍在迅速发展中,我们只能介绍一些基本的算法.更多的算法可以参考我们给出的文献以及它们的文献目录.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="ExactLinearAlgebra.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>快速矩阵乘法</h2>
+
+<p class="first">在有关矩阵的计算中,矩阵乘法具有基础性的意义.对于<img src="latex/latex2png-ExactLinearAlgebra_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶矩阵的乘法,常规算法具有<img src="latex/latex2png-ExactLinearAlgebra_22781230_-5.gif" alt="$O(n^3)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">的复杂度.自1968年Strassen<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-2" name="cite-2">[2]</a></span>发现一种基于分治策略的快速矩阵乘法算法以来,矩阵乘法复杂度的阶数已由3降到2.376<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-1" name="cite-1">[1]</a></span>.下面我们回顾两个经典算法,它们在实际中有着重要的应用.而更多算法虽然渐进复杂度更低,但由于算法过于复杂,且对于有限规模的问题所需运算更多,因而并不实用,可参考<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-3" name="cite-3">[3]</a></span>.<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-4" name="cite-4">[4]</a></span></p>
+
+<h3><a name="sec2" id="sec2"></a>
+<a href="ExactLinearAlgebra.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>基于向量内积算法的Winograd加速算法</h3>
+
+<p class="first">以下讨论主要来自文献<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-5" name="cite-5">[5]</a></span>.
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(Winograd内积算法)</span>
+设<img src="latex/latex2png-ExactLinearAlgebra_3311170_-5.gif" alt="$x=(x_1,\cdots,x_n)^T$" class="latex-inline" style="vertical-align: -5px" width="129" height="19">,<img src="latex/latex2png-ExactLinearAlgebra_265189838_-5.gif" alt="$y=(y_1,\cdots,y_n)^T$" class="latex-inline" style="vertical-align: -5px" width="126" height="19">,记<img src="latex/latex2png-ExactLinearAlgebra_155773401_-18.gif" alt="$\xi=\sum\limits_{j=1}^{\lfloor n/2\rfloor}x_{2j-1}x_{2j}$" class="latex-inline" style="vertical-align: -18px" width="129" height="44">,<img src="latex/latex2png-ExactLinearAlgebra_31196877_-18.gif" alt="$\eta=\sum\limits^{\lfloor n/2\rfloor}_{j=1}y_{2j-1}y_{2j}$" class="latex-inline" style="vertical-align: -18px" width="127" height="44">,则内积<img src="latex/latex2png-ExactLinearAlgebra_247761281_-5.gif" alt="$(x,y)$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">可由下式给出:</p>
+
+<p class="image"><img src="latex/latex2png-ExactLinearAlgebra_129437591_.gif" alt="
+\begin{equation*}
+  (x,y)=
+  \begin{cases}
+    \sum\limits^{\lfloor n/2\rfloor}_{j=1}(x_{2j-1}+y_{2j})(x_{2j}+y_{2j-1})-\xi-\eta,& \text{$n$是偶,} \\
+    \sum\limits^{\lfloor n/2\rfloor}_{j=1}(x_{2j-1}+y_{2j})(x_{2j}+y_{2j-1})-\xi-\eta+x_ny_n,& \text{$n$是奇.}
+  \end{cases}
+\end{equation*}
+" class="latex-display" width="580" height="91"></p>
+
+
+</div>
+
+<p>将这种算法用于<img src="latex/latex2png-ExactLinearAlgebra_246123462_-1.gif" alt="$C=AB$" class="latex-inline" style="vertical-align: -1px" width="59" height="13">的矩阵元素运算时,由于减少重复计算<img src="latex/latex2png-ExactLinearAlgebra_21197844_-4.gif" alt="$\xi$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-ExactLinearAlgebra_33256508_-4.gif" alt="$\eta$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,可使计算所需的乘法次数减半,但同时使所需的加法运算增加.Winograd算法也是<img src="latex/latex2png-ExactLinearAlgebra_22781231_-5.gif" alt="$O(N^3)$" class="latex-inline" style="vertical-align: -5px" width="46" height="19">的算法,仅适用于小规模的矩阵求积运算,且由于该算法破坏了向量内积的整体间运算,同时增加了内存开销,因而其算法改进价值并不很大.</p>
+
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="ExactLinearAlgebra.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Strassen算法</h3>
+
+<p class="first">Strassen算法(1968)是一种分治策略的算法.它以分块矩阵运算为基础.</p>
+
+<p>下面介绍改进型Strassen算法,它较原始算法<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-2" name="cite-2">[2]</a></span>需要更少的矩阵加法运算<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-1" name="cite-1">[1]</a></span>.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name=""></a></span><span class="theorem-name">(Strassen算法)</span>
+设<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-ExactLinearAlgebra_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶矩阵,必要时通过补充零行零列加以扩充,将其分块:
+
+<p class="image"><img src="latex/latex2png-ExactLinearAlgebra_51540841_.gif" alt="
+\begin{gather*}
+  A=
+  \begin{bmatrix}
+    A_{11}& A_{12}\\
+    A_{21}& A_{22}
+  \end{bmatrix}
+  ,B=
+  \begin{bmatrix}
+    B_{11}& B_{12}\\
+    B_{21}& B_{22}
+  \end{bmatrix}
+ ,C=AB=
+  \begin{bmatrix}
+    C_{11}& C_{12}\\
+    C_{21}& C_{22}
+  \end{bmatrix}.
+\end{gather*}
+" class="latex-display" width="580" height="50">
+进行如下递归运算:</p>
+
+<ol>
+<li>若<img src="latex/latex2png-ExactLinearAlgebra_79101926_-3.gif" alt="$n\leq l$" class="latex-inline" style="vertical-align: -3px" width="36" height="15">(<img src="latex/latex2png-ExactLinearAlgebra_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="4" height="12">为递归下界),做直接乘法.</li>
+<li>计算
+<img src="latex/latex2png-ExactLinearAlgebra_31287137_.gif" alt="
+\begin{gather*}
+  S_1=A_{21}+A_{22},S_2=S_1-A_{11},S_3=A_{11}-A_{21},S_4=A_{12}-S_2,\\
+  T_1=B_{12}-B_{11},T_2=B_{22}-T_1,T_3=B_{22}-B_{12},T_4=T_2-B_{21}.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>计算
+<img src="latex/latex2png-ExactLinearAlgebra_206134550_.gif" alt="
+\begin{gather*}
+  P_1=A_{11}B_{11},P_2=A_{12}B_{21},P_3=S_4B_{22},P_4=A_{22}T_4,\\
+  P_5=S_1T_1,P_6=S_2T_2,P_7=S_3T_3.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>计算
+<img src="latex/latex2png-ExactLinearAlgebra_63071635_.gif" alt="
+\begin{gather*}
+  U_1=P_1+P_2,U_2=P_1+P_6,U_3=U_2+P_7,U_4=U_2+P_5,\\
+  U_5=U_4+P_3,U_6=U_3-P_4,U_7=U_3+P_5.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>返回
+<img src="latex/latex2png-ExactLinearAlgebra_26894256_.gif" alt="
+\begin{equation*}
+\begin{bmatrix}
+   U_1& U_5\\
+   U_6& U_7
+\end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="50"></li>
+</ol>
+
+
+</div>
+
+<p>以上算法的正确性直接代入即可验证.可以看出,每次递归需要7次乘法与15次加法,从而其算法复杂度是<img src="latex/latex2png-ExactLinearAlgebra_151296797_-5.gif" alt="$O(N^{\log_27})\simeq O(N^{2.808})$" class="latex-inline" style="vertical-align: -5px" width="167" height="19">.</p>
+
+<p>下面考虑一个技术细节,即对于阶数不是<img src="latex/latex2png-ExactLinearAlgebra_131763180_0.gif" alt="$2^k$" class="latex-inline" style="vertical-align: 0px" width="15" height="14">的矩阵添加零行零列的问题.很容易想到两种方案,一是在必要时才考虑添加,即在递归过程中,遇到矩阵阶数为奇数的情形则给它添加一个零行(或零列);二是统一添加,即在计算的开始首先考察矩阵的阶数,若它不满足<img src="latex/latex2png-ExactLinearAlgebra_131763180_0.gif" alt="$2^k$" class="latex-inline" style="vertical-align: 0px" width="15" height="14">的要求,即给它添加若干个零行零列,使之满足,而在正式计算过程中则不需再考虑矩阵阶数的问题.直观的理论分析可以知道,由于第一种方式一方面将添加零行零列的工作分成许多次完成,增加了很多冗余的判断,另一方面,它逐次添加零行零列的结果是使得矩阵在内存中的存储位置非常零碎,存储结构十分混乱,这两方面因素造成其计算效率大大下降.经实际测试,对于<img src="latex/latex2png-ExactLinearAlgebra_172160114_-1.gif" alt="$1000\times 100$" class="latex-inline" style="vertical-align: -1px" width="77" height="12">阶与<img src="latex/latex2png-ExactLinearAlgebra_70790440_-1.gif" alt="$100\times 1000$" class="latex-inline" style="vertical-align: -1px" width="76" height="12">阶的系数在<img src="latex/latex2png-ExactLinearAlgebra_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">到<img src="latex/latex2png-ExactLinearAlgebra_121795602_-1.gif" alt="$10$" class="latex-inline" style="vertical-align: -1px" width="15" height="12">之间的整系数矩阵乘法,第二种方案的效率平均较第一种提高了30倍左右.</p>
+
+<p>我们还对随机生成的浮点数矩阵进行了测试,并与经典算法给出的结果做对比,并未见数值稳定性有明显下降.</p>
+
+<p>Strassen算法在之后有许多推广,最优渐进复杂度可以降到<img src="latex/latex2png-ExactLinearAlgebra_146725201_-5.gif" alt="$O(N^{2.376})$" class="latex-inline" style="vertical-align: -5px" width="70" height="19">.但在实际中,仅当<img src="latex/latex2png-ExactLinearAlgebra_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">极大时才有价值,故通常并不采用.可参考<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-4" name="cite-4">[4]</a></span><span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-3" name="cite-3">[3]</a></span>.</p>
+
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="ExactLinearAlgebra.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>线性方程组</h2>
+
+<p class="first">线性方程组的重要性是显而易见的,它不但是许多实际问题的数学模型,而且构成许多算法的基础.在&quot;数值线性代数&quot;部分中我们已经介绍了工程计算中使用的数值算法,在这里我们将介绍线性方程组的精确求解,主要讨论整数系数与多项式系数线性方程组的有理解,一些方法可以推广到一般整区上.</p>
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="ExactLinearAlgebra.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>基于中国剩余定理的模算法</h3>
+
+<p class="first">求解一般线性方程组的一般方法在任何一本线性代数教材中都可以找到(例如,参见<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-6" name="cite-6">[6]</a></span>).其典型做法是对线性方程组的系数矩阵与增广矩阵进行行初等变换,将其化为行相抵的行既约阶梯形阵(row-reduced echelon,RRE),即如下形式(最后的0可能是子方阵,也可能没有):
+<img src="latex/latex2png-ExactLinearAlgebra_105191974_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    0&\cdots&0&*&\cdots&0&\cdots&0&\cdots\\
+     & & & & &*&\cdots&0&\cdots\\
+     & & & & & &\cdots&\cdots&\cdots\\
+     & & & & & & &*&\cdots\\
+     & & & & & & & &0
+  \end{bmatrix}
+\end{equation*}
+" class="latex-display" width="580" height="130">即具有如下特点:</p>
+
+<ul>
+<li>非0行的最左非0元素非0,且此1所在行的其余元素均为0;</li>
+<li>各非0行最左非0元素的位置,随行号增加而右移,若有零行均排在最后.</li>
+</ul>
+
+<p>详言之,若非零矩阵<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">满足:存在一列整数<img src="latex/latex2png-ExactLinearAlgebra_102862513_-3.gif" alt="$1\le k_1<k_2<\cdots<k_r\le n$" class="latex-inline" style="vertical-align: -3px" width="196" height="15">,其中<img src="latex/latex2png-ExactLinearAlgebra_162567916_-3.gif" alt="$1\le r\le m$" class="latex-inline" style="vertical-align: -3px" width="74" height="14">(<img src="latex/latex2png-ExactLinearAlgebra_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">即矩阵<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的秩),使得<img src="latex/latex2png-ExactLinearAlgebra_70919320_-5.gif" alt="$B(i,k_i)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="84" height="18">,<img src="latex/latex2png-ExactLinearAlgebra_220905554_-5.gif" alt="$B(i,j)=0$" class="latex-inline" style="vertical-align: -5px" width="77" height="18">,<img src="latex/latex2png-ExactLinearAlgebra_257690792_-4.gif" alt="$1\le j<k_i$" class="latex-inline" style="vertical-align: -4px" width="73" height="16">,且若<img src="latex/latex2png-ExactLinearAlgebra_235369492_-1.gif" alt="$r<m$" class="latex-inline" style="vertical-align: -1px" width="44" height="10">,则第<img src="latex/latex2png-ExactLinearAlgebra_62292922_-4.gif" alt="$r+1,\ldots,m$" class="latex-inline" style="vertical-align: -4px" width="87" height="15">行均为0.称<img src="latex/latex2png-ExactLinearAlgebra_242415740_-5.gif" alt="$K=\{k_1,k_2,\cdots,k_r\}$" class="latex-inline" style="vertical-align: -5px" width="148" height="18">为<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的既约阶梯(reduced echelon,RE)序列,<img src="latex/latex2png-ExactLinearAlgebra_43318246_-5.gif" alt="$B(i,k_i),1\le i\le r$" class="latex-inline" style="vertical-align: -5px" width="126" height="18">称为RRE矩阵的对角元素.若<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">与<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">行相抵,则也称<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的RRE,<img src="latex/latex2png-ExactLinearAlgebra_42824722_0.gif" alt="$K$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的行RE序列.对于已经化为这种形式的系数矩阵与增广矩阵,我们很容易判断线性方程组是否有解并求出其一般解.在下面我们考察的情形中，非0行往往以一个公共元素<img src="latex/latex2png-ExactLinearAlgebra_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">开始,对于整系数线性方程组的求解,由此可以避免中间计算过程出现分数.</p>
+
+<p>在本节中,我们将介绍一种适用于整系数与多元多项式系数线性方程组求解的算法<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-7" name="cite-7">[7]</a></span>.在如下算法中,我们需要判断采用模同态的可用性,其判断标准由如下定义的矩阵的正则RE序列表征.为了叙述方便,我们首先引入<span class="cite"><a class="cite" href="ExactLinearAlgebra.html#ref-6" name="cite-6">[6]</a></span>中的子阵的记号:设<img src="latex/latex2png-ExactLinearAlgebra_129129560_-5.gif" alt="$1\le i_1<i_2\cdots<i_p\le m$" class="latex-inline" style="vertical-align: -5px" width="172" height="17">,<img src="latex/latex2png-ExactLinearAlgebra_233780973_-5.gif" alt="$1\le j_1<j_2<\cdots<j_q\le n.$" class="latex-inline" style="vertical-align: -5px" width="193" height="17"> <img src="latex/latex2png-ExactLinearAlgebra_2915221_0.gif" alt="$m\times n$" class="latex-inline" style="vertical-align: 0px" width="45" height="9">阶矩阵<img src="latex/latex2png-ExactLinearAlgebra_3460263_-5.gif" alt="$A=(a_{ij})$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">中位于第<img src="latex/latex2png-ExactLinearAlgebra_154773650_-5.gif" alt="$i_1,\cdots,i_p$" class="latex-inline" style="vertical-align: -5px" width="66" height="17">行和第<img src="latex/latex2png-ExactLinearAlgebra_171550882_-5.gif" alt="$j_1,\cdots,j_p$" class="latex-inline" style="vertical-align: -5px" width="69" height="17">列交叉处的元素按原序排成的方阵称为<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的一个<img src="latex/latex2png-ExactLinearAlgebra_2522005_-4.gif" alt="$p\times q$" class="latex-inline" style="vertical-align: -4px" width="38" height="13">阶子阵,记为<img src="latex/latex2png-ExactLinearAlgebra_127340490_.gif" alt="$$A\begin{pmatrix}i_1&\cdots&i_p\\j_1&\cdots&j_q\end{pmatrix}.$$" class="latex-display" width="580" height="50">记<img src="latex/latex2png-ExactLinearAlgebra_214666220_-5.gif" alt="$M_j$" class="latex-inline" style="vertical-align: -5px" width="22" height="17">为矩阵<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的前<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$j$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">列构成的子矩阵.定义序列<img src="latex/latex2png-ExactLinearAlgebra_37422213_-5.gif" alt="$J=\{j_1,\cdots,j_r\}$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">,其中<img src="latex/latex2png-ExactLinearAlgebra_137524244_-4.gif" alt="$j_h$" class="latex-inline" style="vertical-align: -4px" width="16" height="16">为最小的整数<img src="latex/latex2png-ExactLinearAlgebra_42234898_0.gif" alt="$j$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">使得<img src="latex/latex2png-ExactLinearAlgebra_207929321_-5.gif" alt="$\mathrm{rank}(M_j)=h$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">.由行变换不改变列向量之间的相关性质可知,<img src="latex/latex2png-ExactLinearAlgebra_42759186_0.gif" alt="$J$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">即上文定义的行RE序列,而且是唯一的.对于非零矩阵<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,可以找到一列互异整数<img src="latex/latex2png-ExactLinearAlgebra_138127490_-4.gif" alt="$h_1,\cdots,h_r$" class="latex-inline" style="vertical-align: -4px" width="73" height="16">,<img src="latex/latex2png-ExactLinearAlgebra_51646354_-4.gif" alt="$1\le h_t\le m,1\le t\le r$" class="latex-inline" style="vertical-align: -4px" width="155" height="16">满足<img src="latex/latex2png-ExactLinearAlgebra_236790909_.gif" alt="$$A\begin{pmatrix}h_1&\cdots&h_s\\j_1&\cdots&j_s\end{pmatrix}\neq 0,1\le s\le r.$$" class="latex-display" width="580" height="50">若记<img src="latex/latex2png-ExactLinearAlgebra_258278138_-4.gif" alt="$h_{r+1},\cdots,h_m$" class="latex-inline" style="vertical-align: -4px" width="95" height="16">为其余的整数,则<img src="latex/latex2png-ExactLinearAlgebra_204208918_-5.gif" alt="$H=(h_1,\cdots,h_m)$" class="latex-inline" style="vertical-align: -5px" width="128" height="18">构成<img src="latex/latex2png-ExactLinearAlgebra_179735778_-4.gif" alt="$1,\cdots,m$" class="latex-inline" style="vertical-align: -4px" width="61" height="15">的一个排列.记所有这样的序列<img src="latex/latex2png-ExactLinearAlgebra_42628114_-4.gif" alt="$H$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">构成集合<img src="latex/latex2png-ExactLinearAlgebra_154625098_-2.gif" alt="$\mathcal{P}_A$" class="latex-inline" style="vertical-align: -2px" width="26" height="14">,则<img src="latex/latex2png-ExactLinearAlgebra_154625098_-2.gif" alt="$\mathcal{P}_A$" class="latex-inline" style="vertical-align: -2px" width="26" height="14">中,存在一个(按照字典序)最小的序列<img src="latex/latex2png-ExactLinearAlgebra_221977934_-5.gif" alt="$I_A=\{i_1,\cdots,i_m\}$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">.这相当于说,对于<img src="latex/latex2png-ExactLinearAlgebra_162240204_-3.gif" alt="$1\le t\le r$" class="latex-inline" style="vertical-align: -3px" width="65" height="14">,<img src="latex/latex2png-ExactLinearAlgebra_121533460_-2.gif" alt="$i_t$" class="latex-inline" style="vertical-align: -2px" width="11" height="14">为依次选出来的最小的整数使得这些行向量线性无关,而对于<img src="latex/latex2png-ExactLinearAlgebra_105868223_-3.gif" alt="$r+1\le t\le m$" class="latex-inline" style="vertical-align: -3px" width="101" height="14">,<img src="latex/latex2png-ExactLinearAlgebra_104756244_-2.gif" alt="$h_t$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">被按照原序排好.若<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为零矩阵,我们很自然地定义<img src="latex/latex2png-ExactLinearAlgebra_167128266_-5.gif" alt="$I_A=\{1,\cdots,m\}$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">.在下面的算法中,我们将用<img src="latex/latex2png-ExactLinearAlgebra_105107391_-2.gif" alt="$J_A\times I_A$" class="latex-inline" style="vertical-align: -2px" width="56" height="14">的字典序来判断实施的模同态是否改变了某些&quot;本质的&quot;内容,即我们认为<img src="latex/latex2png-ExactLinearAlgebra_44320680_-5.gif" alt="$(J_A,I_A)>(J_B,I_B)$" class="latex-inline" style="vertical-align: -5px" width="138" height="18">,当且仅当<img src="latex/latex2png-ExactLinearAlgebra_264829881_-2.gif" alt="$J_A>J_B$" class="latex-inline" style="vertical-align: -2px" width="60" height="14">,或<img src="latex/latex2png-ExactLinearAlgebra_258741116_-4.gif" alt="$J_A=J_B,I_A>I_B$" class="latex-inline" style="vertical-align: -4px" width="126" height="16">.</p>
+
+<p>在定义了矩阵的正则RE序列之后,我们引入如下的正则RRE矩阵.对于<img src="latex/latex2png-ExactLinearAlgebra_2915221_0.gif" alt="$m\times n$" class="latex-inline" style="vertical-align: 0px" width="45" height="9">阶矩阵<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,定义
+<img src="latex/latex2png-ExactLinearAlgebra_231083355_.gif" alt="
+\begin{equation*}
+\bar{A}_H(k,j)=
+\begin{cases}
+A
+\begin{pmatrix}
+h_1&\hdotsfor{5}&h_r\\
+j_1&\cdots&j_{k-1}&j&j_{k+1}&\cdots&j_r
+\end{pmatrix},&1\le k\le r,\\
+0,&\text{其他}.
+\end{cases}
+\end{equation*}
+" class="latex-display" width="580" height="90">对于利用<img src="latex/latex2png-ExactLinearAlgebra_238421062_-4.gif" alt="$J_A,H_A$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">的定义可知,<img src="latex/latex2png-ExactLinearAlgebra_232411657_-2.gif" alt="$\bar{A}_H$" class="latex-inline" style="vertical-align: -2px" width="24" height="16">为RRE矩阵,且可以证明,<img src="latex/latex2png-ExactLinearAlgebra_232411657_-2.gif" alt="$\bar{A}_H$" class="latex-inline" style="vertical-align: -2px" width="24" height="16">与<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">行相抵.特别地,对于<img src="latex/latex2png-ExactLinearAlgebra_13237689_-2.gif" alt="$H_A=I_A$" class="latex-inline" style="vertical-align: -2px" width="64" height="14">,将其记为<img src="latex/latex2png-ExactLinearAlgebra_144043025_0.gif" alt="$\bar{A}$" class="latex-inline" style="vertical-align: 0px" width="12" height="14">,并称为<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的正则RRE.很显然,这一标准形式是唯一确定的.对于<img src="latex/latex2png-ExactLinearAlgebra_204208918_-5.gif" alt="$H=(h_1,\cdots,h_m)$" class="latex-inline" style="vertical-align: -5px" width="128" height="18">,定义<img src="latex/latex2png-ExactLinearAlgebra_226150314_.gif" alt="$$\delta_H(A)=A\begin{pmatrix}h_1&\cdots&h_r\\j_1&\cdots&j_r\end{pmatrix},$$" class="latex-display" width="580" height="50">若<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为零矩阵,则定义<img src="latex/latex2png-ExactLinearAlgebra_50068528_-5.gif" alt="$\delta(A)=0$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">.我们看到<img src="latex/latex2png-ExactLinearAlgebra_232411657_-2.gif" alt="$\bar{A}_H$" class="latex-inline" style="vertical-align: -2px" width="24" height="16">的对角线元素都等于<img src="latex/latex2png-ExactLinearAlgebra_12844080_-5.gif" alt="$\delta(A)_H$" class="latex-inline" style="vertical-align: -5px" width="44" height="18">.特别地,对于<img src="latex/latex2png-ExactLinearAlgebra_13404514_-2.gif" alt="$H=I_A$" class="latex-inline" style="vertical-align: -2px" width="54" height="14">,将<img src="latex/latex2png-ExactLinearAlgebra_205325320_-5.gif" alt="$\delta_H(A)$" class="latex-inline" style="vertical-align: -5px" width="43" height="18">简记为<img src="latex/latex2png-ExactLinearAlgebra_19171935_-5.gif" alt="$\delta(A)$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">或<img src="latex/latex2png-ExactLinearAlgebra_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">.</p>
+
+<p>该算法的整体思路,就是计算线性方程组增广矩阵的CRRE,并利用其得到线性方程组的一般解.其中,前者是算法最核心的部分.我们首先讨论后者的算法,即已知增广矩阵的CRRE,求得线性方程组的一般解的问题.为了讨论最一般的情形,我们设要求解的方程组为<img src="latex/latex2png-ExactLinearAlgebra_202667066_0.gif" alt="$AX=B$" class="latex-inline" style="vertical-align: 0px" width="63" height="12">,其中<img src="latex/latex2png-ExactLinearAlgebra_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为<img src="http://www.mathmu.cn/doc/lical-align:&#32;-2px" width="64" height="14">,灏

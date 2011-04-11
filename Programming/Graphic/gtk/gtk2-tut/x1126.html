@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>组合框 Combo Box</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="微调按钮 Spin Buttons"
+HREF="x1030.html"><LINK
+REL="NEXT"
+TITLE="日历 Calendar"
+HREF="x1163.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1030.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1163.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-COMBOBOX">组合框 Combo Box</H1
+><P
+>组合框(combo box)是另一个很简单的构件，实际上它仅仅是其它构件的集合。从用户的观点来说，这个构件是由一个文本输入构件和一个下拉菜单组成的，用户可以从一个预先定义的列表里面选择一个选项，同时，用户也可以直接在文本框里面输入文本。</P
+><P
+>下面是从定义组合框构件的结构里面摘取出来的，从中可以看到组合框构件是由什么构件组合形成的：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct _GtkCombo { 
+        GtkHBox hbox; 
+        GtkWidget *entry; 
+        GtkWidget *button;
+        GtkWidget *popup; 
+        GtkWidget *popwin; 
+        GtkWidget *list;
+	...  };</PRE
+></TD
+></TR
+></TABLE
+><P
+>可以看到，组合框构件有两个主要部分：一个输入框和一个列表。</P
+><P
+>用下面的函数创建组合框构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_combo_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>现在，如果想设置显示在输入框部分中的字符串，可以直接操纵组合框构件内部的<TT
+CLASS="LITERAL"
+>文本输入</TT
+>构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gtk_entry_set_text (GTK_ENTRY (GTK_COMBO (combo)-&#62;entry), "My String.");</PRE
+></TD
+></TR
+></TABLE
+><P
+>要设置下拉列表中的值，可以使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_combo_set_popdown_strings( GtkCombo *combo,
+                                    GList    *strings );</PRE
+></TD
+></TR
+></TABLE
+><P
+>在使用这个函数之前，先得将要添加的字符串组合成一个GList链表。GList是一个双向链表，是 <A
+HREF="c1977.html"
+>GLib</A
+> 的一部分，而GLib是 GTK 的基础。暂时你可以先设置一个GList指针，其值设为 NULL，然后用下面的函数将字符串追加到链表当中：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GList *g_list_append( GList *glist, 
+                      gpointer data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>要注意的是：一定要将GList链表的初值设为 NULL，必须将 g_list_append() 函数返回的值赋给要操作的链表本身。</P
+><P
+>下面是一段典型的代码，用于创建一个选项列表：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GList *glist = NULL;
+
+    glist = g_list_append (glist, "String 1");
+    glist = g_list_append (glist, "String 2");
+    glist = g_list_append (glist, "String 3"); 
+    glist = g_list_append (glist, "String 4");
+
+    gtk_combo_set_popdown_strings (GTK_COMBO (combo), glist);
+    
+    /* 现在可以释放glist了，组合框已经复制了一份 */</PRE
+></TD
+></TR
+></TABLE
+><P
+>组合框将传给它的glist结构里的字符串复制了一份。因此，在恰当的情况下，你应该确认释放了链表所使用的内存。</P
+><P
+>到这里为止，你已经有了一个可以使用的组合框构件了。有几个行为是可以改变的。下面是相关的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_combo_set_use_arrows( GtkCombo *combo,
+                               gboolean  val );
+
+void gtk_combo_set_use_arrows_always( GtkCombo *combo,
+                                      gboolean  val );
+
+void gtk_combo_set_case_sensitive( GtkCombo *combo,
+                                   gboolean  val );</PRE
+></TD
+></TR
+></TABLE
+><P
+>gtk_combo_set_use_arrows()让用户用上/下方向键改变文本输入构件你的值。这并不会弹出列表框，只是用列表中的下一个列表项替换了文本输入框中的文本(向上则取上一个值，向下则取下一个值)。这是通过搜索当前项在列表中的位置并选择前一项/下一项来实现的。通常，在一个输入框中方向键是用来改变焦点的(也可以用TAB键)。注意，如果当前项是列表的最后一项，按向下的方向键会改变焦点的位置(这对当前项为列表的第一项时按向上方向键也适用)。</P
+><P
+>如果当前值并不在列表中，则 gtk_combo_set_use_arrows() 函数的功能会失效。</P
+><P
+>同样地，gtk_combo_set_use_arrows_always()允许使用上/下方向键在下拉列表中选取列表项，但是它在列表项中循环，也就是当列表项位于第一个表项时按向上方向键，会跳到最后一个，当列表项位于最后一个表项时按向下方向键，会跳到第一个。这样可以完全禁止使用方向键改变焦点。</P
+><P
+>gtk_combo_set_case_sensitive() 函数 切换 GTK 是否以大小写敏感的方式搜索其中的列表项。这在组合框根据内部文本输入构件中的文本查找列表值时使用。可以将其设置为大小写敏感或不敏感。如果用户同时按下MOD-1和“Tab”键，组合框构件还可以简单地补全当前输入。MOD-1一般被 <TT
+CLASS="LITERAL"
+>xmodmap</TT
+> 工具映射为“Alt”键。注意，一些窗口管理器也要使用这种组合键方式，这将覆盖 GTK 中这个组合键的使用。</P
+><P
+>注意，我们使用的是组合框构件，它能够为我们从一个下拉列表中选择一个选项。这一点是很直截了当的。大多数时候，你可能很关心怎样从其中的文本输入构件中获取数据。组合框构件内部的文本输入构件可以用<TT
+CLASS="LITERAL"
+>GTK_ENTRY (GTK_COMBO (combo)-&#62;entry)</TT
+>访问。一般你想要做的两件主要工作一个是连接到activate信号，当用户按回车键时就能够进行响应，另一个就是读出其中的文本。第一件工作可以用下面的方法实现：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>g_signal_connect (G_OBJECT (GTK_COMBO (combo)-&#62;entry), "activate",
+                      G_CALLBACK (my_callback_function), my_data);</PRE
+></TD
+></TR
+></TABLE
+><P
+>可以使用下面的函数在任意时候取得文本输入构件中的文本：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gchar *gtk_entry_get_text( GtkEntry *entry );</PRE
+></TD
+></TR
+></TABLE
+><P
+>具体做法如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gchar *string;
+
+    string = gtk_entry_get_text (GTK_ENTRY (GTK_COMBO (combo)-&#62;entry));</PRE
+></TD
+></TR
+></TABLE
+><P
+>这就是取得文本输入框中字符串的方法。下面有一个函数</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_combo_disable_activate( GtkCombo *combo );</PRE
+></TD
+></TR
+></TABLE
+><P
+>它将屏蔽组合框构件内部的文本输入构件的activate信号。我不明白你为什么想要用它，不过还是提供了。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1030.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1163.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>微调按钮 Spin Buttons</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>日历 Calendar</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

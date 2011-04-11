@@ -1,0 +1,430 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>数值线性代数基础 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>数值线性代数基础
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="BasicConceptsNLA.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="BasicConceptsNLA.html#sec1">线性代数与矩阵分析的基本概念</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="BasicConceptsNLA.html#sec2">矩阵与线性空间</a>
+      </dt>
+      <dt>
+	<a href="BasicConceptsNLA.html#sec3">向量范数与矩阵范数</a>
+      </dt>
+      <dt>
+	<a href="BasicConceptsNLA.html#sec4">特殊形式的矩阵</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="BasicConceptsNLA.html#sec5">数值型算法分析基础</a>
+  </dt>
+  <dt>
+    <a href="BasicConceptsNLA.html#sec6">矩阵乘法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="BasicConceptsNLA.html#sec7">基于向量内积算法的Winograd加速算法</a>
+      </dt>
+      <dt>
+	<a href="BasicConceptsNLA.html#sec8">Strassen算法</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p>线性代数在现代数学与科学计算中起着十分基础的作用.按照计算的目的与用途,可以分为数值线性代数与精确线性代数.</p>
+
+<p>数值线性代数服务于工程计算,运用数值方法主要求解三大类问题:线性方程组,最小二乘问题与特征值问题.所谓数值方法,是指由于工程计算中多不需要严格解,而只要依据计算的需要,实施精确到一定程度的快速计算即可,因而计算结果往往并非严格解,常常有一定的误差,称为数值解.由于这一特点,在进行算法设计时,往往不需考虑算法能否&quot;真正地&quot;严格求解,即使对一些有严格算法的问题 (如线性方程组)也可以考虑通过迭代法&quot;逼近&quot;严格解到一定精度.而在评价一个算法的优劣时,最重要的则是如下两条:</p>
+
+<ol>
+<li>这一算法是否稳定?即,能否在全部或绝大部分情况下得到我们所需要的精度?与数值线性代数有关的算法稳定性分析的基本概念,我们会在&quot;数值型算法分析基础&quot;一节中简单介绍.</li>
+<li>算法效率如何?即,能否在较短时间内计算出我们所需要的结果?在数值算法分析中,常用flop (floating point operation,浮点运算),即完成该算法所需进行的浮点运算次数来表征算法效率.由于通常计算机进行浮点数加减法的速度要快于浮点数乘除法,故在数值线性代数部分中我们以flop只表示浮点除乘除法的次数.例如,矩阵阶数为<img src="latex/latex2png-BasicConceptsNLA_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">时,Gauss消元法求解线性方程组需要<img src="latex/latex2png-BasicConceptsNLA_22781230_-5.gif" alt="$O(n^3)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">次浮点数乘法(flop),其中<img src="latex/latex2png-BasicConceptsNLA_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">表示忽略了一个渐近的常数因子,即在<img src="latex/latex2png-BasicConceptsNLA_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">趋于无穷大时,flop数与<img src="latex/latex2png-BasicConceptsNLA_202732564_0.gif" alt="$n^3$" class="latex-inline" style="vertical-align: 0px" width="16" height="14">同阶.</li>
+</ol>
+
+<p>本章将介绍数值线性代数的如下基本问题:</p>
+
+<ol>
+<li>一般线性代数与矩阵分析的一些基本概念.</li>
+<li>数值型算法分析基础.我们将讨论数值运算的误差与稳定性的基本概念.</li>
+<li>矩阵乘法的快速算法.由于矩阵乘法构成几乎所有线性代数算法的基础,因此对它进行加速是很重要的.</li>
+</ol>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>线性代数与矩阵分析的基本概念</h2>
+
+<p class="first">我们假定读者已经熟悉矩阵的概念与基本运算,以及线性空间的基本概念,这些内容都可以参考一般线性代数的教材,如<span class="cite"><a class="cite" href="BasicConceptsNLA.html#ref-1" name="cite-1">[1]</a></span>.这里我们将一些今后常用的概念和记号交代一下.</p>
+
+<h3><a name="sec2" id="sec2"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>矩阵与线性空间</h3>
+
+<p class="first">在数值分析中,我们总假定线性空间的基域是实数域<img src="latex/latex2png-BasicConceptsNLA_41964624_0.gif" alt="$\mathbb{R}$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">或复数域<img src="latex/latex2png-BasicConceptsNLA_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">.在如下的介绍中,我们如无特殊说明,都只在<img src="latex/latex2png-BasicConceptsNLA_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">上考虑,但所有定义都容易推广到<img src="latex/latex2png-BasicConceptsNLA_41964624_0.gif" alt="$\mathbb{R}$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">上.</p>
+
+<p>我们通常将矩阵用大写拉丁字母或希腊字母表示,向量则以小写字母表示.如<img src="latex/latex2png-BasicConceptsNLA_206833862_-1.gif" alt="$A\in \mathbb{C}^{m\times n}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">,<img src="latex/latex2png-BasicConceptsNLA_157370481_-1.gif" alt="$x\in \mathbb{C}^n$" class="latex-inline" style="vertical-align: -1px" width="50" height="13">.用<img src="latex/latex2png-BasicConceptsNLA_121009172_0.gif" alt="$A^T$" class="latex-inline" style="vertical-align: 0px" width="22" height="14">表示矩阵<img src="latex/latex2png-BasicConceptsNLA_206833862_-1.gif" alt="$A\in \mathbb{C}^{m\times n}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">的转置,即<img src="latex/latex2png-BasicConceptsNLA_73379164_-5.gif" alt="$(A^T)_{ji}=A_{ij},1\leqslant i \leqslant m,1\leqslant j\leqslant n.$" class="latex-inline" style="vertical-align: -5px" width="254" height="19">用<img src="latex/latex2png-BasicConceptsNLA_120222740_0.gif" alt="$A^H$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">表示复矩阵<img src="latex/latex2png-BasicConceptsNLA_206833862_-1.gif" alt="$A\in \mathbb{C}^{m\times n}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">的共轭转置 (Hermite转置)，即<img src="latex/latex2png-BasicConceptsNLA_236639992_-5.gif" alt="$(A^H)_{ji}=\bar{A}_{ij},1\leqslant i \leqslant m,1\leqslant j\leqslant n.$" class="latex-inline" style="vertical-align: -5px" width="256" height="19"></p>
+
+<p>设<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">是一个线性空间,<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">是<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">中的一个向量组,<img src="latex/latex2png-BasicConceptsNLA_130992124_-1.gif" alt="$\alpha\in V$" class="latex-inline" style="vertical-align: -1px" width="44" height="13">称为<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">的线性组合 (或由<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">线性表出,线性生成)是指<img src="latex/latex2png-BasicConceptsNLA_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">可由<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">中的某有限多个向量线性表出.若<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的子集合<img src="latex/latex2png-BasicConceptsNLA_43611154_-1.gif" alt="$W$" class="latex-inline" style="vertical-align: -1px" width="17" height="13">在<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">中加法和数乘运算下是<img src="latex/latex2png-BasicConceptsNLA_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">上的线性空间,则称<img src="latex/latex2png-BasicConceptsNLA_43611154_-1.gif" alt="$W$" class="latex-inline" style="vertical-align: -1px" width="17" height="13">是<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的子空间.对<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的子集合<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">,由<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">线性生成的子空间 (即<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">中任意有限个向量线性组合全体)称为由<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">生成 (或张成)的子空间,记为<img src="latex/latex2png-BasicConceptsNLA_92553266_-5.gif" alt="$\mathrm{span} (S)$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">.特别地,当<img src="latex/latex2png-BasicConceptsNLA_3319492_-5.gif" alt="$S=\{\alpha_1,\cdots,\alpha_s\}$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">为有限集时,<img src="latex/latex2png-BasicConceptsNLA_64865803_.gif" alt="$$\mathrm{span} (S)=\mathrm{span}\{\alpha_1,\cdots,\alpha_s\}=\mathbb{C}\alpha_1+\cdots+\mathbb{C}\alpha_s.$$" class="latex-display" width="580" height="18"></p>
+
+<p>设矩阵<img src="latex/latex2png-BasicConceptsNLA_206833862_-1.gif" alt="$A\in \mathbb{C}^{m\times n}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">,<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的列空间是指由<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的所有列向量张成的空间,记为<img src="latex/latex2png-BasicConceptsNLA_111427634_-5.gif" alt="$\mathrm{span} (A)$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">,它是<img src="latex/latex2png-BasicConceptsNLA_200822221_-1.gif" alt="$\mathbb{C}^m$" class="latex-inline" style="vertical-align: -1px" width="24" height="13">中所有能表示为<img src="latex/latex2png-BasicConceptsNLA_140669970_0.gif" alt="$Ax$" class="latex-inline" style="vertical-align: 0px" width="21" height="12">形式的向量的集合,因此也称为矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的值域 (range).<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的列空间的维数称为矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的列秩,记作<img src="latex/latex2png-BasicConceptsNLA_178521132_-5.gif" alt="$\mathrm{rank}_c (A)$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">. 与此相对应,<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的行空间是指<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的所有行向量张成的空间,记为<img src="latex/latex2png-BasicConceptsNLA_210187323_-5.gif" alt="$\mathrm{span}_r (A)$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,其维数称为<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的行秩,记作<img src="latex/latex2png-BasicConceptsNLA_178521147_-5.gif" alt="$\mathrm{rank}_r (A)$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">.但可证明,对于任意矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,其行秩与列秩总是相等,通常称为矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的秩,记作<img src="latex/latex2png-BasicConceptsNLA_111427634_-5.gif" alt="$\mathrm{span} (A)$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">. 矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的零空间 (nullspace)是指满足<img src="latex/latex2png-BasicConceptsNLA_67269690_-1.gif" alt="$Ax=0$" class="latex-inline" style="vertical-align: -1px" width="52" height="13">的向量<img src="latex/latex2png-BasicConceptsNLA_157370481_-1.gif" alt="$x\in \mathbb{C}^n$" class="latex-inline" style="vertical-align: -1px" width="50" height="13">的集合,记作<img src="latex/latex2png-BasicConceptsNLA_111732050_-5.gif" alt="$\mathrm{null} (A)$" class="latex-inline" style="vertical-align: -5px" width="50" height="18">或<img src="latex/latex2png-BasicConceptsNLA_83038487_-5.gif" alt="$\mathrm{ker} (A)$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">.</p>
+
+<p>有如下定理,它反映了线性映射的某种&quot;守恒&quot;性质:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name="Thm:Dim"></a></span><span class="theorem-name">(维数定理)</span>
+设<img src="latex/latex2png-BasicConceptsNLA_206833862_-1.gif" alt="$A\in \mathbb{C}^{m\times n}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">,则<img src="latex/latex2png-BasicConceptsNLA_57200202_.gif" alt="$$n=\mathrm{dim} (\mathrm{null} (A))+rank (A).$$" class="latex-display" width="580" height="18">
+
+
+</div>
+
+<p>通常我们研究的线性空间具有内积空间的结构.定义向量<img src="latex/latex2png-BasicConceptsNLA_119519122_-4.gif" alt="$x,y\in \mathbb{C}^n$" class="latex-inline" style="vertical-align: -4px" width="66" height="16">的内积为<img src="latex/latex2png-BasicConceptsNLA_105029800_.gif" alt="$$(x,y)\equiv x^Hy\in \mathbb{C}.$$" class="latex-display" width="580" height="20">可以看出,对任意非零向量<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,<img src="latex/latex2png-BasicConceptsNLA_119883419_-5.gif" alt="$(x,x)=x^Hx>0$" class="latex-inline" style="vertical-align: -5px" width="122" height="19">,称<img src="latex/latex2png-BasicConceptsNLA_147139439_-5.gif" alt="$||x||\equiv\sqrt {x^Hx}$" class="latex-inline" style="vertical-align: -5px" width="95" height="21">为<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的范数 (norm).有时也称<img src="latex/latex2png-BasicConceptsNLA_243475061_.gif" alt="$$(x,Ay)\equiv x^HAy$$" class="latex-display" width="580" height="20">为广义内积,其中<img src="latex/latex2png-BasicConceptsNLA_205785286_-1.gif" alt="$A\in \mathbb{C}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">为Hermite矩阵,即<img src="latex/latex2png-BasicConceptsNLA_202602137_0.gif" alt="$A^H=A$" class="latex-inline" style="vertical-align: 0px" width="59" height="14">.若对于任意非零向量<img src="latex/latex2png-BasicConceptsNLA_150634767_-5.gif" alt="$x\in \mathbb{C}^n,(x,Ax)>0$" class="latex-inline" style="vertical-align: -5px" width="140" height="18">(或<img src="latex/latex2png-BasicConceptsNLA_81888242_-5.gif" alt="$ (x,Ax)\leqslant 0$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">),则称<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为正定矩阵 (或半正定矩阵).对于实向量,只要把内积定义中的共轭转置改为转置即可.特别地,若<img src="latex/latex2png-BasicConceptsNLA_50011837_-5.gif" alt="$(x,y)=0$" class="latex-inline" style="vertical-align: -5px" width="68" height="18">,则称<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">与<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">正交 (垂直),这与解析几何中向量垂直的概念是一致的.若<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的两个子空间<img src="latex/latex2png-BasicConceptsNLA_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">和<img src="latex/latex2png-BasicConceptsNLA_43611154_-1.gif" alt="$W$" class="latex-inline" style="vertical-align: -1px" width="17" height="13">满足对任意<img src="latex/latex2png-BasicConceptsNLA_35719179_-4.gif" alt="$u\in U,w\in W$" class="latex-inline" style="vertical-align: -4px" width="98" height="16">,<img src="latex/latex2png-BasicConceptsNLA_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">与<img src="latex/latex2png-BasicConceptsNLA_43086866_-1.gif" alt="$w$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">正交且<img src="latex/latex2png-BasicConceptsNLA_187201194_-2.gif" alt="$U+W=V$" class="latex-inline" style="vertical-align: -2px" width="86" height="14">,则<img src="latex/latex2png-BasicConceptsNLA_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">和<img src="latex/latex2png-BasicConceptsNLA_43611154_-1.gif" alt="$W$" class="latex-inline" style="vertical-align: -1px" width="17" height="13">互称为正交补,记为<img src="latex/latex2png-BasicConceptsNLA_75735378_-1.gif" alt="$U=W^\perp$" class="latex-inline" style="vertical-align: -1px" width="62" height="15">.</p>
+
+<p>对于矩阵<img src="latex/latex2png-BasicConceptsNLA_205785286_-1.gif" alt="$A\in \mathbb{C}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">,若<img src="latex/latex2png-BasicConceptsNLA_81897995_-1.gif" alt="$\lambda\in \mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="41" height="13">及非零向量<img src="latex/latex2png-BasicConceptsNLA_4710797_-1.gif" alt="$\alpha\in \mathbb{C}^n$" class="latex-inline" style="vertical-align: -1px" width="51" height="13">使得<img src="latex/latex2png-BasicConceptsNLA_211710352_.gif" alt="$$A\alpha=\lambda a,$$" class="latex-display" width="580" height="16">则称<img src="latex/latex2png-BasicConceptsNLA_234755215_0.gif" alt="$\lambda$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">是矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的特征值或特征根,<img src="latex/latex2png-BasicConceptsNLA_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">称为<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的属于<img src="latex/latex2png-BasicConceptsNLA_234755215_0.gif" alt="$\lambda$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">的特征向量.我们注意到,<img src="latex/latex2png-BasicConceptsNLA_123056839_0.gif" alt="$A\alpha=\lambda\alpha$" class="latex-inline" style="vertical-align: 0px" width="65" height="12">相当于<img src="latex/latex2png-BasicConceptsNLA_102388673_-5.gif" alt="$(\lambda I-A)\alpha=0$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">有非零解<img src="latex/latex2png-BasicConceptsNLA_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,故<img src="latex/latex2png-BasicConceptsNLA_234755215_0.gif" alt="$\lambda$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">是<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的特征根当且仅当<img src="latex/latex2png-BasicConceptsNLA_13346600_.gif" alt="$$\det (\lambda I-A)=0,$$" class="latex-display" width="580" height="18">其中,多项式<img src="latex/latex2png-BasicConceptsNLA_57530381_-5.gif" alt="$f (\lambda)=\det (\lambda I-A)$" class="latex-inline" style="vertical-align: -5px" width="139" height="18">称为矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的特征多项式.计算矩阵的特征值与特征多项式是数值线性代数中的一个重要的问题,我们将在&quot;特征值问题&quot;两章中讨论.</p>
+
+<p>对于一个任意的矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,我们常可以通过变换矩阵<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">使<img src="latex/latex2png-BasicConceptsNLA_194808812_-4.gif" alt="$PAQ$" class="latex-inline" style="vertical-align: -4px" width="37" height="16">成为&quot;特定的&quot;(其精确定义以后给出) 形式,称为矩阵的标准形 (canonical form),矩阵<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">称为变换矩阵.若要求<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是可逆矩阵,则称之为相抵变换.特别地,如果<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">互为逆矩阵,则这种变换称为相似变换;如果<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">互为转置矩阵,则这种变换称为相合变换.如果复矩阵<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">满足<img src="latex/latex2png-BasicConceptsNLA_199516812_0.gif" alt="$P^HP=I$" class="latex-inline" style="vertical-align: 0px" width="70" height="14">以及<img src="latex/latex2png-BasicConceptsNLA_182739580_-4.gif" alt="$Q^HQ=I$" class="latex-inline" style="vertical-align: -4px" width="69" height="18">,则<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">称为酉矩阵 (unitary matrix),相应的变换也称为酉变换;与之相对应实数域上的矩阵<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">和<img src="latex/latex2png-BasicConceptsNLA_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">如果满足<img src="latex/latex2png-BasicConceptsNLA_199516811_0.gif" alt="$P^TP=I$" class="latex-inline" style="vertical-align: 0px" width="68" height="14">以及<img src="latex/latex2png-BasicConceptsNLA_182739579_-4.gif" alt="$Q^TQ=I$" class="latex-inline" style="vertical-align: -4px" width="67" height="18">,则称为正交矩阵 (orthogonal matrix),相应变换称为正交变换.容易看到,酉矩阵和正交矩阵的每一列 (行) 都是单位向量,且不同的列 (行) 之间相互正交.这几种变换是我们今后常用的变换,由它们可以给出矩阵的多种标准形式 (或分解),是多种算法的基础.</p>
+
+<p>为了接下来讨论方便起见,我们先给出所谓奇异值分解 (singular value decomposition,SVD)的概念.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name="SVD"></a></span><span class="theorem-name">(奇异值分解,或矩阵的酉相抵标准形)</span>
+设<img src="latex/latex2png-BasicConceptsNLA_2915221_0.gif" alt="$n\times m$" class="latex-inline" style="vertical-align: 0px" width="44" height="9">复矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的秩为<img src="latex/latex2png-BasicConceptsNLA_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">,则有酉方阵<img src="latex/latex2png-BasicConceptsNLA_81562604_-2.gif" alt="$U_1$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">和<img src="latex/latex2png-BasicConceptsNLA_81497068_-2.gif" alt="$U_2$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">使
+<img src="latex/latex2png-BasicConceptsNLA_249831708_.gif" alt="
+\begin{equation*}
+  A=U_1
+  \begin{bmatrix}
+    \lambda_1& & & & & \\
+    & \ddots& & & & \\
+    & & \lambda_r& & & \\
+    & & & 0& & \\
+    & & & & \ddots& \\
+    & & & & & 0
+  \end{bmatrix}U_2，
+\end{equation*}
+" class="latex-display" width="580" height="170">其中<img src="latex/latex2png-BasicConceptsNLA_129066964_-3.gif" alt="$\lambda_1\geqslant \lambda_2\geqslant\cdots\geqslant\lambda_r>0$" class="latex-inline" style="vertical-align: -3px" width="166" height="15">,而<img src="latex/latex2png-BasicConceptsNLA_191965848_-4.gif" alt="$\lambda_1^2,\cdots,\lambda_r^2$" class="latex-inline" style="vertical-align: -4px" width="72" height="18">为<img src="latex/latex2png-BasicConceptsNLA_222071750_0.gif" alt="$A^HA$" class="latex-inline" style="vertical-align: 0px" width="37" height="14">的所有非零特征根.
+
+
+</div>
+
+<p>以上定理的证明可参考<span class="cite"><a class="cite" href="BasicConceptsNLA.html#ref-1" name="cite-1">[1]</a></span>.可对于实数域上的矩阵证明类似的奇异值分解 (或称为正交相抵标准形).</p>
+
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>向量范数与矩阵范数</h3>
+
+<p class="first">以上我们已经给出了向量范数的概念,我们进一步给出它的基本性质,其证明都很容易:
+<img src="latex/latex2png-BasicConceptsNLA_7639415_.gif" alt="
+\begin{align*}
+   &||x||\geqslant 0,&& x\in \mathbb{C}^n,& (||x||=0 \text{~iff~}x=0.)\notag\\ \tag{1}
+  &||x+y||\leqslant ||x||+||y||,&&x,y\in \mathbb{C}^n.&\\
+  &||\alpha x||=|\alpha | ||x||,&&\alpha\in \mathbb{C},x\in \mathbb{C}^n.&\notag
+\end{align*}
+" class="latex-display" name="eqref-1" width="580" height="80">事实上,以上性质是一般意义下的范数所具有的性质.据此,若<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">是正定Hermite阵,则广义内积<img src="latex/latex2png-BasicConceptsNLA_104569573_-5.gif" alt="$(x,Ay)$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">同样&quot;诱导&quot;出向量的范数<img src="latex/latex2png-BasicConceptsNLA_74506033_.gif" alt="$$||x||_A\equiv (x,Ax),$$" class="latex-display" width="580" height="18">脚标<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">用于标识不同的范数定义.除内积诱导的范数外,还有一类重要的<img src="latex/latex2png-BasicConceptsNLA_145716242_-4.gif" alt="$p-$" class="latex-inline" style="vertical-align: -4px" width="21" height="12">范数经常使用,其定义如下:<img src="latex/latex2png-BasicConceptsNLA_203856440_.gif" alt="$$||x||_p= (|x_1|^p+\cdots+|x_n|^p)^\frac{1}{p},~p>1.$$" class="latex-display" width="580" height="24"> <img src="latex/latex2png-BasicConceptsNLA_55756352_-4.gif" alt="$p=1,2,\infty$" class="latex-inline" style="vertical-align: -4px" width="79" height="15">的情形特别重要:
+<img src="latex/latex2png-BasicConceptsNLA_47797519_.gif" alt="
+\begin{align*}
+&||x||_1 =  |x_1|+\cdots+|x_n|,\\
+&||x||_2 = (|x_1|^2+\cdots+|x_n|^2)^\frac{1}{2},\\
+&||x||_\infty =\max\limits_{1\leqslant i\leqslant n}|x_i|.
+\end{align*}
+" class="latex-display" width="580" height="89">由H&ouml;lder不等式<img src="latex/latex2png-BasicConceptsNLA_101216974_.gif" alt="$$|x^Hy|\leqslant||x||_p||y||_q,~\frac{1}{p}+\frac{1}{q}=1$$" class="latex-display" width="580" height="38">可以证明,以上定义确实满足范数定义要求的性质<a class="ref-eq" href="BasicConceptsNLA.html#eqref-1"  title="公式(1)">(1)</a>.</p>
+
+<p>若把复数域上<img src="latex/latex2png-BasicConceptsNLA_2915221_0.gif" alt="$n\times m$" class="latex-inline" style="vertical-align: 0px" width="44" height="9">维矩阵全体看做一个向量空间,也可以有范数的多种定义.最常用的是以下两种:</p>
+
+<ol>
+<li>Frobenius范数:将<img src="latex/latex2png-BasicConceptsNLA_2915221_0.gif" alt="$n\times m$" class="latex-inline" style="vertical-align: 0px" width="44" height="9">维矩阵全体看做<img src="latex/latex2png-BasicConceptsNLA_2915221_0.gif" alt="$m\times n$" class="latex-inline" style="vertical-align: 0px" width="44" height="9">向量空间,定义2-范数为<img src="latex/latex2png-BasicConceptsNLA_207480160_.gif" alt="$$||A||_F= (\sum\limits_{ij}|A_{ij}|^2)^{\frac{1}{2}},$$" class="latex-display" width="580" height="40">这称为Frobenius范数.</li>
+<li>算子范数:由<img src="latex/latex2png-BasicConceptsNLA_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">维和<img src="latex/latex2png-BasicConceptsNLA_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">维向量空间的<img src="latex/latex2png-BasicConceptsNLA_145716242_-4.gif" alt="$p-$" class="latex-inline" style="vertical-align: -4px" width="21" height="12">范数诱导的算子范数定义如下:<img src="latex/latex2png-BasicConceptsNLA_147765431_.gif" alt="$$||A||_p=\sup\limits_{x\neq 0}\frac{||Ax||_p}{||x||_p},$$" class="latex-display" width="580" height="41">由上确界的定义可以验证这确实满足范数的定义<a class="ref-eq" href="BasicConceptsNLA.html#eqref-1"  title="公式(1)">(1)</a>,并且对于有限维向量空间有<img src="latex/latex2png-BasicConceptsNLA_209205257_.gif" alt="$$||A||_p=\sum\limits_{x\neq 0}\left\| A \left(\frac{x}{||x||_p}\right)\right\|_p=\max\limits_{||x||_p=1}||Ax||_p.$$" class="latex-display" width="580" height="48"></li>
+</ol>
+
+<p>向量范数与矩阵范数用于描述两个向量或矩阵的&quot;接近&quot;程度,在考察算法的精度时经常使用.</p>
+
+<p>下面给出两个同维子空间的&quot;距离&quot;的定义,它用于描写这两个子空间的分离程度,在研究特征值算法的收敛速率时会用到.</p>
+
+<p>设<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">为<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的子空间,若矩阵<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">满足以下条件,则称<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">为<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">到<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">的正交投影映射:</p>
+
+<ol>
+<li><img src="latex/latex2png-BasicConceptsNLA_225521708_-5.gif" alt="$\mathrm{span} (P)=S$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">.</li>
+<li><img src="latex/latex2png-BasicConceptsNLA_165513560_0.gif" alt="$P^2=P$" class="latex-inline" style="vertical-align: 0px" width="56" height="14">.</li>
+<li><img src="latex/latex2png-BasicConceptsNLA_131959128_0.gif" alt="$P^T=P$" class="latex-inline" style="vertical-align: 0px" width="59" height="14">.</li>
+</ol>
+
+<p>由此定义可以得到,若<img src="latex/latex2png-BasicConceptsNLA_128410254_-1.gif" alt="$x\in V$" class="latex-inline" style="vertical-align: -1px" width="43" height="13">,则<img src="latex/latex2png-BasicConceptsNLA_128448142_-1.gif" alt="$Px\in S$" class="latex-inline" style="vertical-align: -1px" width="54" height="13">,且<img src="latex/latex2png-BasicConceptsNLA_78614401_-5.gif" alt="$(I-P)x\in S^\perp$" class="latex-inline" style="vertical-align: -5px" width="105" height="19">.若<img src="latex/latex2png-BasicConceptsNLA_165448684_-2.gif" alt="$P_1$" class="latex-inline" style="vertical-align: -2px" width="17" height="14">和<img src="latex/latex2png-BasicConceptsNLA_165383148_-2.gif" alt="$P_2$" class="latex-inline" style="vertical-align: -2px" width="17" height="14">均为<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">到<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">的正交投影,则<img src="latex/latex2png-BasicConceptsNLA_11878496_.gif" alt="$$\| (P_1-P_2)x\|_2^2= (P_1z)^T (I-P_2)z+ (P_2z)^T (I-P_1)z=0,$$" class="latex-display" width="580" height="20">由此得到<img src="latex/latex2png-BasicConceptsNLA_103221815_-2.gif" alt="$P_1=P_2$" class="latex-inline" style="vertical-align: -2px" width="57" height="14">,即向同一个子空间的正交投影映射是唯一的.若<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">有一组单位正交基<img src="latex/latex2png-BasicConceptsNLA_20437369_-5.gif" alt="$[\alpha_1,\cdots,\alpha_s]\equiv A$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">,则容易证明<img src="latex/latex2png-BasicConceptsNLA_147415725_0.gif" alt="$P=AA^T$" class="latex-inline" style="vertical-align: 0px" width="69" height="14">正是<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">到<img src="latex/latex2png-BasicConceptsNLA_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">的正交投影.</p>
+
+<p>可以根据线性子空间与正交投影映射的一一对应关系定义两个同维子空间之间的距离.设<img src="latex/latex2png-BasicConceptsNLA_115117036_-2.gif" alt="$S_1$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">和<img src="latex/latex2png-BasicConceptsNLA_115051500_-2.gif" alt="$S_2$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">为<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的线性子空间,<img src="latex/latex2png-BasicConceptsNLA_64936477_-2.gif" alt="$\mathrm{dim}S_1=\mathrm{dim}S_2$" class="latex-inline" style="vertical-align: -2px" width="111" height="14">,<img src="latex/latex2png-BasicConceptsNLA_164400108_-2.gif" alt="$P_i$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">为<img src="latex/latex2png-BasicConceptsNLA_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">到<img src="latex/latex2png-BasicConceptsNLA_114068460_-2.gif" alt="$S_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="14">的正交投影 (<img src="latex/latex2png-BasicConceptsNLA_66352791_-4.gif" alt="$i=1,2$" class="latex-inline" style="vertical-align: -4px" width="52" height="16">).则两线性子空间之间的距离定义为<img src="latex/latex2png-BasicConceptsNLA_138907407_.gif" alt="$$\mathrm{dist} (S_1,S_2)=\|P_1-P_2\|_2.$$" class="latex-display" width="580" height="18">我们用<img src="latex/latex2png-BasicConceptsNLA_240523073_-5.gif" alt="$\mathrm{dist} (S_1,S_1)$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">来表征两个同维子空间的分离程度.注意到<img src="latex/latex2png-BasicConceptsNLA_115288351_.gif" alt="$$0\leqslant \mathrm{dist} (S_1,S_2)\leqslant 1,$$" class="latex-display" width="580" height="18">且该距离为0当且仅当<img src="latex/latex2png-BasicConceptsNLA_153554231_-2.gif" alt="$S_1=S_2$" class="latex-inline" style="vertical-align: -2px" width="55" height="14">,距离为1当且仅当<img src="latex/latex2png-BasicConceptsNLA_182436080_-4.gif" alt="$S_1\cap S_2^\perp \neq 0$" class="latex-inline" style="vertical-align: -4px" width="88" height="18">.</p>
+
+
+<h3><a name="sec4" id="sec4"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>特殊形式的矩阵</h3>
+
+<p class="first">具有特殊结构的矩阵在数值线性代数中有着重要的地位.事实上,这是一个相当普遍的原则,即任何算法设计均应充分利用计算对象的特殊结构,而对于一般形式的矩阵则应进行约化,使之变成利于快速精确求解的矩阵形式.下面我们介绍一些今后会用到的特殊形式的矩阵.</p>
+
+<p>上文中我们已经介绍了酉矩阵和Hermite矩阵.</p>
+
+<p>置换矩阵<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">是指它的每一行和每一列都只有一个元素是1,其他元素都是0.从而<img src="latex/latex2png-BasicConceptsNLA_156922898_0.gif" alt="$PX$" class="latex-inline" style="vertical-align: 0px" width="27" height="12">与<img src="latex/latex2png-BasicConceptsNLA_164787218_0.gif" alt="$XP$" class="latex-inline" style="vertical-align: 0px" width="28" height="12">的结果是分别将<img src="latex/latex2png-BasicConceptsNLA_43676690_0.gif" alt="$X$" class="latex-inline" style="vertical-align: 0px" width="14" height="12">的行与列做一个置换.</p>
+
+<p>反向置换阵<img src="latex/latex2png-BasicConceptsNLA_42431506_0.gif" alt="$E$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">定义为
+<img src="latex/latex2png-BasicConceptsNLA_233230220_.gif" alt="
+\begin{equation*}
+  E=
+  \begin{bmatrix}
+    & & 1\\
+    & \adots & \\
+    1& &
+  \end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="79">它左乘向量的效果是使向量各分量的顺序颠倒过来,即<img src="latex/latex2png-BasicConceptsNLA_258113929_.gif" alt="$$Ex=E (x_1,\cdots,x_n)^T= (x_n,\cdots,x_1).$$" class="latex-display" width="580" height="20"></p>
+
+<p>稀疏矩阵是一大类非零元素的数目远小于矩阵元素总数的矩阵.可以看出置换矩阵就是一类特殊的稀疏矩阵.今后我们主要应用的稀疏矩阵是所谓带状阵,形象地说,就是其非零元素在矩阵中排成带状.若矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">满足<img src="latex/latex2png-BasicConceptsNLA_64044437_-5.gif" alt="$\forall i>j+s_1,A_{ij}=0$" class="latex-inline" style="vertical-align: -5px" width="142" height="17">,则称<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">下带宽为<img src="latex/latex2png-BasicConceptsNLA_249334764_-2.gif" alt="$s_1$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">.类似地,若<img src="latex/latex2png-BasicConceptsNLA_65097093_-5.gif" alt="$\forall j>i+s_2,A_{ij}=0$" class="latex-inline" style="vertical-align: -5px" width="142" height="17">,则称<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">上带宽为<img src="latex/latex2png-BasicConceptsNLA_249269228_-2.gif" alt="$s_2$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">.以下几类带状阵是值得注意的:</p>
+
+<ol>
+<li>对角阵:若方阵的上下带宽均为0,则称为对角阵.直观地说,它的非零元素仅排列在对角线上.</li>
+<li>双对角阵与Hessenberg阵:若方阵的上 (或下)带宽为1,则称为下 (或上)Hessenberg阵.若进一步要求上Hessenberg阵的上带宽为0,则成为下双对角阵,类似定义上双对角阵.</li>
+<li>三对角阵:若方阵的上下带宽均为1,则称之为三对角阵.若它还是对称矩阵,则称为对称三对角阵.</li>
+<li>块对角阵:若方阵经过合适的分块,可以看做对角阵,则称为块对角阵.</li>
+</ol>
+
+<p>反向对称阵:若矩阵沿次对角线进行翻转后不变,则称之为反向对称阵.</p>
+
+<p>我们还会用到Vandermonde阵与Toeplitz阵,将在应用时介绍.</p>
+
+
+
+<h2><a name="sec5" id="sec5"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>数值型算法分析基础</h2>
+
+<p class="first">由于数值计算通常是有误差的,因此对误差的分析构成算法分析的重要方面.按照误差的来源,可分为模型误差,观测误差与数值计算误差.前二者是数值分析中不考虑的.计算过程中产生的误差,主要起源与两个方面:</p>
+
+<ol>
+<li>算法误差,即由于问题不可精确求解 (如高于5阶的一般矩阵的特征值问题)或算法的特殊设计 (如迭代法),算法本身就包含了误差的因素.典型的算法误差如截断误差,在运用级数对函数值进行逼近时,根据精度需要,只截断到某一项而舍去其余.(可参考&quot;矩阵函数&quot;一章中中&quot;逼近算法&quot;一节.)</li>
+<li>舍入误差.这是由于计算机硬件存储数位的长度限制,在对原始数据与中间数据进行存储与计算时,可能产生误差.由于数值计算的特殊性,对这一误差来源往往要慎重考虑.为了消减舍入误差,在计算中有一些原则需要遵守,如避免相近数相减或大数与小数相加减等,以防精度严重丢失.</li>
+</ol>
+
+<p>在一定条件下进行数值运算,对运算过程中产生误差的上界进行估计,从而评价算法的优劣,避免精度的过度损失是误差分析的目的.由于舍入误差的存在与不可避免,对于一个特定算法,我们往往要评价其结果对于中间数据的微小扰动的稳定性,这导致&quot;条件数 (conditioning)&quot;概念的出现.对一个数值问题,如果输入数据仅有微小扰动时,引起计算结果的相对误差很大,这就是病态 (ill-conditioned) 问题.例如,计算函数值<img src="latex/latex2png-BasicConceptsNLA_220952210_-5.gif" alt="$f (x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">时,若<img src="latex/latex2png-BasicConceptsNLA_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">有扰动<img src="latex/latex2png-BasicConceptsNLA_237334415_0.gif" alt="$\Delta x-x^*$" class="latex-inline" style="vertical-align: 0px" width="59" height="12">,其相对误差为<img src="latex/latex2png-BasicConceptsNLA_93107088_-6.gif" alt="$\frac{\Delta x}{x}$" class="latex-inline" style="vertical-align: -6px" width="19" height="22">,函数值<img src="latex/latex2png-BasicConceptsNLA_13497407_-5.gif" alt="$f (x^*)$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">的相对误差为<img src="latex/latex2png-BasicConceptsNLA_17824693_-9.gif" alt="$\frac{f (x)-f (x^*)}{f (x)}$" class="latex-inline" style="vertical-align: -9px" width="69" height="26">.相对误差比值<img src="latex/latex2png-BasicConceptsNLA_214117338_.gif" alt="$$\left|\frac{f (x)-f (x^*)}{f (x)}\right|\Big/\left|\frac{\Delta x}{x}\right|\approx\left|\frac{xf' (x)}{f (x)}\right|=C_p,$$" class="latex-display" width="580" height="42"> <img src="latex/latex2png-BasicConceptsNLA_154825748_-5.gif" alt="$C_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">称为函数计算问题的条件数.自变量相对误差一般不会很大,如果条件数<img src="latex/latex2png-BasicConceptsNLA_154825748_-5.gif" alt="$C_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">很大,将引起函数值相对误差很大,出现这种情况的问题就是病态问题.</p>
+
+<p>对于矩阵计算的许多算法进行误差分析,发现问题的条件数往往与以下定义的矩阵的条件数有关 (多数是与变换矩阵的条件数成正比).因此,将其单独拿出来进行一些讨论是有意义的.</p>
+
+<div class="definition">
+<span class="theorem-header">定义1<a name="conditioning"></a></span><span class="theorem-name">(矩阵的条件数)</span>
+设<img src="latex/latex2png-BasicConceptsNLA_205785286_-1.gif" alt="$A\in \mathbb{C}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">为可逆矩阵,称乘积<img src="latex/latex2png-BasicConceptsNLA_87132409_-5.gif" alt="$\|A\|\|A^{-1}\|$" class="latex-inline" style="vertical-align: -5px" width="74" height="19">为矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">(对于范数<img src="latex/latex2png-BasicConceptsNLA_79172610_-5.gif" alt="$\|\cdot\|$" class="latex-inline" style="vertical-align: -5px" width="26" height="18">)的条件数,记为<img src="latex/latex2png-BasicConceptsNLA_163426099_-5.gif" alt="$\kappa (A)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">.
+
+
+</div>
+
+<p>这里,&quot;条件数&quot;与一个矩阵相关,因而与该矩阵参与的所有数值计算均相关.如果<img src="latex/latex2png-BasicConceptsNLA_163426099_-5.gif" alt="$\kappa (A)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">小,<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">称为良态的;如果<img src="latex/latex2png-BasicConceptsNLA_163426099_-5.gif" alt="$\kappa (A)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">大,则<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">称为病态的.若<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">奇异,习惯写成<img src="latex/latex2png-BasicConceptsNLA_126372637_-5.gif" alt="$\kappa (A)=\infty$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">,以说明用奇异矩阵进行变换时,求解精度往往变得很差.</p>
+
+<p>特别地,当以上定义中范数取矩阵的2-范数时,<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的条件数与其SVD有着重要的联系.记非奇异矩阵<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的SVD为<img src="latex/latex2png-BasicConceptsNLA_140249020_.gif" alt="$$A=U\mathrm{diag} (\sigma_1,\cdots,\sigma_n)V,$$" class="latex-display" width="580" height="18">则<img src="latex/latex2png-BasicConceptsNLA_166676885_.gif" alt="$$\|A\|_2=\sigma_1,\|A^{-1}\|_2=1/\sigma_n.$$" class="latex-display" width="580" height="20">因此2-范数意义如下<img src="latex/latex2png-BasicConceptsNLA_186648133_.gif" alt="$$\kappa (A)=\frac{\sigma_1}{\sigma_n}.$$" class="latex-display" width="580" height="33">这个比值可以解释为<img src="latex/latex2png-BasicConceptsNLA_200756685_-1.gif" alt="$\mathbb{C}^n$" class="latex-inline" style="vertical-align: -1px" width="20" height="13">中单位球面在<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">作用下的象的哪个超椭球的离心率.注意到,这一离心率不小于1.当且仅当<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为酉矩阵 (或正交矩阵) 时,<img src="latex/latex2png-BasicConceptsNLA_65023848_-5.gif" alt="$\kappa (A)=1$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">达到最小值.这正是数值算法设计中往往采用酉变换 (或正交变换)的原因.</p>
+
+<p>根据以上关于矩阵条件数与SVD关系的讨论,我们还可以将矩阵的条件数推广到任意维数<img src="latex/latex2png-BasicConceptsNLA_2915221_0.gif" alt="$n\times m$" class="latex-inline" style="vertical-align: 0px" width="44" height="9">的矩阵上去.设<img src="latex/latex2png-BasicConceptsNLA_206833862_-1.gif" alt="$A\in \mathbb{C}^{n\times m}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">的SVD为<img src="latex/latex2png-BasicConceptsNLA_19752750_.gif" alt="$$A=U\mathrm{diag} (\sigma_1,\cdots,\sigma_r,0,\cdots,0)V,$$" class="latex-display" width="580" height="18">定义<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的 (广义)条件数为<img src="latex/latex2png-BasicConceptsNLA_14096793_.gif" alt="$$\kappa_2A=\sigma_1/\sigma_r.$$" class="latex-display" width="580" height="18">这样定义的条件数也能反映<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">用作变换矩阵时数值运算的精度.</p>
+
+
+<h2><a name="sec6" id="sec6"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>矩阵乘法</h2>
+
+<p class="first">在有关矩阵的计算中,矩阵乘法具有基础性的意义.对于<img src="latex/latex2png-BasicConceptsNLA_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶矩阵的乘法,常规算法具有<img src="latex/latex2png-BasicConceptsNLA_22781230_-5.gif" alt="$O(n^3)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">的复杂度,因此加速矩阵计算是很重要的.</p>
+
+<h3><a name="sec7" id="sec7"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>基于向量内积算法的Winograd加速算法</h3>
+
+<p class="first">以下讨论主要来自文献<span class="cite"><a class="cite" href="BasicConceptsNLA.html#ref-2" name="cite-2">[2]</a></span>.
+<div class="algorithm">
+<span class="theorem-header">算法1<a name="alg:WinogradInnerProduct"></a></span><span class="theorem-name">(Winograd内积算法)</span>
+设<img src="latex/latex2png-BasicConceptsNLA_3311170_-5.gif" alt="$x=(x_1,\cdots,x_n)^T$" class="latex-inline" style="vertical-align: -5px" width="129" height="19">,<img src="latex/latex2png-BasicConceptsNLA_265189838_-5.gif" alt="$y=(y_1,\cdots,y_n)^T$" class="latex-inline" style="vertical-align: -5px" width="126" height="19">,记<img src="latex/latex2png-BasicConceptsNLA_155773401_-18.gif" alt="$\xi=\sum\limits_{j=1}^{\lfloor n/2\rfloor}x_{2j-1}x_{2j}$" class="latex-inline" style="vertical-align: -18px" width="129" height="44">,<img src="latex/latex2png-BasicConceptsNLA_31196877_-18.gif" alt="$\eta=\sum\limits^{\lfloor n/2\rfloor}_{j=1}y_{2j-1}y_{2j}$" class="latex-inline" style="vertical-align: -18px" width="127" height="44">,则内积<img src="latex/latex2png-BasicConceptsNLA_247761281_-5.gif" alt="$(x,y)$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">可由下式给出:</p>
+
+<p class="image"><img src="latex/latex2png-BasicConceptsNLA_129437591_.gif" alt="
+\begin{equation*}
+  (x,y)=
+  \begin{cases}
+    \sum\limits^{\lfloor n/2\rfloor}_{j=1}(x_{2j-1}+y_{2j})(x_{2j}+y_{2j-1})-\xi-\eta,& \text{$n$是偶,} \\
+    \sum\limits^{\lfloor n/2\rfloor}_{j=1}(x_{2j-1}+y_{2j})(x_{2j}+y_{2j-1})-\xi-\eta+x_ny_n,& \text{$n$是奇.}
+  \end{cases}
+\end{equation*}
+" class="latex-display" width="580" height="91"></p>
+
+
+</div>
+
+<p>将这种算法用于<img src="latex/latex2png-BasicConceptsNLA_246123462_-1.gif" alt="$C=AB$" class="latex-inline" style="vertical-align: -1px" width="59" height="13">的矩阵元素运算时,由于减少重复计算<img src="latex/latex2png-BasicConceptsNLA_21197844_-4.gif" alt="$\xi$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-BasicConceptsNLA_33256508_-4.gif" alt="$\eta$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,可使计算所需的乘法次数减半,但同时使所需的加法运算增加.Winograd算法也是<img src="latex/latex2png-BasicConceptsNLA_22781231_-5.gif" alt="$O(N^3)$" class="latex-inline" style="vertical-align: -5px" width="46" height="19">的算法,仅适用于小规模的矩阵求积运算,且由于该算法破坏了向量内积的整体间运算,同时增加了内存开销,因而其算法改进价值并不很大.</p>
+
+
+<h3><a name="sec8" id="sec8"></a>
+<a href="BasicConceptsNLA.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Strassen算法</h3>
+
+<p class="first">Strassen算法(1968)是一种分治策略的算法.它以分块矩阵运算为基础.</p>
+
+<p>下面介绍改进型Strassen算法,它较原始算法<span class="cite"><a class="cite" href="BasicConceptsNLA.html#ref-3" name="cite-3">[3]</a></span>需要更少的矩阵加法运算<span class="cite"><a class="cite" href="BasicConceptsNLA.html#ref-4" name="cite-4">[4]</a></span>.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name="alg:Str"></a></span><span class="theorem-name">(Strassen算法)</span>
+设<img src="latex/latex2png-BasicConceptsNLA_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,<img src="latex/latex2png-BasicConceptsNLA_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-BasicConceptsNLA_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶矩阵,必要时通过补充零行零列加以扩充,将其分块:
+
+<p class="image"><img src="latex/latex2png-BasicConceptsNLA_51540841_.gif" alt="
+\begin{gather*}
+  A=
+  \begin{bmatrix}
+    A_{11}& A_{12}\\
+    A_{21}& A_{22}
+  \end{bmatrix}
+  ,B=
+  \begin{bmatrix}
+    B_{11}& B_{12}\\
+    B_{21}& B_{22}
+  \end{bmatrix}
+ ,C=AB=
+  \begin{bmatrix}
+    C_{11}& C_{12}\\
+    C_{21}& C_{22}
+  \end{bmatrix}.
+\end{gather*}
+" class="latex-display" width="580" height="50">
+进行如下递归运算:</p>
+
+<ol>
+<li>若<img src="latex/latex2png-BasicConceptsNLA_79101926_-3.gif" alt="$n\leq l$" class="latex-inline" style="vertical-align: -3px" width="36" height="15">(<img src="latex/latex2png-BasicConceptsNLA_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="4" height="12">为递归下界),做直接乘法.</li>
+<li>计算
+<img src="latex/latex2png-BasicConceptsNLA_31291233_.gif" alt="
+\begin{gather*}
+  S_1=A_{21}+A_{22},S_2=S_1-A_{11},S_3=A_{11}-A_{21},S_4=A_{12}-S_2,\\
+  T_1=B_{12}-B_{11},T_2=B_{22}-T_1,T_3=B_{22}-B_{11},T_4=T_2-B_{21}.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>计算
+<img src="latex/latex2png-BasicConceptsNLA_206134534_.gif" alt="
+\begin{gather*}
+  P_1=A_{11}B_{11},P_2=A_{12}B_{21},P_3=S_4B_{22},P_4=B_{22}T_4,\\
+  P_5=S_1T_1,P_6=S_2T_2,P_7=S_3T_3.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>计算
+<img src="latex/latex2png-BasicConceptsNLA_63071635_.gif" alt="
+\begin{gather*}
+  U_1=P_1+P_2,U_2=P_1+P_6,U_3=U_2+P_7,U_4=U_2+P_5,\\
+  U_5=U_4+P_3,U_6=U_3-P_4,U_7=U_3+P_5.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>返回
+<img src="latex/latex2png-BasicConceptsNLA_26894256_.gif" alt="
+\begin{equation*}
+\begin{bmatrix}
+   U_1& U_5\\
+   U_6& U_7
+\end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="50"></li>
+</ol>
+
+
+</div>
+
+<p>以上算法的正确性直接代入即可验证.可以看出,每次递归需要7次乘法与15次加法,从而其算法复杂度是<img src="latex/latex2png-BasicConceptsNLA_151296797_-5.gif" alt="$O(N^{\log_27})\simeq O(N^{2.808})$" class="latex-inline" style="vertical-align: -5px" width="167" height="19">.</p>
+
+<p>Strassen算法在之后有许多推广,最优渐进复杂度可以降到<img src="latex/latex2png-BasicConceptsNLA_146725201_-5.gif" alt="$O(N^{2.376})$" class="latex-inline" style="vertical-align: -5px" width="70" height="19">.但在实际中,仅当<img src="latex/latex2png-BasicConceptsNLA_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">极大时才有价值,故通常并不采用.可参考<span class="cite"><a class="cite" href="BasicConceptsNLA.html#ref-5" name="cite-5">[5]</a></span>.</p>
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="BasicConceptsNLA.html#cite-1" name="ref-1">[1]</a><span class="ref-author">张贤科，许甫华, </span><span class="ref-title-chs">高等代数学, </span><span class="ref-publisher">清华大学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2004. </span></p>
+<p class="ref"><a class="ref" href="BasicConceptsNLA.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Winograd S., </span><span class="ref-title">A New Algorithm for Inner Product, </span><span class="ref-journal">IEEE Trans. Comp. </span><span class="ref-volume">17 </span><span class="ref-year">(1968), </span><span class="ref-pages">693-694. </span></p>
+<p class="ref"><a class="ref" href="BasicConceptsNLA.html#cite-3" name="ref-3">[3]</a><span class="ref-author">Strassen V., </span><span class="ref-title">Gaussian Elimination is not Optimal, </span><span class="ref-journal">Numer. Math. </span><span class="ref-volume">13 </span><span class="ref-year">(1969), </span><span class="ref-pages">354-356. </span></p>
+<p class="ref"><a class="ref" href="BasicConceptsNLA.html#cite-4" name="ref-4">[4]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<p class="ref"><a class="ref" href="BasicConceptsNLA.html#cite-5" name="ref-5">[5]</a><span class="ref-author">Pan V., </span><span class="ref-title">How Can We Speed Up Matrix Multiplication?, </span><span class="ref-journal">SIAM Review </span><span class="ref-volume">26 </span><span class="ref-year">(1984), </span><span class="ref-number">no.3. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

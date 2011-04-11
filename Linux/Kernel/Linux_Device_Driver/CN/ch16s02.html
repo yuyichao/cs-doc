@@ -1,0 +1,161 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>16.2.&#160;块设备操作-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch16.html" title="第&#160;16&#160;章&#160;块驱动">
+<link rel="prev" href="ch16.html" title="第&#160;16&#160;章&#160;块驱动">
+<link rel="next" href="ch16s03.html" title="16.3.&#160;请求处理">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">16.2.&#160;块设备操作</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch16.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;16&#160;章&#160;块驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch16s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="TheBlockDeviceOperations.sect1"></a>16.2.&#160;块设备操作</h2></div></div></div>
+<p>在前面一节中我们对 block_device_operations 有了简短的介绍. 现在我们详细些看看这些操作, 在进入请求处理之前. 为此, 是时间提到 sbull 驱动的另一个特性: 它假装是一个可移出的设备. 无论何时最后一个用户关闭设备, 一个 30 秒的定时器被设置; 如果设备在这个时间内不被打开, 设备的内容被清除, 并且内核被告知介质已被改变. 30 秒延迟给了用户时间, 例如, 来卸载一个 sbull 设备在创建一个文件系统之后.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheopenandreleaseMethods.sect2"></a>16.2.1.&#160;open 和 release 方法</h3></div></div></div>
+<p>为实现模拟的介质移出, 当最后一个用户已关闭设备时 sbull 必须知道. 一个用户计数被驱动维护. 它是 open 和 close 方法的工作来保持这个计数最新.</p>
+<p>open 方法看起来非常类似于它的字符驱动对等体; 它用相关的节点和文件结构指针作为参数. 当一个节点引用一个块设备, i_bdev-&gt;bd_disk 包含一个指向关联 gendisk 结构的指针; 这个指针可用来获得一个驱动的给设备的内部数据结构. 即, 实际上, sbull open 方法做的第一件事:</p>
+<pre class="programlisting">
+static int sbull_open(struct inode *inode, struct file *filp)
+{
+        struct sbull_dev *dev = inode-&gt;i_bdev-&gt;bd_disk-&gt;private_data;
+        del_timer_sync(&amp;dev-&gt;timer);
+        filp-&gt;private_data = dev;
+        spin_lock(&amp;dev-&gt;lock)
+        ;
+        if (! dev-&gt;users)
+                check_disk_change(inode-&gt;i_bdev);
+        dev-&gt;users++;
+        spin_unlock(&amp;dev-&gt;lock)
+        ;
+        return 0;
+}
+</pre>
+<p>一旦 sbull_open 有它的设备结构指针, 它调用 del_timer_sync 来去掉"介质移出"定时器, 如果有一个是活的. 注意我们不加锁设备自旋锁, 直到定时器被删除后; 如果定时器函数在我们可删除它之前运行, 反过来做会有死锁. 在设备加锁下, 我们调用一个内核函数, 称为 check_disk_change, 来检查是否已发生一个介质改变. 可能有人争论说内核应当做这个调用, 但是标准模式是为驱动来在打开时处理它.</p>
+<p>最后一步是递增用户计数并且返回.</p>
+<p>释放方法的任务是, 相反, 来递减用户计数, 以及, 如果被指示了, 启动介质移出定时器:</p>
+<pre class="programlisting">
+static int sbull_release(struct inode *inode, struct file *filp)
+{
+        struct sbull_dev *dev = inode-&gt;i_bdev-&gt;bd_disk-&gt;private_data;
+        spin_lock(&amp;dev-&gt;lock)
+        ;
+        dev-&gt;users--;
+        if (!dev-&gt;users)
+        {
+                dev-&gt;timer.expires = jiffies + INVALIDATE_DELAY;
+                add_timer(&amp;dev-&gt;timer);
+        }
+
+        spin_unlock(&amp;dev-&gt;lock)
+        ;
+        return 0;
+}
+</pre>
+<p>在一个处理真实的硬件设备的驱动中, open 和 release 方法应当相应地设置驱动和硬件的状态. 这个工作可能包括起停磁盘, 加锁一个可移出设备的门, 分配 DMA 缓冲, 等等.</p>
+<p>你可能奇怪谁实际上打开了一个块设备. 有一些操作可导致一个块设备从用户空间直接打开; 这包括分区一个磁盘, 在一个分区上建立一个文件系统, 或者运行一个文件系统检查器. 当加载一个分区时, 块驱动也可看到一个 open 调用. 在这个情况下, 没有用户空间进程持有一个这个设备的打开的文件描述符; 相反, 打开的文件被内核自身持有. 块驱动无法知道一个加载操作(它从内核打开设备)和调用如 mkfs 工具(从用户空间打开它)之间的差别.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="SupportingRemovableMedia.sect2"></a>16.2.2.&#160;支持可移出的介质</h3></div></div></div>
+<p>block_device_operations 结构包含 2 个方法来支持可移出介质. 如果你为一个非可移出设备编写一个驱动, 你可安全地忽略这些方法. 它们的实现是相对直接的.</p>
+<p>media_changed 方法被调用( 从 check_disk_change ) 来看是否介质已经被改变; 它应当返回一个非零值, 如果已经发生. sbull 实现是简单的; 它查询一个已被设置的标志, 如果介质移出定时器已超时:</p>
+<pre class="programlisting">
+int sbull_media_changed(struct gendisk *gd)
+{
+        struct sbull_dev *dev = gd-&gt;private_data;
+        return dev-&gt;media_change;
+}
+</pre>
+<p>revalidate 方法在介质改变后被调用; 它的工作是做任何需要的事情来准备驱动对新介质的操作, 如果有. 在调用 revalidate 之后, 内核试图重新读分区表并且启动这个设备. sbull 的实现仅仅复位 media_change 标志并且清零设备内存来模拟一个空盘插入.</p>
+<pre class="programlisting">
+int sbull_revalidate(struct gendisk *gd)
+{
+        struct sbull_dev *dev = gd-&gt;private_data;
+
+        if (dev-&gt;media_change)
+        {
+                dev-&gt;media_change = 0;
+                memset (dev-&gt;data, 0, dev-&gt;size);
+        }
+        return 0;
+}
+</pre>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheioctlMethod.sect2"></a>16.2.3.&#160;ioctl 方法</h3></div></div></div>
+<p>块设备可提供一个 ioctl 方法来进行设备控制函数. 高层的块子系统代码在你的驱动能见到它们之前解释许多的 ioctl 命令, 但是( 全部内容见 drivers/block/ioctl.c , 在内核源码中). 实际上, 一个现代的块驱动根本不必实现许多的 ioctl 命令. </p>
+<p>sbull ioctl 方法只处理一个命令 -- 一个对设备的结构的请求:</p>
+<pre class="programlisting">
+int sbull_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+{
+        long size;
+        struct hd_geometry geo;
+        struct sbull_dev *dev = filp-&gt;private_data;
+
+        switch(cmd)
+        {
+        case HDIO_GETGEO:
+                /*
+                * Get geometry: since we are a virtual device, we have to make
+                * up something plausible. So we claim 16 sectors, four heads,
+                * and calculate the corresponding number of cylinders. We set the
+                * start of data at sector four.
+                */ 
+                size = dev-&gt;size*(hardsect_size/KERNEL_SECTOR_SIZE);
+                geo.cylinders = (size &amp; ~0x3f) &gt;&gt; 6;
+                geo.heads = 4;
+                geo.sectors = 16;
+                geo.start = 4;
+                if (copy_to_user((void __user *) arg, &amp;geo, sizeof(geo)))
+                        return -EFAULT;
+                return 0;
+        }
+
+        return -ENOTTY; /* unknown command */
+}
+</pre>
+<p>提供排列信息可能看来象一个奇怪的任务, 因为我们的设备是纯粹虚拟的并且和磁道和柱面没任何关系. 甚至大部分真正的块硬件都已很多年不再有很多更复杂的结构. 内核不关心一个块设备的排列; 只把它看作一个扇区的线性数组. 但是, 有某些用户工具仍然想能够查询一个磁盘的排列. 特别的, fdisk 工具, 它编辑分区表, 依靠柱面信息并且如果这个信息没有则不能正确工作.</p>
+<p>我们希望 sbull 设备是可分区的, 即便使用老的, 简单的工具. 因此, 我们已提供了一个 ioctl 方法, 这个方法提供了一个可靠的能够匹配我们设备容量的排列的假象. 大部分磁盘驱动做类似的事情. 注意, 象通常, 扇区计数被转换, 如果需要, 来匹配内核使用的 512-字节 的惯例.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch16.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch16.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch16s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;16&#160;章&#160;块驱动&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;16.3.&#160;请求处理</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,563 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>17.10. The Socket Buffers</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-17-sect-9.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-17-sect-11.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-17-sect-10"></a>
+<h3 class="docSection1Title">17.10. The Socket Buffers</H3>
+
+<p class="docText">We've now covered<a name="chp-17-ITERM-7758"></a>
+<a name="chp-17-ITERM-7759"></a>
+most of the issues related to network interfaces.
+What's still missing is some more detailed
+discussion of the <tt>sk_buff</tt> structure. The structure
+is at the core of the network subsystem of the Linux kernel, and we
+now introduce both the main fields of the structure and the functions
+used to act on it.</p>
+
+<p class="docText">Although there is no strict need to understand the internals of
+<tt>sk_buff</tt>, the ability to look at its contents can
+be helpful when you are tracking down problems and when you are
+trying to optimize your code. For example, if you look in
+<i>loopback.c</I>, you'll find an
+optimization based on knowledge of the <tt>sk_buff</tt>
+internals. The usual warning applies here: if you write code that
+takes advantage of knowledge of the <tt>sk_buff</tt>
+structure, you should be prepared to see it break with future kernel
+releases. Still, sometimes the performance advantages justify the
+additional maintenance cost.</p>
+
+<p class="docText">We are not going to describe the whole structure here, just the
+fields that might be used from within a driver. If you want to see
+more, you can look at <span class="docEmphasis">&lt;linux/skbuff.h&gt;</span>,
+where the structure is defined and the functions are prototyped.
+Additional details about how the fields and functions are used can be
+easily retrieved by grepping in the kernel sources.</P>
+
+<a name="chp-17-sect-10.1"></a>
+<h4 class="docSection2Title">17.10.1. The Important Fields</h4>
+
+<p class="docText"><a name="chp-17-ITERM-7760"></a>
+<a name="chp-17-ITERM-7761"></a>The
+fields introduced here are the ones a driver might need to access.
+They are listed in no particular order.</p>
+
+<dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct net_device *dev;</span></span></span></dt></p>
+<dd>
+<p class="docList">The device receiving or sending this buffer.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">union { /* ... */ } h;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">union { /* ... */ } nh;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">union { /*... */} mac;</span></span></span></dt></P>
+<dd>
+<p class="docList">Pointers to the various levels of headers contained within the
+packet. Each field of the union is a pointer to a different type of
+data structure. <tt>h</tt> hosts pointers to transport
+layer headers (for example, <tt>struct</tt>
+<tt>tcphdr</tt> <tt>*th</tt>);
+<tt>nh</tt> includes network layer headers (such as
+<tt>struct</tt> <tt>iphdr</tt>
+<tt>*iph</tt>); and <tt>mac</tt> collects
+pointers to link-layer headers (such as <tt>struct
+ethdr</tt> <tt>*ethernet</tt>).</P>
+</dd>
+</dl>
+<p class="docText">If your driver needs to look at the source and destination addresses
+of a TCP packet, it can find them in <tt>skb-&gt;h.th</tt>.
+See the header file for the full set of header types that can be
+accessed in this way.</p>
+
+<p class="docText">Note that network drivers are responsible for setting the
+<tt>mac</tt> pointer for incoming packets. This task is
+normally handled by <span class="docEmphasis">eth_type_trans</span>, but
+non-Ethernet drivers have to set <tt>skb-&gt;mac.raw</tt>
+directly, as shown in <a class="docLink" href="chp-17-sect-11.shtml#chp-17-sect-11.3">Section 17.11.3</a>.</p>
+
+<a name="chp-17-ITERM-7762"></a><a name="chp-17-ITERM-7763"></a><a name="chp-17-ITERM-7764"></a><a name="chp-17-ITERM-7765"></a><a name="chp-17-ITERM-7766"></a><a name="chp-17-ITERM-7767"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *head;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *data;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *tail;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *end;</span></span></span></dt></P>
+<dd>
+<p class="docList">Pointers used to address the data in the packet.
+<tt>head</tt> points to the beginning of the allocated
+space, <tt>data</tt> is the beginning of the valid octets
+(and is usually slightly greater than <tt>head</tt>),
+<tt>tail</tt> is the end of the valid octets, and
+<tt>end</tt> points to the maximum address
+<tt>tail</tt> can reach. Another way to look at it is that
+the <span class="docEmphasis">available</span> buffer space is
+<tt>skb-&gt;end</tt> <tt>-</tt>
+<tt>skb-&gt;head</tt>, and the <span class="docEmphasis">currently
+used</span> data space is <tt>skb-&gt;tail</tt>
+<tt>-</tt> <tt>skb-&gt;data</tt>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned int len;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned int data_len;</span></span></span></dt></p>
+<dd>
+<p class="docList"><tt>len</tt> is the full length of the data in the packet,
+while <tt>data_len</tt> is the length of the portion of the
+packet stored in separate fragments. The <tt>data_len</tt>
+field is <tt>0</tt> unless scatter/gather I/O is being
+used.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char ip_summed;</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7762"></a>The checksum policy for this packet.
+The field is set by the driver on incoming packets, as described in
+the <a class="docLink" href="chp-17-sect-6.shtml#chp-17-sect-6">Section 17.6</a>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char pkt_type;</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7763"></a>
+<a name="chp-17-ITERM-7764"></a><a name="chp-17-ITERM-7765"></a><a name="chp-17-ITERM-7766"></a><a name="chp-17-ITERM-7767"></a>Packet classification used in its delivery.
+The driver is responsible for setting it to
+<tt>PACKET_HOST</tt> (this packet is for me),
+<tt>PACKET_OTHERHOST</tt> (no, this packet is not for me),
+<tt>PACKET_BROADCAST</tt>, or
+<tt>PACKET_MULTICAST</tt>. Ethernet drivers
+don't modify <tt>pkt_type</tt> explicitly
+because <span class="docEmphasis">eth_type_trans</span> does it for them.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">shinfo(struct sk_buff *skb);</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned int shinfo(skb)-&gt;nr_frags;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">skb_frag_t shinfo(skb)-&gt;frags;</span></span></span></dt></p>
+<dd>
+<p class="docList">For performance reasons, some skb information is stored in a separate
+structure that appears immediately after the skb in memory. This
+"shared info" (so called because it
+can be shared among copies of the skb within the networking code)
+must be accessed via the <span class="docEmphasis">shinfo</span> macro. There are
+several fields in this structure, but most of them are beyond the
+scope of this book. We saw <tt>nr_frags</tt> and
+<tt>frags</tt> in <a class="docLink" href="chp-17-sect-5.shtml#chp-17-sect-5.3">Section 17.5.3</a>.</p>
+</dd>
+</dl>
+
+<p class="docText">The remaining fields in the structure are not particularly
+interesting. They are used to maintain lists of buffers, to account
+for memory belonging to the socket that owns the buffer, and so on.</p>
+
+
+<a name="chp-17-sect-10.2"></a>
+<h4 class="docSection2Title">17.10.2. Functions Acting on Socket Buffers</h4>
+
+<p class="docText">Network devices<a name="chp-17-ITERM-7768"></a> that use an
+<tt>sk_buff</tt> structure act on it by means of the
+official interface functions. Many functions operate on socket
+buffers; here are the most interesting ones:</p>
+
+<a name="chp-17-ITERM-7769"></a><a name="chp-17-ITERM-7770"></a><a name="chp-17-ITERM-7771"></a><a name="chp-17-ITERM-7772"></a><a name="chp-17-ITERM-7773"></a><a name="chp-17-ITERM-7774"></a><a name="chp-17-ITERM-7775"></a><a name="chp-17-ITERM-7776"></a><a name="chp-17-ITERM-7777"></a><a name="chp-17-ITERM-7778"></a><a name="chp-17-ITERM-7779"></a><a name="chp-17-ITERM-7780"></a><a name="chp-17-ITERM-7781"></a><a name="chp-17-ITERM-7782"></a><a name="chp-17-ITERM-7783"></a><a name="chp-17-ITERM-7784"></a><a name="chp-17-ITERM-7785"></a><a name="chp-17-ITERM-7786"></a><a name="chp-17-ITERM-7787"></a><a name="chp-17-ITERM-7788"></a><a name="chp-17-ITERM-7789"></a><a name="chp-17-ITERM-7790"></a><a name="chp-17-ITERM-7791"></a><a name="chp-17-ITERM-7792"></a><a name="chp-17-ITERM-7793"></a><a name="chp-17-ITERM-7794"></a><a name="chp-17-ITERM-7795"></a><a name="chp-17-ITERM-7796"></a><a name="chp-17-ITERM-7797"></a><a name="chp-17-ITERM-7798"></a><a name="chp-17-ITERM-7799"></a><a name="chp-17-ITERM-7800"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct sk_buff *alloc_skb(unsigned int len, int priority);</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct sk_buff *dev_alloc_skb(unsigned int len);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7769"></a>
+<a name="chp-17-ITERM-7770"></a>
+<a name="chp-17-ITERM-7771"></a>
+<a name="chp-17-ITERM-7772"></a><a name="chp-17-ITERM-7773"></a>
+<a name="chp-17-ITERM-7774"></a><a name="chp-17-ITERM-7775"></a>Allocate a buffer. The
+<span class="docEmphasis">alloc_skb</span> function allocates a buffer and
+initializes both <tt>skb-&gt;data</tt> and
+<tt>skb-&gt;tail</tt> to <tt>skb-&gt;head</tt>.
+The <span class="docEmphasis">dev_alloc_skb</span> function is a shortcut that
+calls <span class="docEmphasis">alloc_skb</span> with
+<tt>GFP_ATOMIC</tt> priority and reserves some space
+between <tt>skb-&gt;head</tt> and
+<tt>skb-&gt;data</tt>. This data space is used for
+optimizations within the network layer and should not be touched by
+the driver.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void kfree_skb(struct sk_buff *skb);</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void dev_kfree_skb(struct sk_buff *skb);</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void dev_kfree_skb_irq(struct sk_buff *skb);</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void dev_kfree_skb_any(struct sk_buff *skb);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7776"></a>
+<a name="chp-17-ITERM-7777"></a>
+<a name="chp-17-ITERM-7778"></a>
+<a name="chp-17-ITERM-7779"></a><a name="chp-17-ITERM-7780"></a>
+<a name="chp-17-ITERM-7781"></a>Free
+a buffer. The <span class="docEmphasis">kfree_skb</span> call is used internally
+by the kernel. A driver should use one of the forms of
+<span class="docEmphasis">dev_kfree_skb</span> instead:
+<span class="docEmphasis">dev_kfree_skb</span> for noninterrupt context,
+<span class="docEmphasis">dev_kfree_skb_irq</span> for interrupt context, or
+<span class="docEmphasis">dev_kfree_skb_any</span> for code that can run in
+either context.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *skb_put(struct sk_buff *skb, int len);</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *_ _skb_put(struct sk_buff *skb, int len);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7782"></a>
+<a name="chp-17-ITERM-7783"></a>Update
+the <tt>tail</tt> and <tt>len</tt> fields of the
+<tt>sk_buff</tt> structure; they are used to add data to
+the end of the buffer. Each function's return value
+is the previous value of <tt>skb-&gt;tail</tt> (in other
+words, it points to the data space just created). Drivers can use the
+return value to copy data by invoking
+<tt>memcpy(skb_put(...)</tt>, <tt>data</tt>,
+<tt>len)</tt> or an equivalent. The difference between the
+two functions is that <span class="docEmphasis">skb_put</span> checks to be sure
+that the data fits in the buffer, whereas <span class="docEmphasis">_
+_skb_put</span> omits the check.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *skb_push(struct sk_buff *skb, int len);</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *_ _skb_push(struct sk_buff *skb, int len);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7784"></a>
+<a name="chp-17-ITERM-7785"></a><a name="chp-17-ITERM-7786"></a>Functions to
+decrement <tt>skb-&gt;data</tt> and increment
+<tt>skb-&gt;len</tt>. They are similar to
+<span class="docEmphasis">skb_put</span>, except that data is added to the
+beginning of the packet instead of the end. The return value points
+to the data space just created. The functions are used to add a
+hardware header before transmitting a packet. Once again, <span class="docEmphasis">_
+_skb_push</span> differs in that it does not check for adequate
+available space.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int skb_tailroom(struct sk_buff *skb);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7787"></a>
+<a name="chp-17-ITERM-7788"></a>Returns
+the amount of space available for putting data in the buffer. If a
+driver puts more data into the buffer than it can hold, the system
+panics. Although you might object that a <span class="docEmphasis">printk</span>
+would be sufficient to tag the error, memory corruption is so harmful
+to the system that the developers decided to take definitive action.
+In practice, you shouldn't need to check the
+available space if the buffer has been correctly allocated. Since
+drivers usually get the packet size before allocating a buffer, only
+a severely broken driver puts too much data in the buffer, and a
+panic might be seen as due punishment.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int skb_headroom(struct sk_buff *skb);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7789"></a>
+<a name="chp-17-ITERM-7790"></a>Returns
+the amount of space available in front of <tt>data</tt>,
+that is, how many octets one can
+"push" to the buffer.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void skb_reserve(struct sk_buff *skb, int len);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7791"></a>
+<a name="chp-17-ITERM-7792"></a>Increments
+both <tt>data</tt> and <tt>tail</tt>. The
+function can be used to reserve headroom before filling the buffer.
+Most Ethernet interfaces reserve two bytes in front of the packet;
+thus, the IP header is aligned on a 16-byte boundary, after a 14-byte
+Ethernet header. <span class="docEmphasis">snull</span> does this as well,
+although the instruction was not shown in <a class="docLink" href="chp-17-sect-6.shtml#chp-17-sect-6">Section 17.6</a> to avoid introducing extra concepts at
+that point.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char *skb_pull(struct sk_buff *skb, int len);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7793"></a>
+<a name="chp-17-ITERM-7794"></a>Removes
+data from the head of the packet. The driver won't
+need to use this function, but it is included here for completeness.
+It decrements <tt>skb-&gt;len</tt> and increments
+<tt>skb-&gt;data</tt>; this is how the hardware header
+(Ethernet or equivalent) is stripped from the beginning of incoming
+packets.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int skb_is_nonlinear(struct sk_buff *skb);</span></span><a name="chp-17-ITERM-7795"></a>
+<a name="chp-17-ITERM-7796"></a></span></dt></p>
+<dd>
+<p class="docList">Returns a true value if this skb is separated into multiple fragments
+for scatter/gather I/O.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int skb_headlen(struct sk_buff *skb);</span></span><a name="chp-17-ITERM-7797"></a>
+<a name="chp-17-ITERM-7798"></a></span></dt></p>
+<dd>
+<p class="docList">Returns the length of the first segment of the skb (that part pointed
+to by <tt>skb-&gt;data</tt>).</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *kmap_skb_frag(skb_frag_t *frag);</span></span><a name="chp-17-ITERM-7799"></a>
+<a name="chp-17-ITERM-7800"></a></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void kunmap_skb_frag(void *vaddr);</span></span></span></dt></p>
+<dd>
+<p class="docList">If you must directly access fragments in a nonlinear skb from within
+the kernel, these functions map and unmap them for you. An atomic
+kmap is used, so you cannot have more than one fragment mapped at a
+time.</P>
+</dd>
+</dl>
+
+<p class="docText">The kernel defines several other functions that act on socket
+buffers, but they are meant to be used in higher layers of <a name="chp-17-ITERM-7801"></a> <a name="chp-17-ITERM-7802"></a>networking code,
+and the driver doesn't need them.</P>
+
+
+
+<UL></ul></TD></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-17-sect-9.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-17-sect-11.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

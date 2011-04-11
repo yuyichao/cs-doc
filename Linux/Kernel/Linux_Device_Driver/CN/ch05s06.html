@@ -1,0 +1,82 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>5.6.&#160;锁陷阱-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch05.html" title="第&#160;5&#160;章&#160;并发和竞争情况">
+<link rel="prev" href="ch05s05.html" title="5.5.&#160;自旋锁">
+<link rel="next" href="ch05s07.html" title="5.7.&#160;加锁的各种选择">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">5.6.&#160;锁陷阱</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch05s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;5&#160;章&#160;并发和竞争情况</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch05s07.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="LockingTraps.sect"></a>5.6.&#160;锁陷阱</h2></div></div></div>
+<p>多年使用锁的经验 -- 早于 Linux 的经验 -- 已经表明加锁可能是非常难于正确的. 管理并发是一个固有的技巧性的事情, 有很多出错的方式. 在这一节, 我们快速看一下可能出错的东西.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AmbiguousRules.sect"></a>5.6.1.&#160;模糊的规则</h3></div></div></div>
+<p>如同上面已经说过的, 一个正确的加锁机制需要清晰和明确的规则. 当你创建一个可以被并发存取的资源时, 你应当定义哪个锁将控制存取. 加锁应当真正在开始处进行; 事后更改会是难的事情. 开始时花费的时间常常在调试时获得回报.</p>
+<p>当你编写你的代码, 你会毫无疑问遇到几个函数需要存取通过一个特定锁保护的结构. 在此, 你必须小心: 如果一个函数需要一个锁并且接着调用另一个函数也试图请求这个锁, 你的代码死锁. 不论旗标还是自旋锁都不允许一个持锁者第 2 次请求锁; 如果你试图这样做, 事情就简单地完了.</p>
+<p>为使的加锁正确工作, 你不得不编写一些函数, 假定它们的调用者已经获取了相关的锁. 常常地, 只有你的内部的, 静态函数能够这样编写; 从外部调用的函数必须明确处理加锁. 当你编写内部函数对加锁做了假设, 方便自己(和其他使用你的代码的人)并且明确记录这些假设. 在几个月后可能很难回来并记起是否你需要持有一个锁来调用一个特殊函数.</p>
+<p>在 sucll 的例子里, 采用的设计决定是要求所有的函数直接从系统调用里调用, 来请求应用到被存取的设备结构上的旗标. 所有的内部函数, 那些只是从其他 scull 函数里调用的, 可以因此假设旗标已经正确获得.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="LockOrderingRules.sect"></a>5.6.2.&#160;加锁顺序规则</h3></div></div></div>
+<p>在有大量锁的系统中(并且内核在成为这样一个系统), 一次需要持有多于一个锁, 对代码是不寻常的. 如果某类计算必须使用 2 个不同的资源进行, 每个有它自己的锁, 常常没有选择只能获取 2 个锁.</p>
+<p>获得多个锁可能是危险的, 然而. 如果你有 2 个锁, 称为 Lock1 和 Lock2, 代码需要同时都获取, 你有一个潜在的死锁. 仅仅想象一个线程锁住 Lock1 而另一个同时获得 Lock2. 接着每个线程试图得到它没有的那个. 2 个线程都会死锁.</p>
+<p>这个问题的解决方法常常是简单的: 当多个锁必须获得时, 它们应当一直以同样顺序获得. 只要遵照这个惯例, 象上面描述的简单死锁能够避免. 然而, 遵照加锁顺序规则是做比说难. 非常少见这样的规则真正在任何地方被写下. 常常你能做的最好的是看看别的代码如何做的.</p>
+<p>一些经验规则能帮上忙. 如果你必须获得一个对你的代码来说的本地锁(假如, 一个设备锁), 以及一个属于内核更中心部分的锁, 先获取你的. 如果你有一个旗标和自旋锁的组合, 你必须, 当然, 先获得旗标; 调用 down (可能睡眠) 在持有一个自旋锁时是一个严重的错误. 但是最重要的, 尽力避免需要多于一个锁的情况.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="FineVersusCoarseGrainedLocking.sect"></a>5.6.3.&#160;细 -粗- 粒度加锁</h3></div></div></div>
+<p>第一个支持多处理器系统的 Linux 内核是 2.0; 它只含有一个自旋锁. 这个大内核锁将整个内核变为一个大的临界区; 在任何时候只有一个 CPU 能够执行内核代码. 这个锁足够好地解决了并发问题以允许内核开发者从事所有其他的开发 SMP 所包含的问题. 但是它不是扩充地很好. 甚至一个 2 个处理器的系统可能花费可观数量的时间只是等待这个大内核锁. 一个 4 个处理器的系统的性能甚至不接近 4 个独立的机器的性能.</p>
+<p>因此, 后续的内核发布已经包含了更细粒度的加锁. 在 2.2 中, 一个自旋锁控制对块 I/O 子系统的存取; 另一个为网络而工作, 等等. 一个现代的内核能包含几千个锁, 每个保护一个小的资源. 这种细粒度的加锁可能对伸缩性是好的; 它允许每个处理器在它自己特定的任务上工作而不必竞争其他处理器使用的锁. 很少人忘记大内核锁.<sup>[<a name="id428542" href="ch05s06.html#ftn.id428542">19</a>]</sup></p>
+<p>但是, 细粒度加锁带有开销. 在有几千个锁的内核中, 很难知道你需要那个锁 -- 以及你应当以什么顺序获取它们 -- 来进行一个特定的操作. 记住加锁错误可能非常难发现; 更多的锁提供了更多的机会使真正有害的加锁 bug 钻进内核中. 细粒度加锁能带来一定水平的复杂性, 长期来, 对内核的可维护性有一个大的, 不利的效果.</p>
+<p>在一个设备驱动中加锁常常是相对直接的; 你可以用一个锁来涵盖你做的所有东西, 或者你可以给你管理的每个设备创建一个锁. 作为一个通用的规则, 你应当从相对粗的加锁开始, 除非你有确实的理由相信竞争可能是一个问题. 忍住怂恿去过早地优化; 真实地性能约束常常表现在想不到的地方.</p>
+<p>如果你确实怀疑锁竞争在损坏性能, 你可能发现 lockmeter 工具有用. 这个补丁(从 http://oss.sgi.com/projects/lockmeter/ 可得到) 装备内核来测量在锁等待花费的时间. 通过看这个报告, 你能够很快知道是否锁竞争真的是问题.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id428542" href="ch05s06.html#id428542">19</a>] </sup>这个锁仍然存在于 2.6, 几个它现在覆盖内核非常小的部分. 如果你偶然发现一个 lock_kernel 调用, 你已找到了这个大内核锁. 但是, 想都不要想在任何新代码中使用它.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch05s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch05.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch05s07.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">5.5.&#160;自旋锁&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;5.7.&#160;加锁的各种选择</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

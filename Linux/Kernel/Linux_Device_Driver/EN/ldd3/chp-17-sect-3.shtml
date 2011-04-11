@@ -1,0 +1,974 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>17.3. The net_device Structure in Detail</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-17-sect-2.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-17-sect-4.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-17-sect-3"></a>
+<h3 class="docSection1Title">17.3. The net_device Structure in Detail</H3>
+
+<p class="docText">The <tt>net_device</tt> structure is at the <a name="chp-17-ITERM-7536"></a> <a name="chp-17-ITERM-7537"></a>very
+core of the network driver layer and deserves a complete description.
+This list describes all the fields, but more to provide a reference
+than to be memorized. The rest of this chapter briefly describes each
+field as soon as it is used in the sample code, so you
+don't need to keep referring back to this section.</p>
+
+<a name="chp-17-sect-3.1"></a>
+<h4 class="docSection2Title">17.3.1. Global Information</H4>
+
+<p class="docText">The first part of <tt>struct net_device</tt> is composed of
+the following fields:</p>
+
+<a name="chp-17-ITERM-7538"></a><a name="chp-17-ITERM-7539"></a><a name="chp-17-ITERM-7540"></a><a name="chp-17-ITERM-7541"></a><a name="chp-17-ITERM-7542"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">char name[IFNAMSIZ];</span></span><a name="chp-17-ITERM-7538"></a></span></dt></p>
+<dd>
+<p class="docList">The name of the device. If the name set by the driver contains a
+<tt>%d</tt> format string,
+<span class="docEmphasis">register_netdev</span> replaces it with a number to
+make a unique name; assigned numbers start at <tt>0</tt>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long state;</span></span></span></dt></p>
+<dd>
+<p class="docList">Device<a name="chp-17-ITERM-7539"></a> state. The field includes several
+flags. Drivers do not normally manipulate these flags directly;
+instead, a set of utility functions has been provided. These
+functions are discussed shortly when we get into driver operations.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct net_device *next;</span></span></span></dt></p>
+<dd>
+<p class="docList">Pointer to the next <a name="chp-17-ITERM-7540"></a>device in the global
+linked list. This field shouldn't be touched by the
+driver.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*init)(struct net_device *dev);</span></span></span></dt></P>
+<dd>
+<p class="docList">An initialization <a name="chp-17-ITERM-7541"></a>function. If this pointer
+<a name="chp-17-ITERM-7542"></a>is set, the function is called by
+<span class="docEmphasis">register_netdev</span> to complete the initialization
+of the <tt>net_device</tt> structure. Most modern network
+drivers do not use this function any longer; instead, initialization
+is performed before registering the interface.</p>
+</dd>
+</dl>
+
+
+<a name="chp-17-sect-3.2"></a>
+<H4 class="docSection2Title">17.3.2. Hardware Information</H4>
+
+<p class="docText">The following
+fields<a name="chp-17-ITERM-7543"></a> contain low-level hardware
+information for relatively simple devices. They are a holdover from
+the earlier days of Linux networking; most modern drivers do make use
+of them (with the possible exception of <tt>if_port</tt>).
+We list them here for completeness.</p>
+
+<a name="chp-17-ITERM-7544"></a><a name="chp-17-ITERM-7545"></a><a name="chp-17-ITERM-7546"></a><a name="chp-17-ITERM-7547"></a><a name="chp-17-ITERM-7548"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long rmem_end;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long rmem_start;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long mem_end;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long mem_start;</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7544"></a>
+<a name="chp-17-ITERM-7545"></a>
+<a name="chp-17-ITERM-7546"></a>Device
+memory information. These fields hold the beginning and ending
+addresses of the shared memory used by the device. If the device has
+different receive and transmit memories, the <tt>mem</tt>
+fields are used for transmit memory and the <tt>rmem</tt>
+fields for receive memory. The <tt>rmem</tt> fields are
+never referenced outside of the driver itself. By convention, the
+<tt>end</tt> fields are set so that <tt>end</tt>
+<tt>-</tt> <tt>start</tt> is the amount of
+available onboard memory.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long base_addr;</span></span></span></dt></P>
+<dd>
+<p class="docList">The I/O base address of the network interface. This field, like the
+previous ones, is assigned by the driver during the device probe. The
+<span class="docEmphasis">ifconfig</span> command can be used to display or
+modify the current value. The <tt>base_addr</tt> can be
+explicitly assigned on the kernel command line at system boot (via
+the <tt>neTDev=</tt> parameter) or at module load time. The
+field, like the memory fields described above, is not used by the
+kernel.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char irq;</span></span></span></dt></p>
+<dd>
+<p class="docList">The assigned interrupt number. The value of
+<tt>dev-&gt;irq</tt> is printed by
+<span class="docEmphasis">ifconfig</span> when interfaces are listed. This value
+can usually be set at boot or load time and modified later using
+<span class="docEmphasis">ifconfig</span>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char if_port;</span></span></span></dt></P>
+<dd>
+<p class="docList">The port in use on multiport devices. This field is used, for
+example, with devices that support both coaxial
+(<tt>IF_PORT_10BASE2</tt>) and twisted-pair
+(<tt>IF_PORT_100BASET</tt>) Ethernet connections. The full
+set of known port types is defined in
+<span class="docEmphasis">&lt;linux/netdevice.h&gt;</span>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char dma;</span></span></span></dt></p>
+<dd>
+<p class="docList">The DMA channel allocated by the device. The field makes sense only
+with some peripheral buses, such as ISA. It is not used outside of
+the device driver itself but for informational<a name="chp-17-ITERM-7547"></a> <a name="chp-17-ITERM-7548"></a> purposes (in
+<span class="docEmphasis">ifconfig</span>).</P>
+</dd>
+</dl>
+
+
+<a name="chp-17-sect-3.3"></a>
+<h4 class="docSection2Title">17.3.3. Interface Information</h4>
+
+<p class="docText">Most of the information about the interface is correctly set up by
+the <span class="docEmphasis">ether_setup</span> <a name="chp-17-ITERM-7549"></a> <a name="chp-17-ITERM-7550"></a>
+<a name="chp-17-ITERM-7551"></a>function (or whatever other setup
+function is appropriate for the given hardware type). Ethernet cards
+can rely on this general-purpose function for most of these fields,
+but the <tt>flags</tt> and <tt>dev_addr</tt>
+fields are device specific and must be explicitly assigned at
+initialization time.</p>
+
+<p class="docText"><a name="chp-17-ITERM-7552"></a>
+<a name="chp-17-ITERM-7553"></a>Some <a name="chp-17-ITERM-7554"></a>
+<a name="chp-17-ITERM-7555"></a>
+<a name="chp-17-ITERM-7556"></a>non-Ethernet interfaces can use
+helper functions similar to <span class="docEmphasis">ether_setup</span>.
+<i>drivers/net/net_init.c</i> exports a number of such
+functions, including the following:</p>
+
+<a name="chp-17-ITERM-7557"></a><a name="chp-17-ITERM-7558"></a><a name="chp-17-ITERM-7559"></a><a name="chp-17-ITERM-7560"></a><a name="chp-17-ITERM-7561"></a><a name="chp-17-ITERM-7562"></a><a name="chp-17-ITERM-7563"></a><a name="chp-17-ITERM-7564"></a><a name="chp-17-ITERM-7565"></a><a name="chp-17-ITERM-7566"></a><a name="chp-17-ITERM-7567"></a><a name="chp-17-ITERM-7568"></a><a name="chp-17-ITERM-7569"></a><a name="chp-17-ITERM-7570"></a><a name="chp-17-ITERM-7571"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void ltalk_setup(struct net_device *dev);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7557"></a>
+<a name="chp-17-ITERM-7558"></a><a name="chp-17-ITERM-7559"></a>Sets up the
+fields for a LocalTalk device</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void fc_setup(struct net_device *dev);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7560"></a>
+<a name="chp-17-ITERM-7561"></a><a name="chp-17-ITERM-7562"></a>Initializes fields
+for fiber-channel devices</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void fddi_setup(struct net_device *dev);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7563"></a>
+<a name="chp-17-ITERM-7564"></a><a name="chp-17-ITERM-7565"></a>Configures an
+interface for a Fiber Distributed Data Interface (FDDI) network</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void hippi_setup(struct net_device *dev);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7566"></a>
+<a name="chp-17-ITERM-7567"></a><a name="chp-17-ITERM-7568"></a>Prepares fields
+for a High-Performance Parallel Interface (HIPPI) high-speed
+interconnect driver</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void tr_setup(struct net_device *dev);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7569"></a>
+<a name="chp-17-ITERM-7570"></a><a name="chp-17-ITERM-7571"></a>Handles
+setup for token ring network interfaces</p>
+</dd>
+</dl>
+
+<p class="docText">Most devices are covered by one of these classes. If yours is
+something radically new and different, however, you need to assign
+the following fields by hand:</p>
+
+<a name="chp-17-ITERM-7572"></a><a name="chp-17-ITERM-7573"></a><a name="chp-17-ITERM-7574"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned short hard_header_len;</span></span></span></dt></P>
+<dd>
+<p class="docList">The hardware header length, that is, the number of octets that lead
+the transmitted packet before the IP header, or other protocol
+information. The value of <tt>hard_header_len</tt> is
+<tt>14</tt> (<tt>ETH_HLEN</tt>) for Ethernet
+interfaces.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned mtu;</span></span></span></dt></P>
+<dd>
+<p class="docList">The maximum transfer unit (MTU). This field is used by the network
+layer to drive packet transmission. Ethernet has an MTU of 1500
+octets (<tt>ETH_DATA_LEN</tt>). This value can be changed
+with <span class="docEmphasis">ifconfig</span>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long tx_queue_len;</span></span></span></dt></p>
+<dd>
+<p class="docList">The maximum number of frames that can be queued on the
+device's transmission queue. This value is set to
+1000 by <span class="docEmphasis">ether_setup</span>, but you can change it. For
+example, <span class="docEmphasis">plip</span> uses 10 to avoid wasting system
+memory (<span class="docEmphasis">plip</span> has a lower throughput than a real
+Ethernet interface).</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned short type;</span></span></span></dt></p>
+<dd>
+<p class="docList">The hardware type of the interface. The <tt>type</tt> field
+is used by ARP to determine what kind of hardware address the
+interface supports. The proper value for Ethernet interfaces is
+<tt>ARPHRD_ETHER</tt>, and that is the value set by
+<span class="docEmphasis">ether_setup</span>. The recognized types are defined in
+<span class="docEmphasis">&lt;linux/if_arp.h&gt;</span>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char addr_len;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char broadcast[MAX_ADDR_LEN];</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned char dev_addr[MAX_ADDR_LEN];</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7572"></a>
+<a name="chp-17-ITERM-7573"></a><a name="chp-17-ITERM-7574"></a>Hardware (MAC)
+address length and device hardware addresses. The Ethernet address
+length is six octets (we are referring to the hardware ID of the
+interface board), and the broadcast address is made up of six
+<tt>0xff</tt> octets; <span class="docEmphasis">ether_setup</span>
+arranges for these values to be correct. The device address, on the
+other hand, must be read from the interface board in a
+device-specific way, and the driver should copy it to
+<tt>dev_addr</tt>. The hardware address is used to generate
+correct Ethernet headers before the packet is handed over to the
+driver for transmission. The <span class="docEmphasis">snull</span> device
+doesn't use a physical interface, and it invents its
+own hardware address.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned short flags;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int features;</span></span></span></dt></p>
+<dd>
+<p class="docList">Interface flags (detailed next).</p>
+</dd>
+</dl>
+
+<p class="docText"><a name="chp-17-ITERM-7575"></a>
+<a name="chp-17-ITERM-7576"></a><a name="chp-17-ITERM-7577"></a><a name="chp-17-ITERM-7578"></a><a name="chp-17-ITERM-7579"></a>The <tt>flags</tt> field is a bit
+mask including the following bit values. The <tt>IFF_</tt>
+prefix stands for "interface
+flags." Some flags are managed by the kernel, and
+some are set by the interface at initialization time to assert
+various capabilities and other features of the interface. The valid
+flags, which are defined in <span class="docEmphasis">&lt;linux/if.h&gt;</span>,
+are:</p>
+
+<a name="chp-17-ITERM-7580"></a><a name="chp-17-ITERM-7581"></a><a name="chp-17-ITERM-7582"></a><a name="chp-17-ITERM-7583"></a><a name="chp-17-ITERM-7584"></a><a name="chp-17-ITERM-7585"></a><a name="chp-17-ITERM-7586"></a><a name="chp-17-ITERM-7587"></a><a name="chp-17-ITERM-7588"></a><a name="chp-17-ITERM-7589"></a><a name="chp-17-ITERM-7590"></a><a name="chp-17-ITERM-7591"></a><a name="chp-17-ITERM-7592"></a><a name="chp-17-ITERM-7593"></a><a name="chp-17-ITERM-7594"></a><a name="chp-17-ITERM-7595"></a><a name="chp-17-ITERM-7596"></a><a name="chp-17-ITERM-7597"></a><a name="chp-17-ITERM-7598"></a><a name="chp-17-ITERM-7599"></a><a name="chp-17-ITERM-7600"></a><a name="chp-17-ITERM-7601"></a><a name="chp-17-ITERM-7602"></a><a name="chp-17-ITERM-7603"></a><a name="chp-17-ITERM-7604"></a><a name="chp-17-ITERM-7605"></a><a name="chp-17-ITERM-7606"></a><a name="chp-17-ITERM-7607"></a><a name="chp-17-ITERM-7608"></a><a name="chp-17-ITERM-7609"></a><a name="chp-17-ITERM-7610"></a><a name="chp-17-ITERM-7611"></a><a name="chp-17-ITERM-7612"></a><a name="chp-17-ITERM-7613"></a><a name="chp-17-ITERM-7614"></a><a name="chp-17-ITERM-7615"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_UP</span></span><a name="chp-17-ITERM-7580"></a>
+<a name="chp-17-ITERM-7581"></a></span></dt></P>
+<dd>
+<p class="docList">This flag is read-only for the driver. The kernel turns it on when
+the interface is active and ready to transfer packets.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_BROADCAST</span></span><a name="chp-17-ITERM-7582"></a>
+<a name="chp-17-ITERM-7583"></a></span></dt></p>
+<dd>
+<p class="docList">This flag (maintained by the networking code) states that the
+interface allows broadcasting. Ethernet boards do.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_DEBUG</span></span><a name="chp-17-ITERM-7584"></a>
+<a name="chp-17-ITERM-7585"></a></span></dt></P>
+<dd>
+<p class="docList">This marks debug mode. The flag can be used to control the verbosity
+of your <span class="docEmphasis">printk</span> calls or for other debugging
+purposes. Although no in-tree driver currently uses this flag, it can
+be set and reset by user programs via <span class="docEmphasis">ioctl</span>, and
+your driver can use it. The
+<I>misc-progs/netifdebug</i> program can be used to
+turn the flag on and off.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_LOOPBACK</span></span><a name="chp-17-ITERM-7586"></a>
+<a name="chp-17-ITERM-7587"></a></span></dt></P>
+<dd>
+<p class="docList">This flag should be set only in the loopback interface. The kernel
+checks for <tt>IFF_LOOPBACK</tt> instead of hardwiring the
+<tt>lo</tt> name as a special interface.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_POINTOPOINT</span></span><a name="chp-17-ITERM-7588"></a>
+<a name="chp-17-ITERM-7589"></a></span></dt></P>
+<dd>
+<p class="docList">This flag signals that the interface is connected to a point-to-point
+link. It is set by the driver or, sometimes, by
+<span class="docEmphasis">ifconfig</span>. For example, <span class="docEmphasis">plip</span>
+and the PPP driver have it set.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_NOARP</span></span><a name="chp-17-ITERM-7590"></a>
+<a name="chp-17-ITERM-7591"></a></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7592"></a>This means that the interface
+can't perform ARP. For example, point-to-point
+interfaces don't need to run ARP, which would only
+impose additional traffic without retrieving useful information.
+<span class="docEmphasis">snull</span> runs without ARP capabilities, so it sets
+the flag.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_PROMISC</span></span><a name="chp-17-ITERM-7593"></a>
+<a name="chp-17-ITERM-7594"></a></span></dt></p>
+<dd>
+<p class="docList">This flag is set (by the networking code) to activate promiscuous
+operation. By default, Ethernet interfaces use a hardware filter to
+ensure that they receive broadcast packets and packets directed to
+that interface's hardware address only. Packet
+sniffers such as <span class="docEmphasis">tcpdump</span> set promiscuous mode on
+the interface in order to retrieve all packets that travel on the
+interface's transmission medium.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_MULTICAST</span></span><a name="chp-17-ITERM-7595"></a>
+<a name="chp-17-ITERM-7596"></a></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7597"></a>This flag is set by drivers to mark
+interfaces that are capable of multicast transmission.
+<span class="docEmphasis">ether_setup</span> sets
+<tt>IFF_MULTICAST</tt> by default, so if your driver does
+not support multicast, it must clear the flag at initialization time.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_ALLMULTI</span></span><a name="chp-17-ITERM-7598"></a>
+<a name="chp-17-ITERM-7599"></a></span></dt></p>
+<dd>
+<p class="docList">This flag tells the interface to receive all multicast packets. The
+kernel sets it when the host performs multicast routing, only if
+<tt>IFF_MULTICAST</tt> is set.
+<tt>IFF_ALLMULTI</tt> is read-only for the driver.
+Multicast flags are used in <a class="docLink" href="chp-17-sect-14.shtml#chp-17-sect-14">Section 17.14</a>
+later in this chapter.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_MASTER</span></span><a name="chp-17-ITERM-7600"></a>
+<a name="chp-17-ITERM-7601"></a></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_SLAVE</span></span><a name="chp-17-ITERM-7602"></a>
+<a name="chp-17-ITERM-7603"></a></span></dt></p>
+<dd>
+<p class="docList">These flags are used by the load equalization code. The interface
+driver doesn't need to know about them.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_PORTSEL</span></span><a name="chp-17-ITERM-7604"></a>
+<a name="chp-17-ITERM-7605"></a></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_AUTOMEDIA</span></span><a name="chp-17-ITERM-7606"></a>
+<a name="chp-17-ITERM-7607"></a></span></dt></P>
+<dd>
+<p class="docList">These flags signal that the device is capable of switching between
+multiple media types; for example, <a name="chp-17-ITERM-7608"></a> <a name="chp-17-ITERM-7609"></a>unshielded twisted
+pair (UTP) versus coaxial Ethernet cables. If
+<tt>IFF_AUTOMEDIA</tt> is set, the device selects the
+proper medium automatically. In practice, the kernel makes no use of
+either flag.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_DYNAMIC</span></span><a name="chp-17-ITERM-7610"></a>
+<a name="chp-17-ITERM-7611"></a></span></dt></p>
+<dd>
+<p class="docList">This flag, set by the driver, indicates that the address of this
+interface can change. It is not currently used by the kernel.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_RUNNING</span></span><a name="chp-17-ITERM-7612"></a>
+<a name="chp-17-ITERM-7613"></a></span></dt></P>
+<dd>
+<p class="docList">This flag indicates that the interface is up and running. It is
+mostly present for BSD compatibility; the kernel makes little use of
+it. Most network drivers need not worry about
+<tt>IFF_RUNNING</tt>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">IFF_NOTRAILERS</span></span><a name="chp-17-ITERM-7614"></a>
+<a name="chp-17-ITERM-7615"></a></span></dt></p>
+<dd>
+<p class="docList">This flag is unused in Linux, but it exists for BSD compatibility.</p>
+</dd>
+</dl>
+
+<p class="docText">When a program changes <tt>IFF_UP</tt>, the
+<span class="docEmphasis">open</span> or <span class="docEmphasis">stop</span> device method
+is called. Furthermore, when <tt>IFF_UP</tt> or any other
+flag is modified, the
+<span class="docEmphasis">set_multicast_list</span><a name="chp-17-ITERM-7616"></a>
+<a name="chp-17-ITERM-7617"></a>
+method is invoked. If the driver needs to perform some action in
+response to a modification of the flags, it must take that action in
+<span class="docEmphasis">set_multicast_list</span>. For example, when
+<tt>IFF_PROMISC</tt> is set or reset,
+<span class="docEmphasis">set_multicast_list</span> must notify the onboard
+hardware filter. The responsibilities of this device method are
+outlined in <a class="docLink" href="chp-17-sect-14.shtml#chp-17-sect-14">Section 17.14</a>.</P>
+
+<p class="docText">The <tt>features</tt> field of the
+<tt>net_device</tt> structure is set by the driver to tell
+the kernel about any special hardware capabilities that this
+interface has. We will discuss some of these features; others are
+beyond the scope of this book. The full set is:</P>
+
+<dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_SG</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_FRAGLIST</span></span></span></dt></p>
+<dd>
+<p class="docList">Both of these flags control the use of scatter/gather I/O. If your
+interface can transmit a packet that has been split into several
+distinct memory segments, you should set
+<tt>NETIF_F_SG</tt>. Of course, you have to actually
+implement the scatter/gather I/O (we describe how that is done in the
+<a class="docLink" href="chp-17-sect-5.shtml#chp-17-sect-5.3">Section 17.5.3</a>). <tt>NETIF_F_FRAGLIST</tt> states
+that your interface can cope with packets that have been fragmented;
+only the loopback driver does this in 2.6.</p>
+</dd>
+</dl>
+<p class="docText">Note that the kernel does not perform scatter/gather I/O to your
+device if it does not also provide some form of checksumming as well.
+The reason is that, if the kernel has to make a pass over a
+fragmented ("nonlinear") packet to
+calculate the checksum, it might as well copy the data and coalesce
+the packet at the same time.</p>
+
+<dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_IP_CSUM</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_NO_CSUM</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_HW_CSUM</span></span></span></dt></P>
+<dd>
+<p class="docList">These flags are all ways of telling the kernel that it need not apply
+checksums to some or all packets leaving the system by this
+interface. Set <tt>NETIF_F_IP_CSUM</tt> if your interface
+can checksum IP packets but not others. If no checksums are ever
+required for this interface, set <tt>NETIF_F_NO_CSUM</tt>.
+The loopback driver sets this flag, and <span class="docEmphasis">snull</span>
+does, too; since packets are only transferred through system memory,
+there is (one hopes!) no opportunity for them to be corrupted, and no
+need to check them. If your hardware does checksumming itself, set
+<tt>NETIF_F_HW_CSUM</tt>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_HIGHDMA</span></span></span></dt></p>
+<dd>
+<p class="docList">Set this flag if your device can perform DMA to high memory. In the
+absence of this flag, all packet buffers provided to your driver are
+allocated in low memory.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_HW_VLAN_TX</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_HW_VLAN_RX</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_HW_VLAN_FILTER</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_VLAN_CHALLENGED</span></span></span></dt></P>
+<dd>
+<p class="docList">These options describe your hardware's support for
+802.1q VLAN packets. VLAN support is beyond what we can cover in this
+chapter. If VLAN packets confuse your device (which they really
+shouldn't), set the
+<tt>NETIF_F_VLAN_CHALLENGED</tt> flag.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">NETIF_F_TSO</span></span></span></dt></P>
+<dd>
+<p class="docList">Set this flag if your device can perform TCP segmentation offloading.
+TSO is an advanced feature that we cannot cover here.</p>
+</dd>
+</dl>
+
+
+<a name="chp-17-sect-3.4"></a>
+<H4 class="docSection2Title">17.3.4. The Device Methods</H4>
+
+<p class="docText">As happens with the
+<a name="chp-17-ITERM-7618"></a>
+<a name="chp-17-ITERM-7619"></a>char
+and block drivers, each network device declares the functions that
+act on it. Operations that can be performed on network interfaces are
+listed in this section. Some of the operations can be left
+<tt>NULL</tt>, and others are usually untouched because
+<span class="docEmphasis">ether_setup</span> assigns suitable methods to them.</P>
+
+<p class="docText">Device methods for a network interface can be divided into two
+groups: fundamental and optional. Fundamental methods include those
+that are needed to be able to use the interface; optional methods
+implement more advanced functionalities that are not strictly
+required. The following are the fundamental methods:</p>
+
+<a name="chp-17-ITERM-7620"></a><a name="chp-17-ITERM-7621"></a><a name="chp-17-ITERM-7622"></a><a name="chp-17-ITERM-7623"></a><a name="chp-17-ITERM-7624"></a><a name="chp-17-ITERM-7625"></a><a name="chp-17-ITERM-7626"></a><a name="chp-17-ITERM-7627"></a><a name="chp-17-ITERM-7628"></a><a name="chp-17-ITERM-7629"></a><a name="chp-17-ITERM-7630"></a><a name="chp-17-ITERM-7631"></a><a name="chp-17-ITERM-7632"></a><a name="chp-17-ITERM-7633"></a><a name="chp-17-ITERM-7634"></a><a name="chp-17-ITERM-7635"></a><a name="chp-17-ITERM-7636"></a><a name="chp-17-ITERM-7637"></a><a name="chp-17-ITERM-7638"></a><a name="chp-17-ITERM-7639"></a><a name="chp-17-ITERM-7640"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*open)(struct net_device *dev);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7620"></a>
+<a name="chp-17-ITERM-7621"></a>Opens the interface. The interface is
+opened whenever <span class="docEmphasis">ifconfig</span> activates it. The
+<span class="docEmphasis">open</span> method should register any system resource
+it needs (I/O ports, IRQ, DMA, etc.), turn on the hardware, and
+perform any other setup your device requires.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*stop)(struct net_device *dev);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7622"></a>
+<a name="chp-17-ITERM-7623"></a>Stops
+the interface. The interface is stopped when it is brought down. This
+function should reverse operations performed at open time.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*hard_start_xmit) (struct sk_buff *skb, struct net_device *dev);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7624"></a>
+<a name="chp-17-ITERM-7625"></a>Method
+that initiates the transmission of a packet. The full packet
+(protocol headers and all) is contained in a socket buffer
+(<tt>sk_buff</tt>) structure. Socket buffers are introduced
+later in this chapter.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*hard_header) (struct sk_buff *skb, struct net_device *dev, unsigned</span></span> </span></dt></p>
+<dt><span class="docPubcolor">  <span class="docPubcolor"><span class="docMonofont">short type, void *daddr, void *saddr, unsigned len);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7626"></a>
+<a name="chp-17-ITERM-7627"></a><a name="chp-17-ITERM-7628"></a><a name="chp-17-ITERM-7629"></a>Function
+(called before <span class="docEmphasis">hard_start_xmit</span>) that builds the
+hardware header from the source and destination hardware addresses
+that were previously retrieved; its job is to organize the
+information passed to it as arguments into an appropriate,
+device-specific hardware header. <span class="docEmphasis">eth_header</span> is
+the default function for Ethernet-like interfaces, and
+<span class="docEmphasis">ether_setup</span> assigns this field accordingly.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*rebuild_header)(struct sk_buff *skb);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7630"></a>
+<a name="chp-17-ITERM-7631"></a>Function
+used to rebuild the hardware header after ARP resolution completes
+but before a packet is transmitted. The default function used by
+Ethernet devices uses the ARP support code to fill the packet with
+missing information.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void (*tx_timeout)(struct net_device *dev);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7632"></a>
+<a name="chp-17-ITERM-7633"></a><a name="chp-17-ITERM-7634"></a>Method called by the networking code when
+a packet transmission fails to complete within a reasonable period,
+on the assumption that an interrupt has been missed or the interface
+has locked up. It should handle the problem and resume packet
+transmission.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct net_device_stats *(*get_stats)(struct net_device *dev);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7635"></a>
+<a name="chp-17-ITERM-7636"></a><a name="chp-17-ITERM-7637"></a>Whenever an application needs to
+get statistics for the interface, this method is called. This
+happens, for example, when <span class="docEmphasis">ifconfig</span> or
+<span class="docEmphasis">netstat -i</span> is run. A sample implementation for
+<span class="docEmphasis">snull</span> is introduced in <a class="docLink" href="chp-17-sect-13.shtml#chp-17-sect-13">Section 17.13</a>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*set_config)(struct net_device *dev, struct ifmap *map);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7638"></a>
+<a name="chp-17-ITERM-7639"></a><a name="chp-17-ITERM-7640"></a>Changes the interface configuration.
+This method is the entry point for configuring the driver. The I/O
+address for the device and its interrupt number can be changed at
+runtime using <span class="docEmphasis">set_config</span>. This capability can be
+used by the system administrator if the interface cannot be probed
+for. Drivers for modern hardware normally do not need to implement
+this method.</p>
+</dd>
+</dl>
+
+<p class="docText">The remaining
+device<a name="chp-17-ITERM-7641"></a>
+<a name="chp-17-ITERM-7642"></a>
+<a name="chp-17-ITERM-7643"></a>
+operations are optional:</P>
+
+<a name="chp-17-ITERM-7644"></a><a name="chp-17-ITERM-7645"></a><a name="chp-17-ITERM-7646"></a><a name="chp-17-ITERM-7647"></a><a name="chp-17-ITERM-7648"></a><a name="chp-17-ITERM-7649"></a><a name="chp-17-ITERM-7650"></a><a name="chp-17-ITERM-7651"></a><a name="chp-17-ITERM-7652"></a><a name="chp-17-ITERM-7653"></a><a name="chp-17-ITERM-7654"></a><a name="chp-17-ITERM-7655"></a><a name="chp-17-ITERM-7656"></a><a name="chp-17-ITERM-7657"></a><a name="chp-17-ITERM-7658"></a><a name="chp-17-ITERM-7659"></a><a name="chp-17-ITERM-7660"></a><a name="chp-17-ITERM-7661"></a><a name="chp-17-ITERM-7662"></a><a name="chp-17-ITERM-7663"></a><a name="chp-17-ITERM-7664"></a><a name="chp-17-ITERM-7665"></a><a name="chp-17-ITERM-7666"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int weight;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*poll)(struct net_device *dev; int *quota);</span></span></span></dt></p>
+<dd>
+<p class="docList">Method <a name="chp-17-ITERM-7644"></a>
+<a name="chp-17-ITERM-7645"></a>provided
+by NAPI-compliant drivers to operate the interface in a polled mode,
+with interrupts disabled. NAPI (and the <tt>weight</tt>
+field) are covered in <a class="docLink" href="chp-17-sect-8.shtml#chp-17-sect-8">Section 17.8</a>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void (*poll_controller)(struct net_device *dev);</span></span></span></dt></P>
+<dd>
+<p class="docList">Function that asks the driver to check for events on the interface in
+situations where interrupts are disabled. It is used for specific
+in-kernel networking tasks, such as remote consoles and kernel
+debugging over the network.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*do_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7646"></a>
+<a name="chp-17-ITERM-7647"></a><a name="chp-17-ITERM-7648"></a>Performs interface-specific
+<span class="docEmphasis">ioctl</span> commands. (Implementation of those
+commands is described in <a class="docLink" href="chp-17-sect-12.shtml#chp-17-sect-12">Section 17.12</a>.) The corresponding field in
+<tt>struct</tt> <tt>net_device</tt> can be left
+as <tt>NULL</tt> if the interface doesn't
+need any interface-specific commands.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void (*set_multicast_list)(struct net_device *dev);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7649"></a>
+<a name="chp-17-ITERM-7650"></a>Method
+called when the multicast list for the device changes and when the
+flags change. See the <a class="docLink" href="chp-17-sect-14.shtml#chp-17-sect-14">Section 17.14</a>
+for further details and a sample implementation.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*set_mac_address)(struct net_device *dev, void *addr);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7651"></a>
+<a name="chp-17-ITERM-7652"></a><a name="chp-17-ITERM-7653"></a><a name="chp-17-ITERM-7654"></a>Function that can be implemented if the
+interface supports the ability to change its hardware address. Many
+interfaces don't support this ability at all. Others
+use the default <span class="docEmphasis">eth_mac_addr</span> implementation
+(from <i>drivers/net/net_init.c</i>).
+<span class="docEmphasis">eth_mac_addr</span> only copies the new address into
+<tt>dev-&gt;dev_addr</tt>, and it does so only if the
+interface is not running. Drivers that use
+<span class="docEmphasis">eth_mac_addr</span> should set the hardware MAC address
+from <tt>dev-&gt;dev_addr</tt> in their
+<span class="docEmphasis">open</span> method.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*change_mtu)(struct net_device *dev, int new_mtu);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7655"></a>
+<a name="chp-17-ITERM-7656"></a><a name="chp-17-ITERM-7657"></a>Function that takes action
+if there is a change in the maximum transfer unit (MTU) for the
+interface. If the driver needs to do anything particular when the MTU
+is changed by the user, it should declare its own function;
+otherwise, the default does the right thing.
+<span class="docEmphasis">snull</span> has a template for the function if you are
+interested.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*header_cache) (struct neighbour *neigh, struct hh_cache *hh);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7658"></a>
+<a name="chp-17-ITERM-7659"></a><span class="docEmphasis">header_cache</span>
+is called to fill in the <tt>hh_cache</tt> structure with
+the results of an ARP query. Almost all Ethernet-like drivers can use
+the default <span class="docEmphasis">eth_header_cache</span> implementation.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*header_cache_update) (struct hh_cache *hh, struct net_device *dev</span></span>, </span></dt></p>
+<dt><span class="docPubcolor">  <span class="docPubcolor"><span class="docMonofont">unsigned char *haddr);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7660"></a>
+<a name="chp-17-ITERM-7661"></a>Method
+that updates the destination address in the
+<tt>hh_cache</tt> structure in response to a change.
+Ethernet devices use <span class="docEmphasis">eth_header_cache_update</span>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*hard_header_parse) (struct sk_buff *skb, unsigned char *haddr);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7662"></a><a name="chp-17-ITERM-7663"></a>The <span class="docEmphasis">hard_header_parse</span>
+method extracts the source address from the packet contained in
+<tt>skb</tt>, copying it into the buffer at
+<tt>haddr</tt>. The return value from the function is the
+<a name="chp-17-ITERM-7664"></a>
+<a name="chp-17-ITERM-7665"></a>
+<a name="chp-17-ITERM-7666"></a>length
+of that address. Ethernet devices normally use
+<span class="docEmphasis">eth_header_parse</span>.</p>
+</dd>
+</dl>
+
+
+<a name="chp-17-sect-3.5"></a>
+<h4 class="docSection2Title">17.3.5. Utility Fields</h4>
+
+<p class="docText"><a name="chp-17-ITERM-7667"></a> <a name="chp-17-ITERM-7668"></a>The remaining <tt>struct
+net_device</tt> data fields are used by the interface to hold
+useful status information. Some of the fields are used by
+<span class="docEmphasis">ifconfig</span> and <span class="docEmphasis">netstat</span> to
+provide the user with information about the current configuration.
+Therefore, an interface should assign values to these fields:</p>
+
+<a name="chp-17-ITERM-7669"></a><a name="chp-17-ITERM-7670"></a><a name="chp-17-ITERM-7671"></a><a name="chp-17-ITERM-7672"></a><a name="chp-17-ITERM-7673"></a><a name="chp-17-ITERM-7674"></a><a name="chp-17-ITERM-7675"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long trans_start;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long last_rx;</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7669"></a>
+<a name="chp-17-ITERM-7670"></a>Fields
+that hold a jiffies value. The driver is responsible for updating
+these values when transmission begins and when a packet is received,
+respectively. The <tt>trans_start</tt> value is used by the
+networking subsystem to detect transmitter lockups.
+<tt>last_rx</tt> is currently unused, but the driver should
+maintain this field anyway to be prepared for future use.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int watchdog_timeo;</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7671"></a><a name="chp-17-ITERM-7672"></a>The minimum time (in
+jiffies) that should pass before the networking layer decides that a
+transmission timeout has occurred and calls the
+driver's <span class="docEmphasis">tx_timeout</span> function.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *priv;</span></span></span></dt></p>
+<dd>
+<p class="docList">The equivalent of <tt>filp-&gt;private_data</tt>. In modern
+drivers, this field is set by <span class="docEmphasis">alloc_netdev</span> and
+should not be accessed directly; use <span class="docEmphasis">netdev_priv</span>
+instead.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct dev_mc_list *mc_list;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int mc_count;</span></span></span></dt></P>
+<dd>
+<p class="docList">Fields that handle multicast transmission.
+<tt>mc_count</tt> is the count of items in
+<tt>mc_list</tt>. See the <a class="docLink" href="chp-17-sect-14.shtml#chp-17-sect-14">Section 17.14</a>
+for further details.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">spinlock_t xmit_lock;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int xmit_lock_owner;</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-17-ITERM-7673"></a>
+<a name="chp-17-ITERM-7674"></a>
+<a name="chp-17-ITERM-7675"></a>The
+<tt>xmit_lock</tt> is used to avoid multiple simultaneous
+calls to the driver's
+<span class="docEmphasis">hard_start_xmit</span> function.
+<tt>xmit_lock_owner</tt> is the number of the CPU that has
+obtained <tt>xmit_lock</tt>. The driver should make no
+changes to these fields.</P>
+</dd>
+</dl>
+
+<p class="docText">There are other fields in <a name="chp-17-ITERM-7676"></a> <a name="chp-17-ITERM-7677"></a> <a name="chp-17-ITERM-7678"></a> <a name="chp-17-ITERM-7679"></a><tt>struct net_device</tt>,
+but they are not used by network drivers.</p>
+
+
+
+<ul></UL></td></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-17-sect-2.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-17-sect-4.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

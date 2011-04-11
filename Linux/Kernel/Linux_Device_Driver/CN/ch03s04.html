@@ -1,0 +1,125 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>3.4.&#160;字符设备注册-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch03.html" title="第&#160;3&#160;章&#160;字符驱动">
+<link rel="prev" href="ch03s03.html" title="3.3.&#160;一些重要数据结构">
+<link rel="next" href="ch03s05.html" title="3.5.&#160;open 和 release">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">3.4.&#160;字符设备注册</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch03s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;3&#160;章&#160;字符驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch03s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="CharDeviceRegistration.sect"></a>3.4.&#160;字符设备注册</h2></div></div></div>
+<p>如我们提过的, 内核在内部使用类型 struct cdev 的结构来代表字符设备. 在内核调用你的设备操作前, 你编写分配并注册一个或几个这些结构. <sup>[<a name="id415477" href="ch03s04.html#ftn.id415477">11</a>]</sup>为此, 你的代码应当包含 &lt;linux/cdev.h&gt;, 这个结构和它的关联帮助函数定义在这里.</p>
+<p>有 2 种方法来分配和初始化一个这些结构. 如果你想在运行时获得一个独立的 cdev 结构, 你可以为此使用这样的代码:</p>
+<pre class="programlisting">
+struct cdev *my_cdev = cdev_alloc();
+my_cdev-&gt;ops = &amp;my_fops;
+</pre>
+<p>但是, 偶尔你会想将 cdev 结构嵌入一个你自己的设备特定的结构; scull 这样做了. 在这种情况下, 你应当初始化你已经分配的结构, 使用:</p>
+<pre class="programlisting">
+void cdev_init(struct cdev *cdev, struct file_operations *fops);
+</pre>
+<p>任一方法, 有一个其他的 struct cdev 成员你需要初始化. 象 file_operations 结构, struct cdev 有一个拥有者成员, 应当设置为 THIS_MODULE. 一旦 cdev 结构建立, 最后的步骤是把它告诉内核, 调用:</p>
+<pre class="programlisting">
+int cdev_add(struct cdev *dev, dev_t num, unsigned int count);
+</pre>
+<p>这里, dev 是 cdev 结构, num 是这个设备响应的第一个设备号, count 是应当关联到设备的设备号的数目. 常常 count 是 1, 但是有多个设备号对应于一个特定的设备的情形. 例如, 设想 SCSI 磁带驱动, 它允许用户空间来选择操作模式(例如密度), 通过安排多个次编号给每一个物理设备.</p>
+<p>在使用 cdev_add 是有几个重要事情要记住. 第一个是这个调用可能失败. 如果它返回一个负的错误码, 你的设备没有增加到系统中.  它几乎会一直成功, 但是, 并且带起了其他的点: cdev_add 一返回, 你的设备就是"活的"并且内核可以调用它的操作. 除非你的驱动完全准备好处理设备上的操作, 你不应当调用 cdev_add.</p>
+<p>为从系统去除一个字符设备, 调用:</p>
+<pre class="programlisting">
+void cdev_del(struct cdev *dev);
+</pre>
+<p>显然, 你不应当在传递给 cdev_del 后存取 cdev 结构.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="DeviceRegistrationinscull.sect"></a>3.4.1.&#160;scull 中的设备注册</h3></div></div></div>
+<p>在内部, scull 使用一个 struct scull_dev 类型的结构表示每个设备. 这个结构定义为:</p>
+<pre class="programlisting">
+struct scull_dev { 
+ struct scull_qset *data;  /* Pointer to first quantum set */ 
+ int quantum;  /* the current quantum size */ 
+ int qset;  /* the current array size */ 
+ unsigned long size;  /* amount of data stored here */ 
+ unsigned int access_key;  /* used by sculluid and scullpriv */ 
+ struct semaphore sem;  /* mutual exclusion semaphore  */ 
+
+ struct cdev cdev; /* Char device structure */
+};
+</pre>
+<p>我们在遇到它们时讨论结构中的各个成员, 但是现在, 我们关注于 cdev, 我们的设备与内核接口的 struct cdev. 这个结构必须初始化并且如上所述添加到系统中; 处理这个任务的 scull 代码是:</p>
+<pre class="programlisting">
+static void scull_setup_cdev(struct scull_dev *dev, int index)
+{
+ int err, devno = MKDEV(scull_major, scull_minor + index);
+
+ cdev_init(&amp;dev-&gt;cdev, &amp;scull_fops);
+ dev-&gt;cdev.owner = THIS_MODULE;
+ dev-&gt;cdev.ops = &amp;scull_fops;
+ err = cdev_add (&amp;dev-&gt;cdev, devno, 1);
+ /* Fail gracefully if need be */
+ if (err)
+ printk(KERN_NOTICE "Error %d adding scull%d", err, index);
+} 
+</pre>
+<p>因为 cdev 结构嵌在 struct scull_dev 里面, cdev_init 必须调用来进行那个结构的初始化.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheOlderWay.sect"></a>3.4.2.&#160;老方法</h3></div></div></div>
+<p>如果你深入浏览 2.6 内核的大量驱动代码, 你可能注意到有许多字符驱动不使用我们刚刚描述过的 cdev 接口. 你见到的是还没有更新到 2.6 内核接口的老代码. 因为那个代码实际上能用, 这个更新可能很长时间不会发生. 为完整, 我们描述老的字符设备注册接口, 但是新代码不应当使用它; 这个机制在将来内核中可能会消失.</p>
+<p>注册一个字符设备的经典方法是使用:</p>
+<pre class="programlisting">
+int register_chrdev(unsigned int major, const char *name, struct file_operations *fops);
+</pre>
+<p>这里, major 是感兴趣的主编号, name 是驱动的名子(出现在 /proc/devices), fops 是缺省的 file_operations 结构. 一个对 register_chrdev 的调用为给定的主编号注册 0 - 255 的次编号, 并且为每一个建立一个缺省的 cdev 结构. 使用这个接口的驱动必须准备好处理对所有 256 个次编号的 open 调用( 不管它们是否对应真实设备 ), 它们不能使用大于 255 的主或次编号.</p>
+<p>如果你使用 register_chrdev, 从系统中去除你的设备的正确的函数是:</p>
+<pre class="programlisting">
+int unregister_chrdev(unsigned int major, const char *name);
+</pre>
+<p>major 和 name 必须和传递给 register_chrdev 的相同, 否则调用会失败.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id415477" href="ch03s04.html#id415477">11</a>] </sup>有一个早些的机制以避免使用 cdev 结构(我们在"老方法"一节中讨论).但是, 新代码应当使用新技术.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch03s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch03.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch03s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">3.3.&#160;一些重要数据结构&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;3.5.&#160;open 和 release</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

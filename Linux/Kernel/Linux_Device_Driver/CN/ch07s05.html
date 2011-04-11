@@ -1,0 +1,105 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>7.5.&#160;Tasklets 机制-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch07.html" title="第&#160;7&#160;章&#160;时间, 延时, 和延后工作">
+<link rel="prev" href="ch07s04.html" title="7.4.&#160;内核定时器">
+<link rel="next" href="ch07s06.html" title="7.6.&#160;工作队列">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">7.5.&#160;Tasklets 机制</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch07s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;7&#160;章&#160;时间, 延时, 和延后工作</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch07s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="Tasklets.sect"></a>7.5.&#160;Tasklets 机制</h2></div></div></div>
+<p>另一个有关于定时问题的内核设施是 tasklet 机制. 它大部分用在中断管理(我们将在第 10 章再次见到).</p>
+<p>tasklet 类似内核定时器在某些方面. 它们一直在中断时间运行, 它们一直运行在调度它们的同一个 CPU 上, 并且它们接收一个 unsigned long 参数. 不象内核定时器, 但是, 你无法请求在一个指定的时间执行函数. 通过调度一个 tasklet, 你简单地请求它在以后的一个由内核选择的时间执行. 这个行为对于中断处理特别有用, 那里硬件中断必须被尽快处理, 但是大部分的时间管理可以安全地延后到以后的时间. 实际上, 一个 tasket, 就象一个内核定时器, 在一个"软中断"的上下文中执行(以原子模式), 在使能硬件中断时执行异步任务的一个内核机制.</p>
+<p>一个 tasklet 存在为一个时间结构, 它必须在使用前被初始化. 初始化能够通过调用一个特定函数或者通过使用某些宏定义声明结构:</p>
+<pre class="programlisting">
+#include &lt;linux/interrupt.h&gt; 
+struct tasklet_struct {
+ /* ... */
+
+void (*func)(unsigned long);
+ unsigned long data;
+};
+
+void tasklet_init(struct tasklet_struct *t,
+ void (*func)(unsigned long), unsigned long data);
+DECLARE_TASKLET(name, func, data);
+DECLARE_TASKLET_DISABLED(name, func, data);
+</pre>
+<p>tasklet 提供了许多有趣的特色:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>一个 tasklet 能够被禁止并且之后被重新使能; 它不会执行直到它被使能与被禁止相同的的次数.</p></li>
+<li><p>如同定时器, 一个 tasklet 可以注册它自己.</p></li>
+<li><p>一个 tasklet 能被调度来执行以正常的优先级或者高优先级. 后一组一直是首先执行.</p></li>
+<li><p>taslet 可能立刻运行, 如果系统不在重载下, 但是从不会晚于下一个时钟嘀哒.</p></li>
+<li><p>一个 tasklet 可能和其他 tasklet 并发, 但是对它自己是严格地串行的 -- 同样的 tasklet 从不同时运行在超过一个处理器上. 同样, 如已经提到的, 一个 tasklet 常常在调度它的同一个 CPU 上运行.</p></li>
+</ul></div>
+<p>jit 模块包括 2 个文件, /proc/jitasklet 和 /proc/jitasklethi, 它返回和在"内核定时器"一节中介绍过的 /proc/jitimer 同样的数据. 当你读其中一个文件时, 你取回一个 header 和 sixdata 行. 第一个数据行描述了调用进程的上下文, 并且其他的行描述了一个 tasklet 过程连续运行的上下文. 这是一个在编译一个内核时的运行例子:</p>
+<pre class="screen">
+phon% cat /proc/jitasklet
+ time delta inirq pid cpu command
+ 6076139 0 0 4370 0 cat
+ 6076140 1 1 4368 0 cc1
+ 6076141 1 1 4368 0 cc1
+ 6076141 0 1 2 0 ksoftirqd/0
+ 6076141 0 1 2 0 ksoftirqd/0
+ 6076141 0 1 2 0 ksoftirqd/0
+</pre>
+<p>如同由上面数据所确定的, tasklet 在下一个时间嘀哒内运行只要 CPU 在忙于运行一个进程, 但是它立刻被运行当 CPU 处于空闲. 内核提供了一套 ksoftirqd 内核线程, 每个 CPU 一个, 只是来运行 "软件中断" 处理, 就像 tasklet_action 函数. 因此, tasklet 的最后 3 个运行在关联到 CPU 0 的 ksoftirqd 内核线程的上下文中发生. jitasklethi 的实现使用了一个高优先级 tasklet, 在马上要来的函数列表中解释. </p>
+<p>jit 中实现 /proc/jitasklet 和 /proc/jittasklethi 的实际代码与 /proc/jitimer 的实现代码几乎是一致的, 但是它使用 tasklet 调用代替那些定时器. 下面的列表详细展开了 tasklet 结构已被初始化后的内核对 tasklet 的接口:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>void tasklet_disable(struct tasklet_struct *t);</span></span></dt>
+<dd><p>这个函数禁止给定的 tasklet. tasklet 可能仍然被 tasklet_schedule 调度, 但是它的执行被延后直到这个 tasklet 被再次使能. 如果这个 tasklet 当前在运行, 这个函数忙等待直到这个tasklet退出; 因此, 在调用 tasklet_disable 后, 你可以确保这个 tasklet 在系统任何地方都不在运行.</p></dd>
+<dt><span class="term"><span>void tasklet_disable_nosync(struct tasklet_struct *t);</span></span></dt>
+<dd><p>禁止这个 tasklet, 但是没有等待任何当前运行的函数退出. 当它返回, 这个 tasklt 被禁止并且不会在以后被调度直到重新使能, 但是它可能仍然运行在另一个 CPU 当这个函数返回时.</p></dd>
+<dt><span class="term"><span>void tasklet_enable(struct tasklet_struct *t);</span></span></dt>
+<dd><p>使能一个之前被禁止的 tasklet. 如果这个 tasklet 已经被调度, 它会很快运行. 一个对 tasklet_enable 的调用必须匹配每个对 tasklet_disable 的调用, 因为内核跟踪每个 tasklet 的"禁止次数". </p></dd>
+<dt><span class="term"><span>void tasklet_schedule(struct tasklet_struct *t);</span></span></dt>
+<dd><p>调度 tasklet 执行. 如果一个 tasklet 被再次调度在它有机会运行前, 它只运行一次. 但是, 如果他在运行中被调度, 它在完成后再次运行; 这保证了在其他事件被处理当中发生的事件收到应有的注意. 这个做法也允许一个 tasklet 重新调度它自己.</p></dd>
+<dt><span class="term"><span>void tasklet_hi_schedule(struct tasklet_struct *t);</span></span></dt>
+<dd><p>调度 tasklet 在更高优先级执行. 当软中断处理运行时, 它处理高优先级 tasklet 在其他软中断之前, 包括"正常的" tasklet. 理想地, 只有具有低响应周期要求( 例如填充音频缓冲 )应当使用这个函数, 为避免其他软件中断处理引入的附加周期. 实际上, /proc/jitasklethi 没有显示可见的与 /proc/jitasklet 的区别.</p></dd>
+<dt><span class="term"><span>void tasklet_kill(struct tasklet_struct *t);</span></span></dt>
+<dd><p>这个函数确保了这个 tasklet 没被再次调度来运行; 它常常被调用当一个设备正被关闭或者模块卸载时. 如果这个 tasklet 被调度来运行, 这个函数等待直到它已执行. 如果这个 tasklet 重新调度它自己, 你必须阻止在调用 tasklet_kill 前它重新调度它自己, 如同使用 del_timer_sync.</p></dd>
+</dl></div>
+<p>tasklet 在 kernel/softirq.c 中实现. 2 个 tasklet 链表( 正常和高优先级 )被声明为每-CPU数据结构, 使用和内核定时器相同的 CPU-亲和 机制. 在 tasklet 管理中的数据结构是简单的链表, 因为 tasklet 没有内核定时器的分类请求.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch07s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch07.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch07s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">7.4.&#160;内核定时器&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;7.6.&#160;工作队列</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

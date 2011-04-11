@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 数组应用实例：直方图</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch08.html" title="第 8 章 数组" /><link rel="prev" href="ch08s02.html" title="2. 数组应用实例：统计随机数" /><link rel="next" href="ch08s04.html" title="4. 字符串" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 数组应用实例：直方图</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch08s02.html">上一页</a> </td><th width="60%" align="center">第 8 章 数组</th><td width="20%" align="right"> <a accesskey="n" href="ch08s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2734162"></a>3. 数组应用实例：直方图</h2></div></div></div><p>继续上面的例子。我们统计一列0~9的随机数，打印每个数字出现的次数，像这样的统计结果称为直方图（Histogram）<a id="id2734172" class="indexterm"></a>。有时候我们并不只是想打印，更想把统计结果保存下来以便做后续处理。我们可以把程序改成这样：</p><pre class="programlisting">int main(void)
+{
+	int howmanyones = howmany(1);
+	int howmanytwos = howmany(2);
+	...
+}</pre><p>这显然太繁琐了。要是这样的随机数有100个呢？显然这里用数组最合适不过了：</p><pre class="programlisting">int main(void)
+{
+	int i, histogram[10];
+
+	gen_random(10);
+	for (i = 0; i &lt; 10; i++)
+		histogram[i] = howmany(i);
+	...
+}</pre><p>有意思的是，这里的循环变量<code class="literal">i</code>有两个作用，一是作为参数传给<code class="literal">howmany</code>函数，统计数字<code class="literal">i</code>出现的次数，二是做<code class="literal">histogram</code>的下标，也就是“<span class="quote">把数字<code class="literal">i</code>出现的次数保存在数组<code class="literal">histogram</code>的第<code class="literal">i</code>个位置</span>”。</p><p>尽管上面的方法可以准确地得到统计结果，但是效率很低，这100000个随机数需要从头到尾检查十遍，每一遍检查只统计一种数字的出现次数。其实可以把<code class="literal">histogram</code>中的元素当作累加器来用，这些随机数只需要从头到尾检查一遍（Single Pass）<a id="id2734261" class="indexterm"></a>就可以得出结果：</p><pre class="programlisting">int main(void)
+{
+	int i, histogram[10] = {0};
+
+	gen_random(10);
+	for (i = 0; i &lt; N; i++)
+		histogram[a[i]]++;
+	...
+}</pre><p>首先把<code class="literal">histogram</code>的所有元素初始化为0，注意使用局部变量的值之前一定要初始化，否则值是不确定的。接下来的代码很有意思，在每次循环中，<code class="literal">a[i]</code>就是出现的随机数，而这个随机数同时也是<code class="literal">histogram</code>的下标，这个随机数每出现一次就把<code class="literal">histogram</code>中相应的元素加1。</p><p>把上面的程序运行几遍，你就会发现每次产生的随机数都是一样的，不仅如此，在别的计算机上运行该程序产生的随机数很可能也是这样的。这正说明了这些数是伪随机数，是用一套确定的公式基于某个初值算出来的，只要初值相同，随后的整个数列就都相同。实际应用中不可能使用每次都一样的随机数，例如开发一个麻将游戏，每次运行这个游戏摸到的牌不应该是一样的。因此，C标准库允许我们自己指定一个初值，然后在此基础上生成伪随机数，这个初值称为Seed<a id="id2734329" class="indexterm"></a>，可以用<code class="literal">srand</code>函数指定Seed。通常我们通过别的途径得到一个不确定的数作为Seed，例如调用<code class="literal">time</code>函数得到当前系统时间距1970年1月1日00:00:00<sup>[<a id="id2734350" href="#ftn.id2734350" class="footnote">18</a>]</sup>的秒数，然后传给<code class="literal">srand</code>：</p><pre class="programlisting">srand(time(NULL));</pre><p>然后再调用<code class="literal">rand</code>，得到的随机数就和刚才完全不同了。调用<code class="literal">time</code>函数需要包含头文件<code class="literal">time.h</code>，这里的<code class="literal">NULL</code>表示空指针，到<a class="xref" href="ch23s01.html#pointer.intro">第 1 节 “指针的基本概念”</a>再详细解释。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2734410"></a>习题</h3></div></div></div><p>1、补完本节直方图程序的<code class="literal">main</code>函数，以可视化的形式打印直方图。例如上一节统计20个随机数的结果是：</p><pre class="screen">
+0  1  2  3  4  5  6  7  8  9
+
+*  *  *  *     *  *  *     *
+*     *  *     *  *  *     *
+      *  *        *
+                  *
+                  *</pre><p>2、定义一个数组，编程打印它的全排列。比如定义：</p><pre class="programlisting">#define N 3
+int a[N] = { 1, 2, 3 };</pre><p>则运行结果是：</p><pre class="screen">$ ./a.out
+1 2 3 
+1 3 2 
+2 1 3 
+2 3 1 
+3 2 1 
+3 1 2 
+1 2 3</pre><p>程序的主要思路是：</p><div class="orderedlist"><ol type="1"><li><p>把第1个数换到最前面来（本来就在最前面），准备打印1xx，再对后两个数2和3做全排列。</p></li><li><p>把第2个数换到最前面来，准备打印2xx，再对后两个数1和3做全排列。</p></li><li><p>把第3个数换到最前面来，准备打印3xx，再对后两个数1和2做全排列。</p></li></ol></div><p>可见这是一个递归的过程，把对整个序列做全排列的问题归结为对它的子序列做全排列的问题，注意我没有描述Base Case怎么处理，你需要自己想。你的程序要具有通用性，如果改变了<code class="literal">N</code>和数组<code class="literal">a</code>的定义（比如改成4个数的数组），其它代码不需要修改就可以做4个数的全排列（共24种排列）。</p><p>完成了上述要求之后再考虑第二个问题：如果再定义一个常量<code class="literal">M</code>表示从<code class="literal">N</code>个数中取几个数做排列（<code class="literal">N == M</code>时表示全排列），原来的程序应该怎么改？</p><p>最后再考虑第三个问题：如果要求从<code class="literal">N</code>个数中取<code class="literal">M</code>个数做组合而不是做排列，就不能用原来的递归过程了，想想组合的递归过程应该怎么描述，编程实现它。</p></div><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2734350" href="#id2734350" class="para">18</a>] </sup>各种派生自UNIX的系统都把这个时刻称为Epoch<a id="id2734354" class="indexterm"></a>，因为UNIX系统最早发明于1969年。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch08s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch08.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch08s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. 数组应用实例：统计随机数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. 字符串</td></tr></table></div></body></html>

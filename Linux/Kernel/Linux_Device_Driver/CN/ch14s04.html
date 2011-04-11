@@ -1,0 +1,427 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>14.4.&#160;总线, 设备, 和驱动-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch14.html" title="第&#160;14&#160;章&#160;Linux 设备模型">
+<link rel="prev" href="ch14s03.html" title="14.3.&#160;热插拔事件产生">
+<link rel="next" href="ch14s05.html" title="14.5.&#160;类">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">14.4.&#160;总线, 设备, 和驱动</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch14s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;14&#160;章&#160;Linux 设备模型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch14s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="BuesDevicesandDrivers.sect"></a>14.4.&#160;总线, 设备, 和驱动</h2></div></div></div>
+<p>至今, 我们已经看到大量低级框架和一个相对少的例子. 我们试图在本章剩下部分中补充, 随着我们进入 Linux 设备模型的更高级. 为此, 我们介绍一个新的虚拟总线, 我们称为 lddbus, <sup>[<a name="id485223" href="ch14s04.html#ftn.id485223">46</a>]</sup>并且修改 scullp 驱动来 "接入" 到这个总线.</p>
+<p>再一次, 许多驱动作者将不会需要这里涉及的材料. 这个水平的细节通常在总线级别处理, 并且很少作者需要添加一个新总线类型. 这个信息是有用的, 但是, 对任何人好奇在 PCI, USB 等层面的里面发生了什么或者谁需要在那个级别做改变. </p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="Buses.sect"></a>14.4.1.&#160;总线</h3></div></div></div>
+<p>一个总线是处理器和一个或多个设备之间的通道. 为设备模型的目的, 所有的设备都通过一个总线连接, 甚至当它是一个内部的虚拟的,"平台"总线. 总线可以插入另一个 - 一个 USB 控制器常常是一个 PCI 设备, 例如. 设备模型表示在总线和它们控制的设备之间的实际连接.</p>
+<p></p>
+<p>在 Linux 设备模型中, 一个总线由 bus_type 结构代表, 定义在 &lt;linux/device.h&gt;. 这个结构看来象:</p>
+<pre class="programlisting">
+struct bus_type {
+ char *name;
+ struct subsystem subsys;
+ struct kset drivers;
+ struct kset devices;
+ int (*match)(struct device *dev, struct device_driver *drv);
+ struct device *(*add)(struct device * parent, char * bus_id);
+ int (*hotplug) (struct device *dev, char **envp,
+ int num_envp, char *buffer, int buffer_size);
+ /* Some fields omitted */
+};
+</pre>
+<p>name 成员是总线的名子, 有些同 pci. 你可从这个结构中见到每个总线是它自己的子系统; 这个子系统不位于 sysfs 的顶层, 但是. 相反, 它们在总线子系统下面. 一个总线包含 2 个 ksets, 代表已知的总线的驱动和所有插入总线的设备. 所以, 有一套方法我们马上将涉及.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Busregisteration.sect"></a>14.4.1.1.&#160;总线注册</h4></div></div></div>
+<p>如同我们提过的, 例子源码包含一个虚拟总线实现称为 lddbus. 这个总线建立它的 bus_type 结构, 如下:</p>
+<pre class="programlisting">
+struct bus_type ldd_bus_type = { .name = "ldd", .match = ldd_match, .hotplug = ldd_hotplug, };
+</pre>
+<p>注意很少 bus_type 成员要求初始化; 大部分由设备模型核心处理. 但是, 我们确实不得不指定总线的名子, 以及任何伴随它的方法.</p>
+<p>不可避免地, 一个新总线必须注册到系统, 通过一个对 bus_register 的调用. lddbus 代码这样做以这样的方式:</p>
+<pre class="programlisting">
+ret = bus_register(&amp;ldd_bus_type);
+if (ret)
+ return ret; 
+</pre>
+<p>这个调用可能失败, 当然, 因此返回值必须一直检查. 如果它成功, 新总线子系统已被添加到系统; 在 sysfs 中 /sys/bus 的下面可以见到, 并且可能启动添加设备.</p>
+<p>如果有必要从系统中去除一个总线(当关联模块被去除, 例如), 调用调用 bus_unregister:</p>
+<pre class="programlisting">
+void bus_unregister(struct bus_type *bus); 
+</pre>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Busmethods.sect"></a>14.4.1.2.&#160;总线方法</h4></div></div></div>
+<p>有几个给 bus_type 结构定义的方法; 它们允许总线代码作为一个设备核心和单独驱动之间的中介. 在 2.6.10 内核中定义的方法是:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>int (*match)(struct device *device, struct device_driver *driver);</span></span></dt>
+<dd><p>这个方法被调用, 大概多次, 无论何时一个新设备或者驱动被添加给这个总线. 它应当返回一个非零值如果给定的设备可被给定的驱动处理. (我们马上进入设备和 device_driver 结构的细节). 这个函数必须在总线级别处理, 因为那是合适的逻辑存在的地方; 核心内核不能知道如何匹配每个可能总线类型的设备和驱动.</p></dd>
+<dt><span class="term"><span>int (*hotplug) (struct device *device, char **envp, int num_envp, char *buffer, int buffer_size);</span></span></dt>
+<dd><p>这个模块允许总线添加变量到环境中, 在产生一个热插拔事件在用户空间之前. 参数和 kset 热插拔方法相同( 在前面的 "热插拔事件产生" 一节中描述 ).</p></dd>
+</dl></div>
+<p>lddbus 驱动有一个非常简单的匹配函数, 它仅仅比较驱动和设备的名子:</p>
+<pre class="programlisting">
+static int ldd_match(struct device *dev, struct device_driver *driver)
+{
+ return !strncmp(dev-&gt;bus_id, driver-&gt;name, strlen(driver-&gt;name));
+}
+</pre>
+<p>当涉及到真实硬件, match 函数常常在有设备自身提供的硬件 ID 和驱动提供的 ID 之间, 做一些比较.</p>
+<p>lddbus 热插拔方法看来象这样:</p>
+<pre class="programlisting">
+static int ldd_hotplug(struct device *dev, char **envp, int num_envp, char *buffer, int buffer_size)
+{
+ envp[0] = buffer;
+ if (snprintf(buffer, buffer_size, "LDDBUS_VERSION=%s",
+ Version) &gt;= buffer_size)
+ return -ENOMEM;
+ envp[1] = NULL;
+ return 0;
+}
+</pre>
+<p>这里, 我们加入 lddbus 源码的当前版本号, 只是以防有人好奇.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Iteratingoverdevicesanddrivers.sect"></a>14.4.1.3.&#160;列举设备和驱动</h4></div></div></div>
+<p>如果你在编写总线级别的代码, 你可能不得不对所有已经注册到你的总线的设备或驱动进行一些操作. 它可能会诱惑人直接进入 bus_type 结构中的各种结构, 但是最好使用已经提供的帮助函数.</p>
+<p>为操作每个对总线已知的设备, 使用:</p>
+<pre class="programlisting">
+int bus_for_each_dev(struct bus_type *bus, struct device *start, void *data, int (*fn)(struct device *, void *));
+</pre>
+<p>这个函数列举总线上的每个设备, 传递关联的设备结构给 fn, 连同作为 data 来传递的值. 如果 start 是 NULL, 列举从总线的第一个设备开始; 否则列举从 start 之后的第一个设备开始. 如果 fn 返回一个非零值, 列举停止并且那个值从 bus_for_each_dev 返回.</p>
+<p>有一个类似的函数来列举驱动:</p>
+<pre class="programlisting">
+int bus_for_each_drv(struct bus_type *bus, struct device_driver *start, void *data, int (*fn)(struct device_driver *, void *));
+</pre>
+<p>这个函数就像 buf_for_each_dev, 除了, 当然, 它替之作用于驱动.</p>
+<p>应当注意, 这 2 个函数持有总线子系统的读者/写者旗标在工作期间. 因此试图一起使用这 2 个会死锁 -- 每个将试图获取同一个旗标. 修改总线的操作( 例如注销设备 )也将锁住. 因此, 小心使用 bus_for_each 函数.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Busattributes.sect"></a>14.4.1.4.&#160;总线属性</h4></div></div></div>
+<p>几乎 Linux 驱动模型中的每一层都提供一个添加属性的接口, 并且总线层不例外. bus_attribute 类型定义在 &lt;linux/device.h&gt; 如下:</p>
+<pre class="programlisting">
+struct bus_attribute {
+ struct attribute attr;
+ ssize_t (*show)(struct bus_type *bus, char *buf);
+ ssize_t (*store)(struct bus_type *bus, const char *buf,
+ size_t count);
+};
+</pre>
+<p>我们已经见到 struct attribute 在 "缺省属性" 一节. bus_attribute 类型也包含 2 个方法来显示和设置属性值. 大部分在 kobject 之上的设备模型层以这种方式工作.</p>
+<p>已经提供了一个方便的宏为在编译时间创建和初始化 bus_attribute 结构:</p>
+<pre class="programlisting">
+BUS_ATTR(name, mode, show, store);
+</pre>
+<p>这个宏声明一个结构, 产生它的名子通过前缀字符串 bus_attr_ 到给定的名子.</p>
+<p>任何属于一个总线的属性应当明确使用 bus_create_file 来创建:</p>
+<pre class="programlisting">
+int bus_create_file(struct bus_type *bus, struct bus_attribute *attr); 
+</pre>
+<p>属性也可被去除, 使用:</p>
+<pre class="programlisting">
+void bus_remove_file(struct bus_type *bus, struct bus_attribute *attr); 
+</pre>
+<p>lddbus 驱动创建一个简单属性文件, 再次, 包含源码版本号. show 方法和 bus_attribute 结构设置如下:</p>
+<pre class="programlisting">
+static ssize_t show_bus_version(struct bus_type *bus, char *buf)
+{
+ return snprintf(buf, PAGE_SIZE, "%s\n", Version);
+}
+
+static BUS_ATTR(version, S_IRUGO, show_bus_version, NULL); 
+</pre>
+<p>创建属性文件在模块加载时间完成:</p>
+<pre class="programlisting">
+if (bus_create_file(&amp;ldd_bus_type, &amp;bus_attr_version))
+ printk(KERN_NOTICE "Unable to create version attribute\n");
+</pre>
+<p>这个调用创建一个属性文件(/sys/busldd/version) 包含 lddbus 代码的版本号.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="Devices.sect"></a>14.4.2.&#160;设备</h3></div></div></div>
+<p>在最低层, Linux 系统中的每个设备由一个 struct device 代表:</p>
+struct device {
+ struct device *parent;
+ struct kobject kobj;
+ char bus_id[BUS_ID_SIZE];
+ struct bus_type *bus;
+ struct device_driver *driver;
+ void *driver_data;
+ void (*release)(struct device *dev);
+ /* Several fields omitted */
+
+}; 
+<p>有许多其他的 struct device 成员只对设备核心代码感兴趣. 但是, 这些成员值得了解:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct device *parent </span></span></dt>
+<dd><p>设备的 "parent" 设备 -- 它所附着到的设备. 在大部分情况, 一个父设备是某种总线或者主控制器. 如果 parent 是 NULL, 设备是一个顶层设备, 这常常不是你所要的.</p></dd>
+<dt><span class="term"><span>struct kobject kobj;</span></span></dt>
+<dd><p>代表这个设备并且连接它到层次中的 kobject. 注意, 作为一个通用的规则, device-&gt;kobj-&gt;parent 等同于 device-&gt;parent-&gt;kobj.</p></dd>
+<dt><span class="term"><span>char bus_id[BUS_ID_SIZE];</span></span></dt>
+<dd><p>唯一确定这个总线上的设备的字符串. PCI 设备, 例如, 使用标准的 PCI ID 格式, 包含域, 总线, 设备, 和功能号.</p></dd>
+<dt><span class="term"><span>struct bus_type *bus;</span></span></dt>
+<dd><p>确定设备位于哪种总线.</p></dd>
+<dt><span class="term"><span>struct device_driver *driver;</span></span></dt>
+<dd><p>管理这个设备的驱动; 我们查看 struct device_driver 在下一节.</p></dd>
+<dt><span class="term"><span>void *driver_data;</span></span></dt>
+<dd><p>一个可能被设备驱动使用的私有数据成员.</p></dd>
+<dt><span class="term"><span>void (*release)(struct device *dev);</span></span></dt>
+<dd><p>当对这个设备的最后引用被去除时调用的方法; 它从被嵌入的 kobject 的 release 方法被调用. 注册到核心的所有的设备结构必须有一个 release 方法, 否则内核打印出慌乱的抱怨.</p></dd>
+</dl></div>
+<p>最少, parent, bus_id, bus, 和 release 成员必须在设备结构被注册前设置.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Deviceregisteration.sect"></a>14.4.2.1.&#160;设备注册</h4></div></div></div>
+<p>通常的注册和注销函数在:</p>
+<pre class="programlisting">
+int device_register(struct device *dev);
+void device_unregister(struct device *dev);
+</pre>
+<p>我们已经见到 lddbus 代码如何注册它的总线类型. 但是, 一个实际的总线是一个设备并且必须单独注册. 为简单起见, lddbus 模块只支持一个单个虚拟总线, 因此这个驱动在编译时建立它的设备:</p>
+<pre class="programlisting">
+static void ldd_bus_release(struct device *dev)
+{
+ printk(KERN_DEBUG "lddbus release\n");
+}
+
+struct device ldd_bus = {
+ .bus_id = "ldd0",
+ .release = ldd_bus_release
+
+}; 
+</pre>
+<p>这是顶级总线, 因此 parent 和 bus 成员留为 NULL. 我们有一个简单的, no-op release 方法, 并且, 作为第一个(并且唯一)总线, 它的名子时 ldd0. 这个总线设备被注册, 使用:</p>
+<pre class="programlisting">
+ret = device_register(&amp;ldd_bus);
+if (ret)
+ printk(KERN_NOTICE "Unable to register ldd0\n");
+</pre>
+<p>一旦调用完成, 新总线可在 sysfs 中 /sys/devices 下面见到. 任何加到这个总线的设备接着在 /sys/devices/ldd0 下显示.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Deviceattributes.sect3"></a>14.4.2.2.&#160;设备属性</h4></div></div></div>
+<p>sysfs 中的设备入口可有属性. 相关的结构是:</p>
+<pre class="programlisting">
+struct device_attribute {
+ struct attribute attr;
+ ssize_t (*show)(struct device *dev, char *buf);
+ ssize_t (*store)(struct device *dev, const char *buf,
+ size_t count);
+};
+</pre>
+<p>这些属性结构可在编译时建立, 使用这些宏:</p>
+<pre class="programlisting">
+DEVICE_ATTR(name, mode, show, store);
+</pre>
+<p>结果结构通过前缀 dev_attr_ 到给定名子上来命名. 属性文件的实际管理使用通常的函数对来处理:</p>
+<pre class="programlisting">
+int device_create_file(struct device *device, struct device_attribute *entry);
+void device_remove_file(struct device *dev, struct device_attribute *attr);
+</pre>
+<p>struct bus_type 的 dev_attrs 成员指向一个缺省的属性列表, 这些属性给添加到总线的每个设备创建.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Devicestructureembedding.sect3"></a>14.4.2.3.&#160;设备结构嵌入</h4></div></div></div>
+<p>设备结构包含设备模型核心需要的来模型化系统的信息. 大部分子系统, 但是, 跟踪关于它们驻留的设备的额外信息. 结果, 对设备很少由空设备结构所代表; 相反, 这个结构, 如同 kobject 结构, 常常是嵌入一个更高级的设备表示中. 如果你查看 struct pci_dev 的定义或者 struct usb_device 的定义, 你会发现一个 struct device 埋在其中. 常常地, 低层驱动甚至不知道 struct device, 但是有例外.</p>
+<p>lddbus 驱动创建它自己的设备类型( struct ldd_device ) 并且期望单独的设备驱动来注册它们的设备使用这个类型. 它是一个简单结构:</p>
+<pre class="programlisting">
+struct ldd_device {
+ char *name;
+ struct ldd_driver *driver;
+ struct device dev; 
+}; 
+#define to_ldd_device(dev) container_of(dev, struct ldd_device, dev); 
+</pre>
+<p>这个结构允许驱动提供一个实际的名子给设备( 这可以清楚地不同于它的总线 ID, 存储于设备结构) 以及一个这些驱动信息的指针. 给真实设备的结构常常还包含关于供应者信息, 设备型号, 设备配置, 使用的资源, 等等. 可以在 struct pci_dev (&lt;linux/pci.h&gt;) 或者 struct usb_device (&lt;linux/usb.h&gt;) 中找到好的例子. 一个方便的宏( to_ldd_device ) 也为 struct ldd_device 定义, 使得容易转换指向被嵌入的结构的指针为 ldd_device 指针.</p>
+<p>lddbus 输出的注册接口看来如此:</p>
+<pre class="programlisting">
+int register_ldd_device(struct ldd_device *ldddev) 
+{
+ ldddev-&gt;dev.bus = &amp;ldd_bus_type;
+ ldddev-&gt;dev.parent = &amp;ldd_bus;
+ ldddev-&gt;dev.release = ldd_dev_release;
+ strncpy(ldddev-&gt;dev.bus_id, ldddev-&gt;name, BUS_ID_SIZE);
+ return device_register(&amp;ldddev-&gt;dev);
+
+}
+EXPORT_SYMBOL(register_ldd_device);
+</pre>
+<p>这里, 我们简单地填充一些嵌入的设备结构成员( 单个驱动不应当需要知道这个 ), 并且注册这个设备到驱动核心. 如果我们想添加总线特定的属性到设备, 我们可在这里做.</p>
+<p>为显示这个接口如何使用, 我们介绍另一个例子驱动, 我们称为 sculld. 它是在第 8 章介绍的 scullp 驱动上的另一个变体. 它实现通用的内存区设备, 但是 sculld 也使用 Linux 设备模型, 通过 lddbus 接口.</p>
+<p>sculld 驱动添加一个它自己的属性到它的设备入口; 这个属性, 称为 dev, 仅仅包含关联的设备号. 这个属性可被一个模块用来加载脚本或者热插拔子系统, 来自动创建设备节点, 当设备被添加到系统时. 这个属性的设置遵循常用模式:</p>
+<pre class="programlisting">
+static ssize_t sculld_show_dev(struct device *ddev, char *buf)
+{
+ struct sculld_dev *dev = ddev-&gt;driver_data;
+
+ return print_dev_t(buf, dev-&gt;cdev.dev);
+}
+
+static DEVICE_ATTR(dev, S_IRUGO, sculld_show_dev, NULL);
+</pre>
+<p>接着, 在初始化时间, 设备被注册, 并且 dev 属性被创建通过下面的函数:</p>
+<pre class="programlisting">
+static void sculld_register_dev(struct sculld_dev *dev, int index) 
+{
+ sprintf(dev-&gt;devname, "sculld%d", index);
+ dev-&gt;ldev.name = dev-&gt;devname;
+ dev-&gt;ldev.driver = &amp;sculld_driver;
+ dev-&gt;ldev.dev.driver_data = dev;
+ register_ldd_device(&amp;dev-&gt;ldev);
+ device_create_file(&amp;dev-&gt;ldev.dev, &amp;dev_attr_dev);
+
+} 
+</pre>
+<p>注意, 我们使用 driver_data 成员来存储指向我们自己的内部的设备结构的指针.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="DeviceDrivers.sect2"></a>14.4.3.&#160;设备驱动</h3></div></div></div>
+<p>设备模型跟踪所有对系统已知的驱动. 这个跟踪的主要原因是使驱动核心能匹配驱动和新设备. 一旦驱动在系统中是已知的对象, 但是, 许多其他的事情变得有可能. 设备驱动可输出和任何特定设备无关的信息和配置变量, 例如:</p>
+<p>驱动由下列结构定义:</p>
+<pre class="programlisting">
+struct device_driver {
+ char *name;
+ struct bus_type *bus;
+ struct kobject kobj;
+ struct list_head devices;
+ int (*probe)(struct device *dev);
+ int (*remove)(struct device *dev);
+ void (*shutdown) (struct device *dev);
+}; 
+</pre>
+<p>再一次, 几个结构成员被忽略( 全部内容见 &lt;linux/device.h&gt; ). 这里, name 是驱动的名子( 它在 sysfs 中出现 ), bus 是这个驱动使用的总线类型, kobj 是必然的 kobject, devices 是当前绑定到这个驱动的所有设备的列表, probe 是一个函数被调用来查询一个特定设备的存在(以及这个驱动是否可以使用它), remove 当设备从系统中去除时被调用, shutdown 在关闭时被调用来关闭设备.</p>
+<p>使用 device_driver 结构的函数的形式, 现在应当看来是类似的(因此我们快速涵盖它们). 注册函数是:</p>
+<pre class="programlisting">
+int driver_register(struct device_driver *drv);
+void driver_unregister(struct device_driver *drv);
+</pre>
+<p>通常的属性结构在:</p>
+<pre class="programlisting">
+struct driver_attribute {
+ struct attribute attr;
+ ssize_t (*show)(struct device_driver *drv, char *buf);
+ ssize_t (*store)(struct device_driver *drv, const char *buf,
+
+ size_t count);
+};
+DRIVER_ATTR(name, mode, show, store);
+</pre>
+<p>以及属性文件以通常的方法创建:</p>
+<pre class="programlisting">
+int driver_create_file(struct device_driver *drv, struct driver_attribute *attr);
+void driver_remove_file(struct device_driver *drv, struct driver_attribute *attr);
+</pre>
+<p>bus_type 结构含有一个成员( drv_attrs ) 指向一套缺省属性, 对所有关联到这个总线的驱动都创建.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Driverstructureembedding.sect"></a>14.4.3.1.&#160;驱动结构嵌入</h4></div></div></div>
+<p>如同大部分驱动核心结构的情形, device_driver 结构常常被发现嵌到一个更高级的, 总线特定的结构. lddbus 子系统不会和这样的趋势相反, 因此它已定义了它自己的 ldd_driver 结构:</p>
+<pre class="programlisting">
+struct ldd_driver {
+ char *version;
+ struct module *module;
+ struct device_driver driver;
+ struct driver_attribute version_attr; 
+}; 
+#define to_ldd_driver(drv) container_of(drv, struct ldd_driver, driver); 
+</pre>
+<p>这里, 我们要求每个驱动提供特定当前软件版本, 并且 lddbus 输出这个版本字串为它知道的每个驱动. 总线特定的驱动注册函数是:</p>
+<pre class="programlisting">
+int register_ldd_driver(struct ldd_driver *driver)
+{
+
+ int ret;
+ driver-&gt;driver.bus = &amp;ldd_bus_type;
+ ret = driver_register(&amp;driver-&gt;driver);
+ if (ret)
+ return ret;
+ driver-&gt;version_attr.attr.name = "version";
+ driver-&gt;version_attr.attr.owner = driver-&gt;module;
+ driver-&gt;version_attr.attr.mode = S_IRUGO;
+ driver-&gt;version_attr.show = show_version;
+ driver-&gt;version_attr.store = NULL;
+ return driver_create_file(&amp;driver-&gt;driver, &amp;driver-&gt;version_attr);
+}
+</pre>
+<p>这个函数的第一部分只注册低级的 device_driver 结构到核心; 剩下的建立版本属性. 因为这个属性在运行时被创建, 我们不能使用 DRIVER_ATTR 宏; 反之, driver_attribute 结构必须手工填充. 注意我们设定属性的拥有者为驱动模块, 不是 lddbus 模块; 这样做的理由是可以在为这个属性的 show 函数的实现中见到:</p>
+<pre class="programlisting">
+static ssize_t show_version(struct device_driver *driver, char *buf)
+{
+
+ struct ldd_driver *ldriver = to_ldd_driver(driver);
+ sprintf(buf, "%s\n", ldriver-&gt;version);
+ return strlen(buf);
+}
+</pre>
+<p>有人可能认为属性拥有者应当是 lddbus 模块, 因为实现这个属性的函数在那里定义. 这个函数, 但是, 是使用驱动自身所创建的 ldd_driver 结构. 如果那个结构在一个用户空间进程试图读取版本号时要消失, 事情会变得麻烦. 指定驱动模块作为属性的拥有者阻止了模块被卸载, 在用户空间保持属性文件打开时. 因为每个驱动模块创建一个对 lddbus 模块的引用, 我们能确信 lddbus 不会在一个不合适的时间被卸载.</p>
+<p>为完整起见, sculld 创建它的 ldd_driver 结构如下:</p>
+<pre class="programlisting">
+static struct ldd_driver sculld_driver = { .version = "$Revision: 1.1 $", .module = THIS_MODULE, .driver = { .name = "sculld", }, }; 
+</pre>
+<p>一个简单的对 register_ldd_driver 的调用添加它到系统中. 一旦完成初始化, 驱动信息可在 sysfs 中见到:</p>
+<pre class="screen">
+$ tree /sys/bus/ldd/drivers 
+/sys/bus/ldd/drivers 
+`-- sculld
+ |-- sculld0 -&gt; ../../../../devices/ldd0/sculld0
+ |-- sculld1 -&gt; ../../../../devices/ldd0/sculld1
+ |-- sculld2 -&gt; ../../../../devices/ldd0/sculld2
+ |-- sculld3 -&gt; ../../../../devices/ldd0/sculld3
+ `-- version 
+</pre>
+</div>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id485223" href="ch14s04.html#id485223">46</a>] </sup>这个总线的逻辑名子, 当然, 应当是"sbus", 但是这个名子已经被一个真实的, 物理总线采用.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch14s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch14.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch14s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">14.3.&#160;热插拔事件产生&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;14.5.&#160;类</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

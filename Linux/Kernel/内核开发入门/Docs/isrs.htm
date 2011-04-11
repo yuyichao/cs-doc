@@ -1,0 +1,430 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+		<title>
+			Bran的内核开发指南：中断服务例程
+		</title>
+		<link href="layout.css" type="text/css" rel="stylesheet">
+		<style>
+<!--
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	}
+-->
+</style>
+	</head>
+
+	<body>
+		<h2><font face="Tahoma">中断服务例程</font></h2>
+		
+		<p><span style="font-family: Tahoma">中断服务例程（</span><font face="Tahoma"><span lang="EN-US">Interrupt 
+		Service Routines</span></font><span style="font-family: Tahoma">，</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">）用来保存当前处理器状态，并且在内核的</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">语言级别中断处理程序被调用之前设置好内核模式所需的适当的段寄存器。这些事情可以在大约</span><font face="Tahoma"><span lang="EN-US">15</span></font><span style="font-family: Tahoma">到</span><font face="Tahoma"><span lang="EN-US">20</span></font><span style="font-family: Tahoma">行的汇编语句中完成，包括调用我们用</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">编写的处理程序。为了适当地处理异常，我们还需要将</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">中正确的入口指向正确的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">。</span></p>
+		<p><span style="font-family: Tahoma">
+		异常是处理器遇到的特殊情况，此时处理器无法继续正常执行程序。这有点像除零操作：结果是未知的或非实的数，所以处理器将产生一个异常，使内核可以停止程序或任务以防产生任何问题。如果处理器发现程序试图访问一块它不该访问的内存，就会产生一般性保护错误（</span><font face="Tahoma"><span lang="EN-US">General 
+		Protection Fault</span></font><span style="font-family: Tahoma">）。当你设置分页，处理器产生一个页错误（</span><font face="Tahoma"><span lang="EN-US">Page 
+		Fault</span></font><span style="font-family: Tahoma">）</span><font face="Tahoma"><span lang="EN-US">,</span></font><span style="font-family: Tahoma">但这是可恢复的：你可以把内存中的一页映射到出错地址——这会在另一个指南中说到。</span></p>
+		<p><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">中的前</span><font face="Tahoma"><span lang="EN-US">32</span></font><span style="font-family: Tahoma">个入口对应于可能由处理器产生的异常，因此需要加以处理。一些异常将会把另一个值压入栈：一个对应的错误代码值。</span><font face="Tahoma">
+		</font>
+		</p>
+		<table class="MsoNormalTable" border="0" cellpadding="0" style="margin-left: 23.55pt" id="table1">
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><b><span style="font-family: Tahoma">异常号</span></b></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><b><span style="font-family: Tahoma">描述</span></b></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><b><span style="font-family: Tahoma">错误代码？</span></b></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">0</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">除零异常（</span><font face="Tahoma"><span lang="EN-US">Division 
+				By Zero Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">1</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">调试异常（</span><font face="Tahoma"><span lang="EN-US">Debug 
+				Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">2</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">非可屏蔽中断异常（</span><font face="Tahoma"><span lang="EN-US">Non 
+				Maskable Interrupt Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">3</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">断点异常（</span><font face="Tahoma"><span lang="EN-US">Breakpoint 
+				Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">4</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">INTO</span></font><span style="font-family: Tahoma">指令溢出异常（</span><font face="Tahoma"><span lang="EN-US">Into 
+				Detected Overflow Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">5</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">越界异常（</span><font face="Tahoma"><span lang="EN-US">Out 
+				of Bounds Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">6</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">非法操作码异常（</span><font face="Tahoma"><span lang="EN-US">Invalid 
+				Opcode Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">7</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">无协处理器异常（</span><font face="Tahoma"><span lang="EN-US">No 
+				Coprocessor Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">8</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">双重故障异常（</span><font face="Tahoma"><span lang="EN-US">Double 
+				Fault Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">9</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">
+				协处理器段溢出异常（</span><font face="Tahoma"><span lang="EN-US">Coprocessor 
+				Segment Overrun Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">10</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">无效</span><font face="Tahoma"><span lang="EN-US">TSS</span></font><span style="font-family: Tahoma">异常（</span><font face="Tahoma"><span lang="EN-US">Bad 
+				TSS Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">11</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">段不存在异常（</span><font face="Tahoma"><span lang="EN-US">Segment 
+				Not Present Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">12</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">栈错误异常（</span><font face="Tahoma"><span lang="EN-US">Stack 
+				Fault Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">13</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">
+				一般性保护错误异常（</span><font face="Tahoma"><span lang="EN-US">General 
+				Protection Fault Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">14</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">页错误异常（</span><font face="Tahoma"><span lang="EN-US">Page 
+				Fault Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">15</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">未知中断异常（</span><font face="Tahoma"><span lang="EN-US">Unknown 
+				Interrupt Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">16</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">协处理器错误异常（</span><font face="Tahoma"><span lang="EN-US">Coprocessor 
+				Fault Exception</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">17</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">队列校验异常（</span><font face="Tahoma"><span lang="EN-US">Alignment 
+				Check Exception </span></font><span style="font-family: Tahoma">
+				，</span><font face="Tahoma"><span lang="EN-US">486+</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">18</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">自动校验异常（</span><font face="Tahoma"><span lang="EN-US">Machine 
+				Check Exception</span></font><span style="font-family: Tahoma">，奔腾</span><font face="Tahoma"><span lang="EN-US">/586+</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+			<tr>
+				<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">19 
+				to 31</span></font></td>
+				<td width="452" style="width:338.7pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">保留异常（</span><font face="Tahoma"><span lang="EN-US">Reserved 
+				Exceptions</span></font><span style="font-family: Tahoma">）</span></td>
+				<td width="93" style="width:69.75pt;padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><span style="font-family: Tahoma">没有</span></td>
+			</tr>
+		</table>
+		<p><span style="font-family: Tahoma">
+		就像前面提到的一样，一些异常把对应错误代码压入栈。为了降低复杂性，我们以此来解决问题：为任何没有压入错误码的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">压入一个伪错误码</span><font face="Tahoma"><span lang="EN-US">0</span></font><span style="font-family: Tahoma">到栈中。这样做就保持了一个统一的栈结构。为了能够追溯是哪个异常被激活，我们还把中断号压入栈中。我们使用汇编操作码“</span><font face="Tahoma"><span lang="EN-US">cli</span></font><span style="font-family: Tahoma">”来禁止中断并阻止</span><font face="Tahoma"><span lang="EN-US">IRQ</span></font><span style="font-family: Tahoma">的激活，如果不这样，各中断就可能在我们的内核中发生冲突。为了节省内核空间并且生成一个更小的二进制输出文件，我们使每个</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">的</span><font face="Tahoma"><span lang="EN-US">stub</span></font><span style="font-family: Tahoma">都跳转到一个通用的“</span><font face="Tahoma"><span lang="EN-US">isr_common_stub</span></font><span style="font-family: Tahoma">”。“</span><font face="Tahoma"><span lang="EN-US">isr_common_stub</span></font><span style="font-family: Tahoma">”将在栈中保留处理器状态，并把当前栈地址压入栈（这个栈将给我们的</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">处理程序），然后调用我们的</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">“</span><font face="Tahoma"><span lang="EN-US">fault_handler</span></font><span style="font-family: Tahoma">”，并最终恢复栈中的状态。对照下面的位置把代码添加到“</span><font face="Tahoma"><span lang="EN-US">start.asm</span></font><span style="font-family: Tahoma">”，填写所有的</span><font face="Tahoma"><span lang="EN-US">32</span></font><span style="font-family: Tahoma">个</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">：</span><font face="Tahoma">
+		</font>
+		</p>
+		<table border="1" width="100%" id="table2" style="border-collapse: collapse">
+			<tr>
+				<td>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">; </span></font><span style="font-family: Tahoma">我们将在这里添加我们的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">global _isr0</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">global _isr1</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">global _isr2</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">...                ; </span></font><span style="font-family: Tahoma">剩余的填写在这里！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">global _isr30</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">global _isr31</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">;  0: </span></font><span style="font-family: Tahoma">除零异常</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">_isr0:</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    cli</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    push byte 0    ; </span></font><span style="font-family: Tahoma">普通的</span><font face="Tahoma"><span lang="EN-US">ISR stub</span></font><span style="font-family: Tahoma">，弹出一个伪错误码以保持一个统一的栈结构</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push byte 0</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    jmp isr_common_stub</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">;  1: </span></font><span style="font-family: Tahoma">调试异常</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">_isr1:</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    cli</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push byte 0</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push byte 1</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    jmp isr_common_stub</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    </span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">...                ; </span></font><span style="font-family: Tahoma">这里填写</span><font face="Tahoma"><span lang="EN-US">2</span></font><span style="font-family: Tahoma">－</span><font face="Tahoma"><span lang="EN-US">7</span></font><span style="font-family: Tahoma">的异常！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font face="Tahoma"><span lang="EN-US"><font color="#800000">;  8: </font><span style="color:#800000">Double Fault Exception</span></span></font><span style="font-family: Tahoma; color: #800000">（</span><span style="font-family: Tahoma"><font color="#800000">以及错误码！</font><span style="color:#800000">）</span></span></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">_isr8:</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    cli</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    push byte 8        ; </span></font><span style="font-family: Tahoma">注意到我们在这个异常中不压入值到栈中！因为它已经压入了一个值！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">                       ; </span></font><span style="font-family: Tahoma">使用这类</span><font face="Tahoma"><span lang="EN-US">stub</span></font><span style="font-family: Tahoma">将弹出错误码！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">  &nbsp;&nbsp;jmp isr_common_stub</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">...                ; </span></font><span style="font-family: Tahoma">你应该在这里填写</span><font face="Tahoma"><span lang="EN-US">_isr9</span></font><span style="font-family: Tahoma">到</span><font face="Tahoma"><span lang="EN-US">_isr31</span></font><span style="font-family: Tahoma">。记得使用正确的</span><font face="Tahoma"><span lang="EN-US">stub</span></font><span style="font-family: Tahoma">来处理错误码和压入伪码！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">; </span></font><span style="font-family: Tahoma">我们在这里调用一个</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">函数。我们需要让汇编器知道“</span><font face="Tahoma"><span lang="EN-US">_fault_handler</span></font><span style="font-family: Tahoma">”在另一个文件中存在。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">extern _fault_handler</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">; </span></font><span style="font-family: Tahoma">这是我们的通用</span><font face="Tahoma"><span lang="EN-US">ISR stub</span></font><span style="font-family: Tahoma">。它保存处理器状态、设置内核模式段、调用</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">语言级别的错误处理程序，并最终恢复栈结构。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">isr_common_stub:</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    pusha</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push ds</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push es</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push fs</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push gs</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    mov ax, 0x10   ; </span></font><span style="font-family: Tahoma">装载内核数据段（</span><font face="Tahoma"><span lang="EN-US">Kernel Data Segment</span></font><span style="font-family: Tahoma">）描述符！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    mov ds, ax</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    mov es, ax</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    mov fs, ax</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    mov gs, ax</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    mov eax, esp   ; </span></font><span style="font-family: Tahoma">压入栈</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    push eax</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    mov eax, _fault_handler</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    call eax       ; </span></font><span style="font-family: Tahoma">一个特殊调用，用于保护“</span><font face="Tahoma"><span lang="EN-US">eip</span></font><span style="font-family: Tahoma">”寄存器</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    pop eax</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    pop gs</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    pop fs</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    pop es</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    pop ds</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    popa</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    add esp, 8     ; </span></font><span style="font-family: Tahoma">清除以压入的错误代码和</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">号</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    iret           ; </span></font><span style="font-family: Tahoma">立即弹出</span><font face="Tahoma"><span lang="EN-US">5</span></font><span style="font-family: Tahoma">个东西：</span><font face="Tahoma"><span lang="EN-US">CS</span></font><span style="font-family: Tahoma">，</span><font face="Tahoma"><span lang="EN-US">EIP</span></font><span style="font-family: Tahoma">，</span><font face="Tahoma"><span lang="EN-US">EFLAGS</span></font><span style="font-family: Tahoma">，</span><font face="Tahoma"><span lang="EN-US">SS</span></font><span style="font-family: Tahoma">和</span><font face="Tahoma"><span lang="EN-US">ESP!</span></font></font></pre>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				<div style="text-align: left">
+		<p style="text-indent: 45.8pt; tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 17.2pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt" align="left"><b>
+		<span style="font-family: Tahoma">添加到“</span><font face="Tahoma"><span lang="EN-US">start.asm</span></font><span style="font-family: Tahoma">”相应位置（我们在“基本内核”一节中已指出）</span></b></div>
+				</td>
+				</tr>
+			</table>
+			<p><span style="font-family: Tahoma">创建一个名为“</span><font face="Tahoma"><span lang="EN-US">isrs.c</span></font><span style="font-family: Tahoma">”的文件。接下来，记得在“</span><font face="Tahoma"><span lang="EN-US">build.bat</span></font><span style="font-family: Tahoma">”中添加适当语句以使</span><font face="Tahoma"><span lang="EN-US">GCC</span></font><span style="font-family: Tahoma">编译这个文件。把“</span><font face="Tahoma"><span lang="EN-US">isrs.o</span></font><span style="font-family: Tahoma">”添加到</span><font face="Tahoma"><span lang="EN-US">LD</span></font><span style="font-family: Tahoma">的文件列表中，使其能够被链接到内核中。“</span><font face="Tahoma"><span lang="EN-US">isrs.c</span></font><span style="font-family: Tahoma">”是相当简明的：声明我们的常规</span><font face="Tahoma"><span lang="EN-US">#include</span></font><span style="font-family: Tahoma">行，声明“</span><font face="Tahoma"><span lang="EN-US">start.asm</span></font><span style="font-family: Tahoma">”内部的每个</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">的原型，将</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口指向正确的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">，最后，用</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">语言创建一个中断处理程序一般地处理我们的所有异常。这里将留给你来填空：</span><font face="Tahoma">
+			</font>
+		</p>
+			<table border="1" width="100%" id="table3" style="border-collapse: collapse">
+				<tr>
+					<td>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">#include &lt; system.h &gt;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">/* </span></font><span style="font-family: Tahoma">这里是所有异常处理程序的函数原型：</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">的前</span><font face="Tahoma"><span lang="EN-US">32</span></font><span style="font-family: Tahoma">个入口都由</span><font face="Tahoma"><span lang="EN-US">Intel</span></font><span style="font-family: Tahoma">保留，并用来处理异常！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">*/</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">extern void isr0();</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">extern void isr1();</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">extern void isr2();</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">...                             /* </span></font><span style="font-family: Tahoma">这里填写剩余的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">原型</span><font face="Tahoma"><span lang="EN-US">*/</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">extern void isr29();</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">extern void isr30();</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">extern void isr31();</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">/* </span></font><span style="font-family: Tahoma">这是一个重复性的函数……并不难，但很烦。就像你看到的，我们设置</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">的前</span><font face="Tahoma"><span lang="EN-US">32</span></font><span style="font-family: Tahoma">个入口指向前</span><font face="Tahoma"><span lang="EN-US">32</span></font><span style="font-family: Tahoma">个</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">*  </span></font><span style="font-family: Tahoma">我们不能使用循环来完成，因为没有办法获得给定入口的相应函数名。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">*  </span></font><span style="font-family: Tahoma">我们把访问标志设置为</span><font face="Tahoma"><span lang="EN-US">0x8E</span></font><span style="font-family: Tahoma">。这意味着如果入口存在，将运行在</span><font face="Tahoma"><span lang="EN-US">0</span></font><span style="font-family: Tahoma">环（内核级别），</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">*  </span></font><span style="font-family: Tahoma">并且低五位设置为要求的“</span><font face="Tahoma"><span lang="EN-US">14</span></font><span style="font-family: Tahoma">”，在十六进制中这用“</span><font face="Tahoma"><span lang="EN-US">E</span></font><span style="font-family: Tahoma">”来表示。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">*/</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">void isrs_install()</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">{</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    idt_set_gate(0, (unsigned)isr0, 0x08, 0x8E);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    idt_set_gate(1, (unsigned)isr1, 0x08, 0x8E);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    idt_set_gate(2, (unsigned)isr2, 0x08, 0x8E);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    idt_set_gate(3, (unsigned)isr3, 0x08, 0x8E);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    ...                         /* </span></font><span style="font-family: Tahoma">这里填写剩余的</span><font face="Tahoma"><span lang="EN-US">ISR */</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    idt_set_gate(30, (unsigned)isr30, 0x08, 0x8E);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    idt_set_gate(31, (unsigned)isr31, 0x08, 0x8E);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">}</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">/* </span></font><span style="font-family: Tahoma">这是一个简单的字符串，它包含了对应每个异常的信息。</span><font face="Tahoma"><span lang="EN-US">We get the correct</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">*  </span></font><span style="font-family: Tahoma">我们以下面的形式来获得正确的信息：</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">*  exception_message[interrupt_number] </span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">*/</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">unsigned char *exception_messages[] =</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">{</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    &quot;Division By Zero&quot;,</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    &quot;Debug&quot;,</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    &quot;Non Maskable Interrupt&quot;,</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    </span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">&nbsp;&nbsp;&nbsp;&nbsp;...                         /* </span></font><span style="font-family: Tahoma">这里填写剩余的异常表中的剩余部分</span><font face="Tahoma"><span lang="EN-US">*/</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    </span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;&nbsp;&nbsp;&nbsp;&quot;Reserved&quot;,</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    &quot;Reserved&quot;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">};</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">&nbsp;</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">/* </span></font><span style="font-family: Tahoma">我们的所有异常处理</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">都将指向这个函数。这将告诉我们发生了哪个异常！</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">*  </span></font><span style="font-family: Tahoma">我们马上通过激活一个无限循环来挂起系统。所有</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">在服务时都利用锁机制禁止中断，</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">*  </span></font><span style="font-family: Tahoma">以预防另一个</span><font face="Tahoma"><span lang="EN-US">IRQ</span></font><span style="font-family: Tahoma">的发生并搅乱内核数据结构。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">*/</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">void fault_handler(struct regs *r)</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">{</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    /* </span></font><span style="font-family: Tahoma">数字从</span><font face="Tahoma"><span lang="EN-US">0</span></font><span style="font-family: Tahoma">到</span><font face="Tahoma"><span lang="EN-US">31</span></font><span style="font-family: Tahoma">是一个错误吗？</span><font face="Tahoma"><span lang="EN-US"> */</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    if (r-&gt;int_no &lt; 32)</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    {</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">        /* </span></font><span style="font-family: Tahoma">显示所对发生异常的描述。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">        *  </span></font><span style="font-family: Tahoma">在本指南中，我们将简单地用一个无限循环来挂起系统。</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">           */</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;puts(exception_messages[r-&gt;int_no]);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">        puts(&quot; Exception. System Halted!\n&quot;);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">        for (;;);</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">    }</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">}</span></font></pre>
+					</td>
+				</tr>
+				<tr>
+					<td><b><span style="font-family: Tahoma">
+					<font size="2">“</font></span><font size="2" face="Tahoma"><span lang="EN-US">isrs.c</span></font><span style="font-family: Tahoma"><font size="2">”的内容</font></span></b></td>
+				</tr>
+			</table>
+			<p><span style="font-family: Tahoma">我们这里有一个新的结构作为“</span><font face="Tahoma"><span lang="EN-US">fault_handler</span></font><span style="font-family: Tahoma">”的参数——结构体“</span><font face="Tahoma"><span lang="EN-US">regs</span></font><span style="font-family: Tahoma">”。在这个例子中，“</span><font face="Tahoma"><span lang="EN-US">regs</span></font><span style="font-family: Tahoma">”是一种显示栈结构特征的</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">语言代码。记得我们在“</span><font face="Tahoma"><span lang="EN-US">start.asm</span></font><span style="font-family: Tahoma">”把栈的指针压入栈本身：这样做就可以通过处理程序本身找回任何错误代码和中断号。这个设计允许我们为不同的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">使用同一个</span><font face="Tahoma"><span lang="EN-US">C</span></font><span style="font-family: Tahoma">处理程序，并且可以获知实际发生的是哪一个异常或中断。</span><font face="Tahoma">
+			</font>
+		</p>
+			<table border="1" width="100%" id="table4" style="border-collapse: collapse">
+				<tr>
+					<td>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">/* </span></font><span style="font-family: Tahoma">这里定义了</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">运行之后栈的特征。</span><font face="Tahoma"><span lang="EN-US"> */</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">struct regs</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">{</span></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    unsigned int gs, fs, es, ds;                            /* </span></font><span style="font-family: Tahoma">压入上一个段。</span><font face="Tahoma"><span lang="EN-US"> */</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;   /* </span></font><span style="font-family: Tahoma">由“</span><font face="Tahoma"><span lang="EN-US">pusha</span></font><span style="font-family: Tahoma">”压入。</span><font face="Tahoma"><span lang="EN-US"> */</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    unsigned int int_no, err_code;                         /* </span></font><span style="font-family: Tahoma">我们的“</span><font face="Tahoma"><span lang="EN-US">push byte #</span></font><span style="font-family: Tahoma">”和代码来完成这个。</span><font face="Tahoma"><span lang="EN-US"> */</span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Courier New; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><font face="Tahoma"><span lang="EN-US">    unsigned int eip, cs, eflags, useresp, ss;             /* </span></font><span style="font-family: Tahoma">由处理器自动压入。</span><font face="Tahoma"><span lang="EN-US"> */ </span></font></font></pre>
+		<pre style="tab-stops: 45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt; font-size: 10.0pt; font-family: Tahoma; margin-left: 24.0pt; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt"><font color="#800000"><span lang="EN-US">};</span></font></pre>
+					</td>
+				</tr>
+				<tr>
+					<td><b><span style="font-family: Tahoma">
+					<font size="2">定义一个栈结构指针参数，把这些添加到“</font></span><font size="2" face="Tahoma"><span lang="EN-US">system.h</span></font><span style="font-family: Tahoma"><font size="2">”</font></span></b></td>
+				</tr>
+			</table>
+		<p><span style="font-family: Tahoma">打开“</span><font face="Tahoma"><span lang="EN-US">system.h</span></font><span style="font-family: Tahoma">”，添加结构体“</span><font face="Tahoma"><span lang="EN-US">regs</span></font><span style="font-family: Tahoma">”的定义和“</span><font face="Tahoma"><span lang="EN-US">isrs_install</span></font><span style="font-family: Tahoma">”的函数原型，这样我们就可以在“</span><font face="Tahoma"><span lang="EN-US">main.c</span></font><span style="font-family: Tahoma">”中调用它了。最后，安装好我们的新</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">后，紧接着从我们的“</span><font face="Tahoma"><span lang="EN-US">main</span></font><span style="font-family: Tahoma">”函数中调用“</span><font face="Tahoma"><span lang="EN-US">isrs_install</span></font><span style="font-family: Tahoma">”。现在就在我们的内核里测试异常处理程序是个不错的主意。</span><font face="Tahoma"><span lang="EN-US"><br>
+		<br>
+		</span></font><span style="font-family: Tahoma">可选的：在“</span><font face="Tahoma"><span lang="EN-US">main</span></font><span style="font-family: Tahoma">”中添加除零的测试代码。只要处理器遇到这里，就会产生一个“除零”异常，你将会在屏幕上看到提示！当你测试完，并且它确实这样反应，你就可以删除你的导致异常的代码（比如“</span><font face="Tahoma"><span lang="EN-US">putch(myvar 
+		/ 0);</span></font><span style="font-family: Tahoma">”或任何你所写的）。</span><font face="Tahoma">
+		</font> </p>
+		<p><span style="font-family: Tahoma">你可以在</span><span lang="EN-US" style="font-family: Tahoma"><a style="color: blue; text-decoration: underline; text-underline: single" href="../Sources/start.asm">这里</a></span><span style="font-family: Tahoma">找到完整的“</span><font face="Tahoma"><span lang="EN-US">start.asm</span></font><span style="font-family: Tahoma">”，</span><font face="Tahoma">
+		</font>
+		<span style="font-family: Tahoma">在</span><span lang="EN-US" style="font-family: Tahoma"><a style="color: blue; text-decoration: underline; text-underline: single" href="../Sources/isrs.c">这里</a></span><span style="font-family: Tahoma">找到完整的“</span><font face="Tahoma"><span lang="EN-US">isrs.c</span></font><span style="font-family: Tahoma">”。</span></p>
+
+		<table cols="150, *, 150" width="100%">
+			<tr>
+				<td align="left" width="150">
+					<font face="Tahoma">
+					<a href="idt.htm">&lt;&lt; 中断描述符表</a>
+					</font>
+				</td>
+				<td align="center" width="*">
+					<font face="Tahoma">
+					<a href="mailto:friesenb@gmail.com">联系 Brandon F. </a>
+					</font>
+				</td>
+				<td align="right" width="150">
+					<font face="Tahoma">
+					<a href="irqs.htm">中断请求和可编程中断控制器&gt;&gt;</a>
+					</font>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

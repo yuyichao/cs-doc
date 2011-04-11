@@ -1,0 +1,94 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;10&#160;章&#160;中断处理-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch09s05.html" title="9.5.&#160;快速参考">
+<link rel="next" href="ch10s02.html" title="10.2.&#160;安装一个中断处理">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;10&#160;章&#160;中断处理</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch09s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch10s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="InterruptHandling.chap"></a>第&#160;10&#160;章&#160;中断处理</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch10.html#PreparingtheParallelPort.sect">10.1. 准备并口</a></span></dt>
+<dt><span class="sect1"><a href="ch10s02.html">10.2. 安装一个中断处理</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch10s02.html#TheprocInterface.sect">10.2.1. /proc 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#AutodetectingtheIRQNumber.sect">10.2.2. 自动检测 IRQ 号</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#FastandSlowHandlers.sect">10.2.3. 快速和慢速处理</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#ImplementingaHandler.sect">10.2.4. 实现一个处理</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#HandlerArgumentsandReturnValue.sect">10.2.5. 处理者的参数和返回值</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#EnablingandDisablingInterrupts.sect">10.2.6. 使能和禁止中断</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch10s03.html">10.3. 前和后半部</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch10s03.html#Tasklet.sect">10.3.1. Tasklet 实现</a></span></dt>
+<dt><span class="sect2"><a href="ch10s03.html#Workqueues.sect">10.3.2. 工作队列</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch10s04.html">10.4. 中断共享</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch10s04.html#InstallingaSharedHandler.sect">10.4.1. 安装一个共享的处理者</a></span></dt>
+<dt><span class="sect2"><a href="ch10s04.html#RunningtheHandler.sect">10.4.2. 运行处理者</a></span></dt>
+<dt><span class="sect2"><a href="ch10s04.html#TheprocInterfaceandShardInterrupts.sect">10.4.3. /proc 接口和共享中断</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch10s05.html">10.5. 中断驱动 I/O</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch10s05.html#AWriteBufferingExample.sect">10.5.1. 一个写缓存例子</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch10s06.html">10.6. 快速参考</a></span></dt>
+</dl>
+</div>
+<p>尽管一些设备可只使用它们的 I/O 区来控制, 大部分真实的设备比那个要复杂点. 设备不得不和外部世界打交道, 常常包括诸如旋转的磁盘, 移动的磁带, 连到远处的线缆, 等等. 很多必须在一个时间片中完成, 不同于, 并且远慢于处理器. 因为几乎一直是不希望使处理器等待外部事件, 对于设备必须有一种方法使处理器知道有事情发生了.</p>
+<p>当然, 那种方法是中断. 一个中断不过是一个硬件在它需要处理器的注意时能够发出的信号. Linux 处理中断非常类似它处理用户空间信号的方式. 对大部分来说, 一个驱动只需要为它的设备中断注册一个处理函数, 并且当它们到来时正确处理它们. 当然, 在这个简单图像之下有一些复杂; 特别地, 中断处理有些受限于它们能够进行的动作, 这是它们如何运行而导致的结果.</p>
+<p>没有一个真实的硬件设备来产生中断, 就难演示中断的使用. 因此, 本章使用的例子代码使用并口工作. 这些端口在现代硬件上开始变得稀少, 但是, 运气地, 大部分人仍然能够有一个有可用的端口的系统. 我们将使用来自上一章的简短模块; 添加一小部分它能够产生并处理来自并口的中断. 模块的名子, short, 实际上意味着 short int ( 它是 C, 对不?), 来提醒我们它处理中断.</p>
+<p>但是, 在我们进入主题之前, 是时候提出一个注意事项. 中断处理, 由于它们的特性, 与其他的代码并行地运行. 因此, 它们不可避免地引起并发问题和对数据结构和硬件的竞争. 如果你屈服于诱惑以越过第 5 章的讨论, 我们理解. 但是我们也建议你转回去并且现在看一下. 一个坚实的并发控制技术的理解是重要的, 在使用中断时.</p>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="PreparingtheParallelPort.sect"></a>10.1.&#160;准备并口</h2></div></div></div>
+<p>尽管并口简单, 它能够触发中断. 这个能力被打印机用来通知 lp 驱动它准备好接收缓存中的下一个字符.</p>
+<p>如同大部分设备, 并口实际上不产生中断, 在它被指示这样作之前; 并口标准规定设置 port 2 (0x37a, 0x27a, 或者任何)的 bit 4 就使能中断报告. short 在模块初始化时进行一个简单的 outb 调用来设置这个位.</p>
+<p>一旦中断使能, 任何时候在管脚 10 (所谓的 ACK 位)上的电信号从低变到高, 并口产生一个中断. 最简单的方法来强制接口产生中断( 没有挂一个打印机到端口 )是连接并口连接器的管脚 9 和 管脚 10. 一根短线, 插到你的系统后面的并口连接器的合适的孔中, 就建立这个连接. 并口外面的管脚图示于图<a href="ch09s03.html#ldd3-9-1.fig" title="图&#160;9.1.&#160;并口的管脚">并口的管脚</a></p>
+<p>管脚 9 是并口数据字节的最高位. 如果你写二进制数据到 /dev/short0, 你产生几个中断. 然而, 写 ASCII 文本到这个端口不会产生任何中断, 因为 ASCII 字符集没有最高位置位的项.</p>
+<p>如果你宁愿避免连接管脚到一起, 而你手上确实有一台打印机, 你可用使用一个真正的打印机来运行例子中断处理, 如同下面展示的. 但是, 注意我们介绍的探测函数依赖管脚 9 和管脚 10 之间的跳线在位置上, 并且你需要它使用你的代码来试验探测.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch09s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch10s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">9.5.&#160;快速参考&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;10.2.&#160;安装一个中断处理</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

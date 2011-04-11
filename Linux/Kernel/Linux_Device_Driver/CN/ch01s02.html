@@ -1,0 +1,75 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>1.2.&#160;划分内核-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch01.html" title="第&#160;1&#160;章&#160;第一章 设备驱动简介">
+<link rel="prev" href="ch01.html" title="第&#160;1&#160;章&#160;第一章 设备驱动简介">
+<link rel="next" href="ch01s03.html" title="1.3.&#160;设备和模块的分类">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">1.2.&#160;划分内核</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch01.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;1&#160;章&#160;第一章 设备驱动简介</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch01s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="SplittingtheKernel.sect1"></a>1.2.&#160;划分内核</h2></div></div></div>
+<p>在 Unix 系统中, 几个并发的进程专注于不同的任务. 每个进程请求系统资源, 象计算能力, 内存, 网络连接, 或者一些别的资源. 内核是个大块的可执行文件, 负责处理所有这样的请求. 尽管不同内核任务间的区别常常不是能清楚划分, 内核的角色可以划分(如同图<a href="ch01s02.html#ldd3-1-1.fig" title="图&#160;1.1.&#160;内核的划分">内核的划分</a>)成下列几个部分:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>进程管理</span></span></dt>
+<dd><p>内核负责创建和销毁进程, 并处理它们与外部世界的联系(输入和输出). 不同进程间通讯(通过信号, 管道, 或者进程间通讯原语)对整个系统功能来说是基本的, 也由内核处理. 另外, 调度器, 控制进程如何共享 CPU, 是进程管理的一部分. 更通常地, 内核的进程管理活动实现了多个进程在一个单个或者几个 CPU 之上的抽象.</p></dd>
+<dt><span class="term"><span>内存管理 </span></span></dt>
+<dd><p>计算机的内存是主要的资源, 处理它所用的策略对系统性能是至关重要的. 内核为所有进程的每一个都在有限的可用资源上建立了一个虚拟地址空间. 内核的不同部分与内存管理子系统通过一套函数调用交互, 从简单的 malloc/free 对到更多更复杂的功能.</p></dd>
+<dt><span class="term"><span>文件系统 </span></span></dt>
+<dd><p>Unix 在很大程度上基于文件系统的概念; 几乎 Unix 中的任何东西都可看作一个文件. 内核在非结构化的硬件之上建立了一个结构化的文件系统, 结果是文件的抽象非常多地在整个系统中应用. 另外, Linux 支持多个文件系统类型, 就是说, 物理介质上不同的数据组织方式. 例如, 磁盘可被格式化成标准 Linux 的 ext3 文件系统, 普遍使用的 FAT 文件系统, 或者其他几个文件系统.</p></dd>
+<dt><span class="term"><span>设备控制 </span></span></dt>
+<dd><p>几乎每个系统操作最终都映射到一个物理设备上. 除了处理器, 内存和非常少的别的实体之外, 全部中的任何设备控制操作都由特定于要寻址的设备相关的代码来进行. 这些代码称为设备驱动. 内核中必须嵌入系统中出现的每个外设的驱动, 从硬盘驱动到键盘和磁带驱动器. 内核功能的这个方面是本书中的我们主要感兴趣的地方.</p></dd>
+<dt><span class="term"><span>网络 </span></span></dt>
+<dd><p>网络必须由操作系统来管理, 因为大部分网络操作不是特定于某一个进程: 进入系统的报文是异步事件. 报文在某一个进程接手之前必须被收集, 识别, 分发. 系统负责在程序和网络接口之间递送数据报文, 它必须根据程序的网络活动来控制程序的执行. 另外, 所有的路由和地址解析问题都在内核中实现.</p></dd>
+</dl></div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="LoadableModules.sect2"></a>1.2.1.&#160;可加载模块</h3></div></div></div>
+<p>Linux 的众多优良特性之一就是可以在运行时扩展由内核提供的特性的能力. 这意味着你可以在系统正在运行着的时候增加内核的功能( 也可以去除 ).</p>
+<p>每块可以在运行时添加到内核的代码, 被称为一个模块. Linux 内核提供了对许多模块类型的支持, 包括但不限于, 设备驱动. 每个模块由目标代码组成( 没有连接成一个完整可执行文件 ), 可以动态连接到运行中的内核中, 通过 insmod 程序, 以及通过 rmmod 程序去连接.</p>
+<p>图 <a href="ch01s02.html#ldd3-1-1.fig" title="图&#160;1.1.&#160;内核的划分">内核的划分</a> 表示了负责特定任务的不同类别的模块, 一个模块是根据它提供的功能来说它属于一个特别类别的. 图 <a href="ch01s02.html#ldd3-1-1.fig" title="图&#160;1.1.&#160;内核的划分">内核的划分</a> 中模块的安排涵盖了最重要的类别, 但是远未完整, 因为在 Linux 中越来越多的功能被模块化了.</p>
+<div class="figure">
+<a name="ldd3-1-1.fig"></a><p class="title"><b>图&#160;1.1.&#160;内核的划分</b></p>
+<div><img src="images/snagitldd3/ldd3-1-1.png" alt="内核的划分"></div>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch01.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch01.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch01s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;1&#160;章&#160;第一章 设备驱动简介&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;1.3.&#160;设备和模块的分类</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

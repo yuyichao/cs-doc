@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. main函数和启动例程</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch19.html" title="第 19 章 汇编与C之间的关系" /><link rel="prev" href="ch19s01.html" title="1. 函数调用" /><link rel="next" href="ch19s03.html" title="3. 变量的存储布局" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. <code class="literal">main</code>函数和启动例程</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch19s01.html">上一页</a> </td><th width="60%" align="center">第 19 章 汇编与C之间的关系</th><td width="20%" align="right"> <a accesskey="n" href="ch19s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2776173"></a>2. <code class="literal">main</code>函数和启动例程</h2></div></div></div><p>为什么汇编程序的入口是<code class="literal">_start</code>，而C程序的入口是<code class="literal">main</code>函数呢？本节就来解释这个问题。在讲<a class="xref" href="ch18s01.html#asm.simpleasm">例 18.1 “最简单的汇编程序”</a>时，我们的汇编和链接步骤是：</p><pre class="screen">$ as hello.s -o hello.o
+$ ld hello.o -o hello</pre><p>以前我们常用<code class="literal">gcc main.c -o main</code>命令编译一个程序，其实也可以分三步做，第一步生成汇编代码，第二步生成目标文件，第三步生成可执行文件：</p><pre class="screen">$ gcc -S main.c
+$ gcc -c main.s
+$ gcc main.o</pre><p><code class="literal">-S</code>选项生成汇编代码，<code class="literal">-c</code>选项生成目标文件，此外在<a class="xref" href="ch08s02.html#array.statistic">第 2 节 “数组应用实例：统计随机数”</a>还讲过<code class="literal">-E</code>选项只做预处理而不编译，如果不加这些选项则<code class="literal">gcc</code>执行完整的编译步骤，直到最后链接生成可执行文件为止。如下图所示。</p><div class="figure"><a id="id2776267"></a><p class="title"><b>图 19.2. gcc命令的选项</b></p><div class="figure-contents"><div><img src="images/asmc.gcc.png" alt="gcc命令的选项" /></div></div></div><br class="figure-break" /><p>这些选项都可以和<code class="literal">-o</code>搭配使用，给输出的文件重新命名而不使用<code class="literal">gcc</code>默认的文件名（<code class="literal">xxx.c</code>、<code class="literal">xxx.s</code>、<code class="literal">xxx.o</code>和<code class="literal">a.out</code>），例如<code class="literal">gcc main.o -o main</code>将<code class="literal">main.o</code>链接成可执行文件<code class="literal">main</code>。先前由汇编代码<a class="xref" href="ch18s01.html#asm.simpleasm">例 18.1 “最简单的汇编程序”</a>生成的目标文件<code class="literal">hello.o</code>我们是用<code class="literal">ld</code>来链接的，可不可以用<code class="literal">gcc</code>链接呢？试试看。</p><pre class="screen">$ gcc hello.o -o hello
+hello.o: In function `_start':
+(.text+0x0): multiple definition of `_start'
+/usr/lib/gcc/i486-linux-gnu/4.3.2/../../../../lib/crt1.o:(.text+0x0): first defined here
+/usr/lib/gcc/i486-linux-gnu/4.3.2/../../../../lib/crt1.o: In function `_start':
+(.text+0x18): undefined reference to `main'
+collect2: ld returned 1 exit status</pre><p>提示两个错误：一是<code class="literal">_start</code>有多个定义，一个定义是由我们的汇编代码提供的，另一个定义来自<code class="literal">/usr/lib/crt1.o</code>；二是<code class="literal">crt1.o</code>的<code class="literal">_start</code>函数要调用<code class="literal">main</code>函数，而我们的汇编代码中没有提供<code class="literal">main</code>函数的定义。从最后一行还可以看出这些错误提示是由<code class="literal">ld</code>给出的。由此可见，如果我们用<code class="literal">gcc</code>做链接，<code class="literal">gcc</code>其实是调用<code class="literal">ld</code>将目标文件<code class="literal">crt1.o</code>和我们的<code class="literal">hello.o</code>链接在一起。<code class="literal">crt1.o</code>里面已经提供了<code class="literal">_start</code>入口点，我们的汇编程序中再实现一个<code class="literal">_start</code>就是多重定义了，链接器不知道该用哪个，只好报错。另外，<code class="literal">crt1.o</code>提供的<code class="literal">_start</code>需要调用<code class="literal">main</code>函数，而我们的汇编程序中没有实现<code class="literal">main</code>函数，所以报错。</p><p>如果目标文件是由C代码编译生成的，用<code class="literal">gcc</code>做链接就没错了，整个程序的入口点是<code class="literal">crt1.o</code>中提供的<code class="literal">_start</code>，它首先做一些初始化工作（以下称为启动例程，Startup Routine<a id="id2776521" class="indexterm"></a>），然后调用C代码中提供的<code class="literal">main</code>函数。所以，以前我们说<code class="literal">main</code>函数是程序的入口点其实不准确，<code class="literal">_start</code>才是真正的入口点，而<code class="literal">main</code>函数是被<code class="literal">_start</code>调用的。</p><p>我们继续研究上一节的<a class="xref" href="ch19s01.html#asmc.func">例 19.1 “研究函数的调用过程”</a>。如果分两步编译，第二步<code class="literal">gcc main.o -o main</code>其实是调用<code class="literal">ld</code>做链接的，相当于这样的命令：</p><pre class="screen">$ ld /usr/lib/crt1.o /usr/lib/crti.o main.o -o main -lc -dynamic-linker /lib/ld-linux.so.2</pre><p>也就是说，除了<code class="literal">crt1.o</code>之外其实还有<code class="literal">crti.o</code>，这两个目标文件和我们的<code class="literal">main.o</code>链接在一起生成可执行文件<code class="literal">main</code>。<code class="literal">-lc</code>表示需要链接<code class="literal">libc</code>库，在<a class="xref" href="ch03s01.html#func.mathfunc">第 1 节 “数学函数”</a>讲过<code class="literal">-lc</code>选项是<code class="literal">gcc</code>默认的，不用写，而对于<code class="literal">ld</code>则不是默认选项，所以要写上。<code class="literal">-dynamic-linker /lib/ld-linux.so.2</code>指定动态链接器是<code class="literal">/lib/ld-linux.so.2</code>，稍后会解释什么是动态链接。</p><p>那么<code class="literal">crt1.o</code>和<code class="literal">crti.o</code>里面都有什么呢？我们可以用<code class="literal">readelf</code>命令查看。在这里我们只关心符号表，如果只看符号表，可以用<code class="literal">readelf</code>命令的<code class="literal">-s</code>选项，也可以用<code class="literal">nm</code>命令。</p><pre class="screen">$ nm /usr/lib/crt1.o 
+00000000 R _IO_stdin_used
+00000000 D __data_start
+         U __libc_csu_fini
+         U __libc_csu_init
+         U __libc_start_main
+00000000 R _fp_hw
+00000000 T _start
+00000000 W data_start
+         U main
+$ nm /usr/lib/crti.o
+         U _GLOBAL_OFFSET_TABLE_
+         w __gmon_start__
+00000000 T _fini
+00000000 T _init</pre><p><code class="literal">U main</code>这一行表示<code class="literal">main</code>这个符号在<code class="literal">crt1.o</code>中用到了，但是没有定义（U表示Undefined），因此需要别的目标文件提供一个定义并且和<code class="literal">crt1.o</code>链接在一起。具体来说，在<code class="literal">crt1.o</code>中要用到<code class="literal">main</code>这个符号所代表的地址，例如有一条指令是<code class="literal">push $符号main所代表的地址</code>，但不知道这个地址是多少，所以在<code class="literal">crt1.o</code>中这条指令暂时写成<code class="literal">push $0x0</code>，等到和<code class="literal">main.o</code>链接成可执行文件时就知道这个地址是多少了，比如是0x80483c4，那么可执行文件<code class="literal">main</code>中的这条指令就被链接器改成了<code class="literal">push $0x80483c4</code>。链接器在这里起到符号解析（Symbol Resolution）的作用，在<a class="xref" href="ch18s05.html#asm.executable">第 5.2 节 “可执行文件”</a>我们看到链接器起到重定位的作用，这两种作用都是通过修改指令中的地址实现的，链接器也是一种编辑器，<code class="literal">vi</code>和<code class="literal">emacs</code>编辑的是源文件，而链接器编辑的是目标文件，所以链接器也叫Link Editor。<code class="literal">T _start</code>这一行表示<code class="literal">_start</code>这个符号在<code class="literal">crt1.o</code>中提供了定义，这个符号的类型是代码（T表示Text）。我们从上面的输出结果中选取几个符号用图示说明它们之间的关系：</p><div class="figure"><a id="id2776845"></a><p class="title"><b>图 19.3. C程序的链接过程</b></p><div class="figure-contents"><div><img src="images/asmc.link.png" alt="C程序的链接过程" /></div></div></div><br class="figure-break" /><p>其实上面我们写的<code class="literal">ld</code>命令做了很多简化，<code class="literal">gcc</code>在链接时还用到了另外几个目标文件，所以上图多画了一个框，表示组成可执行文件<code class="literal">main</code>的除了<code class="literal">main.o</code>、<code class="literal">crt1.o</code>和<code class="literal">crti.o</code>之外还有其它目标文件，本书不做深入讨论，用<code class="literal">gcc</code>的<code class="literal">-v</code>选项可以了解详细的编译过程：</p><pre class="screen">$ gcc -v main.c -o main
+Using built-in specs.
+Target: i486-linux-gnu
+...
+ /usr/lib/gcc/i486-linux-gnu/4.3.2/cc1 -quiet -v main.c -D_FORTIFY_SOURCE=2 -quiet -dumpbase main.c -mtune=generic -auxbase main -version -fstack-protector -o /tmp/ccRGDpua.s
+...
+ as -V -Qy -o /tmp/ccidnZ1d.o /tmp/ccRGDpua.s
+...
+ /usr/lib/gcc/i486-linux-gnu/4.3.2/collect2 --eh-frame-hdr -m elf_i386 --hash-style=both -dynamic-linker /lib/ld-linux.so.2 -o main -z relro /usr/lib/gcc/i486-linux-gnu/4.3.2/../../../../lib/crt1.o /usr/lib/gcc/i486-linux-gnu/4.3.2/../../../../lib/crti.o /usr/lib/gcc/i486-linux-gnu/4.3.2/crtbegin.o -L/usr/lib/gcc/i486-linux-gnu/4.3.2 -L/usr/lib/gcc/i486-linux-gnu/4.3.2 -L/usr/lib/gcc/i486-linux-gnu/4.3.2/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/i486-linux-gnu/4.3.2/../../.. /tmp/ccidnZ1d.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/i486-linux-gnu/4.3.2/crtend.o /usr/lib/gcc/i486-linux-gnu/4.3.2/../../../../lib/crtn.o</pre><p>链接生成的可执行文件<code class="literal">main</code>中包含了各目标文件所定义的符号，通过反汇编可以看到这些符号的定义：</p><pre class="screen">$ objdump -d main
+main:     file format elf32-i386
+
+
+Disassembly of section .init:
+
+08048274 &lt;_init&gt;:
+ 8048274:	55                   	push   %ebp
+ 8048275:	89 e5                	mov    %esp,%ebp
+ 8048277:	53                   	push   %ebx
+...
+Disassembly of section .text:
+
+080482e0 &lt;_start&gt;:
+ 80482e0:	31 ed                	xor    %ebp,%ebp
+ 80482e2:	5e                   	pop    %esi
+ 80482e3:	89 e1                	mov    %esp,%ecx
+...
+08048394 &lt;bar&gt;:
+ 8048394:	55                   	push   %ebp
+ 8048395:	89 e5                	mov    %esp,%ebp
+ 8048397:	83 ec 10             	sub    $0x10,%esp
+...
+080483aa &lt;foo&gt;:
+ 80483aa:	55                   	push   %ebp
+ 80483ab:	89 e5                	mov    %esp,%ebp
+ 80483ad:	83 ec 08             	sub    $0x8,%esp
+...
+080483c4 &lt;main&gt;:
+ 80483c4:	8d 4c 24 04          	lea    0x4(%esp),%ecx
+ 80483c8:	83 e4 f0             	and    $0xfffffff0,%esp
+ 80483cb:	ff 71 fc             	pushl  -0x4(%ecx)
+...
+Disassembly of section .fini:
+
+0804849c &lt;_fini&gt;:
+ 804849c:	55                   	push   %ebp
+ 804849d:	89 e5                	mov    %esp,%ebp
+ 804849f:	53                   	push   %ebx</pre><p><code class="literal">crt1.o</code>中的未定义符号<code class="literal">main</code>在<code class="literal">main.o</code>中定义了，所以链接在一起就没问题了。<code class="literal">crt1.o</code>还有一个未定义符号<code class="literal">__libc_start_main</code>在其它几个目标文件中也没有定义，所以在可执行文件<code class="literal">main</code>中仍然是个未定义符号。这个符号是在<code class="literal">libc</code>中定义的，<code class="literal">libc</code>并不像其它目标文件一样链接到可执行文件<code class="literal">main</code>中，而是在运行时做动态链接：</p><div class="orderedlist"><ol type="1"><li><p>操作系统在加载执行<code class="literal">main</code>这个程序时，首先查看它有没有需要动态链接的未定义符号。</p></li><li><p>如果需要做动态链接，就查看这个程序指定了哪些共享库（我们用<code class="literal">-lc</code>指定了<code class="literal">libc</code>）以及用什么动态链接器来做动态链接（我们用<code class="literal">-dynamic-linker /lib/ld-linux.so.2</code>指定了动态链接器）。</p></li><li><p>动态链接器在共享库中查找这些符号的定义，完成链接过程。</p></li></ol></div><p>了解了这些原理之后，现在我们来看<code class="literal">_start</code>的反汇编：</p><pre class="screen">...
+Disassembly of section .text:
+
+080482e0 &lt;_start&gt;:
+ 80482e0:       31 ed                   xor    %ebp,%ebp
+ 80482e2:       5e                      pop    %esi
+ 80482e3:       89 e1                   mov    %esp,%ecx
+ 80482e5:       83 e4 f0                and    $0xfffffff0,%esp
+ 80482e8:       50                      push   %eax
+ 80482e9:       54                      push   %esp
+ 80482ea:       52                      push   %edx
+ 80482eb:       68 00 84 04 08          push   $0x8048400
+ 80482f0:       68 10 84 04 08          push   $0x8048410
+ 80482f5:       51                      push   %ecx
+ 80482f6:       56                      push   %esi
+ 80482f7:       68 c4 83 04 08          push   $0x80483c4
+ 80482fc:       e8 c3 ff ff ff          call   80482c4 &lt;__libc_start_main@plt&gt;
+...</pre><p>首先将一系列参数压栈，然后调用<code class="literal">libc</code>的库函数<code class="literal">__libc_start_main</code>做初始化工作，其中最后一个压栈的参数<code class="literal">push   $0x80483c4</code>是<code class="literal">main</code>函数的地址，<code class="literal">__libc_start_main</code>在完成初始化工作之后会调用<code class="literal">main</code>函数。由于<code class="literal">__libc_start_main</code>需要动态链接，所以这个库函数的指令在可执行文件<code class="literal">main</code>的反汇编中肯定是找不到的，然而我们找到了这个：</p><pre class="screen">Disassembly of section .plt:
+...
+080482c4 &lt;__libc_start_main@plt&gt;:
+ 80482c4:       ff 25 04 a0 04 08       jmp    *0x804a004
+ 80482ca:       68 08 00 00 00          push   $0x8
+ 80482cf:       e9 d0 ff ff ff          jmp    80482a4 &lt;_init+0x30&gt;</pre><p>这三条指令位于<code class="literal">.plt</code>段而不是<code class="literal">.text</code>段，<code class="literal">.plt</code>段协助完成动态链接的过程。我们将在下一章详细讲解动态链接的过程。</p><p><code class="literal">main</code>函数最标准的原型应该是<code class="literal">int main(int argc, char *argv[])</code>，也就是说启动例程会传两个参数给<code class="literal">main</code>函数，这两个参数的含义我们学了指针以后再解释。我们到目前为止都把<code class="literal">main</code>函数的原型写成<code class="literal">int main(void)</code>，这也是C标准允许的，如果你认真分析了上一节的习题，你就应该知道，多传了参数而不用是没有问题的，少传了参数却用了则会出问题。</p><p>由于<code class="literal">main</code>函数是被启动例程调用的，所以从<code class="literal">main</code>函数<code class="literal">return</code>时仍返回到启动例程中，<code class="literal">main</code>函数的返回值被启动例程得到，如果将启动例程表示成等价的C代码（实际上启动例程一般是直接用汇编写的），则它调用<code class="literal">main</code>函数的形式是：</p><pre class="programlisting">exit(main(argc, argv));</pre><p>也就是说，启动例程得到<code class="literal">main</code>函数的返回值后，会立刻用它做参数调用<code class="literal">exit</code>函数。<code class="literal">exit</code>也是<code class="literal">libc</code>中的函数，它首先做一些清理工作，然后调用上一章讲过的<code class="literal">_exit</code>系统调用终止进程，<code class="literal">main</code>函数的返回值最终被传给<code class="literal">_exit</code>系统调用，成为进程的退出状态。我们也可以在<code class="literal">main</code>函数中直接调用<code class="literal">exit</code>函数终止进程而不返回到启动例程，例如：</p><pre class="programlisting">#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+	exit(4);
+}</pre><p>这样和<code class="literal">int main(void) { return 4; }</code>的效果是一样的。在Shell中运行这个程序并查看它的退出状态：</p><pre class="screen">$ ./a.out 
+$ echo $?
+4</pre><p>按照惯例，退出状态为0表示程序执行成功，退出状态非0表示出错。注意，退出状态只有8位，而且被Shell解释成无符号数，如果将上面的代码改为<code class="literal">exit(-1);</code>或<code class="literal">return -1;</code>，则运行结果为</p><pre class="screen">$ ./a.out 
+$ echo $?
+255</pre><p>注意，如果声明一个函数的返回值类型是<code class="literal">int</code>，函数中每个分支控制流程必须写<code class="literal">return</code>语句指定返回值，如果缺了<code class="literal">return</code>则返回值不确定（想想这是为什么），编译器通常是会报警告的，但如果某个分支控制流程调用了<code class="literal">exit</code>或<code class="literal">_exit</code>而不写<code class="literal">return</code>，编译器是允许的，因为它都没有机会返回了，指不指定返回值也就无所谓了。使用<code class="literal">exit</code>函数需要包含头文件<code class="literal">stdlib.h</code>，而使用<code class="literal">_exit</code>函数需要包含头文件<code class="literal">unistd.h</code>，以后还要详细解释这两个函数。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch19s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch19.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch19s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 函数调用 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 变量的存储布局</td></tr></table></div></body></html>

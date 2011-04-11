@@ -1,0 +1,309 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>框架 Frames</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="容器构件 Container Widgets"
+HREF="c1289.html"><LINK
+REL="PREVIOUS"
+TITLE="布局容器 Layout Container"
+HREF="x1342.html"><LINK
+REL="NEXT"
+TITLE="比例框架 Aspect Frames"
+HREF="x1380.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1342.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>容器构件 Container Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1380.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-FRAMES">框架 Frames</H1
+><P
+>框架(Frames)可以用于在盒子中封装一个或一组构件，框架本身还可以有一个标签。标签的位置和盒子的风格可以灵活改变。</P
+><P
+>框架可以用下面的函数创建：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_frame_new( const gchar *label );</PRE
+></TD
+></TR
+></TABLE
+><P
+>标签缺省放在框架的左上角。传递NULL值作为<TT
+CLASS="LITERAL"
+>label</TT
+>参数时，框架不显示标签。标签文本可以用下面的函数改变。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_frame_set_label( GtkFrame    *frame,
+                          const gchar *label );</PRE
+></TD
+></TR
+></TABLE
+><P
+>标签的位置可以用下面的函数改变：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_frame_set_label_align( GtkFrame *frame,
+                                gfloat    xalign,
+                                gfloat    yalign );</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>xalign</TT
+>和<TT
+CLASS="LITERAL"
+>yalign</TT
+>参数取值范围介于0.0和1.0之间。<TT
+CLASS="LITERAL"
+>xalign</TT
+>指定标签在框架构件上部水平线上的位置。<TT
+CLASS="LITERAL"
+>yalign</TT
+>目前还没有被使用。xalign的缺省值是0.0，它将标签放在框架构件的最左端。</P
+><P
+>下面的函数改变盒子的风格，用于显示框架的轮廓。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_frame_set_shadow_type( GtkFrame      *frame,
+                                GtkShadowType  type);</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>type</TT
+>参数可以取以下值之一：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  GTK_SHADOW_NONE
+  GTK_SHADOW_IN
+  GTK_SHADOW_OUT
+  GTK_SHADOW_ETCHED_IN (缺省值)
+  GTK_SHADOW_ETCHED_OUT</PRE
+></TD
+></TR
+></TABLE
+><P
+>下面的示例演示了怎样使用框架构件。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/frame.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+
+int main( int   argc,
+          char *argv[] )
+{
+  /* GtkWidget 是构件的存储类型 */
+  GtkWidget *window;
+  GtkWidget *frame;
+
+  /* 初始化 */
+  gtk_init (&#38;argc, &#38;argv);
+    
+  /* 创建一个新窗口 */
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title (GTK_WINDOW (window), "Frame Example");
+
+  /* 在这里我们将 "destroy" 事件连接到一个回调函数 */ 
+  g_signal_connect (G_OBJECT (window), "destroy",
+		    G_CALLBACK (gtk_main_quit), NULL);
+
+  gtk_widget_set_size_request (window, 300, 300);
+  /* 设置窗口的边框宽度 */
+  gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+
+  /* 创建一个框架 */
+  frame = gtk_frame_new (NULL);
+  gtk_container_add (GTK_CONTAINER (window), frame);
+
+  /* 设置框架的标签 */
+  gtk_frame_set_label (GTK_FRAME (frame), "GTK Frame Widget");
+
+  /* 将标签定位在框架的右边 */
+  gtk_frame_set_label_align (GTK_FRAME (frame), 1.0, 0.0);
+
+  /* 设置框架的风格 */
+  gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_ETCHED_OUT);
+
+  gtk_widget_show (frame);
+  
+  /* 显示窗口 */
+  gtk_widget_show (window);
+    
+  /* 进入事件循环 */
+  gtk_main ();
+    
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1342.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1380.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>布局容器 Layout Container</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1289.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>比例框架 Aspect Frames</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

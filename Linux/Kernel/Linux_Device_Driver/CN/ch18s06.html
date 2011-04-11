@@ -1,0 +1,101 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>18.6.&#160;tty_driver 结构的细节-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+<link rel="prev" href="ch18s05.html" title="18.5.&#160;TTY 设备的 proc 和 sysfs 处理">
+<link rel="next" href="ch18s07.html" title="18.7.&#160;tty_operaions 结构的细节">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">18.6.&#160;tty_driver 结构的细节</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch18s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;18&#160;章&#160;TTY 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch18s07.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ThettydriverStructureinDetail.sect"></a>18.6.&#160;tty_driver 结构的细节</h2></div></div></div>
+<p>tty_driver 结构用来注册一个 tty 驱动到 tty 核心. 这是结构中所有不同的成员的列表和如何被 tty 核心使用:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct module *owner;</span></span></dt>
+<dd><p>这个驱动的模块拥有者.</p></dd>
+<dt><span class="term"><span>int magic;</span></span></dt>
+<dd><p>给这个结构的"魔术"值. 应当一直设为 TTY_DRIVER_MAGIC. 在 alloc_tty_driver 函数中被初始化.</p></dd>
+<dt><span class="term"><span>const char *driver_name;</span></span></dt>
+<dd><p>驱动的名子, 用在 /proc/tty 和 sysfs.</p></dd>
+<dt><span class="term"><span>const char *name;</span></span></dt>
+<dd><p>驱动的节点名.</p></dd>
+<dt><span class="term"><span>int name_base;</span></span></dt>
+<dd><p>使用的起始数字, 当创建设备名子时. 当内核创建分配给这个 tty 驱动的一个特定 tty 设备的字符串表示是使用.</p></dd>
+<dt><span class="term"><span>short major;</span></span></dt>
+<dd><p>驱动的主编号</p></dd>
+<dt><span class="term"><span>short minor_start;</span></span></dt>
+<dd><p>驱动的开始次编号. 这常常设为 name_base 的相同值. 典型地, 这个值设为 0.</p></dd>
+<dt><span class="term"><span>short num;</span></span></dt>
+<dd><p>分配给这个驱动的次编号个数. 如果整个主编号范围被驱动使用了, 这个值应当设为 255. 这个变量在 alloc_tty_driver 函数中初始化.</p></dd>
+<dt><span class="term"><span>short type;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>short subtype;</span></span></dt>
+<dd>
+<p>描述什么类型的 tty 驱动在注册到 tty 核心. subtype 的值依赖于 type. type 成员可能是:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>TTY_DRIVER_TYPE_SYSTEM </span></span></dt>
+<dd><p>由 tty 子系统内部使用来记住它在处理一个内部 tty 驱动. subtype 应当设为 SYSTEM_TYPE_TTY, SYSTEM_TYEP_CONSOLE, SYSTEM_TYPE_SYSCONS, 或者 SYSTEM_TYPE_SYSPTMX. 这个类型不应当被任何"正常" tty 驱动使用.</p></dd>
+<dt><span class="term"><span>TTY_DRIVER_TYPE_CONSOLE </span></span></dt>
+<dd><p>仅被控制台驱动使用.</p></dd>
+<dt><span class="term"><span>TTY_DRIVER_TYPE_SERIAL</span></span></dt>
+<dd><p>被任何串行类型驱动使用. subtype 应当设为 SERIAL_TYPE_NORMAL 或者 SERIAL_TYPE_CALLOUT, 根据你的驱动是什么类型. 这是 type 成员的其中一个最普遍的设置.</p></dd>
+<dt><span class="term"><span>TTY_DRIVER_TYPE_PTY</span></span></dt>
+<dd><p>被伪控制台接口(pty)使用. subtype 需要被设置为 PTY_TYPE_MASTER 或者 PTY_TYPE_SLAVE.</p></dd>
+</dl></div>
+</dd>
+<dt><span class="term"><span>struct termios init_termios;</span></span></dt>
+<dd><p>当创建设备时的初始化 struct termios 值.</p></dd>
+<dt><span class="term"><span>int flags;</span></span></dt>
+<dd><p>驱动标志, 如同本章前面描述的.</p></dd>
+<dt><span class="term"><span>struct proc_dir_entry *proc_entry;</span></span></dt>
+<dd><p>这个驱动的 /proc 入口结构. 它由 tty 核心创建如果驱动实现了 write_proc 或者 read_proc 函数. 这个成员不应当由 tty 驱动自己设置.</p></dd>
+<dt><span class="term"><span>struct tty_driver *other;</span></span></dt>
+<dd><p>指向一个 tty 从驱动. 这只被 pty 驱动使用, 并且不应当被其他的 tty 驱动使用.</p></dd>
+<dt><span class="term"><span>void *driver_state;</span></span></dt>
+<dd><p>tty 驱动的内部状态. 应当只被 pty 驱动使用.</p></dd>
+<dt><span class="term"><span>struct tty_driver *next;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct tty_driver *prev;</span></span></dt>
+<dd><p>连接变量. 这些变量被 tty 核心使用来连接所有的不同 tty 驱动, 并且不应当被任何 tty 驱动碰.</p></dd>
+</dl></div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch18s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch18.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch18s07.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">18.5.&#160;TTY 设备的 proc 和 sysfs 处理&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;18.7.&#160;tty_operaions 结构的细节</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

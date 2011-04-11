@@ -1,0 +1,301 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>符号求和 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>符号求和
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="Summation.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="Summation.html#sec1">多项式级数</a>
+  </dt>
+  <dt>
+    <a href="Summation.html#sec2">超几何级数</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="Summation.html#sec3">极大阶乘分解</a>
+      </dt>
+      <dt>
+	<a href="Summation.html#sec4">Gosper算法</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="Summation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>多项式级数</h2>
+
+<p class="first">为了解决多项式级数求和问题,我们先来研究一元单项式级数求和.
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name"></span></p>
+
+<ol>
+<li><img src="latex/latex2png-Summation_167613235_-19.gif" alt="$\sum\limits_{0\le k<n}k=\frac{n(n-1)}{2}$" class="latex-inline" style="vertical-align: -19px" width="123" height="36"></li>
+<li><img src="latex/latex2png-Summation_127031683_-19.gif" alt="$\sum\limits_{0\le k<n}k^2=\frac{n(n-1)(2n-1)}{6}$" class="latex-inline" style="vertical-align: -19px" width="172" height="36"></li>
+<li><img src="latex/latex2png-Summation_164833341_-19.gif" alt="$\sum\limits_{0\le k<n}k^3=\frac{n^2(n-1)^2}{4}$" class="latex-inline" style="vertical-align: -19px" width="143" height="38"></li>
+<li><img src="latex/latex2png-Summation_62951272_-19.gif" alt="$\sum\limits_{0\le k<n}k^4=\frac{n(n-1)(2n-1)(3n^2-3n-1)}{30}$" class="latex-inline" style="vertical-align: -19px" width="246" height="38"></li>
+</ol>
+
+
+</div>
+事实上可以利用二项式展开求出任意次幂方和,但这样做得到的表达式一般比较复杂.
+
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name"></span>
+
+<ol>
+<li>平移算子<img src="latex/latex2png-Summation_42431506_0.gif" alt="$E$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">将函数映射为函数,它满足<img src="latex/latex2png-Summation_249561780_.gif" alt="$$E(f)(x)=f(x+1),$$" class="latex-display" width="580" height="18">定义<img src="latex/latex2png-Summation_251093241_0.gif" alt="$E^n=E\circ E^{n-1}$" class="latex-inline" style="vertical-align: 0px" width="111" height="14">,<img src="latex/latex2png-Summation_183011683_0.gif" alt="$E^1=E$" class="latex-inline" style="vertical-align: 0px" width="56" height="14">,<img src="latex/latex2png-Summation_200313187_0.gif" alt="$E^0=e$" class="latex-inline" style="vertical-align: 0px" width="50" height="14">.</li>
+<li>差分算子<img src="latex/latex2png-Summation_200296146_0.gif" alt="$\Delta=E^1-E^0$" class="latex-inline" style="vertical-align: 0px" width="96" height="14">,它满足<img src="latex/latex2png-Summation_195521296_.gif" alt="$$\Delta(f\cdot g)=\Delta(f)\cdot g+f\cdot\Delta(g)-\Delta(f)\cdot\Delta(g).$$" class="latex-display" width="580" height="18"></li>
+</ol>
+
+
+</div>
+如果<img src="latex/latex2png-Summation_12847708_-5.gif" alt="$g=\Delta(f)$" class="latex-inline" style="vertical-align: -5px" width="66" height="18">,那么<img src="latex/latex2png-Summation_125080907_-15.gif" alt="$\sum\limits_{i=a}^{b-1}g(i)=\sum\limits_{i=a}^{b-1}(f(i+1)-f(i))=f(b)-f(a)$" class="latex-inline" style="vertical-align: -15px" width="319" height="39">,即<img src="latex/latex2png-Summation_132073278_.gif" alt="$$g=\Delta(f)\Leftrightarrow f=\Sigma(g),$$" class="latex-display" width="580" height="18">这和微积分的互逆定理<img src="latex/latex2png-Summation_195372707_.gif" alt="$$g=D(f)\Leftrightarrow f=\int g$$" class="latex-display" width="580" height="37">类似.
+定义降阶乘<img src="latex/latex2png-Summation_261005739_.gif" alt="$$f^{\underline{m}}=f(x)\cdot f(x-1)\cdots f(x-m+1),$$" class="latex-display" width="580" height="18">则<img src="latex/latex2png-Summation_126030142_-5.gif" alt="$\Delta(x^{\underline{m}})=mx^{\underline{m-1}}$" class="latex-inline" style="vertical-align: -5px" width="125" height="19">,于是<img src="latex/latex2png-Summation_144491826_.gif" alt="$$\sum_{i=0}^{n-1}i^{\underline{m}}={1\over m+1}n^{\underline{m+1}}.$$" class="latex-display" width="580" height="49">
+设<img src="latex/latex2png-Summation_96238691_.gif" alt="$$x^m=\sum_{i=0}^ma_{m,i}x^{\underline{i}},$$" class="latex-display" width="580" height="46">则
+<img src="latex/latex2png-Summation_3342973_.gif" alt="
+\begin{align*}
+x^m&=x\cdot x^{m-1}\\
+&=\sum_{i=0}^{m-1}a_{m-1,i}(x-i+i)\cdot x^{\underline{i}}\\
+&=\sum_{i=0}^{m-1}a_{m-1,i}x^{\underline{i+1}}+\sum_{i=0}^{m-1}a_{m-1,i}i\cdot x^{\underline{i}}\\
+&=x^{\underline{m}}+\sum_{i=1}^{m-1}(a_{m-1,i-1}+i\cdot a_{m-1,i})x^{\underline{i}},
+\end{align*}
+" class="latex-display" width="580" height="194">
+于是有递推公式<img src="latex/latex2png-Summation_156573184_.gif" alt="$$a_{m,i}=a_{m-1,i-1}+i\cdot a_{m-1,i},$$" class="latex-display" width="580" height="18">其中<img src="latex/latex2png-Summation_75318383_-5.gif" alt="$a_{m,0}=1$" class="latex-inline" style="vertical-align: -5px" width="61" height="16">.<img src="latex/latex2png-Summation_6943577_-5.gif" alt="$a_{m,i}$" class="latex-inline" style="vertical-align: -5px" width="30" height="13">在组合数学中被称为第二类斯特林(Stirling)数,它表示将一个<img src="latex/latex2png-Summation_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">元有限集划分为<img src="latex/latex2png-Summation_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个非空子集的方法数.以<img src="latex/latex2png-Summation_66352795_-4.gif" alt="$m=1,2$" class="latex-inline" style="vertical-align: -4px" width="60" height="15">为例:
+
+<ul>
+<li><img src="latex/latex2png-Summation_162932474_-16.gif" alt="$\sum\limits_{i=0}^{n-1}i=\sum\limits_{i=0}^{n-1}i^{\underline 1}={1\over 2}n^{\underline 2}={1\over 2}n(n-1),$" class="latex-inline" style="vertical-align: -16px" width="245" height="40"></li>
+<li><img src="latex/latex2png-Summation_243879331_-16.gif" alt="$\sum\limits_{i=0}^{n-1}i^2=\sum\limits_{i=0}^{n-1}(i^{\underline 2}+i^{\underline 1})={1\over 3}n^{\underline 3}+{1\over 2}n^{\underline 2}={1\over 6}n(n+1)(2n+1).$" class="latex-inline" style="vertical-align: -16px" width="403" height="40"></li>
+</ul>
+
+<p>设<img src="latex/latex2png-Summation_11950240_-15.gif" alt="$g=\sum\limits_{m=0}^dg_mx^m$" class="latex-inline" style="vertical-align: -15px" width="104" height="39">,则
+<img src="latex/latex2png-Summation_185758251_.gif" alt="
+\begin{align*}
+  \Sigma(g)&=\sum_{m=0}^dg_m(\sum_{i=0}^ma_{m,i}x^{\underline i})\\
+&=\sum_{0\le i\le m\le d}g_ma_{m,i}\frac{x^{\underline{i+1}}}{i+1},
+\end{align*}
+" class="latex-display" width="580" height="105">
+因此<img src="latex/latex2png-Summation_79885385_.gif" alt="$$\sum_{k=0}^{n-1}g(k)=\sum_{0\le i\le m\le d}g_ma_{m,i}\frac{n^{\underline{i+1}}}{i+1}.$$" class="latex-display" width="580" height="53"></p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="Summation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>超几何级数</h2>
+
+<p class="first">和多项式级数的情形一样,首先研究一元超几何单项式级数求和.
+<div class="definition">
+<span class="theorem-header">定义2<a name=""></a></span><span class="theorem-name"></span>
+单项式级数通项<img src="latex/latex2png-Summation_87585812_-4.gif" alt="$g_n$" class="latex-inline" style="vertical-align: -4px" width="16" height="12">是超几何单项式,如果相邻项之比<img src="latex/latex2png-Summation_37294418_.gif" alt="$$r(n)=\frac{g_{n+1}}{g_n}$$" class="latex-display" width="580" height="35">是关于<img src="latex/latex2png-Summation_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的有理函数.</p>
+
+
+</div>
+
+<ul>
+<li>二项式系数<img src="latex/latex2png-Summation_101854902_-6.gif" alt="$\binom{m}{n}$" class="latex-inline" style="vertical-align: -6px" width="22" height="20">是超几何单项式,因为
+<img src="latex/latex2png-Summation_261225407_.gif" alt="
+\begin{align*}
+  \frac{\binom{m}{n+1}}{\binom{m}{n}}&=\frac{\Gamma(m+1)\Gamma(n+1)\Gamma(m-n+1)}{\Gamma(n+2)\Gamma(m+n)\Gamma(m)}\\
+&=\frac{-n+m}{n+1}
+\end{align*}
+" class="latex-display" width="580" height="87"></li>
+</ul>
+
+<p>设<img src="latex/latex2png-Summation_172835022_.gif" alt="$$r(n)=\frac{g_{n+1}}{g_n}=\frac{a(n)}{b(n)}\cdot \frac{c(n+1)}{c(n)},$$" class="latex-display" width="580" height="41">并且满足<img src="latex/latex2png-Summation_154085574_-5.gif" alt="$\gcd(a(n),b(n+k))=1$" class="latex-inline" style="vertical-align: -5px" width="165" height="18">,<img src="latex/latex2png-Summation_70697599_-1.gif" alt="$\forall k\in \mathbb{N}$" class="latex-inline" style="vertical-align: -1px" width="51" height="13">.设<img src="latex/latex2png-Summation_227738576_-5.gif" alt="$\Delta(f)=g$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,则<img src="latex/latex2png-Summation_228441562_-16.gif" alt="$f_n=f_0+\sum\limits_{k=0}^{n-1}g_k$" class="latex-inline" style="vertical-align: -16px" width="117" height="40">,<img src="latex/latex2png-Summation_87653213_.gif" alt="$$\frac{f_n}{g_n}=\frac{f_n}{f_{n+1}-f_n}=\frac{1}{\frac{f_{n+1}}{f_n}-1}.$$" class="latex-display" width="580" height="47">令<img src="latex/latex2png-Summation_12115984_-9.gif" alt="$y(n)=\frac{f_n}{g_n}$" class="latex-inline" style="vertical-align: -9px" width="71" height="24">,则<img src="latex/latex2png-Summation_171439679_.gif" alt="$$y(n+1)g(n+1)=f_{n+1}=(y(n)+1)g(n),$$" class="latex-display" width="580" height="18">即<img src="latex/latex2png-Summation_145486030_-5.gif" alt="$r(n)y(n+1)=y(n)+1$" class="latex-inline" style="vertical-align: -5px" width="172" height="18">,所以存在<img src="latex/latex2png-Summation_73335580_-5.gif" alt="$x(n)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">使得<img src="latex/latex2png-Summation_66270807_-9.gif" alt="$y(n)=\frac{b(n-1)}{c(n)}x(n)$" class="latex-inline" style="vertical-align: -9px" width="129" height="26">,其中<img src="latex/latex2png-Summation_124402920_.gif" alt="$$a(n)x(n+1)-b(n-1)x(n)=c(n).$$" class="latex-display" width="580" height="18"></p>
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="Summation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>极大阶乘分解</h3>
+
+<p class="first">极大阶乘分解(Greatest Factorial Factorization)是多项式的一种特殊分解.
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-Summation_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">为首一多项式,记<img src="latex/latex2png-Summation_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的极大阶乘分解为<img src="latex/latex2png-Summation_216600727_.gif" alt="$$gff(f)=\langle f_1,\cdots,f_m\rangle,$$" class="latex-display" width="580" height="18">它满足:</p>
+
+<ol>
+<li><img src="latex/latex2png-Summation_232964592_-4.gif" alt="$f=f_1^{\underline 1}\cdots f_m^{\underline m}$" class="latex-inline" style="vertical-align: -4px" width="96" height="21">.</li>
+<li><img src="latex/latex2png-Summation_104245346_-4.gif" alt="$f_1,\cdots,f_m$" class="latex-inline" style="vertical-align: -4px" width="74" height="16">为首一多项式且<img src="latex/latex2png-Summation_38293732_-4.gif" alt="$f_m\neq 1$" class="latex-inline" style="vertical-align: -4px" width="49" height="16">.</li>
+<li><img src="latex/latex2png-Summation_218583617_-5.gif" alt="$\gcd(f_i^{\underline i},E(f_j))=1$" class="latex-inline" style="vertical-align: -5px" width="131" height="22">.</li>
+<li><img src="latex/latex2png-Summation_33855573_-5.gif" alt="$\gcd(f_i^{\underline i},E^{-j}f_j)=1$" class="latex-inline" style="vertical-align: -5px" width="136" height="22">,<img src="latex/latex2png-Summation_121353993_-4.gif" alt="$1\le i,j\le m$" class="latex-inline" style="vertical-align: -4px" width="86" height="16">.</li>
+</ol>
+
+
+</div>
+这样定义是为了保证<img src="latex/latex2png-Summation_258914040_.gif" alt="$$f_j^{\underline j}=f_j\cdot E^{-1}f_j\cdots E^{-j+1}f_j$$" class="latex-display" width="580" height="27">没有更小的降阶乘因子,因为如果<img src="latex/latex2png-Summation_125843485_-5.gif" alt="$g=\gcd(f_i^{\underline i},E^{-j}f_j)\neq 1$" class="latex-inline" style="vertical-align: -5px" width="166" height="22">,则<img src="latex/latex2png-Summation_154438556_-5.gif" alt="$g^{\underline{j+1}}|f$" class="latex-inline" style="vertical-align: -5px" width="46" height="20">.
+
+<p>根据极大阶乘分解的定义,它有很好的性质.
+<div class="theorem">
+<span class="theorem-header">定理2<a name=""></a></span><span class="theorem-name"></span></p>
+
+<ol>
+<li>设<img src="latex/latex2png-Summation_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">为首一多项式且<img src="latex/latex2png-Summation_80414692_-4.gif" alt="$f\neq 0$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">,则<img src="latex/latex2png-Summation_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">至多有一种极大阶乘分解.</li>
+<li><img src="latex/latex2png-Summation_46383446_-5.gif" alt="$gff(\gcd(f,E(f)))=\langle f_2,\cdots,f_m\rangle$" class="latex-inline" style="vertical-align: -5px" width="241" height="18">.</li>
+</ol>
+
+
+</div>
+
+
+<h3><a name="sec4" id="sec4"></a>
+<a href="Summation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Gosper算法</h3>
+
+<p class="first">在上面的讨论中,超几何单项式级数求和归结到求解超几何单项式的差分原函数.给定超几何单项式<img src="latex/latex2png-Summation_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,设<img src="latex/latex2png-Summation_263851397_-9.gif" alt="$\sigma={E(g)\over g}$" class="latex-inline" style="vertical-align: -9px" width="62" height="26">,<img src="latex/latex2png-Summation_255829636_-4.gif" alt="$f=\tau\cdot g$" class="latex-inline" style="vertical-align: -4px" width="60" height="16">,则
+<img src="latex/latex2png-Summation_165851558_.gif" alt="
+\begin{align*}
+\Delta(f)&=E(f)-f\\
+&=E(\tau)\cdot E(g)-\tau\cdot g\\
+&=(E(\tau)\cdot\sigma-\tau)g,
+\end{align*}
+" class="latex-display" width="580" height="80">
+于是<img src="latex/latex2png-Summation_76780330_.gif" alt="$$\Delta(f)=g\Leftrightarrow E(\tau)\cdot \sigma-\tau=1.$$" class="latex-display" width="580" height="18">由超几何单项式的性质可以设<img src="latex/latex2png-Summation_116951700_-6.gif" alt="$\sigma={a\over b}$" class="latex-inline" style="vertical-align: -6px" width="42" height="18">,<img src="latex/latex2png-Summation_138600143_-6.gif" alt="$\tau={u\over v}$" class="latex-inline" style="vertical-align: -6px" width="41" height="18">,其中<img src="latex/latex2png-Summation_214987646_-5.gif" alt="$(a,b)=(u,v)=1$" class="latex-inline" style="vertical-align: -5px" width="125" height="18">,并且<img src="latex/latex2png-Summation_49253356_-4.gif" alt="$b,v$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">均为首一多项式,上式化为<img src="latex/latex2png-Summation_236659785_.gif" alt="$$a\cdot v\cdot E(u)-b\cdot u\cdot E(v)=b\cdot v\cdot E(v).$$" class="latex-display" width="580" height="18">这样我们就把求解差分原函数的问题归结到求解多项式方程,理论上可以直接通过待定系数法像求解线性方程组一样解出这个方程来,但是计算量很大.</p>
+
+<p>Gosper算法利用极大阶乘分解来求解这个多项式方程,记<img src="latex/latex2png-Summation_265756389_-5.gif" alt="$\gcd(E(f))=\gcd(f,E(f))$" class="latex-inline" style="vertical-align: -5px" width="184" height="18">,设<img src="latex/latex2png-Summation_245011955_-9.gif" alt="$v_0={v\over\gcd(E(v))}$" class="latex-inline" style="vertical-align: -9px" width="99" height="21">,<img src="latex/latex2png-Summation_196710872_-9.gif" alt="$v_1={E(v)\over\gcd(E(v))}$" class="latex-inline" style="vertical-align: -9px" width="99" height="26">,则<img src="latex/latex2png-Summation_172336470_-5.gif" alt="$(v_0,v_1)=1$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,方程两边同除以<img src="latex/latex2png-Summation_88186151_-5.gif" alt="$\gcd(E(v))$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">得<img src="latex/latex2png-Summation_3010016_.gif" alt="$$a\cdot v_0\cdot E(u)-b\cdot v_1\cdot u=b\cdot v_0\cdot v_1\cdot\gcd(E(v)),$$" class="latex-display" width="580" height="18">其中<img src="latex/latex2png-Summation_121152617_.gif" alt="$$(u,v_0)=(E(u),v_1)=(u,v)=1,$$" class="latex-display" width="580" height="18">于是有<img src="latex/latex2png-Summation_25407180_.gif" alt="$$v_0|b,v_1|a.$$" class="latex-display" width="580" height="18">设<img src="latex/latex2png-Summation_197231049_-5.gif" alt="$gff(v)=(h_1,\cdots,h_m)$" class="latex-inline" style="vertical-align: -5px" width="162" height="18">,则
+<img src="latex/latex2png-Summation_104252916_.gif" alt="
+\begin{align*}
+v_0&=\frac{h_1^{\underline 1}h_2^{\underline 2}\cdots h_m^{\underline m}}{h_2^{\underline 1}\cdots h_m^{\underline{m-1}}}\\
+&=h_1\cdot E^{-1}(h_2)\cdots E^{-(m-1)}(h_m),
+\end{align*}
+" class="latex-display" width="580" height="77">
+<img src="latex/latex2png-Summation_260706575_.gif" alt="
+\begin{align*}
+v_1&=\frac{E(h_1)^{\underline 1}E(h_2)^{\underline 2}\cdots E(h_m)^{\underline m}}{h_2^{\underline 1}\cdots h_m^{\underline{m-1}}}\\
+&=E(h_1)\cdot E(h_2)\cdots E(h_m),
+\end{align*}
+" class="latex-display" width="580" height="75">
+再由<img src="latex/latex2png-Summation_92042918_-5.gif" alt="$v_0|b$" class="latex-inline" style="vertical-align: -5px" width="27" height="18">,<img src="latex/latex2png-Summation_108754598_-5.gif" alt="$v_1|a$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">可得<img src="latex/latex2png-Summation_66102977_.gif" alt="$$h_i|E^{-1}(a),h_i|E^{i-1}(b).$$" class="latex-display" width="580" height="20">若<img src="latex/latex2png-Summation_80345060_-4.gif" alt="$v\neq 1$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">,则
+<img src="latex/latex2png-Summation_137859148_.gif" alt="
+\begin{align*}
+  1&\neq h_m|\gcd(E^{-1}(a),E^{m-1}(b))\\
+&=E^{-1}(\gcd(a(x),b(x+m))),
+\end{align*}
+" class="latex-display" width="580" height="51">
+而这等价于<img src="latex/latex2png-Summation_241096791_.gif" alt="$$res_x(a(x),b(x+y))|_{y=m}=0.$$" class="latex-display" width="580" height="19">我们可以写出求<img src="latex/latex2png-Summation_43021330_0.gif" alt="$v$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的某一个倍数<img src="latex/latex2png-Summation_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的算法.
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(Gosper)</span></p>
+
+<p>输入:<img src="latex/latex2png-Summation_3443075_-5.gif" alt="$(a,b)$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">=1,其中<img src="latex/latex2png-Summation_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">为首一多项式.</p>
+
+<p>输出:首一多项式<img src="latex/latex2png-Summation_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">,满足<img src="latex/latex2png-Summation_208112620_-5.gif" alt="$v|V$" class="latex-inline" style="vertical-align: -5px" width="27" height="18">,其中<img src="latex/latex2png-Summation_218489107_-5.gif" alt="$(u,v)=1$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">且<img src="latex/latex2png-Summation_236659785_.gif" alt="$$a\cdot v\cdot E(u)-b\cdot u\cdot E(v)=b\cdot v\cdot E(v).$$" class="latex-display" width="580" height="18"></p>
+
+<ol>
+<li>设<img src="latex/latex2png-Summation_46761274_-5.gif" alt="$R=res_x(a(x),b(x+y))$" class="latex-inline" style="vertical-align: -5px" width="175" height="18">,<img src="latex/latex2png-Summation_212094342_-5.gif" alt="$d=\max\{k\in \mathbb{N}$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">;<img src="latex/latex2png-Summation_117601300_-1.gif" alt="$k=0$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">或<img src="latex/latex2png-Summation_104906863_-5.gif" alt="$R(k)=0\}$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">.若<img src="latex/latex2png-Summation_226324_0.gif" alt="$d=1$" class="latex-inline" style="vertical-align: 0px" width="38" height="12">,输出1.</li>
+<li>设<img src="latex/latex2png-Summation_67860113_-3.gif" alt="$a_0=a$" class="latex-inline" style="vertical-align: -3px" width="46" height="11">,<img src="latex/latex2png-Summation_67925650_-3.gif" alt="$b_0=b$" class="latex-inline" style="vertical-align: -3px" width="44" height="15">,对<img src="latex/latex2png-Summation_223386478_-4.gif" alt="$i=1,2,\cdots,d$" class="latex-inline" style="vertical-align: -4px" width="101" height="16">依次计算<img src="latex/latex2png-Summation_174196529_.gif" alt="$$H_i=\gcd(E^{-1}(a_{i-1}),E^{i-1}(b_{i-1})),$$" class="latex-display" width="580" height="20"> <img src="latex/latex2png-Summation_10001668_.gif" alt="$$a_i=\frac{a_{i-1}}{E(H_i)},b_i=\frac{b_{i-1}}{E^{-(i-1)}(H_i)}.$$" class="latex-display" width="580" height="40"></li>
+<li>输出<img src="latex/latex2png-Summation_133312369_-5.gif" alt="$H_1^{\underline 1}\cdots H_d^{\underline d}$" class="latex-inline" style="vertical-align: -5px" width="71" height="22">.</li>
+</ol>
+
+
+</div>
+不难看出<img src="latex/latex2png-Summation_238418504_-5.gif" alt="$h_i|H_i$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">,因此<img src="latex/latex2png-Summation_69337503_.gif" alt="$$v=h_1^{\underline 1}\cdots h_m^{\underline m}|H_1^{\underline 1}\cdots H_m^{\underline m}\cdots H_d^{\underline d}=V.$$" class="latex-display" width="580" height="22">在算法实际运行过程中,一旦<img src="latex/latex2png-Summation_184322415_-2.gif" alt="$a_i=1$" class="latex-inline" style="vertical-align: -2px" width="43" height="13">或<img src="latex/latex2png-Summation_184322414_-2.gif" alt="$b_i=1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">,可以预计<img src="latex/latex2png-Summation_167545184_-5.gif" alt="$H_j=1$" class="latex-inline" style="vertical-align: -5px" width="50" height="17">,其中<img src="latex/latex2png-Summation_205560703_-4.gif" alt="$j=i+1,\cdots,d$" class="latex-inline" style="vertical-align: -4px" width="114" height="16">,此时可以自动结束计算.
+
+<p>现在我们将方程化成了<img src="latex/latex2png-Summation_146897233_.gif" alt="$$a\cdot V\cdot E(U)-b\cdot E(V)\cdot U=b\cdot V\cdot E(V),$$" class="latex-display" width="580" height="18">其中<img src="latex/latex2png-Summation_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">为已知的首一多项式.左右同除以<img src="latex/latex2png-Summation_180029137_-5.gif" alt="$g=\gcd(a\cdot V,b\cdot E(V))$" class="latex-inline" style="vertical-align: -5px" width="164" height="18">,得<img src="latex/latex2png-Summation_260573725_.gif" alt="$$r\cdot E(U)-s\cdot U=t,$$" class="latex-display" width="580" height="18">其中<img src="latex/latex2png-Summation_96792675_-9.gif" alt="$r=\frac{a\cdot V}{g}$" class="latex-inline" style="vertical-align: -9px" width="54" height="24">,<img src="latex/latex2png-Summation_16707791_-9.gif" alt="$s=\frac{b\cdot E(V)}{g}$" class="latex-inline" style="vertical-align: -9px" width="73" height="26">,<img src="latex/latex2png-Summation_123372546_-1.gif" alt="$t=s\cdot V$" class="latex-inline" style="vertical-align: -1px" width="61" height="13">.设<img src="latex/latex2png-Summation_220531383_.gif" alt="$$U=U_ex^e+\cdots+U_0,$$" class="latex-display" width="580" height="16">其中<img src="latex/latex2png-Summation_41907218_0.gif" alt="$e$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">可以这样确定:</p>
+
+<p>设<img src="latex/latex2png-Summation_12828945_-5.gif" alt="$m=\max\{\deg(r)-1,\deg(s-r)\}$" class="latex-inline" style="vertical-align: -5px" width="239" height="18">,<img src="latex/latex2png-Summation_117727726_0.gif" alt="$\delta$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">为<img src="latex/latex2png-Summation_30111358_-5.gif" alt="$(s-r)$" class="latex-inline" style="vertical-align: -5px" width="46" height="18">中<img src="latex/latex2png-Summation_165186540_0.gif" alt="$x^m$" class="latex-inline" style="vertical-align: 0px" width="21" height="11">的系数.</p>
+
+<ul>
+<li>若<img src="latex/latex2png-Summation_116167165_-5.gif" alt="$\deg(r)-1<\deg(s-r)$" class="latex-inline" style="vertical-align: -5px" width="169" height="18">或<img src="latex/latex2png-Summation_238264407_-5.gif" alt="$\delta\notin \mathbb{N}$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">,令<img src="latex/latex2png-Summation_222786865_-5.gif" alt="$e=\deg(t)-m$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">.</li>
+<li>若<img src="latex/latex2png-Summation_132581155_-5.gif" alt="$\deg(t)-m=\delta$" class="latex-inline" style="vertical-align: -5px" width="109" height="18">,不可解.</li>
+<li>若<img src="latex/latex2png-Summation_162461949_-5.gif" alt="$\deg(t)-m\neq \delta$" class="latex-inline" style="vertical-align: -5px" width="109" height="18">,设<img src="latex/latex2png-Summation_28085984_-5.gif" alt="$e=\max\{\deg(t)-m,\delta\}$" class="latex-inline" style="vertical-align: -5px" width="170" height="18">,如果<img src="latex/latex2png-Summation_15889428_-1.gif" alt="$e<0$" class="latex-inline" style="vertical-align: -1px" width="38" height="12">,不可解.</li>
+</ul>
+
+<p>比较对应项系数将得到一个上三角阵的线性方程组,这时就可以解出<img src="latex/latex2png-Summation_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">来.通过这一系列手续,最终求得<img src="latex/latex2png-Summation_182374392_.gif" alt="$$u=\frac{U}{\gcd(U,V)},v=\frac{V}{\gcd(U,V)}.$$" class="latex-display" width="580" height="40"></p>
+
+
+
+
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

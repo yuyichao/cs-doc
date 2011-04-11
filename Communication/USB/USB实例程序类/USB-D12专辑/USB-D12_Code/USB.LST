@@ -1,0 +1,1071 @@
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE USB
+OBJECT MODULE PLACED IN USB.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE USB.C BROWSE DEBUG OBJECTEXTEND
+
+stmt level    source
+
+   1          /******************************************************************
+   2             ±¾³ÌÐòÖ»¹©Ñ§Ï°Ê¹ÓÃ£¬Î´¾­×÷ÕßÐí¿É£¬²»µÃÓÃÓÚÆäËüÈÎºÎÓÃÍ¾
+   3                ÎÒµÄÓÊÏä£ºcomputer-lov@tom.com
+   4                  »¶Ó­·ÃÎÊÎÒµÄblog£º  http://computer00.21ic.org
+   5          
+   6          USB.C  file
+   7          
+   8          Created by Computer-lov
+   9          Date: 2004.9.21
+  10          
+  11          Edit date:2006.3.2
+  12          
+  13          Version V1.1
+  14          Copyright(C) Computer-lov 2004-2014
+  15          All rigths reserved
+  16                       
+  17          *******************************************************************/
+  18          
+  19          #include<Atmel/AT89x52.H>
+  20          #include<USB.H>
+  21          #include<PDIUSBD12.H>
+  22          #include<MASS_STORAGE.H>
+  23          //#include<serial.h>
+  24          
+  25          
+  26          #define USB_COMMAND_ADD           1
+  27          #define USB_DATA_ADD              0
+  28          
+  29          #define USB_DATA                  P0
+  30          #define USB_A0                    P3_5
+  31          #define USB_WR                    P3_6
+  32          #define USB_RD                    P3_7
+  33          #define USB_INT                   P3_2
+  34          
+  35          
+  36          #define ENDPOINT_NUMBER           2
+  37          #define MAX_CONTROL_DATA_SIZE     16
+  38          #define MAX_LUN                    0
+  39          #define MAX_BULK_DATA_SIZE        64
+  40          
+  41          CONTROL_DATA_BUFF Control_Data;
+  42          
+  43          unsigned char idata buffer[64];
+  44          
+  45          CBW cbw;
+  46          CSW csw;
+  47          
+  48          
+  49          union 
+  50          {
+  51           unsigned char Register;
+  52           struct
+  53            {
+  54             unsigned char Command                :1;
+  55             unsigned char Data                   :1;
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 2   
+
+  56            }Status;
+  57          }SCSI;
+  58          
+  59          unsigned char *pData;
+  60          
+  61          code unsigned char DISK_INF[36]=                                      //´ÅÅÌÐÅÏ¢
+  62          {
+  63           0x00,
+  64           0x00,
+  65           0x02,
+  66           0x02,
+  67           0x1F,
+  68           0x00,0x00,0x00,
+  69           0xB5,0xE7,0XC4,0xD4,0xC8,0xA6,0xC8,0xA6, 
+  70           0xD7,0xD4,0xBC,0xBA,0xD7,0xF6,0xB5,0xC4,0xBC,0xD9,0x55,0xC5,0xCC,0x00,0x00,0x00,
+  71           0x31,0x2E,0x30,0x31
+  72          };
+  73          
+  74          code unsigned char DISK_CAPACITY[8]=                                  //´ÅÅÌÈÝÁ¿
+  75          {
+  76           0x00,0x01,0xff,0x00,
+  77           0x00,0x00,0x02,0x00
+  78          };
+  79          
+  80          code unsigned char SENSE[0x12]=                                      //Ä£Ê½Ì½²â·µ»ØÊý¾Ý
+  81          {
+  82          0x70, 0x00, 0x05, 0x00, 0x00, 0x00,
+  83          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00
+  84          };
+  85          
+  86          code unsigned char DBR[512]=                                          //DOSÒýµ¼¼ÇÂ¼
+  87          {
+  88           0xeb, 0x3e, 0x90,                                                    //Ìø×ªÖ¸Áî
+  89           0x4d, 0x53, 0x44, 0x4f, 0x53, 0x35, 0x2e, 0x30,                      //ÎÄ¼þÏµÍ³°æ±¾ÐÅÏ¢
+  90           0x00, 0x02,                                                          //ÉÈÇø×Ö½ÚÊý
+  91           0x20,                                                                //Ã¿´ØÉÈÇøÊý
+  92           0x01, 0x00,                                                          //±£ÁôÉÈÇøÊý
+  93           0x02,                                                                //¸Ã·ÖÇøµÄFAT¸±±¾Êý
+  94           0xF0, 0x01,                                                          //¸ùÄ¿Â¼ÏîÊý
+  95           0x00, 0x00,                                                          //Ð¡ÉÈÇøÊý
+  96           0xf8,                                                                //Ã½ÌåÃèÊö·û
+  97           0x10, 0x00,                                                          //Ã¿FATÉÈÇøÊý
+  98           0x20, 0x00,                                                          //Ã¿µÀÉÈÇøÊý
+  99           0x40, 0x00,                                                          //´ÅÍ·Êý
+ 100           0x00, 0x00, 0x00, 0x00,                                              //Òþ²ØÉÈÇøÊý
+ 101           0x40, 0xff, 0x01, 0x00,                                              //´óÉÈÇøÊý
+ 102           0x80,                                                                //´ÅÅÌÇý¶¯Æ÷²ÎÊý£¬80±íÊ¾Ó²ÅÌ
+ 103           0x00,                                                                //±£Áô
+ 104           0x29,                                                                //À©Õ¹Òýµ¼±ê¼Ç£¬0x29±íÊ¾ºóÈý¸öÇø¿ÉÓÃ
+             - 
+ 105           0x88, 0x09, 0x71, 0x20,                                              //±ê¾íÐòÁÐºÅ
+ 106           0xBC, 0xD9, 0x55, 0xC5, 0xCC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    //´ÅÅÌ±ê¾í
+ 107           0x46, 0x41, 0x54, 0x31, 0x36, 0x20,  0x20, 0x20,                     //ÎÄ¼þÏµÍ³ÀàÐÍÐÅÏ¢
+ 108           0xf1, 0x7d,
+ 109           0xfa, 0x33, 0xc9, 0x8e,  0xd1, 0xbc, 0xfc, 0x7b,  0x16, 0x07, 0xbd, 0x78,  0x00, 0xc5, 0x76, 0x00,
+ 110           0x1e, 0x56, 0x16, 0x55,  0xbf, 0x22, 0x05, 0x89,  0x7e, 0x00, 0x89, 0x4e,  0x02, 0xb1, 0x0b, 0xfc,
+ 111           0xf3, 0xa4, 0x06, 0x1f,  0xbd, 0x00, 0x7c, 0xc6,  0x45, 0xfe, 0x0f, 0x8b,  0x46, 0x18, 0x88, 0x45,
+ 112           0xf9, 0xfb, 0x38, 0x66,  0x24, 0x7c, 0x04, 0xcd,  0x13, 0x72, 0x3c, 0x8a,  0x46, 0x10, 0x98, 0xf7,
+ 113           0x66, 0x16, 0x03, 0x46,  0x1c, 0x13, 0x56, 0x1e,  0x03, 0x46, 0x0e, 0x13,  0xd1, 0x50, 0x52, 0x89,
+ 114           0x46, 0xfc, 0x89, 0x56,  0xfe, 0xb8, 0x20, 0x00,  0x8b, 0x76, 0x11, 0xf7,  0xe6, 0x8b, 0x5e, 0x0b,
+ 115           0x03, 0xc3, 0x48, 0xf7,  0xf3, 0x01, 0x46, 0xfc,  0x11, 0x4e, 0xfe, 0x5a,  0x58, 0xbb, 0x00, 0x07,
+ 116           0x8b, 0xfb, 0xb1, 0x01,  0xe8, 0x94, 0x00, 0x72,  0x47, 0x38, 0x2d, 0x74,  0x19, 0xb1, 0x0b, 0x56,
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 3   
+
+ 117           0x8b, 0x76, 0x3e, 0xf3,  0xa6, 0x5e, 0x74, 0x4a,  0x4e, 0x74, 0x0b, 0x03,  0xf9, 0x83, 0xc7, 0x15,
+ 118           0x3b, 0xfb, 0x72, 0xe5,  0xeb, 0xd7, 0x2b, 0xc9,  0xb8, 0xd8, 0x7d, 0x87,  0x46, 0x3e, 0x3c, 0xd8,
+ 119           0x75, 0x99, 0xbe, 0x80,  0x7d, 0xac, 0x98, 0x03,  0xf0, 0xac, 0x84, 0xc0,  0x74, 0x17, 0x3c, 0xff,
+ 120           0x74, 0x09, 0xb4, 0x0e,  0xbb, 0x07, 0x00, 0xcd,  0x10, 0xeb, 0xee, 0xbe,  0x83, 0x7d, 0xeb, 0xe5,
+ 121           0xbe, 0x81, 0x7d, 0xeb,  0xe0, 0x33, 0xc0, 0xcd,  0x16, 0x5e, 0x1f, 0x8f,  0x04, 0x8f, 0x44, 0x02,
+ 122           0xcd, 0x19, 0xbe, 0x82,  0x7d, 0x8b, 0x7d, 0x0f,  0x83, 0xff, 0x02, 0x72,  0xc8, 0x8b, 0xc7, 0x48,
+ 123           0x48, 0x8a, 0x4e, 0x0d,  0xf7, 0xe1, 0x03, 0x46,  0xfc, 0x13, 0x56, 0xfe,  0xbb, 0x00, 0x07, 0x53,
+ 124           0xb1, 0x04, 0xe8, 0x16,  0x00, 0x5b, 0x72, 0xc8,  0x81, 0x3f, 0x4d, 0x5a,  0x75, 0xa7, 0x81, 0xbf,
+ 125           0x00, 0x02, 0x42, 0x4a,  0x75, 0x9f, 0xea, 0x00,  0x02, 0x70, 0x00, 0x50,  0x52, 0x51, 0x91, 0x92,
+ 126           0x33, 0xd2, 0xf7, 0x76,  0x18, 0x91, 0xf7, 0x76,  0x18, 0x42, 0x87, 0xca,  0xf7, 0x76, 0x1a, 0x8a,
+ 127           0xf2, 0x8a, 0x56, 0x24,  0x8a, 0xe8, 0xd0, 0xcc,  0xd0, 0xcc, 0x0a, 0xcc,  0xb8, 0x01, 0x02, 0xcd,
+ 128           0x13, 0x59, 0x5a, 0x58,  0x72, 0x09, 0x40, 0x75,  0x01, 0x42, 0x03, 0x5e,  0x0b, 0xe2, 0xcc, 0xc3,
+ 129           0x03, 0x18, 0x01, 0x27,  0x0d, 0x0a, 0x49, 0x6e,  0x76, 0x61, 0x6c, 0x69,  0x64, 0x20, 0x73, 0x79,
+ 130           0x73, 0x74, 0x65, 0x6d,  0x20, 0x64, 0x69, 0x73,  0x6b, 0xff, 0x0d, 0x0a,  0x44, 0x69, 0x73, 0x6b,
+ 131           0x20, 0x49, 0x2f, 0x4f,  0x20, 0x65, 0x72, 0x72,  0x6f, 0x72, 0xff, 0x0d,  0x0a, 0x52, 0x65, 0x70,
+ 132           0x6c, 0x61, 0x63, 0x65,  0x20, 0x74, 0x68, 0x65,  0x20, 0x64, 0x69, 0x73,  0x6b, 0x2c, 0x20, 0x61,
+ 133           0x6e, 0x64, 0x20, 0x74,  0x68, 0x65, 0x6e, 0x20,  0x70, 0x72, 0x65, 0x73,  0x73, 0x20, 0x61, 0x6e,
+ 134           0x79, 0x20, 0x6b, 0x65,  0x79, 0x0d, 0x0a, 0x00,  0x49, 0x4f, 0x20, 0x20,  0x20, 0x20, 0x20, 0x20,
+ 135           0x53, 0x59, 0x53, 0x4d,  0x53, 0x44, 0x4f, 0x53,  0x20, 0x20, 0x20, 0x53,  0x59, 0x53, 0x80, 0x01,
+ 136           0x00, 0x57, 0x49, 0x4e,  0x42, 0x4f, 0x4f, 0x54,  0x20, 0x53, 0x59, 0x53,  0x00, 0x00, 0x55, 0xaa,
+ 137          };
+ 138          
+ 139          code unsigned char FAT[64]=                                             //Ä£ÄâµÄÎÄ¼þ·ÖÅä±í
+ 140          {
+ 141           0xF8, 0xFF, 0xFF, 0xFF,  0xff, 0xff, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
+ 142           0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00 ,0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
+ 143           0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00 ,0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
+ 144           0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00 ,0x00, 0x00,  0x00, 0x00, 0x00, 0x00
+ 145          };
+ 146          
+ 147          code unsigned char ZERO[64]=                                            //Ìî³ä0
+ 148          {
+ 149           0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00 ,0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
+ 150           0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00 ,0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
+ 151           0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00 ,0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
+ 152           0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00 ,0x00, 0x00,  0x00, 0x00, 0x00, 0x00
+ 153          };
+ 154          
+ 155          code unsigned char ROOT_DIR[64]=                                       //¸ùÄ¿Â¼
+ 156          {
+ 157           0xBC, 0xD9, 0x55, 0xC5, 0xCC, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,   //´ÅÅÌ±ê¾í
+ 158           0x08,                                                               //ÎÄ¼þÊôÐÔ£¬±íÊ¾´ÅÅÌ±ê¾í
+ 159           0x00,                                                               //±£Áô
+ 160           0x00,                                                               //´´½¨Ê±¼äºÁÃëÊ±¼ä´Á
+ 161           0x00, 0x40,                                                         //ÎÄ¼þ´´½¨Ê±¼ä
+ 162           0x41, 0x31,                                                         //ÎÄ¼þ´´½¨ÈÕÆÚ
+ 163           0x42, 0x31,                                                         //×îºó·ÃÎÊÈÕÆÚ
+ 164           0x00, 0x00,                                                         //ÆðÊ¼´ØºÅ¸ßÎ»×Ö½Ú£¬FAT12/16±ØÐëÎª0
+ 165           0x00, 0x40,                                                         //×îºóÐ´Ê±¼ä
+ 166           0x42, 0x31,                                                         //×îºóÐ´ÈÕÆÚ
+ 167           0x00, 0x00,                                                         //ÆðÊ¼´ØµÍÎ»×Ö½Ú 
+ 168           0x00, 0x00, 0x00, 0x00,                                             //ÎÄ¼þ³¤¶È
+ 169           'T',  'E',   'S',  'T', ' ', ' ', ' ', ' ',  'T', 'X', 'T',         //ÎÄ¼þÃû
+ 170           0x01,                                                               //ÎÄ¼þÊôÐÔ£¬±íÊ¾´ÅÅÌ±ê¾í
+ 171           0x00,                                                               //±£Áô
+ 172           0x00,                                                               //´´½¨Ê±¼äºÁÃëÊ±¼ä´Á
+ 173           0x00, 0x40,                                                         //ÎÄ¼þ´´½¨Ê±¼ä
+ 174           0x41, 0x31,                                                         //ÎÄ¼þ´´½¨ÈÕÆÚ
+ 175           0x42, 0x31,                                                         //×îºó·ÃÎÊÈÕÆÚ
+ 176           0x00, 0x00,                                                         //ÆðÊ¼´ØºÅ¸ßÎ»×Ö½Ú£¬FAT12/16±ØÐëÎª0
+ 177           0x00, 0x40,                                                         //×îºóÐ´Ê±¼ä
+ 178           0x42, 0x31,                                                         //×îºóÐ´ÈÕÆÚ
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 4   
+
+ 179           0x02, 0x00,                                                         //ÆðÊ¼´ØµÍÎ»×Ö½Ú 
+ 180           0xe9, 0x00, 0x00, 0x00,                                             //ÎÄ¼þ³¤¶È
+ 181          };
+ 182          
+ 183          code unsigned char FILE_DATA[233]=
+ 184          {"ÕâÊÇÒ»¸ö²âÊÔ³ÌÐò£¬ÓÃÀ´²âÊÔÎÄ¼þÏµÍ³ÊÇ·ñ¹¤×÷Õý³£¡£Èç¹ûÄãÄÜ¿´µ½ÕâÐ©ÎÄ×Ö£¬ÄÇÃ´ËµÃ÷ÄãµÄµçÄÔÒÑ¾­ÖÐÁË×îÎÞ³ÜµÄ10
+             -8²¡¶¾ÁË£¬ÇëÂíÉÏ°ÑËùÓÐÎÄ¼þÉ¾³ý£¬²¢¸ñÊ½»¯Ó²ÅÌºó£¬½«Ó²ÅÌÑ¹Ëé£¬ÒÔÃâÄãÒ²±»¸ÐÈ¾£¡Èç¹ûÄãÔÚ30ÃëÄÚ»¹Î´¿ªÊ¼É¾³ýÎÄ¼þ£¬ÄãµÄµçÄÔ½«»áÓ
+             -À¾Ã±¨·Ï£¡"};
+ 185           
+ 186          unsigned int SWAP(unsigned int temp)                                //¸ßµÍ×Ö½Ú½»»»
+ 187          {
+ 188   1       unsigned int i;
+ 189   1       i=temp;
+ 190   1       i<<=8;
+ 191   1       temp>>=8;
+ 192   1       i|=temp;
+ 193   1       return i;
+ 194   1      }
+ 195          
+ 196          /*unsigned long int SWAP_long(unsigned long int temp)                  //ËÄ×Ö½Ú½»»»
+ 197          {
+ 198           unsigned long int i;
+ 199           i=temp<<24;
+ 200            i|=(temp<<8)&0x00FF0000; 
+ 201            i|=(temp>>8)&0x0000FF00;
+ 202           i|=(temp>>24)&0x000000FF;
+ 203           return i;
+ 204          }*/
+ 205           
+ 206          
+ 207          unsigned char LSB(unsigned int temp)                                //È¡Ò»¸öÕûÊýµÄµÍ×Ö½Ú
+ 208          {
+ 209   1       return (unsigned char)temp;
+ 210   1      }
+ 211          
+ 212          unsigned char MSB(unsigned int temp)                                //È¡Ò»¸öÕûÊýµÄ¸ß×Ö½Ú
+ 213          {
+ 214   1       return (unsigned char)(temp>>8);
+ 215   1      }
+ 216          
+ 217          code unsigned char LANGUAGE_ID[4]={0x04,0x03,0x09,0x04};            //×Ö·û´®ÃèÊö·ûËùÓÃµÄÓïÑÔÖÖÀà        
+ 218          
+ 219          code unsigned char device_serial_number[18]=                         //Éè±¸ÐòÁÐºÅ
+ 220           {0x12,0x03,0x32,0x00,0x30,0x00,0x37,0x00,0x31,0x00,0x30,0x00,0x39,0x00,0x38,0x00,0x32,0x00};
+ 221          
+ 222          code DEVICE_DESCRIPTOR_STRUCT device_descriptor=     //Éè±¸ÃèÊö·û
+ 223          {
+ 224           sizeof(DEVICE_DESCRIPTOR_STRUCT),                   //Éè±¸ÃèÊö·ûµÄ×Ö½ÚÊý´óÐ¡
+ 225           DEVICE_DESCRIPTOR,                                  //Éè±¸ÃèÊö·ûÀàÐÍ±àºÅ
+ 226           0x1001,                                             //USB°æ±¾ºÅ
+ 227           0x00,                                               //USB·ÖÅäµÄÉè±¸Àà´úÂë
+ 228           0x00,                                               //USB·ÖÅäµÄ×ÓÀà´úÂë
+ 229           0x00,                                               //USB·ÖÅäµÄÉè±¸Ð­Òé´úÂë
+ 230           0x10,                                               //¶Ëµã0µÄ×î´ó°ü´óÐ¡
+ 231           0x7104,                                             //³§ÉÌ±àºÅ
+ 232           0xf0ff,                                             //²úÆ·±àºÅ
+ 233           0x0100,                                             //Éè±¸³ö³§±àºÅ
+ 234           0x00,                                               //Éè±¸³§ÉÌ×Ö·û´®µÄË÷Òý
+ 235           0x00,                                               //ÃèÊö²úÆ·×Ö·û´®µÄË÷Òý
+ 236           0x02,                                               //ÃèÊöÉè±¸ÐòÁÐºÅ×Ö·û´®µÄË÷Òý
+ 237           0x01                                                //¿ÉÄÜµÄÅäÖÃÊýÁ¿
+ 238          };
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 5   
+
+ 239          
+ 240          typedef struct _CON_INT_ENDP_DESCRIPTOR_STRUCT
+ 241          {
+ 242           CONFIGURATION_DESCRIPTOR_STRUCT configuration_descriptor;
+ 243           INTERFACE_DESCRIPTOR_STRUCT  interface_descritor;
+ 244           ENDPOINT_DESCRIPTOR_STRUCT  endpoint_descriptor[ENDPOINT_NUMBER];
+ 245          }CON_INT_ENDP_DESCRIPTOR_STRUCT;
+ 246          
+ 247          code CON_INT_ENDP_DESCRIPTOR_STRUCT con_int_endp_descriptor=
+ 248          {
+ 249          //configuration_descriptor                                          //ÅäÖÃÃèÊö·û
+ 250          {
+ 251           sizeof(CONFIGURATION_DESCRIPTOR_STRUCT),                           //ÅäÖÃÃèÊö·ûµÄ×Ö½ÚÊý´óÐ¡
+ 252           CONFIGURATION_DESCRIPTOR,                                          //ÅäÖÃÃèÊö·ûÀàÐÍ±àºÅ
+ 253           (sizeof(CONFIGURATION_DESCRIPTOR_STRUCT)+sizeof(INTERFACE_DESCRIPTOR_STRUCT)+sizeof(ENDPOINT_DESCRIPTOR_S
+             -TRUCT)*ENDPOINT_NUMBER)*256+
+ 254           (sizeof(CONFIGURATION_DESCRIPTOR_STRUCT)+sizeof(INTERFACE_DESCRIPTOR_STRUCT)+sizeof(ENDPOINT_DESCRIPTOR_S
+             -TRUCT)*ENDPOINT_NUMBER)/256,
+ 255           0x01,                                                            //Ö»°üº¬Ò»¸ö½Ó¿Ú
+ 256           0x01,                                                            //¸ÃÅäÖÃµÄ±àºÅ
+ 257           0x00,                                                            //iConfiguration×Ö¶Î
+ 258           0x80,                                                            //²ÉÓÃ×ÜÏß¹©µç£¬²»Ö§³ÖÔ¶³Ì»½ÐÑ
+ 259           0xC8                                                            //´Ó×ÜÏß»ñÈ¡×î´óµçÁ÷400mA
+ 260          },
+ 261          //interface_descritor                                             //½Ó¿ÚÃèÊö·û
+ 262          {
+ 263           sizeof(INTERFACE_DESCRIPTOR_STRUCT),                             //½Ó¿ÚÃèÊö·ûµÄ×Ö½ÚÊý´óÐ¡
+ 264           INTERFACE_DESCRIPTOR,                                            //½Ó¿ÚÃèÊö·ûÀàÐÍ±àºÅ
+ 265           0x00,                                                            //½Ó¿Ú±àºÅÎª0
+ 266           0x00,                                                            //¸Ã½Ó¿ÚÃèÊö·ûµÄ±àºÅ
+ 267           ENDPOINT_NUMBER,                                                 //·Ç0¶ËµãÊýÁ¿Îª2£¬Ö»Ê¹ÓÃ¶ËµãÖ÷¶ËµãÊäÈëºÍ
+             -Êä³ö
+ 268           0x08,                                                            //USB´óÈÝÁ¿´æ´¢Éè±¸
+ 269           0x06,                                                            //Ê¹ÓÃµÄ×ÓÀà£¬Îª¼ò»¯¿éÃüÁî
+ 270           0x50,                                                            //Ê¹ÓÃµÄÐ­Òé£¬ÕâÀïÊ¹ÓÃµ¥ÅúÁ¿´«ÊäÐ­Òé
+ 271           0x00                                                             //½Ó¿ÚÃèÊö·û×Ö·û´®Ë÷Òý
+ 272          },
+ 273          
+ 274          //endpoint_descriptor[]
+ 275          {
+ 276           {                                                                  //Ö÷¶ËµãÊäÈëÃèÊö
+ 277            sizeof(ENDPOINT_DESCRIPTOR_STRUCT),                             //¶ËµãÃèÊö·ûµÄ×Ö½ÚÊý´óÐ¡
+ 278            ENDPOINT_DESCRIPTOR,                                            //¶ËµãÃèÊö·ûÀàÐÍ±àºÅ
+ 279            MAIN_POINT_IN,                                                  //¶ËµãºÅ£¬Ö÷ÊäÈë¶Ëµã
+ 280            ENDPOINT_TYPE_BULK,                                             //Ê¹ÓÃµÄ´«ÊäÀàÐÍ£¬ÅúÁ¿´«Êä
+ 281            0x4000,                                                         //¸Ã¶ËµãÖ§³ÖµÄ×î´ó°ü³ß´ç£¬64×Ö½Ú
+ 282            0x00                                                            //ÖÐ¶ÏÉ¨ÃèÊ±¼ä£¬¶ÔÅúÁ¿´«ÊäÎÞÐ§
+ 283           },
+ 284            
+ 285           {                                                                  //Ö÷¶ËµãÊä³öÃèÊö
+ 286            sizeof(ENDPOINT_DESCRIPTOR_STRUCT),                             //¶ËµãÃèÊö·ûµÄ×Ö½ÚÊý´óÐ¡
+ 287            ENDPOINT_DESCRIPTOR,                                            //¶ËµãÃèÊö·ûÀàÐÍ±àºÅ
+ 288            MAIN_POINT_OUT,                                                 //¶ËµãºÅ£¬Ö÷Êä³ö¶Ëµã
+ 289            ENDPOINT_TYPE_BULK,                                             //Ê¹ÓÃµÄ´«ÊäÀàÐÍ£¬ÅúÁ¿´«Êä
+ 290            0x4000,                                                         //¸Ã¶ËµãÖ§³ÖµÄ×î´ó°ü³ß´ç£¬64×Ö½Ú
+ 291            0x00                                                            //ÖÐ¶ÏÉ¨ÃèÊ±¼ä£¬¶ÔÅúÁ¿´«ÊäÎÞÐ§
+ 292           }
+ 293          }
+ 294          };
+ 295          
+ 296          union                                          //³ÌÐò±êÖ¾Î»
+ 297          {
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 6   
+
+ 298          unsigned int Register;
+ 299          struct 
+ 300          {
+ 301           unsigned char bus_reset        :1;
+ 302           unsigned char suspend          :1;
+ 303           unsigned char remote_wakeup    :1;
+ 304           unsigned char int_isr          :1;
+ 305           unsigned char not_end          :1;
+ 306           unsigned char usb_idle         :1;
+ 307           unsigned char usb_busy         :1;
+ 308           unsigned char setup_packet_in  :1;
+ 309           unsigned char setup_packet_out :1;
+ 310           unsigned char set_addr         :1;
+ 311           unsigned char usb_endp0_in     :1;
+ 312           unsigned char usb_endp2_in     :1;
+ 313           unsigned char usb_endp2_out    :1;
+ 314          }flags;
+ 315          }usb_flags;
+ 316          
+ 317          union                                         //ÖÐ¶Ï¼Ä´æÆ÷
+ 318          {
+ 319           unsigned char Register[2];
+ 320           struct 
+ 321            {
+ 322             unsigned char control_out_port  :1;
+ 323             unsigned char control_in_port   :1;
+ 324             unsigned char port_out_1        :1;
+ 325             unsigned char port_in_1         :1;
+ 326             unsigned char main_out_port     :1;
+ 327             unsigned char main_in_port      :1;
+ 328             unsigned char bus_reset         :1;
+ 329             unsigned char suspend_change    :1;
+ 330             unsigned char DMA_EOT           :1;
+ 331             unsigned char not_use           :7;
+ 332            }Interrupt;
+ 333          }Interrupt_Register;
+ 334          
+ 335          
+ 336          union                                    //¶Ëµã×îºó´¦Àí×´Ì¬
+ 337          {
+ 338           unsigned char Register;
+ 339           struct
+ 340           {
+ 341            unsigned char successful          :1;
+ 342            unsigned char error_code          :4;
+ 343            unsigned char setup_packet        :1;
+ 344            unsigned char data_1              :1;
+ 345            unsigned char prestatus_not_read  :1;
+ 346           }Status;
+ 347          }Last_Status;
+ 348          
+ 349          
+ 350          //*****************   ÑÓÊ±xºÁÃëº¯Êý ***********
+ 351          void delay(unsigned int x)                
+ 352          {
+ 353   1       unsigned int i;
+ 354   1       unsigned int j;
+ 355   1       for(i=0;i<x;i++)
+ 356   1       for(j=0;j<230;j++);
+ 357   1      }
+ 358          //********************************************
+ 359          
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 7   
+
+ 360          
+ 361          void write_usb_command(unsigned char usb_command)       //Ð´USBÃüÁî
+ 362          {
+ 363   1       USB_A0=USB_COMMAND_ADD;
+ 364   1       USB_DATA=usb_command;
+ 365   1       USB_WR=0;
+ 366   1       USB_WR=1;
+ 367   1       USB_DATA=0xFF;
+ 368   1      }
+ 369          
+ 370          void write_a_usb_data(unsigned char usb_data)        //Ð´Ò»×Ö½ÚUSBÊý¾Ý
+ 371          {
+ 372   1       USB_A0=USB_DATA_ADD;
+ 373   1       USB_DATA=usb_data;
+ 374   1       USB_WR=0;
+ 375   1       USB_WR=1;
+ 376   1       USB_DATA=0XFF;
+ 377   1      }
+ 378          
+ 379          unsigned char read_a_usb_data(void)                  //¶ÁÒ»×Ö½ÚUSBÊý¾Ý
+ 380          {
+ 381   1       unsigned char temp;
+ 382   1       USB_A0=USB_DATA_ADD;
+ 383   1       USB_RD=0;
+ 384   1       temp=USB_DATA;
+ 385   1       USB_RD=1;
+ 386   1       return temp;
+ 387   1      }
+ 388          
+ 389          
+ 390          void read_interrupt_register(void)             //¶ÁUSBÖÐ¶Ï¼Ä´æÆ÷
+ 391          {
+ 392   1       write_usb_command(Read_Interrupt_Register);
+ 393   1       Interrupt_Register.Register[0]=read_a_usb_data();
+ 394   1       Interrupt_Register.Register[1]=read_a_usb_data();
+ 395   1      }
+ 396          
+ 397          void set_usb_addr(unsigned char addr)          //ÉèÖÃUSBµØÖ·
+ 398          {
+ 399   1       write_usb_command(Set_Address);
+ 400   1       write_a_usb_data(0x80|addr);
+ 401   1      }
+ 402          
+ 403          void set_endpoint_enable(void)                  //¶ËµãÊ¹ÄÜ
+ 404          {
+ 405   1       write_usb_command(Set_Endpoint_Enable);
+ 406   1       write_a_usb_data(0x01);
+ 407   1      }
+ 408          
+ 409          unsigned char select_endpoint(unsigned char endp)   //Ñ¡ÔñÖÕ¶Ëµã
+ 410          {
+ 411   1       write_usb_command(Select_EndPoint+endp);
+ 412   1       return read_a_usb_data();
+ 413   1      }
+ 414          
+ 415          unsigned char  read_last_status(unsigned char endp)   //¶Á¶Ëµã×îºó×´Ì¬
+ 416          {
+ 417   1       write_usb_command(Read_Last_Status+endp);
+ 418   1       return read_a_usb_data();
+ 419   1      }
+ 420          
+ 421          void set_endpoint_status(unsigned char endp,unsigned char status)  //ÉèÖÃ¶Ëµã×´Ì¬
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 8   
+
+ 422          {
+ 423   1       write_usb_command(0x40+endp);
+ 424   1       write_a_usb_data(!status);
+ 425   1      }
+ 426          
+ 427          unsigned char read_endpoint_status(unsigned char endp)           //¶Á¶Ëµã×´Ì¬
+ 428          {
+ 429   1       write_usb_command(0x80+endp);
+ 430   1       return read_a_usb_data();
+ 431   1      }
+ 432          
+ 433          void clear_buffer(void)                        //Çå»º³å£¬ÔÚ¶ÁÈ¡»º³åÊý¾Ýºóµ÷ÓÃ
+ 434          {
+ 435   1       write_usb_command(Clear_Buffer);
+ 436   1      }
+ 437          
+ 438          void validate_buffer(void)                    //»º³åÇøÊý¾ÝÓÐÐ§£¬ÔÚÐ´»º³åºóµ÷ÓÃ
+ 439          {
+ 440   1       write_usb_command(Validate_Buffer);
+ 441   1      }
+ 442          
+ 443          void ack_setup(unsigned char endp)            //Ó¦´ð½¨Á¢°ü
+ 444          {
+ 445   1       select_endpoint(endp);
+ 446   1       write_usb_command(Ack_Setup);
+ 447   1      }
+ 448          
+ 449          void error(unsigned char number)             //³ö´í´¦Àí
+ 450          {
+ 451   1      // unsigned char Error[]={"ERROR: "};
+ 452   1      // prints(Error);
+ 453   1      // printc(number);
+ 454   1       number=0;
+ 455   1      }
+ 456          
+ 457          unsigned char read_endpoint_buff(unsigned char endp,unsigned char len,unsigned char * buff)   //¶ÁÖÕ¶Ëµã»º
+             -³å
+ 458          {
+ 459   1       unsigned char i,j;
+ 460   1       read_last_status(endp);
+ 461   1       if(!(select_endpoint(endp))&0x01){error(0); return 0;}
+ 462   1       read_endpoint_status(endp);
+ 463   1       write_usb_command(Read_Buffer);
+ 464   1       read_a_usb_data();
+ 465   1       j=read_a_usb_data();
+ 466   1       if(j>len)
+ 467   1        j=len;
+ 468   1       for(i=0;i<j;i++)
+ 469   1        {
+ 470   2         USB_RD=0;
+ 471   2         *(buff+i)=USB_DATA;
+ 472   2         USB_RD=1;
+ 473   2        }
+ 474   1       clear_buffer();
+ 475   1       return j;
+ 476   1      }
+ 477          
+ 478          unsigned char write_endpoint_buff(unsigned char endp,unsigned char len,unsigned char * buff)    //Ð´ÖÕ¶Ëµã
+             -»º³å
+ 479          {
+ 480   1       unsigned char i;
+ 481   1       read_last_status(endp);
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 9   
+
+ 482   1       select_endpoint(endp);
+ 483   1       write_usb_command(Write_Buffer);
+ 484   1       write_a_usb_data(0);
+ 485   1       write_a_usb_data(len);
+ 486   1       for(i=0;i<len;i++)
+ 487   1        {
+ 488   2         USB_DATA=*(buff+i);
+ 489   2         USB_WR=0;
+ 490   2         USB_WR=1;
+ 491   2        }
+ 492   1       USB_DATA=0XFF;
+ 493   1       validate_buffer();
+ 494   1       return len;
+ 495   1      }
+ 496          
+ 497          void disconnect_usb(void)
+ 498          {
+ 499   1       write_usb_command(0xf3);
+ 500   1       write_a_usb_data(0x0e);
+ 501   1       write_a_usb_data(0x47);
+ 502   1       delay(100);
+ 503   1      }
+ 504          
+ 505          void connect_usb(void)                            //Á¬½ÓUSB
+ 506          {
+ 507   1       write_usb_command(0xf3);                         //³õÊ¼»¯USBD12
+ 508   1       write_a_usb_data(0x1e);                          //Á¬½ÓUSB
+ 509   1       write_a_usb_data(0x47);                          //ÉèÖÃÆµÂÊ
+ 510   1      }
+ 511          
+ 512          void init_usb(void)                              //³õÊ¼»¯USB
+ 513          {
+ 514   1       set_usb_addr(0);
+ 515   1       set_endpoint_enable();
+ 516   1      }
+ 517          
+ 518          void usb_bus_reset(void)                         //USB×ÜÏß¸´Î»´¦Àí
+ 519          {
+ 520   1      // code unsigned char Usb_Bus_Reset[]={"USB BUS RESET"};
+ 521   1      // prints(Usb_Bus_Reset);
+ 522   1       usb_flags.Register=0;
+ 523   1       set_endpoint_enable();
+ 524   1       SCSI.Status.Command=1;
+ 525   1       SCSI.Status.Data=0;
+ 526   1       csw.dCSWSignature=0x55534253;
+ 527   1      
+ 528   1      }
+ 529          
+ 530          void usb_bus_suspend(void)                       //USB×ÜÏß¹ÒÆð´¦Àí
+ 531          {
+ 532   1      // code unsigned char Usb_Bus_Suspend[]={"USB BUS SUSPEND"};
+ 533   1      // prints(Usb_Bus_Suspend);
+ 534   1      // send_to_comport(10);
+ 535   1      }
+ 536          
+ 537          void set_usb_address(void)                       //ÉèÖÃµØÖ·
+ 538          {
+ 539   1       usb_flags.flags.set_addr=1;
+ 540   1       while(select_endpoint(1)&0x01);
+ 541   1       write_endpoint_buff(1,0,0);
+ 542   1       set_usb_addr(Control_Data.DeviceRequest.wValue);
+ 543   1       usb_flags.flags.usb_endp0_in=0;
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 10  
+
+ 544   1       usb_flags.flags.setup_packet_out=0;
+ 545   1      }
+ 546          
+ 547          void get_status(unsigned char receiver)           //»ñÈ¡×´Ì¬ÏìÓ¦
+ 548          {
+ 549   1       unsigned char status[2];
+ 550   1       switch (receiver)
+ 551   1        {
+ 552   2         case 0:                        //»ñÈ¡Éè±¸×´Ì¬
+ 553   2          status[0]=0x00;
+ 554   2          status[1]=0x00;
+ 555   2          break;
+ 556   2         case 1:                        //»ñÈ¡½Ó¿Ú×´Ì¬
+ 557   2          status[0]=0x00;
+ 558   2          status[0]=0x00;
+ 559   2          break;
+ 560   2         case 2:                        //»ñÈ¡¶Ëµã×´Ì¬
+ 561   2          status[0]=0x00;
+ 562   2          status[1]=0x00;
+ 563   2          break;
+ 564   2         }
+ 565   1        write_endpoint_buff(1,2,status);
+ 566   1        usb_flags.flags.usb_endp0_in=0;
+ 567   1      }
+ 568          
+ 569          void clear_feature(unsigned char receiver)    
+ 570          {
+ 571   1       receiver=0;
+ 572   1       write_endpoint_buff(1,0,0);
+ 573   1       usb_flags.flags.usb_endp0_in=0;
+ 574   1       usb_flags.flags.setup_packet_out=0;
+ 575   1      }
+ 576          
+ 577          void set_feature(unsigned char receiver)
+ 578          {
+ 579   1       receiver=0;
+ 580   1       write_endpoint_buff(1,0,0);
+ 581   1       usb_flags.flags.usb_endp0_in=0;
+ 582   1       usb_flags.flags.setup_packet_out=0;
+ 583   1      }
+ 584          
+ 585          void set_descriptor(void)
+ 586          {
+ 587   1       usb_flags.flags.usb_endp0_in=0;
+ 588   1       usb_flags.flags.setup_packet_out=0;
+ 589   1      }
+ 590          
+ 591          void set_configuration(void)
+ 592          {
+ 593   1       write_endpoint_buff(1,0,0);
+ 594   1       usb_flags.flags.usb_endp0_in=0;
+ 595   1       usb_flags.flags.setup_packet_out=0;
+ 596   1      }
+ 597          
+ 598          void get_configuration(void)               //»ñÈ¡ÅäÖÃ×´Ì¬
+ 599          {
+ 600   1       unsigned char value=0x01;
+ 601   1       write_endpoint_buff(1,1,&value);
+ 602   1       usb_flags.flags.usb_endp0_in=0;
+ 603   1      }
+ 604          
+ 605          void set_interface(void)                   //ÉèÖÃ½Ó¿Ú
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 11  
+
+ 606          {
+ 607   1       write_endpoint_buff(1,0,0);
+ 608   1       usb_flags.flags.usb_endp0_in=0;
+ 609   1       usb_flags.flags.setup_packet_out=0;
+ 610   1      }
+ 611          
+ 612          void get_interface(void)                  //»ñÈ¡½Ó¿Ú×´Ì¬
+ 613          {
+ 614   1       unsigned char value=0x01;
+ 615   1       write_endpoint_buff(1,1,&value);
+ 616   1       usb_flags.flags.usb_endp0_in=0;
+ 617   1      }
+ 618          
+ 619          void get_max_LUN(void)                   //»ñÈ¡´ÅÅÌ×î´óÂß¼­µ¥ÔªºÅ
+ 620          {
+ 621   1       unsigned char max_LUN=MAX_LUN;          //Ö»ÓÐÒ»¸öÂß¼­µ¥Ôª
+ 622   1       write_endpoint_buff(1,1,&(max_LUN));
+ 623   1       usb_flags.flags.usb_endp0_in=0; 
+ 624   1      }
+ 625          
+ 626          void mass_storage_reset(void)            //USB´óÈÝÁ¿´æ´¢Éè±¸¸´Î»
+ 627          {
+ 628   1       write_endpoint_buff(1,0,0);
+ 629   1       usb_flags.flags.usb_endp0_in=0;
+ 630   1       usb_flags.flags.setup_packet_out=0;
+ 631   1       SCSI.Status.Command=1;
+ 632   1       SCSI.Status.Data=0;
+ 633   1      }
+ 634          
+ 635          
+ 636          void get_descriptor(void)                    //»ñÈ¡ÃèÊö·û
+ 637          {
+ 638   1          if(!usb_flags.flags.not_end)
+ 639   1           {
+ 640   2            switch(MSB(Control_Data.DeviceRequest.wValue))
+ 641   2                 {
+ 642   3              case DEVICE_DESCRIPTOR:
+ 643   3                       Control_Data.wCount=sizeof(DEVICE_DESCRIPTOR_STRUCT);
+ 644   3                       Control_Data.pData=(unsigned char *)(&device_descriptor);
+ 645   3                   break;
+ 646   3              case CONFIGURATION_DESCRIPTOR:
+ 647   3                   Control_Data.wCount=SWAP(con_int_endp_descriptor.configuration_descriptor.wTotalLength);
+ 648   3                               Control_Data.pData=(unsigned char *)(&con_int_endp_descriptor);
+ 649   3                   if(Control_Data.wLength<Control_Data.wCount)Control_Data.wCount=Control_Data.wLength;
+ 650   3                   break;
+ 651   3                      case STRING_DESCRIPTOR:
+ 652   3                           if(LSB(Control_Data.DeviceRequest.wValue)==0)
+ 653   3                                {
+ 654   4                                 Control_Data.wCount=LANGUAGE_ID[0];
+ 655   4                     Control_Data.pData=LANGUAGE_ID;
+ 656   4                                }
+ 657   3                           if(LSB(Control_Data.DeviceRequest.wValue)==2)
+ 658   3                                {
+ 659   4                                 Control_Data.wCount=device_serial_number[0];
+ 660   4                                 Control_Data.pData=device_serial_number;
+ 661   4                                }
+ 662   3                               break;
+ 663   3                      }
+ 664   2            if(Control_Data.wLength<Control_Data.wCount)Control_Data.wCount=Control_Data.wLength;
+ 665   2               }
+ 666   1      
+ 667   1          if(Control_Data.wCount>=MAX_CONTROL_DATA_SIZE)
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 12  
+
+ 668   1           {
+ 669   2                write_endpoint_buff(1,MAX_CONTROL_DATA_SIZE,Control_Data.pData);
+ 670   2                Control_Data.pData+=MAX_CONTROL_DATA_SIZE;
+ 671   2            Control_Data.wCount-=MAX_CONTROL_DATA_SIZE;
+ 672   2                if(usb_flags.flags.set_addr)usb_flags.flags.not_end=1;
+ 673   2                 else usb_flags.flags.usb_endp0_in=0;
+ 674   2                return;
+ 675   2               }
+ 676   1          else
+ 677   1           {
+ 678   2                write_endpoint_buff(1,Control_Data.wCount,Control_Data.pData);
+ 679   2            usb_flags.flags.setup_packet_in=0;
+ 680   2                usb_flags.flags.usb_endp0_in=0;
+ 681   2                return;
+ 682   2               }      
+ 683   1      }
+ 684          
+ 685          void endp0_out(void)                            //ÖÕ¶Ëµã0Êä³öÖÐ¶Ï´¦Àí
+ 686          {
+ 687   1       Last_Status.Register=read_last_status(0);
+ 688   1       if(Last_Status.Status.setup_packet)
+ 689   1        {
+ 690   2         Control_Data.wLength=0;
+ 691   2         Control_Data.wCount=0;
+ 692   2         if(read_endpoint_buff(0,sizeof(Control_Data.DeviceRequest),(unsigned char *)(&(Control_Data.DeviceReque
+             -st)))!=sizeof(REQUESTCMD))
+ 693   2          {
+ 694   3               set_endpoint_status(0,0);
+ 695   3               set_endpoint_status(1,0);
+ 696   3               return;
+ 697   3              }
+ 698   2        Control_Data.DeviceRequest.wValue=SWAP(Control_Data.DeviceRequest.wValue);
+ 699   2        Control_Data.DeviceRequest.wIndex=SWAP(Control_Data.DeviceRequest.wIndex);
+ 700   2        Control_Data.DeviceRequest.wLength=SWAP(Control_Data.DeviceRequest.wLength);
+ 701   2      
+ 702   2        ack_setup(0);
+ 703   2        ack_setup(1);
+ 704   2        Control_Data.wLength=Control_Data.DeviceRequest.wLength;
+ 705   2        usb_flags.flags.not_end=0;
+ 706   2        usb_flags.flags.usb_endp0_in=1;
+ 707   2        usb_flags.flags.setup_packet_in=0;
+ 708   2        usb_flags.flags.setup_packet_out=0;
+ 709   2        if(Control_Data.DeviceRequest.bmRequestType&0x80){usb_flags.flags.setup_packet_in=1;return;}
+ 710   2        else {usb_flags.flags.setup_packet_out=1;return;}
+ 711   2       }
+ 712   1       else
+ 713   1        {
+ 714   2         select_endpoint(0);
+ 715   2         clear_buffer();
+ 716   2        }
+ 717   1      }
+ 718          
+ 719          void endp0_in(void)                                        //ÖÕ¶Ëµã0ÊäÈë´¦Àí
+ 720          {
+ 721   1       read_last_status(1);
+ 722   1       if(usb_flags.flags.setup_packet_in||usb_flags.flags.not_end)
+ 723   1        {
+ 724   2         if((Control_Data.DeviceRequest.bmRequestType==0xA1)&&(Control_Data.DeviceRequest.bRequest==0xFE))
+ 725   2          get_max_LUN();
+ 726   2         switch(Control_Data.DeviceRequest.bmRequestType&0x7B)
+ 727   2          {
+ 728   3               case 0:
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 13  
+
+ 729   3                 switch (Control_Data.DeviceRequest.bRequest)
+ 730   3                  {
+ 731   4                   case 0: get_status(0);break;
+ 732   4                   case 6: get_descriptor();break;
+ 733   4                   case 8: get_configuration();break;
+ 734   4                       default:break;
+ 735   4                  }
+ 736   3               case 1:
+ 737   3                 switch (Control_Data.DeviceRequest.bRequest)
+ 738   3                  {
+ 739   4               case  0: get_status(1);break;
+ 740   4                   case 10: get_interface();break;
+ 741   4               default: break;
+ 742   4                      }
+ 743   3               case 2:
+ 744   3                {
+ 745   4             if(Control_Data.DeviceRequest.bRequest==0)get_status(2);  
+ 746   4                }
+ 747   3               default: break;
+ 748   3          }
+ 749   2        return;
+ 750   2        }
+ 751   1       if(usb_flags.flags.setup_packet_out) 
+ 752   1        {
+ 753   2         if((Control_Data.DeviceRequest.bmRequestType==0x21)&&(Control_Data.DeviceRequest.bRequest==0xFF))
+ 754   2          mass_storage_reset();
+ 755   2      
+ 756   2         switch(Control_Data.DeviceRequest.bmRequestType&0x03)
+ 757   2          {
+ 758   3               case 0:
+ 759   3           switch (Control_Data.DeviceRequest.bRequest)
+ 760   3            {
+ 761   4                 case     CLEAR_FEATURE: clear_feature(0);break;
+ 762   4                 case       SET_FEATURE: set_feature(0);break;
+ 763   4                 case       SET_ADDRESS: set_usb_address();break;                  //set_address                 
+ 764   4                 case    SET_DESCRIPTOR: set_descriptor();break;                //set_descriptor
+ 765   4                 case SET_CONFIGURATION: set_configuration(); break;         //set_configurat                           
+ 766   4                 default: break;
+ 767   4                }break;
+ 768   3               case 1:
+ 769   3            switch (Control_Data.DeviceRequest.bRequest)
+ 770   3                 {
+ 771   4                  case CLEAR_FEATURE:  clear_feature(1);break;
+ 772   4                  case   SET_FEATURE:  set_feature(1); break;
+ 773   4              case SET_INTERFACE: set_interface();break;
+ 774   4                  default: break;
+ 775   4              }break;
+ 776   3               case 2:
+ 777   3                switch (Control_Data.DeviceRequest.bRequest)
+ 778   3                 {
+ 779   4                  case CLEAR_FEATURE: clear_feature(2);break;
+ 780   4                  case   SET_FEATURE: set_feature(2);break;
+ 781   4              default: break;      
+ 782   4                 }break;
+ 783   3               default: break;
+ 784   3          }
+ 785   2        }
+ 786   1      }
+ 787          
+ 788          /*void endp1_out(void)
+ 789          {
+ 790           printc(0xcc);
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 14  
+
+ 791          }*/
+ 792          
+ 793          
+ 794          /*void endp1_in(void)
+ 795          {
+ 796           printc(0xcc);
+ 797          }*/
+ 798          
+ 799          void Return_CSW(unsigned long int DataResidue,unsigned char status)          //·µ»ØCSWÊý¾Ý°ü
+ 800          {
+ 801   1        
+ 802   1        csw.dCSWTag=cbw.dCBWTag;
+ 803   1        csw.dCSWDataResidue=DataResidue;
+ 804   1        csw.bCSWStatus=status;
+ 805   1        while(select_endpoint(5)&0x01);
+ 806   1        write_endpoint_buff(5,sizeof(CSW),(unsigned char *)(&csw));
+ 807   1        usb_flags.flags.usb_endp2_in=0;
+ 808   1        usb_flags.flags.usb_endp2_out=0;
+ 809   1        SCSI.Status.Command=1;
+ 810   1        SCSI.Status.Data=0;
+ 811   1      }
+ 812          
+ 813          void write_10(void)                                                         //SCSIÐ´²Ù×÷
+ 814          {
+ 815   1       unsigned long int LBA,Byte_Count;
+ 816   1       unsigned char i;
+ 817   1        if(SCSI.Status.Data)
+ 818   1        {
+ 819   2         for(i=0;i<4;i++)
+ 820   2         {
+ 821   3          LBA<<=8;
+ 822   3          LBA+=cbw.CBWCB[2+i];
+ 823   3         }
+ 824   2      //   pData=get_physical_addr(LBA);
+ 825   2         Byte_Count=0;
+ 826   2         Byte_Count+=cbw.CBWCB[7];
+ 827   2         Byte_Count<<=8;
+ 828   2         Byte_Count+=cbw.CBWCB[8];
+ 829   2         Byte_Count<<=9;
+ 830   2       while(usb_flags.flags.usb_endp2_out)
+ 831   2        {
+ 832   3         while(!(select_endpoint(4)&0x01));
+ 833   3              if(Byte_Count>64)
+ 834   3               {
+ 835   4                read_endpoint_buff(4,64,buffer);
+ 836   4                Byte_Count-=64;
+ 837   4               }
+ 838   3              else 
+ 839   3               {
+ 840   4            read_endpoint_buff(4,Byte_Count,buffer);
+ 841   4            Return_CSW(0x00,SUCCESS);
+ 842   4               }
+ 843   3         }
+ 844   2       }
+ 845   1      }
+ 846          
+ 847          void endp2_out(void)                                                     //Ö÷¶ËµãÊä³ö´¦Àí
+ 848          {
+ 849   1      // printc(0xcc);
+ 850   1       if(SCSI.Status.Command)
+ 851   1        {
+ 852   2         if(read_endpoint_buff(4,sizeof(CBW),(unsigned char *)(&cbw))!=sizeof(CBW)){error(2);return;}
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 15  
+
+ 853   2         if(cbw.dCBWSignature!=0x55534243){error(3);return;}
+ 854   2         SCSI.Status.Command=0;
+ 855   2         SCSI.Status.Data=1;
+ 856   2         if(cbw.bmCBWFlags&0x80)
+ 857   2          {
+ 858   3               usb_flags.flags.usb_endp2_in=1;
+ 859   3               usb_flags.flags.usb_endp2_out=0;
+ 860   3              }
+ 861   2         else
+ 862   2          {
+ 863   3               usb_flags.flags.usb_endp2_in=0;
+ 864   3               usb_flags.flags.usb_endp2_out=1;
+ 865   3           switch(cbw.CBWCB[0])
+ 866   3            {
+ 867   4             case        Write_10: write_10();break;
+ 868   4             case Test_Unit_Ready: Return_CSW(0x00,SUCCESS);break; 
+ 869   4             case          Verify: Return_CSW(0x00,SUCCESS);break;
+ 870   4                 default             : Return_CSW(cbw.dCBWDataTransgerLength,FAIL);break;
+ 871   4                }
+ 872   3              }
+ 873   2        }
+ 874   1       else
+ 875   1        {
+ 876   2         read_last_status(4);
+ 877   2         select_endpoint(4);
+ 878   2         clear_buffer();
+ 879   2        }
+ 880   1      }
+ 881          
+ 882          unsigned char *get_physical_addr(unsigned long int LBA)                        //´ÓLBA»ñÈ¡ÎïÀíµØÖ·
+ 883          {
+ 884   1       if(LBA==0)return DBR;
+ 885   1       if(LBA==2)return FAT;
+ 886   1       if(LBA==0x40)return ZERO;
+ 887   1       if(LBA==0X0A)return FAT;
+ 888   1      }
+ 889          
+ 890          
+ 891          void read_10(void)                                                              //SCSI¶Á´¦Àí
+ 892          {
+ 893   1       unsigned long int LBA=0,Byte_Count;
+ 894   1       unsigned long int count=0;
+ 895   1       unsigned char i;
+ 896   1       if(SCSI.Status.Data)
+ 897   1        {
+ 898   2         for(i=0;i<4;i++)
+ 899   2         {
+ 900   3          LBA<<=8;
+ 901   3          LBA+=cbw.CBWCB[2+i];
+ 902   3         }
+ 903   2         pData=get_physical_addr(LBA);
+ 904   2         Byte_Count=0;
+ 905   2         Byte_Count+=cbw.CBWCB[7];
+ 906   2         Byte_Count<<=8;
+ 907   2         Byte_Count+=cbw.CBWCB[8];
+ 908   2         Byte_Count<<=9;
+ 909   2         i=0;
+ 910   2        while(usb_flags.flags.usb_endp2_in)
+ 911   2         {
+ 912   3          if(LBA==0)
+ 913   3             if(count<512)pData=DBR+count;
+ 914   3                 else 
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 16  
+
+ 915   3                  if(count==512)pData=FAT;
+ 916   3                      else pData=ZERO;
+ 917   3              if(LBA==2)
+ 918   3      //         if(count<64)pData=FAT;
+ 919   3      //         else
+ 920   3       //         if(count==512*7)pData=FAT;
+ 921   3       //      else
+ 922   3                       pData=ZERO;
+ 923   3              if(LBA==8)
+ 924   3       //         if(count<512)pData=ZERO;
+ 925   3       //             else 
+ 926   3       //              if(count==512)pData=FAT;
+ 927   3       //              else 
+ 928   3                        pData=ZERO;
+ 929   3           if(LBA==0x10)
+ 930   3                  if(count==512)pData=FAT;
+ 931   3                       else pData=ZERO;
+ 932   3              if(LBA==0x21)
+ 933   3               if(count==0)
+ 934   3      //        else
+ 935   3             pData=ROOT_DIR;
+ 936   3                 else pData=ZERO;
+ 937   3      
+ 938   3              if(LBA==0x40)
+ 939   3                if(count<240)pData=FILE_DATA+count;
+ 940   3                else 
+ 941   3                  pData=ZERO;
+ 942   3      
+ 943   3         while(select_endpoint(5)&0x01);
+ 944   3         if(Byte_Count>MAX_BULK_DATA_SIZE)
+ 945   3         {
+ 946   4          write_endpoint_buff(5,MAX_BULK_DATA_SIZE,pData);
+ 947   4      //    pData+=MAX_BULK_DATA_SIZE;
+ 948   4          Byte_Count-=MAX_BULK_DATA_SIZE;
+ 949   4      //    SCSI.Status.Data=1;
+ 950   4         }
+ 951   3        else
+ 952   3         {
+ 953   4          write_endpoint_buff(5,Byte_Count,pData);
+ 954   4          Return_CSW(0x00,SUCCESS);
+ 955   4         }
+ 956   3        count+=64;
+ 957   3        }
+ 958   2       }
+ 959   1       else error(2);return;
+ 960   1      }
+ 961          
+ 962          void endp2_in(void)                                      //Ö÷¶ËµãÊäÈë´¦Àí
+ 963          {
+ 964   1          switch(cbw.CBWCB[0])
+ 965   1          {
+ 966   2           case              Read_10: read_10();break;
+ 967   2           case              Inquiry: write_endpoint_buff(5,0x24,DISK_INF);Return_CSW(0x00,SUCCESS); break;
+ 968   2           case        Read_Capacity: write_endpoint_buff(5,0x08,DISK_CAPACITY);Return_CSW(0x00,SUCCESS);break;
+ 969   2           case Read_Format_capacity: write_endpoint_buff(5,0x00,0x00);Return_CSW(cbw.dCBWDataTransgerLength,FAI
+             -L);break;
+ 970   2           case        Request_Sense: write_endpoint_buff(5,0x12,SENSE);Return_CSW(0x00,SUCCESS);break;
+ 971   2               case       Medium_Removal: Return_CSW(0x00,SUCCESS);break;
+ 972   2               case                 0x1a: write_endpoint_buff(5,0x00,0x00);Return_CSW(cbw.dCBWDataTransgerLength,FAIL);
+             -break;
+ 973   2           default                  : write_endpoint_buff(5,0x00,0x00);Return_CSW(cbw.dCBWDataTransgerLength,FAI
+             -L);break;
+C51 COMPILER V7.06   USB                                                                   09/09/2006 19:51:11 PAGE 17  
+
+ 974   2              }
+ 975   1      }
+ 976          
+ 977          void main(void)
+ 978          {
+ 979   1       disconnect_usb();
+ 980   1      // delay(1000);
+ 981   1      // init_comport(57600);
+ 982   1       init_usb();
+ 983   1       connect_usb();
+ 984   1      // send_to_comport('O');
+ 985   1      // send_to_comport('K');
+ 986   1        
+ 987   1       while(1)
+ 988   1        { 
+ 989   2         if(!USB_INT)
+ 990   2          {
+ 991   3               read_interrupt_register();
+ 992   3      //      delay(10);
+ 993   3      //      printc(Interrupt_Register.Register[0]);
+ 994   3               if(Interrupt_Register.Interrupt.bus_reset){usb_bus_reset();continue;}
+ 995   3               if(Interrupt_Register.Interrupt.suspend_change){usb_bus_suspend();continue;}
+ 996   3               if(Interrupt_Register.Interrupt.control_out_port){endp0_out();continue;}
+ 997   3               if(Interrupt_Register.Interrupt.control_in_port&&usb_flags.flags.usb_endp0_in){endp0_in();continue;}
+ 998   3      //       if(Interrupt_Register.Interrupt.port_out_1)endp1_out();
+ 999   3      //       if(Interrupt_Register.Interrupt.port_in_1)endp1_in();
+1000   3               if(Interrupt_Register.Interrupt.main_out_port){endp2_out();continue;}
+1001   3               if(Interrupt_Register.Interrupt.main_in_port&&usb_flags.flags.usb_endp2_in){endp2_in();continue;}
+1002   3          }
+1003   2        }
+1004   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2901    ----
+   CONSTANT SIZE    =   1071    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     84      40
+   IDATA SIZE       =     64    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

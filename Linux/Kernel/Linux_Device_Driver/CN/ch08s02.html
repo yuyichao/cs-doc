@@ -1,0 +1,177 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>8.2.&#160;后备缓存-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch08.html" title="第&#160;8&#160;章&#160;分配内存">
+<link rel="prev" href="ch08.html" title="第&#160;8&#160;章&#160;分配内存">
+<link rel="next" href="ch08s03.html" title="8.3.&#160;get_free_page 和其友">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">8.2.&#160;后备缓存</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch08.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;8&#160;章&#160;分配内存</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch08s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="LookasideCaches.sect"></a>8.2.&#160;后备缓存</h2></div></div></div>
+<p>一个设备驱动常常以反复分配许多相同大小的对象而结束. 如果内核已经维护了一套相同大小对象的内存池, 为什么不增加一些特殊的内存池给这些高容量的对象? 实际上, 内核确实实现了一个设施来创建这类内存池, 它常常被称为一个后备缓存. 设备驱动常常不展示这类的内存行为, 它们证明使用一个后备缓存是对的, 但是, 有例外; 在 Linux 2.6 中 USB 和 SCSI 驱动使用缓存.</p>
+<p>Linux 内核的缓存管理者有时称为" slab 分配器". 因此, 它的功能和类型在 &lt;linux/slab.h&gt; 中声明. slab 分配器实现有一个 kmem_cache_t 类型的缓存; 使用一个对 kmem_cache_create 的调用来创建它们:</p>
+<pre class="programlisting">
+kmem_cache_t *kmem_cache_create(const char *name, size_t size,
+ size_t offset,
+ unsigned long flags,
+ void (*constructor)(void *, kmem_cache_t *,
+ unsigned long flags), void (*destructor)(void *, kmem_cache_t *, unsigned long flags)); 
+</pre>
+<p>这个函数创建一个新的可以驻留任意数目全部同样大小的内存区的缓存对象, 大小由 size 参数指定. name 参数和这个缓存关联并且作为一个在追踪问题时有用的管理信息; 通常, 它被设置为被缓存的结构类型的名子. 这个缓存保留一个指向 name 的指针, 而不是拷贝它, 因此驱动应当传递一个指向在静态存储中的名子的指针(常常这个名子只是一个文字字串). 这个名子不能包含空格.</p>
+<p>offset 是页内的第一个对象的偏移; 它可被用来确保一个对被分配的对象的特殊对齐, 但是你最可能会使用 0 来请求缺省值. flags 控制如何进行分配并且是下列标志的一个位掩码:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>SLAB_NO_REAP </span></span></dt>
+<dd><p>设置这个标志保护缓存在系统查找内存时被削减. 设置这个标志通常是个坏主意; 重要的是避免不必要地限制内存分配器的行动自由.</p></dd>
+<dt><span class="term"><span>SLAB_HWCACHE_ALIGN </span></span></dt>
+<dd><p>这个标志需要每个数据对象被对齐到一个缓存行; 实际对齐依赖主机平台的缓存分布. 这个选项可以是一个好的选择, 如果在 SMP 机器上你的缓存包含频繁存取的项. 但是, 用来获得缓存行对齐的填充可以浪费可观的内存量.</p></dd>
+<dt><span class="term"><span>SLAB_CACHE_DMA </span></span></dt>
+<dd><p>这个标志要求每个数据对象在 DMA 内存区分配.</p></dd>
+</dl></div>
+<p>还有一套标志用来调试缓存分配; 详情见 mm/slab.c. 但是, 常常地, 在用来开发的系统中, 这些标志通过一个内核配置选项被全局性地设置</p>
+<p>函数的 constructor 和 destructor 参数是可选函数( 但是可能没有 destructor, 如果没有 constructor ); 前者可以用来初始化新分配的对象, 后者可以用来"清理"对象在它们的内存被作为一个整体释放回给系统之前.</p>
+<p>构造函数和析构函数会有用, 但是有几个限制你必须记住. 一个构造函数在分配一系列对象的内存时被调用; 因为内存可能持有几个对象, 构造函数可能被多次调用. 你不能假设构造函数作为分配一个对象的一个立即的结果而被调用. 同样地, 析构函数可能在以后某个未知的时间中调用, 不是立刻在一个对象被释放后. 析构函数和构造函数可能或不可能被允许睡眠, 根据它们是否被传递 SLAB_CTOR_ATOMIC 标志(这里 CTOR 是 constructor 的缩写).</p>
+<p>为方便, 一个程序员可以使用相同的函数给析构函数和构造函数; slab 分配器常常传递 SLAB_CTOR_CONSTRUCTOR 标志当被调用者是一个构造函数.</p>
+<p>一旦一个对象的缓存被创建, 你可以通过调用 kmem_cache_alloc 从它分配对象.</p>
+<pre class="programlisting">
+void *kmem_cache_alloc(kmem_cache_t *cache, int flags);
+</pre>
+<p>这里, cache 参数是你之前已经创建的缓存; flags 是你会传递给 kmalloc 的相同, 并且被参考如果 kmem_cache_alloc 需要出去并分配更多内存.</p>
+<p>为释放一个对象, 使用 kmem_cache_free:</p>
+<pre class="programlisting">
+ void kmem_cache_free(kmem_cache_t *cache, const void *obj); 
+</pre>
+<p>当驱动代码用完这个缓存, 典型地当模块被卸载, 它应当如下释放它的缓存:</p>
+<pre class="programlisting">
+ int kmem_cache_destroy(kmem_cache_t *cache); 
+</pre>
+<p>这个销毁操作只在从这个缓存中分配的所有的对象都已返回给它时才成功. 因此, 一个模块应当检查从 kmem_cache_destroy 的返回值; 一个失败指示某类在模块中的内存泄漏(因为某些对象已被丢失.)</p>
+<p>使用后备缓存的一方面益处是内核维护缓冲使用的统计. 这些统计可从 /proc/slabinfo 获得.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AscullBasedontheSlabCachesscullc.sect"></a>8.2.1.&#160;一个基于 Slab 缓存的 scull: scullc</h3></div></div></div>
+<p>是时候给个例子了. scullc 是一个简化的 scull 模块的版本, 它只实现空设备 -- 永久的内存区. 不象 scull, 它使用 kmalloc, scullc 使用内存缓存. 量子的大小可在编译时和加载时修改, 但是不是在运行时 -- 这可能需要创建一个新内存区, 并且我们不想处理这些不必要的细节.</p>
+<p>scullc 使用一个完整的例子, 可用来试验 slab 分配器. 它区别于 scull 只在几行代码. 首先, 我们必须声明我们自己的 slab 缓存:</p>
+<pre class="programlisting">
+/* declare one cache pointer: use it for all devices */
+kmem_cache_t *scullc_cache;
+</pre>
+<p>slab 缓存的创建以这样的方式处理( 在模块加载时 ):</p>
+<pre class="programlisting">
+/* scullc_init: create a cache for our quanta */
+scullc_cache = kmem_cache_create("scullc", scullc_quantum,
+                                 0, SLAB_HWCACHE_ALIGN, NULL, NULL); /* no ctor/dtor */
+
+if (!scullc_cache)
+{
+        scullc_cleanup();
+        return -ENOMEM;
+
+}
+</pre>
+<p>这是它如何分配内存量子:</p>
+<pre class="programlisting">
+/* Allocate a quantum using the memory cache */
+if (!dptr-&gt;data[s_pos])
+{
+        dptr-&gt;data[s_pos] = kmem_cache_alloc(scullc_cache, GFP_KERNEL);
+        if (!dptr-&gt;data[s_pos])
+
+                goto nomem;
+        memset(dptr-&gt;data[s_pos], 0, scullc_quantum);
+}
+</pre>
+<p>还有这些代码行释放内存:</p>
+<pre class="programlisting">
+for (i = 0; i &lt; qset; i++)
+        if (dptr-&gt;data[i])
+                kmem_cache_free(scullc_cache, dptr-&gt;data[i]);
+</pre>
+<p>最后, 在模块卸载时, 我们不得不返回缓存给系统:</p>
+<pre class="programlisting">
+/* scullc_cleanup: release the cache of our quanta */
+if (scullc_cache)
+        kmem_cache_destroy(scullc_cache);
+</pre>
+<p>从 scull 到 scullc 的主要不同是稍稍的速度提升以及更好的内存使用. 因为量子从一个恰好是合适大小的内存片的池中分配, 它们在内存中的排列是尽可能的密集, 与 scull 量子的相反, 它带来一个不可预测的内存碎片.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="MemoryPools.sect"></a>8.2.2.&#160;内存池</h3></div></div></div>
+<p>在内核中有不少地方内存分配不允许失败. 作为一个在这些情况下确保分配的方式, 内核开发者创建了一个已知为内存池(或者是 "mempool" )的抽象. 一个内存池真实地只是一类后备缓存, 它尽力一直保持一个空闲内存列表给紧急时使用.</p>
+<p>一个内存池有一个类型 mempool_t ( 在 &lt;linux/mempool.h&gt; 中定义); 你可以使用 mempool_create 创建一个:</p>
+<pre class="programlisting">
+mempool_t *mempool_create(int min_nr,
+ mempool_alloc_t *alloc_fn,
+ mempool_free_t *free_fn,
+ void *pool_data); 
+</pre>
+<p>min_nr 参数是内存池应当一直保留的最小数量的分配的对象. 实际的分配和释放对象由 alloc_fn 和 free_fn 处理, 它们有这些原型:</p>
+<pre class="programlisting">
+typedef void *(mempool_alloc_t)(int gfp_mask, void *pool_data);
+typedef void (mempool_free_t)(void *element, void *pool_data);
+</pre>
+<p>给 mempool_create 最后的参数 ( pool_data ) 被传递给 alloc_fn 和 free_fn.</p>
+<p>如果需要, 你可编写特殊用途的函数来处理 mempool 的内存分配. 常常, 但是, 你只需要使内核 slab 分配器为你处理这个任务. 有 2 个函数 ( mempool_alloc_slab 和 mempool_free_slab) 来进行在内存池分配原型和 kmem_cache_alloc 和 kmem_cache_free 之间的感应淬火. 因此, 设置内存池的代码常常看来如此:</p>
+<pre class="programlisting">
+cache = kmem_cache_create(. . .); 
+pool = mempool_create(MY_POOL_MINIMUM,mempool_alloc_slab, mempool_free_slab, cache); 
+</pre>
+<p>一旦已创建了内存池, 可以分配和释放对象,使用:</p>
+<pre class="programlisting">
+void *mempool_alloc(mempool_t *pool, int gfp_mask);
+void mempool_free(void *element, mempool_t *pool);
+</pre>
+<p>当内存池创建了, 分配函数将被调用足够的次数来创建一个预先分配的对象池. 因此, 对 mempool_alloc 的调用试图从分配函数请求额外的对象; 如果那个分配失败, 一个预先分配的对象(如果有剩下的)被返回. 当一个对象被用 mempool_free 释放, 它保留在池中, 如果对齐预分配的对象数目小于最小量; 否则, 它将被返回给系统.</p>
+<p>一个 mempool 可被重新定大小, 使用:</p>
+<pre class="programlisting">
+int mempool_resize(mempool_t *pool, int new_min_nr, int gfp_mask);
+</pre>
+<p>这个调用, 如果成功, 调整内存池的大小至少有 new_min_nr 个对象. 如果你不再需要一个内存池, 返回给系统使用:</p>
+<pre class="programlisting">
+void mempool_destroy(mempool_t *pool); 
+</pre>
+<p>你编写返回所有的分配的对象, 在销毁 mempool 之前, 否则会产生一个内核 oops.</p>
+<p>如果你考虑在你的驱动中使用一个 mempool, 请记住一件事: mempools 分配一块内存在一个链表中, 对任何真实的使用是空闲和无用的. 容易使用 mempools 消耗大量的内存. 在几乎每个情况下, 首选的可选项是不使用 mempool 并且代替以简单处理分配失败的可能性. 如果你的驱动有任何方法以不危害到系统完整性的方式来响应一个分配失败, 就这样做. 驱动代码中的 mempools 的使用应当少.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch08.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch08.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch08s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;8&#160;章&#160;分配内存&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;8.3.&#160;get_free_page 和其友</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

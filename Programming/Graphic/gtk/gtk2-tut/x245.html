@@ -1,0 +1,432 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>事件</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="从这里开始"
+HREF="c103.html"><LINK
+REL="PREVIOUS"
+TITLE="信号和回调函数的原理"
+HREF="x223.html"><LINK
+REL="NEXT"
+TITLE="Hello World 详解"
+HREF="x344.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x223.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>从这里开始</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x344.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-EVENTS">事件</H1
+><P
+>除有前面描述的信号机制外，还有一套 <I
+CLASS="EMPHASIS"
+>events</I
+> 反映 X 事件机制。回调函数可以与这些事件连接。这些事件是：</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><SPAN
+> event</SPAN
+></LI
+><LI
+><SPAN
+> button_press_event</SPAN
+></LI
+><LI
+><SPAN
+> button_release_event</SPAN
+></LI
+><LI
+><SPAN
+> scroll_event</SPAN
+></LI
+><LI
+><SPAN
+> motion_notify_event</SPAN
+></LI
+><LI
+><SPAN
+> delete_event</SPAN
+></LI
+><LI
+><SPAN
+> destroy_event</SPAN
+></LI
+><LI
+><SPAN
+> expose_event</SPAN
+></LI
+><LI
+><SPAN
+> key_press_event</SPAN
+></LI
+><LI
+><SPAN
+> key_release_event</SPAN
+></LI
+><LI
+><SPAN
+> enter_notify_event</SPAN
+></LI
+><LI
+><SPAN
+> leave_notify_event</SPAN
+></LI
+><LI
+><SPAN
+> configure_event</SPAN
+></LI
+><LI
+><SPAN
+> focus_in_event</SPAN
+></LI
+><LI
+><SPAN
+> focus_out_event</SPAN
+></LI
+><LI
+><SPAN
+> map_event</SPAN
+></LI
+><LI
+><SPAN
+> unmap_event</SPAN
+></LI
+><LI
+><SPAN
+> property_notify_event</SPAN
+></LI
+><LI
+><SPAN
+> selection_clear_event</SPAN
+></LI
+><LI
+><SPAN
+> selection_request_event</SPAN
+></LI
+><LI
+><SPAN
+> selection_notify_event</SPAN
+></LI
+><LI
+><SPAN
+> proximity_in_event</SPAN
+></LI
+><LI
+><SPAN
+> proximity_out_event</SPAN
+></LI
+><LI
+><SPAN
+> visibility_notify_event</SPAN
+></LI
+><LI
+><SPAN
+> client_event</SPAN
+></LI
+><LI
+><SPAN
+> no_expose_event</SPAN
+></LI
+><LI
+><SPAN
+> window_state_event</SPAN
+></LI
+></UL
+><P
+>为了连接一个回调函数到这些事件之一，你使用函数 g_signal_connect()，像前面介绍的一样，用上面事件名之一作为 <TT
+CLASS="LITERAL"
+>name</TT
+> 参数。事件的回调函数与信号的回调函数有一点点不同：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gint callback_func( GtkWidget *widget,
+                    GdkEvent  *event,
+                    gpointer   callback_data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>GdkEvent 是一个 C <TT
+CLASS="LITERAL"
+>联合</TT
+>结构，它的类型依赖于上述事件中的哪个事件发生了。为了让我们得知发生了哪个事件，每个可能的类型都有一个 <TT
+CLASS="LITERAL"
+>type</TT
+> 成员来反映发生的事件。事件结构的其它部分将依赖于这个事件的类型。类型的可能的值有：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  GDK_NOTHING
+  GDK_DELETE
+  GDK_DESTROY
+  GDK_EXPOSE
+  GDK_MOTION_NOTIFY
+  GDK_BUTTON_PRESS
+  GDK_2BUTTON_PRESS
+  GDK_3BUTTON_PRESS
+  GDK_BUTTON_RELEASE
+  GDK_KEY_PRESS
+  GDK_KEY_RELEASE
+  GDK_ENTER_NOTIFY
+  GDK_LEAVE_NOTIFY
+  GDK_FOCUS_CHANGE
+  GDK_CONFIGURE
+  GDK_MAP
+  GDK_UNMAP
+  GDK_PROPERTY_NOTIFY
+  GDK_SELECTION_CLEAR
+  GDK_SELECTION_REQUEST
+  GDK_SELECTION_NOTIFY
+  GDK_PROXIMITY_IN
+  GDK_PROXIMITY_OUT
+  GDK_DRAG_ENTER
+  GDK_DRAG_LEAVE
+  GDK_DRAG_MOTION
+  GDK_DRAG_STATUS
+  GDK_DROP_START
+  GDK_DROP_FINISHED
+  GDK_CLIENT_EVENT
+  GDK_VISIBILITY_NOTIFY
+  GDK_NO_EXPOSE
+  GDK_SCROLL
+  GDK_WINDOW_STATE
+  GDK_SETTING</PRE
+></TD
+></TR
+></TABLE
+><P
+>所以，连接一个回调函数到这些事件之一，我们会这样用：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>g_signal_connect (G_OBJECT (button), "button_press_event",
+                  G_CALLBACK (button_press_callback), NULL);</PRE
+></TD
+></TR
+></TABLE
+><P
+>这里假定 <TT
+CLASS="LITERAL"
+>button</TT
+> 是一个按钮构件。现在，当鼠标位于按钮上并按一下鼠标时，函数 button_press_callback() 会被调用。这个函数应该声明为：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static gint button_press_callback( GtkWidget      *widget, 
+                                   GdkEventButton *event,
+                                   gpointer        data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>注意，我们可以把第二个参数类型声明为 <TT
+CLASS="LITERAL"
+>GdkEventButton</TT
+>，因为我们知道哪个类型的事件会发生。</P
+><P
+>这个函数的返回值指示这个事件是否应该由 GTK 事件处理机制做进一步的传播。返回 TRUE 指示这个事件已经处理了，且不应该做进一步传播。返回 FALSE 继续正常的事件处理。详见<A
+HREF="c1751.html"
+>高级事件和信号处理</A
+>这一章。</P
+><P
+>GdkEvent 数据类型详情请参见附录 <A
+HREF="a2711.html"
+>GDK 事件类型</A
+>。</P
+><P
+>GDK 选中区和拖放的接口函数也发出许多事件，在 GTK 中用信号来反映。下列信号的内容详见<A
+HREF="x1893.html#SEC-SIGNALSONSOURCEWIDGETS"
+>源构件上的信号</A
+>和<A
+HREF="x1893.html#SEC-SIGNALSONDESTWIDGETS"
+>目的构件上的信号</A
+>这两章：</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><SPAN
+> selection_received</SPAN
+></LI
+><LI
+><SPAN
+> selection_get</SPAN
+></LI
+><LI
+><SPAN
+> drag_begin_event</SPAN
+></LI
+><LI
+><SPAN
+> drag_end_event</SPAN
+></LI
+><LI
+><SPAN
+> drag_data_delete</SPAN
+></LI
+><LI
+><SPAN
+> drag_motion</SPAN
+></LI
+><LI
+><SPAN
+> drag_drop</SPAN
+></LI
+><LI
+><SPAN
+> drag_data_get</SPAN
+></LI
+><LI
+><SPAN
+> drag_data_received</SPAN
+></LI
+></UL
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x223.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x344.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>信号和回调函数的原理</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c103.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Hello World 详解</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

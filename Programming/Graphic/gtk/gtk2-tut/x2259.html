@@ -1,0 +1,1125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>从头创建构件</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="编写你自己的构件"
+HREF="c2132.html"><LINK
+REL="PREVIOUS"
+TITLE="创建一个复合构件"
+HREF="x2152.html"><LINK
+REL="NEXT"
+TITLE="深入的学习"
+HREF="x2367.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2152.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>编写你自己的构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2367.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-CREATINGAWIDGETFROMSCRATCH">从头创建构件</H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2261">介绍</H2
+><P
+>在这一节，我们将学习如何让构件把自己显示在屏幕上，以及如何让构件与事件交互。期间，我们将做一个表盘构件，用户可以拖动表盘上的指针来设定值。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/gtkdial.png"></SPAN
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2268">在屏幕上显示构件</H2
+><P
+>在屏幕上显示需要几个相关步骤。在调用 <TT
+CLASS="LITERAL"
+>WIDGETNAME_new()</TT
+> 创建构件之后，如下几个函数需要用到：</P
+><P
+></P
+><UL
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>WIDGETNAME_realize()</TT
+> 如果构件有 X 窗口，该函数负责为构件创建 X 窗口。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>WIDGETNAME_map()</TT
+> 在用户调用 <TT
+CLASS="LITERAL"
+>gtk_widget_show()</TT
+> 之后会调用该函数。它负责确保构件绘制在屏幕上。对于容器类，该函数必须调用每个子构件的 <TT
+CLASS="LITERAL"
+>map()</TT
+> 函数。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>WIDGETNAME_draw()</TT
+> 当为构件或它的一个祖先调用 <TT
+CLASS="LITERAL"
+>gtk_widget_draw()</TT
+> 时该函数被调用。它实际上是调用绘制函数在屏幕上绘制构件。对于容器构件，该函数必须为它的子构件调用 <TT
+CLASS="LITERAL"
+>gtk_widget_draw()</TT
+>。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>WIDGETNAME_expose()</TT
+> 是构件的暴露事件处理函数。它调用绘制函数把暴露的部分绘制在屏幕上。对于容器构件，该函数必须为无窗口子构件产生暴露事件。(如果它们有自己的窗口，X 会产生必需的暴露事件。)</P
+></LI
+></UL
+><P
+>你可能注意到后面的两个函数十分相似，都是负责在屏幕上绘制构件。实际上许多构件并不真正关心它们之间的不同。构件类里的默认 <TT
+CLASS="LITERAL"
+>draw()</TT
+> 函数只是简单的为重绘区域产生一个暴露事件。然而，一些构件通过区分这两个函数可以减少操作。例如，如果一个构件有多个 X 窗口，因为暴露事件标识了暴露的窗口，它可以只重绘受影响的窗口，调用 <TT
+CLASS="LITERAL"
+>draw()</TT
+> 是不可能这样的。</P
+><P
+>容器构件，即使它们自身并不关心这个差别，也不能简单的使用默认 <TT
+CLASS="LITERAL"
+>draw()</TT
+> 函数，因为它的子构件可能需要注意这个差别。然而，在两个函数里重复绘制代码是一种浪费的。按惯例，构件有一个名为 <TT
+CLASS="LITERAL"
+>WIDGETNAME_paint()</TT
+> 的函数做实际的绘制构件的工作，<TT
+CLASS="LITERAL"
+>draw()</TT
+> 和 <TT
+CLASS="LITERAL"
+>expose()</TT
+> 函数再调用它。</P
+><P
+>在我们的示例里，因为表盘构件不是一个容器构件，并且只有一个窗口，我们采用最简便的方法，用默认的 <TT
+CLASS="LITERAL"
+>draw()</TT
+> 函数，并且仅仅实现一个 <TT
+CLASS="LITERAL"
+>expose()</TT
+> 函数。</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2300">表盘构件的原形</H2
+><P
+>正像陆上动物是从泥里爬出的两栖动物的变体，GTK 构件是其它的、以前写的构件的变体。因此，虽然这个章节命名为“从头创建构件”，但表盘构件实际上是从范围构件的源码上开始的。以它为起点是因为如果我们的表盘构件能与比例构件有相同的接口会好一些，比例构件是范围构件的继承。所以，虽然源代码在下面以完整的形式出现，它不能说是<I
+CLASS="EMPHASIS"
+>从头</I
+>写出来的。如果你还不熟悉比例构件如何以应用程序作者的观点来运作，最好先看一下前面的章节。</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2304">主体</H2
+><P
+>我们的构件中的相当多的一部分看起来与井字游戏构件十分相似。首先，我们有一个头文件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;/* GTK - GIMP工具包
+ * 版权 (C) 1995-1997 Peter Mattis, Spencer Kimball 和 Josh MacDonald 所有
+ *
+ * 本程序是自由软件。你可以在自由软件基金发布的 GNU GPL 的条款下重新分发
+ * 或修改它。GPL 可以使用版本 2 或(由你选择)任何随后的版本。
+ *
+ * 本程序分发的目的是它可能对其他人有用，但不提供任何的担保，包括隐含的
+ * 和适合特定用途的保证。请查阅GNU通用公共许可证获得详细的信息。
+ *
+ * 你应该已经随该软件一起收到一份GNU通用公共许可。如果还没有，请写信给
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
+#ifndef __GTK_DIAL_H__
+#define __GTK_DIAL_H__
+
+#include &#60;gdk/gdk.h&#62;
+#include &#60;gtk/gtkadjustment.h&#62;
+#include &#60;gtk/gtkwidget.h&#62;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
+#define GTK_DIAL(obj)          GTK_CHECK_CAST (obj, gtk_dial_get_type (), GtkDial)
+#define GTK_DIAL_CLASS(klass)  GTK_CHECK_CLASS_CAST (klass, gtk_dial_get_type (), GtkDialClass)
+#define GTK_IS_DIAL(obj)       GTK_CHECK_TYPE (obj, gtk_dial_get_type ())
+
+
+typedef struct _GtkDial        GtkDial;
+typedef struct _GtkDialClass   GtkDialClass;
+
+struct _GtkDial
+{
+  GtkWidget widget;
+
+  /* 更新方式 (GTK_UPDATE_[CONTINUOUS/DELAYED/DISCONTINUOUS]) */
+  guint policy : 2;
+
+  /* 当前按下的按钮，如果没有该值是 0 */
+  guint8 button;
+
+  /* 表盘指针的大小 */
+  gint radius;
+  gint pointer_width;
+
+  /* 更新计时器的ID , 如果没有该值是 0 */
+  guint32 timer;
+
+  /* 当前角度 */
+  gfloat angle;
+
+  /* 将从调整对象中得到的旧值保存起来，这样在改变时我们就会知道 */
+  gfloat old_value;
+  gfloat old_lower;
+  gfloat old_upper;
+
+  /* 为这个表盘构件存储数据的调整对象 */
+  GtkAdjustment *adjustment;
+};
+
+struct _GtkDialClass
+{
+  GtkWidgetClass parent_class;
+};
+
+
+GtkWidget*     gtk_dial_new                    (GtkAdjustment *adjustment);
+GtkType        gtk_dial_get_type               (void);
+GtkAdjustment* gtk_dial_get_adjustment         (GtkDial      *dial);
+void           gtk_dial_set_update_policy      (GtkDial      *dial,
+						GtkUpdateType  policy);
+
+void           gtk_dial_set_adjustment         (GtkDial      *dial,
+						GtkAdjustment *adjustment);
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+
+#endif /* __GTK_DIAL_H__ */</PRE
+></TD
+></TR
+></TABLE
+><P
+>因为相对于上一个构件，这个构件我们要做的工作更多，所以在数据结构里有更多的域，但是其它地方一样。</P
+><P
+>接下来，在包含了头文件和声明了几个常量之后，我们有几个提供构件信息的函数和初始化构件的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &#60;math.h&#62;
+#include &#60;stdio.h&#62;
+#include &#60;gtk/gtkmain.h&#62;
+#include &#60;gtk/gtksignal.h&#62;
+
+#include "gtkdial.h"
+
+#define SCROLL_DELAY_LENGTH  300
+#define DIAL_DEFAULT_SIZE 100
+
+/* 声明 */
+
+[ 省略以节省空间 ]
+
+/* 局部数据 */
+
+static GtkWidgetClass *parent_class = NULL;
+
+GtkType
+gtk_dial_get_type ()
+{
+  static GtkType dial_type = 0;
+
+  if (!dial_type)
+    {
+      static const GtkTypeInfo dial_info =
+      {
+	"GtkDial",
+	sizeof (GtkDial),
+	sizeof (GtkDialClass),
+	(GtkClassInitFunc) gtk_dial_class_init,
+	(GtkObjectInitFunc) gtk_dial_init,
+	/* reserved_1 */ NULL,
+	/* reserved_1 */ NULL,
+	(GtkClassInitFunc) NULL
+      };
+
+      dial_type = gtk_type_unique (GTK_TYPE_WIDGET, &#38;dial_info);
+    }
+
+  return dial_type;
+}
+
+static void
+gtk_dial_class_init (GtkDialClass *class)
+{
+  GtkObjectClass *object_class;
+  GtkWidgetClass *widget_class;
+
+  object_class = (GtkObjectClass*) class;
+  widget_class = (GtkWidgetClass*) class;
+
+  parent_class = gtk_type_class (gtk_widget_get_type ());
+
+  object_class-&#62;destroy = gtk_dial_destroy;
+
+  widget_class-&#62;realize = gtk_dial_realize;
+  widget_class-&#62;expose_event = gtk_dial_expose;
+  widget_class-&#62;size_request = gtk_dial_size_request;
+  widget_class-&#62;size_allocate = gtk_dial_size_allocate;
+  widget_class-&#62;button_press_event = gtk_dial_button_press;
+  widget_class-&#62;button_release_event = gtk_dial_button_release;
+  widget_class-&#62;motion_notify_event = gtk_dial_motion_notify;
+}
+
+static void
+gtk_dial_init (GtkDial *dial)
+{
+  dial-&#62;button = 0;
+  dial-&#62;policy = GTK_UPDATE_CONTINUOUS;
+  dial-&#62;timer = 0;
+  dial-&#62;radius = 0;
+  dial-&#62;pointer_width = 0;
+  dial-&#62;angle = 0.0;
+  dial-&#62;old_value = 0.0;
+  dial-&#62;old_lower = 0.0;
+  dial-&#62;old_upper = 0.0;
+  dial-&#62;adjustment = NULL;
+}
+
+GtkWidget*
+gtk_dial_new (GtkAdjustment *adjustment)
+{
+  GtkDial *dial;
+
+  dial = gtk_type_new (gtk_dial_get_type ());
+
+  if (!adjustment)
+    adjustment = (GtkAdjustment*) gtk_adjustment_new (0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+  gtk_dial_set_adjustment (dial, adjustment);
+
+  return GTK_WIDGET (dial);
+}
+
+static void
+gtk_dial_destroy (GtkObject *object)
+{
+  GtkDial *dial;
+
+  g_return_if_fail (object != NULL);
+  g_return_if_fail (GTK_IS_DIAL (object));
+
+  dial = GTK_DIAL (object);
+
+  if (dial-&#62;adjustment)
+    gtk_object_unref (GTK_OBJECT (dial-&#62;adjustment));
+
+  if (GTK_OBJECT_CLASS (parent_class)-&#62;destroy)
+    (* GTK_OBJECT_CLASS (parent_class)-&#62;destroy) (object);
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>注意 <TT
+CLASS="LITERAL"
+>init()</TT
+> 函数所做的工作比井字游戏构件少，因为这个构件不是复合构件，<TT
+CLASS="LITERAL"
+>new()</TT
+> 函数所做的工作多一些，因为现在它具有一个参数。还要注意，当我们存储一个到调整对象的指针的时候，我们增加它的引用计数，(并在不再使用它的时候相应的减少它)，这样 GTK 就能明了在何时可以安全的销毁这个对象。</P
+><P
+>还有几个操作构件选项的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkAdjustment*
+gtk_dial_get_adjustment (GtkDial *dial)
+{
+  g_return_val_if_fail (dial != NULL, NULL);
+  g_return_val_if_fail (GTK_IS_DIAL (dial), NULL);
+
+  return dial-&#62;adjustment;
+}
+
+void
+gtk_dial_set_update_policy (GtkDial      *dial,
+			     GtkUpdateType  policy)
+{
+  g_return_if_fail (dial != NULL);
+  g_return_if_fail (GTK_IS_DIAL (dial));
+
+  dial-&#62;policy = policy;
+}
+
+void
+gtk_dial_set_adjustment (GtkDial      *dial,
+			  GtkAdjustment *adjustment)
+{
+  g_return_if_fail (dial != NULL);
+  g_return_if_fail (GTK_IS_DIAL (dial));
+
+  if (dial-&#62;adjustment)
+    {
+      gtk_signal_disconnect_by_data (GTK_OBJECT (dial-&#62;adjustment), (gpointer) dial);
+      gtk_object_unref (GTK_OBJECT (dial-&#62;adjustment));
+    }
+
+  dial-&#62;adjustment = adjustment;
+  gtk_object_ref (GTK_OBJECT (dial-&#62;adjustment));
+
+  gtk_signal_connect (GTK_OBJECT (adjustment), "changed",
+		      (GtkSignalFunc) gtk_dial_adjustment_changed,
+		      (gpointer) dial);
+  gtk_signal_connect (GTK_OBJECT (adjustment), "value_changed",
+		      (GtkSignalFunc) gtk_dial_adjustment_value_changed,
+		      (gpointer) dial);
+
+  dial-&#62;old_value = adjustment-&#62;value;
+  dial-&#62;old_lower = adjustment-&#62;lower;
+  dial-&#62;old_upper = adjustment-&#62;upper;
+
+  gtk_dial_update (dial);
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2316"><TT
+CLASS="LITERAL"
+>gtk_dial_realize()</TT
+></H2
+><P
+>现在我们来看几个新的函数。第一个是创建 X 窗口的函数。注意有一个掩码传递给函数 <TT
+CLASS="LITERAL"
+>gdk_window_new()</TT
+>，它指出 GdkWindowAttr 结构的哪些域实际上有数据在里面(其余的值会设为默认值)。同时也应该注意创建构件的事件掩码的方法。我们调用 <TT
+CLASS="LITERAL"
+>gtk_widget_get_events()</TT
+> 去获取用户为这个构件设置的事件掩码 (用 <TT
+CLASS="LITERAL"
+>gtk_widget_set_events()</TT
+> )，并把我们需要的事件加入其中。</P
+><P
+>创建窗口之后，我们设置它的风格和背景，并把指向构件的指针放入 GdkWindow 的用户数据域。最后一步允许 GTK 分派这个窗口的事件到正确的构件。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static void
+gtk_dial_realize (GtkWidget *widget)
+{
+  GtkDial *dial;
+  GdkWindowAttr attributes;
+  gint attributes_mask;
+
+  g_return_if_fail (widget != NULL);
+  g_return_if_fail (GTK_IS_DIAL (widget));
+
+  GTK_WIDGET_SET_FLAGS (widget, GTK_REALIZED);
+  dial = GTK_DIAL (widget);
+
+  attributes.x = widget-&#62;allocation.x;
+  attributes.y = widget-&#62;allocation.y;
+  attributes.width = widget-&#62;allocation.width;
+  attributes.height = widget-&#62;allocation.height;
+  attributes.wclass = GDK_INPUT_OUTPUT;
+  attributes.window_type = GDK_WINDOW_CHILD;
+  attributes.event_mask = gtk_widget_get_events (widget) | 
+    GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | 
+    GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK |
+    GDK_POINTER_MOTION_HINT_MASK;
+  attributes.visual = gtk_widget_get_visual (widget);
+  attributes.colormap = gtk_widget_get_colormap (widget);
+
+  attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
+  widget-&#62;window = gdk_window_new (widget-&#62;parent-&#62;window, &#38;attributes, attributes_mask);
+
+  widget-&#62;style = gtk_style_attach (widget-&#62;style, widget-&#62;window);
+
+  gdk_window_set_user_data (widget-&#62;window, widget);
+
+  gtk_style_set_background (widget-&#62;style, widget-&#62;window, GTK_STATE_ACTIVE);
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2325">大小磋商</H2
+><P
+>在包含构件的窗口第一次被显示前和每当窗口布局改变时，GTK 会询问每个子构件所期望的大小。函数 <TT
+CLASS="LITERAL"
+>gtk_dial_size_request()</TT
+> 处理这个请求。因为我们的构件不是一个容器构件，且在其上也没有容器构件，我们仅仅返回一个合理的缺省值。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static void 
+gtk_dial_size_request (GtkWidget      *widget,
+		       GtkRequisition *requisition)
+{
+  requisition-&#62;width = DIAL_DEFAULT_SIZE;
+  requisition-&#62;height = DIAL_DEFAULT_SIZE;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>在所有的构件已经请求了一个想要的大小之后，就开始计算窗口的布局，且每个子构件被告知它们实际的大小。通常，它至少是请求的大小，但是，如果，比如用户调整了窗口的大小，它偶尔可能小于请求的大小。函数 <TT
+CLASS="LITERAL"
+>gtk_dial_size_allocate()</TT
+> 处理大小通知。注意在计算部件将要使用的大小的同时，这个例程也把构件的 X 窗口移到新位置和和设置新的大小。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static void
+gtk_dial_size_allocate (GtkWidget     *widget,
+			GtkAllocation *allocation)
+{
+  GtkDial *dial;
+
+  g_return_if_fail (widget != NULL);
+  g_return_if_fail (GTK_IS_DIAL (widget));
+  g_return_if_fail (allocation != NULL);
+
+  widget-&#62;allocation = *allocation;
+  if (GTK_WIDGET_REALIZED (widget))
+    {
+      dial = GTK_DIAL (widget);
+
+      gdk_window_move_resize (widget-&#62;window,
+			      allocation-&#62;x, allocation-&#62;y,
+			      allocation-&#62;width, allocation-&#62;height);
+
+      dial-&#62;radius = MAX(allocation-&#62;width,allocation-&#62;height) * 0.45;
+      dial-&#62;pointer_width = dial-&#62;radius / 5;
+    }
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2333"><TT
+CLASS="LITERAL"
+>gtk_dial_expose()</TT
+></H2
+><P
+>像前面讲的一样，构件的所有的绘制在暴露事件处理函数里做。这里不需要多讲，除了它用三维阴影法，按照存储在构件的风格里的颜色，用函数 <TT
+CLASS="LITERAL"
+>gtk_draw_polygon</TT
+> 绘制表的指针。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static gint
+gtk_dial_expose (GtkWidget      *widget,
+		 GdkEventExpose *event)
+{
+  GtkDial *dial;
+  GdkPoint points[3];
+  gdouble s,c;
+  gdouble theta;
+  gint xc, yc;
+  gint tick_length;
+  gint i;
+
+  g_return_val_if_fail (widget != NULL, FALSE);
+  g_return_val_if_fail (GTK_IS_DIAL (widget), FALSE);
+  g_return_val_if_fail (event != NULL, FALSE);
+
+  if (event-&#62;count &#62; 0)
+    return FALSE;
+  
+  dial = GTK_DIAL (widget);
+
+  gdk_window_clear_area (widget-&#62;window,
+			 0, 0,
+			 widget-&#62;allocation.width,
+			 widget-&#62;allocation.height);
+
+  xc = widget-&#62;allocation.width/2;
+  yc = widget-&#62;allocation.height/2;
+
+  /* 绘制刻度 */
+
+  for (i=0; i&#60;25; i++)
+    {
+      theta = (i*M_PI/18. - M_PI/6.);
+      s = sin(theta);
+      c = cos(theta);
+
+      tick_length = (i%6 == 0) ? dial-&#62;pointer_width : dial-&#62;pointer_width/2;
+      
+      gdk_draw_line (widget-&#62;window,
+		     widget-&#62;style-&#62;fg_gc[widget-&#62;state],
+		     xc + c*(dial-&#62;radius - tick_length),
+		     yc - s*(dial-&#62;radius - tick_length),
+		     xc + c*dial-&#62;radius,
+		     yc - s*dial-&#62;radius);
+    }
+
+  /* 绘制指针 */
+
+  s = sin(dial-&#62;angle);
+  c = cos(dial-&#62;angle);
+
+
+  points[0].x = xc + s*dial-&#62;pointer_width/2;
+  points[0].y = yc + c*dial-&#62;pointer_width/2;
+  points[1].x = xc + c*dial-&#62;radius;
+  points[1].y = yc - s*dial-&#62;radius;
+  points[2].x = xc - s*dial-&#62;pointer_width/2;
+  points[2].y = yc - c*dial-&#62;pointer_width/2;
+
+  gtk_draw_polygon (widget-&#62;style,
+		    widget-&#62;window,
+		    GTK_STATE_NORMAL,
+		    GTK_SHADOW_OUT,
+		    points, 3,
+		    TRUE);
+  
+  return FALSE;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2339">事件处理</H2
+><P
+>我们的构件还剩下处理各种类型的事件的代码，但我们会发现和许多其它 GTK 程序里的没多大区别。可以产生两种类型的事件，一个是用户可以点击构件并拖动指针，另一个是通过外部的情况来改变调整对象的值。</P
+><P
+>当用户点击构件时，我们检查看这个点击是否是在表盘的指针里，如果是这样，把用户所点击的按钮存入构件结构的 <TT
+CLASS="LITERAL"
+>button</TT
+> 域，并且调用 <TT
+CLASS="LITERAL"
+>gtk_grab_add()</TT
+> 强占所有鼠标事件。随后的鼠标移动引发控制值被重新计算(通过函数 <TT
+CLASS="LITERAL"
+>gtk_dial_update_mouse</TT
+>)。按照已经设定的方式(policy)，"value_changed" 事件被立即产生 (<TT
+CLASS="LITERAL"
+>GTK_UPDATE_CONTINUOUS</TT
+>)，在用<TT
+CLASS="LITERAL"
+>gtk_timeout_add()</TT
+>添加的定时器里定义的一段延迟后 (<TT
+CLASS="LITERAL"
+>GTK_UPDATE_DELAYED</TT
+>)，或只在按钮被释放时 (<TT
+CLASS="LITERAL"
+>GTK_UPDATE_DISCONTINUOUS</TT
+>)产生。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static gint
+gtk_dial_button_press (GtkWidget      *widget,
+		       GdkEventButton *event)
+{
+  GtkDial *dial;
+  gint dx, dy;
+  double s, c;
+  double d_parallel;
+  double d_perpendicular;
+
+  g_return_val_if_fail (widget != NULL, FALSE);
+  g_return_val_if_fail (GTK_IS_DIAL (widget), FALSE);
+  g_return_val_if_fail (event != NULL, FALSE);
+
+  dial = GTK_DIAL (widget);
+
+  /* 判断按钮是否是在表盘指针你按下 - 我们通过计算鼠标按下
+     点到表盘指针中线的水平和垂直距离来判断。 */
+  
+  dx = event-&#62;x - widget-&#62;allocation.width / 2;
+  dy = widget-&#62;allocation.height / 2 - event-&#62;y;
+  
+  s = sin(dial-&#62;angle);
+  c = cos(dial-&#62;angle);
+  
+  d_parallel = s*dy + c*dx;
+  d_perpendicular = fabs(s*dx - c*dy);
+  
+  if (!dial-&#62;button &#38;&#38;
+(d_perpendicular &#60; dial-&#62;pointer_width/2) &#38;&#38;
+(d_parallel &#62; - dial-&#62;pointer_width))
+    {
+      gtk_grab_add (widget);
+
+      dial-&#62;button = event-&#62;button;
+
+      gtk_dial_update_mouse (dial, event-&#62;x, event-&#62;y);
+    }
+
+  return FALSE;
+}
+
+static gint
+gtk_dial_button_release (GtkWidget      *widget,
+			  GdkEventButton *event)
+{
+  GtkDial *dial;
+
+  g_return_val_if_fail (widget != NULL, FALSE);
+  g_return_val_if_fail (GTK_IS_DIAL (widget), FALSE);
+  g_return_val_if_fail (event != NULL, FALSE);
+
+  dial = GTK_DIAL (widget);
+
+  if (dial-&#62;button == event-&#62;button)
+    {
+      gtk_grab_remove (widget);
+
+      dial-&#62;button = 0;
+
+      if (dial-&#62;policy == GTK_UPDATE_DELAYED)
+	gtk_timeout_remove (dial-&#62;timer);
+      
+      if ((dial-&#62;policy != GTK_UPDATE_CONTINUOUS) &#38;&#38;
+(dial-&#62;old_value != dial-&#62;adjustment-&#62;value))
+	gtk_signal_emit_by_name (GTK_OBJECT (dial-&#62;adjustment), "value_changed");
+    }
+
+  return FALSE;
+}
+
+static gint
+gtk_dial_motion_notify (GtkWidget      *widget,
+			 GdkEventMotion *event)
+{
+  GtkDial *dial;
+  GdkModifierType mods;
+  gint x, y, mask;
+
+  g_return_val_if_fail (widget != NULL, FALSE);
+  g_return_val_if_fail (GTK_IS_DIAL (widget), FALSE);
+  g_return_val_if_fail (event != NULL, FALSE);
+
+  dial = GTK_DIAL (widget);
+
+  if (dial-&#62;button != 0)
+    {
+      x = event-&#62;x;
+      y = event-&#62;y;
+
+      if (event-&#62;is_hint || (event-&#62;window != widget-&#62;window))
+	gdk_window_get_pointer (widget-&#62;window, &#38;x, &#38;y, &#38;mods);
+
+      switch (dial-&#62;button)
+	{
+	case 1:
+	  mask = GDK_BUTTON1_MASK;
+	  break;
+	case 2:
+	  mask = GDK_BUTTON2_MASK;
+	  break;
+	case 3:
+	  mask = GDK_BUTTON3_MASK;
+	  break;
+	default:
+	  mask = 0;
+	  break;
+	}
+
+      if (mods &#38; mask)
+	gtk_dial_update_mouse (dial, x,y);
+    }
+
+  return FALSE;
+}
+
+static gint
+gtk_dial_timer (GtkDial *dial)
+{
+  g_return_val_if_fail (dial != NULL, FALSE);
+  g_return_val_if_fail (GTK_IS_DIAL (dial), FALSE);
+
+  if (dial-&#62;policy == GTK_UPDATE_DELAYED)
+    gtk_signal_emit_by_name (GTK_OBJECT (dial-&#62;adjustment), "value_changed");
+
+  return FALSE;
+}
+
+static void
+gtk_dial_update_mouse (GtkDial *dial, gint x, gint y)
+{
+  gint xc, yc;
+  gfloat old_value;
+
+  g_return_if_fail (dial != NULL);
+  g_return_if_fail (GTK_IS_DIAL (dial));
+
+  xc = GTK_WIDGET(dial)-&#62;allocation.width / 2;
+  yc = GTK_WIDGET(dial)-&#62;allocation.height / 2;
+
+  old_value = dial-&#62;adjustment-&#62;value;
+  dial-&#62;angle = atan2(yc-y, x-xc);
+
+  if (dial-&#62;angle &#60; -M_PI/2.)
+    dial-&#62;angle += 2*M_PI;
+
+  if (dial-&#62;angle &#60; -M_PI/6)
+    dial-&#62;angle = -M_PI/6;
+
+  if (dial-&#62;angle &#62; 7.*M_PI/6.)
+    dial-&#62;angle = 7.*M_PI/6.;
+
+  dial-&#62;adjustment-&#62;value = dial-&#62;adjustment-&#62;lower + (7.*M_PI/6 - dial-&#62;angle) *
+    (dial-&#62;adjustment-&#62;upper - dial-&#62;adjustment-&#62;lower) / (4.*M_PI/3.);
+
+  if (dial-&#62;adjustment-&#62;value != old_value)
+    {
+      if (dial-&#62;policy == GTK_UPDATE_CONTINUOUS)
+	{
+	  gtk_signal_emit_by_name (GTK_OBJECT (dial-&#62;adjustment), "value_changed");
+	}
+      else
+	{
+	  gtk_widget_draw (GTK_WIDGET(dial), NULL);
+
+	  if (dial-&#62;policy == GTK_UPDATE_DELAYED)
+	    {
+	      if (dial-&#62;timer)
+		gtk_timeout_remove (dial-&#62;timer);
+
+	      dial-&#62;timer = gtk_timeout_add (SCROLL_DELAY_LENGTH,
+					     (GtkFunction) gtk_dial_timer,
+					     (gpointer) dial);
+	    }
+	}
+    }
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>通过外部方式产生的对Adjustment的改变通过 "changed" 和 "value_changed" 信号传到我们的构件。处理这些事情的处理函数将调用<TT
+CLASS="LITERAL"
+>gtk_dial_update()</TT
+>来验证参数，计算新的表盘指针角度，并重新绘制构件 (通过调用 <TT
+CLASS="LITERAL"
+>gtk_widget_draw()</TT
+> 函数 )。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static void
+gtk_dial_update (GtkDial *dial)
+{
+  gfloat new_value;
+  
+  g_return_if_fail (dial != NULL);
+  g_return_if_fail (GTK_IS_DIAL (dial));
+
+  new_value = dial-&#62;adjustment-&#62;value;
+  
+  if (new_value &#60; dial-&#62;adjustment-&#62;lower)
+    new_value = dial-&#62;adjustment-&#62;lower;
+
+  if (new_value &#62; dial-&#62;adjustment-&#62;upper)
+    new_value = dial-&#62;adjustment-&#62;upper;
+
+  if (new_value != dial-&#62;adjustment-&#62;value)
+    {
+      dial-&#62;adjustment-&#62;value = new_value;
+      gtk_signal_emit_by_name (GTK_OBJECT (dial-&#62;adjustment), "value_changed");
+    }
+
+  dial-&#62;angle = 7.*M_PI/6. - (new_value - dial-&#62;adjustment-&#62;lower) * 4.*M_PI/3. /
+    (dial-&#62;adjustment-&#62;upper - dial-&#62;adjustment-&#62;lower);
+
+  gtk_widget_draw (GTK_WIDGET(dial), NULL);
+}
+
+static void
+gtk_dial_adjustment_changed (GtkAdjustment *adjustment,
+			      gpointer       data)
+{
+  GtkDial *dial;
+
+  g_return_if_fail (adjustment != NULL);
+  g_return_if_fail (data != NULL);
+
+  dial = GTK_DIAL (data);
+
+  if ((dial-&#62;old_value != adjustment-&#62;value) ||
+      (dial-&#62;old_lower != adjustment-&#62;lower) ||
+      (dial-&#62;old_upper != adjustment-&#62;upper))
+    {
+      gtk_dial_update (dial);
+
+      dial-&#62;old_value = adjustment-&#62;value;
+      dial-&#62;old_lower = adjustment-&#62;lower;
+      dial-&#62;old_upper = adjustment-&#62;upper;
+    }
+}
+
+static void
+gtk_dial_adjustment_value_changed (GtkAdjustment *adjustment,
+				    gpointer       data)
+{
+  GtkDial *dial;
+
+  g_return_if_fail (adjustment != NULL);
+  g_return_if_fail (data != NULL);
+
+  dial = GTK_DIAL (data);
+
+  if (dial-&#62;old_value != adjustment-&#62;value)
+    {
+      gtk_dial_update (dial);
+
+      dial-&#62;old_value = adjustment-&#62;value;
+    }
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2355">可能的增强</H2
+><P
+>迄今为止我们描绘的Dial构件有大约670行代码。不过我们真正完成的只有一点点，头文件和模板占了其中的很大一部分。然而，对这个构件还有很多地方可以进行增强。</P
+><P
+></P
+><UL
+><LI
+><P
+>如果你试一下这个构件，你会发现当拖动pointer转圈的时候有闪烁。这是因为每次表盘指针移动，整个构件在重绘前都要被擦除。最好的处理这个问题的方法就是把这些变化绘制到一个不显示在屏幕上的pixmap上，然后一步将最后结果直接复制到屏幕上。(进度条构件就是以这种方式绘制它自身。)</P
+></LI
+><LI
+><P
+>用户应该可以通过上下光标键来增加或减少这个值。</P
+></LI
+><LI
+><P
+>最好让构件有一些按钮来小步或大步增加或减少这个值。虽然有可能用你含的(embedded)按钮来实现这个，但我们还是想让这个按钮在持续被按下的时候认为用户按下了很多次，就像滚动条上的箭头一样。在范围构件的代码中可以找到实现这种动作的大部分代码。</P
+></LI
+><LI
+><P
+>表盘构件可以做成一个容器构件，在以上所述的按钮中间表盘构件的底部放置一个简单的子构件。用户可以自己选择加入一个标签或文本输入构件来显示表盘的当前值。</P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2152.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2367.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>创建一个复合构件</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2132.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>深入的学习</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

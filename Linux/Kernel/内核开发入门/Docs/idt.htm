@@ -1,0 +1,206 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+		<title>
+			Bran的内核开发指南：中断描述表
+		</title>
+		<link href="layout.css" type="text/css" rel="stylesheet">
+
+	</head>
+
+	<body>
+		<h2><font face="Tahoma">中断描述符表</font></h2>
+		
+		<p><span style="font-family: Tahoma">中断描述符表（</span><font face="Tahoma"><span lang="EN-US">Interrupt 
+		Descriptor Table</span></font><span style="font-family: Tahoma">，</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">）是用来告诉处理器在遇到异常或</span><font face="Tahoma">
+		</font>
+		<span style="font-family: Tahoma">“</span><font face="Tahoma"><span lang="EN-US">INT</span></font><span style="font-family: Tahoma">”操作码（汇编中）时所应调用的中断服务例程（</span><font face="Tahoma"><span lang="EN-US"> 
+		Interrupt Service Routine</span></font><span style="font-family: Tahoma">，</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">）。在一个设备完成请求并且需要获得服务时，中断请求也调用</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口。更多关于异常和</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">的详细内容在本指南的下一节里，点击</span><span lang="EN-US" style="font-family: Tahoma"><a style="color: gray; text-decoration: underline; text-underline: single" href="isrs.htm">这里</a></span><span style="font-family: Tahoma">查看。</span></p>
+		<p><span style="font-family: Tahoma">每个</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口都与一个</span><font face="Tahoma"><span lang="EN-US">GDT</span></font><span style="font-family: Tahoma">入口类似，它们都有一个基地址，都有一个访问标志，并且总长度都是</span><font face="Tahoma"><span lang="EN-US">32</span></font><span style="font-family: Tahoma">位的。两种描述符的主要区别是这些域有不同的含义。在</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">中，描述符所指定的基地址实际上是中断产生时处理器所应调用的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">的地址。</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口本身没有限制，但你需要指定一个给定</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">所在的段。这样做的好处是，当处理器处于某个环时（比如一个应用程序正在运行），依然可以通过一个已经发生的中断使其将控制权交给内核。</span></p>
+		<p><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口的访问标志也与</span><font face="Tahoma"><span lang="EN-US">GDT</span></font><span style="font-family: Tahoma">的类似。有一位用来表示描述符是否真实存在。还有一个域用来存放描述符优先级（</span><font face="Tahoma"><span lang="EN-US">Descriptor 
+		Privilege Level</span></font><span style="font-family: Tahoma">，</span><font face="Tahoma"><span lang="EN-US">DPL</span></font><span style="font-family: Tahoma">），即允许使用给定中断的最大数目的环。主要的区别在于访问标志的剩余部分的定义。访问位的低五位经常设置为二进制的</span><font face="Tahoma"><span lang="EN-US">01110</span></font><span style="font-family: Tahoma">，即十进制中的</span><font face="Tahoma"><span lang="EN-US">14</span></font><span style="font-family: Tahoma">。下面用一个表来更好地图形表示</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口的访问位。</span></p>
+		<table class="MsoNormalTable" border="0" cellpadding="0" id="table1">
+			<tr>
+				<td style="padding:.75pt .75pt .75pt .75pt">
+				<table class="MsoNormalTable" border="0" cellpadding="0" id="table2">
+					<tr>
+						<td width="25" style="width:18.75pt;padding:.75pt .75pt .75pt .75pt">
+						<p class="MsoNormal" align="center" style="text-align:center">
+						<font face="Tahoma">
+						<span lang="EN-US">7</span></font></td>
+						<td width="25" style="width:18.75pt;padding:.75pt .75pt .75pt .75pt">
+						<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">
+						6</span></font></td>
+						<td width="25" style="width:18.75pt;padding:.75pt .75pt .75pt .75pt">
+						<p class="MsoNormal" align="right" style="text-align:right">
+						<font face="Tahoma">
+						<span lang="EN-US">5</span></font></td>
+						<td width="25" style="width:18.75pt;padding:.75pt .75pt .75pt .75pt">
+						<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">
+						4</span></font></td>
+						<td width="100" style="width:75.0pt;padding:.75pt .75pt .75pt .75pt">
+						<p class="MsoNormal" align="right" style="text-align:right">
+						<font face="Tahoma">
+						<span lang="EN-US">0</span></font></td>
+					</tr>
+				</table>
+				<p class="MsoNormal">　</td>
+			</tr>
+			<tr>
+				<td style="padding:.75pt .75pt .75pt .75pt">
+				<table class="MsoNormalTable" border="1" cellpadding="0" style="border: 1.0pt outset gray" cols="25" id="table3">
+					<tr>
+						<td width="25" style="width: 18.75pt; border: 1.0pt inset gray; padding: .75pt">
+						<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">
+						P </span>
+						</font></td>
+						<td width="50" style="width: 37.5pt; border: 1.0pt inset gray; padding: .75pt">
+						<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">
+						DPL </span>
+						</font></td>
+						<td width="125" style="width: 93.75pt; border: 1.0pt inset gray; padding: .75pt">
+						<p class="MsoNormal"><span style="font-family: Tahoma">
+						常为</span><font face="Tahoma"><span lang="EN-US">01110 
+						(14) </span></font></td>
+					</tr>
+				</table>
+				<p class="MsoNormal">　</td>
+			</tr>
+			<tr>
+				<td style="padding:.75pt .75pt .75pt .75pt">
+				<p class="MsoNormal"><font face="Tahoma"><span lang="EN-US">P</span></font><span style="font-family: Tahoma">－段是否存在？</span><font face="Tahoma"><span lang="EN-US">(1 
+				= </span></font><span style="font-family: Tahoma">是</span><font face="Tahoma"><span lang="EN-US">)<br>
+				DPL</span></font><span style="font-family: Tahoma">－描述符所处优先级（</span><font face="Tahoma"><span lang="EN-US">0
+				</span></font><span style="font-family: Tahoma">到</span><font face="Tahoma"><span lang="EN-US">3</span></font><span style="font-family: Tahoma">）</span></td>
+			</tr>
+		</table>
+		<p><span style="font-family: Tahoma">在你的内核目录下创建一个名为“</span><font face="Tahoma"><span lang="EN-US">idt.c</span></font><span style="font-family: Tahoma">”的新文件。在你的“</span><font face="Tahoma"><span lang="EN-US">build.bat</span></font><span style="font-family: Tahoma">”文件中添加一行以使</span><font face="Tahoma"><span lang="EN-US">GCC</span></font><span style="font-family: Tahoma">同样编译“</span><font face="Tahoma"><span lang="EN-US">idt.c</span></font><span style="font-family: Tahoma">”。最后，把“</span><font face="Tahoma"><span lang="EN-US">idt.o</span></font><span style="font-family: Tahoma">”添加到</span><font face="Tahoma"><span lang="EN-US">LD</span></font><span style="font-family: Tahoma">需要链接以创建自定义内核的不断增长的文件列表中。“</span><font face="Tahoma"><span lang="EN-US">idt.c</span></font><span style="font-family: Tahoma">”将声明一个结构，这个结构定义了每个</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口、装载</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">时必须用到的特定</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">指针结构（与装载</span><font face="Tahoma"><span lang="EN-US">GDT</span></font><span style="font-family: Tahoma">类似，但更简单），并且声明一个包含</span><font face="Tahoma"><span lang="EN-US">256</span></font><span style="font-family: Tahoma">个</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口的数组（这就是我们自己的</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">）。</span><font face="Tahoma">
+		</font>
+		</p>
+		<table border="1" width="100%" id="table4" style="border-collapse: collapse">
+			<tr>
+				<td><font face="Tahoma"><font size="2" color="#800000">#include 
+				&lt; system.h &gt;<br>
+				<br>
+				/* 定义一个IDT入口。 */<br>
+				struct idt_entry<br>
+				{<br>
+				&nbsp;&nbsp;&nbsp; unsigned short base_lo;<br>
+				</font>
+				<font size="2">&nbsp;&nbsp;&nbsp; </font> <font size="2" color="#800000">
+				unsigned short sel; /* 我们的内核段从这里开始！ */<br>
+				</font><font size="2">&nbsp;&nbsp;&nbsp; </font> <font size="2" color="#800000">
+				unsigned char always0; /* 这个变量将一直设置为0！ */<br>
+				</font><font size="2">&nbsp;&nbsp;&nbsp; </font> <font size="2" color="#800000">
+				unsigned char flags; /* 设置使用上面的表！ */<br>
+				</font><font size="2">&nbsp;&nbsp;&nbsp; </font> <font size="2" color="#800000">
+				unsigned short base_hi;<br>
+				} __attribute__((packed));<br>
+				<br>
+				struct idt_ptr<br>
+				{<br>
+				</font><font size="2">&nbsp;&nbsp;&nbsp; </font> <font size="2" color="#800000">
+				unsigned short limit;<br>
+				</font><font size="2">&nbsp;&nbsp;&nbsp; </font> <font size="2" color="#800000">
+				unsigned int base;<br>
+				} __attribute__((packed));<br>
+				<br>
+				/* 声明一个有256个入口的IDT，尽管在本指南中我们将只使用前32个入口。<br>
+				* 如果访问任何未定义的IDT入口，正常情况下将导致一个“未知中断”的异<br>
+				* 常。访问任何“存在”位被清除（为0）的描述符则将产生一个“无法处理<br>
+				* 中断”的异常。<br>
+				*/<br>
+				struct idt_entry idt[256];<br>
+				struct idt_ptr idtp;<br>
+				<br>
+				/* 这存在于“start.asm”，用来装载我们的IDT。 */<br>
+				extern void idt_load();</font></font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">这是“idt.c”的开始部分，定义了重要的数据结构！</font></b></td>
+			</tr>
+		</table>
+		<p><span style="font-family: Tahoma">接下来，就像“</span><font face="Tahoma"><span lang="EN-US">gdt.c</span></font><span style="font-family: Tahoma">”，你将注意到这里声明了一个已经在其它文件中实际存在的函数。“</span><font face="Tahoma"><span lang="EN-US">idt_load</span></font><span style="font-family: Tahoma">”和“</span><font face="Tahoma"><span lang="EN-US">gdt_flush</span></font><span style="font-family: Tahoma">”一样，由汇编语言编写。所有“</span><font face="Tahoma"><span lang="EN-US">idt_load</span></font><span style="font-family: Tahoma">”使用我们的特定</span><font face="Tahoma"><span lang="EN-US"> 
+		IDT</span></font><span style="font-family: Tahoma">指针来调用“</span><font face="Tahoma"><span lang="EN-US">lidt</span></font><span style="font-family: Tahoma">”汇编操作码，我们随后将在“</span><font face="Tahoma"><span lang="EN-US">idt_install</span></font><span style="font-family: Tahoma">”中创建这个指针。</span><font face="Tahoma">
+		</font>
+		<span style="font-family: Tahoma">打开“</span><font face="Tahoma"><span lang="EN-US">start.asm</span></font><span style="font-family: Tahoma">”，并在对应“</span><font face="Tahoma"><span lang="EN-US">_gdt_flush</span></font><span style="font-family: Tahoma">”的“</span><font face="Tahoma"><span lang="EN-US">ret</span></font><span style="font-family: Tahoma">”后面添加下面几行：</span></p>
+		<table border="1" width="100%" id="table5" style="border-collapse: collapse">
+			<tr>
+				<td><font size="2" color="#800000" face="Tahoma">; 
+				把“_idtp”中定义的IDT装载到处理器。<br>
+				; 在C语言里，这样的声明应写为“extern void idt_load();”。<br>
+				global _idt_load<br>
+				extern _idtp<br>
+				_idt_load:<br>
+				lidt [_idtp]<br>
+				ret</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">把这段添加到“start.asm”</font></b></td>
+			</tr>
+		</table>
+		<p><span style="font-family: Tahoma">设置</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口比设置</span><font face="Tahoma"><span lang="EN-US">GDT</span></font><span style="font-family: Tahoma">入口简单很多。我们有一个“</span><font face="Tahoma"><span lang="EN-US">idt_set_gate</span></font><span style="font-family: Tahoma">”函数，这个函数接收</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">入口数目、我们的</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">基地址、我们的内核代码段（</span><font face="Tahoma"><span lang="EN-US">Kernel 
+		Code Segment</span></font><span style="font-family: Tahoma">）、以及我们在前面的介绍中用表描述的访问标志。接下来，我们有一个“</span><font face="Tahoma"><span lang="EN-US">idt_install</span></font><span style="font-family: Tahoma">”函数，这个函数用来设置我们的特定</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">指针，同时将</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">设置为</span><font face="Tahoma">
+		</font>
+		<span style="font-family: Tahoma">默认的已知的清除状态。最后，我们将通过调用“</span><font face="Tahoma"><span lang="EN-US">idt_load</span></font><span style="font-family: Tahoma">”装载</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">。请注意，在</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">装载之后，你仍可以在任意时刻将</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">添加到你的</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">中。更多关于</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">的内容将在下一节中讲解。</span></p>
+		<table border="1" width="100%" id="table6" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" size="2" face="Tahoma">/* 
+				用这个函数来设置IDT中的一个入口。同样比GDT中的简单。 */<br>
+				void idt_set_gate(unsigned char num, unsigned long base, 
+				unsigned short sel, unsigned char flags)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 这里留给你去试着编写这个函数：把参数“base”划分为高16位和低16位，<br>
+&nbsp;&nbsp;&nbsp; * 并将他们存储到idt[num].base_hi和idt[num].base_lo。idt[num]中<br>
+&nbsp;&nbsp;&nbsp; * 你还需要设置的其它域，在设置时都是不言而喻的。<br>
+&nbsp;&nbsp;&nbsp; */<br>
+				}<br>
+				<br>
+				/* 安装IDT */<br>
+				void idt_install()<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 设置特点的IDT指针，就像“gdt.c”中的一样。 */<br>
+&nbsp;&nbsp;&nbsp; idtp.limit = (sizeof (struct idt_entry) * 256) - 1;<br>
+&nbsp;&nbsp;&nbsp; idtp.base = &amp;idt;<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 清除整个IDT，初始化其为零。 */<br>
+&nbsp;&nbsp;&nbsp; memset(&amp;idt, 0, sizeof(struct idt_entry) * 256);<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 使用idt_set_gate将任意新的ISR添加到IDT。 */<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 将处理器的内部寄存器指向新的IDT。 */<br>
+&nbsp;&nbsp;&nbsp; idt_load();<br>
+				}</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">
+				“idt.c”的剩余部分。请试着写出“idt_set_gate”，很容易的！</font></b></td>
+			</tr>
+		</table>
+		<p><span style="font-family: Tahoma">最后，确保将“</span><font face="Tahoma"><span lang="EN-US">idt_set_gate</span></font><span style="font-family: Tahoma">”和“</span><font face="Tahoma"><span lang="EN-US">idt_install</span></font><span style="font-family: Tahoma">”作为函数原型添加到“</span><font face="Tahoma"><span lang="EN-US">system.h</span></font><span style="font-family: Tahoma">”中。我们需要在其它文件中调用这些函数，比如“</span><font face="Tahoma"><span lang="EN-US">main.c</span></font><span style="font-family: Tahoma">”。在我们的“</span><font face="Tahoma"><span lang="EN-US">main.c</span></font><span style="font-family: Tahoma">”中紧接着“</span><font face="Tahoma"><span lang="EN-US">gdt_install
+		</span></font><span style="font-family: Tahoma">”之后调用“</span><font face="Tahoma"><span lang="EN-US">idt_install</span></font><span style="font-family: Tahoma">”。你应该可以毫无问题地编译你的内核。用一些时间在你的新内核下做一些试验。如果你试着做一些非法操作，比如除零，你会发现你的计算机
+		重启了！我们可以通过在新</span><font face="Tahoma"><span lang="EN-US">IDT</span></font><span style="font-family: Tahoma">中安装</span><font face="Tahoma"><span lang="EN-US">ISR</span></font><span style="font-family: Tahoma">来捕获这些“异常”。</span><font face="Tahoma">
+		</font>
+		</p>
+		<span style="font-size: 12.0pt; font-family: Tahoma">如果你不想自己写“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">idt_set_gate</span><span style="font-size: 12.0pt; font-family: Tahoma">”，可以在</span><span lang="EN-US" style="font-family: Tahoma; font-size:12.0pt"><a style="color: gray; text-decoration: underline; text-underline: single" href="../Sources/idt.c">这里</a></span><span style="font-size: 12.0pt; font-family: Tahoma">找到本节提到的解决方案。<br>
+　</span><table cols="150, *, 150" width="100%">
+			<tr>
+				<td align="left" width="150">
+					<font face="Tahoma">
+					<a href="gdt.htm">&lt;&lt; 全局描述表 </a>
+					</font>
+				</td>
+				<td align="center" width="*">
+					<font face="Tahoma">
+					<a href="mailto:friesenb@gmail.com">联系Brandon F.</a>
+					</font>
+				</td>
+				<td align="right" width="174">
+					<font face="Tahoma">
+					<a href="isrs.htm">中断服务例程(ISR) &gt;&gt;</a>
+				</font>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

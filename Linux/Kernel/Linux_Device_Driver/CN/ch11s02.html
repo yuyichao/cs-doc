@@ -1,0 +1,69 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>11.2.&#160;安排一个明确大小给数据项-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch11.html" title="第&#160;11&#160;章&#160;内核中的数据类型">
+<link rel="prev" href="ch11.html" title="第&#160;11&#160;章&#160;内核中的数据类型">
+<link rel="next" href="ch11s03.html" title="11.3.&#160;接口特定的类型">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">11.2.&#160;安排一个明确大小给数据项</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch11.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;11&#160;章&#160;内核中的数据类型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch11s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="AssigninganExplicitSizetoDataItems.sect"></a>11.2.&#160;安排一个明确大小给数据项</h2></div></div></div>
+<p>有时内核代码需要一个特定大小的数据项, 也许要匹配预定义的二进制结构,<sup>[<a name="id466598" href="ch11s02.html#ftn.id466598">39</a>]</sup> 来和用户空间通讯, 或者来用插入"填充"字段来对齐结构中的数据( 但是关于对齐问题的信息参考 "数据对齐" 一节 ).</p>
+<p>内核提供了下列数据类型来使用, 无论你什么时候需要知道你的数据的大小. 所有的数据声明在 &lt;asm/types.h&gt;, 它又被 &lt;linux/types.h&gt; 包含.</p>
+<pre class="programlisting">
+u8; /* unsigned byte (8 bits) */
+u16; /* unsigned word (16 bits) */
+u32; /* unsigned 32-bit value */
+u64; /* unsigned 64-bit value */
+</pre>
+<p>存在对应的有符号类型, 但是很少需要; 如果你需要它们, 只要在名子里用 s 代替 u. </p>
+<p>如果一个用户空间程序需要使用这些类型, 可用使用一个双下划线前缀在名子上: __u8 和其它独立于 __KERNEL__ 定义的类型. 例如, 如果, 一个驱动需要与用户空间中运行的程序交换二进制结构, 通过 ioctl, 头文件应当在结构中声明 32-位 成员为 __u32.</p>
+<p>重要的是记住这些类型是 Linux 特定的, 并且使用它们妨碍了移植软件到其他的 Unix 口味上. 使用近期编译器的系统支持 C99-标准 类型, 例如 uint8_t 和 uint32_t; 如果考虑到移植性, 使用这些类型比 Linux-特定的变体要好.</p>
+<p>你可能也注意到有时内核使用传统的类型, 例如 unsigned int, 给那些维数与体系无关的项. 这是为后向兼容而做的. 当 u32 和它的类似物在版本 1.1.67 引入时, 开发者不能改变存在的数据结构为新的类型, 因为编译器发出一个警告当在结构成员和安排给它的值之间有一个类型不匹配时.. Linus 不希望他写给自己使用的操作系统称为多平台的; 结果是, 老的结构有时被松散的键入.</p>
+<p>事实上, 编译器指示类型不一致, 甚至在 2 个类型只是同一个对象的不同名子, 例如在 PC 上 unsigned long 和 u32.</p>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id466598" href="ch11s02.html#id466598">39</a>] </sup>这发生在当读取分区表时, 当执行一个二进制文件时, 或者当解码一个网络报文时.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch11.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch11.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch11s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;11&#160;章&#160;内核中的数据类型&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;11.3.&#160;接口特定的类型</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

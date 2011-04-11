@@ -1,0 +1,3558 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 8. Client and Utility Programs</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="optimization.html" title="Chapter 7. Optimization"><link rel="next" href="language-structure.html" title="Chapter 9. Language Structure">
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="client-side-scripts"></a>
+	第8章：客户端和实用工具程序</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="client-side-scripts.html#client-side-overview">
+			8.1. 客户端脚本和实用工具概述</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#myisampack">8.2. 
+			myisampack：生成压缩、只读MyISAM表</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysql">
+			8.3. mysql：MySQL命令行工具</a></span></dt><dd><dl><dt><span class="section"><a href="client-side-scripts.html#mysql-command-options">
+				8.3.1. 选项</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysql-commands">8.3.2. <span><strong class="command">
+				mysql</strong></span>命令</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#batch-commands">
+				8.3.3. 怎样从文本文件执行SQL语句</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysql-tips">8.3.4. <span><strong class="command">
+				mysql</strong></span>技巧</a></span></dt></dl></dd><dt><span class="section"><a href="client-side-scripts.html#mysqlaccess">
+			8.4. mysqlaccess：用于检查访问权限的客户端</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysqladmin">
+			8.5. mysqladmin：用于管理MySQL服务器的客户端</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysqlbinlog">
+			8.6. mysqlbinlog：用于处理二进制日志文件的实用工具</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysqlcheck">
+			8.7. mysqlcheck：表维护和维修程序</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysqldump">
+			8.8. mysqldump：数据库备份程序</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysqlhotcopy">
+			8.9. mysqlhotcopy：数据库备份程序</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysqlimport">
+			8.10. mysqlimport：数据导入程序</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysqlshow">
+			8.11. mysqlshow－显示数据库、表和列信息</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#myisamlog">
+			8.12. myisamlog：显示MyISAM日志文件内容</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#perror">
+			8.13. perror：解释错误代码</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#replace-utility">
+			8.14. replace：字符串替换实用工具</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysql-zap">
+			8.15. mysql_zap：杀死符合某一模式的进程</a></span></dt></dl></div>
+	<p>
+	有许多不同的<span>MySQL</span>客户端程序可以连接服务器以访问数据库或执行管理任务。也可以使用其它工具。这些程序不与服务器进行通讯但可以执行<span>MySQL</span>相关的操作。</p>
+	<p>
+	本章简述了这些程序然后详细描述了每个程序。描述了如何调用这些程序和它们理解的选项。调用程序和指定程序选项的总信息参见<a href="using-mysql-programs.html">第4章：</a><a href="using-mysql-programs.html" title="Chapter 4. Using MySQL Programs"><i>MySQL程序概述</i></a>。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="client-side-overview"></a>
+		8.1.&nbsp;客户端脚本和实用工具概述</h2></div></div></div>
+		<p>
+		下面简单列出了<span>MySQL</span>客户端程序和实用工具：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>myisampack</span></p>
+		<p>
+		压缩<span>MyISAM</span>表以产生更小的只读表的一个工具。参见<a href="client-side-scripts.html#myisampack" title="8.2. myisampack — Generate Compressed, Read-Only MyISAM Tables">8.2节，“myisampack：生成压缩、只读MyISAM表”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysql</span></p>
+		<p>
+		交互式输入<span>SQL</span>语句或从文件以批处理模式执行它们的命令行工具。参见<a href="client-side-scripts.html#mysql" title="8.3. mysql — The MySQL Command-Line Tool">8.3节，“mysql：MySQL命令行工具”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysqlaccess</span></p>
+		<p>
+		检查访问主机名、用户名和数据库组合的权限的脚本。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysqladmin</span></p>
+		<p>
+		执行管理操作的客户程序，例如创建或删除数据库，重载授权表，将表刷新到硬盘上，以及重新打开日志文件。<strong><span>mysqladmin</span></strong>还可以用来检索版本、进程，以及服务器的状态信息。参见<a href="client-side-scripts.html#mysqladmin" title="8.5. mysqladmin — Client for Administering a MySQL Server">8.5节，“mysqladmin：用于管理MySQL服务器的客户端”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysqlbinlog</span></p>
+		<p>
+		从二进制日志读取语句的工具。在二进制日志文件中包含的执行过的语句的日志可用来帮助从崩溃中恢复。参见<a href="client-side-scripts.html#mysqlbinlog" title="8.6. mysqlbinlog — Utility for Processing Binary Log Files">8.6节，“mysqlbinlog：用于处理二进制日志文件的实用工具”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysqlcheck</span></p>
+		<p>
+		检查、修复、分析以及优化表的表维护客户程序。参见<a href="client-side-scripts.html#mysqlcheck" title="8.7. mysqlcheck — A Table Maintenance and Repair Program">8.7节，“mysqlcheck：表维护和维修程序”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysqldump</span></p>
+		<p>
+		将<span>MySQL</span>数据库转储到一个文件（例如<span>SQL</span>语句或<span>tab</span>分隔符文本文件）的客户程序。增强版免费软件首先由<span>Igor 
+		Romanenko</span>提供。参见<a href="client-side-scripts.html#mysqldump" title="8.8. mysqldump — A Database Backup Program">8.8节，“mysqldump：数据库备份程序”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysqlhotcopy</span></p>
+		<p>
+		当服务器在运行时，快速备份<span>MyISAM</span>或<span>ISAM</span>表的工具。参见<a href="client-side-scripts.html#mysqlhotcopy" title="8.9. mysqlhotcopy — A Database Backup Program">8.9节，“mysqlhotcopy：数据库备份程序”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysql import</span></p>
+		<p>
+		使用<span>LOAD 
+		DATA INFILE</span>将文本文件导入相关表的客户程序。参见<a href="client-side-scripts.html#mysqlimport" title="8.10. mysqlimport — A Data Import Program">8.10节，“mysqlimport：数据导入程序”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>mysqlshow</span></p>
+		<p>
+		显示数据库、表、列以及索引相关信息的客户程序。参见<a href="client-side-scripts.html#mysqlshow" title="8.11. mysqlshow — Display Database, Table, and Column Information">8.11节，“mysqlshow：显示数据库、表和列信息”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>perror</span></p>
+		<p>
+		显示系统或<span>MySQL</span>错误代码含义的工具。参见<a href="client-side-scripts.html#perror" title="8.13. perror — Explain Error Codes">8.13节，“perror：解释错误代码”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>replace</span></p>
+		<p>
+		更改文件中或标准输入中的字符串的实用工具。参见<a href="client-side-scripts.html#replace-utility" title="8.14. replace — A String-Replacement Utility">8.14节，“replace：字符串替换实用工具”</a>。</p>
+		<p>
+		<span>MySQL AB</span>还提供了大量<span>GUI</span>工具用于管理和<span>MySQL</span>服务器的其它工作。相关基本信息参见<a href="using-mysql-programs.html">第4章：</a><a href="using-mysql-programs.html" title="Chapter 4. Using MySQL Programs"><i>MySQL程序概述</i></a>。</p>
+		<p>
+		每个<span>MySQL</span>程序有许多不同的选项。但每个<span>MySQL</span>程序均提供一个<span>---help</span>选项，可以用来全面描述程序不同的选项。例如，可以试试<strong><span>mysql---help</span></strong>。</p>
+		<p>
+		使用<span>mysqlclient</span>库同服务器进行通讯的<span>MySQL</span>客户使用下面的环境变量：</p>
+		<table border="1" cellpadding="0" id="table1">
+			<tr>
+				<td>
+				<p>
+				<span>MYSQL_UNIX_PORT</span></td>
+				<td>
+				<p>默认<span>Unix</span>套接字文件；用于连接<span>localhost</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>MYSQL_TCP_PORT</span></td>
+				<td>
+				<p>默认端口号；用于<span>TCP/IP</span>连接</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>MYSQL_PWD</span></td>
+				<td>
+				<p>默认密码</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>MYSQL_DEBUG</span></td>
+				<td>
+				<p>调试过程中的调试跟踪选项</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TMPDIR</span></td>
+				<td>
+				<p>创建临时表和文件的目录</td>
+			</tr>
+		</table>
+		<p>
+		使用<span>MYSQL_PWD</span>不安全。参见<a href="database-administration.html#password-security" title="5.8.6. Keeping Your Password Secure">5.8.6节，“使你的密码安全”</a>。</p>
+		<p>可以在选项文件中或在命令行中指定选项来替换所有标准程序的默认选项值或指定的环境变量的值。参见<a href="using-mysql-programs.html#program-options" title="4.3. Specifying Program Options">4.3节，“指定程序选项”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="myisampack"></a>
+		8.2.&nbsp;myisampack：生成压缩、只读MyISAM表</h2></div></div></div>
+		<p>
+		<strong><span>myisampack</span></strong>工具可以压缩<span>MyISAM</span>表<span>.MYI<strong><span>sampack</span></strong></span>分别压缩表中的每一列。通常，<strong><span>myisampack</span></strong>可以将数据文件压缩到<span>40%-70%</span>。</p>
+		<p>
+		当以后使用表时，解压缩列需要的信息被读入内存。当访问具体的记录时性能会更好，因为你只需要解压缩一个记录。</p>
+		<p>
+		<span>MySQL</span>使用<span>mmap()</span>对压缩的表进行内存映射。如果<span>mmap()</span>不工作，<span>MySQL</span>返回到普通读<span>/</span>写文件操作。</p>
+		<p>
+		请注意：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果用<span>--skip-external-locking</span>选项调用<strong><span>mysqld</span></strong>服务器，如果在压缩过程中表可能被更新，调用<strong><span>myisampack</span></strong>不是一个好注意。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>表压缩后，它变为只读。这是故意的<span>(</span>例如当访问<span>CD</span>上的压缩的表时<span>)</span>。允许写入到压缩的表位于我们的<span>TODO</span>列表中，但优先级较低。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>myisampack</span></strong>可以压缩<span>BLOB</span>或<span>TEXT</span>列。旧版本<span>ISAM</span>表的<strong><span>pack_isam</span></strong>程序不可以。</p>
+		<p>
+		调用<strong><span>myisampack</span></strong>的方法：</p>
+		<pre><span>shell&gt; </span><span><b><span>myisampack [<i>options</i>] <i>filename</i> ...</span></b></span></pre>
+		<p>
+		文件名应为索引<span>(</span><span>.MYI</span><span>)</span>文件的文件名。如果不在数据库目录，应指定文件的路径名。允许忽略<span>.MYI</span>扩展名。</p>
+		<p>
+		<strong><span>myisampack</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--backup</span>，<span>-b</span></p>
+		<p>
+		使用<span><i><span>tbl_name</span></i><span>.OLD</span></span>名备份表数据文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug[=<i>debug_options</i>]</span>，<span>-# 
+		[<i>debug_options</i>]</span></p>
+		<p>
+		写调试日志。<span><i><span>debug_options</span></i></span>字符串通常为<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--force</span>，<span>-f</span></p>
+		<p>
+		产生一个压缩的表，即使它比原始表大，或如果以前调用<strong><span>myisampack</span></strong>的中间文件存在。<span>(<strong><span>myisampack</span></strong></span>压缩表时在数据库目录中创建一个名为<span><i><span>tbl_name</span></i><span>.TMD</span></span>的中间文件。如果杀掉<strong><span  style="font-family:
+宋体">myisampack</span></strong>，<span>.</span><span>TMD</span>文件会被删除）<span>。</span>通常情况，如果<strong><span>myisampack</span></strong>发现<span><i><span>tbl_name</span></i><span>.TMD</span></span>存在则退出并提示错误。用<span>--force</span>，<strong><span>myisampack</span></strong>则一定压缩表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-join=<i>big_tbl_name</i></span>，<span>-j
+		<i>big_tbl_name</i></span></p>
+		<p>
+		将命令行中的所有表联接为一个表<span><i><span>big_tbl_name</span></i></span>。将要连接的所有表必须有相等的结构<span>(</span>相同的列名和类型，相同的索引等等<span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--pack length=<i>len</i></span>，<span>-p
+		<i>len</i></span></p>
+		<p>
+		指定记录长度存储大小，以字节计。值应为<span>1</span>、<span>2</span>或者<span>3</span>。<strong><span>myisampack</span></strong>保存所有长度指针为<span>1</span>、<span>2</span>或者<span>3</span>字节的行。在大多数正常情况下，<strong><span>myisampack</span></strong>在开始压缩文件前可以确定准确的长度值，但在压缩过程中它可以提示它可能已经使用了一个短的长度。在这种情况下，<strong><span>myisampack</span></strong>输出一条提示，下次你压缩同一文件时，你可以使用更短的记录长度。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--silent</span>，<span>-s</span></p>
+		<p>
+		沉默模式。只有发生错误时才写输出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--test</span>，<span>-t</span></p>
+		<p>
+		没有实际地压缩表，只是测试压缩。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--tmpdir=<i>path</i></span>，<span>-T
+		<i>path</i></span></p>
+		<p>
+		使用<strong><span>myisamchk</span></strong>创建临时文件的目录。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--verbose</span>，<span>-v</span></p>
+		<p>
+		冗长模式。写压缩操作过程相关信息和其结果。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-V</span></p>
+		<p>
+		显示版本信息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--wait</span>，<span>-w</span></p>
+		<p>
+		如果表正使用则等待并重试。如果用<span>--skip-external-locking</span>选项调用了<strong><span  style="font-family:
+宋体">mysqld</span></strong>服务器，如果在压缩过程中表可能被更新，调用<strong><span>myisampack</span></strong>不是一个好注意。</p>
+		<p>下面的顺序命令说明了典型的表压缩会话：</p>
+		<pre><span>shell&gt; </span><span><b><span>ls -l station.*</span></b></span></pre>
+		<pre><span>-rw-rw-r--&nbsp;&nbsp; 1 monty&nbsp;&nbsp;&nbsp; my&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 994128 Apr 17 19:00 station.MYD</span></pre>
+		<pre><span>-rw-rw-r--&nbsp;&nbsp; 1 monty&nbsp;&nbsp;&nbsp; my&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 53248 Apr 17 19:00 station.MYI</span></pre>
+		<pre><span>-rw-rw-r--&nbsp;&nbsp; 1 monty&nbsp;&nbsp;&nbsp; my&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5767 Apr 17 19:00 station.frm</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>shell&gt; </span><span><b><span>myisamchk -dvv station</span></b></span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>MyISAM file:&nbsp;&nbsp;&nbsp;&nbsp; station</span></pre>
+		<pre><span>Isam-version:&nbsp; 2</span></pre>
+		<pre><span>Creation time: 1996-03-13 10:08:58</span></pre>
+		<pre><span>Recover time:&nbsp; 1997-02-02&nbsp; 3:06:43</span></pre>
+		<pre><span>Data records:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1192&nbsp; Deleted blocks:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>Datafile parts:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1192&nbsp; Deleted data:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>Datafile pointer (bytes):&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; Keyfile pointer (bytes): &nbsp;&nbsp;&nbsp;&nbsp;2</span></pre>
+		<pre><span>Max datafile length:&nbsp;&nbsp; 54657023&nbsp; Max keyfile length:&nbsp;&nbsp; 33554431</span></pre>
+		<pre><span>Recordlength:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 834</span></pre>
+		<pre><span>Record format: Fixed length</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>table description:</span></pre>
+		<pre><span>Key Start Len Index&nbsp;&nbsp; Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Root&nbsp; Blocksize&nbsp;&nbsp;&nbsp; Rec/key</span></pre>
+		<pre><span>1&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp;&nbsp; unique&nbsp; unsigned long&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1024&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1024&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>2&nbsp;&nbsp; 32&nbsp;&nbsp;&nbsp; 30&nbsp; multip. text&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10240&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1024&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>Field Start Length Type</span></pre>
+		<pre><span>1&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>2&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 4</span></pre>
+		<pre><span>3&nbsp;&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;&nbsp; 4</span></pre>
+		<pre><span>4&nbsp;&nbsp;&nbsp;&nbsp; 10&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>5&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp;&nbsp;&nbsp; 20</span></pre>
+		<pre><span>6&nbsp;&nbsp;&nbsp;&nbsp; 31&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>7&nbsp;&nbsp;&nbsp;&nbsp; 32&nbsp;&nbsp;&nbsp; 30</span></pre>
+		<pre><span>8&nbsp;&nbsp;&nbsp;&nbsp; 62&nbsp;&nbsp;&nbsp; 35</span></pre>
+		<pre><span>9&nbsp;&nbsp;&nbsp;&nbsp; 97&nbsp; &nbsp;&nbsp;35</span></pre>
+		<pre><span>10&nbsp;&nbsp;&nbsp; 132&nbsp;&nbsp; 35</span></pre>
+		<pre><span>11&nbsp;&nbsp;&nbsp; 167&nbsp;&nbsp; 4</span></pre>
+		<pre><span>12&nbsp;&nbsp;&nbsp; 171&nbsp;&nbsp; 16</span></pre>
+		<pre><span>13&nbsp;&nbsp;&nbsp; 187&nbsp;&nbsp; 35</span></pre>
+		<pre><span>14&nbsp;&nbsp;&nbsp; 222&nbsp;&nbsp; 4</span></pre>
+		<pre><span>15&nbsp;&nbsp;&nbsp; 226&nbsp;&nbsp; 16</span></pre>
+		<pre><span>16&nbsp;&nbsp;&nbsp; 242&nbsp;&nbsp; 20</span></pre>
+		<pre><span>17&nbsp;&nbsp;&nbsp; 262&nbsp;&nbsp; 20</span></pre>
+		<pre><span>18&nbsp;&nbsp;&nbsp; 282&nbsp;&nbsp; 20</span></pre>
+		<pre><span>19&nbsp;&nbsp;&nbsp; 302&nbsp;&nbsp; 30</span></pre>
+		<pre><span>20&nbsp;&nbsp;&nbsp; 332&nbsp;&nbsp; 4</span></pre>
+		<pre><span>21&nbsp;&nbsp;&nbsp; 336&nbsp;&nbsp; 4</span></pre>
+		<pre><span>22&nbsp;&nbsp;&nbsp; 340&nbsp;&nbsp; 1</span></pre>
+		<pre><span>23&nbsp;&nbsp;&nbsp; 341&nbsp;&nbsp; 8</span></pre>
+		<pre><span>24&nbsp;&nbsp;&nbsp; 349&nbsp;&nbsp; 8</span></pre>
+		<pre><span>25&nbsp;&nbsp;&nbsp; 357&nbsp;&nbsp; 8</span></pre>
+		<pre><span>26&nbsp;&nbsp;&nbsp; 365&nbsp;&nbsp; 2</span></pre>
+		<pre><span>27&nbsp;&nbsp; &nbsp;367&nbsp;&nbsp; 2</span></pre>
+		<pre><span>28&nbsp;&nbsp;&nbsp; 369&nbsp;&nbsp; 4</span></pre>
+		<pre><span>29&nbsp;&nbsp;&nbsp; 373&nbsp;&nbsp; 4</span></pre>
+		<pre><span>30&nbsp;&nbsp;&nbsp; 377&nbsp;&nbsp; 1</span></pre>
+		<pre><span>31&nbsp;&nbsp;&nbsp; 378&nbsp;&nbsp; 2</span></pre>
+		<pre><span>32&nbsp;&nbsp;&nbsp; 380&nbsp;&nbsp; 8</span></pre>
+		<pre><span>33&nbsp;&nbsp;&nbsp; 388&nbsp;&nbsp; 4</span></pre>
+		<pre><span>34&nbsp;&nbsp;&nbsp; 392&nbsp;&nbsp; 4</span></pre>
+		<pre><span>35&nbsp;&nbsp;&nbsp; 396&nbsp;&nbsp; 4</span></pre>
+		<pre><span>36&nbsp;&nbsp;&nbsp; 400&nbsp;&nbsp; 4</span></pre>
+		<pre><span>37&nbsp;&nbsp;&nbsp; 404&nbsp;&nbsp; 1</span></pre>
+		<pre><span>38&nbsp;&nbsp;&nbsp; 405&nbsp;&nbsp; 4</span></pre>
+		<pre><span>39&nbsp;&nbsp;&nbsp; 409&nbsp;&nbsp; 4</span></pre>
+		<pre><span>40&nbsp;&nbsp;&nbsp; 413&nbsp;&nbsp; 4</span></pre>
+		<pre><span>41&nbsp;&nbsp;&nbsp; 417&nbsp;&nbsp; 4</span></pre>
+		<pre><span>42&nbsp;&nbsp;&nbsp; 421&nbsp;&nbsp; 4</span></pre>
+		<pre><span>43&nbsp;&nbsp;&nbsp; 425&nbsp;&nbsp; 4</span></pre>
+		<pre><span>44&nbsp;&nbsp;&nbsp; 429&nbsp;&nbsp; 20</span></pre>
+		<pre><span>45&nbsp;&nbsp;&nbsp; 449&nbsp;&nbsp; 30</span></pre>
+		<pre><span>46&nbsp;&nbsp;&nbsp; 479&nbsp;&nbsp; 1</span></pre>
+		<pre><span>47&nbsp;&nbsp;&nbsp; 480&nbsp;&nbsp; 1</span></pre>
+		<pre><span>48&nbsp;&nbsp;&nbsp; 481&nbsp;&nbsp; 79</span></pre>
+		<pre><span>49&nbsp;&nbsp;&nbsp; 560&nbsp;&nbsp; 79</span></pre>
+		<pre><span>50&nbsp;&nbsp;&nbsp; 639&nbsp;&nbsp; 79</span></pre>
+		<pre><span>51&nbsp;&nbsp;&nbsp; 718&nbsp;&nbsp; 79</span></pre>
+		<pre><span>52&nbsp;&nbsp;&nbsp; 797&nbsp;&nbsp; 8</span></pre>
+		<pre><span>53&nbsp;&nbsp;&nbsp; 805&nbsp;&nbsp; 1</span></pre>
+		<pre><span>54&nbsp;&nbsp;&nbsp; 806&nbsp;&nbsp; 1</span></pre>
+		<pre><span>55&nbsp;&nbsp;&nbsp; 807&nbsp;&nbsp; 20</span></pre>
+		<pre><span>56&nbsp;&nbsp;&nbsp; 827&nbsp;&nbsp; 4</span></pre>
+		<pre><span>57&nbsp;&nbsp;&nbsp; 831&nbsp;&nbsp; 4</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>shell&gt; </span><span><b><span>myisampack station.MYI</span></b></span></pre>
+		<pre><span>Compressing station.MYI: (1192 records)</span></pre>
+		<pre><span>- Calculating statistics</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>normal:&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp; empty-space:&nbsp;&nbsp; 16&nbsp; empty-zero:&nbsp;&nbsp;&nbsp;&nbsp; 12&nbsp; empty-fill:&nbsp; 11</span></pre>
+		<pre><span>pre-space:&nbsp;&nbsp; 0&nbsp; end-space:&nbsp;&nbsp;&nbsp;&nbsp; 12&nbsp; table-lookups:&nbsp;&nbsp; 5&nbsp; zero:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7</span></pre>
+		<pre><span>Original trees:&nbsp; 57&nbsp; After join: 17</span></pre>
+		<pre><span>- Compressing file</span></pre>
+		<pre><span>87.14%</span></pre>
+		<pre><span>Remember to run myisamchk -rq on compressed tables</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>shell&gt; </span><span><b><span>ls -l station.*</span></b></span></pre>
+		<pre><span>-rw-rw-r--&nbsp;&nbsp; 1 monty&nbsp;&nbsp;&nbsp; my&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 127874 Apr 17 19:00 station.MYD</span></pre>
+		<pre><span>-rw-rw-r--&nbsp;&nbsp; 1 monty&nbsp;&nbsp;&nbsp; my&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 55296 Apr 17 19:04 station.MYI</span></pre>
+		<pre><span>-rw-rw-r--&nbsp;&nbsp; 1 monty&nbsp;&nbsp;&nbsp; my&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5767 Apr 17 19:00 station.frm</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>shell&gt; </span><span><b><span>myisamchk -dvv station</span></b></span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>MyISAM file:&nbsp;&nbsp;&nbsp;&nbsp; station</span></pre>
+		<pre><span>Isam-version:&nbsp; 2</span></pre>
+		<pre><span>Creation time: 1996-03-13 10:08:58</span></pre>
+		<pre><span>Recover time:&nbsp; 1997-04-17 19:04:26</span></pre>
+		<pre><span>Data records:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1192&nbsp; Deleted blocks:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>Datafile parts:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1192&nbsp; Deleted data:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>Datafile pointer (bytes):&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp; Keyfile pointer (bytes):&nbsp;&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>Max datafile length:&nbsp;&nbsp;&nbsp; 16777215&nbsp; Max keyfile length:&nbsp;&nbsp;&nbsp;&nbsp; 131071</span></pre>
+		<pre><span>Recordlength:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 834</span></pre>
+		<pre><span>Record format: Compressed</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>table description:</span></pre>
+		<pre><span>Key Start Len Index&nbsp;&nbsp; Type&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Root&nbsp; Blocksize&nbsp;&nbsp;&nbsp; Rec/key</span></pre>
+		<pre><span>1&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp;&nbsp; unique&nbsp; unsigned long&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10240&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1024&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>2&nbsp;&nbsp; 32&nbsp;&nbsp;&nbsp; 30&nbsp; multip. text&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 54272&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1024&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>Field Start Length Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Huff tree&nbsp; Bits</span></pre>
+		<pre><span>1&nbsp;&nbsp;&nbsp;&nbsp; 1 &nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; constant&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>2&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>3&nbsp;&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>4&nbsp;&nbsp;&nbsp;&nbsp; 10&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>5&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp;&nbsp;&nbsp; table-lookup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>6&nbsp;&nbsp;&nbsp;&nbsp; 31&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>7&nbsp;&nbsp;&nbsp;&nbsp; 32&nbsp;&nbsp;&nbsp; 30&nbsp;&nbsp;&nbsp;&nbsp; no endspace, not_always&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>8&nbsp;&nbsp;&nbsp;&nbsp; 62&nbsp;&nbsp;&nbsp; 35&nbsp;&nbsp;&nbsp;&nbsp; no endspace, not_always, no empty&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>9&nbsp;&nbsp;&nbsp;&nbsp; 97&nbsp;&nbsp;&nbsp; 35&nbsp;&nbsp;&nbsp;&nbsp; no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>10&nbsp;&nbsp;&nbsp; 132&nbsp;&nbsp; 35&nbsp;&nbsp;&nbsp;&nbsp; no endspace, not_always, no empty&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>11&nbsp;&nbsp;&nbsp; 167&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>12&nbsp;&nbsp;&nbsp; 171&nbsp;&nbsp; 16&nbsp;&nbsp;&nbsp;&nbsp; no endspace, not_always, no empty&nbsp;&nbsp;&nbsp; 5&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>13&nbsp;&nbsp;&nbsp; 187&nbsp;&nbsp; 35&nbsp;&nbsp;&nbsp;&nbsp; no endspace, not_always, no empty&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>14&nbsp;&nbsp;&nbsp; 222&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>15&nbsp;&nbsp;&nbsp; 226&nbsp;&nbsp; 16&nbsp;&nbsp;&nbsp;&nbsp; no endspace, not_always, no empty&nbsp;&nbsp;&nbsp; 5&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>16&nbsp;&nbsp;&nbsp; 242&nbsp;&nbsp; 20&nbsp;&nbsp;&nbsp;&nbsp; no endspace, not_always&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>17&nbsp;&nbsp;&nbsp; 262&nbsp;&nbsp; 20&nbsp;&nbsp;&nbsp;&nbsp; no endspace, no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>18&nbsp;&nbsp;&nbsp; 282&nbsp;&nbsp; 20&nbsp;&nbsp;&nbsp;&nbsp; no endspace, no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>19&nbsp;&nbsp;&nbsp; 302&nbsp;&nbsp; 30&nbsp;&nbsp;&nbsp;&nbsp; no endspace, no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>20&nbsp;&nbsp;&nbsp; 332&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; always zero&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>21&nbsp;&nbsp;&nbsp; 336&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; always zero&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>22&nbsp;&nbsp;&nbsp; 340&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>23&nbsp;&nbsp;&nbsp; 341&nbsp;&nbsp; 8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table-lookup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>24&nbsp;&nbsp;&nbsp; 349&nbsp;&nbsp; 8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table-lookup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>25&nbsp;&nbsp;&nbsp; 357&nbsp;&nbsp; 8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; always zero&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>26&nbsp;&nbsp;&nbsp; 365&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>27&nbsp;&nbsp;&nbsp; 367&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>28&nbsp;&nbsp;&nbsp; 369&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>29&nbsp;&nbsp;&nbsp; 373&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table-lookup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>30&nbsp;&nbsp;&nbsp; 377&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>31&nbsp;&nbsp;&nbsp; 378&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>32&nbsp;&nbsp;&nbsp; 380&nbsp;&nbsp; 8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>33&nbsp;&nbsp;&nbsp; 388&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; always zero&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>34&nbsp;&nbsp;&nbsp; 392&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; table-lookup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>35&nbsp;&nbsp;&nbsp; 396&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 13&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>36&nbsp;&nbsp;&nbsp; 400&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>37&nbsp;&nbsp;&nbsp; 404&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>38&nbsp;&nbsp;&nbsp; 405&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>39&nbsp;&nbsp;&nbsp; 409&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; always zero&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>40&nbsp;&nbsp;&nbsp; 413&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>41&nbsp;&nbsp;&nbsp; 417&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; always zero&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>42&nbsp;&nbsp;&nbsp; 421&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>43&nbsp;&nbsp;&nbsp; 425&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; always zero&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>44&nbsp;&nbsp;&nbsp; 429&nbsp;&nbsp; 20&nbsp;&nbsp;&nbsp;&nbsp; no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>45&nbsp;&nbsp;&nbsp; 449&nbsp;&nbsp; 30&nbsp;&nbsp;&nbsp;&nbsp; no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>46&nbsp;&nbsp;&nbsp; 479&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 14&nbsp;&nbsp;&nbsp;&nbsp; 4</span></pre>
+		<pre><span>47&nbsp;&nbsp;&nbsp; 480&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 14&nbsp;&nbsp;&nbsp;&nbsp; 4</span></pre>
+		<pre><span>48&nbsp;&nbsp;&nbsp; 481&nbsp;&nbsp; 79&nbsp;&nbsp;&nbsp;&nbsp; no endspace, no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 15&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>49&nbsp;&nbsp;&nbsp; 560&nbsp;&nbsp; 79&nbsp;&nbsp;&nbsp;&nbsp; no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>50&nbsp;&nbsp;&nbsp; 639&nbsp;&nbsp; 79&nbsp;&nbsp;&nbsp;&nbsp; no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>51&nbsp;&nbsp;&nbsp; 718&nbsp;&nbsp; 79&nbsp;&nbsp;&nbsp;&nbsp; no endspace&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>52&nbsp;&nbsp;&nbsp; 797&nbsp;&nbsp; 8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>53&nbsp;&nbsp;&nbsp; 805&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 17&nbsp;&nbsp;&nbsp;&nbsp; 1</span></pre>
+		<pre><span>54&nbsp;&nbsp;&nbsp; 806&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>55&nbsp;&nbsp;&nbsp; 807&nbsp;&nbsp; 20&nbsp;&nbsp;&nbsp;&nbsp; no empty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>56&nbsp;&nbsp;&nbsp; 827&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(2)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<pre><span>57&nbsp;&nbsp;&nbsp; 831&nbsp;&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no zeros, zerofill(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp; 9</span></pre>
+		<p>
+		<strong><span>myisampack</span></strong>显示下面的各种信息：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>normal</span></p>
+		<p>
+		不需要进行额外压缩的列的数量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>empty-space</span></p>
+		<p>
+		只包含空格的列的数量；占一个比特。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>empty-zero</span></p>
+		<p>
+		只包含二进制零的列的数量；占一个比特。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>empty-fill</span></p>
+		<p>
+		不占该类全字节范围的整数列的数量；这些列被改为较小的类型。例如，如果所有值的范围为从<span>-128</span>到<span>127</span>，<span>BIGINT</span>列<span>(8</span>个字节<span>)</span>可以保存为<span>TINYINT</span>列<span>(1</span>个字节<span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>pre-space</span></p>
+		<p>
+		用引导空格保存的十进制列的数量。在这种情况下，每个值包含一个引导空格的数量计数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>end-space</span></p>
+		<p>
+		有大量结尾空格的列的数量。在这种情况下，每个值包含一个结尾空格的数量计数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>table-lookup</span></p>
+		<p>
+		该列只有少量的不同的值，在进行哈夫曼压缩前被转换为一个<span>ENUM</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>zero</span></p>
+		<p>
+		所有值为零的列的数量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Original trees</span></p>
+		<p>
+		哈夫曼树的最初数量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>After join</span></p>
+		<p>
+		联接树以节省一些头空间之后留下的哈夫曼树的数量。</p>
+		<p>
+		表被压缩后，<strong><span  style="font-family:
+宋体">myisamchk -dvv</span></strong>为每列输出详细信息：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Type</span></p>
+		<p>
+		列的类型。该值可以包含下面的任何描述符：</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>constant</span></p>
+		<p>
+		所有行具有相同的值。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>no endspace</span></p>
+		<p>
+		不保存结尾空格。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>
+		<span>no endspace</span><span>，<span>not_always</span></span></span></p>
+		<p>
+		不保存结尾空格并且对于所有的值不压缩结尾空格。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>
+		<span>no endspace</span><span>，<span>no 
+		empty</span></span></span></p>
+		<p>
+		不保存结尾空格。不保存空值。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>table-lookup</span></p>
+		<p>
+		列被转换为一个<span>ENUM</span>。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>zerofill(<i>n</i>)</span></p>
+		<p>
+		值中最有意义的<span><i><span>n</span></i></span>字节总为<span>0</span>，并且不保存。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>no zeros</span></p>
+		<p>
+		不保存零。</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>always zeros</span></p>
+		<p>
+		用一个位保存零值。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Huff tree</span></p>
+		<p>
+		列相关的哈夫曼树的数量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Bits</span></p>
+		<p>
+		哈夫曼树使用的位数。</p>
+		<p>
+		运行<strong><span>myisampack</span></strong>后，必须运行<strong><span>myisamchk</span></strong>以重新创建索引。此时，你也可以排序索引块并创建<span>MySQL</span>优化器需要的统计信息以更有效地工作：</p>
+		<pre><span>shell&gt; </span><span><b><span>myisamchk -rq --sort-index --analyze tbl_name.MYI</span></b></span></pre>
+		<p>
+		将压缩的表安装到<span>MySQL</span>数据库目录中后，应执行<strong><span>mysqladmin 
+		flush-tables</span></strong>以强制<strong><span>mysqld</span></strong>使用新的表。</p>
+		<p>要想解压缩一个压缩的表，使用<strong><span>myisamchk</span></strong>或<strong><span>isamchk</span></strong>的<span>--unpack</span>选项。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysql"></a>
+		8.3.&nbsp;mysql：MySQL命令行工具</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="client-side-scripts.html#mysql-command-options">
+			8.3.1. 选项</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysql-commands">8.3.2. <span><strong class="command">
+			mysql</strong></span>命令</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#batch-commands">
+			8.3.3. 怎样从文本文件执行SQL语句</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysql-tips">8.3.4. <span><strong class="command">
+			mysql</strong></span>技巧</a></span></dt></dl></div>
+		<p>
+		<strong><span>mysql</span></strong>是一个简单的<span>SQL</span>外壳<span>(</span>有<span>GNU</span><span> 
+		readline</span>功能<span>)</span>。它支持交互式和非交互式使用。当交互使用时，查询结果采用<span>ASCII</span>表格式。当采用非交互式<span>(</span>例如，用作过滤器<span>)</span>模式时，结果为<span>tab</span>分割符格式。可以使用命令行选项更改输出格式。</p>
+		<p>
+		如果由于结果较大而内存不足遇到问题，使用<span>--quick</span>选项。这样可以强制<strong><span  style="font-family:
+宋体">mysql</span></strong>从服务器每次一行搜索结果，而不是检索整个结果集并在显示之前不得不将它保存到内存中。使用<span>mysql_use_result()</span>而不是<span>mysql_store_result()</span>来搜索结果集。</p>
+		<p>
+		使用<strong><span>mysql</span></strong>很简单。从命令解释符提示来调用它：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql <i>db_name</i></span></b></span></pre>
+		<p>
+		或：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql --user=<i>user_name</i> --password=<i>your_password db_name</i></span></b></span></pre>
+		<p>
+		这样输入一个<span>SQL</span>语句，用‘<span>；</span>’、<span>\g</span>或者<span>\G</span>结尾并按回车键。</p>
+		<p>
+		你可以这样运行一个脚本：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql <i>db_name</i> &lt; <i>script.sql</i> &gt; <i>output.tab</i></span></b></span></pre>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="mysql-command-options"></a>
+			8.3.1.&nbsp;选项</h3></div></div></div><a class="indexterm" name="id2819118"></a><a class="indexterm" name="id2819127"></a><a class="indexterm" name="id2819139"></a><a class="indexterm" name="id2819153"></a>
+			<p>
+			<strong><span>mysql</span></strong>支持下面的选项：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+			<p>
+			显示帮助消息并退出。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--batch</span>，<span>-B</span></p>
+			<p>
+			打印结果，使用<span>tab</span>作为列间隔符，每个行占用新的一行。使用该选项，则<strong><span>mysql</span></strong>不使用历史文件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--character-sets -dir=<i>path</i></span></p>
+			<p>
+			字符集的安装目录。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--compress</span>，<span>-C</span></p>
+			<p>
+			压缩在客户端和服务器之间发送的所有信息（如果二者均支持压缩）。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>---database=<i>db_name</i></span>，<span>-D
+			<i>db_name</i></span></p>
+			<p>
+			要使用的数据库。主要在选项文件中有用。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>---debug[=<i>debug_options</i>]</span>，<span>-# 
+			[<i>debug_options</i>]</span></p>
+			<p>
+			写调试日志。<span><i><span>debug_options</span></i></span>字符串通常为<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。
+			默认为<span>&#39;d:t:o,/tmp/mysql.trace&#39;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>---debug-info</span>，<span>-T</span></p>
+			<p>
+			当程序退出时输出部分调试信息。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--default-character-set=<i>charset</i></span></p>
+			<p>
+			使用<span><i><span>charset</span></i></span><span>as</span>作为默认字符集。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--execute=<i>statement</i></span><span>,
+			</span>
+			<span>-e <i>statement</i></span></p>
+			<p>
+			执行语句并退出。默认输出格式与用<span>--batch</span>产生的相同。<a href="using-mysql-programs.html#command-line-options" title="4.3.1. Using Options on the Command Line">4.3.1节，“在命令行上使用选项”</a>中提供了一些例子。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--force</span>，<span>-f</span></p>
+			<p>
+			即使出现一个<span>SQL</span>错误仍继续。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--host=<i>host_name</i></span>，<span>-h
+			<i>host_name</i></span></p>
+			<p>
+			连接给定主机上的<span>MySQL</span>服务器。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--html</span>，<span>-H</span></p>
+			<p>
+			产生<span>HTML</span>输出。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--ignore-space</span>，<span>-i</span></p>
+			<p>
+			忽视函数名后面的空格。其结果描述参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>中的<span>IGNORE_SPACE</span>的讨论。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--local-infile[={0|1}]</span></p>
+			<p>
+			为<span>LOAD 
+			DATA INFILE</span>启用或禁用<span>LOCAL</span>功能。没有值，该选项启用<span>LOCAL</span>。还可以采用<span>--local-infile=0</span>或<span>--local-infile=1</span>以显式禁用或启用<span>LOCAL</span>。如果服务器不支持，启用<span>LOCAL</span>不会生效。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--named-commands</span>，<span>-G</span></p>
+			<p>
+			命名的命令被<em><span>启用</span></em>。允许长格式命令和短格式<span>\*</span>命令。例如，<span>quit</span>和<span>\q</span>均被识别。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--no-auto-rehash</span>，<span>-A</span></p>
+			<p>
+			不自动重新进行哈希运算。该选项使<strong><span>mysql</span></strong>启动得更快，但果你想要完成表和列名，你必须发出<span>rehash</span>命令。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--no-beep</span>，<span>-b</span></p>
+			<p>
+			当发生错误时不要保持。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--no-named-commands</span>，<span>-g</span></p>
+			<p>
+			命名的命令被禁用。只使用<span>\*</span>形式，或者只使用行开头的命名用分号<span>(</span>‘<span>；</span>’<span>)</span>结束的的命令。对于<span>MySQL 
+			3.23.22</span>，默认情况<strong><span>mysql</span></strong>启动时启用该选项。然而，即使使用该选项，长格式命令仍然从第<span>1</span>行工作。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--no-pager</span></p>
+			<p>
+			不使用分页器来显示查询输出。在<a href="client-side-scripts.html#mysql-commands" title="8.3.2. mysql Commands">8.3.2节，“<span><strong class="command">mysql</strong></span>命令”</a>中详细讨论了输出分页。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--no-tee</span></p>
+			<p>
+			不将输出复制到文件中。在<a href="client-side-scripts.html#mysql-commands" title="8.3.2. mysql Commands">8.3.2节，“<span><strong class="command">mysql</strong></span>命令”</a>中详细讨论了<span>Tee</span>文件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--one--database</span>，<span>-O</span></p>
+			<p>
+			忽视除了为命令行中命名的默认数据库的语句。可以帮助跳过对二进制日志中的其它数据库的更新。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--pager[=<i>command</i>]</span></p>
+			<p>
+			使用给出的命令来分页查询输出。如果该命令被删除，默认分页器为<span>PAGER</span>环境变量的值。合法<span>pagers</span>是<strong><span>less</span><span>、<span>more</span>、<span>cat 
+			[&gt;filename]</span></span></strong>等等。该选项只在<span>Unix</span>中工作。不能以批处理模式工作。在<a href="client-side-scripts.html#mysql-commands" title="8.3.2. mysql Commands">8.3.2节，“<span><strong class="command">mysql</strong></span>命令”</a>中详细讨论了输出分页。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span></p>
+			<p>
+			当连接服务器时使用的密码。如果使用短选项形式<span>(</span><span>-p</span><span>)</span>，选项和
+			密码之间<em><span>不能</span></em>有空格。如果在命令行中<span>--password</span>或<span>-p</span>选项后面没有
+			密码值，则提示输入一个密码。在<span>SysV-based 
+			UNIX</span>系统中应省略密码，因为密码可以显示在<span>ps</span>的输出中。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--port=<i>port_num</i></span>，<span>-P
+			<i>port_num</i></span></p>
+			<p>
+			用于连接的<span>TCP/IP</span>端口号。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--prompt=<i>format_str</i></span></p>
+			<p>
+			将提示设置为指定的格式。默认为<span>mysql&gt;</span>。在<a href="client-side-scripts.html#mysql-commands" title="8.3.2. mysql Commands">8.3.2节，“<span><strong class="command">mysql</strong></span>命令”</a>中描述了提示中可以包含的具体顺序。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--protocol={TCP | SOCKET | 
+			PIPE | MEMORY}</span></p>
+			<p>
+			使用的连接协议。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--quick</span>，<span>-q</span></p>
+			<p>
+			不缓存每个查询的结果，按照接收顺序打印每一行。如果输出被挂起，服务器会慢下来。使用该选项，<strong><span>mysql</span></strong>不使用历史文件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--raw</span>，<span>-r</span></p>
+			<p>
+			写列的值而不转义转换。通常结合<span>--batch</span>选项使用。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--reconnect</span></p>
+			<p>
+			如果与服务器之间的连接断开，自动尝试重新连接。每次连接断开后则尝试一次重新连接。要想禁止重新连接，使用<span>--skip-reconnect</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--safe-updates</span>，<span>--i-am-a-dummy</span>，<span>-U</span></p>
+			<p>
+			只允许那些使用键值指定行生效的<span>UPDATE</span>和<span>DELETE</span>语句。如果已经在选项文件中设置了该选项，可以用命令行中的<span>--safe-updates</span>覆盖它。关于该选项的详细信息参见<a href="client-side-scripts.html#mysql-tips" title="8.3.4. mysql Tips">8.3.4节，“<span><strong class="command">mysql</strong></span>技巧”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--secure-auth</span></p>
+			<p>
+			不向旧<span>(pre-4.1.1)</span>格式的服务器发送密码。这样可以防止不使用新密码格式的服务器的连接。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--show-warnings</span></p>
+			<p>
+			如果每个语句后有警告则显示。该选项适用于交互式和批处理模式。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--sigint-ignore</span></p>
+			<p>
+			忽视<span>SIGINT</span>符号<span>(</span>一般为<span>Control-C</span>的结果<span>)</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--silent</span>，<span>-s</span></p>
+			<p>
+			沉默模式。产生少的输出。可以多次使用该选项以产生更少的输出。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--skip-column-names</span>，<span>-N</span></p>
+			<p>
+			在结果中不写列名。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--skip-line-numbers</span>，<span>-L</span></p>
+			<p>
+			在错误信息中不写行号。当你想要比较包括错误消息的结果文件时有用。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--socket=<i>path</i></span>，<span>-S
+			<i>path</i></span></p>
+			<p>
+			用于连接的套接字文件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--tables</span>，<span>-t</span></p>
+			<p>
+			用表格式显示输出。这是交互式应用的默认设置，但可用来以批处理模式产生表输出。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--tee=<i>file_name</i></span></p>
+			<p>
+			将输出拷贝添加到给定的文件中。该选项在批处理模式不工作。在<a href="client-side-scripts.html#mysql-commands" title="8.3.2. mysql Commands">8.3.2节，“<span><strong class="command">mysql</strong></span>命令”</a>中详细讨论了<span>Tee</span>文件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--unbuffered</span>，<span>-n</span></p>
+			<p>
+			每次查询后刷新缓存区。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--user=<i>user_name</i></span>，<span>-u
+			<i>user_name</i></span></p>
+			<p>
+			当连接服务器时<span>MySQL</span>使用的用户名。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--verbose</span>，<span>-v</span></p>
+			<p>
+			冗长模式。产生更多的输出。可以多次使用该选项以产生更多的输出。<span>(</span>例如，<span>-v 
+			-v -v</span>甚至可以在批处理模式产生表输出格式）<span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--version</span>，<span>-V</span></p>
+			<p>
+			显示版本信息并退出。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--vertical</span>，<span>-E</span></p>
+			<p>
+			垂直输出查询输出的行。没有该选项，可以用<span>\G</span>结尾来指定单个语句的垂直输出。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--wait</span>，<span>-w</span></p>
+			<p>
+			如果不能建立连接，等待并重试而不是放弃。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--xml</span>，<span>-X</span></p>
+			<p>
+			产生<span>XML</span>输出。</p>
+			<p>
+			你还可以使用<span>--<i>var_name</i>=<i>value</i></span>选项设置下面的变量：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>connect_timeout</span></p>
+			<p>
+			连接超时前的秒数。<span>(</span>默认值是<span><span>0</span><span>）</span></span><span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>max_allowed_packet</span></p>
+			<p>
+			从服务器发送或接收的最大包长度。<span>(</span>默认值是<span>16MB</span>）<span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>max_join_size</span></p>
+			<p>
+			当使用<span>--safe-updates</span>时联接中的行的自动限制。<span>(</span>默认值是<span>1,000,000</span>）<span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>net_buffer_length</span></p>
+			<p>
+			<span>TCP/IP</span>和套接字通信缓冲区大小。<span>(</span>默认值是<span>16KB</span>）<span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>select_limit</span></p>
+			<p>
+			当使用<span>--safe-updates</span>时<span>SELECT</span>语句的自动限制。<span>(</span>默认值是<span>1,000</span>）<span>。</span></p>
+			<p>
+			也可以使用<span>--set-variable=<i>var_name</i>=<i>value</i></span><span> 
+			or </span>
+			<span>-O <i>var_name</i>=<i>value</i></span>语法来设置变量。<i>不赞成使用<em><span>该语法</span></em></i>。</p>
+			<p>
+			在<span>Unix</span>中，<strong><span>mysql</span><span>客户程序向</span></strong>历史文件中写入已执行语句的一条记录。默认情况，历史文件名为<span>.</span><span>mysql_history</span>并在根目录中重建。要想指定不同的文件，应设置<span>MYSQL_HISTFILE</span>环境变量的值。</p>
+			<p>
+			如果不想要历史文件，首先删除<span>.</span><span>mysql_history</span>（如果有），然后使用下面的任何一种方法：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>将<span>MYSQL_HISTFILE</span>变量设到<span>/dev/null</span>。要想在每次登录时让该设置生效，将该设置放入外壳的一个启动文件中。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>创建<span>.mysql_history</span>，作为一个符号链接指向<span>/dev/null</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>shell&gt; </span><span><b><span>ln -s /dev/null $HOME/.mysql_history</span></b></span></pre>
+			<p>只需要执行一次。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="mysql-commands"></a>8.3.2. <span><strong class="command">mysql</strong></span>命令</h3></div></div></div><a class="indexterm" name="id2821309"></a>
+			<p><strong><span>mysql</span></strong>将发出的<span>SQL</span>语句发送到待执行的服务器。还有一系列命令<strong><span  style="font-family:
+宋体">mysql</span></strong>可以自己解释。要查看这些命令，在<span>mysql&gt;</span>提示下输入<span>help</span>或<span>\h</span>：</p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">help</strong>
+
+List of all MySQL commands:
+Note that all text commands must be first on line and end with ';'
+?         (\?) Synonym for `help'.
+clear     (\c) Clear command.
+connect   (\r) Reconnect to the server. Optional arguments are db and host.
+delimiter (\d) Set statement delimiter. NOTE: Takes the rest of the line as new delimiter.
+edit      (\e) Edit command with $EDITOR.
+ego       (\G) Send command to mysql server, display result vertically.
+exit      (\q) Exit mysql. Same as quit.
+go        (\g) Send command to mysql server.
+help      (\h) Display this help.
+nopager   (\n) Disable pager, print to stdout.
+notee     (\t) Don't write into outfile.
+pager     (\P) Set PAGER [to_pager]. Print the query results via PAGER.
+print     (\p) Print current command.
+prompt    (\R) Change your mysql prompt.
+quit      (\q) Quit mysql.
+rehash    (\#) Rebuild completion hash.
+source    (\.) Execute a SQL script file. Takes a file name as an argument.
+status    (\s) Get status information from the server.
+system    (\!) Execute a system shell command.
+tee       (\T) Set outfile [to_outfile]. Append everything into given outfile.
+use       (\u) Use another database. Takes database name as argument.
+warnings  (\W) Show warnings after every statement.
+nowarning (\w) Don't show warnings after every statement.
+</pre>
+			<p>
+			每个命令有长形式和短形式。长形式对大小写不敏感；短形式敏感。长形式后面可以加一个分号结束符，但短形式不可以。</p>
+			<p>
+			在<span>delimiter</span>命令中，应避免使用反斜线<span>(</span>‘<span>\</span>’<span>)</span>，因为这是<span>MySQL</span>的转义符。</p>
+			<p>
+			<strong><span>Edit</span></strong>、<strong><span>nopager</span></strong>、<strong><span>pager</span></strong>和<strong><span>system</span></strong>命令只在<span>Unix</span>中工作。</p>
+			<p>
+			<span  >status</span><span>命令提供连接和使用的服务器相关的部分信息。如果用</span><span  >--safe-updates</span><span>模式运行，</span><span  >status</span><span>也打印影响查询的<span>MySQL</span>变量的值。</span></p>
+			<p>
+			<span>要想记录查询及其输出，应使用<strong><span>tee</span></strong>命令。屏幕上显示的所有数据被追加到给定的文件后面。这对于调试也很有用。可以用</span><span  >--tee</span><span>选项在命令行中启用该特性，或者用<strong><span>tee</span></strong>命令交互式启用。可以用<strong><span>notee</span></strong>命令交互式禁用<strong><span>tee</span></strong>文件。再次执行<strong><span>tee</span></strong>可以重新启用日志。前面的文件使用时不带任何参数。请注意执行完每个语句后<strong><span>tee</span></strong>可以将查询结果刷新到一个文件中，并且在<strong><span>mysql</span></strong>打印下一个提示前刷新。</span></p>
+			<p>
+			<span>用</span><span  >--pager</span><span>选项，可以用交互式模式使用<span>Unix</span>程序，例如<strong><span>less</span><span>、<span>more</span></span></strong>或者其它类似的程序，来浏览或搜索查询结果。如果未指定该选项的值，<strong><span>mysql</span></strong>检查</span><span  >PAGER</span><span>环境变量的值并将<span>PAGER</span>设为该值。可以用<strong><span>pager</span></strong>命令交互式启用输出分页，并用<strong><span>nopager</span></strong></span><span>禁用</span><span>。该命令采用可选参量；如果给出，分页程序设置为该值。如果没有给出参量，分页器被设置为在命令行中设置的分页器的值，如果未指定分页器，则设置为</span><span  >stdout</span><span>。</span></p>
+			<p>
+			输出分页只适合<span>Unix</span>，因为它使用<span>popen()</span>函数，该函数在<span>Windows</span>中不存在。在<span>Windows</span>中，可以使用<strong><span>tee</span></strong>选项来保存查询输出，尽管在某些情况下浏览输出时不如<strong><span>pager</span></strong>方便。</p>
+			<p>
+			关于<strong><span>pager</span></strong>命令的一些技巧：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>可以使用它写入一个文件，将结果只输出到该文件中：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>pager cat &gt; /tmp/log.txt</span></b></span></pre>
+			<p>
+			也可以为将用作分页器的程序传递选项：</p>
+			<pre ><span>mysql&gt; </span><span><b><span>pager less -n -i -S</span></b></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>注意前面例子中的<span>-S</span>选项。它可以帮助浏览广范围的查询结果。有时太广的结果很难在屏幕上读出来。<strong><span>less</span></strong>的<span>-S</span>选项可以使结果更易于读，因为可以用左、右箭头水平滚动它。还可以在<strong><span>less</span></strong>中交互式使用<span>-S</span>，以关闭或打开水平浏览模式。详细信息请阅读手册中的<strong><span>less</span></strong>页：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>shell&gt; </span><span><b><span>man less</span></b></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>可以指定很复杂的<span>pager</span>命令来处理查询输出：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>PAGER cat | tee /dr1/tmp/res.txt \</span></b></span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span><b><span>| tee /dr2/tmp/res2.txt | less -n -i -S</span></b></span></pre>
+			<p>
+			在该例子中，该命令将查询结果发送到位于<span>/dr1</span>和<span>/dr2</span>上安装的两个不同的文件系统中的两个不同目录中的两个文件中，但仍然可以通过<strong><span>less</span></strong>将结果显示在屏幕上。</p>
+			<p>
+			还可以结合使用<strong><span  style="font-family:
+宋体">tee</span></strong>和<strong><span>pager</span></strong>函数。启用一个<strong><span>tee</span></strong>文件并将<strong><span>pager</span></strong>设置为<strong><span>less</span></strong>，能够使用<strong><span>less</span></strong><span>
+			</span>程序浏览结果，并且仍然可以同时将内容添加到一个文件中。结合<strong><span>pager</span></strong>命令使用的<span>Unix
+			<strong><span>tee</span></strong></span>和 
+			<strong><span>mysql</span></strong>嵌入式<strong><span>tee</span></strong>命令的差别是即使没有可用的<span>Unix
+			<strong><span>tee</span></strong></span>，嵌入式<strong><span>tee</span><span style="font-family:
+宋体;">仍然可以</span></strong>工作。嵌入式<strong><span>tee</span></strong>还可以记录在屏幕上输出的内容，而结合<strong><span>pager</span></strong>命令使用的<span>Unix
+			<strong><span>tee</span></strong></span>不能记录那么多的内容。并且，可以从<span>MySQL</span>中交互式打开或关闭<strong><span>tee</span></strong>文件日志。当你想要将部分查询记录到一个文件中时很有用，但其它不适合。</p>
+			<p>
+			默认<span>mysql&gt;</span>提示符可以重新配置。定义提示符的字符串可以包含下面的特殊序列：</p>
+			<table border="1" cellpadding="0" id="table2">
+				<tr>
+					<td>
+					<p><strong><span>选项</span></strong></td>
+					<td>
+					<p><strong><span>描述</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\v</span></td>
+					<td>
+					<p>服务器版本</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\d</span></td>
+					<td>
+					<p>当前的数据库</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\h</span></td>
+					<td>
+					<p>服务器主机</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\p</span></td>
+					<td>
+					<p>当前的<span>TCP/IP</span>端口或套接字文件</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\u</span></td>
+					<td>
+					<p>你的用户名</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\U</span></td>
+					<td>
+					<p>你的全<span><i><span>user_name</span></i><span>@<i>host_name</i></span></span>账户名</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\\</span></td>
+					<td>
+					<p>‘<span>\</span>’反斜线字符</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\n</span></td>
+					<td>
+					<p>新行字符</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\t</span></td>
+					<td>
+					<p><span>Tab</span>字符</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\ </span>
+					</td>
+					<td>
+					<p>空格<span>(</span>反斜线后面的空格<span>)</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\_</span></td>
+					<td>
+					<p>空格</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\R</span></td>
+					<td>
+					<p>当前的时间，<span>24-</span>小时军用时间<span>(0-23)</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\r</span></td>
+					<td>
+					<p>当前的时间，标准<span>12-</span>小时<span>(1-12)</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\m</span></td>
+					<td>
+					<p>当前时间的分钟</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\y</span></td>
+					<td>
+					<p>当前的年，两位</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\Y</span></td>
+					<td>
+					<p>当前的年，四位</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\D</span></td>
+					<td>
+					<p>当前的日期</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\s</span></td>
+					<td>
+					<p>当前时间的秒</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\w</span></td>
+					<td>
+					<p>当前周的天，<span>3</span>字符格式<span>(Mon</span>，<span>Tue</span>，<span>...)</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\P</span></td>
+					<td>
+					<p><span>am/pm</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\o</span></td>
+					<td>
+					<p>当前的月，数字格式</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\O</span></td>
+					<td>
+					<p>当前的月，<span>3</span>字符格式<span>(Jan</span>，<span>Feb</span>，<span>...)</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\c</span></td>
+					<td>
+					<p>随发出的每个语句递增的计数</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\S</span></td>
+					<td>
+					<p>分号</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\&#39;</span></td>
+					<td>
+					<p>单引号</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\&quot;</span></td>
+					<td>
+					<p>双引号</td>
+				</tr>
+			</table>
+			<p>
+			‘<span>\</span>’后面跟随的其它字母则变为该字母。</p>
+			<p>
+			如果不用任何参量指定提示命令，<strong><span>mysql</span></strong>将提示重新设置位默认<span>mysql&gt;</span>。</p>
+			<p>
+			可以用几种方式设置提示：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用环境变量 </p>
+			<p>
+			可以用<span>MYSQL_PS1</span>环境变量来设置提示字符串。例如：</p>
+			<pre ><span>shell&gt; </span><span><b><span>export MYSQL_PS1=&quot;(\u@\h) [\d]&gt; &quot;</span></b></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用选项文件</p>
+			<p>
+			可以在<span>MySQL</span>选项文件中的<span>[mysql]</span>组设置提示，例如根目录中的<span>/etc/my.cnf</span>或<span>.my.cnf</span>文件。例如：</p>
+			<pre ><span>[mysql]</span></pre>
+			<pre ><span>prompt=(\\u@\\h) [\\d]&gt;\\_</span></pre>
+			<p>
+			在该例子中，请注意反斜线是双线。如果使用选项文件中的<span>prompt</span>选项来设置提示，当使用特殊提示选项时，建议使用双反斜线。在允许的提示选项和选项文件中可识别的特殊转义序列中有部分重叠。<span>(</span>这些序列列于<a href="using-mysql-programs.html#option-files" title="4.3.2. Using Option Files">4.3.2节，“使用选项文件”</a>）<span>。</span>如果使用单反斜线，会遇到问题。例如，<span>\s</span>被解释为空格而不是当前的秒值。下面的例子显示了如何在选项文件中定义提示以包括当前的时间，格式为<span>HH:MM:SS&gt;</span>：</p>
+			<pre ><span>[mysql]</span></pre>
+			<pre ><span>prompt=&quot;\\r:\\m:\\s&gt; &quot;</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用命令行选项</p>
+			<p>
+			可以在<strong><span>mysql</span></strong>的命令行中设置<span>--prompt</span>选项。例如：</p>
+			<pre ><span>shell&gt; </span><span><b><span>mysql --prompt=&quot;(\u@\h) [\d]&gt; &quot;</span></b></span></pre>
+			<pre ><span>(user@host) [database]&gt;</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>交互式</p>
+			<p>
+			你可以使用<span>prompt</span><span>(</span>或<span>\R</span><span>)</span>命令交互地更改提示。例如：</p>
+			<pre ><span>mysql&gt; </span><span><b><span>prompt (\u@\h) [\d]&gt;\_</span></b></span></pre>
+			<pre ><span>PROMPT set to &#39;(\u@\h) [\d]&gt;\_&#39;</span></pre>
+			<pre ><span>(</span><span><i><span>user</span></i></span><span>@</span><span><i><span>host</span></i></span><span>) [</span><span><i><span>database</span></i></span><span>]&gt;</span></pre>
+			<pre ><span>(</span><span><i><span>user</span></i></span><span>@</span><span><i><span>host</span></i></span><span>) [</span><span><i><span>database</span></i></span><span>]&gt; prompt</span></pre>
+			<pre ><span>Returning to default PROMPT of mysql&gt;</span></pre>
+			<pre ><span>mysql&gt;</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="batch-commands"></a>
+			8.3.3.&nbsp;怎样从文本文件执行SQL语句</h3></div></div></div>
+			<p>
+			<strong><span>mysql</span></strong>客户程序一般交互使用：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql <i>db_name</i></span></b></span></pre>
+			<p>
+			还可以将<span>SQL</span>语句放到一个文件中然后告诉<strong><span>mysql</span></strong>从该文件读取输入。要想实现，创建一个文本文件<span>text_file</span>，并包含你想要执行的语句。然后按如下所示调用<strong><span>mysql</span></strong>：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql <i>db_name</i> &lt; <i>text_file</i></span></b></span></pre>
+			<p>
+			还可以用一个<span>USE
+			<i>db_name</i></span>语句启动文本文件。在这种情况下，不需要在命令行中指定数据库名：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql &lt; text_file</span></b></span></pre>
+			<p>
+			如果正运行<strong><span  style="font-family:
+宋体">mysql</span></strong>，可以使用<span>source</span>或<span>\.</span>命令执行<span>SQL</span>脚本文件：</p>
+			<pre><span>mysql&gt; </span><span><b><span>source <i>filename</i></span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>\. <i>filename</i></span></b></span></pre>
+			<p>
+			有时想要使用脚本来向用户显示进度信息；为此可以插入下述行：</p>
+			<pre><span>SELECT &#39;&lt;info_to_display&gt;&#39; AS &#39; &#39;</span>；</pre>
+			<p>
+			将输出<span>&lt;info_to_display&gt;</span>。</p>
+			<p>
+			关于批处理模式的详细信息，参见<a href="tutorial.html#batch-mode" title="3.5. Using mysql in Batch Mode">3.5节，“在批处理模式<span><strong class="command">下使用my</strong></span>sql”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="mysql-tips"></a>8.3.4. <span><strong class="command">mysql</strong></span>技巧</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="client-side-scripts.html#vertical-query-results">
+			8.3.4.1. 垂直显示查询结果</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#safe-updates">
+			8.3.4.2. 使用--safe-updates选项</a></span></dt><dt><span class="section"><a href="client-side-scripts.html#mysql-reconnect">
+			8.3.4.3. 禁用mysql自动连<span><strong class="command">接</strong></span></a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+				<p>
+				该节描述了可以帮助你更有效使用<strong><span>mysql</span><span style="font-family:
+宋体;">的一些</span></strong>技术。</p>
+				<h4 class="title"><a name="vertical-query-results"></a>
+				8.3.4.1.&nbsp;垂直显示查询结果</h4></div></div></div>
+				<p>一些查询结果如果垂直显示而不用通常的水平表格式显示，则更容易读取。用<span>\G</span>而不用分号结束查询可以垂直显示查询。例如，包括新行的更长的文本值垂直输出时通常更容易读取：</p>
+				<pre class="programlisting">mysql&gt; <strong class="userinput">SELECT * FROM mails WHERE LENGTH(txt) &lt; 300 LIMIT 300,1\G</strong>
+*************************** 1. row ***************************
+  msg_nro: 3068
+     date: 2000-03-01 23:29:50
+time_zone: +0200
+mail_from: Monty
+    reply: monty@no.spam.com
+  mail_to: "Thimble Smith" &lt;tim@no.spam.com&gt;
+      sbj: UTF-8
+      txt: &gt;&gt;&gt;&gt;&gt; "Thimble" == Thimble Smith writes:
+
+Thimble&gt; Hi.  I think this is a good idea.  Is anyone familiar
+Thimble&gt; with UTF-8 or Unicode? Otherwise, I'll put this on my
+Thimble&gt; TODO list and see what happens.
+
+Yes, please do that.
+
+Regards,
+Monty
+     file: inbox-jani-1
+     hash: 190402944
+1 row in set (0.09 sec)
+</pre></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="safe-updates"></a>
+				8.3.4.2.&nbsp;使用--safe-updates选项</h4></div></div></div><a class="indexterm" name="id2822519"></a>
+				<p>
+				对于新手，有一个有用的启动选项<span>--safe-updates</span><span>(</span>或<span>--i-am-a-dummy</span>，具有相同的效果<span>)</span>。当你已经发出一个<span>DELETE 
+				FROM <i>tbl_name</i></span>语句但忘记了<span>WHERE</span>子句时很有用。通常情况，这样的语句从表中删除所有行。用<span>--safe-updates</span>，可以通过指定可以识别它们的键值只删除某些行。这样可以帮助防止事故。</p>
+				<p>
+				若使用<span>--safe-updates</span>选项，<strong><span>mysql</span></strong>连接<span>MySQL</span>服务器时发出下面的语句：</p>
+				<pre><span>SET SQL_SAFE_UPDATES=1,SQL_SELECT_LIMIT=1000, SQL_MAX_JOIN_SIZE=1000000;</span></pre>
+				<p>
+				参见<a href="sql-syntax.html#set-option" title="13.5.3. SET Syntax">13.5.3节，“SET语法”</a>。</p>
+				<p>
+				<span>SET</span>语句有下面的效果：</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>不允许你执行<span>UPDATE</span>或<span>DELETE</span>语句，除非在<span>WHERE</span>子句中指定一个键值约束或提供一个<span>LIMIT</span>子句<span>(</span>或二者皆使用<span>)</span>。例如：</p>
+				<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>UPDATE </span><span><i><span>tbl_name</span></i></span><span> SET </span><span><i><span>not_key_column</span></i></span><span>=</span><span><i><span>val</span></i></span><span> WHERE </span><span><i><span>key_column</span></i></span><span>=</span><span><i><span>val</span></i></span><span>;</span></pre>
+				<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;</span></pre>
+				<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>UPDATE </span><span><i><span>tbl_name</span></i></span><span> SET </span><span><i><span>not_key_column</span></i></span><span>=</span><span><i><span>val</span></i></span><span> LIMIT 1;</span></pre>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>所有大的<span>SELECT</span>结果自动限制到<span>1,000</span>行，除非语句包括一个<span>LIMIT</span>子句。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>放弃可能需要检查<span>1,000,000</span>多行组合的多表<span><span style="font-size:
+10.0pt">S</span><span>ELECT</span></span>语句。</p>
+				<p>
+				要将限制指定为<span>1,000</span>和<span>1,000,000</span>之外的值，可以使用<span>--select_limit</span>和<span>--max_join_size</span>选项覆盖默认值：</p>
+				<pre><span>shell&gt; </span><span><b><span>mysql --safe-updates --select_limit=500 --max_join_size=10000</span></b></span></pre>
+			</div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="mysql-reconnect"></a>
+				8.3.4.3.&nbsp;禁用mysql自动连<span><strong class="command">接</strong></span></h4></div></div></div>
+				<p>
+				如果<strong><span>mysql</span></strong>客户程序发送查询时断开与服务器的连接，它立即并自动尝试重新连接服务器并再次发送查询。然而，即使<strong><span>mysql</span></strong>重新连接成功，你的第<span>1</span>个连接也已经结束，并且以前的会话对象和设定值被丢失：包括临时表、自动提交模式，以及用户和会话变量。该行为很危险，如下面的例子所示，服务器将在你不知道的情况下关闭并重启：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SET @a=1;</span></b></span></pre>
+				<pre><span>Query OK, 0 rows affected (0.05 sec)</span></pre>
+				<pre><span>&nbsp;</span></pre>
+				<pre><span>mysql&gt; </span><span><b><span>INSERT INTO t VALUES(@a);</span></b></span></pre>
+				<pre><span>ERROR 2006: MySQL server has gone away</span></pre>
+				<pre><span>No connection. Trying to reconnect...</span></pre>
+				<pre><span>Connection id:&nbsp;&nbsp;&nbsp; 1</span></pre>
+				<pre><span>Current database: test</span></pre>
+				<pre><span>&nbsp;</span></pre>
+				<pre><span>Query OK, 1 row affected (1.30 sec)</span></pre>
+				<pre><span>&nbsp;</span></pre>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM t;</span></b></span></pre>
+				<pre><span>+------+</span></pre>
+				<pre><span>| a&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+------+</span></pre>
+				<pre><span>| NULL |</span></pre>
+				<pre><span>+------+</span></pre>
+				<pre><span>1 row in set (0.05 sec)</span></pre>
+				<p>
+				<span>@a</span>用户变量已经随连接丢失，并且重新连接后它也没有定义。如果有必要在连接断开时终止<strong><span>mysql</span></strong>并提示错误，你可以用<span>--skip-reconnect</span>选项启动<strong><span>mysql</span></strong>客户程序。</div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysqlaccess"></a>
+		8.4.&nbsp;mysqlaccess：用于检查访问权限的客户端</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<p>
+		<strong><span>mysqlaccess</span></strong>是<span>Yves 
+		Carlier</span>为<span>MySQL</span>分发提供的一个诊断工具。它检查访问权限的主机名、用户名和数据库组合。请注意 
+		<strong><span>mysqlaccess</span></strong>检查只使用<span><span>user</span><span>、<span>db</span></span></span>和<span>host</span>表的访问。它不检查在<span><span>tables_priv</span><span>、<span>columns_priv</span></span></span>或<span>procs_priv</span>表中指定的表、列或者程序的权限。</p>
+		<p>
+		调用<strong><span>mysqlaccess</span></strong>的方法：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlaccess [<i>host_name</i> [<i>user_name</i> [<i>db_name</i>]]] [<i>options</i>]</span></b></span></pre>
+		<p>
+		<strong><span>mysqlaccess</span></strong>理解下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--brief</span>，<span>-b</span><span>
+		</span></p>
+		<p>
+		生成单行表格式的报告。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--commit </span></p>
+		<p>
+		从临时表将新访问权限复制到原授权表。必须为新的权限刷新授权表以使其生效。<span>(</span>例如，执行<strong><span>mysqladmin 
+		RELOAD</span></strong>命令）<span>。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--copy</span></p>
+		<p>
+		从原授权表重载临时授权表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--db=<i>db_name</i></span>，<span>-d
+		<i>db_name</i></span></p>
+		<p>
+		指定数据库名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug=<i>N</i></span></p>
+		<p>
+		指定调试级别。<span><i><span>N</span></i></span>可以为从<span>0</span>到<span>3</span>的一个整数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--host=<i>host_name</i></span>，<span>-h
+		<i>host_name</i></span></p>
+		<p>
+		在访问权限中使用的主机名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--howto</span></p>
+		<p>
+		显示一些例子显示如何使用<strong><span>mysqlaccess</span></strong>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--old_server</span></p>
+		<p>
+		假定服务器是一个旧版本的<span>MySQL</span>服务器<span>(MySQL 3.21</span>之前<span>)</span>，还不知道如何处理全<span>WHERE</span>子句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span></p>
+		<p>
+		当连接服务器时使用的密码。如果你在命令行中在<span>--password</span>或<span>-p</span>选项后面省略
+		密码值，将提示你输入密码。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--plan</span></p>
+		<p>
+		显示将来发布的建议和思想。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--preview</span></p>
+		<p>
+		更改临时授权表后显示权限的不同。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--relnotes</span></p>
+		<p>
+		显示发布注解。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--rhost=<i>host_name</i></span>，<span>-H
+		<i>host_name</i></span></p>
+		<p>
+		连接给定主机的<span>MySQL</span>服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--rollback</span></p>
+		<p>
+		取消对临时授权表的最新的更改。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--spassword[=<i>password</i>]</span>，<span>-P[<i>password</i>]</span></p>
+		<p>
+		以<span>super</span>用户连接服务器时使用的密码。如果在命令行中在<span>--password</span>或<span>-p</span>选项后面省略了
+		密码值，将提示你输入密码。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--superuser=<i>user_name</i></span>，<span>-U
+		<i>user_name</i></span></p>
+		<p>
+		指定以<span>super</span>用户连接时的用户名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--tables</span>，<span>-t</span></p>
+		<p>
+		生成表格式的报告。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		在访问权限中使用的主机名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-v</span></p>
+		<p>
+		显示版本信息并退出。</p>
+		<p>
+		如果你的<span>MySQL</span>分发安装在某个非标准位置，必须进入<strong><span>mysqlaccess</span></strong>期望找到<strong><span>mysql</span></strong>客户的目录。编辑大约在<span>18</span>行处的<span>mysqlaccess</span>脚本。搜索类似下面的一行：</p>
+		<pre><span>$MYSQL&nbsp;&nbsp;&nbsp;&nbsp; = &#39;/usr/local/bin/mysql&#39;;&nbsp;&nbsp;&nbsp; # path to mysql executable</span></pre>
+		<p>将路径更改为<strong><span>mysql</span></strong>实际在系统中保存的位置。如果不这样做，当运行<strong><span>mysqlaccess</span></strong>时会发生<span>Broken 
+		pipe</span>错误。</p>
+		<h2 class="title"><a name="mysqladmin"></a>
+		8.5.&nbsp;mysqladmin：用于管理MySQL服务器的客户端</h2></div></div></div>
+		<p>
+		<strong><span>mysqladmin</span></strong>是一个执行管理操作的客户程序。可以用它来检查服务器的配置和当前的状态，创建并删除数据库等等。</p>
+		<p>
+		这样调用<strong><span>mysqladmin</span></strong>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqladmin [<i>options</i>] <i>command</i> [<i>command-options</i>] [<i>command</i> [<i>command-options</i>]] ...</span></b></span></pre>
+		<p>
+		<strong><span>mysqladmin</span></strong>支持下面的命令：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>create <i>db_name</i></span></p>
+		<p>
+		创建一个名为<span><i><span>db_name</span></i></span>的新数据库。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>debug</span></p>
+		<p>
+		告诉服务器向错误日志写入调试信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>drop <i>db_name</i></span></p>
+		<p>
+		删除名为<span><i><span>db_nam</span></i></span>的数据库和所有表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>extended-status</span></p>
+		<p>
+		显示服务器状态变量及其值。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>flush-hosts</span></p>
+		<p>
+		刷新主机缓存中的所有信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>flush-logs</span></p>
+		<p>
+		刷新所有日志。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>flush-privileges</span></p>
+		<p>
+		重载授权表<span>(</span>类似<span>reload</span><span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>flush-status</span></p>
+		<p>
+		清除状态变量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>flush-tables</span></p>
+		<p>
+		刷新所有表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>flush-threads</span></p>
+		<p>
+		刷新线程缓存。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>kill id,id,...</span></p>
+		<p>
+		杀掉服务器线程。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>old-password <i>new-password</i></span></p>
+		<p>
+		类似<span>password</span>但使用旧的<span>(pre-4.1)</span>密码哈希格式保存
+		密码。<span>(</span>参见<a href="database-administration.html#password-hashing" title="5.7.9. Password Hashing in MySQL 4.1">5.7.9节，“MySQL 4.1中的密码哈希处理”</a>）<span>。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>password <i>new-password</i></span></p>
+		<p>
+		设置一个新密码。将用<strong><span>mysqladmin</span></strong>连接服务器使用的
+		账户的密码更改为<span>new-password</span>。</p>
+		<p>
+		如果<span><i><span>new-password</span></i></span>包含空格或其它命令解释符的特殊字符，需要用引号将它引起来。在<span>Windows</span>中，一定要使用双引号而不要用单引号；单引号不会从
+		密码中剥离出来，而是解释为密码的一部分。例如：</p>
+		<p><span>shell&gt; mysqladmin 
+		password &quot;my new password&quot;</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>ping</span></p>
+		<p>
+		检查服务器是否仍活动。如果服务器在运行<strong><span>mysqladmin</span></strong>返回状态<span>0</span>，如果不运行返回<span>1</span>。即使出现错误例如<span>Access 
+		denied</span>也为<span>0</span>，因为这说明服务器在运行但拒绝了连接，与服务器不在运行不同。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>processlist</span></p>
+		<p>
+		显示活动服务器线程的列表。类似<span>SHOW 
+		PROCESSLIST</span>语句的输出。如果给出了<span>--verbose</span>选项，输出类似<span>SHOW 
+		FULL PROCESSLIST</span>。<span>(</span>参见<a href="sql-syntax.html#show-processlist" title="13.5.4.16. SHOW PROCESSLIST Syntax">13.5.4.16节，“SHOW 
+				PROCESSLIST语法”</a>）<span>。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>reload</span></p>
+		<p>
+		重载授权表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>refresh</span></p>
+		<p>
+		刷新所有表并关闭和打开日志文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>shutdown</span></p>
+		<p>
+		停止服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>start-slave</span></p>
+		<p>
+		开始从服务器上的复制。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>status</span></p>
+		<p>
+		显示短服务器状态消息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>stop-slave</span></p>
+		<p>
+		停止从服务器上的复制。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>variables</span></p>
+		<p>
+		显示服务器系统变量及其值。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>version</span></p>
+		<p>
+		显示服务器的版本信息。</p>
+		<p>所有命令可以简化为任何唯一的前缀。例如：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqladmin proc stat</span></b></span></pre>
+		<pre><span>+----+-------+-----------+----+---------+------+-------+------------------+</span></pre>
+		<pre><span>| Id | User&nbsp; | Host&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | db | Command | Time | State | Info&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|</span></pre>
+		<pre><span>+----+-------+-----------+----+---------+------+-------+------------------+</span></pre>
+		<pre><span>| 51 | monty | localhost |&nbsp;&nbsp;&nbsp; | Query&nbsp;&nbsp; | 0&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | show processlist |</span></pre>
+		<pre><span>+----+-------+-----------+----+---------+------+-------+------------------+</span></pre>
+		<pre><span>Uptime: 1473624 &nbsp;Threads: 1&nbsp; Questions: 39487&nbsp; </span></pre>
+		<pre><span>Slow queries: 0&nbsp; Opens: 541&nbsp; Flush tables: 1&nbsp; </span></pre>
+		<pre><span>Open tables: 19&nbsp; Queries per second avg: 0.0268</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<p>
+		<strong><span>mysqladmin status</span></strong>命令的结果显示下面的值：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Uptime</span></p>
+		<p>
+		<span>MySQL</span>服务器已经运行的秒数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Threads</span></p>
+		<p>
+		活动线程<span>(</span>客户<span>)</span>的数目。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Questions</span></p>
+		<p>
+		服务器启动以来客户的问题<span>(</span>查询<span>)</span>数目。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Slow queries</span></p>
+		<p>
+		执行时间超过<span>long_query_time</span>秒的查询的数量。参见<a href="database-administration.html#slow-query-log" title="5.11.4. The Slow Query Log">5.11.4节，“慢速查询日志”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Opens</span></p>
+		<p>
+		服务器已经打开的数据库表的数量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Flush tables</span></p>
+		<p>
+		服务器已经执行的<span>flush 
+		...</span>、<span>refresh</span>和<span>reload</span>命令的数量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Open tables</span></p>
+		<p>
+		目前打开的表的数量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Memory in use</span></p>
+		<p>
+		<strong><span>mysqld</span></strong>代码直接分配的内存数量。只有用<span>--with--debug=full</span>编译了<span>MySQL</span>该值才显示。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Maximum memory used</span></p>
+		<p>
+		<strong><span>mysqld</span></strong>代码直接分配的最大内存数量。只有用<span>--with--debug=full</span>编译了<span>MySQL</span>该值才显示。</p>
+		<p>
+		如果当使用<span>Unix</span>套接字文件连接本地服务器时执行<strong><span>mysqladmin 
+		shutdown</span></strong>，<strong><span>mysqladmin</span></strong>将等待直到服务器的进程<span>ID</span>文件被删除，以确保服务器正确停止。</p>
+		<p>
+		<strong><span>mysqladmin</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--character-sets-dir=<i>path</i></span></p>
+		<p>
+		字符集的安装目录。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--compress</span>，<span>-C</span></p>
+		<p>
+		压缩客户和服务器之间发送的所有信息（如果二者均支持压缩）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--count=<i>num</i></span>，<span>-c
+		<i>num</i></span></p>
+		<p>
+		迭代数目。该选项只有结合<span>--sleep</span><span> 
+		(</span><span>-i</span><span>)</span>才能工作。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug[=<i>debug_options</i>]</span>，<span>-# 
+		[<i>debug_options</i>]</span></p>
+		<p>
+		写调试日志。<span><i><span>debug_options</span></i></span>字符串通常为<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。
+		默认为<span>&#39;d:t:o,/tmp/mysqladmin.trace&#39;</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--default-character-set=<i>charset</i></span></p>
+		<p>
+		使用<span><i><span>charset</span></i></span><span>as</span>作为默认字符集。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--force</span>，<span>-f</span></p>
+		<p>
+		不再为<span>drop 
+		database</span>命令进行确认。对于多个命令，即使出现错误也继续。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--host=<i>host_name</i></span>，<span>-h
+		<i>host_name</i></span></p>
+		<p>
+		连接给定主机上的<span>MySQL</span>服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span></p>
+		<p>
+		连接服务器使用的密码。如果使用短选项形式<span>(</span><span>-p</span><span>)</span>，该选项和
+		密码之间<em><span>不能</span></em>有空格。如果你在命令行中在<span>--password</span>或<span>-p</span>选项后面省略
+		密码值，将提示你输入密码。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--port=<i>port_num</i></span>，<span>-P<i> 
+		port_num</i></span></p>
+		<p>
+		用于连接的<span>TCP/IP</span>端口号。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--protocol={TCP | SOCKET | 
+		PIPE | MEMORY}</span></p>
+		<p>
+		使用的连接协议。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--relative</span>，<span>-r</span></p>
+		<p>
+		当带<span>-I</span>使用时显示当前和前面值的差别。目前，该选项只用于<span>extended-status</span>命令。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--silent</span>，<span>-s</span></p>
+		<p>
+		如果不能建立与服务器的连接则以沉默方式退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--sleep=<i>delay</i></span>，<span>-i
+		<i>delay</i></span></p>
+		<p>
+		每睡眠<span><i><span>delay</span></i></span>秒后执行一次命令。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--socket=<i>path</i></span>，<span>-S
+		<i>path</i></span></p>
+		<p>
+		用于连接的套接字文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		当连接服务器时使用的<span>MySQL</span>用户名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--verbose</span>，<span>-v</span></p>
+		<p>
+		冗长模式。打印出程序操作的详细信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-V</span></p>
+		<p>
+		显示版本信息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--vertical</span>，<span>-E</span></p>
+		<p>
+		垂直打印输出。类似于<span>--relative</span>，但垂直打印输出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--wait[=<i>count</i>]</span>，<span>-w[<i>count</i>]</span></p>
+		<p>
+		如果连接不能建立，等待并重试而不是放弃。如果给出一个选项值，则指示重试的次数。默认是一次。</p>
+		<p>
+		也可以使用<span>--<i>var_name</i>=<i>value</i></span>选项设置下面的变量：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>connect_timeout</span></p>
+		<p>
+		连接超时之前的最大秒数。默认值为<span>43200(12</span>小时<span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>shutdown_timeout</span></p>
+		<p>
+		等候关闭的最大秒数。默认值为<span>3600(1</span>小时<span>)</span>。</p>
+		<p>也可以使用<span>--set-variable=<i>var_name</i>=<i>value</i></span>或<span>-O
+		<i>var_name</i>=<i>value</i></span>语法来设置变量。然而，现在不赞成该语法，并且不再使用。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysqlbinlog"></a>
+		8.6.&nbsp;mysqlbinlog：用于处理二进制日志文件的实用工具</h2></div></div></div>
+		<p>
+		服务器生成的二进制日志文件写成二进制格式。要想检查这些文本格式的文件，应使用<strong><span>mysqlbinlog</span></strong>实用工具。</p>
+		<p>
+		应这样调用<strong><span  style="font-family:
+宋体">mysqlbinlog</span></strong>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog [options] <i>log-files</i>...</span></b></span></pre>
+		<p>
+		例如，要想显示二进制日志<span>binlog.000003</span>的内容，使用下面的命令：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog binlog.0000003</span></b></span></pre>
+		<p>
+		输出包括在<span>binlog.000003</span>中包含的所有语句，以及其它信息例如每个语句花费的时间、客户发出的线程<span>ID</span>、发出线程时的时间戳等等。</p>
+		<p>
+		通常情况，可以使用<strong><span  style="font-family:
+宋体">mysqlbinlog</span></strong>直接读取二进制日志文件并将它们用于本地<span>MySQL</span>服务器。也可以使用<span>--read-from-remote-server</span>选项从远程服务器读取二进制日志。</p>
+		<p>
+		当读取远程二进制日志时，可以通过连接参数选项来指示如何连接服务器，但它们经常被忽略掉，除非你还指定了<span>--read-from-remote-server</span>选项。这些选项是<span>--host</span>、<span>--password</span>、<span>--port</span>、<span>--protocol</span>、<span>--socket</span>和<span>--user</span>。</p>
+		<p>
+		还可以使用<strong><span  style="font-family:
+宋体">mysqlbinlog</span></strong>来读取在复制过程中从服务器所写的中继日志文件。中继日志格式与二进制日志文件相同。</p>
+		<p>
+		在<a href="database-administration.html#binary-log" title="5.11.3. The Binary Log">5.11.3节，“二进制日志”</a>中详细讨论了二进制日志。</p>
+		<p>
+		<strong><span>mysqlbinlog</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---database=<i>db_name</i></span>，<span>-d
+		<i>db_name</i></span></p>
+		<p>
+		只列出该数据库的条目<span>(</span>只用本地日志<span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--force-read</span>，<span>-f</span></p>
+		<p>
+		使用该选项，如果<strong><span>mysqlbinlog</span></strong>读它不能识别的二进制日志事件，它会打印警告，忽略该事件并继续。没有该选项，如果<strong><span>mysqlbinlog</span></strong>读到此类事件则停止。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--hexdump</span>，<span>-H</span></p>
+		<p>
+		在注释中显示日志的十六进制转储。该输出可以帮助复制过程中的调试。在<span>MySQL 5.1.2</span>中添加了该选项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--host=<i>host_name</i></span>，<span>-h
+		<i>host_name</i></span></p>
+		<p>
+		获取给定主机上的<span>MySQL</span>服务器的二进制日志。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--local-load=<i>path</i></span>，<span>-l
+		<i>pat</i></span></p>
+		<p>
+		为指定目录中的<span>LOAD 
+		DATA INFILE</span>预处理本地临时文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--offset=<i>N</i></span>，<span>-o
+		<i>N</i></span></p>
+		<p>
+		跳过前<span><i><span>N</span></i></span>个条目。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span></p>
+		<p>
+		当连接服务器时使用的密码。如果使用短选项形式<span>(</span><span>-p</span><span>)</span>，选项和
+		密码之间<em><span>不能</span></em>有空格。如果在命令行中<span>--password</span>或<span>-p</span>选项后面没有
+		密码值，则提示输入一个密码。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--port=<i>port_num</i></span>，<span>-P 
+		port_<i>num</i></span></p>
+		<p>
+		用于连接远程服务器的<span>TCP/IP</span>端口号。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--position=<i>N</i></span>，<span>-j
+		<i>N</i></span></p>
+		<p>
+		不赞成使用，应使用<span>--start-position</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--protocol={TCP | SOCKET | 
+		PIPE | -position</span><span> </span></p>
+		<p>
+		使用的连接协议。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--read-from-remote-server</span>，<span>-R</span></p>
+		<p>
+		从<span>MySQL</span>服务器读二进制日志。如果未给出该选项，任何连接参数选项将被忽略。这些选项是<span>--host</span>、<span>--password</span>、<span>--port</span>、<span><span>--protocol</span><span>、<span>--socket</span></span></span>和<span>--user</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--result-file=<i>name</i></span><span>,
+		</span>
+		<span>-r <i>name</i></span></p>
+		<p>
+		将输出指向给定的文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--short-form</span>，<span>-s</span></p>
+		<p>
+		只显示日志中包含的语句，不显示其它信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--socket=<i>path</i></span>，<span>-S
+		<i>path</i></span></p>
+		<p>
+		用于连接的套接字文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--start-datetime=<i>datetime</i></span></p>
+		<p>
+		从二进制日志中第<span>1</span>个日期时间等于或晚于<span><i><span>datetime</span></i></span>参量的事件开始读取。<span><i><span>datetime</span></i></span>值相对于运行<strong><span  style="font-family:
+宋体">mysqlbinlog</span></strong>的机器上的本地时区<strong><span>。</span><span>该</span></strong>值格式应符合<span>DATETIME</span>或<span>TIMESTAMP</span>数据类型。例如：</p>
+		<pre ><span>shell&gt; </span><span><b><span>mysqlbinlog --start-datetime=&quot;2004-12-25 11:25:56&quot; binlog.000003</span></b></span></pre>
+		<p>
+		该选项可以帮助点对点恢复。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--stop-datetime=<i>datetime</i></span></p>
+		<p>
+		从二进制日志中第<span>1</span>个日期时间等于或晚于<span><i><span>datetime</span></i></span>参量的事件起停止读。关于<span><i><span>datetime</span></i></span>值的描述参见<span>--start-datetime</span>选项。该选项可以帮助及时恢复。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--start-position=<i>N</i></span></p>
+		<p>
+		从二进制日志中第<span>1</span>个位置等于<span><i><span>N</span></i></span>参量时的事件开始读。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--stop-position=<i>N</i></span></p>
+		<p>
+		从二进制日志中第<span>1</span>个位置等于和大于<span><i><span>N</span></i></span>参量时的事件起停止读。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--to-last-logs</span>，<span>-t</span></p>
+		<p>
+		在<span>MySQL</span>服务器中请求的二进制日志的结尾处不停止，而是继续打印直到最后一个二进制日志的结尾。如果将输出发送给同一台<span>MySQL</span>服务器，会导致无限循环。该选项要求<span>--read-from-remote-server</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>
+		<span>--</span><span>disable</span><span>-logs-bin</span></span>，<span>-D</span></p>
+		<p>
+		禁用二进制日志。如果使用<span>--to-last-logs</span>选项将输出发送给同一台<span>MySQL</span>服务器，可以避免无限循环。该选项在崩溃恢复时也很有用，可以避免复制已经记录的语句。<strong><span>注释：</span></strong>该选项要求有<span>SUPER</span>权限。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		连接远程服务器时使用的<span>MySQL</span>用户名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-V</span></p>
+		<p>
+		显示版本信息并退出。</p>
+		<p>
+		还可以使用<span>--var_name=value</span>选项设置下面的变量：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>open_files_limit</span></p>
+		<p>
+		指定要保留的打开的文件描述符的数量。</p>
+		<p>
+		可以将<strong><span>mysqlbinlog</span></strong>的输出传到<strong><span>mysql</span></strong>客户端以执行包含在二进制日志中的语句。如果你有一个旧的备份，该选项在崩溃恢复时也很有用<span>(</span>参见<a href="database-administration.html#backup" title="5.9.1. Database Backups">5.9.1节，“数据库备份”</a><span>)</span>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog <i>hostname-</i>bin.000001 | mysql</span></b></span></pre>
+		<p>
+		或：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog <i>hostname-</i>bin.[0-9]* | mysql</span></b></span></pre>
+		<p>
+		如果你需要先修改含语句的日志，还可以将<strong><span>mysqlbinlog</span></strong>的输出重新指向一个文本文件。<span>(</span>例如，想删除由于某种原因而不想执行的语句<span>)</span>。编辑好文件后，将它输入到<strong><span>mysql</span></strong>程序并执行它包含的语句。</p>
+		<p>
+		<strong><span>mysqlbinlog</span></strong>有一个<span>--position</span>选项，只打印那些在二进制日志中的偏移量大于或等于某个给定位置的语句<span>(</span>给出的位置必须匹配一个事件的开始<span>)</span>。它还有在看见给定日期和时间的事件后停止或启动的选项。这样可以使用<span>--stop-datetime</span>选项进行点对点恢复<span>(</span>例如，能够说“将<span class="quote">数据库前滚动到今天<span>10:30 
+		AM</span>的位置</span>”<span>)</span>。</p>
+		<p>如果<span>MySQL</span>服务器上有多个要执行的二进制日志，安全的方法是在一个连接中处理它们。下面是一个说明什么是<em><span>不安全</span></em>的例子：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog <i>hostname</i>-bin.000001 | mysql # DANGER!!</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog <i>hostname</i>-bin.000002 | mysql # DANGER!!</span></b></span></pre>
+		<p>
+		使用与服务器的不同连接来处理二进制日志时，如果第<span>1</span>个日志文件包含一个<span>CREATE 
+		TEMPORARY TABLE</span>语句，第<span>2</span>个日志包含一个使用该临时表的语句，则会造成问题。当第<span>1</span>个<strong><span>mysql</span></strong>进程结束时，服务器撤销临时表。当第<span>2</span>个<strong><span>mysql</span></strong>进程想使用该表时，服务器报告 
+		“不知道该<span class="quote">表</span>”。</p>
+		<p>
+		要想避免此类问题，使用一个连接来执行想要处理的所有二进制日志中的内容。下面提供了一种方法：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog <i>hostname-</i>bin.000001 <i>hostname-</i>bin.000002 | mysql</span></b></span></pre>
+		<p>
+		另一个方法是：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog <i>hostname-</i>bin.000001 &gt;&nbsp; /tmp/statements.sql</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog <i>hostname-</i>bin.000002 &gt;&gt; /tmp/statements.sql</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysql -e &quot;source /tmp/statements.sql&quot;</span></b></span></pre>
+		<p>
+		<strong><span>mysqlbinlog</span></strong>产生的输出可以不需要原数据文件即可重新生成一个<span>LOAD 
+		DATA INFILE</span>操作。<strong><span>mysqlbinlog</span></strong>将数据复制到一个临时文件并写一个引用该文件的<span>LOAD 
+		DATA LOCAL INFILE</span>语句。由系统确定写入这些文件的目录的默认位置。要想显式指定一个目录，使用<span>--local-load</span>选项。</p>
+		<p>
+		因为<strong><span>mysqlbinlog</span></strong>可以将<span>LOAD 
+		DATA INFILE</span>语句转换为<span>LOAD 
+		DATA LOCAL INFILE</span>语句<span>(</span>也就是说，它添加了<span>LOCAL</span><span>)</span>，用于处理语句的客户端和服务器必须配置为允许<span>LOCAL</span>操作。参见<a href="database-administration.html#load-data-local" title="5.6.4. Security Issues with LOAD DATA LOCAL">5.6.4节，“LOAD DATA LOCAL安全问题<code class="literal"></code>”</a>。</p>
+		<p>
+		<strong><span>警告：</span></strong>为<span>LOAD 
+		DATA LOCAL</span>语句创建的临时文件不会自动删除，因为在实际执行完那些语句前需要它们。不再需要语句日志后应自己删除临时文件。文件位于临时文件目录中，文件名类似<span>original_file_name-#-#</span>。</p>
+		<p>
+		<span>
+		--hexdump</span>选项可以在注释中产生日志内容的十六进制转储：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlbinlog --hexdump master-bin.000001</span></b></span></pre>
+		<p>上述命令的输出应类似：</p>
+		<pre><span>/*!40019 SET @@session.max_insert_delayed_threads=0*/;</span></pre>
+		<pre><span>/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;</span></pre>
+		<pre><span># at 4</span></pre>
+		<pre><span>#051024 17:24:13 server id 1&nbsp; end_log_pos 98</span></pre>
+		<pre><span># Position&nbsp; Timestamp&nbsp;&nbsp; Type&nbsp;&nbsp; Master ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Size&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Master Pos&nbsp;&nbsp;&nbsp; Flags</span></pre>
+		<pre><span># 00000004 9d fc 5c 43&nbsp;&nbsp; 0f&nbsp;&nbsp; 01 00 00 00&nbsp;&nbsp; 5e 00 00 00&nbsp;&nbsp; 62 00 00 00&nbsp;&nbsp; 00 00</span></pre>
+		<pre><span># 00000017 04 00 35 2e 30 2e 31 35&nbsp; 2d 64 65 62 75 67 2d 6c |..5.0.15.debug.l|</span></pre>
+		<pre><span># 00000027 6f 67 00 00 00 00 00 00&nbsp; 00 00 00 00 00 00 00 00 |og..............|</span></pre>
+		<pre><span># 00000037 00 00 00 00 00 00 00 00&nbsp; 00 00 00 00 00 00 00 00 |................|</span></pre>
+		<pre><span># 00000047 00 00 00 00 9d fc 5c 43&nbsp; 13 38 0d 00 08 00 12 00 |.......C.8......|</span></pre>
+		<pre><span># 00000057 04 04 04 04 12 00 00 4b&nbsp; 00 04 1a&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |.......K...|</span></pre>
+		<pre><span>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Start: binlog v 4, server v 5.0.15-debug-log created 051024 17:24:13</span></pre>
+		<pre><span>#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; at startup</span></pre>
+		<pre><span>ROLLBACK;</span></pre>
+		<p>十六进制转储的输出包含下面的元素：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Position</span><span>: 
+		The byte position within the log file. </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Timestamp</span><span>: 
+		The event timestamp. In the example just shown, </span>
+		<span>
+		&#39;9d fc 5c 43&#39;</span><span> is the representation of
+		</span>
+		<span>&#39;051024 17:24:13&#39;</span><span> 
+		in hexadecimal. </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Type</span><span>: 
+		The type of the log event. </span>
+		<span>&#39;0f&#39;</span><span> 
+		means that the example event is a </span>
+		<span>FORMAT_DESCRIPTION_EVENT</span><span>. 
+		The types are: </span></p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>00&nbsp; UNKNOWN_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;This event should never be present in the log.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>01&nbsp; START_EVENT_V3</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;This indicates the start of a log file written by MySQL 4 or earlier.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>02&nbsp; QUERY_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;The most common type of events.&nbsp; These contain queries executed</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;on the master.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>03&nbsp; STOP_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Indicates that master has stopped.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>04&nbsp; ROTATE_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Written when the master switches to a new log file.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>05&nbsp; INTVAR_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used mainly for AUTO_INCREMENT values and if the LAST_INSERT_ID()</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;function is used in the statement.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>06&nbsp; LOAD_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used for LOAD DATA INFILE in MySQL 3.23.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>07&nbsp; SLAVE_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Reserved for future use.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>08&nbsp; CREATE_FILE_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used for LOAD DATA INFILE statements.&nbsp; This indicates the start</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;of execution of such a statement.&nbsp; A temporary file is created</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;on the slave.&nbsp; Used in MySQL 4 only.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>09&nbsp; APPEND_BLOCK_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Contains data for use in a LOAD DATA INFILE statement.&nbsp; The</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;data is stored in the temporary file on the slave.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>0a&nbsp; EXEC_LOAD_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used for LOAD DATA INFILE statements.&nbsp; The contents of the</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;temporary file is stored in the table on the slave.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used in MySQL 4 only.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>0b&nbsp; DELETE_FILE_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Rollback of LOAD DATA INFILE statement.&nbsp; The temporary file</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;should be deleted on slave.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>0c&nbsp; NEW_LOAD_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used for LOAD DATA INFILE in MySQL 4 and earlier.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>0d&nbsp; RAND_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used to send information about random values if the RAND()</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;function is used in the query.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>0e&nbsp; USER_VAR_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used to replicate user variables.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>0f&nbsp; FORMAT_DESCRIPTION_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;This indicates the start of a log file written by MySQL 5 or later.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>10&nbsp; XID_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Event indicating commit of XA transaction</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>11&nbsp; BEGIN_LOAD_QUERY_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used for LOAD DATA statements in MySQL 5 and later.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>12&nbsp; EXECUTE_LOAD_QUERY_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Used for LOAD DATA statements in MySQL 5 and later.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>13&nbsp; TABLE_MAP_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Reserved for future use</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>14&nbsp; WRITE_ROWS_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Reserved for future use</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>15&nbsp; UPDATE_ROWS_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Reserved for future use</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>16&nbsp; DELETE_ROWS_EVENT</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Reserved for future use</span></pre>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Master ID</span><span>: 
+		The server id of the master that created the event. </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Size</span><span>: 
+		The size in bytes of the event. </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Master Pos</span><span>: 
+		The position of the event in the original master log file. </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>Flags</span><span>: 
+		16 flags. </span></p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>01&nbsp; LOG_EVENT_BINLOG_IN_USE_F</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Log file correctly closed (Used only in FORMAT_DESCRIPTION_EVENT)</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;If this flag is set (if the flags are e.g. &#39;01 00&#39;) in an</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;FORMAT_DESCRIPTION_EVENT, then the log file has not been</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;properly closed.&nbsp; Most probably because of a master crash (for</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;example, due to power failure).</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>02&nbsp; Reserved for future use.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>04&nbsp; LOG_EVENT_THREAD_SPECIFIC_F</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Set if the event is dependent on the connection it was</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;executed in (example &#39;04 00&#39;), e.g. if the event uses</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;temporary tables.</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>08&nbsp; LOG_EVENT_SUPPRESS_USE_F</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;Set in some circumstances when the event is not dependent on</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;the current database</span></pre>
+		<p>
+		其它标志保留用于将来使用。</p>
+		<p>在以后的版本中十六进制转储输出的格式可能会改变。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysqlcheck"></a>
+		8.7.&nbsp;mysqlcheck：表维护和维修程序</h2></div></div></div>
+		<p>
+		<strong><span>mysqlcheck</span></strong>客户端可以检查和修复<span>MyISAM</span>表。它还可以优化和分析表。</p>
+		<p>
+		<strong><span>mysqlcheck</span></strong>的功能类似<strong><span  style="font-family:
+宋体">myisamchk</span></strong>，但其工作不同。主要差别是当<strong><span>mysqld</span></strong>服务器在运行时必须使用<strong><span>mysqlcheck</span></strong>，而<strong><span>myisamchk</span></strong>应用于服务器没有运行时。使用<strong><span>mysqlcheck</span><span>的</span></strong>好处是不需要停止服务器来检查或修复表。</p>
+		<p>
+		<strong><span>Mysqlcheck</span><span>为用户提供了一种方便的</span></strong>使用<span>SQL</span>语句<span><span>CHECK 
+		TABLE</span><span>、<span>REPAIR 
+		TABLE</span>、<span>ANALYZE TABLE</span></span></span>和<span>OPTIMIZE 
+		TABLE</span>的方式。它确定在要执行的操作中使用使用哪个语句，然后将语句发送到要执行的服务器上。</p>
+		<p>
+		有<span>3</span>种方式来调用<strong><span>mysqlcheck</span></strong>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlcheck[options] <i>db_name</i> [<i>tables</i>]</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqlcheck[options] ---database <i>DB1</i> [<i>DB2</i> <i>DB3</i>...]</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqlcheck[options] --all--database</span></b></span></pre>
+		<p>
+		如果没有指定任何表或使用<span>---database</span>或<span>--all--database</span>选项，则检查整个数据库。</p>
+		<p>
+		同其它客户端比较，<strong><span  style="font-family:
+宋体">mysqlcheck</span></strong>有一个特殊特性。重新命名二进制可以更改检查表的默认行为<span>(</span><span>--check</span><span>)</span>。如果你想要一个工具默认可以修复表的工具，只需要将<strong><span>mysqlcheck</span></strong>重新复制为<strong><span>mysqlrepair</span></strong>，或者使用一个符号链接<strong><span>mysqlrepair</span></strong>链接<strong><span>mysqlcheck</span></strong>。如果调用<strong><span>mysqlrepair</span></strong>，可按照命令修复表。</p>
+		<p>
+		下面的名可用来更改<strong><span  style="font-family:
+宋体">mysqlcheck</span></strong>的默认行为：</p>
+		<table border="1" cellpadding="0" id="table3">
+			<tr>
+				<td>
+				<p><strong>
+				<span>mysqlrepair</span></strong></td>
+				<td>
+				<p>默认选项为<span>--repair</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><strong>
+				<span>mysqlanalyze</span></strong></td>
+				<td>
+				<p>默认选项为<span>--analyze</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><strong>
+				<span>mysqloptimize</span></strong></td>
+				<td>
+				<p>默认选项为<span>--optimize</span></td>
+			</tr>
+		</table>
+		<p>
+		<strong><span>mysqlcheck</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--all--database</span>，<span>-A</span></p>
+		<p>
+		检查所有数据库中的所有表。与使用<span>---database</span>选项相同，在命令行中命名所有数据库。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--all-in-1</span>，<span>-1</span></p>
+		<p>
+		不是为每个表发出一个语句，而是为命名数据库中待处理的所有表的每个数据库执行一个语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--analyze</span>，<span>-a</span></p>
+		<p>
+		分析表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--auto-repair</span></p>
+		<p>
+		如果某个被检查的表破坏了，自动修复它。检查完所有表后自动进行所有需要的修复。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--character-sets-dir=<i>path</i></span></p>
+		<p>
+		字符集的安装目录。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--check</span>，<span>-c</span></p>
+		<p>
+		检查表的错误。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--check-only-changed</span>，<span>-C</span></p>
+		<p>
+		只检查上次检查以来已经更改的或没有正确关闭的表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--compress</span></p>
+		<p>
+		压缩在客户端和服务器之间发送的所有信息（如果二者均支持压缩）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---database</span>，<span>-B</span></p>
+		<p>
+		处理数据库中命名的所有表。使用该选项，所有字名参量被看作数据库名，而不是表名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug[=<i>debug_options</i>]</span>，<span>-# 
+		[<i>debug_options</i>]</span></p>
+		<p>
+		写调试日志。<span><i><span>debug_options</span></i></span>字符串通常为<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--default-character-set=<i>charset</i></span></p>
+		<p>
+		使用<span><i><span>charset</span></i></span><span>as</span>默认字符集。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--extended</span>，<span>-e</span></p>
+		<p>
+		如果你正使用该选项来检查表，可以确保它们<span>100%</span>地一致，但需要很长的时间。</p>
+		<p>
+		如果你正使用该选项来修复表，则运行扩展修复，不但执行的时间很长，而且还会产生大量的垃圾行<span>! </span>
+		</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--fast</span>，<span>-F</span></p>
+		<p>
+		只检查没有正确关闭的表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--force</span>，<span>-f</span></p>
+		<p>
+		即使出现<span>SQL</span>错误也继续。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--host=<i>host_name</i></span>，<span>-h
+		<i>host_name</i></span></p>
+		<p>
+		连接给定主机上的<span>MySQL</span>服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--medium-check</span>，<span>-m</span></p>
+		<p>
+		执行比<span>--extended</span>操作更快的检查。只能发现<span>99.99%</span>的错误，在大多数情况下这已经足够了。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--optimize</span>，<span>-o</span></p>
+		<p>
+		优化表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span></p>
+		<p>
+		当连接服务器时使用的密码。如果使用短选项形式<span>(</span><span>-p</span><span>)</span>，选项和
+		密码之间<em><span>不能</span></em>有空格。如果在命令行中<span>--password</span>或<span>-p</span>选项后面没有
+		密码值，则提示输入一个密码。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--port=<i>port_num</i></span>，<span>-P 
+		port_<i>num</i></span></p>
+		<p>
+		用于连接的<span>TCP/IP</span>端口号。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--protocol={TCP | SOCKET | 
+		PIPE | MEMORY}</span><span> </span></p>
+		<p>
+		使用的连接协议。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--quick</span>，<span>-q</span></p>
+		<p>
+		如果你正使用该选项在检查表，它防止扫描行以检查错误链接的检查。这是最快的检查方法。</p>
+		<p>
+		如果你正使用该选项在修复表，它尝试只修复索引树。这是最快的修复方法。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--repair</span>，<span>-r</span></p>
+		<p>
+		执行可以修复大部分问题的修复，只是唯一值不唯一时不能修复。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--silent</span>，<span>-s</span></p>
+		<p>
+		沉默模式。只打印错误消息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--socket=<i>path</i></span>，<span>-S
+		<i>path</i></span></p>
+		<p>
+		用于连接的套接字文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--tables</span></p>
+		<p>
+		覆盖<span>---database</span>或<span>-B</span>选项。选项后面的所有参量被视为表名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		当连接服务器时使用的<span>MySQL</span>用户名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--verbose</span>，<span>-v</span></p>
+		<p>
+		冗长模式。打印关于各阶段程序操作的信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-V</span></p>
+		<p>显示版本信息并退出。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysqldump"></a>
+		8.8.&nbsp;mysqldump：数据库备份程序</h2></div></div></div>
+		<p>
+		<strong><span>mysqldump</span></strong>客户端可用来转储数据库或搜集数据库进行备份或将数据转移到另一个<span>SQL</span>服务器<span>(</span>不一定是一个<span>MySQL</span>服务器<span>)</span>。转储包含创建表和<span>/</span>或装载表的<span>SQL</span>语句。</p>
+		<p>
+		如果你在服务器上进行备份，并且表均为<span>MyISAM</span>表，应考虑使用<strong><span  style="font-family:
+宋体">mysqlhotcopy</span></strong>，因为可以更快地进行备份和恢复。参见<a href="client-side-scripts.html#mysqlhotcopy" title="8.9. mysqlhotcopy — A Database Backup Program">8.9节，“mysqlhotcopy：数据库备份程序”</a>。</p>
+		<p>
+		有<span>3</span>种方式来调用<strong><span>mysqldump</span></strong>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump [options] <i>db_name</i> [<i>tables</i>]</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump [options] ---database <i>DB1</i> [<i>DB2</i> <i>DB3</i>...]</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump [options] --all--database</span></b></span></pre>
+		<p>
+		如果没有指定任何表或使用了<span>---database</span>或<span>--all--database</span>选项，则转储整个数据库。</p>
+		<p>
+		要想获得你的版本的<strong><span  style="font-family:
+宋体">mysqldump</span></strong>支持的选项，执行<strong><span  style="font-family:
+宋体">mysqldump ---help</span></strong>。</p>
+		<p>
+		如果运行<strong><span>mysqldump</span></strong>没有<span>--quick</span>或<span>--opt</span>选项，<strong><span>mysqldump</span></strong>在转储结果前将整个结果集装入内存。如果转储大数据库可能会出现问题。该选项默认启用，但可以用<span>--skip-opt</span>禁用。</p>
+		<p>
+		如果使用最新版本的<strong><span  style="font-family:
+宋体">mysqldump</span></strong>程序生成一个转储重装到很旧版本的<span>MySQL</span>服务器中，不应使用<span>--opt</span>或<span>-e</span>选项。</p>
+		<p>
+		<strong><span>mysqldump</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--add-drop--database</span></p>
+		<p>
+		在每个<span>CREATE 
+		DATABASE</span>语句前添加<span>DROP 
+		DATABASE</span>语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--add-drop-tables</span></p>
+		<p>
+		在每个<span>CREATE 
+		TABLE</span>语句前添加<span>DROP 
+		TABLE</span>语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--add-locking</span></p>
+		<p>
+		用<span>LOCK 
+		TABLES</span>和<span>UNLOCK 
+		TABLES</span>语句引用每个表转储。重载转储文件时插入得更快。参见<a href="optimization.html#insert-speed" title="7.2.16. Speed of INSERT Statements">7.2.16节，“INSERT语句的速度”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--all--database</span>，<span>-A</span></p>
+		<p>
+		转储所有数据库中的所有表。与使用<span>---database</span>选项相同，在命令行中命名所有数据库。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--allow-keywords</span></p>
+		<p>
+		允许创建关键字列名。应在每个列名前面加上表名前缀。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---comments[={0|1}]</span></p>
+		<p>
+		如果设置为 
+		<span>0</span>，禁止转储文件中的其它信息，例如程序版本、服务器版本和主机。<span><span>--skip</span><span>—</span><span>comments</span></span>与<span>---comments=0</span>的结果相同。
+		默认值为<span>1</span>，即包括额外信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--compact</span></p>
+		<p>
+		产生少量输出。该选项禁用注释并启用<span><span>--skip-add-drop-tables</span><span>、<span>--no-set-names</span></span></span>、<span>--skip-disable-keys</span>和<span>--skip-add-locking</span>选项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--compatible=<i>name</i></span></p>
+		<p>
+		产生与其它数据库系统或旧的<span>MySQL</span>服务器更兼容的输出。值可以为<span><span>ansi</span><span>、<span>mysql323</span>、<span>mysql40</span>、<span>postgresql</span>、<span>oracle</span>、<span>mssql</span>、<span>db2</span>、<span>maxdb</span>、<span>no_key_options</span>、<span>no_tables_options</span></span></span>或者<span>no_field_options</span>。要使用几个值，用逗号将它们隔开。这些值与设置服务器<span>SQL</span>模式的相应选项有相同的含义。参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+		<p>
+		该选项不能保证同其它服务器之间的兼容性。它只启用那些目前能够使转储输出更兼容的<span>SQL</span>模式值。例如，<span>--compatible=oracle</span><span>
+		</span>不映射<span>Oracle</span>类型或使用<span>Oracle</span>注释语法的数据类型。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--complete-insert</span>，<span>-c</span></p>
+		<p>
+		使用包括列名的完整的<span>INSERT</span>语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--compress</span>，<span>-C</span></p>
+		<p>
+		压缩在客户端和服务器之间发送的所有信息（如果二者均支持压缩）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--create-option</span></p>
+		<p>
+		在<span>CREATE 
+		TABLE</span>语句中包括所有<span>MySQL</span>表选项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---database</span>，<span>-B</span></p>
+		<p>
+		转储几个数据库。通常情况，<strong><span>mysqldump</span></strong>将命令行中的第<span>1</span>个名字参量看作数据库名，后面的名看作表名。使用该选项，它将所有名字参量看作数据库名。<span>CREATE 
+		DATABASE IF NOT EXISTS <i>db_name</i></span>和<span>USE
+		<i>db_name</i></span>语句包含在每个新数据库前的输出中。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug[=<i>debug_options</i>]</span>，<span>-# 
+		[<i>debug_options</i>]</span></p>
+		<p>
+		写调试日志。<span><i><span>debug_options</span></i></span>字符串通常为<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--default-character-set=<i>charset</i></span></p>
+		<p>
+		使用<span><i><span>charset</span></i></span><span>as</span>默认字符集。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。如果没有指定，<strong><span>mysqldump</span></strong>使用<span>utf8</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--delayed-insert </span>
+		</p>
+		<p>
+		使用<span>INSERT 
+		DELAYED</span>语句插入行。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--delete-master-logs</span></p>
+		<p>
+		在主复制服务器上，完成转储操作后删除二进制日志。该选项自动启用<span>--master-data</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--disable-keys</span>，<span>-K</span></p>
+		<p>
+		对于每个表，用<span>/*!40000 
+		ALTER TABLE <i>tbl_name</i> DISABLE KEYS */;</span>和<span>/*!40000 
+		ALTER TABLE <i>tbl_name</i> ENABLE KEYS */;</span>语句引用<span>INSERT</span>语句。这样可以更快地装载转储文件，因为在插入所有行后创建索引。该选项只适合<span>MyISAM</span>表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--extended-insert</span>，<span>-e</span></p>
+		<p>
+		使用包括几个<span>VALUES</span>列表的多行<span>INSERT</span>语法。这样使转储文件更小，重载文件时可以加速插入。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--fields-terminated-by=...</span>，<span>--fields-enclosed-by=...</span>，<span>--fields-optionally-enclosed-by=...</span>，<span>--fields-escaped-by=...</span>，<span><span>--</span><span>行<span>-terminated-by=...</span></span></span></p>
+		<p>
+		这些选项结合<span>-T</span>选项使用，与<span>LOAD 
+		DATA INFILE</span>的相应子句有相同的含义。参见<a href="sql-syntax.html#load-data" title="13.2.5. LOAD DATA INFILE Syntax">13.2.5节，“LOAD 
+				DATA INFILE语法”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--first-slave</span>，<span>-x</span></p>
+		<p>
+		不赞成使用，现在重新命名为<span>--lock-all-tables</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--flush-logs</span>，<span>-F</span></p>
+		<p>
+		开始转储前刷新<span>MySQL</span>服务器日志文件。该选项要求<span>RELOAD</span>权限。请注意如果结合<span>--all--database</span><span>(</span>或<span>-A</span><span>)</span>选项使用该选项，<em><span>根据每个转储的数据库</span></em>刷新日志。例外情况是当使用<span>--lock-all-tables</span>或<span>--master-data</span>的时候：在这种情况下，日志只刷新一次，在所有 
+		表被锁定后刷新。如果你想要同时转储和刷新日志，应使用<span>--flush-logs</span>连同<span>--lock-all-tables</span>或<span>--master-data</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--force</span>，<span>-f</span></p>
+		<p>
+		在表转储过程中，即使出现<span>SQL</span>错误也继续。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--host=<i>host_name</i></span>，<span>-h
+		<i>host_name</i></span></p>
+		<p>
+		从给定主机的<span>MySQL</span>服务器转储数据。默认主机是<span>localhost</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--hex-blob</span></p>
+		<p>
+		使用十六进制符号转储二进制字符串列<span>(</span>例如，<span>&#39;abc&#39;</span><span>
+		</span>变为<span>0x616263</span><span>)</span>。影响到的列有<span><span>BINARY</span><span>、<span>VARBINARY</span>、<span>BLOB</span></span></span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--lock-all-tables</span>，<span>-x</span></p>
+		<p>
+		所有数据库中的所有表加锁。在整体转储过程中通过全局读锁定来实现。该选项自动关闭<span>--single-transaction</span>和<span>--lock-tables</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--lock-tables</span>，<span>-l</span></p>
+		<p>
+		开始转储前锁定所有表。用<span>READ 
+		LOCAL</span>锁定表以允许并行插入<span>MyISAM</span>表。对于事务表例如<span>InnoDB</span>和<span>BDB</span>，<span>--single-transaction</span>是一个更好的选项，因为它不根本需要锁定表。</p>
+		<p>
+		请注意当转储多个数据库时，<span>--lock-tables</span>分别为每个数据库锁定表。因此，该选项不能保证转储文件中的表在数据库之间的逻辑一致性。不同数据库表的转储状态可以完全不同。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--master-data[=<i>value</i>]</span></p>
+		<p>
+		该选项将二进制日志的位置和文件名写入到输出中。该选项要求有<span>RELOAD</span>权限，并且必须启用二进制日志。如果该选项值等于<span>1</span>，位置和文件名被写入<span>CHANGE 
+		MASTER</span>语句形式的转储输出，如果你使用该<span>SQL</span>转储主服务器以设置从服务器，从服务器从主服务器二进制日志的正确位置开始。如果选项值等于<span>2</span>，<span>CHANGE 
+		MASTER</span>语句被写成<span>SQL</span>注释。如果<span><i><span>value</span></i></span>被省略，这是默认动作。</p>
+		<p>
+		<span>
+		--master-data</span>选项启用<span>--lock-all-tables</span>，除非还指定<span>--single-transaction</span><span>(</span>在这种情况下，只在刚开始转储时短时间获得全局读锁定。又见<span>--single-transaction</span>。在任何一种情况下，日志相关动作发生在转储时。该选项自动关闭<span>--lock-tables</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--no-create-db</span>，<span>-n</span></p>
+		<p>
+		该选项禁用<span>CREATE 
+		DATABASE /*!32312 IF NOT EXISTS*/ db_name</span>语句，如果给出<span>---database</span>或<span>--all--database</span>选项，则包含到输出中。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--no-create-info</span>，<span>-t</span></p>
+		<p>
+		不写重新创建每个转储表的<span>CREATE 
+		TABLE</span>语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--no-data</span>，<span>-d</span></p>
+		<p>
+		不写表的任何行信息。如果你只想转储表的结构这很有用。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--opt</span></p>
+		<p>
+		该选项是速记；等同于指定 
+		<span>--add-drop-tables--add-locking 
+		--create-option --disable-keys--extended-insert --lock-tables --quick 
+		--set-charset</span>。它可以给出很快的转储操作并产生一个可以很快装入<span>MySQL</span>服务器的转储文件。<em><span>该选项默认开启，但可以用</span></em><span><i><span>--skip-opt</span></i></span><em><span>禁用</span></em>。要想只禁用确信用<span>-opt</span>启用的选项，使用<span>--skip</span>形式；例如，<span>--skip-add-drop-tables</span>或<span>--skip-quick</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span></p>
+		<p>
+		连接服务器时使用的密码。如果你使用短选项形式<span>(</span><span>-p</span><span>)</span>，<em><span>不能</span><span style="
+font-style:normal">在选项和密码之间有一个空格</span></em>。如果在命令行中，忽略了<span>--password</span>或<span>-p</span>选项后面的
+		密码值，将提示你输入一个。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--port=<i>port_num</i></span>，<span>-P 
+		port_<i>num</i></span></p>
+		<p>
+		用于连接的<span>TCP/IP</span>端口号。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--protocol={TCP | SOCKET | 
+		PIPE | MEMORY}</span></p>
+		<p>
+		使用的连接协议。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--quick</span>，<span>-q</span></p>
+		<p>
+		该选项用于转储大的表。它强制<strong><span>mysqldump</span></strong>从服务器一次一行地检索表中的行而不是检索所有行并在输出前将它缓存到内存中。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--quote-names</span>，<span>-Q</span></p>
+		<p>
+		用‘<span>`</span>’字符引用数据库、表和列名。如果服务器<span>SQL</span>模式包括<span>ANSI_QUOTES</span>选项，用‘<span>&quot;</span>’字符引用名。默认启用该选项。可以用<span>--skip-quote-names</span>禁用，但该选项应跟在其它选项后面，例如可以启用<span>--quote-names</span>的<span>--compatible</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--result-file=<i>file</i></span>，<span>-r
+		<i>file</i></span></p>
+		<p>
+		将输出转向给定的文件。该选项应用在<span>Windows</span>中，因为它禁止将新行‘<span>\n</span>’字符转换为‘<span>\r\n</span>’回车、返回<span>/</span>新行序列。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--routines</span>，<span>-R</span></p>
+		<p>
+		在转储的数据库中转储存储程序<span>(</span>函数和程序<span>)</span>。使用<span>---routines</span>产生的输出包含<span>CREATE 
+		PROCEDURE</span>和<span>CREATE 
+		FUNCTION</span>语句以重新创建子程序。但是，这些语句不包括属性，例如子程序定义者或创建和修改时间戳。这说明当重载子程序时，对它们进行创建时定义者应设置为重载用户，时间戳等于重载时间。</p>
+		<p>
+		如果你需要创建的子程序使用原来的定义者和时间戳属性，不使用<span>--routines</span>。相反，使用一个具有<span>mysql</span>数据库相应权限的<span>MySQL</span>账户直接转储和重载<span>mysql.proc</span>表的内容。</p>
+		<p>
+		该选项在<span>MySQL 5.1.2</span>中添加进来。在此之前，存储程序不转储。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--set-charset</span></p>
+		<p>
+		将<span>SET 
+		NAMES <i>default_character_set</i></span>加到输出中。该选项默认启用。要想禁用<span>SET 
+		NAMES</span>语句，使用<span>--skip-set-charset</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--single-transaction</span></p>
+		<p>
+		该选项从服务器转储数据之前发出一个<span>BEGIN</span><span> 
+		SQL</span>语句。它只适用于事务表，例如<span>InnoDB</span>和<span>BDB</span>，因为然后它将在发出<span>BEGIN</span>而没有阻塞任何应用程序时转储一致的数据库状态。</p>
+		<p>
+		当使用该选项时，应记住只有<span>InnoDB</span>表能以一致的状态被转储。例如，使用该选项时任何转储的<span>MyISAM</span>或<span>HEAP</span>表仍然可以更改状态。</p>
+		<p>
+		<span>
+		--single-transaction</span>选项和<span>--lock-tables</span>选项是互斥的，因为<span>LOCK 
+		TABLES</span>会使任何挂起的事务隐含提交。</p>
+		<p>
+		要想转储大的表，应结合<span>--quick</span>使用该选项。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--socket=<i>path</i></span>，<span>-S
+		<i>path</i></span></p>
+		<p>
+		当连接<span>localhost</span><span>(</span>为默认主机<span>)</span>时使用的套接字文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--skip--comments</span></p>
+		<p>
+		参见<span>---comments</span>选项的描述。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--tab=<i>path</i></span>，<span>-T
+		<i>path</i></span></p>
+		<p>
+		产生<span>tab</span>分割的数据文件。对于每个转储的表，<strong><span>mysqldump</span></strong>创建一个包含创建表的<span>CREATE 
+		TABLE</span>语句的<span><i><span>tbl_name</span></i><span>.sql</span></span>文件，和一个包含其数据的<span><i><span>tbl_name</span></i><span>.txt</span></span>文件。选项值为写入文件的目录。</p>
+		<p>
+		默认情况，<span>.txt</span>数据文件的格式是在列值和每行后面的新行之间使用<span>tab</span>字符。可以使用<span>--fields-<i>xxx</i></span>和<span><span>--</span><span>行<span>--<i>xxx</i></span></span></span>选项明显指定格式。</p>
+		<p><strong><span>注释：</span></strong>该选项只适用于<strong><span  style="font-family:
+宋体">mysqldump</span></strong>与<strong><span>mysqld</span></strong>服务器在同一台机器上运行时。你必须具有<span>FILE</span>权限，并且服务器必须有在你指定的目录中有写文件的许可。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--tables</span></p>
+		<p>
+		覆盖<span>---database</span>或<span>-B</span>选项。选项后面的所有参量被看作表名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--triggers</span></p>
+		<p>
+		为每个转储的表转储触发器。该选项默认启用；用<span>--skip-triggers</span>禁用它。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--tz-utc</span></p>
+		<p>
+		在转储文件中加入<span>SET 
+		TIME_ZONE=&#39;+00:00&#39;</span>以便<span>TIMESTAMP</span>列可以在具有不同时区的服务器之间转储和重载。<span>(</span>不使用该选项，<span>TIMESTAMP</span>列在具有本地时区的源服务器和目的服务器之间转储和重载）<span>。</span><span>--tz-utc</span>也可以保护由于夏令时带来的更改。<span>--tz-utc</span>默认启用。要想禁用它，使用<span>--skip-tz-utc</span>。该选项在<span>MySQL 
+		5.1.2</span>中加入。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		连接服务器时使用的<span>MySQL</span>用户名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--verbose</span>，<span>-v</span></p>
+		<p>
+		冗长模式。打印出程序操作的详细信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-V</span></p>
+		<p>
+		显示版本信息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--where=&#39;<i>where-condition</i>&#39;</span><span>,
+		</span>
+		<span>-w &#39;<i>where-condition</i>&#39;</span></p>
+		<p>
+		只转储给定的<span>WHERE</span>条件选择的记录。请注意如果条件包含命令解释符专用空格或字符，一定要将条件引用起来。</p>
+		<p>
+		例如：</p>
+		<pre ><span>&quot;--where=user=&#39;jimf&#39;&quot;</span></pre>
+		<pre ><span>&quot;-wuserid&gt;1&quot;</span></pre>
+		<pre ><span>&quot;-wuserid&lt;1&quot;</span></pre>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--xml</span>，<span>-X</span></p>
+		<p>
+		将转储输出写成<span>XML</span>。</p>
+		<p>
+		还可以使用<span>--var_name=value</span>选项设置下面的变量：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>max_allowed_packet</span></p>
+		<p>
+		客户端<span>/</span>服务器之间通信的缓存区的最大大小。最大为<span>1GB</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>net_buffer_length</span></p>
+		<p>客户端<span>/</span>服务器之间通信的缓存区的初始大小。当创建多行插入语句时<span>(</span>如同使用选项<span>--extended-insert</span>或<span>--opt</span><span>)</span>，<strong><span>mysqldump</span></strong>创建长度达<span>net_buffer_length</span>的行。如果增加该变量，还应确保在<span>MySQL</span>服务器中的<span>net_buffer_length</span>变量至少这么大。</p>
+		<p>
+		还可以使用<span>--set-variable=<i>var_name</i>=<i>value</i></span>或<span>-O
+		<i>var_name</i>=<i>value</i></span>语法设置变量。然而，现在不赞成使用该语法。</p>
+		<p>
+		<strong><span>mysqldump</span></strong>最常用于备份一个整个的数据库：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump --opt <i>db_name</i> &gt; <i>backup-file.sql</i></span></b></span></pre>
+		<p>
+		你可以这样将转储文件读回到服务器：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql <i>db_name</i> &lt; <i>backup-file.sql</i></span></b></span></pre>
+		<p>
+		或者为：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql -e &quot;source /<i>path-to--backup/backup-file.sql</i>&quot; <i>db_name</i></span></b></span></pre>
+		<p>
+		<strong><span>mysqldump</span></strong>也可用于从一个<span>MySQL</span>服务器向另一个服务器复制数据时装载数据库：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump --opt <i>db_name</i> | mysql --host=<i>remote_host</i> -C <i>db_name</i></span></b></span></pre>
+		<p>
+		可以用一个命令转储几个数据库：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump ---database <i>db_name1</i> [<i>db_name2</i> ...] &gt; my_databases.sql</span></b></span></pre>
+		<p>
+		如果你想要转储所有数据库，使用<span>--all--database</span>选项：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump --all-databases &gt; all_databases.sql</span></b></span></pre>
+		<p>如果表保存在<span>InnoDB</span>存储引擎中，<span>mysqldump</span>提供了一种联机备份的途径<span>(</span>参见下面的命令<span>)</span>。该备份只需要在开始转储时对所有表进行全局读锁定<span>(</span>使用<span>FLUSH 
+		TABLES WITH READ LOCK</span><span>)</span>。获得锁定后，读取二进制日志的相应内容并将锁释放。因此如果并且只有当发出<span>FLUSH...</span>时正执行一个长的更新语句，<span>MySQL</span>服务器才停止直到长语句结束，然后转储则释放锁。因此如果<span>MySQL</span>服务器只接收到短<span>(&quot;</span>短执行时间<span>&quot;)</span>的更新语句，即使有大量的语句，也不会注意到锁期间。</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump --all-databases --single-transaction &gt; all_databases.sql</span></b></span></pre>
+		<p>对于点对点恢复<span>(</span>也称为“前滚”，当你需要恢复旧的备份并重放该备份以后的更改时<span>)</span>，循环二进制日志<span>(</span>参见<a href="database-administration.html#binary-log" title="5.11.3. The Binary Log">5.11.3节，“二进制日志”</a><span>)</span>或至少知道转储对应的二进制日志内容很有用：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump --all-databases --master-data=2 &gt; all_databases.sql</span></b></span></pre>
+		<pre>或</pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump --all-databases --flush-logs --master-data=2 &gt; all_databases.sql</span></b></span></pre>
+		<p>
+		如果表保存在<span>InnoDB</span>存储引擎中，同时使用<span>--master-data</span>和<span>--single-transaction</span>提供了一个很方便的方式来进行适合点对点恢复的联机备份。</p>
+		<p>关于备份的详细信息，参见<a href="database-administration.html#backup" title="5.9.1. Database Backups">5.9.1节，“数据库备份”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysqlhotcopy"></a>
+		8.9.&nbsp;mysqlhotcopy：数据库备份程序</h2></div></div></div>
+		<p><strong><span>mysqlhotcopy</span><span>是一个</span></strong><span>Perl</span>脚本，最初由<span>Tim 
+		Bunce</span>编写并提供。它使用<span>LOCK 
+		TABLES</span>、<span>FLUSH 
+		TABLES</span>和<span>cp</span>或<span>scp</span>来快速备份数据库。它是备份数据库或单个表的最快的途径，但它只能运行在数据库目录所在的机器上。<strong><span>mysqlhotcopy</span></strong>只用于备份<span>MyISAM</span>。它运行在<span>Unix</span>和<span>NetWare</span>中。</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlhotcopy <i>db_name</i> [<i>/path/to/new_directory</i>]</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqlhotcopy <i>db_name_1</i> ... <i>db_name_n</i> <i>/path/to/new_directory</i></span></b></span></pre>
+		<p>
+		备份给定数据库中的匹配正则表达式的表：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlhotcopy <i>db_name.</i>/<i>regex</i>/</span></b></span></pre>
+		<p>
+		加上发音符<span>(</span>‘<span>~</span>’<span>)</span>前缀，表名的正则表达式可以被否定：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlhotcopy <i>db_name.</i>/~<i>regex</i>/</span></b></span></pre>
+		<p>
+		<strong><span>mysqlhotcopy</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--allowold</span></p>
+		<p>
+		如果目标存在不放弃<span>(</span>加上一个<span>_old</span>后缀重新命名它<span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--checkpoint=<i>db_name.tbl_name</i></span></p>
+		<p>
+		在指定的<span><i><span>db_name.tbl_name</span></i></span>插入检查点条目。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug</span></p>
+		<p>
+		启用调试输出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--dryrun</span>，<span>-n</span></p>
+		<p>
+		报告动作而不执行它们。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--flushlog</span></p>
+		<p>
+		所有表锁定后刷新日志。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--keepold</span></p>
+		<p>
+		完成后不删除以前<span>(</span>重新命名的<span>)</span>的目标。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-- method=<i>command</i></span></p>
+		<p>
+		复制方法<span>(</span><span>cp</span>或<span>scp</span><span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--noindices</span></p>
+		<p>
+		备份中不包括全部索引文件。这样使备份更小、更快。可以在以后用<strong><span  style="font-family:
+宋体">myisamchk -rq</span></strong>重新构建索引。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password=<i>password</i></span>，<span>-p<i> 
+		password</i></span></p>
+		<p>
+		当连接服务器时使用的密码。请注意该选项的密码值是不可选的，不象其它<span>MySQL</span>程序。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--port=<i>port_num</i></span>，<span>-P 
+		port_<i>num</i></span></p>
+		<p>
+		当连接本地服务器时使用的<span>TCP/IP</span>端口号。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--quiet</span>，<span>-q</span></p>
+		<p>
+		除了出现错误时保持沉默。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--regexp=<i>expr</i></span></p>
+		<p>
+		复制所有数据库名匹配给出的正则表达式的数据库。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--socket=<i>path</i></span>，<span>-S
+		<i>path</i></span></p>
+		<p>
+		用于连接的<span>Unix</span>套接字文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--suffix=<i>str</i></span></p>
+		<p>
+		所复制的数据库名的后缀。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--tmpdir=<i>path</i></span><span>
+		</span></p>
+		<p>
+		临时目录<span>(</span>代替<span>/tmp</span><span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		当连接服务器时使用的<span>MySQL</span>用户名。</p>
+		<p>
+		<strong><span>mysqlhotcopy</span></strong>从选项文件读取<span>[client]</span>和<span>[mysqlhotcopy]</span>选项组。</p>
+		<p>
+		要想执行<strong><span>mysqlhotcopy</span></strong>，你必须可以访问备份的表文件，具有那些表的<span>SELECT</span>权限和<span>RELOAD</span>权限<span>(</span>以便能够执行<span>FLUSH 
+		TABLES</span><span>)</span>。</p>
+		<p>
+		使用<span>perldoc</span>调用其它<strong><span>mysqlhotcopy</span></strong>文档：</p>
+		<pre><span>shell&gt; </span><span><b><span>perldoc mysqlhotcopy</span></b></span></pre>
+	</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysqlimport"></a>
+		8.10.&nbsp;mysqlimport：数据导入程序</h2></div></div></div>
+		<p>
+		<strong><span>mysqlimport</span></strong>客户端提供了<span>LOAD 
+		DATA INFILE</span><span>QL</span>语句的一个命令行接口。<strong><span>mysqlimport</span></strong>的大多数选项直接对应<span>LOAD 
+		DATA INFILE</span>子句。参见<a href="sql-syntax.html#load-data" title="13.2.5. LOAD DATA INFILE Syntax">13.2.5节，“LOAD 
+			DATA INFILE语法”</a>。</p>
+		<p>
+		这样调用<strong><span>mysqlimport</span></strong>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlimport [<i>options</i>] <i>db_name</i> <i>textfile1</i> [<i>textfile2</i> ...]</span></b></span></pre>
+		<p>
+		对于在命令行中命名的每个文本文件，<strong><span>mysqlimport</span></strong>去掉文件名的扩展名并使用结果来确定将导入文件内容的表名。例如，文件 
+		 
+		<span>
+		patient.txt</span>、<span>patient.text</span>和<span>patient</span>均将导入表<span>patient</span>。</p>
+		<p>
+		<strong><span>mysqlimport</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--columns=<i>column_list</i></span><span>,
+		</span>
+		<span>-c <i>column_list</i></span></p>
+		<p>
+		该选项采用用逗号分隔的列名作为其值。列名的顺序指示如何匹配数据文件列和表列。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--compress</span>，<span>-C</span></p>
+		<p>
+		压缩在客户端和服务器之间发送的所有信息（如果二者均支持压缩）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug[=<i>debug_options</i>]</span>，<span>-# 
+		[<i>debug_options</i>]</span></p>
+		<p>
+		写调试日志。<span><i><span>debug_options</span></i></span>字符串通常是<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--delete</span>，<span>-D</span></p>
+		<p>
+		导入文本文件前清空表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--fields-terminated-by=...</span>，<span>--fields-enclosed-by=...</span>，<span>--fields-optionally-enclosed-by=...</span>，<span>--fields-escaped-by=...</span>，<span>--lines-terminated-by=...</span></p>
+		<p>
+		这些选项与<span>LOAD 
+		DATA INFILE</span>相应子句的含义相同。参见<a href="sql-syntax.html#load-data" title="13.2.5. LOAD DATA INFILE Syntax">13.2.5节，“LOAD 
+			DATA INFILE语法”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--force</span>，<span>-f</span></p>
+		<p>
+		忽视错误。例如，如果某个文本文件的表不存在，继续处理其它文件。不使用<span>--force</span>，如果表不存在则<strong><span  style="font-family:
+宋体">mysqlimport</span></strong>退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--host=<i>host_name</i></span>，<span>-h
+		<i>host_name</i></span></p>
+		<p>
+		将数据导入给定主机上的<span>MySQL</span>服务器。默认主机是<span>localhost</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--ignore</span>，<span>-i</span></p>
+		<p>
+		参见<span>--replace</span>选项的描述。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--ignore-lines=<i>n</i></span></p>
+		<p>
+		忽视数据文件的前<span><i><span>n</span></i></span>行。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--local</span>，<span>-L</span></p>
+		<p>
+		从本地客户端读入输入文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--lock-tables</span>，<span>-l</span></p>
+		<p>
+		处理文本文件前锁定所有表以便写入。这样可以确保所有表在服务器上保持同步。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span></p>
+		<p>
+		当连接服务器时使用的密码。如果使用短选项形式<span>(</span><span>-p</span><span>)</span>，选项和
+		密码之间<em><span>不能</span></em>有空格。如果在命令行中<span>--password</span>或<span>-p</span>选项后面没有
+		密码值，则提示输入一个密码。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--port=<i>port_num</i></span>，<span>-P 
+		port_<i>num</i></span></p>
+		<p>
+		用于连接的<span>TCP/IP</span>端口号。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--protocol={TCP | SOCKET | 
+		PIPE | MEMORY}</span></p>
+		<p>
+		使用的连接协议。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--replace</span>，<span>-r</span></p>
+		<p>
+		<span>
+		--replace</span>和<span>--ignore</span>选项控制复制唯一键值已有记录的输入记录的处理。如果指定<span>--replace</span>，新行替换有相同的唯一键值的已有行。如果指定<span>--ignore</span>，复制已有的唯一键值的输入行被跳过。如果不指定这两个选项，当发现一个复制键值时会出现一个错误，并且忽视文本文件的剩余部分。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--silent</span>，<span>-s</span></p>
+		<p>
+		沉默模式。只有出现错误时才输出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--socket=<i>path</i></span>，<span>-S
+		<i>path</i></span></p>
+		<p>
+		当连接<span>localhost</span>时使用的套接字文件<span>(</span>为默认主机<span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		当连接服务器时<span>MySQL</span>使用的用户名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--verbose</span>，<span>-v</span></p>
+		<p>
+		冗长模式。打印出程序操作的详细信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-V</span></p>
+		<p>
+		显示版本信息并退出。</p>
+		<p>这里是一个示例会话，显示如何使用<strong><span>mysqlimport</span></strong>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql -e &#39;CREATE TABLE imptest(id INT, n VARCHAR(30))&#39; test</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>ed</span></b></span></pre>
+		<pre><span>a</span></pre>
+		<pre><span>100&nbsp;&nbsp;&nbsp;&nbsp; Max Sydow</span></pre>
+		<pre><span>101&nbsp;&nbsp;&nbsp;&nbsp; Count Dracula</span></pre>
+		<pre><span>.</span></pre>
+		<pre><span>w imptest.txt</span></pre>
+		<pre><span>32</span></pre>
+		<pre><span>q</span></pre>
+		<pre><span>shell&gt; </span><span><b><span>od -c imptest.txt</span></b></span></pre>
+		<pre><span>0000000&nbsp;&nbsp; 1&nbsp;&nbsp; 0&nbsp;&nbsp; 0&nbsp; \t&nbsp;&nbsp; M&nbsp;&nbsp; a&nbsp;&nbsp; x&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;S&nbsp;&nbsp; y&nbsp;&nbsp; d&nbsp;&nbsp; o&nbsp;&nbsp; w&nbsp; \n&nbsp;&nbsp; 1&nbsp;&nbsp; 0</span></pre>
+		<pre><span>0000020&nbsp;&nbsp; 1&nbsp; \t&nbsp;&nbsp; C&nbsp;&nbsp; o&nbsp;&nbsp; u&nbsp;&nbsp; n&nbsp;&nbsp; t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; D&nbsp;&nbsp; r&nbsp;&nbsp; a&nbsp;&nbsp; c&nbsp;&nbsp; u&nbsp;&nbsp; l&nbsp;&nbsp; a&nbsp; \n</span></pre>
+		<pre><span>0000040</span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqlimport --local test imptest.txt</span></b></span></pre>
+		<pre><span>test.imptest: Records: 2&nbsp; Deleted: 0&nbsp; Skipped: 0&nbsp; Warnings: 0</span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysql -e &#39;SELECT * FROM imptest&#39; test</span></b></span></pre>
+		<pre><span>+------+---------------+</span></pre>
+		<pre><span>| id&nbsp;&nbsp; | n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+------+---------------+</span></pre>
+		<pre><span>|&nbsp; 100 | Max Sydow&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>|&nbsp; 101 | Count Dracula |</span></pre>
+		<pre><span>+------+---------------+</span></pre>
+	</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysqlshow"></a>
+		8.11.&nbsp;mysqlshow－显示数据库、表和列信息</h2></div></div></div>
+		<p>
+		<strong><span>mysqlshow</span></strong>客户可用来很快地查找存在哪些数据库，数据库中的表，表中的列或索引。</p>
+		<p>
+		<strong><span>mysqlshow</span></strong>为一些<span>SQL</span>显示语句提供了一个命令行界面。相同的信息可以通过直接使用那些语句获得。例如，你可以从<strong><span>mysql</span></strong>客户程序发出它们。参见<a href="sql-syntax.html#show" title="13.5.4. SHOW Syntax">13.5.4节，“SHOW语法”</a>。</p>
+		<p>
+		象这样调用<strong><span  style="font-family:
+宋体">mysqlshow</span></strong>：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysqlshow[</span><i><span>选项</span></i><span>] [<i>db_name</i> [<i>tbl_name</i> [<i>col_name</i>]]]</span></b></span></pre>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果没有给出数据库，显示所有匹配的数据库。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果没有给出表，显示数据库中所有匹配的表。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果没有给出列，显示表中所有匹配的列和列类型。</p>
+		<p>
+		请注意，在<span>MySQL</span>的新版本中，你只能看到有部分权限的那些数据库、表或者列。</p>
+		<p>
+		如果最后的参数包含<span>shell</span>或<span>SQL</span>通用字符<span> 
+		(</span>‘<span>*</span>’、‘<span>?</span>’、‘<span>%</span>’或者‘<span>_</span>’<span>)</span>，只显示那些名匹配通用字符的名字。如果一个数据库名包含下划线，应该使用一个反斜线（部分<span>Unix 
+		shells</span>需要双反斜线）对它们进行转义，以便得到一个正确的表或列的列表。‘<span>*</span>’和‘<span>?</span>’字符被转换为<span>SQL</span>的‘<span>%</span>’和‘<span>_</span>’通用字符。你试图用‘<span>_</span>’显示一个表的列名时，这可能会造成一些混淆，因为在这种情况下 
+		<strong><span>mysqlshow</span></strong>显示与模式相匹配的表名。这很容易通过在命令行添加一个‘<span>%</span>’参量来解决。</p>
+		<p>
+		<strong><span>mysqlshow</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span><span>-</span><span>？</span></span></p>
+		<p>
+		显示一个帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>--character-sets-dir=<i>path</i></span></p>
+		<p>
+		字符集安装目录。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--compress</span>，<span>-C</span></p>
+		<p>
+		压缩所有的客户和服务器之间发送的信息（如果它们都支持压缩）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---debug[=<i>debug_options</i>]</span>，<span>-# 
+		[<i>debug_options</i>]</span></p>
+		<p>
+		写调试日志。<span><i><span>debug_options</span></i></span>字符串通常是<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--default-character-set=<i>charset</i></span></p>
+		<p>
+		使用<span><i><span>charset</span></i></span>为默认字符集。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--host=<i>host_name</i></span>，<span>-h
+		<i>host_name</i></span><span> </span></p>
+		<p>
+		在给出的主机上连接<span> MySQL</span>服务器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>--keys, -k</span></p>
+		<p>
+		显示表索引。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--password[=<i>password</i>]</span>，<span>-p[<i>password</i>]</span><span>
+		</span></p>
+		<p>
+		连接服务器时使用的密码。如果你使用短选项形式<span>(</span><span>-p</span><span>)</span>，<em><span>不能在选项和
+		密码之间有一个空格</span></em>。如果在命令行中，你忽略了<span>--password</span>或<span>-p</span>选项后面的
+		密码值，将提示你输入一个。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>--port=<i>port_num</i>, -P <i>port_num</i></span></p>
+		<p>
+		连接时使用的<span>TCP/IP</span>端口号。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>--protocol={TCP | SOCKET | PIPE | MEMORY}</span></p>
+		<p>
+		连接时使用的协议。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>--show-table-type</span></p>
+		<p>
+		显示一列来指示表类型，与<span>SHOW FULL TABLES</span>语句显示相同。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--socket=<i>path</i></span>，<span>-S
+		<i>path</i></span><span> </span></p>
+		<p>
+		当连接<span >localhost</span>时使用的套接字文件（它时默认主机）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>--status, -i</span></p>
+		<p>
+		显示关于每个表的额外信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--user=<i>user_name</i></span>，<span>-u
+		<i>user_name</i></span></p>
+		<p>
+		连接服务器时使用的<span>MySQL</span>用户名。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--verbose</span>，<span>-v</span></p>
+		<p>
+		冗长模式。打印出程序操作的详细信息。该选项可以多次使用以便增加信息总量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>--version</span>，<span>-V</span></p>
+		<p>
+		显示版本信息并退出。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="myisamlog"></a>
+		8.12.&nbsp;myisamlog：显示MyISAM日志文件内容</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<p>
+		<strong><span>myisamlog</span></strong>处理<span>MyISAM</span>日志文件内容。</p>
+		<p>
+		象这样调用<strong><span  style="font-family:
+宋体">myisamlog</span></strong>：</p>
+		<pre><span>shell&gt; </span><b><span >myisamlog [<i>options</i>] [<i>logfile-name</i> [<i>tbl_name</i>] ...]</span></b></pre>
+		<p>
+		常用操作是更新（<span>-u</span>）。如果恢复完成（<span><span>-r</span><span>）</span></span>，所有写和可能的更新以及删除操作完成并且只统计错误。如果没有给出日志文件名，使用<span>myisam.log</span>作为日志文件名。如果在命令行中指定了表名，只更新那些指定的表。</p>
+		<p>
+		<strong><span>myisamlog</span></strong>理解下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-?</span>，<span>-I</span></p>
+		<p>
+		显示一个帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-c <i>N</i></span></p>
+		<p>
+		只执行<span><i><span>N</span></i></span>个命令。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-f <i>N</i></span></p>
+		<p>
+		指定打开文件的最大数目。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>-F <i>filepath</i></span><span><i><span>/</span></i></span><span>
+		</span></p>
+		<p>
+		<span>TODO</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-i</span></p>
+		<p>
+		退出之前显示详细信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-o </span><i>
+		<span>offset</span></i></p>
+		<p>
+		指定起始偏移量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-p <i>N</i></span><span>
+		</span></p>
+		<p>
+		从路径中移除<span><i><span>N</span></i></span>个组件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-r</span></p>
+		<p>
+		恢复。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>-R <i>record-pos-file record-pos</i></span></p>
+		<p>
+		指定记录位置文件和记录位置。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-u</span></p>
+		<p>
+		更新。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-v</span></p>
+		<p>
+		<span>Verbose</span>模式。产生更多输出。该选项可以多次使用以便产生越来越多的输出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-w </span><i>
+		<span>write-file</span></i></p>
+		<p>
+		指定写文件。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-V</span></p>
+		<p>
+		显示版本信息。</p>
+		<h2 class="title"><a name="perror"></a>
+		8.13.&nbsp;perror：解释错误代码</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<p>
+		对于大多数系统错误，除内部文本信息之外，<span>MySQL</span>还按下面的风格显示的系统错误代码：</p>
+		<p><span>message ... (errno: #)</span></p>
+		<p><span>message ... (Errcode: #)</span></p>
+		<p>
+		通过检查系统文档或使用<strong><span  style="font-family:
+宋体">perror</span></strong>工具，可以检查错误代码的意义。</p>
+		<p>
+		<strong><span>perror</span></strong>为系统错误代码或存储引擎（表处理）错误代码打印其描述信息。</p>
+		<p>
+		象这样调用<strong><span  style="font-family:
+宋体">perror</span></strong>：</p>
+		<pre><span>shell&gt; </span><b><span >perror [<i>options</i>] <i>errorcode</i> ...</span></b></pre>
+		<p>
+		例如：</p>
+		<pre><span>shell&gt; </span><span><b><span>perror13 64</span></b></span></pre>
+		<p><span>Error code&nbsp; 13:&nbsp; Permission denied</span></p>
+		<p><span>Error code&nbsp; 64:&nbsp; Machine is not on 
+		the network</span></p>
+		<p>
+		<strong><span>注释：</span></strong>要想显示<span>MySQL</span>簇的错误代码，用<span>--ndb</span>选项调用<strong><span>perror</span></strong>：</p>
+		<pre><span>shell&gt; </span><b><span >perror --ndb <i>errorcode</i></span></b></pre>
+		<p>
+		请注意，系统错误信息的含义可能与操作系统有关。在不同的操作系统中错误代码的含义可能不同。</p>
+		<h2 class="title"><a name="replace-utility"></a>
+		8.14.&nbsp;replace：字符串替换实用工具</h2></div></div></div>
+		<p>
+		<strong><span>replace</span></strong>实用工具可以及时更改文件或标准输入中的字符串。它首先使用有限状态机来匹配长的字符串。该工具可以用来交换字符串。例如，下面的命令交换给定文件<span>file1</span>和<span>file2</span>中的<span>a</span>和<span>b</span>：</p>
+		<pre><span>shell&gt; </span><b><span >replace a b b a -- file1 file2 ...</span></b></pre>
+		<p>
+		使用<span>--</span>选项来指示字符串<span>-</span>替换列表的结束位置和开始的文件名。</p>
+		<p>
+		在命令行中的任何文件名被及时修改，因此在转换之前，可能要对源文件进行备份。</p>
+		<p>
+		如果在命令行中没有指定文件名，<strong><span>replace</span></strong>读取标准输入并写到标准输出中。在这种情况下，不需要<span>--</span>选项。</p>
+		<p>
+		<strong><span>replace</span></strong>程序用于<strong><span>msql2mysql</span><span>。</span></strong>参见<a href="apis.html#msql2mysql" title="25.9.1. msql2mysql — Convert mSQL Programs for Use with MySQL">25.9.1节，“msql2mysql：转换mSQL程序以用于MySQL”</a>。</p>
+		<p>
+		<strong><span>replace</span></strong>支持下面的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-?</span>，<span>-I</span></p>
+		<p>
+		显示一条帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-# <i>debug_options</i></span><span>
+		</span></p>
+		<p>
+		写调试日志。<span><i><span>debug_options</span></i></span>字符串通常是<span>&#39;d:t:o,<i>file_name</i>&#39;</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-s</span></p>
+		<p>
+		沉默模式。打印出程序执行的少量信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-v</span></p>
+		<p>
+		冗长模式。打印出程序执行的大量信息。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-V</span></p>
+		<p>
+		显示版本信息并退出。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysql-zap"></a>
+		8.15.&nbsp;mysql_zap：杀死符合某一模式的进程</h2></div></div></div>
+		<p>
+		<strong><span>mysql_zap</span></strong>杀死匹配某一模式的进程。象这样调用它：</p>
+		<pre><span>shell&gt;</span><span class="MsoHyperlink"><b><span> </span></b></span><b><span >mysql_zap [-<i>signal</i>] [-?Ift] <i>pattern</i></span></b></pre>
+		<p>
+		如果进程的<strong><span  style="font-family:
+宋体">ps</span></strong>命令的输出行包含该模式，则认为其匹配。默认情况，<strong><span>mysql_zap</span></strong>对每个进程请求确认。响应<span>y</span>则杀死该进程，或者<span>q</span>退出 
+		<strong><span>mysql_zap</span></strong>。对于其它响应，<strong><span>mysql_zap</span></strong>不试图杀死进程。</p>
+		<p>
+		如果给出<span>-<i>signal</i></span>选项，它指定发送到每个进程的信号名或信号编号。否则，<strong><span>mysql_zap</span></strong>首先尝试<span>TERM</span>（信号<span>15</span>）然后用<span>KILL</span>（信号<span>9</span>）。</p>
+		<p>
+		<strong><span>mysql_zap</span></strong>理解下面的额外选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>---help</span>，<span>-?</span>，<span>-I</span></p>
+		<p>
+		显示一条帮助消息并退出。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-f</span></p>
+		<p>
+		强制模式。<strong><span>mysql_zap</span></strong><span>
+		</span>视图杀死每个匹配的进程而不需要确认。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>-t</span></p>
+		<p>
+		测试模式。显示每个进程的信息但不杀死它。</div></div><div><hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，<span class="GramE">请访问</span><a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。 
+		原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</p></div>
+</body></html>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 阻塞信号</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch33.html" title="第 33 章 信号" /><link rel="prev" href="ch33s02.html" title="2. 产生信号" /><link rel="next" href="ch33s04.html" title="4. 捕捉信号" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 阻塞信号</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch33s02.html">上一页</a> </td><th width="60%" align="center">第 33 章 信号</th><td width="20%" align="right"> <a accesskey="n" href="ch33s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2884689"></a>3. 阻塞信号</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2884694"></a>3.1. 信号在内核中的表示</h3></div></div></div><p>以上我们讨论了信号<span class="emphasis"><em>产生</em></span>（Generation）的各种原因，而实际执行信号的处理动作称为信号<span class="emphasis"><em>递达</em></span>（Delivery），信号从产生到递达之间的状态，称为信号<span class="emphasis"><em>未决</em></span>（Pending）。进程可以选择阻塞（Block）某个信号。被阻塞的信号产生时将保持在未决状态，直到进程解除对此信号的阻塞，才执行递达的动作。注意，阻塞和忽略是不同的，只要信号被阻塞就不会递达，而忽略是在递达之后可选的一种处理动作。信号在内核中的表示可以看作是这样的：</p><div class="figure"><a id="id2884728"></a><p class="title"><b>图 33.1. 信号在内核中的表示示意图</b></p><div class="figure-contents"><div><img src="images/signal.internal.png" alt="信号在内核中的表示示意图" /></div></div></div><br class="figure-break" /><p>每个信号都有两个标志位分别表示阻塞和未决，还有一个函数指针表示处理动作。信号产生时，内核在进程控制块中设置该信号的未决标志，直到信号递达才清除该标志。在上图的例子中，</p><div class="orderedlist"><ol type="1"><li><p><code class="literal">SIGHUP</code>信号未阻塞也未产生过，当它递达时执行默认处理动作。</p></li><li><p><code class="literal">SIGINT</code>信号产生过，但正在被阻塞，所以暂时不能递达。虽然它的处理动作是忽略，但在没有解除阻塞之前不能忽略这个信号，因为进程仍有机会改变处理动作之后再解除阻塞。</p></li><li><p><code class="literal">SIGQUIT</code>信号未产生过，一旦产生<code class="literal">SIGQUIT</code>信号将被阻塞，它的处理动作是用户自定义函数<code class="literal">sighandler</code>。</p></li></ol></div><p>如果在进程解除对某信号的阻塞之前这种信号产生过多次，将如何处理？POSIX.1允许系统递送该信号一次或多次。Linux是这样实现的：常规信号在递达之前产生多次只计一次，而实时信号在递达之前产生多次可以依次放在一个队列里。本章不讨论实时信号。从上图来看，每个信号只有一个bit的未决标志，非0即1，不记录该信号产生了多少次，阻塞标志也是这样表示的。因此，未决和阻塞标志可以用相同的数据类型<code class="literal">sigset_t</code>来存储，<code class="literal">sigset_t</code>称为信号集，这个类型可以表示每个信号的“<span class="quote">有效</span>”或“<span class="quote">无效</span>”状态，在阻塞信号集中“<span class="quote">有效</span>”和“<span class="quote">无效</span>”的含义是该信号是否被阻塞，而在未决信号集中“<span class="quote">有效</span>”和“<span class="quote">无效</span>”的含义是该信号是否处于未决状态。下一节将详细介绍信号集的各种操作。阻塞信号集也叫做当前进程的信号屏蔽字（Signal Mask）<a id="id2884862" class="indexterm"></a>，这里的“<span class="quote">屏蔽</span>”应该理解为阻塞而不是忽略。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2884876"></a>3.2. 信号集操作函数</h3></div></div></div><p><code class="literal">sigset_t</code>类型对于每种信号用一个bit表示“<span class="quote">有效</span>”或“<span class="quote">无效</span>”状态，至于这个类型内部如何存储这些bit则依赖于系统实现，从使用者的角度是不必关心的，使用者只能调用以下函数来操作<code class="literal">sigset_t</code>变量，而不应该对它的内部数据做任何解释，比如用<code class="literal">printf</code>直接打印<code class="literal">sigset_t</code>变量是没有意义的。</p><pre class="programlisting">#include &lt;signal.h&gt;
+
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signo);
+int sigdelset(sigset_t *set, int signo);
+int sigismember(const sigset_t *set, int signo);</pre><p>函数<code class="literal">sigemptyset</code>初始化<code class="literal">set</code>所指向的信号集，使其中所有信号的对应bit清零，表示该信号集不包含任何有效信号。函数<code class="literal">sigfillset</code>初始化<code class="literal">set</code>所指向的信号集，使其中所有信号的对应bit置位，表示该信号集的有效信号包括系统支持的所有信号。注意，在使用<code class="literal">sigset_t</code>类型的变量之前，一定要调用<code class="literal">sigemptyset</code>或<code class="literal">sigfillset</code>做初始化，使信号集处于确定的状态。初始化<code class="literal">sigset_t</code>变量之后就可以在调用<code class="literal">sigaddset</code>和<code class="literal">sigdelset</code>在该信号集中添加或删除某种有效信号。这四个函数都是成功返回0，出错返回-1。<code class="literal">sigismember</code>是一个布尔函数，用于判断一个信号集的有效信号中是否包含某种信号，若包含则返回1，不包含则返回0，出错返回-1。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2885022"></a>3.3. sigprocmask</h3></div></div></div><p>调用函数<code class="literal">sigprocmask</code>可以读取或更改进程的信号屏蔽字。</p><pre class="programlisting">#include &lt;signal.h&gt;
+
+int sigprocmask(int how, const sigset_t *set, sigset_t *oset);</pre><p>返回值：若成功则为0，若出错则为-1</p><p>如果<code class="literal">oset</code>是非空指针，则读取进程的当前信号屏蔽字通过<code class="literal">oset</code>参数传出。如果<code class="literal">set</code>是非空指针，则更改进程的信号屏蔽字，参数<code class="literal">how</code>指示如何更改。如果<code class="literal">oset</code>和<code class="literal">set</code>都是非空指针，则先将原来的信号屏蔽字备份到<code class="literal">oset</code>里，然后根据<code class="literal">set</code>和<code class="literal">how</code>参数更改信号屏蔽字。假设当前的信号屏蔽字为<code class="literal">mask</code>，下表说明了<code class="literal">how</code>参数的可选值。</p><div class="table"><a id="id2885118"></a><p class="title"><b>表 33.1. how参数的含义</b></p><div class="table-contents"><table summary="how参数的含义" border="1"><colgroup><col /><col /></colgroup><tbody><tr><td><code class="literal">SIG_BLOCK</code></td><td><code class="literal">set</code>包含了我们希望添加到当前信号屏蔽字的信号，相当于mask=mask|set</td></tr><tr><td><code class="literal">SIG_UNBLOCK</code></td><td><code class="literal">set</code>包含了我们希望从当前信号屏蔽字中解除阻塞的信号，相当于mask=mask&amp;~set</td></tr><tr><td><code class="literal">SIG_SETMASK</code></td><td>设置当前信号屏蔽字为<code class="literal">set</code>所指向的值，相当于mask=set</td></tr></tbody></table></div></div><br class="table-break" /><p>如果调用<code class="literal">sigprocmask</code>解除了对当前若干个未决信号的阻塞，则在<code class="literal">sigprocmask</code>返回前，至少将其中一个信号递达。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2885205"></a>3.4. sigpending</h3></div></div></div><pre class="programlisting">#include &lt;signal.h&gt;
+
+int sigpending(sigset_t *set);</pre><p><code class="literal">sigpending</code>读取当前进程的未决信号集，通过<code class="literal">set</code>参数传出。调用成功则返回0，出错则返回-1。</p><p>下面用刚学的几个函数做个实验。程序如下：</p><pre class="programlisting">#include &lt;signal.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+
+void printsigset(const sigset_t *set)
+{
+	int i;
+	for (i = 1; i &lt; 32; i++)
+		if (sigismember(set, i) == 1)
+			putchar('1');
+		else
+			putchar('0');
+	puts("");
+}
+
+int main(void)
+{
+	sigset_t s, p;
+	sigemptyset(&amp;s);
+	sigaddset(&amp;s, SIGINT);
+	sigprocmask(SIG_BLOCK, &amp;s, NULL);
+	while (1) {
+		sigpending(&amp;p);
+		printsigset(&amp;p);
+		sleep(1);
+	}
+	return 0;
+}</pre><p>程序运行时，每秒钟把各信号的未决状态打印一遍，由于我们阻塞了<code class="literal">SIGINT</code>信号，按Ctrl-C将会使<code class="literal">SIGINT</code>信号处于未决状态，按Ctrl-\仍然可以终止程序，因为<code class="literal">SIGQUIT</code>信号没有阻塞。</p><pre class="screen">$ ./a.out 
+0000000000000000000000000000000
+0000000000000000000000000000000（这时按Ctrl-C）
+0100000000000000000000000000000
+0100000000000000000000000000000（这时按Ctrl-\）
+Quit (core dumped)</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch33s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch33.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch33s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. 产生信号 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. 捕捉信号</td></tr></table></div></body></html>

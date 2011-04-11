@@ -1,0 +1,421 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Hello World 详解</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="从这里开始"
+HREF="c103.html"><LINK
+REL="PREVIOUS"
+TITLE="事件"
+HREF="x245.html"><LINK
+REL="NEXT"
+TITLE="继续"
+HREF="c389.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x245.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>从这里开始</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c389.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-STEPPINGTHROUGHHELLOWORLD">Hello World 详解</H1
+><P
+>现在我们知道基本理论了，让我们来详细分析<I
+CLASS="EMPHASIS"
+>helloworld</I
+>示例程序。</P
+><P
+>这是按钮被点击时要调用的回调函数。在这个示例中我们忽略了参数 widget 和 data，但是使用这些参数也不难。下一个示例会使用 data 参数来告诉我们哪个按钮被按下了。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void hello( GtkWidget *widget,
+            gpointer   data )
+{
+    g_print ("Hello World\n");
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>接下来的一个回调函数有点特殊。"delete_event" 在窗口管理器发送这个事件给应用程序时发生。我们在这里可以选择对这些事件做什么。可以忽略它们，可以做一点响应，或是简单地退出程序。</P
+><P
+>这个回调函数返回的值让 GTK 知道该如何去做。返回 TRUE，让它知道我们不想让 "destroy" 信号被发出，保持程序继续运行。返回 FALSE，我们让 "destroy" 信号发出，这接着会调用 "destroy" 信号处理函数。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gint delete_event( GtkWidget *widget,
+                   GdkEvent  *event,
+		   gpointer   data )
+{
+    g_print ("delete event occurred\n");
+
+    return TRUE; 
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>这里是另一个回调函数，它通过调用 gtk_main_quit() 来退出程序。这个函数告诉 GTK 当控制权返回给它时就从 gtk_main 退出。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void destroy( GtkWidget *widget,
+              gpointer   data )
+{
+    gtk_main_quit ();
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>我假设你知道 main() 函数...是的，像其它程序一样，所有的 GTK 程序有一个 main() 函数。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>int main( int   argc,
+          char *argv[] )
+{</PRE
+></TD
+></TR
+></TABLE
+><P
+>接下来声明两个指向 GtkWidget 类型的结构的指针。它们被用于创建一个窗口和一个按钮。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    GtkWidget *window;
+    GtkWidget *button;</PRE
+></TD
+></TR
+></TABLE
+><P
+>这里又是 gtk_init()。跟前面一样，这个初始化工具包，分析命令行里的参数。它从参数列表中删除任何可以识别的参数，并且修改 argc 和 argv，使这些被删除的参数好像从来就不存在一样，而允许你的程序分析剩余的参数。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_init (&#38;argc, &#38;argv);</PRE
+></TD
+></TR
+></TABLE
+><P
+>创建一个新窗口。这个很直观。它为 GtkWidget *window 结构分配了内存，这样 window 现在指向了一个有效的结构。它建立了一个新窗口，但是这个窗口直到在程序后面部分我们调用 gtk_widget_show(window) 后才会显示出来。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);</PRE
+></TD
+></TR
+></TABLE
+><P
+>这有两个连接一个信号处理函数到一个对象 (本例中，就是 window ) 的示例。这里，"delete_event" 和 "destroy" 信号被捕获。当我们用窗口管理器去关闭窗口或调用函数 gtk_widget_destroy() 并将 window 构件作为对象传给它来销毁时，"delete_event" 信号发出。当我们在 "delete_event" 信号处理函数中返回 FALSE 值时，"destroy" 信号发出。<TT
+CLASS="LITERAL"
+>G_OBJECT</TT
+> 和 <TT
+CLASS="LITERAL"
+>G_CALLBACK</TT
+> 是宏，为我们执行类型转换和检测，同时也增加了代码的可读性。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    g_signal_connect (G_OBJECT (window), "delete_event",
+                      G_CALLBACK (delete_event), NULL);
+    g_signal_connect (G_OBJECT (window), "destroy",
+                      G_CALLBACK (destroy), NULL);</PRE
+></TD
+></TR
+></TABLE
+><P
+>接下来这个函数用于设置容器对象的属性。设置窗口边框宽度为10个象素。在<A
+HREF="c1709.html"
+>设置构件属性</A
+>这一章还有其它类似函数。</P
+><P
+>再次，<TT
+CLASS="LITERAL"
+>GTK_CONTAINER</TT
+>也是一个执行类型转换的宏。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_container_set_border_width (GTK_CONTAINER (window), 10);</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个函数调用创建一个新按钮。在内存中分配空间给一个新的 GtkWidget 结构，初始化它，并使 button 指针指向它。它显示后上面会有个 "Hello World" 标签。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    button = gtk_button_new_with_label ("Hello World");</PRE
+></TD
+></TR
+></TABLE
+><P
+>在这，我们让这个按钮做一些有用的事。我们给按钮设置信号处理函数，因此当按钮发出 "clicked" 信号时，hello() 函数被调用。我们忽略了 data 参数，简单地传送 NULL 给 hello() 回调函数。显而易见，当我们用鼠标点击按钮时，信号 "clicked" 被发出。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    g_signal_connect (G_OBJECT (button), "clicked",
+                      G_CALLBACK (hello), NULL);</PRE
+></TD
+></TR
+></TABLE
+><P
+>我们也要使用这个按钮退出程序。这将演示 "destroy" 信号怎样由窗口管理器引发，或由我们的程序引发。当我们按下按钮时，和上面一样，它首先调用 hello() 回调函数，然后是这个函数，这依赖于它们被设置连接的顺序。你可以拥有许多回调函数，所有的回调按你设置连接的顺序依次执行。因为 gtk_widget_destroy() 函数只接受 GtkWidget *widget 作为唯一的参数，我们这里用 g_signal_connect_swapped() 函数代替正统的 g_signal_connect()。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    g_signal_connect_swapped (G_OBJECT (button), "clicked",
+                              G_CALLBACK (gtk_widget_destroy),
+                              G_OBJECT (window));</PRE
+></TD
+></TR
+></TABLE
+><P
+>这是一个组装调用，在<A
+HREF="c418.html"
+>组装构件</A
+>这一章将作深入讲解。不过它相当容易理解。它简单地告诉 GTK 要把按钮放在窗口里，也就是它显示的地方。注意一个 GTK 容器只能包含一个构件。还有其它的构件，在后面介绍，设计为用来以各种方法布局多个构件。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_container_add (GTK_CONTAINER (window), button);</PRE
+></TD
+></TR
+></TABLE
+><P
+>一切准备就绪。所有信号处理函数连接好了，按钮也放进了窗口，我们让 GTK 在屏幕上“显示”这些构件。窗口构件最后显示，这样整个窗口会一下弹出，而不是先见到窗口弹出后再见到按钮。虽然这个简单的示例中，你不会注意到。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_widget_show (button);
+
+    gtk_widget_show (window);</PRE
+></TD
+></TR
+></TABLE
+><P
+>接着，当然，我们调用 gtk_main() 函数来等待来自 X 服务器的事件，当这些事件到来时，调用构件发出信号。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_main ();</PRE
+></TD
+></TR
+></TABLE
+><P
+>最后返回，调用函数 gtk_quit() 后控制权返回到这里。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    return 0;</PRE
+></TD
+></TR
+></TABLE
+><P
+>现在，当我们用鼠标点击一个 GTK 按钮，构件发出一个 "clicked" 信号。为了让我们利用这个信息，程序设置了一个信号处理器来捕获那个信号，它按我们的选择依次调用函数。在我们的示例中，当按下按钮时，以 NULL 作为参数调用函数 hello()，然后调用该信号的下一个处理函数，该函数调用 gtk_widget_destroy() 函数，把窗口构件作为参数传递给它，销毁窗口构件。这导致窗口发出 "destroy" 信号，它被捕获，并且调用我们的 destroy() 回调函数，简单地退出 GTK。</P
+><P
+>如果用窗口管理器去关闭窗口，它会引发 "delete_event"。这会调用我们的 "delete_event" 处理函数。如果我们在函数中返回 TRUE，窗口还是留在那里，什么事也不发生。返回 FALSE，会使 GTK 发出 "destroy" 信号，它当然会调用 "destroy" 回调，退出 GTK。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x245.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c389.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>事件</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c103.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>继续</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

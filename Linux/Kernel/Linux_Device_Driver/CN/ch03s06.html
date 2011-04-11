@@ -1,0 +1,106 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>3.6.&#160;scull 的内存使用-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch03.html" title="第&#160;3&#160;章&#160;字符驱动">
+<link rel="prev" href="ch03s05.html" title="3.5.&#160;open 和 release">
+<link rel="next" href="ch03s07.html" title="3.7.&#160;读和写">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">3.6.&#160;scull 的内存使用</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch03s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;3&#160;章&#160;字符驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch03s07.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="scullsMemoryUsage.sect"></a>3.6.&#160;scull 的内存使用</h2></div></div></div>
+<p>在介绍读写操作前, 我们最好看看如何以及为什么 scull 进行内存分配. "如何"是需要全面理解代码, "为什么"演示了驱动编写者需要做的选择, 尽管 scull 明确地不是典型设备.</p>
+<p>本节只处理 scull 中的内存分配策略, 不展示给你编写真正驱动需要的硬件管理技能. 这些技能在第 9 章和第 10 章介绍. 因此, 你可跳过本章, 如果你不感兴趣于理解面向内存的 scull 驱动的内部工作.</p>
+<p>scull 使用的内存区, 也称为一个设备, 长度可变. 你写的越多, 它增长越多; 通过使用一个短文件覆盖设备来进行修整.</p>
+<p>scull 驱动引入 2 个核心函数来管理 Linux 内核中的内存. 这些函数, 定义在 &lt;linux/slab.h&gt;, 是:</p>
+<pre class="programlisting">
+void *kmalloc(size_t size, int flags); 
+void kfree(void *ptr);
+</pre>
+<p>对 kmalloc 的调用试图分配 size 字节的内存; 返回值是指向那个内存的指针或者如果分配失败为NULL. flags 参数用来描述内存应当如何分配; 我们在第 8 章详细查看这些标志. 对于现在, 我们一直使用 GFP_KERNEL. 分配的内存应当用 kfree 来释放. 你应当从不传递任何不是从 kmalloc 获得的东西给 kfree. 但是, 传递一个 NULL 指针给 kfree 是合法的.</p>
+<p>kmalloc 不是最有效的分配大内存区的方法(见第 8 章), 所以挑选给 scull 的实现不是一个特别巧妙的. 一个巧妙的源码实现可能更难阅读, 而本节的目标是展示读和写, 不是内存管理. 这是为什么代码只是使用 kmalloc 和 kfree 而不依靠整页的分配, 尽管这个方法会更有效.</p>
+<p>在 flip 一边, 我们不想限制"设备"区的大小, 由于理论上的和实践上的理由. 理论上, 给在被管理的数据项施加武断的限制总是个坏想法. 实践上, scull 可用来暂时地吃光你系统中的内存, 以便运行在低内存条件下的测试. 运行这样的测试可能会帮助你理解系统的内部. 你可以使用命令 cp /dev/zero /dev/scull0 来用 scull 吃掉所有的真实 RAM, 并且你可以使用 dd 工具来选择贝多少数据给 scull 设备.</p>
+<p>在 scull, 每个设备是一个指针链表, 每个都指向一个 scull_dev 结构. 每个这样的结构, 缺省地, 指向最多 4 兆字节, 通过一个中间指针数组. 发行代码使用一个 1000 个指针的数组指向每个 4000 字节的区域. 我们称每个内存区域为一个量子, 数组(或者它的长度) 为一个量子集. 一个 scull 设备和它的内存区如图<a href="ch03s06.html#ldd3-3-1.fig" title="图&#160;3.1.&#160;一个 scull 设备的布局">一个 scull 设备的布局</a>所示.</p>
+<div class="figure">
+<a name="ldd3-3-1.fig"></a><p class="title"><b>图&#160;3.1.&#160;一个 scull 设备的布局</b></p>
+<div><img src="images/snagitldd3/ldd3-3-1.png" alt="一个 scull 设备的布局"></div>
+</div>
+<p>选定的数字是这样, 在 scull 中写单个一个字节消耗 8000 或 12,000 KB 内存: 4000 是量子, 4000 或者 8000 是量子集(根据指针在目标平台上是用 32位还是 64位表示). 相反, 如果你写入大量数据, 链表的开销不是太坏. 每 4 MB 数据只有一个链表元素, 设备的最大尺寸受限于计算机的内存大小.</p>
+<p>为量子和量子集选择合适的值是一个策略问题, 而不是机制, 并且优化的值依赖于设备如何使用. 因此, scull 驱动不应当强制给量子和量子集使用任何特别的值. 在 scull 中, 用户可以掌管改变这些值, 有几个途径:编译时间通过改变 scull.h 中的宏 SCULL_QUANTUM 和 SCULL_QSET, 在模块加载时设定整数值 scull_quantum 和 scull_qset, 或者使用 ioctl 在运行时改变当前值和缺省值.</p>
+<p>使用宏定义和一个整数值来进行编译时和加载时配置, 是对于如何选择主编号的回忆. 我们在驱动中任何与策略相关或专断的值上运用这个技术.</p>
+<p>余下的唯一问题是如果选择缺省值. 在这个特殊情况下, 问题是找到最好的平衡, 由填充了一半的量子和量子集导致内存浪费, 如果量子和量子集小的情况下分配释放和指针连接引起开销. 另外, kmalloc 的内部设计应当考虑进去. (现在我们不追求这点, 不过; kmalloc 的内部在第 8 章探索.) 缺省值的选择来自假设测试时可能有大量数据写进 scull, 尽管设备的正常使用最可能只传送几 KB 数据.</p>
+<p>我们已经见过内部代表我们设备的 scull_dev 结构. 结构的 quantum 和 qset 分别代表设备的量子和量子集大小. 实际数据, 但是, 是由一个不同的结构跟踪, 我们称为 struct scull_qset:</p>
+<pre class="programlisting">
+struct scull_qset {
+ void **data;
+ struct scull_qset *next; 
+}; 
+</pre>
+<p>下一个代码片段展示了实际中 struct scull_dev 和 struct scull_qset 是如何被用来持有数据的. sucll_trim 函数负责释放整个数据区, 由 scull_open 在文件为写而打开时调用. 它简单地遍历列表并且释放它发现的任何量子和量子集.</p>
+<pre class="programlisting">
+int scull_trim(struct scull_dev *dev)
+{
+        struct scull_qset *next, *dptr;
+        int qset = dev-&gt;qset; /* "dev" is not-null */
+        int i;
+        for (dptr = dev-&gt;data; dptr; dptr = next)
+        { /* all the list items */
+                if (dptr-&gt;data) {
+                        for (i = 0; i &lt; qset; i++)
+                                kfree(dptr-&gt;data[i]);
+                        kfree(dptr-&gt;data);
+                        dptr-&gt;data = NULL;
+                }
+
+                next = dptr-&gt;next;
+                kfree(dptr);
+        }
+        dev-&gt;size = 0;
+        dev-&gt;quantum = scull_quantum;
+        dev-&gt;qset = scull_qset;
+        dev-&gt;data = NULL;
+        return 0;
+}
+</pre>
+<p>scull_trim 也用在模块清理函数中, 来归还 scull 使用的内存给系统.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch03s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch03.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch03s07.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">3.5.&#160;open 和 release&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;3.7.&#160;读和写</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

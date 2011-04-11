@@ -1,0 +1,1318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+  <head>
+    <title>Sawfish Window Manager</title>
+    <meta name="generator" content="emacs-wiki.el">
+    <meta http-equiv="Content-Type"
+	  content="text/html; charset=gb2312">
+    <link rev="made" href="mailto:webmaster@wangyin.com">
+    <link rel="home" href="WelcomePage.html">
+    <link rel="index" href="WikiIndex.html">
+    <LINK rel="stylesheet" href="../main.css" media="screen">
+  </head>
+  <body>
+    <h1>Sawfish Window Manager</h1>
+    <!-- Page published by Emacs Wiki begins here -->
+
+
+
+
+
+
+<h2>Sawfish --- 我的新 WM</h2>
+
+<p>
+我一直用的是 FVWM，直到我发现 Sawfish 可以用 lisp 和 Scheme 
+来配置。这样我可以任意扩展这个 WM 达到我的功能。我可以在里面
+使用函数，起动进程，线程，设置变量，环境，continuation，…… 
+我拥有大量其它人的扩展，我可以修改它们来适应自己的需要。还可
+以在使用的同时练习我的 Scheme 和 Common Lisp ！太棒了！
+
+</p>
+
+<p>
+Sawfish 很像 Emacs，它的配置语言非常像(实际上就是) elisp，不
+过它也可以使用 Scheme 的 lexical binding 和 first class
+continuation. 你可以看到我在后面有一个例子里使用了Scheme 的 
+closure。
+
+</p>
+
+<p>
+关于 FVWM，FVWM 是很好的 WM，以前我一直用它。不过我觉得要是
+它能用 LISP 或者 Scheme 配置就好了。如果你不想了解 LISP，那
+么你可以试试 <a href="../fvwm_frame.html">FVWM</a>。
+
+</p>
+
+<h2>配置要点。</h2>
+
+<ul>
+<li>配置文件是 ~/.sawfishrc。
+</li>
+<li>变量 load-path 跟 Emacs 的 load-path 功能一样。
+</li>
+<li>sawfish-client 可以连接到 sawfish 直接操纵。这个很像FVWM的
+  Fvwmcommand, 不过它不需要由 sawfish fork() 出来，而是通过
+  X11 或者 TCP/IP 连接。
+</li>
+</ul>
+
+<blockquote>
+<p>
+  sawfish-client 里面可以使用类似 Scheme48 的命令，比如
+  ,open ,in ,quit ... 注意这个 ,quit 是退出 sawfish WM 而不
+  是 sawfish-client! 小心！,describe 可以得到一个函数的
+  docstring 帮助。还有 ,apropos, ...
+
+</p>
+</blockquote>
+
+<ul>
+<li>sawfish-ui 可以方便的配置一些我懒得管的东西。比如窗口风格，
+  把某些窗口不加装饰，……
+</li>
+<li>使用 (system "...") 的时候要特别小心。如果启动一个 X 程序，
+  必须在命令行后加 "&"，否则会引起死锁。即使你使用 thread 也
+  不可避免这种情况。不过你可以设计一个函数来防止这种情况。看 
+  <a href="SawfishWindowManager.html#wyrun">这里</a>.
+</li>
+<li>Emacs 有一个 sawfish-mode，可以在
+  <a href="http://www.davep.org/emacs/#sawfish.el">http://www.davep.org/emacs/#sawfish.el</a> 下载。用法类似
+  elisp. C-x C-e 执行上一条 sexp.
+</li>
+<li><a href="http://sawfish.skylab.org/WikiSawfishLibrary">http://sawfish.skylab.org/WikiSawfishLibrary</a> 有很多扩
+  展，都非常好。很新。
+</li>
+<li><a href="http://www.sics.se/~lofgren/sawmill/repository.html">http://www.sics.se/~lofgren/sawmill/repository.html</a> 也
+  有很多扩展。可能有些很老。但是真的很多！
+</li>
+<li>有很多函数需要加载模块才能使用。比如 read-event 需要 
+  sawfish.wm.util.decode-events, popup-menu 需要 
+  sawfish.wm.menus. 它们可以用 require 加载。比如：
+</li>
+</ul>
+
+<pre class="example">
+(require sawfish.wm.menus)
+</pre>
+
+<p>
+<a name="wmmodifier" id="wmmodifier"></a>- Sawfish 可以设置一个 wm-modifier-value，作为 "W-next" 这样
+  <blockquote>
+<p>
+  的热键的 modifier。缺省的设置是 super 键，通常在 PC 键盘上
+  是 Win 键，我觉得这是很自然的用来操纵“窗口”的热键
+  modifier。所以以后的设置中如果用到 "W-next" 这样的说法，实
+  际上就是指 Win 和 <a class="nonexistent" href="mailto:webmaster@wangyin.com">PageDown</a> 同时按下。
+
+</p>
+</blockquote>
+
+<blockquote>
+<p>
+  如果你的 Win 键似乎不起作用，可以把这些内容加到
+  ~/.sawfish/custom 文件。
+
+</p>
+</blockquote>
+
+<pre class="example">
+(custom-set-typed-variable (quote wm-modifier-value) (quote
+(super)) (quote modifier-list))
+</pre>
+
+<h2>FAQ</h2>
+
+<h3>"W-next"  里的 "W" 是指哪个键？</h3>
+
+<p>
+这个问题请参考 <a href="SawfishWindowManager.html#wmmodifier">这里</a>.
+
+</p>
+
+<h3>如何设置起动时需要起动的程序？</h3>
+
+<p>
+可以一个一个使用 system 调用，但是你一旦忘记写一个 "&" 就会
+把整个 WM 挂在那里。所以最好生成新的进程运行程序。
+
+</p>
+
+<p>
+可以做一个表，然后把那些程序和参数放进表里，然后起动这些进程
+就行了，就像我这样：
+
+</p>
+
+<pre class="example">
+(defun wy-construct-arg-list (str sep)
+  &quot;Construct a list from a string. Using sep as separetor.&quot;
+  (interactive)
+  (let* ((result nil)
+         (add-to-the-list
+          (lambda (x)
+            (setq result (cons x result)))))
+    (let loop ((s &quot;&quot;)
+               (left str)
+               (ptr 0))
+         (setq nextchar (substring left 0 1))
+         (print s)
+         (catch 'exit
+           (cond ((and
+                   (string-match &quot;\\s&quot; nextchar)
+                   (&gt; (length s) 0))
+                  (add-to-the-list s)
+                  (setq s &quot;&quot;))
+                 ((= (+ 1 ptr) (length str))
+                  (setq s (concat s nextchar))
+                  (if (&gt; (length s) 0) (add-to-the-list s))
+                  (throw 'exit))
+                 (t
+                  (setq s (concat s nextchar))))
+           (loop s (substring left 1) (+ ptr 1))))
+    (reverse result)))
+
+;; startup programs
+(defun wy-start-entry (prog-entry)
+  (interactive)
+  (let ((process (make-process standard-output))
+        (prog-entry-list (wy-construct-arg-list prog-entry &quot;\\s&quot;)))
+    (apply start-process process (car prog-entry-list) (cdr prog-entry-list))))
+
+(setq startup-programs
+      '(&quot;gnome-panel&quot;
+        &quot;xset b off&quot;
+        &quot;xloadimage -onroot -fullscreen /usr/share/backgrounds/images/leafdrops.jpg&quot;
+        &quot;xsetroot -cursor .sawfish/sawfish.xbm .sawfish/sawfish_mask.xbm&quot;
+        &quot;xdaliclock&quot;
+        &quot;xscreensaver -no-splash&quot;
+        &quot;fcitx&quot;))
+
+(mapc wy-start-up startup-programs)
+
+(defun wy-cleanup-on-exit ()
+  (mapc stop-process (active-processes)))
+
+(add-hook 'before-exit-hook 'wy-cleanup-on-exit)
+</pre>
+
+<p>
+我挂了一个 wy-cleanup-on-exit 到 before-exit-hook, 退出时这
+些被 wy-start-up 起动的程序都会被关闭。
+
+</p>
+
+<p>
+wy-construct-arg-list 是我自己写的一个函数用来把命令行分解成
+一个表。我不知道 rep 有没有现成的函数可以做这个事，所以自己
+写了一个。
+
+</p>
+
+<h3>加载扩展时如何避免找不到文件时起动失败？</h3>
+
+<p>
+你可以使用一个叫做 require-try 的函数，如果要用的扩展找不到
+就返回 nil. 而不会报错。
+
+</p>
+
+<pre class="example">
+(defun require-try (#!rest args)
+  (let ((result t))
+    (mapc
+     (lambda (e)
+       (condition-case err
+           (cond ((stringp e) (load-file e))
+                 ((symbolp e) (require e))
+                 (t (format standard-output
+                            &quot;Invalid arg to require-try: %s&quot; e)
+                    (setq result nil)))
+       (file-error
+        (format standard-output &quot;Couldn't load extension: %s&quot; e)
+        (setq result nil))))
+     args)
+   result))
+</pre>
+
+<h3>如何改变字体？</h3>
+
+<pre class="example">
+(setq default-font (get-font &quot;-*-simsun-medium-r-*-*-14-*-*-*-*-*-*-*&quot;))
+</pre>
+
+<h3>如何让 Shift + 右键可以拖动窗口？</h3>
+
+<p>
+绑定 "W-Button1-Click1" 到 一个函数，在里面调用
+move-window-interactively 就行了。比如下面这个
+wy-move-window.
+
+</p>
+
+<p>
+注意必须先打开 sawfish.wm.commands.move-resize, 否则解析不到
+move-window-interactively.
+
+</p>
+
+<pre class="example">
+(require 'sawfish.wm.commands.move-resize)
+(defun wy-move-window ()
+  (interactive)
+  (move-window-interactively (current-event-window)))
+
+(bind-keys window-keymap &quot;W-Button1-Click1&quot; 'wy-move-window)
+</pre>
+
+<h3>如何使得 C-S-Button1 可以关闭程序窗口？</h3>
+
+<pre class="example">
+(bind-keys window-keymap &quot;C-S-Button3-Click1&quot;
+'(delete-window (current-event-window)))
+</pre>
+
+<h3>如何对窗口做上标记？</h3>
+
+<p>
+你可以用一个简单的函数：
+
+</p>
+
+<pre class="example">
+(require 'sawfish.wm.util.decode-events)
+(defun define-shortcut (win bind)
+  &quot;Ask for a key and bind that key to select the current
+  window. Will happily destroy previous binds for that key.&quot;
+  (interactive &quot;%w\ne&quot;)
+  (when win
+    (let ((key (read-event &quot;Press shortcut key&quot;)))
+      (unless (equal bind key)
+        (bind-keys global-keymap key `(display-window
+        ,win))))))
+(bind-keys window-keymap &quot;M-s&quot; 'define-shortcut)
+</pre>
+
+<p>
+以后按 M-s 接着再按一个热键就可以标记一个窗口。但是这样有可
+能引起很多热键被 WM 截获。对于 Emacs 之类的程序不太好。
+
+</p>
+
+<p>
+所以最好使用 bookmark.jl。 它可以对窗口使用任意热键标记，但
+是你必须在这个热键之前执行 bookmark-goto。在bookmark-set 之
+后按一个热键，以后 bookmark-goto，然后再按那个热键就可以直接
+到达那个窗口了。
+
+</p>
+
+<p>
+bookmark.jl 可以在这里
+<a href="http://sawfish.skylab.org/WikiSawfishLibrary">http://sawfish.skylab.org/WikiSawfishLibrary</a> 找到。
+
+</p>
+
+<p>
+以下是一些简单的配置：
+
+</p>
+
+<pre class="example">
+(when (require-try 'bookmark)
+  (bind-keys global-keymap &quot;W-j&quot; 'bookmark-goto)
+  (bind-keys global-keymap &quot;W-b&quot; 'bookmark-set)
+  (bind-keys global-keymap &quot;W-l&quot; 'bookmark-print-list)
+  (bind-keys global-keymap &quot;W-k&quot; 'bookmark-goto-last)
+  (setq auto-bookmark-list 
+        '(( &quot;^emacs&quot; . e )
+          ( &quot;^locutus$&quot; . l )
+          ( &quot;^ji$&quot; . j )
+          ( &quot;Galeon$&quot; . g )
+          ( &quot;Mozilla {Build ID: [0-9]+}$&quot; . m)
+          ( &quot;Phoenix&quot; . p )
+          ( &quot;rxvt&quot; . t )))
+)
+
+</pre>
+
+<h3>如何显示我一个键的绑定信息？</h3>
+
+<p>
+我设计了一个函数，可以知道一个键正在进行什么操作。你只需要按 
+W-w 然后按你的热键，就能知道它在所有 keymap 里的 binding 和
+它们的描述。我把 describe-symbol 和 describe-key 修改成了可
+以向 string port 输出，而且修正了一个不能显示复合命令的bug。
+从而可以把它们舒服的显示在屏幕上。就像 <a
+href="../images/describe-key-in-all-keymaps.png">这样</a>.
+
+</p>
+
+<p>
+下面是函数：
+
+</p>
+
+<pre class="example">
+(define (wy-describe-symbol fun #!optional stream)
+  &quot;Display the documentation of a specified symbol into stream.&quot;
+  (describe-value (symbol-value fun t) fun)
+  (format (if stream stream standard-output)
+          &quot;\n%s\n&quot;
+          (or (documentation fun nil (symbol-value fun t)) &quot;Undocumented.&quot;)))
+
+(define (wy-describe-key key #!optional map stream)
+    &quot;Print key's binding in keymap map, to stream stream.&quot;
+    (require 'rep.lang.doc)
+    (require 'sawfish.wm.commands.describe)
+    (let (components)
+      (letrec
+	  ((loop
+	    (lambda (keymap)
+	      (let* ((binding (and key (search-keymap key keymap))))
+		(when binding
+		  (setq binding (car binding))
+                  (format (or stream standard-output) &quot;\n%s:\n&quot; map)
+		  (setq components (concat components
+					   (and components ? )
+					   (event-name key)))
+		  (cond ((keymapp binding)
+			 (loop binding))
+			((and (symbolp binding)
+			      (keymapp (symbol-value binding t)))
+			 (loop (symbol-value binding)))
+			(t
+			 (format (or stream standard-output)
+				 &quot;`%s' is bound to `%s'&quot;
+				 components binding)
+                         (setq command binding)
+                         (while (car command)
+                           (setq command (car command)))
+			 (wy-describe-symbol command stream))))))))
+	(loop (or map global-keymap)))))
+
+(defun describe-what-am-i-doing ()
+  &quot;Read a event and search the keymaps for it's definitions. Detailed.&quot;
+  (interactive)
+  (let ((s (make-string-output-stream))
+        (key (read-event (concat &quot;Describe key: &quot;))))
+    (mapc 
+     (lambda (map)
+       (wy-describe-key key map s))
+     '(global-keymap 
+       window-keymap 
+       title-keymap 
+       root-window-keymap 
+       border-keymap
+       close-button-keymap
+       iconify-button-keymap
+       maximize-button-keymap
+       menu-button-keymap
+       ))
+    (setq msg (get-output-stream-string s))
+    (if (&gt; (length msg) 0)
+      (display-message msg
+       `((background . ,tooltips-background-color)
+         (foreground . ,tooltips-foreground-color)
+         (x-justify . left)
+         (spacing . 2)
+         (font . ,tooltips-font)))
+      (display-message (concat
+                        &quot;key `&quot;
+                        (prin1-to-string (event-name key))
+                        &quot;' is not bound&quot;
+                        )))))
+
+(setq tooltips-background-color (get-color &quot;black&quot;))
+(setq tooltips-foreground-color (get-color &quot;red&quot;))
+(setq tooltips-font (get-font &quot;-*-lucida-medium-r-*-*-14-*-*-*-*-*-*-*&quot;))
+(bind-keys global-keymap &quot;W-w&quot; 'describe-what-am-i-doing)
+</pre>
+
+<h3>如何在屏幕上显示信息？</h3>
+
+<p>
+用 display-message 可以在屏幕中央显示字符串，用
+display-tooltip 可以在鼠标处显示字符串。
+
+</p>
+
+<h3>如何定时执行操作？</h3>
+
+<p>
+用 rep 的 make-timer 函数就可以。比如：
+
+</p>
+
+<pre class="example">
+(require 'rep.io.timers)
+(make-timer 
+ (lambda ()
+   (iconify-window (input-focus)))
+   2)
+</pre>
+
+<p>
+会在 2 秒之后最小化聚焦窗口。
+
+</p>
+
+<h3>如何得到 sawfish 知道一个窗口的一切？</h3>
+
+<p>
+用 window-snooper 可以得到 sawfish 知道的一切信息。包括窗口
+参数，键绑定，窗口属性……
+
+</p>
+
+<pre class="example">
+(require 'window-snooper)
+(rplacd (cdr window-ops-menu)
+         `((&quot;Snoop&quot; window-snooper)
+          ,@(cddr window-ops-menu)))
+</pre>
+
+<h3>如何方便的切换窗口？</h3>
+
+<p>
+用 iswitch-window 最好。不但可以正则表达式选取窗口，而且可以
+用热键对它们进行 iconify, shade, ... 等操作。
+
+</p>
+
+<p>
+具体可以的操作有这些：
+
+</p>
+
+<pre class="example">
+;; C-s,A-s,TAB    find next matching window
+;; C-r,A-r,M-TAB  find previous matching window
+;; C-g,ESC        quit waffle
+;; C-u            clear input buffer
+;; backspace      delete previous character
+;; C-z,A-z        iconify window
+;; C-h,A-h        shade window
+;; RET            select window
+</pre>
+
+<h3>如何让 W-next 可以轮换窗口？</h3>
+
+<p>
+iswitch-window 可以方便的寻找到窗口，但是你总是需要按一下RET 
+才能到达。如果你只是想快速的轮换窗口，sawfish 有一个函数叫 
+cycle-windows，把它绑定到一个键就行了。
+
+</p>
+
+<p>
+比如我绑定到了 W-next:
+
+</p>
+
+<pre class="example">
+(bind-keys global-keymap &quot;W-Next&quot; 'cycle-windows)
+</pre>
+
+<p>
+因为我的 Emacs 用 C-next 轮换 buffer，
+Sawfish 用 W-next 当然很自然了。
+
+</p>
+
+<h3>如何让一个窗口一直在最上面？</h3>
+
+<p>
+改变窗口的层就行了。这里有3个函数可以帮助你设置窗口的层：
+
+</p>
+
+<p>
+wy-raise-window-layer 可以帮你把窗口放到更上面一层，
+wy-lower-window-layer 可以帮你把窗口放到下面一层，
+wy-reset-window-layer 可以把窗口放到第 0 层。
+
+</p>
+
+<pre class="example">
+(defun wy-raise-window-layer (window)
+  (interactive &quot;%w&quot;)
+  (let ((layer (1+ (window-get window 'depth))))
+    (display-message (concat 
+                           &quot;Layer &quot; 
+                           (prin1-to-string layer)))
+    (set-window-depth window layer)))
+
+(defun wy-lower-window-layer (window)
+  (interactive &quot;%w&quot;)
+  (let ((layer (1- (window-get window 'depth))))
+    (display-message (concat 
+                      &quot;Layer &quot; 
+                      (prin1-to-string layer)))
+    (set-window-depth window layer)))
+
+(defun wy-reset-window-layer (window)
+  (interactive &quot;%w&quot;)
+  (let ((layer 0))
+    (display-message (concat 
+                      &quot;Layer &quot; 
+                      (prin1-to-string layer)))
+    (set-window-depth window layer)))
+
+(bind-keys window-keymap &quot;W-KP_Add&quot; 'wy-raise-window-layer)
+(bind-keys window-keymap &quot;W-KP_Subtract&quot; 'wy-lower-window-layer)
+(bind-keys window-keymap &quot;W-=&quot; 'wy-reset-window-layer)
+</pre>
+
+<h3><a name="wyrun" id="wyrun"></a>如何防止 system 起动的程序把 WM 挂起？</h3>
+
+<p>
+使用 system 时一定要小心，如果用 X 的程序，后面一定要加 "&"
+让它在后台运行，否则 WM 就会被挂起，键盘会被锁定。有时你不得
+不重新起动。
+
+</p>
+
+<p>
+为了避免这种情况，让程序的起动更加流畅。你可以参考这个函数：
+
+</p>
+
+<pre class="example">
+(defun wy-run (cmd)
+  &quot;Run a command in a new process. And let it start in
+background. Without stop the current WM execution&quot;
+  (interactive)
+  (system 
+   (if (string-match &quot;.*&amp;\\s*$&quot; cmd)
+       cmd
+     (concat cmd &quot; &amp;&quot;))))
+</pre>
+
+<p>
+我们用 (wy-run "程序") 代替 (system "程序")。这样每次起动程
+序时，会首先起动一个新的线程。在这个线程里调用 system 起动那
+个程序。如果命令行最后没有 "&", 我们自己给它加一个 "&". 这样
+就不会挂起我们的 WM 了。
+
+</p>
+
+<h3>能不能选中一些字符就进行拼写检查？</h3>
+
+<p>
+用 sawfish-spell 就行了。随便在那个窗口选中一些字符然后按
+C-W-c 就行了。
+
+</p>
+
+<pre class="example">
+(when (require-try 'sawfish-spell)
+  (bind-keys global-keymap
+             &quot;C-W-c&quot; spellcheck-interactive))
+</pre>
+
+<h3>能不能方便的缩小窗口使它不要挡住它下面的窗口？</h3>
+
+<p>
+你可以使用 shrink-windows-to-fit 扩展。绑定4个键到4个方向缩
+小的函数就行了。Magic!
+
+</p>
+
+<pre class="example">
+(when (require-try 'shrink-windows-to-fit)
+  (bind-keys window-keymap &quot;M-W-Left&quot; 'shrink-window-left)
+  (bind-keys window-keymap &quot;M-W-Right&quot; 'shrink-window-right)
+  (bind-keys window-keymap &quot;M-W-Up&quot; 'shrink-window-up)
+  (bind-keys window-keymap &quot;M-W-Down&quot; 'shrink-window-down)
+)
+
+</pre>
+
+<h3>如何设置菜单？</h3>
+
+<p>
+只要定义一个菜单，把它绑定到一个键上就行了。注意，必须先加载
+sawfish.wm.menus 才能使用 popup-menu 函数。
+
+</p>
+
+<pre class="example">
+(setq menu-program-stays-running t)
+
+(require 'sawfish.wm.menus)
+(setq my-menu
+    '((&quot;screen&quot; (wy-run &quot;rxvt -e screen -xRR &amp;&quot;))
+      (&quot;rxvt&quot; (wy-run &quot;rxvt &amp;&quot;))
+      (&quot;Emacs&quot; (wy-run &quot;emacs &amp;&quot;))
+      (&quot;Gthumb&quot; (wy-run &quot;gthumb &amp;&quot;))
+      (&quot;Phoenix&quot; (wy-run &quot;phoenix &amp;&quot;))
+      (&quot;gv&quot; (wy-run &quot;gv &amp;&quot;))
+))
+
+
+(defun popup-my-menu ()
+  (interactive)
+  (popup-menu my-menu))
+
+(bind-keys global-keymap &quot;W-Button1-Click1&quot; 'popup-my-menu)
+(bind-keys global-keymap &quot;W-Button2-Click1&quot; 'popup-root-menu)
+(bind-keys global-keymap &quot;W-Button3-Click1&quot; 'popup-window-menu)
+(bind-keys window-keymap &quot;W-Button1-Click1&quot; 'popup-my-menu)
+(bind-keys window-keymap &quot;W-Button2-Click1&quot; 'popup-root-menu)
+(bind-keys window-keymap &quot;W-Button3-Click1&quot; 'popup-window-menu)
+
+</pre>
+
+<h3>如何绑定一个热键插入一个新的 workspace 在当前的 workspace</h3>
+   之后？
+
+</p>
+
+<pre class="example">
+(bind-keys window-keymap &quot;W-Insert&quot; 'insert-workspace-after)
+</pre>
+
+<h3>如何返回上次访问过的窗口和 workspace?</h3>
+
+<p>
+我自定义了一些函数。如果你上次切换了窗口，那么按 M-` 就可以
+回到上一个窗口，如果你上次切换了 workspace，那么 M-` 就回到
+上一个工作区。
+
+</p>
+
+<pre class="example">
+;;; switch to last workspace or window
+(define window-or-workspace? 'window)
+(add-hook 'leave-workspace-hook
+          (lambda (current)
+            (setq workspace-last current)
+            (setq window-or-workspace? 'workspace)))
+
+(add-hook 'focus-out-hook
+          (lambda (current)
+            (setq window-last current)
+            (setq window-or-workspace? 'window)))
+
+(bind-keys global-keymap
+    &quot;W-`&quot;
+    (lambda ()
+      (if (eq window-or-workspace? 'workspace)
+          (select-workspace workspace-last)
+        (display-window window-last))))
+
+</pre>
+
+<h3>如何绑定一些键可以在4个角落移动窗口？</h3>
+
+<pre class="example">
+(defun shove-window (dir &amp;optional no-focus)
+  &quot;Move focused window 'left, 'right, 'up or 'down to screen edges.&quot;
+  (interactive)
+  (let* ((win (input-focus))
+         (pos (window-position win))
+         (dim (window-frame-dimensions win))
+         (endx (car pos))
+         (endy (cdr pos)))
+    (cond ((eq dir 'left) (setq endx 0))
+          ((eq dir 'right) (setq endx (- (screen-width) (car dim))))
+          ((eq dir 'up) (setq endy 0))
+          ((eq dir 'down) (setq endy (- (screen-height) (cdr dim)))))
+    (move-window-to win endx endy)
+    (unless no-focus
+      (display-window win))))
+
+
+(bind-keys global-keymap &quot;C-M-Left&quot; '(shove-window 'left))
+(bind-keys global-keymap &quot;C-M-Right&quot; '(shove-window 'right))
+(bind-keys global-keymap &quot;C-M-Up&quot; '(shove-window 'up))
+(bind-keys global-keymap &quot;C-M-Down&quot; '(shove-window 'down))
+
+</pre>
+
+<h3>如何绑定一些键进行最小化，取消最小化，shade, unshade?</h3>
+
+<p>
+先做一些包装函数，然后绑定到键上：
+
+</p>
+
+<pre class="example">
+(defun wy-shade-window (win)
+  (interactive &quot;%w&quot;)
+  (shade-window win))
+
+(defun wy-unshade-window (win)
+  (interactive &quot;%w&quot;)
+  (unshade-window win))
+
+(defun wy-iconify-window (win)
+  (interactive &quot;%w&quot;)
+  (iconify-window win)
+  (setq last-iconified-window win))
+
+(defun wy-uniconify-window ()
+  (interactive)
+  (uniconify-window last-iconified-window)
+  (display-window last-iconified-window))
+
+(bind-keys window-keymap &quot;W-Up&quot; 'wy-shade-window)
+(bind-keys window-keymap &quot;W-Down&quot; 'wy-unshade-window)
+(bind-keys window-keymap &quot;C-W-Down&quot; 'wy-iconify-window)
+(bind-keys window-keymap &quot;C-W-Up&quot; 'wy-uniconify-window)
+
+</pre>
+
+<pre class="example">
+(defun wy-shade-window (win)
+  (interactive &quot;%w&quot;)
+  (shade-window win))
+
+(defun wy-unshade-window (win)
+  (interactive &quot;%w&quot;)
+  (unshade-window win))
+
+(defun wy-iconify-window (win)
+  (interactive &quot;%w&quot;)
+  (iconify-window win)
+  (setq last-iconified-window win))
+
+(defun wy-uniconify-window ()
+  (interactive)
+  (uniconify-window last-iconified-window)
+  (display-window last-iconified-window))
+
+(bind-keys window-keymap &quot;W-Up&quot; 'wy-shade-window)
+(bind-keys window-keymap &quot;W-Down&quot; 'wy-unshade-window)
+(bind-keys window-keymap &quot;C-W-Down&quot; 'wy-iconify-window)
+(bind-keys window-keymap &quot;C-W-Up&quot; 'wy-uniconify-window)
+
+</pre>
+
+<h3>如何绑定一个键可以把鼠标抓到聚焦窗口中央？</h3>
+
+<pre class="example">
+
+(require 'sawfish.wm.focus)
+(defun wy-warp-to (x y)
+  (interactive)
+  (let* ((win (input-focus))
+         (xpix (floor (inexact-&gt;exact (* x (car (window-dimensions win))))))
+         (ypix (floor (inexact-&gt;exact (* y (cdr (window-dimensions win)))))))
+    (warp-cursor-to-window win xpix ypix)))
+
+(setq warp-to-window-enabled t)
+(bind-keys global-keymap &quot;W-c&quot; '(wy-warp-to 0.5 0.5))
+</pre>
+
+<p>
+注意，你必须设置 warp-to-window-enabled 为 t.
+
+</p>
+
+<h3>如何把窗口移动到屏幕中间，如何在四角循环移动窗口？</h3>
+
+<p>
+可以使用一个扩展叫做 animate-move.
+
+</p>
+
+<pre class="example">
+(when (require-try 'animate-move)
+  (bind-keys window-keymap
+             &quot;M-W-s&quot; 'toggle-window-shaded
+             &quot;M-W-i&quot; 'iconify-window
+             &quot;M-W-c&quot; 'animate-center-window
+             &quot;M-W-k&quot; 'delete-window
+             &quot;M-W-r&quot; 'rotate-move))
+
+</pre>
+
+<h3>如何改变窗口的风格</h3>
+
+<p>
+使用 set-frame-style 可以改变窗口边框风格。比如
+
+</p>
+
+<pre class="example">
+(set-frame-style (get-window-by-name-re &quot;rxvt&quot;)
+'microGUI)
+</pre>
+
+<p>
+可以把名字匹配 "rxvt" 的窗口，都设置成microGUI 的风格。
+
+</p>
+
+<pre class="example">
+(find-all-frame-styles)
+</pre>
+
+<p>
+可以得到一个所有 frame-style 的 list. style 就是所谓“主题”。
+
+</p>
+
+<h3>如何使一个窗口不被装饰？</h3>
+
+<p>
+这个你需要用 set-window-type 修改窗口的 window-type 属性。比
+如，
+
+</p>
+
+<pre class="example">
+(set-window-type (get-window-by-name-re &quot;[Dd]ali&quot;) 'unframed)
+</pre>
+
+<p>
+可以把 xdaliclock 的窗口设置为不加标题和边框。另外还有很多
+window-type:
+
+</p>
+
+<dl>
+<dt>default</dt>
+<dd>
+缺省类型。
+</dd>
+<dt>transient</dt>
+<dd>
+临时窗口。就像那种弹出窗口。
+</dd>
+<dt>shaped</dt>
+<dd>
+非矩形窗口。只给它标题栏，而没有边框。
+</dd>
+<dt>shaped-transient</dt>
+<dd>
+上面两个的组合。
+</dd>
+<dt>shaded</dt>
+<dd>
+只有标题栏。
+</dd>
+<dt>shaded-transient</dt>
+<dd>
+shaded 而且 transient.
+</dd>
+<dt>unframed</dt>
+<dd>
+没有任何装饰。
+</dd>
+</dl>
+
+<h3>如何可以按方向聚焦窗口？</h3>
+
+<p>
+比如“把焦点移动到右边的窗口”？用一个扩展叫做
+focus-by-direction 就行了：
+
+</p>
+
+<pre class="example">
+(require-try 'focus-by-direction)
+(bind-keys window-keymap &quot;C-W-KP_Up&quot; 'focus-north-warp)
+(bind-keys window-keymap &quot;C-W-KP_Left&quot; 'focus-west-warp)
+(bind-keys window-keymap &quot;C-W-KP_Right&quot; 'focus-east-warp)
+(bind-keys window-keymap &quot;C-W-KP_Down&quot; 'focus-south-warp)
+</pre>
+
+<h3>如何 undo?</h3>
+
+<p>
+使用 undo 扩展就可以了。几乎所有窗口操作，比如最大化，最小化，
+shade, 改变大小，移动，……都可以 undo.
+
+</p>
+
+<h3>如何绑定一些键可以方便的抓图？</h3>
+
+<pre class="example">
+(defun capture-root-window ()
+  (interactive)
+  (make-thread
+   (lambda ()
+     ((system &quot;import -window root shot.png&quot;)
+      (system &quot;display shot.png&amp;&quot;)))))
+
+
+(defun capture-this-window ()
+  (interactive)
+  (let ((w (current-event-window)))
+    (when w
+      (make-thread
+       (lambda ()
+         (display-message (concat
+                           &quot;import -window &quot;
+                           (prin1-to-string (window-id w)) &quot; window.png&quot;))
+         (system (concat &quot;import -window &quot;
+                         (prin1-to-string (window-id w)) &quot; window.png&quot;))
+      (system &quot;display window.png&amp;&quot;))))))
+
+
+(defun capture-region ()
+  (interactive)
+  (let
+    ((process (make-process standard-output)))
+    (start-process process &quot;import&quot; &quot;capture.png&quot;)))
+
+(bind-keys global-keymap &quot;F7&quot; 'capture-root-window)
+(bind-keys window-keymap &quot;W-F7&quot; 'capture-this-window)
+(bind-keys window-keymap &quot;M-F7&quot; 'capture-region)
+
+</pre>
+
+<h3>如何绑定一些键可以方便的关闭窗口？</h3>
+
+<pre class="example">
+(bind-keys window-keymap &quot;C-S-Button3-Click1&quot;
+'(delete-window (current-event-window)))
+</pre>
+
+<h3>如何绑定一些键可以方便的执行 shell 命令？</h3>
+
+<pre class="example">
+(bind-keys window-keymap &quot;W-F9&quot; 'run-shell-command)
+</pre>
+
+<h3>如何设定一些热键方便的操纵 xmms?</h3>
+
+<pre class="example">
+;; short cuts for xmms
+(bind-keys global-keymap &quot;Pause&quot; '(wy-run &quot;xmms -u&amp;&quot;))
+(bind-keys global-keymap &quot;W-KP_Left&quot; '(wy-run &quot;xmms -r&amp;&quot;))
+(bind-keys global-keymap &quot;W-KP_Right&quot; '(wy-run &quot;xmms -f &amp;&quot;))
+(bind-keys global-keymap &quot;W-KP_Insert&quot; '(wy-run &quot;xmms -p &amp;&quot;))
+(bind-keys global-keymap &quot;W-KP_Delete&quot; '(wy-run &quot;xmms -s &amp;&quot;))
+(bind-keys global-keymap &quot;W-KP_Enter&quot; '(wy-run &quot;xmms -u &amp;&quot;))
+</pre>
+
+<h3>如何绑定一些键可以方便的在 rxvt 之间轮换？</h3>
+
+<p>
+设计一些函数就可以完成这个功能。不过这些函数还有更多的功能。
+不但可以在 rxvt 之间轮转，而且可以在任意条件的窗口之间轮转。
+
+</p>
+
+<pre class="example">
+
+(defun name-match-p (win name)
+  (string-match name (window-name win)))
+
+(defun class-match-p (win class)
+  (string-match class (nth 2 (get-x-property win 'WM_CLASS))))
+
+(defun rotate-around (elem lst)
+  (if elem
+      (append (cdr (memq elem lst)) (reverse (memq elem (reverse lst))))
+    lst))
+
+(defun rotate-list-left (lst)
+  (append (cdr lst) (list (car lst))))
+
+(define next-window-by
+  (let ((my-windows (window-order current-workspace)))
+    (lambda (pred repeating? . args)
+      (if repeating?
+          (setq my-windows (rotate-list-left my-windows))
+        (setq my-windows (window-order current-workspace)))
+      (catch 'foo
+        (mapc (lambda (w)
+                (when (apply pred w args)
+                  (throw 'foo w)))
+              (rotate-around (input-focus) my-windows))
+        nil))))
+
+(defun focus-next (pred &amp;rest arg)
+  (let ((repeating? (eq (car last-command) 'focus-next)))
+    (let ((win
+           (if repeating?
+               (apply next-window-by pred t arg)
+             (apply next-window-by pred nil arg))))
+        (display-window win))))
+
+(bind-keys global-keymap &quot;H-e&quot; '(focus-next class-match-p t &quot;emacs&quot;))
+(bind-keys global-keymap &quot;H-M-r&quot; '(focus-next class-match-p nil &quot;rxvt|xterm&quot;))
+(bind-keys global-keymap &quot;H-r&quot; '(focus-next class-match-p t &quot;rxvt|XTerm&quot;))
+(bind-keys global-keymap &quot;H-m&quot; '(focus-next class-match-p t &quot;XMMS&quot;))
+(bind-keys global-keymap &quot;H-x&quot; '(focus-next name-match-p t &quot;xv|ImageMagick&quot;))
+</pre>
+
+<p>
+最后两句可以使得每按一下 H-r 就跳到下一个 rxvt, 每按一下 H-e
+就跳到下一个 emacs. 每按一下 H-M-r 就跳到下一个 rxvt 或者
+xterm, 而且可以跨过 workspace 轮转。
+
+</p>
+
+<h3>如何设置热键锁定屏幕？</h3>
+
+<pre class="example">
+(bind-keys global-keymap
+	&quot;C-Pause&quot; '(system &quot;xscreensaver-command -activate&amp;&quot;))
+
+(bind-keys global-keymap &quot;C-Break&quot;
+    '(system &quot;xscreensaver-command -lock &amp;&quot;))
+
+(bind-keys global-keymap &quot;M-Pause&quot;
+    '(system &quot;xscreensaver-command -lock &amp; (sleep 2; xset dpms force off) &amp;&quot;))
+
+</pre>
+
+<p>
+以上的设定是：C-Pause 起动屏幕保护， C-Break 起动屏保锁定屏
+幕，M-Pause 起动屏保，锁定屏幕，并且关闭显示器。
+
+</p>
+
+<h3>如何设置热键可以马上跳到 Emacs 的窗口？</h3>
+
+<p>
+下面这个设置使用了 jump-or-exec。按下 W-e 时：
+
+</p>
+
+<ul>
+<li>如果已经有 Emacs 在运行，那么跳到这个 Emacs 窗口
+</li>
+<li>如果没有 Emacs 那么起动一个 Emacs, 并且显示提示 "emacs
+  loading...".
+</li>
+<li>如果已经在 Emacs 的窗口，那么发送 "F12" 到 Emacs. 在我的
+  Emacs 里，F12 是跳到 Todo.
+</li>
+</ul>
+
+<pre class="example">
+(when (require-try 'jump-or-exec)
+  ;; load emacs
+  ;; or switch to it
+  ;; and toggle my notes buffer (bound to F1) if already focused
+  (bind-keys global-keymap
+             &quot;W-e&quot; `(jump-or-exec &quot;^emacs@&quot;
+                     ,(lambda ()
+                        (display-message &quot;emacs loading...&quot;)
+                        (wy-run &quot;emacs &amp;&quot;))
+                     ;; f2 is bound to toggle between the last two buffers
+                     ,(lambda (wind)
+                        (synthesize-event &quot;F12&quot; wind)))))
+</pre>
+
+<h3>Sawfish 可以用 Scheme 吗？</h3>
+
+<p>
+可以。因为 librep 支持 Scheme. 你可以使用 lexical binding 和
+first class continuation. 举一个例子：
+
+</p>
+
+<pre class="example">
+(define con t)
+(display-message (call/cc (lambda (ok) (define con ok) &quot;kick&quot;)))
+(con &quot;haha&quot;)
+</pre>
+
+<h2>常用函数</h2>
+
+<h3>选择窗口：</h3>
+
+<dl>
+<dt>current-event-window</dt>
+<dd>
+这就是得到发生事件时刻窗口的最好办法。
+</dd>
+<dt>get-window-by-name(-re)</dt>
+<dd>
+按名字寻找窗口，返回一个窗口对象。
+</dd>
+<dt>get-window-by-id</dt>
+<dd>
+以 window id 返回窗口对象。
+</dd>
+<dt>get-window-by-class-re</dt>
+<dd>
+这个缺省没有提供。不过我们可以轻松
+实现一个：
+</dd>
+</dl>
+
+<pre class="example">
+(defun get-window-by-class-re (re)
+  &quot;Get a window by matching against its class&quot;
+  (let ((windows (window-order))
+        w done match)
+    (while (and windows (not done))
+      (setq w (car windows))
+      (setq windows (cdr windows))
+      (when (string-match re (window-class w))
+        (setq done t)
+        (setq match w)))
+    (when match match)))
+</pre>
+
+<dl>
+<dt>window-order</dt>
+<dd>
+得到一个所有窗口的 list. 如果加一个参数
+workspace 就得到某个 workspace 的所有窗口 list.
+</dd>
+</dl>
+
+<h3>一些自定义的方便函数</h3>
+
+<ul>
+<li>匹配 name 和 class 的判断函数。这两个都返回 t 或者 nil.
+</li>
+</ul>
+
+<pre class="example">
+
+(defun name-match-p (win name)
+  (string-match name (window-name win)))
+
+(defun class-match-p (win class)
+  (string-match class (nth 2 (get-x-property win  'WM_CLASS))))
+</pre>
+
+<ul>
+<li>按条件寻找窗口。
+</li>
+</ul>
+
+<p>
+有了这两个判断函数我们可以定义一些函数可以跳转，或者操纵那个
+满足条件的窗口。
+
+</p>
+
+<pre class="example">
+(defun rotate-around (elem lst)
+  (if elem
+      (append (cdr (memq elem lst)) (reverse (memq elem (reverse lst))))
+    lst))
+
+(defun rotate-list-left (lst)
+  (append (cdr lst) (list (car lst))))
+
+(define next-window-by
+  (let ((my-windows (window-order current-workspace)))
+    (lambda (pred repeating? . args)
+      (if repeating?
+          (setq my-windows (rotate-list-left my-windows))
+        (setq my-windows (window-order current-workspace)))
+      (catch 'foo
+        (mapc (lambda (w)
+                (when (apply pred w args)
+                  (throw 'foo w)))
+              (rotate-around (input-focus) my-windows))
+        nil))))
+
+(defun focus-next (pred &amp;rest arg)
+  (let ((repeating? (eq (car last-command) 'focus-next)))
+    (let ((win
+           (if repeating?
+               (apply next-window-by pred t arg)
+             (apply next-window-by pred nil arg))))
+        (display-window win))))
+</pre>
+
+<p>
+比如，绑定 F4 可以在 rxvt 之间循环：
+
+</p>
+
+<pre class="example">
+(bind-keys global-keymap &quot;F4&quot; '(focus-next class-match-p &quot;rxvt&quot;))
+</pre>
+
+<h3>操纵窗口：</h3>
+
+<dl>
+<dt>delete-window-safely</dt>
+<dd>
+关闭窗口。就是说，如果窗口支持，那么
+发送一个WM_DELETE_WINDOW 到目标窗口，如果不支持，那么鸣响。
+</dd>
+<dt>move-window-interactively</dt>
+<dd>
+移动窗口。但是它需要一个参数
+win. 所以需要包装一下：
+</dd>
+</dl>
+
+<pre class="example">
+(defun wy-move-window ()
+  (interactive)
+  (move-window-interactively (current-event-window)))
+</pre>
+
+<h3>移动光标</h3>
+
+<ul>
+<li>按百分比移动光标到窗口的某个地方：
+</li>
+</ul>
+
+<pre class="example">
+(defun wy-warp-to (x y)
+  (interactive)
+  (let* ((win (input-focus))
+         (xpix (floor (inexact-&gt;exact (* x (car (window-dimensions win))))))
+         (ypix (floor (inexact-&gt;exact (* y (cdr (window-dimensions win)))))))
+    (warp-cursor-to-window win xpix ypix)))
+</pre>
+
+<p>
+比如我们可以绑定：
+
+</p>
+
+<pre class="example">
+(bind-keys global-keymap &quot;W-w&quot; '(wy-warp-to 0.5 0.5))
+</pre>
+
+<p>
+这样鼠标不管在哪里，一按 W-w, 它就到窗口中央。
+
+</p>
+
+<h3>重要的变量</h3>
+
+<dl>
+<dt>last-command</dt>
+<dd>
+上一个执行的命令。可以依据这个来判断某些东西。
+比如我们上面的 focus-next 函数就用这个来判断自己是否在被反复
+执行，如果是这样它就不更新窗口列表。
+</dd>
+</dl>
+<br>
+
+<!-- Page published by Emacs Wiki ends here -->
+    <div class="navfoot">
+    <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：2003-09-06</span>
+	  </td>
+	  <td width="60%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">王垠的主页</a> / <a href="WelcomePage.html">WiKi首页</a>/<a href="WikiIndex.html">索引</a>/<a href="wiki_frame.html" target=_parent>框架页</a>/<a href="SawfishWindowManager.html" target=_parent>取消框架</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    
+	  </td>
+	</tr>
+      </table>
+    </div>
+
+
+  </body>
+</html>

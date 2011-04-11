@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>双向链表</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="GLib"
+HREF="c1977.html"><LINK
+REL="PREVIOUS"
+TITLE="GLib"
+HREF="c1977.html"><LINK
+REL="NEXT"
+TITLE="单向链表"
+HREF="x2010.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c1977.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>GLib</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2010.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-DOUBLYLINKEDLISTS">双向链表</H1
+><P
+>以下的函数用于创建、管理和销毁标准双向链表。链表中每个元素都包含一块数据和指向前后元素的指针。这使得通过链表的双向移动变的容易。数据项的类型是 "gpointer"，意指数据可为一指向实际数据的指针或 (通过类型转换) 为一数值(但不要设想 int 和 gpointer 有相同的大小!)。这些函数在内部按块为链表元素分配空间，这比单为每个元素分配空间更有效率。</P
+><P
+>不存在专用于创建链表的函数。而是简单地创建一个类型为 Glist* 的变量，并把它的值设置为 NULL；NULL被当作空表。</P
+><P
+>向链表中加入一个新元素，使用函数 g_list_append()、g_list_prepend()、g_list_insert() 或 g_list_insert_sorted() 。无论如何，函数都接收一个指向表头的指针作为参数，并返回一个指向表头的指针(可能和接收的指针不同)。因此，对所有添加或撤除链表元素的操作，一定要保存返回值!</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GList *g_list_append( GList    *list,
+                      gpointer  data );</PRE
+></TD
+></TR
+></TABLE
+><P
+> 此函数把一个新元素(具有值<TT
+CLASS="LITERAL"
+>data</TT
+>)加到链表尾。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GList *g_list_prepend( GList    *list,
+                       gpointer  data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>此函数把一个新元素(具有值<TT
+CLASS="LITERAL"
+>data</TT
+>)加到链表头。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GList *g_list_insert( GList    *list,
+                      gpointer  data,
+                      gint      position );</PRE
+></TD
+></TR
+></TABLE
+><P
+>此函数插入一个新元素(具有值<TT
+CLASS="LITERAL"
+>data</TT
+>)到链表中指定位置，如果位置是 0，它和 g_list_prepend() 函数作用相同，如果位置，它和 g_list_append() 函数作用相同。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GList *g_list_remove( GList    *list,
+                      gpointer  data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>此函数从表中移除一个具有值<TT
+CLASS="LITERAL"
+>data</TT
+>的元素，如果该元素不存在，链表不变。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void g_list_free( GList *list );</PRE
+></TD
+></TR
+></TABLE
+><P
+>此函数释放由Glist使用的所有存储区，如果表元素空间是通过动态分配的，则应首先被释放。</P
+><P
+>还有许多其它支持双向链表的Glib函数;查看文档获得更多的信息。这儿列出几个更有用的函数的声明：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+> GList *g_list_remove_link( GList *list,
+                           GList *link );
+
+GList *g_list_reverse( GList *list );
+
+GList *g_list_nth( GList *list,
+                   gint   n );
+			   
+GList *g_list_find( GList    *list,
+                    gpointer  data );
+
+GList *g_list_last( GList *list );
+
+GList *g_list_first( GList *list );
+
+gint g_list_length( GList *list );
+
+void g_list_foreach( GList    *list,
+                     GFunc     func,
+                     gpointer  user_data );</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c1977.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2010.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>GLib</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1977.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>单向链表</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

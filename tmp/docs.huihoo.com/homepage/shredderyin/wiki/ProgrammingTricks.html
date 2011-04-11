@@ -1,0 +1,236 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+  <head>
+    <title>Programming in Emacs+Sematic</title>
+    <meta name="generator" content="emacs-wiki.el">
+    <meta http-equiv="Content-Type"
+	  content="text/html; charset=gb2312">
+    <link rev="made" href="mailto:webmaster@wangyin.com">
+    <link rel="home" href="WelcomePage.html">
+    <link rel="index" href="WikiIndex.html">
+    <LINK rel="stylesheet" href="../main.css" media="screen">
+  </head>
+  <body>
+    <h1>Programming in Emacs+Sematic</h1>
+    <!-- Page published by Emacs Wiki begins here -->
+
+
+
+
+
+
+<h2>C 程序 </h2>
+
+<h3>怎样在没有生成 TAGS 文件的时候在程序里跳转到某一个函数？</h3>
+
+<p>
+使用 imenu 或者 senator. 推荐使用 senator, 因为它来自
+sematic，一个可以分析很多种语言文法的东西，你可以使用 C-c ,
+j 跳转到文件里任何的函数或者变量。输入函数时按 TAB 可以补全
+函数名。看看<a href="../images/senator-jump.png">这幅图</a>。
+
+</p>
+
+<p>
+imenu 在 semantic 加强后可以在 project 内的函数变量间跳转。
+看<a href="../images/imenu-semantic.png">这幅图</a>。
+
+</p>
+
+<h3>怎样方便的知道正在使用的变量，函数的类型？</h3>
+
+<p>
+使用 semantic-summary-mode 之后，把光标放在C, C++, Java 的变
+量名，函数名之后，minibuffer 里就会显示它的类型。看看<a
+href="../images/semantic-summary-c.png">这幅图</a>。如果放在 lisp
+函数，变量上，就会显示它的 docstring, 看<a
+href="../images/semantic-summary-lisp.png">这幅图</a>。
+
+</p>
+
+<ul>
+<li>一个小问题。
+</li>
+</ul>
+
+<p>
+semantic-summary-mode 只显示当前 project 里的函数和变量定义。
+这个 project 是由 semanticdb-project-roots 定义的。这个变量
+就是说：我们的 project 的根目录在这些地方。
+
+</p>
+
+<pre class="example">
+(setq semanticdb-project-roots (list &quot;/home/wy/rect&quot;))
+</pre>
+
+<p>
+这样，不在这个目录之下(包括子目录)的文件就不会被检索。这样有
+一个问题，如何 summary /usr/include 里的头文件里定义的库函数？
+似乎只有 
+
+</p>
+
+<pre class="example">
+(setq semanticdb-project-roots (list &quot;/&quot;))
+</pre>
+
+<p>
+这样的办法才能做到？
+
+</p>
+
+<h3>怎样在编辑程序时自动补全函数名和变量名？</h3>
+
+<p>
+这有很多方法：
+
+</p>
+
+<h4>简单的办法：senator.</h4>
+
+<p>
+senator 可以在已经分析的文件里提取匹配前缀的符号进行补全。
+
+</p>
+
+<ul>
+<li>senator-complete-symbol
+</li>
+</ul>
+
+<p>
+补全当前的部分变量名，函数名或类型名。它通常绑定在 C-c , TAB。
+反复调用这个函数就可以在补全之间循环。
+
+</p>
+
+<ul>
+<li>senator-completion-menu-keyboard-popup
+</li>
+</ul>
+
+<p>
+弹出一个补全菜单。它可以由 C-c , SPC 或 S-mouse3 调出。看<a
+href="../images/senator-completion-menu-popup.png">这幅图</a>。
+
+</p>
+
+<h4>使用 sematic-ia</h4>
+
+<p>
+semantic-ia 是智能补全。 semantic-ia-complete-symbol 是直接
+补全，你可以重复执行来得到你需要的匹配。
+semantic-ia-complete-symbol-menu 可以弹出一个菜单让你选择。
+
+</p>
+
+<p>
+你可以把 semantic-ia-complete-symbol 绑定到 M-TAB, 把 
+semantic-ia-complete-symbol-menu 绑定到s-mouse3.
+
+</p>
+
+<p>
+为了直观，我现在只示范一下使用 
+semantic-ia-complete-symbol-menu:
+
+</p>
+
+<ul>
+<li>我输入一个结构指针的名字，加上一个 "->"，然后调用 
+  semantic-ia-complete-symbol-menu，出现一个这个结构里成员的
+  列表。<a
+  href="../images/semantic-ia-complete-symbol-menu1.png"> 如
+  图</a>。
+</li>
+<li>我选择了 inact 成员，它是一个 float 类型, 然后输入了一个 
+  "=" 号。然后再次补全。<a
+  href="../images/semantic-ia-complete-symbol-menu2.png">如
+  图</a>，类型是 float 的变量和返回类型是 float 的函数都在列
+  表里了。
+</li>
+</ul>
+
+<p>
+比较一下 senator <a
+href="../images/senator-completion-menu-popup.png">这幅图
+</a>？是不是智能了很多？
+
+</p>
+
+<h4>使用 Speedbar</h4>
+
+<p>
+你可以使用 Speedbar。在输入一个结构或对象之后，Speedbar 会在
+completions 一栏显示这个结构的成员，并可以补全一个前缀。
+
+</p>
+
+<p>
+当我输入 "w->" 后，Speedbar 就在 completions 显示出了 
+Wavefront 结构的成员。当我中键点击 "w" 左边的 "i" 图标后，小
+窗口显示这个结构的定义。看<a
+href="../images/speedbar-struct-member.png">这幅图</a>。
+
+</p>
+
+<p>
+当我中键点击 inact 插入它之后，打入一个 "=" 号，speedbar 里
+出现了可以赋值给一个 float 类型变量的所有匹配。看<a
+href="../images/speedbar-complete.png">这幅图</a>。
+
+</p>
+
+<ul>
+<li>一个小问题。speedbar 的 completions 不会自动随着你敲入的字
+  符更新，可以把一个键绑定到 speedbar-refresh 或者
+  speedbar-update-contents 来更新。或者把这些加入 .emacs:
+</li>
+</ul>
+
+<pre class="example">
+(add-hook 'speedbar-timer-hook
+          (lambda ()
+            (speedbar-refresh)))
+(setq speedbar-verbosity-level 0)
+</pre>
+
+<h3>粗略统计一个程序里函数的复杂度</h3>
+
+<p>
+semantic-chart-nonterminal-complexity-token 可以显示一个统计
+图，图中是这个文件的函数的复杂度统计。看看<a
+href="../images/sematic-chart.png">这个图</a>。当然这样以行
+数来计算不是很恰当，不过它还是给我们一些直观的信息。
+
+</p>
+
+<h3>下载</h3>
+
+<p>
+这些 semantic, speedbar, ... 都可以在
+<a href="http://sourceforge.net/projects/cedet">http://sourceforge.net/projects/cedet</a> 下载。
+</p><!-- Page published by Emacs Wiki ends here -->
+    <div class="navfoot">
+    <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：2003-05-25</span>
+	  </td>
+	  <td width="60%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">王垠的主页</a> / <a href="WelcomePage.html">WiKi首页</a>/<a href="WikiIndex.html">索引</a>/<a href="wiki_frame.html" target=_parent>框架页</a>/<a href="ProgrammingTricks.html" target=_parent>取消框架</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    
+	  </td>
+	</tr>
+      </table>
+    </div>
+
+
+  </body>
+</html>

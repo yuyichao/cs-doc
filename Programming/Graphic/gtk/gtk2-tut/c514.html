@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>构件概述</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="PREVIOUS"
+TITLE="表组装示例"
+HREF="x505.html"><LINK
+REL="NEXT"
+TITLE="构件的组织"
+HREF="x542.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x505.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x542.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="CH-WIDGETOVERVIEW">构件概述</H1
+><P
+>在 GTK 中创建一个构件的一般步骤是：</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+> gtk_*_new() - 创建各种构件的函数。这些函数都将在本文档中作详细的介绍。</P
+></LI
+><LI
+><P
+> 把所有想连接的信号都连接到对应的信号处理函数。</P
+></LI
+><LI
+><P
+> 设定构件的属性。</P
+></LI
+><LI
+><P
+> 用 gtk_container_add() or gtk_box_pack_start()等适当的函数把构件放置到一个容器构件中。</P
+></LI
+><LI
+><P
+> gtk_widget_show() 显示构件。</P
+></LI
+></OL
+><P
+>gtk_widget_show() 让 GTK 知道我们已经完成设定构件属性的工作，并且能够让它显示出来了。你也可以用 gtk_widget_hide 使构件再次隐藏起来。各个构件显示的顺序并不重要，不过我建议在最后显示窗口，这样整个窗口就可以一次弹出来，而不是让用户看着窗口里的构件一个个生成并显示出来。在窗口(也是一个构件)用 gtk_widget_show() 函数显示出来之前，它的子构件并不会被显示。</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-CASTING">类型转换</H1
+><P
+>再继续下去你会发现，GTK 使用了一套类型转换系统。它利用的是一套宏，这些宏在转换前还会测试能否进行转换。一些常见的宏是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  G_OBJECT (object)
+  GTK_WIDGET (widget)
+  GTK_OBJECT (object)
+  GTK_SIGNAL_FUNC (function)
+  GTK_CONTAINER (container)
+  GTK_WINDOW (window)
+  GTK_BOX (box)</PRE
+></TD
+></TR
+></TABLE
+><P
+>这些都用来在函数中转换参数。你将在范例中看到它们的使用，只要看看函数的声明就可以知道什么时候需要使用它们。</P
+><P
+>在下节介绍的类的组织里，你将知道所有的 GtkWidget 都是从 GObject 这个基本类派生来的。也就是说，你能把widget传给任何需要以object类型作为参数的函数 - 只要用一下 <TT
+CLASS="LITERAL"
+>G_OBJECT()</TT
+> 宏。</P
+><P
+>例如：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>g_signal_connect( G_OBJECT (button), "clicked",
+                  G_CALLBACK (callback_function), callback_data);</PRE
+></TD
+></TR
+></TABLE
+><P
+>这样把 button 转换为一个 object，并提供一个函数指针作为回调函数。</P
+><P
+>很多构件也是容器，看一下节介绍的类的组织，你就会注意到很多构件是从容器类派生来的。这些构件都可以用 <TT
+CLASS="LITERAL"
+>GTK_CONTAINER</TT
+> 宏转换后传递给需要以container作为参数的函数。</P
+><P
+>可惜的是，这些宏在本文档中并没有广泛地提及，不过我推荐去看一下 GTK 的头文件或者 GTK API 参考手册。这将很有用。实际上，通过看函数的声明来学习一个构件的使用也不难。</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x505.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x542.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>表组装示例</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>构件的组织</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

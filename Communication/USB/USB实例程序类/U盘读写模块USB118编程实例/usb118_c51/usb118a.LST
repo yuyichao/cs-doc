@@ -1,0 +1,753 @@
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 1   
+
+
+C51 COMPILER V8.02, COMPILATION OF MODULE USB118A
+OBJECT MODULE PLACED IN usb118a.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE usb118a.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /************************************************************************************************
+   2          *                           
+   3          *                                 USB118 C51测试程序
+   4          *                                                               Version 1.1
+   5          *                西安达泰电子有限责任公司（Xi'an DATA Electronic Co,Ltd）      
+   6          *   网址： http://www.dataie.com 
+   7          *   电话： 029-85272421 , 88022900
+   8          *  
+   9          *                                             西安达泰电子有限责任公司        2008.05
+  10          *************************************************************************************************/
+  11          
+  12          
+  13          /************************************************************************************************
+  14          *
+  15          *  U盘文件读写模块 以字节为单位进行U盘文件读写。
+  16          *  MCS-51单片机C语言示例程序 
+  17          *  硬件连接方式: 4线制串口（电源，地，输入，输出） 
+  18          *
+  19          *************************************************************************************************/
+  20          
+  21          #include <AT89X52.h>
+  22          
+  23          #define uchar  unsigned  char
+  24          #define uint   unsigned  int 
+  25                  
+  26          uchar  commd[66]={0x01,0x02,0x43,0x44,0x45,0x46}; //send and receive command buffer
+  27          uchar  idata dat1[32]={0x61,0x62,0x63,0x64,0x65,0x66}; //send  and receive databuffer
+  28          long int sm; 
+  29          uchar Command_status=0;   //receive status 
+  30          
+  31          /*---------------------------------
+  32          函数功能；send data 
+  33          入口参数：
+  34          ---------------------------------*/
+  35          void int_data1(uchar da)
+  36          {
+  37   1       uchar dat;
+  38   1       for(dat=0; dat<32; dat+=2)
+  39   1         {
+  40   2          dat1[dat]=da+dat;
+  41   2         }
+  42   1      }
+  43           /*
+  44          void int_data2(uchar da)
+  45          {
+  46           uchar dat;
+  47           for(dat=1; dat<32; dat+=2)
+  48            {
+  49             dat1[dat]=da;
+  50            }
+  51          }
+  52          /*-------------------------------------------
+  53                      数组初始化函数
+  54          函数功能：初始化函数
+  55          入口参数：ia是要给commd[]数组初始化值
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 2   
+
+  56          出口参数：
+  57          -------------------------------------------*/
+  58          void intia(uchar ia)
+  59          {
+  60   1        uchar t;
+  61   1        for(t=0; t<66; t++)
+  62   1         {
+  63   2          commd[t]=ia;
+  64   2         }
+  65   1      }
+  66          
+  67          
+  68          /*--------------------------------------------------
+  69                         延时函数  延时sec*01ms
+  70          函数功能：延时 function ,when frenquency 24M , 0.1ms
+  71          入口参数：c 是延时多少个0.1ms
+  72          -----------------------------------------------------*
+  73          void delay(uint sec) 
+  74          {
+  75           uint i;
+  76           uchar j;
+  77           for(i=0; i<sec; i++)
+  78             for(j=0; j<100; j++)
+  79                  ;                  
+  80          }
+  81          
+  82           /*------------------------------------------------------
+  83                         延时函数  延时=sec*15.1ms
+  84          函数功能：延时 function ,when frenquency 24M , 15.1ms
+  85          入口参数：c 是延时多少个15.1ms
+  86          --------------------------------------------------------*/
+  87          void Del(int sec) 
+  88          {
+  89   1       uint i;
+  90   1       uchar j, b; 
+  91   1       for(i=0; i<sec; i++)
+  92   1         for(j=0; j<100; j++)
+  93   1           for(b=0; b<99; b++)
+  94   1                 ;       
+  95   1      }
+  96          
+  97          /*----------------------------------------
+  98          函数功能：initialize serial function
+  99          
+ 100          -------------------------------------------
+ 101          void serial_int()
+ 102          {
+ 103            EA=0;          //总中断禁止
+ 104            ES=0;          //serial interrupt forbid
+ 105            TMOD=0x20; //定时器T1使用工作方式2
+ 106            TH1=0xF3;     //设置初值
+ 107            TL1=0xF3;
+ 108            TR1=1;
+ 109            PCON=0x80;    //SMOD=1
+ 110            SCON=0x50;    //工作方式1，9600bit/s 
+ 111            TI=1;
+ 112            REN=1;
+ 113          }
+ 114          */
+ 115          
+ 116          /*---------------------------------------------------
+ 117                          串行通讯口初始化函数 
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 3   
+
+ 118          函数功能：初始化uart   
+ 119          入口参数：波特率（9600， 19200， 57600）
+ 120          ----------------------------------------------------*/ 
+ 121          void Init_COMM(uint sp)
+ 122          {
+ 123   1                   SCON = 0x53;
+ 124   1                   PCON = 0x80 | PCON;
+ 125   1               T2CON=0x30;
+ 126   1                   switch(sp)
+ 127   1                   {
+ 128   2                     case 9600:{// 9600 @ 24MHz: 24000000/(32*(65536-(RCAP2H,RCAP2L)))
+ 129   3                              RCAP2H=0xFF;            
+ 130   3                                  RCAP2L=0xB2;
+ 131   3                                                }break;
+ 132   2                         case 19200:{// 19200 @ 24MHz: 24000000/(32*(65536-(RCAP2H,RCAP2L)))
+ 133   3                                          RCAP2H=0xFF;                
+ 134   3                                  RCAP2L=0xD9;
+ 135   3                                                }break;
+ 136   2                 case 57600:{// 57600 @ 24MHz: 24000000/(32*(65536-(RCAP2H,RCAP2L)))
+ 137   3                                          RCAP2H=0xFF;                
+ 138   3                                  RCAP2L=0xF3;
+ 139   3                                                }break;
+ 140   2                }
+ 141   1                TI=1;
+ 142   1                    RI=0;
+ 143   1                    TR2=1;
+ 144   1                        
+ 145   1      }
+ 146          /*-----------------------------------------------------
+ 147                          URAT命令格式0xaa+0xbb+command+data
+ 148          函数功能：是发送同步码0xaa+0xbb
+ 149          参数说明：syn is send string 
+ 150          -------------------------------------------------------*/
+ 151          void serial_syn(  )
+ 152          {
+ 153   1        uchar i;
+ 154   1        uchar syn;
+ 155   1        i=0;
+ 156   1        syn=0xaa;
+ 157   1        TI=0;
+ 158   1        while(i<2)
+ 159   1        { 
+ 160   2          SBUF=syn;
+ 161   2          while(!TI);
+ 162   2              TI=0;           
+ 163   2              syn=0xbb;
+ 164   2              i++;   
+ 165   2        }
+ 166   1      }
+ 167          
+ 168          /*--------------------------------------------------------
+ 169                             串口接收一个字节数据
+ 170          函数功能：接收一个字节数据
+ 171          ---------------------------------------------------------*/
+ 172          void Send_Data(uchar send)
+ 173          {
+ 174   1         
+ 175   1         SBUF=send;
+ 176   1         while(!TI);   
+ 177   1         TI=0;                                                    
+ 178   1      }
+ 179          /*---------------------------------------------------------------------------------------------------
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 4   
+
+ 180                               串口发送函数command(64)+data(0-2048)
+ 181          函数功能: serial send data
+ 182          入口参数: *s_command 是命令指针，按协议要求发送64个字节为一帧，*s_dat是数据指针，
+ 183                    s_num是要发送的数据字节数（0-2048）
+ 184           ----------------------------------------------------------------------------------------------------*/
+ 185          void serial_send(uchar *s_command,  uchar *s_dat, uint s_num)
+ 186          {
+ 187   1        uint s;
+ 188   1        for(s=0; s<64; s++)            
+ 189   1         {
+ 190   2           //SBUF=*s_command;
+ 191   2              // while(!TI);
+ 192   2              // TI=0;
+ 193   2               Send_Data(*s_command);
+ 194   2               s_command++;  
+ 195   2          }
+ 196   1         for(s=0; s<s_num; s++)
+ 197   1              {
+ 198   2               //SBUF=*s_dat;
+ 199   2               //while(!TI);
+ 200   2               //TI=0;
+ 201   2               Send_Data(*s_dat);
+ 202   2               s_dat++;       
+ 203   2              }
+ 204   1         TI=0;
+ 205   1         RI=0;
+ 206   1      
+ 207   1         EA=1;
+ 208   1         ES=1;    
+ 209   1      }
+ 210          
+ 211          /*--------------------------------------------------------
+ 212                             串口接收一个字节数据
+ 213          函数功能：接收一个字节数据
+ 214          ---------------------------------------------------------*/
+ 215          unsigned char Receive_Data()
+ 216          {
+ 217   1               uchar receive;
+ 218   1                       while(!RI);
+ 219   1                       receive=SBUF;
+ 220   1                       RI=0;                                    
+ 221   1               return (receive);           
+ 222   1      }
+ 223          /*-------------------------------------------------------------------------------------------------
+ 224                              串口接收一帧数据：数据格式 command(64)+data(0-16384)
+ 225          函数功能：接收一帧数据
+ 226          入口参数：*r_command是接收响应命令帧数据指针，*r_dat是接收数据指针，r_num是在命令指针后的数据个数。
+ 227          出口参数：return 0 表示错误命令, 1 表示接收一帧完成 
+ 228          ---------------------------------------------------------------------------------------------------*/
+ 229          unsigned char Receive_One(uchar *r_command,  uchar *r_dat)
+ 230          {
+ 231   1               
+ 232   1        uchar i;
+ 233   1        uint r_num;
+ 234   1        r_num=0;
+ 235   1        for(i=0; i<3; i++)
+ 236   1         {
+ 237   2          *r_command=Receive_Data();
+ 238   2               r_command++;
+ 239   2         }
+ 240   1        if(commd[0]==0xaa)     //如果接收到0xaa+0xbb+0x01 错误信息格式是： 0xaa + 0xbb +0x01
+ 241   1                return 0;
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 5   
+
+ 242   1        for(i=3;i<63;i++)      //不是错误信息时，继续接收完一帧（64byte）    
+ 243   1         {
+ 244   2          *r_command=Receive_Data();
+ 245   2              r_command++;
+ 246   2          }
+ 247   1                                                                                                                                                                       
+ 248   1        if((commd[0]==0xB0))   //如果是read 命令则有数据返回
+ 249   1          {
+ 250   2              r_num=commd[6];  //data for r_num BYTE    
+ 251   2                      r_num<<=8;
+ 252   2                      r_num|=commd[5];
+ 253   2           }
+ 254   1         if(commd[0]==0x20)    //如果是 list 命令则有数据返回
+ 255   1               {
+ 256   2             r_num=commd[5];   //data for r_num BYTE    
+ 257   2             r_num<<=8;
+ 258   2                 r_num|=commd[4];
+ 259   2                }                
+ 260   1         for(i=0;i<r_num;i++)    //receive data,   r_num(0-16384)
+ 261   1           {
+ 262   2            *(r_dat+i)=Receive_Data();
+ 263   2           }           
+ 264   1          return 1;
+ 265   1      }
+ 266          /*----------------------------------------------
+ 267          函数功能：serial receive  data
+ 268          参数说明：同serial_send()
+ 269          ------------------------------------------------*
+ 270          unsigned char serial_rec(unsigned char *r_command,  unsigned char *r_dat,  unsigned int r_num)
+ 271          {
+ 272           unsigned int r, receive_data;
+ 273           //serial_int();
+ 274           
+ 275           for(r=0; r<3; r++)
+ 276             {
+ 277              while(!RI);
+ 278                  receive_data=SBUF;
+ 279                  RI=0;
+ 280              *r_command=receive_data;                                             
+ 281                  r_command++;    
+ 282                    
+ 283             }
+ 284             delay(10);
+ 285            if(commd[0]==0xaa)
+ 286                return 0;
+ 287          
+ 288           for(r=3; r<64; r++)     
+ 289             {
+ 290                  while(!RI);
+ 291                  receive_data=SBUF;
+ 292                  RI=0;
+ 293                  *r_command=receive_data;                                                 
+ 294                  r_command++;
+ 295                  
+ 296                    
+ 297             }
+ 298          
+ 299           for(r=0; r<r_num; r++)
+ 300             {
+ 301                  while(!RI);
+ 302                  receive_data=SBUF;
+ 303                  RI=0; 
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 6   
+
+ 304                  *r_dat=receive_data;
+ 305              r_dat++;
+ 306                  
+ 307                   
+ 308             }
+ 309              return 1;    
+ 310            
+ 311          }
+ 312           
+ 313          /*-------------------------------------------------------------------------------------------
+ 314                      检测设备是否正常
+ 315          函数功能: USB118 detect u
+ 316          出口参数: USB118T_Detect commd[0]= 0x04, commd[1] 是检测结果 0x01有磁盘，0x00没有磁盘。 
+ 317          ------------------------------------------------------------------------------------------- */
+ 318          void USB118_Detect()
+ 319          {
+ 320   1        intia(0x20);          //intialize     command data group
+ 321   1      
+ 322   1        commd[0]=0x01;         //USB118R_Detect command 0x01
+ 323   1        commd[1]=0x00;  
+ 324   1          
+ 325   1        serial_syn();
+ 326   1        serial_send(commd, 0, 0);
+ 327   1      }
+ 328          
+ 329          /*--------------------------------------------------------------------------------------------------------
+             ----------------
+ 330                            创建文件或者目录
+ 331          函数功能：create file or makedir
+ 332          入口参数：tpye is 0x07(file) or 0x32(makedir),na1--an8 feil name, tp1--tp3 feil tpye
+ 333          出口参数：USB118_Create  ,Create 返回command[0]=0x0A, command [1]  01H表示成功，00H表示失败，command[2]-[3
+             -]表示错误码
+ 334                and USB118_MakeDir ,MakeDir返回command[0]=0x42，command [1]  01H表示成功，00H表示失败，command[2]-[3
+             -]表示错误码 
+ 335          ----------------------------------------------------------------------------------------------------------
+             -------------- */
+ 336          void USB118_Crefiledir( uchar tpye,  uchar na1, uchar na2, uchar na3, uchar na4, 
+ 337                                   uchar na5,  uchar na6, uchar na7, uchar na8, uchar tp1,
+ 338                                                           uchar tp2,  uchar tp3 )
+ 339          {
+ 340   1       intia(0);
+ 341   1       commd[0]=tpye;         //create file(07H) or dir(32H)
+ 342   1       commd[1]=na1;
+ 343   1       commd[2]=na2;
+ 344   1       commd[3]=na3;
+ 345   1       commd[4]=na4;
+ 346   1       commd[5]=na5;
+ 347   1       commd[6]=na6;
+ 348   1       commd[7]=na7;
+ 349   1       commd[8]=na8;
+ 350   1      
+ 351   1       commd[9]=tp1;
+ 352   1       commd[10]=tp2;
+ 353   1       commd[11]=tp3;
+ 354   1      
+ 355   1       commd[12]=0x20;        //create file attribute
+ 356   1       commd[23]=0x38;    //create file time
+ 357   1       commd[24]=0x21;
+ 358   1       commd[33]=0;
+ 359   1      
+ 360   1       serial_syn();
+ 361   1       serial_send(commd, 0, 0);  
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 7   
+
+ 362   1       //serial_rec(commd, 0, 0);
+ 363   1      }
+ 364          
+ 365          /*------------------------------------------------------------------
+ 366          函数功能： open file
+ 367          入口参数：The na1-8 is file name, the tp1-3 is file type.
+ 368          出口参数：USB118_Open  ,Open 返回command[0]=0x0D, command [1]  01H表示成功，00H表示失败，
+ 369                    command[2]-[3]表示错误码 
+ 370          ------------------------------------------------------------------*/
+ 371          void  USB118_Open(uchar na1, uchar na2, uchar na3, uchar na4,uchar na5, uchar na6, uchar na7, uchar na8, 
+ 372                            uchar tp1, uchar tp2, uchar tp3)
+ 373                                                             
+ 374          {
+ 375   1       intia(0x20);
+ 376   1       commd[0]=0x06;  //open file 
+ 377   1       commd[1]=na1;
+ 378   1       commd[2]=na2;
+ 379   1       commd[3]=na3;
+ 380   1       commd[4]=na4;
+ 381   1       commd[5]=na5;
+ 382   1       commd[6]=na6;
+ 383   1       commd[7]=na7;
+ 384   1       commd[8]=na8;
+ 385   1      
+ 386   1       commd[9]=tp1;
+ 387   1       commd[10]=tp2;
+ 388   1       commd[11]=tp3;
+ 389   1      
+ 390   1       serial_syn();
+ 391   1       serial_send(commd, 0, 0);
+ 392   1       //serial_rec(commd, 0, 0);     
+ 393   1      }
+ 394          
+ 395          /*-----------------------------------------------------------------------------
+ 396                       写入数据
+ 397          函数功能：when open  or create file, write data
+ 398          入口参数：*wdata 将要写入数据组的指针头, wnum是写入数据的长度(0--2048)
+ 399          -------------------------------------------------------------------------------*/                
+ 400          void USB118_Write(uchar *wdata, uint wnum)
+ 401          {
+ 402   1        
+ 403   1        uchar n;
+ 404   1        uint data_num;
+ 405   1        intia(0);
+ 406   1        data_num=wnum;
+ 407   1        n=wnum&0xff;
+ 408   1        wnum>>=8;
+ 409   1        
+ 410   1        commd[0]=0x09;         //write data
+ 411   1        commd[1]=0;
+ 412   1        commd[2]=n;
+ 413   1        commd[3]=(uchar)wnum;
+ 414   1                                          
+ 415   1        serial_syn();
+ 416   1        serial_send(commd, wdata, data_num);
+ 417   1      
+ 418   1        //serial_rec(commd, 0, 0);
+ 419   1      }         
+ 420          /*-----------------------------------------------
+ 421          函数功能:进入子目录
+ 422          入口参数:na1-8是要进入的目录名
+ 423          ------------------------------------------------*
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 8   
+
+ 424          void USB118_InDir(uchar na1, uchar na2, uchar na3, uchar na4,uchar na5, uchar na6, uchar na7, uchar na8)
+ 425          {
+ 426           intia(0x20);
+ 427          
+ 428           commd[0]=0x33;            //in dir
+ 429           commd[1]=na1;
+ 430           commd[2]=na2;
+ 431           commd[3]=na3;
+ 432           commd[4]=na4;
+ 433           commd[5]=na5;
+ 434           commd[6]=na6;
+ 435           commd[7]=na7;
+ 436           commd[8]=na8;
+ 437          
+ 438           serial_syn();
+ 439           serial_send(commd, 0, 0);
+ 440          }
+ 441          
+ 442          /*------------------------------       
+ 443          函数功能:返回当前目录的上一层
+ 444          -------------------------------*
+ 445          void USB118_OutDir()
+ 446          {
+ 447           intia(0x20);
+ 448           
+ 449           commd[0]=0x34;   // out dir
+ 450          
+ 451           serial_syn();
+ 452           serial_send(commd, 0, 0);
+ 453          }
+ 454          
+ 455          /*------------------------------------
+ 456          函数功能:返回根目录
+ 457          --------------------------------------*
+ 458          void USB118_RootDir()
+ 459          {
+ 460           intia(0x20);
+ 461          
+ 462           commd[0]=0x35;   // return root dir
+ 463          
+ 464           serial_syn();
+ 465           serial_send(commd, 0, 0);
+ 466          }
+ 467          
+ 468          /*----------------------------------
+ 469          函数功能:read data
+ 470          入口参数:length读取数据的长度
+ 471          -----------------------------------*
+ 472          void USB118_Read(uint length)
+ 473          {
+ 474           uchar leng;
+ 475           intia(0x20);
+ 476          
+ 477           leng=(uchar)length&0xff;
+ 478           length>>=8; 
+ 479           commd[0]=0x08;     //read file
+ 480           commd[1]=leng;
+ 481           commd[2]=(uchar)length;
+ 482          
+ 483           serial_syn();
+ 484           serial_send(commd, 0, 0);
+ 485          }
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 9   
+
+ 486          
+ 487          /*----------------------------------
+ 488          函数功能:列举目录下文件和文件夹
+ 489          -----------------------------------*
+ 490          void USB118_List()
+ 491          {
+ 492           intia(0x20);
+ 493           
+ 494           commd[0]=0x10;
+ 495           commd[1]=0;
+ 496          
+ 497           serial_syn();
+ 498           serial_send(commd, 0, 0);
+ 499          }
+ 500          
+ 501          /*--------------------------------------------------------------
+ 502          函数功能:删除指定文件或子目录
+ 503          入口参数:na1-8是要删除的文件名, tp1-3是要删除的文件的扩展名
+ 504          --------------------------------------------------------------*
+ 505          void USB118_Remove(uchar na1, uchar na2, uchar na3, uchar na4,uchar na5, uchar na6, uchar na7, uchar na8, 
+ 506                            uchar tp1, uchar tp2, uchar tp3)
+ 507          {
+ 508           intia(0x20);
+ 509          
+ 510           commd[0]=0x11;
+ 511           commd[1]=0;
+ 512           commd[2]=na1;
+ 513           commd[3]=na2;
+ 514           commd[4]=na3;
+ 515           commd[5]=na4;
+ 516           commd[6]=na5;
+ 517           commd[7]=na6;
+ 518           commd[8]=na7;
+ 519           commd[9]=na8;
+ 520          
+ 521           commd[10]=tp1;
+ 522           commd[11]=tp2;
+ 523           commd[12]=tp3;
+ 524          
+ 525           serial_syn();
+ 526           serial_send(commd, 0, 0);
+ 527          }
+ 528          
+ 529          /*----------------------------------------
+ 530          函数功能:获取磁盘空间
+ 531          ----------------------------------------*
+ 532          void USB118_GetCapacity()
+ 533          {
+ 534            intia(0x20);
+ 535          
+ 536            commd[0]=0x12;
+ 537            commd[1]=0;
+ 538          
+ 539            serial_syn();
+ 540            serial_send(commd, 0, 0);
+ 541          }
+ 542          
+ 543          /*--------------------------------------------------
+ 544          函数功能:移动指针位置
+ 545          入口函数:sp 是指针移动到的位置 (0--4294967295)
+ 546          ---------------------------------------------------*/
+ 547          void USB118_SetFilePointer(long int sp)
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 10  
+
+ 548          {
+ 549   1       //intia(0x20);
+ 550   1      
+ 551   1       commd[0]=0x15;
+ 552   1       commd[1]=0;
+ 553   1       commd[2]=(uchar)sp;
+ 554   1       sp>>=8;
+ 555   1       commd[3]=(uchar)sp;
+ 556   1       sp>>=8;
+ 557   1       commd[4]=(uchar)sp;
+ 558   1       sp>>=8;
+ 559   1       commd[5]=(uchar)sp;
+ 560   1      
+ 561   1       serial_syn();
+ 562   1       serial_send(commd, 0, 0);
+ 563   1      }
+ 564          
+ 565          /*---------------------------------
+ 566          函数功能:获取系统版本号
+ 567          -----------------------------------*
+ 568          void USB118_GetVersion()
+ 569          {
+ 570           intia(0x20);
+ 571          
+ 572           commd[0]=0x30;
+ 573           commd[1]=0;
+ 574          
+ 575           serial_syn();
+ 576           serial_send(commd, 0, 0);
+ 577          } 
+ 578          
+ 579          /************************************************
+ 580          主函数
+ 581          *************************************************/
+ 582          main()
+ 583          {
+ 584   1      
+ 585   1       Del(300);
+ 586   1       //intia(0x20);  
+ 587   1       Init_COMM(9600);
+ 588   1      
+ 589   1       while(1)
+ 590   1       {
+ 591   2        USB118_Detect();
+ 592   2        Del(50);
+ 593   2       // if(Command_status==0x01)
+ 594   2              if((commd[0]==0x04)&(commd[1]==0x01)) 
+ 595   2                {
+ 596   3                 break;
+ 597   3                 }
+ 598   2         
+ 599   2       }
+ 600   1       while(1)
+ 601   1       {
+ 602   2        USB118_Crefiledir( 0x07,  0xB4, 0XEF, 0xCC, 0xA9, 'U', 'S', 'B', 0x20, 'T', 'X', 'T');
+ 603   2        Del(50);
+ 604   2       // if(Command_status==0x01)
+ 605   2              if((commd[0]==0x0A)&(commd[1]==0x01)) 
+ 606   2                {
+ 607   3                 break;
+ 608   3                 }
+ 609   2         
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 11  
+
+ 610   2       }        
+ 611   1       Del(10);       
+ 612   1         while(1)
+ 613   1       {
+ 614   2        USB118_Open(0xB4, 0XEF, 0xCC, 0xA9, 'U', 'S', 'B', 0x20, 'T', 'X', 'T');
+ 615   2        Del(50);
+ 616   2       // if(Command_status==0x01)
+ 617   2              if((commd[0]==0x0D)&(commd[1]==0x01)) 
+ 618   2                {
+ 619   3                 sm=(long int)commd[35];
+ 620   3                 sm<<=8;
+ 621   3                 sm|=(long int)commd[34];
+ 622   3                 sm<<=8;                                                        
+ 623   3                 sm|=(long int)commd[33];
+ 624   3                 sm<<=8;
+ 625   3                 sm|=(long int)commd[32];
+ 626   3                 break;
+ 627   3                 }
+ 628   2         
+ 629   2       }
+ 630   1       Del(10);
+ 631   1        while(1)
+ 632   1       {
+ 633   2        USB118_SetFilePointer(sm);
+ 634   2        Del(50);
+ 635   2       // if(Command_status==0x01)
+ 636   2              if((commd[0]==0x25)&(commd[1]==0x01)) 
+ 637   2                {
+ 638   3                 break;
+ 639   3                 }
+ 640   2         
+ 641   2       }              
+ 642   1       Del(10); 
+ 643   1      
+ 644   1       while(1)
+ 645   1       {
+ 646   2        int_data1(0x41);       //Tab键的ASCII码09H
+ 647   2        dat1[0]=0xCE;   //西
+ 648   2        dat1[1]=0xF7;   
+ 649   2      
+ 650   2        dat1[2]=0xB0;   //安
+ 651   2        dat1[3]=0xB2;
+ 652   2      
+ 653   2        dat1[4]=0xB4;   //达
+ 654   2        dat1[5]=0xEF;  
+ 655   2      
+ 656   2        dat1[6]=0xCC;   //泰
+ 657   2        dat1[7]=0xA9;
+ 658   2      
+ 659   2        dat1[8]=0xB5;   //电
+ 660   2        dat1[9]=0xe7;
+ 661   2      
+ 662   2        dat1[10]=0xD7;  //子
+ 663   2        dat1[11]=0xd3;  
+ 664   2      
+ 665   2        dat1[12]=0x20;   //空格键的ASCII码为20H
+ 666   2      
+ 667   2        dat1[13]='U';
+ 668   2        dat1[14]='S';
+ 669   2        dat1[15]='B';
+ 670   2        dat1[16]='1';
+ 671   2        dat1[17]='1';
+C51 COMPILER V8.02   USB118A                                                               06/02/2008 10:24:42 PAGE 12  
+
+ 672   2        dat1[18]='8';
+ 673   2        dat1[19]='A';
+ 674   2      
+ 675   2              
+ 676   2        USB118_Write(dat1, 19);
+ 677   2        Del(70);
+ 678   2       // if(Command_status==0x01)
+ 679   2              if((commd[0]==0x0C)&(commd[1]==0x01)) 
+ 680   2                {
+ 681   3                 break;
+ 682   3                 }  
+ 683   2       }
+ 684   1       Del(10);
+ 685   1       while(1);
+ 686   1       }
+ 687          
+ 688          /*---------------------------------------------------
+ 689                          接收中断函数
+ 690          函数功能：接收数据
+ 691          出口参数：Command_status的状态
+ 692          ----------------------------------------------------*/
+ 693          void serial() interrupt 4 using 0
+ 694          {
+ 695   1        uint m;
+ 696   1        if(RI)
+ 697   1         {
+ 698   2         ES=0;
+ 699   2         m= Receive_One(commd, 0);
+ 700   2        //m=serial_rec(commd,0, 0);  
+ 701   2         if(m)
+ 702   2           Command_status=0x01;               
+ 703   2        }
+ 704   1       }  
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1227    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     71      46
+   IDATA SIZE       =     32    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

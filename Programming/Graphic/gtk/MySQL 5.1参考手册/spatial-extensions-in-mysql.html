@@ -1,0 +1,1656 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 19. Spatial Extensions in MySQL</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="partitioning.html" title="Chapter 18. Partitioning"><link rel="next" href="stored-procedures.html" title="Chapter 20. Stored Procedures and Functions">
+<style>
+<!--
+span.quote
+	{}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="spatial-extensions-in-mysql"></a>
+	第19章：MySQL中的空间扩展</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-introduction">
+			19.1. 前言</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#opengis-geometry-model">
+			19.2. OpenGIS几何模型</a></span></dt><dd><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-geometry-class-hierarchy">
+				19.2.1. Geometry类的层次</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-geometry">
+				19.2.2. 类Geometry</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-point">
+				19.2.3. 类Point<code class="literal"></code></a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-curve">
+				19.2.4. 类Curve<code class="literal"></code></a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-linestring">
+				19.2.5. 类LineString</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-surface">
+				19.2.6. 类Surface</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-polygon">
+				19.2.7. 类Polygon</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-geometrycollection">
+				19.2.8. 类GeometryCollection</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multipoint">
+				19.2.9. 类MultiPoint</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multicurve">
+				19.2.10. 类MultiCurve</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multilinestring">
+				19.2.11. 类MultiLineString</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multisurface">
+				19.2.12. 类MultiSurface</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multipolygon">
+				19.2.13. 类MultiPolygon</a></span></dt></dl></dd><dt><span class="section"><a href="spatial-extensions-in-mysql.html#supported-spatial-data-formats">
+			19.3. 支持的空间数据格式</a></span></dt><dd><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-wkt-format">
+				19.3.1. 著名的文本(WKT)格式</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-wkb-format">
+				19.3.2. 著名的二进制(WKB)格式</a></span></dt></dl></dd><dt><span class="section"><a href="spatial-extensions-in-mysql.html#creating-a-spatially-enabled-mysql-database">
+			19.4. 创建具备空间功能的MySQL数据库</a></span></dt><dd><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#mysql-spatial-datatypes">
+				19.4.1. MySQL空间数据类型</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#creating-spatial-values">
+				19.4.2. 创建空间值</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#creating-spatial-columns">
+				19.4.3. 创建空间列</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#populating-spatial-columns">
+				19.4.4. 填充空间列</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#fetching-spatial-data">
+				19.4.5. 获取空间数据</a></span></dt></dl></dd><dt><span class="section"><a href="spatial-extensions-in-mysql.html#analysing-spatial-information">
+			19.5. 分析空间信息</a></span></dt><dd><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-to-convert-geometries-between-formats">
+				19.5.1. Geometry格式转换函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#geometry-property-functions">19.5.2. 
+				Geometry函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-that-create-new-geometries-from-existing-ones">
+				19.5.3. 从已有Geometry创建新Geometry的函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-for-testing-spatial-relations-between-geometric-objects">
+				19.5.4. 测试几何对象间空间关系的函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#relations-on-geometry-mbr">
+				19.5.5. 关于几何最小边界矩形（MBR）的关系</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-that-test-spatial-relationships-between-geometries">
+				19.5.6. 测试几何类之间空间关系的函数</a></span></dt></dl></dd><dt><span class="section"><a href="spatial-extensions-in-mysql.html#optimizing-spatial-analysis">
+			19.6. 优化空间分析</a></span></dt><dd><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#creating-spatial-indexes">
+				19.6.1. 创建空间索引</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#using-a-spatial-index">
+				19.6.2. 使用空间索引</a></span></dt></dl></dd><dt><span class="section"><a href="spatial-extensions-in-mysql.html#mysql-gis-conformance-and-compatibility">
+			19.7. MySQL的一致性和兼容性</a></span></dt><dd><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-features-that-are-not-yet-implemented">
+				19.7.1. 尚未实施的GIS特性</a></span></dt></dl></dd></dl></div><a class="indexterm" name="id2981633"></a>
+	<p><span>MySQL</span>支持空间扩展，允许生成、保存和分析地理特征。这些特征可用于<span>MyISAM</span>、<span>InnoDB</span>、<span>NDB</span>、<span>BDB</span>和<span><span>ARCHIVE</span>表（但是，<span>ARCHIVE</span>引擎不支持</span>索引功能，因此，不能为<span><span>ARCHIVE</span>列中的空间列编制索引）。</span></p>
+	<p>本章介绍了下述议题：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>OpenGIS</span>几何模型中这些空间扩展的基础。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>用于表示空间数据的数据格式。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>如何在<span>MySQL</span>中使用空间数据。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>使用关于空间数据的索引功能。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>MySQL</span>与<span>OpenGIS</span>规范的差异。</p>
+	<p>如果在<span>MySQL</span>空间扩展的使用方面有任何问题，可在我们网站的<span><a target="_top"  href="http://forums.mysql.com/list.php?23">GIS<span>论坛</span></a></span>中讨论。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="gis-introduction"></a>
+		19.1.&nbsp;前言</h2></div></div></div><a class="indexterm" name="id2981747"></a><a class="indexterm" name="id2981754"></a><a class="indexterm" name="id2981760"></a>
+		<p>遵从<span><span>OpenGIS</span>联盟（<span>OGC</span>）的规范，</span><span>MySQL</span>实施了空间扩展。<span>OGC</span>是一个由<span>250</span>多家公司、代理机构和大学参与的国际联盟，负责开发公开的概念解决方案，这类解决方案对所有用来管理空间数据的应用都是有用的。<span>OGC</span>的网站是<span><a target="_top"  href="http://www.opengis.org/">http://www.opengis.org/</a></span>。</p>
+		<p><span>1997</span>年，<span><span>OpenGIS</span>联盟（<span>OGC</span>）发布了</span><em><span>针对<span>SQL</span>的<span>OpenGIS®</span>简单特征规范</span></em>，在该文档中，提出了扩展<span>SQL 
+		RDBMS</span>以支持空间数据的一些概念性方法。该规范可从<span>OpenGIS</span>网站上获得<span><a target="_top"  href="http://www.opengis.org/docs/99-049.pdf">http://www.opengis.org/docs/99-049.pdf</a></span>。其中包含与本章有关的额外信息。</p>
+		<p><span>MySQL</span>实施了<span>OGC</span>建议的<strong><span>具有<span>Geometry</span>类型的<span>SQL</span></span></strong>环境的一个子集。该术语指的是用一组集合类型扩展的环境。具有几何值的<span>SQL</span>列是作为拥有集合类型的列实施的。该规范描述了<span>SQL</span>几何类型集合，以及作用在这些类型上用于创建和分析几何值的函数。</p>
+		<p><strong><span>地理特征</span></strong>指的是世界上具有地理位置的任何事物。它可以是：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>实体，如山、池溏、城市。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>空间，如邮政区域、热带。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>可定义的位置，如两条街道相交的十字路口。</p>
+		<p>有些文件采用术语<strong><span>地理空间特征</span></strong>来指代地理特征。</p>
+		<p><strong><span>几何</span></strong>是另一个表示地理特征的术语。最初，单词<strong><span>几何</span></strong>表示的是对大地的测量。来自制图学的另一个含义指的是制图人员用于绘制世界地图的地理特征。</p>
+		<p>本章将所有这些术语当作同义词对待：<strong><span>地理特征、</span></strong><b>地理空间特征</b><strong><span>、</span></strong><b>或几何</b><strong><span>。最常使用的术语是</span><span>几何</span><span>。</span></strong></p>
+		<p>我们将<strong><span>几何</span></strong>定义为世界上具有地理位置的点或点的集合。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="opengis-geometry-model"></a>
+		19.2.&nbsp;OpenGIS几何模型</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-geometry-class-hierarchy">
+			19.2.1. Geometry类的层次</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-geometry">
+			19.2.2. 类Geometry</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-point">
+			19.2.3. 类Point<code class="literal"></code></a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-curve">
+			19.2.4. 类Curve<code class="literal"></code></a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-linestring">
+			19.2.5. 类LineString</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-surface">
+			19.2.6. 类Surface</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-polygon">
+			19.2.7. 类Polygon</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-geometrycollection">
+			19.2.8. 类GeometryCollection</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multipoint">
+			19.2.9. 类MultiPoint</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multicurve">
+			19.2.10. 类MultiCurve</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multilinestring">
+			19.2.11. 类MultiLineString</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multisurface">
+			19.2.12. 类MultiSurface</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-class-multipolygon">
+			19.2.13. 类MultiPolygon</a></span></dt></dl></div>
+		<p><span>OGC</span><strong><span>具有几何类型的<span>SQL</span></span></strong>环境建议的几何类型集合，基于<span>OpenGIS</span>几何模型。在本模型中，每个几何对象均具有下述一般属性：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>与空间参考系统相关，其中介绍了定义对象的坐标空间。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>属于某种几何类。</p>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title">
+						<a name="gis-geometry-class-hierarchy"></a>
+			19.2.1.&nbsp;Geometry类的层次</h3></div></div></div>
+			<p>几何类定义了下述层次：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Geometry</span>（非实例化）</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span>Point</span>（可实例化的）</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span>Curve</span>（非实例化）</p>
+			<p >
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			LineString</span>（可实例化的）</p>
+			<p >
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Line</span><span>
+			</span></p>
+			<p >
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			LinearRing</span><span> </span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span>Surface</span>（非实例化）</p>
+			<p >
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Polygon</span>（可实例化的）</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span>
+			GeometryCollection</span>（可实例化的）</p>
+			<p >
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MultiPoint</span>（可实例化的）</p>
+			<p >
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MultiCurve</span>（非实例化）</p>
+			<p >
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MultiLineString</span>（可实例化的）</p>
+			<p >
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MultiSurface</span>（非实例化）</p>
+			<p >
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MultiPolygon</span>（可实例化的）</p>
+			<p>不能在非实例化类中创建对象。能够在可实例化类中创建对象。所有类均有属性，可实例化类还可以包含声明（定义有效类实例的规则）。</p>
+			<p><span><span>Geometry</span>是一种基本类。</span>它是一种抽象类。<span><span>Geometry</span>的可实例化子类限制为可在<span>2</span>维坐标空间中存在的</span><span>0</span>、<span>1</span>、<span>2</span>维几何对象。所有的可实例化几何类是这样定义的，从而使得几何类的实例从拓扑意义上讲是闭合的（也就是说，所有定义的几何类包含其边界）。</p>
+			<p>基本<span><span>Geometry</span>类具有关于<span>Point</span></span>、<span>Curve</span>、<span>Surface</span>和<span>GeometryCollection</span>的子类：</p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Point</span>表示<span>0</span>维对象。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span><span>Curve</span>表示<span>1</span>维对象</span>，具有子类<span><span>LineString</span>，以及次级子类<span>Line</span></span>和<span>LinearRing</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Surface</span>是为<span>2</span>维对象设计的，具有子类<span>Polygon</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span><span>
+			GeometryCollection</span>具有特殊的</span><span>0</span>维、<span>1</span>维和<span>2</span>维类集合，名为<span>MultiPoint</span>、<span>MultiLineString</span>和<span><span>MultiPolygon</span>，分别用于为对应的<span>Points</span></span>、<span>LineStrings</span>和<span><span>Polygons</span>集合进行几何建模。<span>MultiCurve</span></span>和<span><span>MultiSurface</span>是作为抽象超类引入的，它们归纳了用于处理<span>Curves</span></span>和<span><span>Surfaces</span>的集合接口。</span></p>
+			<p><span>Geometry</span>、<span>Curve</span>、<span>Surface</span>、<span>MultiCurve</span>和<span><span>MultiSurface</span>定义为非实例化类。它们为其子类定义了公用方法集合，而且是为扩展而包含在内的。</span></p>
+			<p><span>Point</span>、<span>LineString</span>、<span>Polygon</span>、<span>GeometryCollection</span>、<span>MultiPoint</span>、<span>MultiLineString</span>和<span><span>MultiPolygon</span>定义为可实例化类。</span></p>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="gis-class-geometry"></a>19.2.2.&nbsp;类Geometry</h3>
+					</div></div></div>
+			<p><span>Geometry</span>是层次结构的根类。它是一种非实例化类，但具有很多属性，这些属性对由任何<span><span>Geometry</span>子类创建的所有几何值来说是共同的。下面介绍了这些属性（尤其是具有自己特殊属性的子类）。</span></p>
+			<p><strong><span>Geometry</span><span>属性</span></strong></p>
+			<p><span>Geometry</span>值具有下述属性：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>其<strong><span>type</span></strong>（类型）。每个<span>geometry</span>属于层次结构中可实例化类之一。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>其<strong><span>SRID</span></strong>，或空间参考<span>ID</span>。该值确定了用于描述定义几何对象的坐标空间的空间坐标系统。</p>
+			<p>在<span>MySQL</span>中，<span>SRID</span>值仅是与<span>geometry</span>值相关的整数值。所有计算均是在欧几里得几何系（平面）中进行的。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>它在其空间坐标系统中的<strong><span>coordinates</span></strong>（坐标），表示为双精度数值（<span>8</span>字节）。所有的非空几何对象至少包含一对坐标（<span>X</span>、<span>Y</span>）。空几何对象不含坐标。</p>
+			<p>坐标与<span>SRID</span>相关。例如，在不同的坐标系内，两个对象之间的距离会有所不同，即使这两个对象具有相同的坐标也同样。这是因为，平面坐标系中的距离和地心坐标系（地球表面上的坐标）中的距离是不同的事项。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>其<strong><span>interior</span></strong>（内部）、<strong><span>boundary</span></strong>（边界）和<strong><span>exterior</span></strong>（外部）。</p>
+			<p>每个几何对象均占据空间中的某一位置。几何对象的<span>exterior</span>（外部）指的是未被该对象占据的所有空间。其<span>interior</span>（内部）指的是被该对象占据的空间。其<span>boundary</span>（边界）指的是几何对象内部和外部之间的界面。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>其<strong><span>MBR</span></strong>（最小边界矩形）或包络面。这是一种边界几何值，由最小和最大坐标（<span>X,Y</span>）构成。</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>((MINX MINY, MAXX MINY, MAXX MAXY, MINX MAXY, MINX MINY))</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>无论值是<strong><span>简单的</span></strong>或<strong><span>非简单的</span></strong>。类型（<span>LineString</span>、<span>MultiPoint</span>、<span>MultiLineString</span>）的几何值或是简单的，或是非简单的。每个类型决定了其自己的简单或非简单声明。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>无论值是<strong><span>封闭的</span></strong>或<strong><span>非封闭的</span></strong>。类型（<span>LineString</span>、<span>MultiPoint</span>）的几何值或是封闭的，或是非封闭的。每个类型决定了其自己的封闭或非封闭声明。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>无论值是<strong><span>空的</span></strong>或<strong><span>非空的</span></strong>。如果没有任何点，几何对象是空的。空几何对象的内部、外部和边界未定义（也就是说，它们由<span>Null</span>值表示）。空的几何对象定义为总是简单的，面积为<span>0</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>其<strong><span>dimension</span></strong>（维数）。几何对象的维数为<span  >−</span><span>1</span>、<span>0</span>、<span>1</span>或<span>2</span>：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span  >−</span><span>1</span>用于空几何对象。</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span>0</span>用于无长度、无面积的几何对象。</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span>1</span>用于具有非<span>0</span>长度和<span>0</span>面积的几何对象。</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span><span>2</span>用于具有非<span>0</span>面积的几何对象。</p>
+			<p><span>
+			<span>Point</span>对象的维数为<span>0</span>。<span>LineString</span>对象的维数为</span><span>1</span>。<span><span>Polygon</span>对象的维数为<span>2</span>。<span>MultiPoint</span>、<span>MultiLineString</span></span>和<span><span>MultiPolygon</span>对象的维数与构成它们的元素的维数相同。</span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="gis-class-point"></a>
+			19.2.3.&nbsp;类Point<code class="literal"></code></h3></div></div></div>
+			<p><span><span>Point</span>（点）指的是代表坐标空间中单个位置的几何类。</span></p>
+			<p><span><b><span>Point</span></b></span><strong><span>示例</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>想像一张具有众多城市的大世界地图。每个<span><span>Point</span>对象可代表<span>1</span>个城市。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在城市地图上，<span><span>Point</span>对象可代表<span>1</span>个公共汽车站。</span></p>
+			<p><span><b><span>Point</span></b></span><strong><span>属性</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>X-</span>坐标值。 </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Y-</span>坐标值。 </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Point</span>定义为<span>0</span>维几何对象。</p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Point</span>的边界为空集合。</span></p>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="gis-class-curve"></a>19.2.4.&nbsp;类Curve<code class="literal"></code></h3>
+					</div></div></div>
+			<p><span><span>Curve</span>（曲线）是一种<span>1</span>维</span>几何对象，通常由一系列点表示。<span>Curve</span>的特殊子类定义了点之间的内插类型。<span>Curve</span>是一种非实例化类。</p>
+			<p><span><b><span>Curve</span></b></span><strong><span>属性</span></strong></p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Curve</span>具有其点的坐标。</span></p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Curve</span>定义为<span>1</span>维几何对象。</span></p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果未通过相同的点两次，<span>Curve</span>就是简单的。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果其起点等于其终点，<span><span>Curve</span>就是封闭的。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>封闭<span><span>Curve</span>的边界为空。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>非封闭<span><span>Curve</span>的边界由其两个端点构成。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>简单且封闭的<span>Curve</span>是<span>LinearRing</span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="gis-class-linestring"></a>
+			19.2.5.&nbsp;类LineString</h3></div></div></div>
+			<p><span><span>LineString</span>是具有点之间线性内插特性的<span>Curve</span>。</span></p>
+			<p><span><b><span>LineString</span></b></span><strong><span>示例</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在世界地图上，<span>LineString</span>对象可表示河流。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在城市地图上，<span><span>LineString</span>对象可表示街道。</span></p>
+			<p><span><b><span>LineString</span></b></span><strong><span>属性</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			LineString</span>具有线段的坐标，由每个连续的点对（两点）定义。</p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果仅包含两点，<span>LineString</span>为<span>Line</span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果它既是简单的也是封闭的，<span><span>LineString</span>为<span>LinearRing</span>。</span></p>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="gis-class-surface"></a>19.2.6.&nbsp;类Surface</h3>
+					</div></div></div>
+			<p><span><span>Surface</span>是一种<span>2</span>维几何对象</span>。它是一种非实例化类。其唯一的可实例化子类是<span>Polygon</span><span>.
+			</span></p>
+			<p><span><b><span>Surface</span></b></span><strong><span>属性</span></strong></p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Surface</span>定义为<span>2</span>维几何对象。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在<span>OpenGIS</span>规范中，将简单的<span><span>Surface</span>定义为由单一</span>“<span class="quote"><span>patch</span></span>”构成的几何对象，它与单个外部边界以及<span>0</span>或多个内部边界有关。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>简单<span><span>Surface</span>的边界是一组与其内部和外部边界对应的封闭曲线的集合。</span></p>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="gis-class-polygon"></a>19.2.7.&nbsp;类Polygon</h3>
+					</div></div></div>
+			<p><span><span>Polygon</span>是代表多边几何对象的</span>平面<span><span>Surface</span>。它由</span>单个外部边界以及<span>0</span>或多个内部边界定义，其中，每个内部边界定义为<span>Polygon</span>中的<span>1</span>个孔。</p>
+			<p><span><b><span>Polygon</span></b></span><strong><span>示例</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在地区地图上，<span>Polygon</span>对象可表示森林、区等。</p>
+			<p><span><b><span>Polygon</span></b></span><strong><span>声明</span></strong></p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Polygon</span>的边界</span>由一组构成其外部边界和比内部边界的<span>LinearRing</span>归向集合构成（即，简单且封闭的<span><span>LineString</span>对象）。</span></p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Polygon</span>没有交叉的环。<span>Polygon</span>边界中的环可能会在<span>Point</span>处相交，但仅以切线方式相交。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span><span>Polygon</span>没有</span>线、尖峰或穿孔。</p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Polygon</span>有由连接点集合构成的内部。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span><span>Polygon</span>可能包含孔。对于具有孔的</span><span>Polygon</span>，其外部不连接。每个孔定义了连接的外部部件。</p>
+			<p>前述声明使得<span><span>Polygon</span>成为简单的几何对象。</span></p>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title">
+						<a name="gis-class-geometrycollection"></a>19.2.8.&nbsp;类GeometryCollection</h3>
+					</div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span><span>GeometryCollection</span>是由<span>1</span>个或多个任意类几何对象构成的几何对象。</span><p>
+			<span><span>GeometryCollection</span>中的所有元素必须具有相同的空间参考系</span>（即相同的坐标系）。对<span><span>GeometryCollection</span>的元素无任何限制，但下面介绍的<span>GeometryCollection</span>的子类会限制其成员。这类限制可能基于：</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>元素类型（例如，<span><span>MultiPoint</span>可能仅包含<span>Point</span>元素）。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>维数。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对元素间空间交迭程度的限制。</p>
+			<h3 class="title"><a name="gis-class-multipoint"></a>
+			19.2.9.&nbsp;类MultiPoint</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span><span>MultiPoint</span>是一种由<span>Point</span>元素构成的几何对象集合。这些点</span>未以任何方式连接或排序。<p>
+			<span><b><span>MultiPoint</span></b></span><strong><span>示例</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在世界地图上，<span><span>MultiPoint</span>可以代表岛链。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在城市地图上，<span><span>MultiPoint</span>可以表示售票处的出口。</span></p>
+			<p><span><b><span>MultiPoint</span></b></span><strong><span>属性</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MultiPoint</span>是<span>0</span>维几何对象。</p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果没有两个<span>Point</span>是相同的（具有等同的坐标值），<span>MultiPoint</span>是简单的。</span></p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>MultiPoint</span>的边界为空集合。</span></p>
+			<h3 class="title"><a name="gis-class-multicurve"></a>
+			19.2.10.&nbsp;类MultiCurve</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span><span>MultiCurve</span>是一种由<span>Curve</span>元素构成的几何对象集合。<span>MultiCurve</span></span>是一种非实例化类。<p>
+			<span><b><span>MultiCurve</span></b></span><strong><span>属性</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MultiCurve</span>是<span>1</span>维几何对象。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>当且仅当其所有元素均是简单的时，<span>MultiCurve</span>才是简单的。</span>任意两元素的唯一交叉仅出现在两元素边界的点上。</p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>MultiCurve</span></span>边界是通过采用“模<span>2</span>联合规则”（也称为奇偶规则）获得的：如果某一点位于奇数编号<span><span>MultiCurve</span>元素的边界内，它将位于<span>MultiCurve</span>的边界内。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果其所有元素均是封闭的，则<span><span>MultiCurve</span>为封闭的。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>封闭<span><span>MultiCurve</span>的边界总为空。</span></p>
+			<h3 class="title"><a name="gis-class-multilinestring"></a>
+			19.2.11.&nbsp;类MultiLineString</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span><span>MultiLineString</span>是一种由</span>
+			<span><span>LineString</span>元素构成的<span>MultiCurve</span>几何对象集合。</span><p>
+			<span><b><span>MultiLineString</span></b></span><strong><span>示例</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在地区地图上，<span><span>MultiLineString</span>可表示河流体系或高速路系统。</span></p>
+			<h3 class="title"><a name="gis-class-multisurface"></a>
+			19.2.12.&nbsp;类MultiSurface</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span><span>MultiSurface</span>是一种由<span>Surface</span>元素构成的几何对象集合。<span>MultiSurface</span></span>是一种非实例化类。其唯一的可实例化子类是<span>MultiPolygon</span>。<p>
+			<span><b><span>MultiSurface</span></b></span><strong><span>声明</span></strong></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>2</span>个<span><span>MultiSurface</span>面没有相交的内部。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>2</span>个<span>MultiSurface</span>元素具有最多在有限点上相交的边界。</p>
+			<h3 class="title"><a name="gis-class-multipolygon"></a>
+			19.2.13.&nbsp;类MultiPolygon</h3></div></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<span><span>MultiPolygon</span>是一种由<span>Polygon</span>元素构成的几何对象集合。</span><p>
+		<span><b><span>MultiPolygon</span></b></span><strong><span>示例</span></strong></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在地区地图上，<span>MultiPolygon</span>可表示湖泊系统。</p>
+		<p><span><b><span>MultiPolygon</span></b></span><strong><span>声明</span></strong></p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MultiPolygon</span></span>没有内部相交的的<span>2</span>个<span><span>Polygon</span>元素。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MultiPolygon</span>没有<span>2</span>个交叉的<span><span>Polygon</span>元素</span>（前述声明也禁止交叉），也没有在无数点处相接触的<span>2</span>个<span>Polugon</span>元素。</p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MultiPolygon</span>不能含有有断开的线、尖峰或穿孔。<span>MultiPolygon</span>是一种正常的封闭点集合。</span></p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于有<span>1</span>个以上<span>Polygon</span>元素的<span>MultiPolygon</span>，</span>具有不连接的内部。<span><span>MultiPolygon</span>内部已连接部件的数目等于<span>MultiPolygon</span>中<span>Polygon</span>值的数目。</span></p>
+		<p><span><b><span>MultiPolygon</span></b></span><strong><span>属性</span></strong></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MultiPolygon</span>是<span>2</span>维几何对象。</p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MultiPolygon</span>边界是与其<span>Polygon</span>元素的边界对应的封闭曲线集合</span>（<span><span>LineString</span>值）。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><span>MultiPolygon</span>边界中的每个<span>Curve</span></span>准确位于<span>1</span>个<span>Polygon</span>元素的边界内。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Polygon</span>元素边界中的每个<span>Curve</span>位于<span>MultiPolygon</span>的边界中。</p>
+		<h2 class="title"><a name="supported-spatial-data-formats"></a>
+		19.3.&nbsp;支持的空间数据格式</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-wkt-format">
+			19.3.1. 著名的文本(WKT)格式</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-wkb-format">
+			19.3.2. 著名的二进制(WKB)格式</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+			在本节中，介绍了用于表示查询中几何对象的标准空间数据格式。它们是：<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>著名的文本<span>(WKT)</span>格式 </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>著名的二进制<span>(WKB)</span>格式 </p>
+			<p>从其内部看，<span>MySQL</span>以不完全等同于<span>WKT</span>或<span>WKB</span>的格式保存几何对象值。</p>
+			<h3 class="title"><a name="gis-wkt-format"></a>
+			19.3.1.&nbsp;著名的文本(WKT)格式</h3></div></div></div><a class="indexterm" name="id2984178"></a><a class="indexterm" name="id2984185"></a></div><div class="section"><div class="titlepage"><div><div>
+			对于<span>Geometry</span>的著名文本（<span>WKT</span>）表示，它是为与采用<span>ASCII</span>格式的几何数据进行交换而设计的。<p>
+			几何对象<span>WKT</span>表示的示例：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>Point</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>POINT(15 20)</span></pre>
+			<p>注意，指定点坐标时不使用分隔用逗号。</p>
+			<p>
+			<span>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>具有<span>4</span>个点的<span>LineString</span>：</span></p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>LINESTRING(0 0, 10 10, 20 25, 50 60)</span></pre>
+			<p>注意，点坐标对采用逗号隔开。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>具有<span>1</span>个外部环和<span>1</span>个内部环的<span>Polygon</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7, 5 5))</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>具有三个<span>Point</span>值的<span><span>MultiPoint</span>：</span></p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>MULTIPOINT(0 0, 20 20, 60 60)</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>具有<span>2</span>个<span><span>LineString</span>值的<span>MultiLineString</span>：</span></p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>MULTILINESTRING((10 10, 20 20), (15 15, 30 15))</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>具有<span>2</span>个<span><span>Polygon</span>值的<span>MultiPolygon</span>：</span></p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7, 5 5)))</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>由<span>2</span>个<span>Point</span>值和<span>1</span>个<span><span>LineString</span>构成的<span>GeometryCollection</span></span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>GEOMETRYCOLLECTION(POINT(10 10), POINT(30 30), LINESTRING(15 15, 20 20))</span></pre>
+			<p>在本章开始处给出的<span>OGC</span>规范文档中，可找到相应的<span>Backus-Naur</span>语法，它指定了用于编写<span>WKT</span>值的正式生产规则。</p>
+			<h3 class="title"><a name="gis-wkb-format"></a>
+			19.3.2.&nbsp;著名的二进制(WKB)格式</h3></div></div></div><a class="indexterm" name="id2984413"></a><a class="indexterm" name="id2984419"></a></div></div><div class="section"><div class="titlepage"><div><div>
+		用于几何值的著名二进制（<span>WKB</span>）表示是由<span>OpenGIS</span>规范定义的。它还定义在<span>ISO
+		</span>“<span class="quote"><span>SQL/MM Part 3: Spatial</span></span>”标准中。<p>
+		<span>WKB</span>用于以二进制流的形式交换几何数据，二进制流由含几何<span>WKB</span>信息的<span>BLOB</span>值表示。</p>
+		<p><span>WKB</span>使用<span>1</span>字节无符号整数、<span>4</span>字节无符号整数、以及<span>8</span>字节双精度数（<span>IEEE 
+		754</span>格式）。<span>1</span>字节等于<span>8</span>比特。</p>
+		<p>例如，与<span><span>POINT(1 1)</span>对应的</span><span>WKB</span>值由下述<span>21</span>字节序列构成（在此，每个字节由<span>2</span>个十六进制数值表示）：</p>
+		<pre><span>0101000000000000000000F03F000000000000F03F</span></pre>
+		<p>该序列可分为下述部分：</p>
+		<pre><span>Byte order : 01</span></pre>
+		<pre><span>WKB type&nbsp;&nbsp; : 01000000</span></pre>
+		<pre><span>X&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 000000000000F03F</span></pre>
+		<pre><span>Y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 000000000000F03F</span></pre>
+		<p>表示如下：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>字节顺序（<span>Byte order</span>）可以是<span>0</span>或<span>1</span>，分别表明<span>little-endian</span>或<span>big-endian</span>存储。<span>little-endian</span>和<span>big-endian</span>字节顺序也分别称为网络数据表示（<span>NDR</span>）和外部数据表示（<span>XDR</span>）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>“<span>WKB type</span>”（<span>WKB</span>类型）是指明几何类型的代码。取值从<span>1</span>到<span>7</span>，分别表示<span>Point</span>、<span>LineString</span>、<span>Polygon</span>、<span>MultiPoint</span>、<span>MultiLineString</span>、<span>MultiPolygon</span>、和<span>GeometryCollection</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><span>Point</span>值具有</span><span>X</span>和<span>Y</span>坐标，每个值均用双精度值表示。</p>
+		<p>对于更复杂几何值的<span>WKB</span>值，它们是由更复杂的数据结构表示的，详情请参见<span>OpenGIS</span>规范。</p>
+		<h2 class="title"><a name="creating-a-spatially-enabled-mysql-database"></a>
+		19.4.&nbsp;创建具备空间功能的MySQL数据库</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#mysql-spatial-datatypes">
+			19.4.1. MySQL空间数据类型</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#creating-spatial-values">
+			19.4.2. 创建空间值</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#creating-spatial-columns">
+			19.4.3. 创建空间列</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#populating-spatial-columns">
+			19.4.4. 填充空间列</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#fetching-spatial-data">
+			19.4.5. 获取空间数据</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+			本节介绍了可用于表示<span>MySQL</span>中空间数据的数据类型，以及用于创建和检索空间值的函数。<h3 class="title"><a name="mysql-spatial-datatypes"></a>
+			19.4.1.&nbsp;MySQL空间数据类型</h3></div></div></div><a class="indexterm" name="id2984595"></a><a class="indexterm" name="id2984604"></a><a class="indexterm" name="id2984614"></a><a class="indexterm" name="id2984623"></a><a class="indexterm" name="id2984632"></a><a class="indexterm" name="id2984641"></a><a class="indexterm" name="id2984650"></a><a class="indexterm" name="id2984659"></a><a class="indexterm" name="id2984669"></a><a class="indexterm" name="id2984681"></a><a class="indexterm" name="id2984694"></a><a class="indexterm" name="id2984706"></a><a class="indexterm" name="id2984718"></a><a class="indexterm" name="id2984731"></a><a class="indexterm" name="id2984743"></a><a class="indexterm" name="id2984756"></a></div><div class="section"><div class="titlepage"><div><div>
+			<span>MySQL</span>具有与<span>OpenGIS</span>类对应的数据类型。某些类型只能保存单个几何值：<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>GEOMETRY</span><span>
+			</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>POINT</span><span>
+			</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			LINESTRING</span><span> </span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>POLYGON</span><span>
+			</span></p>
+			<p><span>GEOMETRY</span>能够保存任何类型的几何值。其他的单值类型<span><span>POINT</span>、<span>LINESTRING</span></span>以及<span><span>POLYGON</span>只能保存特定几何类型的</span>值。</p>
+			<p>其他数据类型能保存多个值：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MULTIPOINT</span><span> </span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MULTILINESTRING</span><span> </span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			MULTIPOLYGON</span><span> </span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			GEOMETRYCOLLECTION</span><span> </span></p>
+			<p><span>GEOMETRYCOLLECTION</span>能保存任意类型的对象集合。对于其他集合类型，<span>MULTIPOINT</span>、<span>MULTILINESTRING</span>、<span>MULTIPOLYGON</span>和<span>GEOMETRYCOLLECTION</span>，仅限于具有特定几何类型的集合成员。</p>
+			<h3 class="title"><a name="creating-spatial-values"></a>
+			19.4.2.&nbsp;创建空间值</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-wkt-functions">
+				19.4.2.1. 使用WKT函数创建Geometry（几何）值</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-wkb-functions">
+				19.4.2.2. 使用WKB函数创建Geometry（几何）值</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-mysql-specific-functions">
+				19.4.2.3. 使用MySQL函数创建几何值</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+				在本节中，介绍了使用<span>OpenGIS</span>标准中定义的<span>WKT</span>和<span>WKB</span>函数创建空间值的方法，以及使用相应<span>MySQL</span>函数的方法。<h4 class="title"><a name="gis-wkt-functions"></a>
+				19.4.2.1.&nbsp;使用WKT函数创建Geometry（几何）值</h4></div></div></div><p>
+          <span >
+			MySQL</span><span>提供了众多以<span>WKT</span>表达式、以及可选的空间参考系<span>ID</span>（<span>SRID</span>）为输入参数的函数。它们将返回对应的几何对象。</span></p>
+				<p>
+			<span>GeomFromText()</span><span>接受任何几何类型的<span>WKT</span>作为其第<span>1</span>个参量。在实施方案中也提供了与类型相关的构造函数，用于构造每一种几何类型的几何值。</span></p>
+				<div class="itemizedlist">
+					<ul type="disc">
+						<li>
+						<p>
+              <a class="indexterm" name="id2984990"></a>
+
+              <a class="indexterm" name="id2984999"></a>
+
+              GeomCollFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+              ,
+              GeometryCollectionFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span><span>GEOMETRYCOLLECTION</span>值。</span></span>
+            </p></li><li><p>
+              <a class="indexterm" name="id2985068"></a>
+
+              <a class="indexterm" name="id2985077"></a>
+
+              GeomFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+              ,
+              GeometryFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span>任何类型的几何值。</span></span>
+            </p></li><li><p>
+              <a class="indexterm" name="id2985142"></a>
+
+              <a class="indexterm" name="id2985151"></a>
+
+              LineFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+              ,
+              LineStringFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span><span>LINESTRING</span>值。</span></span>
+            </p></li><li><p>
+              <a class="indexterm" name="id2985219"></a>
+
+              <a class="indexterm" name="id2985228"></a>
+
+              MLineFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+              ,
+              MultiLineStringFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span><span>MULTILINESTRING</span>值。</span></span>
+            </p></li><li><p>
+              <a class="indexterm" name="id2985296"></a>
+
+              <a class="indexterm" name="id2985305"></a>
+
+              MPointFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+              ,
+              MultiPointFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span><span>MULTIPOINT</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2985373"></a>
+
+              <a class="indexterm" name="id2985382"></a>
+
+              MPolyFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+              ,
+              MultiPolygonFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span><span>MULTIPOLYGON</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2985444"></a>
+
+              PointFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span><span>POINT</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2985501"></a>
+
+              <a class="indexterm" name="id2985510"></a>
+
+              PolyFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+              ,
+              PolygonFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKT</span>表示和<span>SRID</span>构造<span><span>POLYGON</span>值。</span></span></p></li></ul></div>
+				<p><span>OpenGIS</span>规范还介绍了用于构造<span>Polygon</span>或<span><span>MultiPolygon</span>值的可选函数，这些值基于环和封闭<span>LineString</span>值集合的</span><span>WKT</span>表达式。这些值可以相交。<span>MySQL</span>未实施下述函数：</p>
+				<div class="itemizedlist">
+					<ul type="disc">
+						<li>
+						<p>
+              <a class="indexterm" name="id2985583"></a>
+
+              BdMPolyFromText(<em class="replaceable">wkt</em>,<em class="replaceable">srid</em>)
+            </p><p>
+              <span>
+				以包含已关闭<span><span>LineString</span>值任意集合的<span>WKT</span>格式，从<span>MultiLineString</span>值构造<span>MultiPolygon</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2985626"></a>
+
+              BdPolyFromText(<em class="replaceable">wkt</em>,<em class="replaceable">srid</em>)
+            </p><p>
+              <span>
+				以包含已关闭<span><span>LineString</span>值任意集合的<span>WKT</span>格式，从<span>MultiLineString</span>值构造<span>Polygon</span>值。</span></span></p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="gis-wkb-functions"></a>
+				19.4.2.2.&nbsp;使用WKB函数创建Geometry（几何）值</h4></div></div></div>
+				<p><span>MySQL</span>提供了众多函数，它们将包含<span>WKT</span>表达式、或可选的空间参考系统<span>ID</span>（<span>SRID</span>）的<span>BLOB</span>作为输入参数。它们返回对应的几何对象。 
+				</p>
+				<span>
+				GeomFromWKB()</span><span>接受任何几何类型的<span>WKB</span>作为其第<span>1</span>个参量。在实施方案中也提供了与类型相关的构造函数，用于构造每一种几何类型的几何值。</span><div class="itemizedlist">
+					<ul type="disc">
+						<li>
+						<p>
+              <a class="indexterm" name="id2985732"></a>
+
+              <a class="indexterm" name="id2985741"></a>
+
+              GeomCollFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+              ,
+              GeometryCollectionFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span><span>GEOMETRYCOLLECTION</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2985809"></a>
+
+              <a class="indexterm" name="id2985818"></a>
+
+              GeomFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+              ,
+              GeometryFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span>任意类型的几何值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2985883"></a>
+
+              <a class="indexterm" name="id2985892"></a>
+
+              LineFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+              ,
+              LineStringFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span><span>LINESTRING</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2985960"></a>
+
+              <a class="indexterm" name="id2985969"></a>
+
+              MLineFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+              ,
+              MultiLineStringFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span><span>MULTILINESTRING</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2986037"></a>
+
+              <a class="indexterm" name="id2986046"></a>
+
+              MPointFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+              ,
+              MultiPointFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span><span>MULTIPOINT</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2986114"></a>
+
+              <a class="indexterm" name="id2986124"></a>
+
+              MPolyFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+              ,
+              MultiPolygonFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span><span>MULTIPOLYGON</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2986192"></a>
+
+              PointFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span><span>POINT</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2986249"></a>
+
+              <a class="indexterm" name="id2986258"></a>
+
+              PolyFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+              ,
+              PolygonFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+            </p><p>
+              <span>使用其<span>WKB</span>表示和<span>SRID</span>构造<span><span>POLYGON</span>值。</span></span></p></li></ul></div><p>
+          <span >
+			OpenGIS</span><span>规范还介绍了用于构造<span>Polygon</span>或<span><span>MultiPolygon</span>值的可选函数，这些值基于环和封闭<span>LineString</span>值集合的</span><span>WKB</span>表达式。这些值可以相交。<span>MySQL</span>未实施下述函数：</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2986330"></a>
+
+              BdMPolyFromWKB(<em class="replaceable">wkb</em>,<em class="replaceable">srid</em>)
+            </p><p>
+              <span>
+				以包含已关闭<span><span>LineString</span>值任意集合的<span>WKB</span>格式，从<span>MultiLineString</span>值构造<span>MultiPolygon</span>值。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2986373"></a>
+
+              BdPolyFromWKB(<em class="replaceable">wkb</em>,<em class="replaceable">srid</em>)
+            </p><p>
+              <span>
+				以包含已关闭<span><span>LineString</span>值任意集合的<span>WKB</span>格式，从<span>MultiLineString</span>值构造<span>Polygon</span>值。</span></span></p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="gis-mysql-specific-functions"></a>
+				19.4.2.3.&nbsp;使用MySQL函数创建几何值</h4></div></div></div>
+				<p><strong><span>注释：</span></strong><span>MySQL</span>未实施本节所列的函数。</p>
+				<span >
+				MySQL</span><span>为创建几何<span>WKB</span>表达式提供了有用的函数集合。本节介绍的函数是对<span>OpenGIS</span>规范的<span>MySQL</span>扩展。这些函数的结果是包含几何值（无<span>SRID</span>）的<span>BLOB</span>值。这些函数的结果可被<span><span>GeomFromWKB()</span>函数系列中任意函数的第<span>1</span>个参量取代。</span></span><div class="itemizedlist">
+					<ul type="disc">
+						<li>
+						<p>
+              <a class="indexterm" name="id2986480"></a>
+
+              GeometryCollection(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>,...)
+            </p><p>
+              <span>构造<span>WKB
+				<span>GeometryCollection</span></span>。如果任何参量不是构造良好的几何对象<span>WKB</span>表达式，返回值为<span>NULL</span>。</span></p></li><li><p>
+              <a class="indexterm" name="id2986536"></a>
+
+              LineString(<em class="replaceable">pt1</em>,<em class="replaceable">pt2</em>,...)
+            </p><p>
+              <span>从多个<span>WKB 
+				Point</span>参量构造<span>WKB
+				<span>LineString</span></span><span>值</span>。如果任何参量不是<span>WKB
+				<span>Point</span></span>，返回值为<span>NULL</span>。如果<span><span>Point</span>参量的数目小于<span>2</span></span>，返回值为<span>NULL</span>。</span></p></li><li><p>
+              <a class="indexterm" name="id2986608"></a>
+
+              MultiLineString(<em class="replaceable">ls1</em>,<em class="replaceable">ls2</em>,...)
+            </p><p>
+              <span>使用<span>WKB
+				<span>LineString</span></span><span>参量构造</span><span>WKB
+				<span>MultiLineString</span></span><span>值</span>。如果任何参量不是<span>WKB
+				<span>LineString</span></span>，返回值为<span>NULL</span>。</span></p></li><li><p>
+              <a class="indexterm" name="id2986671"></a>
+
+              MultiPoint(<em class="replaceable">pt1</em>,<em class="replaceable">pt2</em>,...)
+            </p><p>
+              <span>使用<span>WKB
+				<span>Point</span></span><span>参量构造</span><span>WKB
+				<span>MultiPoint</span></span>值。如果任何参量不是<span>WKB
+				<span>Point</span></span>，返回值为<span>NULL</span>。</span></p></li><li><p>
+              <a class="indexterm" name="id2986734"></a>
+
+              MultiPolygon(<em class="replaceable">poly1</em>,<em class="replaceable">poly2</em>,...)
+            </p><p>
+              <span>从一组<span>WKB
+				<span>Polygon</span></span><span>参量构造</span><span>WKB
+				<span>MultiPolygon</span></span>值。如果任何参量不是<span>WKB
+				<span>Polygon</span></span>，返回值为<span>NULL</span>。</span></p></li><li><p>
+              <a class="indexterm" name="id2986797"></a>
+
+              Point(<em class="replaceable">x</em>,<em class="replaceable">y</em>)
+            </p><p>
+              <span>
+				使用其坐标构造<span>WKB <span>Point</span></span><span>。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2986846"></a>
+
+              Polygon(<em class="replaceable">ls1</em>,<em class="replaceable">ls2</em>,...)
+            </p><p>
+              <span>从多个<span>WKB
+				<span>LineString</span></span><span>参量构造</span><span>WKB
+				<span>Polygon</span></span>值。如果任何参量未表示为<span><span>LinearRing</span>的<span>WKB</span>形式（即，非封闭和简单<span>LineString</span>）</span>，返回值为<span>NULL</span>。</span></p></li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="creating-spatial-columns"></a>
+			19.4.3.&nbsp;创建空间列</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span>MySQL</span>提供了为几何类型创建空间列的标准方法，例如，使用<span>CREATE 
+			TABLE</span>或<span><span>ALTER 
+			TABLE</span>。目前，仅对<span>MyISAM</span>标支持空间列。</span><p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用<span><span>CREATE 
+			TABLE</span>语句创建具有空间列的表：</span></p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>CREATE TABLE geom (g GEOMETRY);</b></span></span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Query OK, 0 rows affected (0.02 sec)</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用<span><span>ALTER 
+			TABLE</span>语句在已有表中增加空间列，或将空间列从已有表中删除：</span></p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>ALTER TABLE geom ADD pt POINT;</b></span></span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Records: 0&nbsp; Duplicates: 0&nbsp; Warnings: 0</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>ALTER TABLE geom DROP pt;</b></span></span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Records: 0&nbsp; Duplicates: 0&nbsp; Warnings: 0</span></pre>
+			<h3 class="title"><a name="populating-spatial-columns"></a>
+			19.4.4.&nbsp;填充空间列</h3></div></div></div>
+			<p>创建了空间列后，可用空间数据填充它们。</p>
+			<p>值应以内部几何格式保存，但你也能将其从<span>WKT</span>或<span>WKB</span>格式转换为内部几何格式。在下面的示例中，介绍了通过将<span>WKT</span>值转换为内部几何格式以便将几何值插入表中的方法。</p>
+			<p>你可以在<span><span>INSERT</span>语句中执行直接转换操作：</span></p>
+			<pre><span>INSERT INTO geom VALUES (GeomFromText(&#39;POINT(1 1)&#39;));</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SET @g = &#39;POINT(1 1)&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (GeomFromText(@g));</span></pre>
+			<p>也可以在<span><span>INSERT</span>之前执行转换操作：</span></p>
+			<pre><span>SET @g = GeomFromText(&#39;POINT(1 1)&#39;);</span></pre>
+			<pre><span>INSERT INTO geom VALUES (@g);</span></pre>
+			<p>在下面的示例中，将多个复杂的几何值插入到了表中：</p>
+			<pre><span>SET @g = &#39;LINESTRING(0 0,1 1,2 2)&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (GeomFromText(@g));</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SET @g = &#39;POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7, 5 5))&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (GeomFromText(@g));</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SET @g =</span></pre>
+			<pre><span>&#39;GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (GeomFromText(@g));</span></pre>
+			<p>在前面的所有示例中，均采用了<span><span>GeomFromText()</span>来创建几何值。你也可以使用与类型相关的函数：</span></p>
+			<pre><span>SET @g = &#39;POINT(1 1)&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (PointFromText(@g));</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SET @g = &#39;LINESTRING(0 0,1 1,2 2)&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (LineStringFromText(@g));</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SET @g = &#39;POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7, 5 5))&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (PolygonFromText(@g));</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SET @g =</span></pre>
+			<pre><span>&#39;GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))&#39;;</span></pre>
+			<pre><span>INSERT INTO geom VALUES (GeomCollFromText(@g));</span></pre>
+			<p>注意，如果客户端应用程序打算使用几何值的<span>WKB</span>表示，它需要在队列中将正确构造的<span>WKB</span>发送至服务器。但是，存在数种满足该要求的方法。例如：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>用十六进制文字语法插入<span><span>POINT(1 
+			1)</span>值：</span></p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>INSERT INTO geom VALUES</b></span></span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>(GeomFromWKB(0x0101000000000000000000F03F000000000000F03F));</b></span></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>ODBC</span>应用程序能够发送<span>WKB</span>表达式，并使用具有<span>BLOB</span>类型的参量将其绑定到占位符：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>INSERT INTO geom VALUES (GeomFromWKB(?))</span></pre>
+			<p>其他编程接口或许也支持类似的占位符机制。</p>
+			<span>在<span>C</span>程序中，可以使用<span><span>mysql_real_escape_string()</span>转义</span>二进制值，并将结果包含在将发送至服务器的查询字符串。请参见</span><a href="apis.html#mysql-real-escape-string" title="25.2.3.52. mysql_real_escape_string()">25.2.3.52节，“mysql_real_escape_string()”</a></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="fetching-spatial-data"></a>
+			19.4.5.&nbsp;获取空间数据</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#fetching-spatial-data-in-internal-format">
+				19.4.5.1. 以内部格式获取空间数据</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#fetching-spatial-data-in-wkt-format">
+				19.4.5.2. 以WKT格式获取空间数据</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#fetching-spatial-data-in-wkb-format">
+				19.4.5.3. 以格式获取空间数据</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+				对于表中保存的几何值，能够以内部格式获取。你也能将其转换为<span>WKT</span>或<span>WKB</span>格式。<h4 class="title"><a name="fetching-spatial-data-in-internal-format"></a>
+				19.4.5.1.&nbsp;以内部格式获取空间数据</h4></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+				在表对表传输中，使用内部格式来获取几何值可能是有用的。<pre><span>CREATE TABLE geom2 (g GEOMETRY) SELECT g FROM geom;</span></pre>
+				<h4 class="title"><a name="fetching-spatial-data-in-wkt-format"></a>
+				19.4.5.2.&nbsp;以WKT格式获取空间数据</h4></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+				<span><span>AsText()</span>函数能够将几何值从内部格式转换为</span><span>WKT</span>字符串。<pre><span>SELECT AsText(g) FROM geom;</span></pre>
+				<h4 class="title"><a name="fetching-spatial-data-in-wkb-format"></a>
+				19.4.5.3.&nbsp;以格式获取空间数据</h4></div></div></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<span><span>AsBinary()</span>函数能够将几何值从内部格式转换为</span>包含<span>WKB</span>值的<span><span>BLOB</span>。</span><pre><span>SELECT AsBinary(g) FROM geom;</span></pre>
+		<h2 class="title"><a name="analysing-spatial-information"></a>
+		19.5.&nbsp;分析空间信息</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-to-convert-geometries-between-formats">
+			19.5.1. Geometry格式转换函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#geometry-property-functions">19.5.2. 
+			Geometry函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-that-create-new-geometries-from-existing-ones">
+			19.5.3. 从已有Geometry创建新Geometry的函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-for-testing-spatial-relations-between-geometric-objects">
+			19.5.4. 测试几何对象间空间关系的函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#relations-on-geometry-mbr">
+			19.5.5. 关于几何最小边界矩形（MBR）的关系</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-that-test-spatial-relationships-between-geometries">
+			19.5.6. 测试几何类之间空间关系的函数</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+			用值填充了空间列后，即可查询和分析它们。<span>MySQL</span>提供了一组在空间数据上执行各种操作的函数。根据它们所执行的操作类型，可以将这些函数分为四种主要类别：<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>用于在各种格式间转换几何值的函数。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>用于访问几何值定性或定量属性的函数。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>描述两种几何值之间关系的函数。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>从已有<span>Geometry</span>创建新<span>Geometry</span>的函数 
+			</p>
+			<p>空间分析函数可用于很多场合下，如：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>任何交互式<span>SQL</span>程序，如<strong><span>mysql</span></strong>或<strong><span>MySQLCC</span></strong>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>以任何语言编写的、支持<span>MySQL</span>客户端<span>API</span>的应用程序。</p>
+			<h3 class="title"><a name="functions-to-convert-geometries-between-formats"></a>
+			19.5.1.&nbsp;Geometry格式转换函数</h3></div></div></div><p>
+        <span >
+		MySQL</span><span>支持下述用于在内部格式和<span>WKT</span>或<span>WKB</span>格式间转换几何值的函数：</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+            <a class="indexterm" name="id2987394"></a>
+
+            AsBinary(<em class="replaceable">g</em>)
+          </p><p>
+            <span>
+			将采用内部几何格式的值转换为其<span>WKB</span>表示，并返回二进制结果。</span></p><pre class="programlisting">SELECT AsBinary(g) FROM geom;
+</pre></li><li><p>
+            <a class="indexterm" name="id2987453"></a>
+
+            AsText(<em class="replaceable">g</em>)
+          </p><p>
+            <span>
+			将采用内部几何格式的值转换为其<span>WKT</span>表示，并返回字符串结果。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @g = 'LineString(1 1,2 2,3 3)';</strong>
+mysql&gt; <strong class="userinput">SELECT AsText(GeomFromText(@g));</strong>
++--------------------------+
+| AsText(GeomFromText(@g)) |
++--------------------------+
+| LINESTRING(1 1,2 2,3 3)  |
++--------------------------+
+</pre></li><li><p>
+            <a class="indexterm" name="id2987504"></a>
+
+            GeomFromText(<em class="replaceable">wkt</em>[,<em class="replaceable">srid</em>])
+          </p><p>
+            <span>
+			将字符串值从其<span>WKT</span>表示转换为内部几何格式，并返回结果。也支持多种与类型相关的函数，如<span>PointFromText()</span>和<span><span>LineFromText()</span>，</span>请参见</span><a href="spatial-extensions-in-mysql.html#gis-wkt-functions" title="19.4.2.1. Creating Geometry Values Using WKT Functions">19.4.2.1节，“使用WKT函数创建Geometry（几何）值”</a><span>。</span></p></li><li><p>
+            <a class="indexterm" name="id2987550"></a>
+
+            GeomFromWKB(<em class="replaceable">wkb</em>[,<em class="replaceable">srid</em>])
+          </p><p>
+            <span>
+			将二进制值从其<span>WKB</span>表示转换为内部几何格式，并返回结果。也支持多种与类型相关的函数，如<span>PointFromWKB()</span>和<span>LineFromWKB()</span>，请参见</span><a href="spatial-extensions-in-mysql.html#gis-wkb-functions" title="19.4.2.2. Creating Geometry Values Using WKB Functions">19.4.2.2节，“使用WKB函数创建Geometry（几何）值”</a><span>。</span></p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="geometry-property-functions"></a>19.5.2. Geometry函数</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#general-geometry-property-functions">
+			19.5.2.1. 通用几何函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#point-property-functions">19.5.2.2. 
+			Point函数<br>
+&nbsp;</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#linestring-property-functions">19.5.2.3. 
+			LineString函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#multilinestring-property-functions">19.5.2.4. 
+			MultiLineString函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#polygon-property-functions">19.5.2.5. 
+			Polygon函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#multipolygon-property-functions">19.5.2.6. 
+			MultiPolygon函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#geometrycollection-property-functions">19.5.2.7. 
+			GeometryCollection函数</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+				属于该组的每个函数均将几何值作为其参量，并返回几何值的定性或定量属性。某些函数限制了其参量类型。如果参量是不正确的几何类型，这类函数将返回<span>NULL</span>。例如，如果对象类型既不是<span>Polygon</span>也不是<span><span>MultiPolygon</span>，<span>Area()</span>将返回<span>NULL</span>。</span><h4 class="title"><a name="general-geometry-property-functions"></a>
+				19.5.2.1.&nbsp;通用几何函数</h4></div></div></div><p>
+          <span>
+			本节列出的函数不限制其参量，可接受任何类型的几何值。</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2987677"></a>
+
+              Dimension(<em class="replaceable">g</em>)
+            </p><p>
+              <span>
+				返回几何值<span><i><span>g</span></i></span>的固有维数。结果可以是<span>-1</span>、<span>0</span>、<span>1</span>或<span>2</span>。（关于这些值的含义，请参见</span><a href="spatial-extensions-in-mysql.html#gis-class-geometry" title="19.2.2. Class Geometry">19.2.2节，“类Geometry”</a><span>）。</span>
+            </p><pre class="programlisting">mysql&gt; <strong class="userinput">SELECT Dimension(GeomFromText('LineString(1 1,2 2)'));</strong>
++------------------------------------------------+
+| Dimension(GeomFromText('LineString(1 1,2 2)')) |
++------------------------------------------------+
+|                                              1 |
++------------------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2987748"></a>
+
+              Envelope(<em class="replaceable">g</em>)
+            </p>
+					<p>
+					<span>
+					返回几何值<span>g</span>的最小边界矩形（MBR）。结果以<span>Polygon</span>值的形式返回。</span></p>
+					<span>
+					多边形（<span>polygon</span>）是由边界框的顶点定义的：</span><pre class="programlisting">POLYGON((MINX MINY, MAXX MINY, MAXX MAXY, MINX MAXY, MINX MINY))
+</pre><pre class="programlisting">mysql&gt; <strong class="userinput">SELECT AsText(Envelope(GeomFromText('LineString(1 1,2 2)')));</strong>
++-------------------------------------------------------+
+| AsText(Envelope(GeomFromText('LineString(1 1,2 2)'))) |
++-------------------------------------------------------+
+| POLYGON((1 1,2 1,2 2,1 2,1 1))                        |
++-------------------------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2987826"></a>
+
+              GeometryType(<em class="replaceable">g</em>)
+            </p><p>
+              <span>
+				以字符串形式返回几何类型的名称，几何实例<span>g</span>是几何类型的成员。该名称与可实例化几何子类之一对应。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SELECT GeometryType(GeomFromText('POINT(1 1)'));</strong>
++------------------------------------------+
+| GeometryType(GeomFromText('POINT(1 1)')) |
++------------------------------------------+
+| POINT                                    |
++------------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2987895"></a>
+
+              SRID(<em class="replaceable">g</em>)
+            </p><p>
+              <span>
+				返回指明了几何值<span>g</span>的空间参考系统<span>ID</span>的整数。</span></p><p>
+              <span>在<span>MySQL</span>中，<span>SRID</span>值仅是与几何值相关的整数。所有计算均是在欧几里得（平面）几何中进行的。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SELECT SRID(GeomFromText('LineString(1 1,2 2)',101));</strong>
++-----------------------------------------------+
+| SRID(GeomFromText('LineString(1 1,2 2)',101)) |
++-----------------------------------------------+
+|                                           101 |
++-----------------------------------------------+
+</pre></li></ul></div><p>
+          <span >
+			OpenGIS</span><span>规范还定义了下述函数，<span>MySQL</span>未实施这类函数：</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2987973"></a>
+
+              Boundary(<em class="replaceable">g</em>)
+            </p><p>
+              <span>
+				返回几何值<span>g</span>的组合边界的闭包的几何对象。</span></p></li><li><p>
+              <a class="indexterm" name="id2988021"></a>
+
+              IsEmpty(<em class="replaceable">g</em>)
+            </p><p>
+              <span>
+				如果几何值<span>g</span>为空的几何对象，返回<span>1</span>，如果非空，返回<span>0</span>，如果参量为<span>NULL</span>，返回<span>-1</span>。如果几何对象是空的，它表示空的点集合。</span></p></li><li><p>
+              <a class="indexterm" name="id2988075"></a>
+
+              IsSimple(<em class="replaceable">g</em>)
+            </p>
+					<p>
+					<span>
+					目前该函数是占位符，不应使用它。如果实施了它，其行为与下段所给出的描述类似。</span></p>
+					<p>
+					<span>
+					如果几何值g没有异常的几何点（如自相交或自相切），返回1。如果参量不是简单参量，<span>IsSimple()返回0，</span>如果参量是NULL，返回-1。</span></p>
+					<span>
+					对于本章前面介绍的每个可实例化几何类，均包含特定的条件，这类条件会使类实例被分类为非简单的。</span></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="point-property-functions"></a>19.5.2.2. Point函数<br>
+&nbsp;</h4></div></div></div><p>
+          <span>
+			<span >Point</span><span>由</span></span><span >X</span><span>和<span>Y</span>坐标构成，可使用下述函数获得它们：</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2988180"></a>
+
+              X(<em class="replaceable">p</em>)
+            </p><p>
+              <span>
+				以双精度数值返回点<span>p</span>的<span>X</span>坐标值。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SELECT X(GeomFromText('Point(56.7 53.34)'));</strong>
++--------------------------------------+
+| X(GeomFromText('Point(56.7 53.34)')) |
++--------------------------------------+
+|                                 56.7 |
++--------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2988242"></a>
+
+              Y(<em class="replaceable">p</em>)
+            </p><p>
+              <span>
+				以双精度数值返回点<span>p</span>的<span>Y</span>坐标值。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SELECT Y(GeomFromText('Point(56.7 53.34)'));</strong>
++--------------------------------------+
+| Y(GeomFromText('Point(56.7 53.34)')) |
++--------------------------------------+
+|                                53.34 |
++--------------------------------------+
+</pre></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="linestring-property-functions"></a>19.5.2.3. LineString函数</h4></div></div></div><p>
+          <span>
+			<span >LineString</span><span>由<span>Point</span>值组成。你可以提取<span>LineString</span>的特定点，计数它所包含的点数，</span></span><span>或获取其长度。</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2988346"></a>
+
+              EndPoint(<em class="replaceable">ls</em>)
+            </p><p>
+              <span>返回<span><span>LineString</span>值<span>1s</span>的最后一个点的<span>Point</span>。</span></span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @ls = 'LineString(1 1,2 2,3 3)';</strong>
+mysql&gt; <strong class="userinput">SELECT AsText(EndPoint(GeomFromText(@ls)));</strong>
++-------------------------------------+
+| AsText(EndPoint(GeomFromText(@ls))) |
++-------------------------------------+
+| POINT(3 3)                          |
++-------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2988419"></a>
+
+              GLength(<em class="replaceable">ls</em>)
+            </p><p>
+              <span>
+				以双精度数值返回<span><span>LineString</span>值<span>1s</span>在相关的空间参考系中的长度。</span></span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @ls = 'LineString(1 1,2 2,3 3)';</strong>
+mysql&gt; <strong class="userinput">SELECT GLength(GeomFromText(@ls));</strong>
++----------------------------+
+| GLength(GeomFromText(@ls)) |
++----------------------------+
+|            2.8284271247462 |
++----------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2988490"></a>
+
+              NumPoints(<em class="replaceable">ls</em>)
+            </p><p>
+              <span>返回<span><span>LineString</span>值<span>1s</span>中的点数。</span></span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @ls = 'LineString(1 1,2 2,3 3)';</strong>
+mysql&gt; <strong class="userinput">SELECT NumPoints(GeomFromText(@ls));</strong>
++------------------------------+
+| NumPoints(GeomFromText(@ls)) |
++------------------------------+
+|                            3 |
++------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2988559"></a>
+
+              PointN(<em class="replaceable">ls</em>,<em class="replaceable">n</em>)
+            </p><p>
+              <span>返回<span><span>LineString</span>值<span>1s</span></span>中的第<span><i><span>n</span></i></span>个点。点编号从<span>1</span>开始。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @ls = 'LineString(1 1,2 2,3 3)';</strong>
+mysql&gt; <strong class="userinput">SELECT AsText(PointN(GeomFromText(@ls),2));</strong>
++-------------------------------------+
+| AsText(PointN(GeomFromText(@ls),2)) |
++-------------------------------------+
+| POINT(2 2)                          |
++-------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2988636"></a>
+
+              StartPoint(<em class="replaceable">ls</em>)
+            </p><p>
+              <span>返回<span><span>LineString</span>值<span>1s</span>的第一个点的<span>Point</span>。</span></span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @ls = 'LineString(1 1,2 2,3 3)';</strong>
+mysql&gt; <strong class="userinput">SELECT AsText(StartPoint(GeomFromText(@ls)));</strong>
++---------------------------------------+
+| AsText(StartPoint(GeomFromText(@ls))) |
++---------------------------------------+
+| POINT(1 1)                            |
++---------------------------------------+
+</pre></li></ul></div><p>
+          <span >
+			OpenGIS</span><span>规范还定义了下述函数，<span>MySQL</span>尚未实施这些函数：</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2988708"></a>
+
+              IsRing(<em class="replaceable">ls</em>)
+            </p><p>
+              <span>如果<span>LineString</span>值<span><i><span>ls</span></i></span>是封闭的（即其<span>StartPoint()</span>和<span><span>EndPoint()</span>值相同</span>）和简单的（未通过相同的点<span>1</span>次以上）返回<span>1</span>。如果<span>ls</span>不是环，返回<span>0</span>，如果它是<span>NULL</span>，返回<span>-1</span>。</span></p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="multilinestring-property-functions"></a>19.5.2.4. MultiLineString函数</h4></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2988784"></a>
+
+              GLength(<em class="replaceable">mls</em>)
+            </p><p>
+              <span>
+				以双精度数值形式返回<span><span>MultiLineString</span>值<span>m1s</span>的长度。<i><span>mls</span></i></span>的长度等于其元素的长度之和。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @mls = 'MultiLineString((1 1,2 2,3 3),(4 4,5 5))';</strong>
+mysql&gt; <strong class="userinput">SELECT GLength(GeomFromText(@mls));</strong>
++-----------------------------+
+| GLength(GeomFromText(@mls)) |
++-----------------------------+
+|             4.2426406871193 |
++-----------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2988839"></a>
+
+              IsClosed(<em class="replaceable">mls</em>)
+            </p><p>
+              <span>如果<span><span>MultiLineString</span>值<span>m1s</span></span>是封闭的（即<span>StartPoint()</span>和<span><span>EndPoint()</span>值对<span>m1s</span>中的每个<span>LineString</span>是相同的</span>）返回<span>1</span>。如果<span>mls</span>是非封闭的，返回<span>0</span>，如果它是<span>NULL</span>，返回<span>-1</span>。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @mls = 'MultiLineString((1 1,2 2,3 3),(4 4,5 5))';</strong>
+mysql&gt; <strong class="userinput">SELECT IsClosed(GeomFromText(@mls));</strong>
++------------------------------+
+| IsClosed(GeomFromText(@mls)) |
++------------------------------+
+|                            0 |
++------------------------------+
+</pre></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="polygon-property-functions"></a>19.5.2.5. Polygon函数</h4></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2988956"></a>
+
+              Area(<em class="replaceable">poly</em>)
+            </p><p>
+              <span>
+				以双精度数值形式返回<span>Polygon</span>值<span><i><span>poly</span></i></span>的面积，根据在其空间参考系中的测量值。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @poly = 'Polygon((0 0,0 3,3 0,0 0),(1 1,1 2,2 1,1 1))';</strong>
+mysql&gt; <strong class="userinput">SELECT Area(GeomFromText(@poly));</strong>
++---------------------------+
+| Area(GeomFromText(@poly)) |
++---------------------------+
+|                         4 |
++---------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2989027"></a>
+
+              ExteriorRing(<em class="replaceable">poly</em>)
+            </p><p>
+              <span>以<span><span>LineString</span>形式返回<span>Polygon</span></span>值<span><i><span>poly</span></i></span>的外环。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @poly =</strong>
+    -&gt; <strong class="userinput">'Polygon((0 0,0 3,3 3,3 0,0 0),(1 1,1 2,2 2,2 1,1 1))';</strong>
+mysql&gt; <strong class="userinput">SELECT AsText(ExteriorRing(GeomFromText(@poly)));</strong>
++-------------------------------------------+
+| AsText(ExteriorRing(GeomFromText(@poly))) |
++-------------------------------------------+
+| LINESTRING(0 0,0 3,3 3,3 0,0 0)           |
++-------------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2989107"></a>
+
+              InteriorRingN(<em class="replaceable">poly</em>,<em class="replaceable">n</em>)
+            </p><p>
+              <span>以<span><span>LineString</span>形式返回<span>Polygon</span></span>值<span><i><span>poly</span></i></span>的第<span>n</span>个内环。环编号从<span>1</span>开始。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @poly =</strong>
+    -&gt; <strong class="userinput">'Polygon((0 0,0 3,3 3,3 0,0 0),(1 1,1 2,2 2,2 1,1 1))';</strong>
+mysql&gt; <strong class="userinput">SELECT AsText(InteriorRingN(GeomFromText(@poly),1));</strong>
++----------------------------------------------+
+| AsText(InteriorRingN(GeomFromText(@poly),1)) |
++----------------------------------------------+
+| LINESTRING(1 1,1 2,2 2,2 1,1 1)              |
++----------------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2989194"></a>
+
+              NumInteriorRings(<em class="replaceable">poly</em>)
+            </p><p>
+				<span>返回<span>Polygon</span></span><span>值<span><i><span>poly</span></i></span>的内环的数目。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @poly =</strong>
+    -&gt; <strong class="userinput">'Polygon((0 0,0 3,3 3,3 0,0 0),(1 1,1 2,2 2,2 1,1 1))';</strong>
+mysql&gt; <strong class="userinput">SELECT NumInteriorRings(GeomFromText(@poly));</strong>
++---------------------------------------+
+| NumInteriorRings(GeomFromText(@poly)) |
++---------------------------------------+
+|                                     1 |
++---------------------------------------+
+</pre></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="multipolygon-property-functions"></a>19.5.2.6. MultiPolygon函数</h4></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2989282"></a>
+
+              Area(<em class="replaceable">mpoly</em>)
+            </p><p>
+              <span>
+				以双精度数值形式返回<span>MultiPolygon</span>值<span><i><span>mpoly</span></i></span>的面积，根据在其空间参考系中的测量结果。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @mpoly =</strong>
+    -&gt; <strong class="userinput">'MultiPolygon(((0 0,0 3,3 3,3 0,0 0),(1 1,1 2,2 2,2 1,1 1)))';</strong>
+mysql&gt; <strong class="userinput">SELECT Area(GeomFromText(@mpoly));</strong>
++----------------------------+
+| Area(GeomFromText(@mpoly)) |
++----------------------------+
+|                          8 |
++----------------------------+
+</pre></li></ul></div><p>
+          <span >
+			OpenGIS</span><span>规范还定义了下述函数，<span>MySQL</span>未实施这类函数：</span></p><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2989346"></a>
+
+              Centroid(<em class="replaceable">mpoly</em>)
+            </p><p>
+              <span>以<span>Point</span>形式返回用于<span><span>MultiPolygon</span>值<i><span>mpoly</span></i></span>的数学质心。不保证结果位于<span><span>MultiPolygon</span>上。</span></span></p></li><li><p>
+              <a class="indexterm" name="id2989389"></a>
+
+              PointOnSurface(<em class="replaceable">mpoly</em>)
+            </p><p>
+              <span>返回<span><span>Point</span>值，</span>保证该值位于<span>MultiPolygon</span>值<span><i><span>mpoly</span></i></span>上。</span></p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="geometrycollection-property-functions"></a>19.5.2.7. GeometryCollection函数</h4></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>
+              <a class="indexterm" name="id2989471"></a>
+
+              GeometryN(<em class="replaceable">gc</em>,<em class="replaceable">n</em>)
+            </p><p>
+              <span>返回<span>GeometryCollection</span>值<span><i><span>gc</span></i></span>中第<span>n</span>个几何对象。几何对象的编号从<span>1</span>开始。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @gc = 'GeometryCollection(Point(1 1),LineString(2 2, 3 3))';</strong>
+mysql&gt; <strong class="userinput">SELECT AsText(GeometryN(GeomFromText(@gc),1));</strong>
++----------------------------------------+
+| AsText(GeometryN(GeomFromText(@gc),1)) |
++----------------------------------------+
+| POINT(1 1)                             |
++----------------------------------------+
+</pre></li><li><p>
+              <a class="indexterm" name="id2989549"></a>
+
+              NumGeometries(<em class="replaceable">gc</em>)
+            </p><p>
+              <span>返回<span>GeometryCollection</span>值<span><i><span>gc</span></i></span>中几何对象的数目。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @gc = 'GeometryCollection(Point(1 1),LineString(2 2, 3 3))';</strong>
+mysql&gt; <strong class="userinput">SELECT NumGeometries(GeomFromText(@gc));</strong>
++----------------------------------+
+| NumGeometries(GeomFromText(@gc)) |
++----------------------------------+
+|                                2 |
++----------------------------------+
+</pre></li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="functions-that-create-new-geometries-from-existing-ones"></a>
+			19.5.3.&nbsp;从已有Geometry创建新Geometry的函数</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#functions-that-produce-new-geometries">
+				19.5.3.1. 生成新Geometry的Geometry函数</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#spatial-operators">
+				19.5.3.2. 空间操作符</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="functions-that-produce-new-geometries"></a>
+				19.5.3.1.&nbsp;生成新Geometry的Geometry函数</h4></div></div></div><p>
+          <span>在</span><a href="spatial-extensions-in-mysql.html#geometry-property-functions" title="19.5.2. Geometry Functions">19.5.2节，“Geometry函数”</a><span>中，我们讨论了一些可从已有几何对象构造新几何对象的函数：</span>
+        </p><div class="itemizedlist"><ul type="disc"><li><p>
+              Envelope(<em class="replaceable">g</em>)
+            </p></li><li><p>
+              StartPoint(<em class="replaceable">ls</em>)
+            </p></li><li><p>
+              EndPoint(<em class="replaceable">ls</em>)
+            </p></li><li><p>
+              PointN(<em class="replaceable">ls</em>,<em class="replaceable">n</em>)
+            </p></li><li><p>
+              ExteriorRing(<em class="replaceable">poly</em>)
+            </p></li><li><p>
+              InteriorRingN(<em class="replaceable">poly</em>,<em class="replaceable">n</em>)
+            </p></li><li><p>
+              GeometryN(<em class="replaceable">gc</em>,<em class="replaceable">n</em>)
+            </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="spatial-operators"></a>
+				19.5.3.2.&nbsp;空间操作符</h4></div></div></div>
+				<p><span>OpenGIS</span>建议了很多可生成几何对象的其他函数。它们是为实施空间操作符而设计的。</p>
+				<p>在<span>MySQL</span>中未实施这些函数。它们或许会在未来的版本中出现。</p>
+				<div class="itemizedlist">
+					<ul type="disc">
+						<li>
+						<p>
+              <a class="indexterm" name="id2989791"></a>
+
+              Buffer(<em class="replaceable">g</em>,<em class="replaceable">d</em>)
+            </p><p>
+              <span>
+				返回几何对象，该对象代表所有距几何值<span>g</span>的距离小于或等于<span>d</span>的所有点。</span></p></li><li><p>
+              <a class="indexterm" name="id2989837"></a>
+
+              ConvexHull(<em class="replaceable">g</em>)
+            </p><p>
+              <span>
+				返回几何对象，该对象代表几何值<span><i><span>g</span></i></span>的凸包。</span></p></li><li><p>
+              <a class="indexterm" name="id2989875"></a>
+
+              Difference(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+            </p><p>
+              <span>
+				返回几何对象，该对象表示了几何值<span>g1</span>与<span>g2</span>的点集合差异。</span></p></li><li><p>
+              <a class="indexterm" name="id2989921"></a>
+
+              Intersection(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+            </p><p>
+              <span>
+				返回几何对象，该对象表示了几何值<span>g1</span>与<span>g2</span>的点集合交集。</span></p></li><li><p>
+              <a class="indexterm" name="id2989967"></a>
+
+              SymDifference(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+            </p><p>
+              <span>
+				返回几何对象，该对象表示了几何值<span>g1</span>与<span>g2</span>的点集合对称差。</span></p></li><li><p>
+              <a class="indexterm" name="id2990012"></a>
+
+              Union(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+            </p><p>
+              <span>
+				返回几何对象，该对象表示了几何值<span>g1</span>与<span>g2</span>的点集合联合。</span></p></li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="functions-for-testing-spatial-relations-between-geometric-objects"></a>
+			19.5.4.&nbsp;测试几何对象间空间关系的函数</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			这些节中所介绍的函数以<span>2</span>个几何对象作为输入参数，并返回它们之间的定量或定性关系。<h3 class="title"><a name="relations-on-geometry-mbr"></a>
+			19.5.5.&nbsp;关于几何最小边界矩形（MBR）的关系</h3></div></div></div><a class="indexterm" name="id2990081"></a><a class="indexterm" name="id2990087"></a>
+			<p><span>MySQL</span>提供了一些可测试两个几何对象<span>g1</span>和<span>g2</span>最小边界矩形之间关系的函数。它们包括：</p>
+			<div class="itemizedlist"><ul type="disc"><li><p>
+            <a class="indexterm" name="id2990132"></a>
+
+            MBRContains(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>的最小边界矩形是否包含<span><i><span>g2</span></i></span>的最小边界矩形。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @g1 = GeomFromText('Polygon((0 0,0 3,3 3,3 0,0 0))');</strong>
+mysql&gt; <strong class="userinput">SET @g2 = GeomFromText('Point(1 1)');</strong>
+mysql&gt; <strong class="userinput">SELECT MBRContains(@g1,@g2), MBRContains(@g2,@g1);</strong>
+----------------------+----------------------+
+| MBRContains(@g1,@g2) | MBRContains(@g2,@g1) |
++----------------------+----------------------+
+|                    1 |                    0 |
++----------------------+----------------------+
+</pre></li><li><p>
+            <a class="indexterm" name="id2990212"></a>
+
+            MBRDisjoint(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明两个几何变量<span><i><span>g1</span></i></span>和<span><i><span>g2</span></i></span>的最小边界矩形是否不相交。</span></p></li><li><p>
+            <a class="indexterm" name="id2990267"></a>
+
+            MBREqual(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明两个几何变量<span><i><span>g1</span></i></span>和<span><i><span>g2</span></i></span>的最小边界矩形是否相同。</span></p></li><li><p>
+            <a class="indexterm" name="id2990321"></a>
+
+            MBRIntersects(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明两个几何变量<span><i><span>g1</span></i></span>和<span><i><span>g2</span></i></span>的最小边界矩形是否相交。</span></p></li><li><p>
+            <a class="indexterm" name="id2990376"></a>
+
+            MBROverlaps(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明两个几何变量<span><i><span>g1</span></i></span>和<span><i><span>g2</span></i></span>的最小边界矩形是否交迭。</span></p></li><li><p>
+            <a class="indexterm" name="id2990430"></a>
+
+            MBRTouches(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明两个几何变量<span><i><span>g1</span></i></span>和<span><i><span>g2</span></i></span>的最小边界矩形是否接触。</span></p></li><li><p>
+            <a class="indexterm" name="id2990484"></a>
+
+            MBRWithin(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>的最小边界矩形是否位于<span><i><span>g2</span></i></span>的最小边界矩形内。</span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SET @g1 = GeomFromText('Polygon((0 0,0 3,3 3,3 0,0 0))');</strong>
+mysql&gt; <strong class="userinput">SET @g2 = GeomFromText('Polygon((0 0,0 5,5 5,5 0,0 0))');</strong>
+mysql&gt; <strong class="userinput">SELECT MBRWithin(@g1,@g2), MBRWithin(@g2,@g1);</strong>
++--------------------+--------------------+
+| MBRWithin(@g1,@g2) | MBRWithin(@g2,@g1) |
++--------------------+--------------------+
+|                  1 |                  0 |
++--------------------+--------------------+
+</pre></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="functions-that-test-spatial-relationships-between-geometries"></a>
+			19.5.6.&nbsp;测试几何类之间空间关系的函数</h3></div></div></div>
+			<p><span>OpenGIS</span>规范定义了下述函数。目前在<span>MySQL</span>尚未按照规范实施它们。对于那些已实施的函数，它们返回的结果与对应的基于<span>MBR</span>的函数返回的相同。包括下面列出的函数，但<span><span>Distance()</span>和<span>Related()</span></span>除外。</p>
+			<p>在未来的版本中，可能会实施这些函数，为空间分析提供全部支持，而不仅仅是基于<span>MBR</span>的支持。</p>
+			<p>这些函数作用在<span>2</span>个几何值<span>g1</span>和<span>g2</span>上。</p>
+			<div class="itemizedlist"><ul type="disc"><li><p>
+            <a class="indexterm" name="id2990629"></a>
+
+            Contains(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>是否完全包含<span><i><span>g2</span></i></span>。</span></p></li><li><p>
+            <a class="indexterm" name="id2990682"></a>
+
+            Crosses(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p>
+				<p>
+				<span>
+				如果g1在空间上与g2相交，返回1。如果<span>g1为Polygon</span>或<span>MultiPolygon，返回NULL，或</span>如果<span>g2</span>为<span>Point</span>或<span>MultiPoint返回NULL。否则，返回0。</span></span></p>
+				<p>
+				<span>
+				术语“空间上交叉”指的是2个给定几何对象之间的空间关系，它具有下述属性：</span></p>
+				<p>o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2个结合对象交叉。</p>
+				<p>o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 其交叉结果将导致其维数小于两个给定几何对象最大维数的几何对象。</p>
+				<p>o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 其交叉不等于两个几何对象中的任何1个。</li><li><p>
+            <a class="indexterm" name="id2990800"></a>
+
+            Disjoint(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>是否与<span><i><span>g2</span></i></span>从空间上不相交。</span></p></li><li><p>
+            <a class="indexterm" name="id2990850"></a>
+
+            Distance(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>
+			以双精度数值形式返回<span>2</span>个几何对象中<span>2</span>点间的最短距离。</span></p></li><li><p>
+            <a class="indexterm" name="id2990892"></a>
+
+            Equals(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>是否从空间上等同于<span><i><span>g2</span></i></span>。</span></p></li><li><p>
+            <a class="indexterm" name="id2990945"></a>
+
+            Intersects(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>是否从空间上与<span><i><span>g2</span></i></span>相交。</span></p></li><li><p>
+            <a class="indexterm" name="id2990998"></a>
+
+            Overlaps(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>是否从空间上与<span><i><span>g2</span></i></span>交迭。如果<span>2</span>个几何对象交叉而且其交叉将导致具有相同维数但并不等同于任一几何对象的几何对象，将使用术语“空间交迭”。</span></p></li><li><p>
+            <a class="indexterm" name="id2991054"></a>
+
+            Related(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>,<em class="replaceable">pattern_matrix</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明由<span><i><span>pattern_matrix</span></i></span>指定的空间关系是否在<span><i><span>g1</span></i></span>和<span><i><span>g2</span></i></span>间存在。如果参量为<span>NULL</span>返回<span>-1</span>。模式矩形为字符串。如果实施了该函数，其规范将在此给出。</span></p></li><li><p>
+            <a class="indexterm" name="id2991118"></a>
+
+            Touches(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>是否从空间上与<span><i><span>g2</span></i></span>接触。如果几何对象的内部不交叉，但<span>1</span>个几何对象的边界与另一个的边界或内部交叉，这两个几何对象是从空间上接触的。</span></p></li><li><p>
+            <a class="indexterm" name="id2991179"></a>
+
+            Within(<em class="replaceable">g1</em>,<em class="replaceable">g2</em>)
+          </p><p>
+            <span>返回<span>1</span>或<span>0</span>以指明<span><i><span>g1</span></i></span>是否从空间上位于<span><i><span>g2</span></i></span>内。</span></p></li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="optimizing-spatial-analysis"></a>
+		19.6.&nbsp;优化空间分析</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#creating-spatial-indexes">
+			19.6.1. 创建空间索引</a></span></dt><dt><span class="section"><a href="spatial-extensions-in-mysql.html#using-a-spatial-index">
+			19.6.2. 使用空间索引</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+			可以使用索引对<span>2</span>个非空间数据库中的搜索操作进行优化。对于空间数据库，这同样成立。有了以前设计的大量多维索引功能的帮助，能够对空间搜索进行优化。最典型的情况如下：<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>搜索包含给定点的所有对象的<span>Point</span>查询。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>搜索与给定地区交迭的所有对象的地区查询。</p>
+			<p><span>MySQL</span>采用了<strong><span>具有<span>2</span>次分裂特性的<span>R-Trees</span></span></strong>来为空间列编制索引。使用几何对象的<span>MBR</span>来创建空间索引。对于大多数几何对象，<span>MBR</span>是包围几何对象的最小矩形。对于水平或垂直<span>linestring</span>，<span>MBR</span>退化为<span>linestring</span>的矩形。对于点，<span>MBR</span>是退化为点的矩形。</p>
+			<p>此外，还能在空间列上创建正常索引。需要为除<span>POINT</span>列之外的空间列上的任何索引（非空间）声明前缀。</p>
+			<h3 class="title"><a name="creating-spatial-indexes"></a>
+			19.6.1.&nbsp;创建空间索引</h3></div></div></div>
+			<p><span>MySQL</span>能够使用与创建正规索引类似的语法创建空间索引，但使用了<span><span>SPATIAL</span>关键字进行了扩展。对于目前编制了索引的空间列，必须将其声明为<span>NOT 
+			NULL</span></span>。在下面的示例中，介绍了创建空间索引的方法。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于<span>CREATE 
+			TABLE</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>CREATE TABLE geom (g GEOMETRY NOT NULL, SPATIAL INDEX(g));</b></span></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于<span>ALTER 
+			TABLE</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>ALTER TABLE geom ADD SPATIAL INDEX(g);</b></span></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于<span>CREATE 
+			INDEX</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>CREATE SPATIAL INDEX sp_index ON geom (g);</b></span></span></pre>
+			<p>对于<span><span>MyISAM</span>表，<span>SPATIAL 
+			INDEX</span></span>负责创建<span>R-tree</span>索引。对于支持空间索引的其他存储引擎，<span><span>SPATIAL 
+			INDEX</span>能够创建</span><span>B-tree</span>索引。对于准确的值查找而不是范围扫描，作用在空间值上的<span>B-tree</span>索引很有用。</p>
+			<p>要想撤销空间索引，可使用<span>ALTER 
+			TABLE</span>或<span>DROP 
+			INDEX</span>：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于<span>ALTER 
+			TABLE</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>ALTER TABLE geom DROP INDEX g;</b></span></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于<span>DROP 
+			INDEX</span>：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>DROP INDEX sp_index ON geom;</b></span></span></pre>
+			<p>示例：假定表<span><span>geom</span>包含<span>32000</span>以上的几何对象，它们保存在类型为<span>GEOMETRY</span>的列<span>g</span>中。</span>该表还有用于保存对象<span>ID</span>值的<span><span>AUTO_INCREMENT</span>列。</span></p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">DESCRIBE geom;</strong>
++-------+----------+------+-----+---------+----------------+
+| Field | Type     | Null | Key | Default | Extra          |
++-------+----------+------+-----+---------+----------------+
+| fid   | int(11)  |      | PRI | NULL    | auto_increment |
+| g     | geometry |      |     |         |                |
++-------+----------+------+-----+---------+----------------+
+2 rows in set (0.00 sec)
+
+mysql&gt; <strong class="userinput">SELECT COUNT(*) FROM geom;</strong>
++----------+
+| count(*) |
++----------+
+|    32376 |
++----------+
+1 row in set (0.00 sec)
+</pre>
+			<p>要想在列<span>g</span>上添加空间索引，可使用下述语句：</p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">ALTER TABLE geom ADD SPATIAL INDEX(g);</strong>
+Query OK, 32376 rows affected (4.05 sec)
+Records: 32376  Duplicates: 0  Warnings: 0
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="using-a-spatial-index"></a>
+			19.6.2.&nbsp;使用空间索引</h3></div></div></div>
+			<p>优化程序将调查可用的空间索引是否能包含在使用某些函数的查询搜索中，如<span>WHERE</span>子句中的<span>MBRContains()</span>或<span><span>MBRWithin()</span>函数。</span>例如，假定我们打算找出位于给定矩形中的所有对象：</p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">SELECT fid,AsText(g) FROM geom WHERE</strong>
+mysql&gt; <strong class="userinput">MBRContains(GeomFromText('Polygon((30000 15000,31000 15000,31000 16000,30000 16000,30000 15000))'),g);</strong>
++-----+-----------------------------------------------------------------------------+
+| fid | AsText(g)                                                                   |
++-----+-----------------------------------------------------------------------------+
+|  21 | LINESTRING(30350.4 15828.8,30350.6 15845,30333.8 15845,30333.8 15828.8)     |
+|  22 | LINESTRING(30350.6 15871.4,30350.6 15887.8,30334 15887.8,30334 15871.4)     |
+|  23 | LINESTRING(30350.6 15914.2,30350.6 15930.4,30334 15930.4,30334 15914.2)     |
+|  24 | LINESTRING(30290.2 15823,30290.2 15839.4,30273.4 15839.4,30273.4 15823)     |
+|  25 | LINESTRING(30291.4 15866.2,30291.6 15882.4,30274.8 15882.4,30274.8 15866.2) |
+|  26 | LINESTRING(30291.6 15918.2,30291.6 15934.4,30275 15934.4,30275 15918.2)     |
+| 249 | LINESTRING(30337.8 15938.6,30337.8 15946.8,30320.4 15946.8,30320.4 15938.4) |
+|   1 | LINESTRING(30250.4 15129.2,30248.8 15138.4,30238.2 15136.4,30240 15127.2)   |
+|   2 | LINESTRING(30220.2 15122.8,30217.2 15137.8,30207.6 15136,30210.4 15121)     |
+|   3 | LINESTRING(30179 15114.4,30176.6 15129.4,30167 15128,30169 15113)           |
+|   4 | LINESTRING(30155.2 15121.4,30140.4 15118.6,30142 15109,30157 15111.6)       |
+|   5 | LINESTRING(30192.4 15085,30177.6 15082.2,30179.2 15072.4,30194.2 15075.2)   |
+|   6 | LINESTRING(30244 15087,30229 15086.2,30229.4 15076.4,30244.6 15077)         |
+|   7 | LINESTRING(30200.6 15059.4,30185.6 15058.6,30186 15048.8,30201.2 15049.4)   |
+|  10 | LINESTRING(30179.6 15017.8,30181 15002.8,30190.8 15003.6,30189.6 15019)     |
+|  11 | LINESTRING(30154.2 15000.4,30168.6 15004.8,30166 15014.2,30151.2 15009.8)   |
+|  13 | LINESTRING(30105 15065.8,30108.4 15050.8,30118 15053,30114.6 15067.8)       |
+| 154 | LINESTRING(30276.2 15143.8,30261.4 15141,30263 15131.4,30278 15134)         |
+| 155 | LINESTRING(30269.8 15084,30269.4 15093.4,30258.6 15093,30259 15083.4)       |
+| 157 | LINESTRING(30128.2 15011,30113.2 15010.2,30113.6 15000.4,30128.8 15001)     |
++-----+-----------------------------------------------------------------------------+
+20 rows in set (0.00 sec)
+</pre>
+			<p>我们使用<span><span>EXPLAIN</span>来检查该查询的执行方式（<span>ID</span>列已被删除，以便输出能更好地与页匹配）</span>：</p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">EXPLAIN SELECT fid,AsText(g) FROM geom WHERE</strong>
+mysql&gt; <strong class="userinput">MBRContains(GeomFromText('Polygon((30000 15000,31000 15000,31000 16000,30000 16000,30000 15000))'),g);</strong>
++-------------+-------+-------+---------------+------+---------+------+------+-------------+
+| select_type | table | type  | possible_keys | key  | key_len | ref  | rows | Extra       |
++-------------+-------+-------+---------------+------+---------+------+------+-------------+
+| SIMPLE      | geom  | range | g             | g    |      32 | NULL |   50 | Using where |
++-------------+-------+-------+---------------+------+---------+------+------+-------------+
+1 row in set (0.00 sec)
+</pre>
+			<p>让我们检查一下在没有空间索引的情况下会出现什么：</p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">EXPLAIN SELECT fid,AsText(g) FROM g IGNORE INDEX (g) WHERE</strong>
+mysql&gt; <strong class="userinput">MBRContains(GeomFromText('Polygon((30000 15000,31000 15000,31000 16000,30000 16000,30000 15000))'),g);</strong>
++-------------+-------+------+---------------+------+---------+------+-------+-------------+
+| select_type | table | type | possible_keys | key  | key_len | ref  | rows  | Extra       |
++-------------+-------+------+---------------+------+---------+------+-------+-------------+
+| SIMPLE      | geom  | ALL  | NULL          | NULL |    NULL | NULL | 32376 | Using where |
++-------------+-------+------+---------------+------+---------+------+-------+-------------+
+1 row in set (0.00 sec)
+</pre>
+			<p>执行<span><span>SELECT</span>语句，忽略</span>空间键：</p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">SELECT fid,AsText(g) FROM geom IGNORE INDEX (g) WHERE</strong>
+mysql&gt; <strong class="userinput">MBRContains(GeomFromText('Polygon((30000 15000,31000 15000,31000 16000,30000 16000,30000 15000))'),g);</strong>
++-----+-----------------------------------------------------------------------------+
+| fid | AsText(g)                                                                   |
++-----+-----------------------------------------------------------------------------+
+|   1 | LINESTRING(30250.4 15129.2,30248.8 15138.4,30238.2 15136.4,30240 15127.2)   |
+|   2 | LINESTRING(30220.2 15122.8,30217.2 15137.8,30207.6 15136,30210.4 15121)     |
+|   3 | LINESTRING(30179 15114.4,30176.6 15129.4,30167 15128,30169 15113)           |
+|   4 | LINESTRING(30155.2 15121.4,30140.4 15118.6,30142 15109,30157 15111.6)       |
+|   5 | LINESTRING(30192.4 15085,30177.6 15082.2,30179.2 15072.4,30194.2 15075.2)   |
+|   6 | LINESTRING(30244 15087,30229 15086.2,30229.4 15076.4,30244.6 15077)         |
+|   7 | LINESTRING(30200.6 15059.4,30185.6 15058.6,30186 15048.8,30201.2 15049.4)   |
+|  10 | LINESTRING(30179.6 15017.8,30181 15002.8,30190.8 15003.6,30189.6 15019)     |
+|  11 | LINESTRING(30154.2 15000.4,30168.6 15004.8,30166 15014.2,30151.2 15009.8)   |
+|  13 | LINESTRING(30105 15065.8,30108.4 15050.8,30118 15053,30114.6 15067.8)       |
+|  21 | LINESTRING(30350.4 15828.8,30350.6 15845,30333.8 15845,30333.8 15828.8)     |
+|  22 | LINESTRING(30350.6 15871.4,30350.6 15887.8,30334 15887.8,30334 15871.4)     |
+|  23 | LINESTRING(30350.6 15914.2,30350.6 15930.4,30334 15930.4,30334 15914.2)     |
+|  24 | LINESTRING(30290.2 15823,30290.2 15839.4,30273.4 15839.4,30273.4 15823)     |
+|  25 | LINESTRING(30291.4 15866.2,30291.6 15882.4,30274.8 15882.4,30274.8 15866.2) |
+|  26 | LINESTRING(30291.6 15918.2,30291.6 15934.4,30275 15934.4,30275 15918.2)     |
+| 154 | LINESTRING(30276.2 15143.8,30261.4 15141,30263 15131.4,30278 15134)         |
+| 155 | LINESTRING(30269.8 15084,30269.4 15093.4,30258.6 15093,30259 15083.4)       |
+| 157 | LINESTRING(30128.2 15011,30113.2 15010.2,30113.6 15000.4,30128.8 15001)     |
+| 249 | LINESTRING(30337.8 15938.6,30337.8 15946.8,30320.4 15946.8,30320.4 15938.4) |
++-----+-----------------------------------------------------------------------------+
+20 rows in set (0.46 sec)
+</pre>
+			<p>未使用索引时，该查询的执行时间将从<span>0.00</span>秒上升到<span>0.46</span>秒。</p>
+			<p>在未来的版本中，空间索引也可能会用于优化其他函数。请参见<a href="spatial-extensions-in-mysql.html#functions-for-testing-spatial-relations-between-geometric-objects" title="19.5.4. Functions for Testing Spatial Relations Between Geometric Objects">19.5.4节，“测试几何对象间空间关系的函数”</a>。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysql-gis-conformance-and-compatibility"></a>
+		19.7.&nbsp;MySQL的一致性和兼容性</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="spatial-extensions-in-mysql.html#gis-features-that-are-not-yet-implemented">
+			19.7.1. 尚未实施的GIS特性</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="gis-features-that-are-not-yet-implemented"></a>
+			19.7.1.&nbsp;尚未实施的GIS特性</h3></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>
+            <span>
+			额外的元数据视图</span></p><p>
+            <span >
+			OpenGIS</span><span>规范建议了数种额外的元数据视图。例如，包含几何列的描述的名为<span><span>GEOMETRY_COLUMNS</span>的系统视图，对于数据库中的每列有<span>1</span>行相关内容。</span></span></p></li><li><p>
+            <span>作用在<span>LineString</span>和<span><span>MultiLineString</span>上的</span><span>OpenGIS</span>函数<span>Length()</span>目前应在<span>MySQL</span>中以<span>GLength()</span>的方式调用。</span></p><p>
+            <span>
+			问题在于存在<span>1</span>个用于计算字符串值长度的已有<span>SQL</span>函数<span><span>Length()</span>，而且在某些情况下无法判断函数是在文本场景下还是空间场景下</span>调用的。我们需要以某种方式解决该问题，或确定另一个函数名。</span></p></li></ul></div></div></div></div><div><hr>
+	<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div>
+</body></html>

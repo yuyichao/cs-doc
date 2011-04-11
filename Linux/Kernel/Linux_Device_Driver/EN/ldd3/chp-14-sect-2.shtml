@@ -1,0 +1,567 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>14.2. Low-Level Sysfs Operations</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-14-sect-1.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-14-sect-3.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-14-sect-2"></a>
+<H3 class="docSection1Title">14.2. Low-Level Sysfs Operations</H3>
+
+<p class="docText">Kobjects are the mechanism<a name="chp-14-ITERM-6649"></a> <a name="chp-14-ITERM-6650"></a> <a name="chp-14-ITERM-6651"></a> <a name="chp-14-ITERM-6652"></a> behind the sysfs virtual <a name="chp-14-ITERM-6653"></a> <a name="chp-14-ITERM-6654"></a> <a name="chp-14-ITERM-6655"></a> <a name="chp-14-ITERM-6656"></a> <a name="chp-14-ITERM-6657"></a> <a name="chp-14-ITERM-6658"></a>filesystem. For every
+directory found in sysfs, there is a kobject lurking somewhere within
+the kernel. Every kobject of interest also exports one or more
+<i>attributes</i>, which appear in that
+kobject's sysfs directory as files containing
+kernel-generated information. This section examines how kobjects and
+sysfs interact at a low level.</p>
+
+<p class="docText">Code that works with sysfs should include
+<i>&lt;linux/sysfs.h&gt;</I>.</p>
+
+<p class="docText">Getting a kobject to show up in sysfs is simply a matter of calling
+<span class="docEmphasis">kobject_add</span>. We have already seen that function
+as the way to add a kobject to a kset; creating entries in sysfs is
+also part of its job. There are a couple of things worth knowing
+about how the sysfs entry is created:</p>
+
+<UL><li><p class="docList">Sysfs entries for kobjects are always directories, so a call to
+<span class="docEmphasis">kobject_add</span> results in the creation of a
+directory in sysfs. Usually that directory contains one or more
+attributes; we see how attributes are specified shortly.</p></LI><li><p class="docList">The name assigned to the kobject (with
+<span class="docEmphasis">kobject_set_name</span>) is the name used for the sysfs
+directory. Thus, kobjects that appear in the same part of the sysfs
+hierarchy must have unique names. Names assigned to kobjects should
+also be reasonable file names: they cannot contain the slash
+character, and the use of white space is strongly discouraged.</P></li><li><p class="docList">The sysfs entry is located in the directory corresponding to the
+kobject's <tt>parent</tt> pointer. If
+<tt>parent</tt> is <tt>NULL</tt> when
+<span class="docEmphasis">kobject_add</span> is called, it is set to the kobject
+embedded in the new kobject's kset; thus, the sysfs
+hierarchy usually matches the internal hierarchy created with ksets.
+If both <tt>parent</tt> and <tt>kset</tt> are
+<tt>NULL</tt>, the sysfs directory is created at the top
+level, which is almost certainly not what you want.</p></li></ul>
+<p class="docText">Using the mechanisms we have described so far, we can use a kobject
+to create an empty directory in sysfs. Usually, you want to do
+something a little more interesting than that, so it is time to look
+at the implementation of attributes.</p>
+
+<a name="chp-14-sect-2.1"></a>
+<h4 class="docSection2Title">14.2.1. Default Attributes</h4>
+
+<p class="docText">When created, every kobject is given a set
+of<a name="chp-14-ITERM-6659"></a>
+<a name="chp-14-ITERM-6660"></a> default attributes. These
+attributes are specified by way of the <tt>kobj_type</tt>
+structure. That structure, remember, looks like this:</p>
+
+<pre>struct kobj_type {
+    void (*release)(struct kobject *);
+    struct sysfs_ops *sysfs_ops;
+    struct attribute **default_attrs;
+};</pre><br>
+
+
+<p class="docText">The<a name="chp-14-ITERM-6661"></a> <tt>default_attrs</tt>
+field lists the attributes to be created for every kobject of this
+type, and <tt>sysfs_ops</tt> provides the methods to
+implement those attributes. We start with
+<tt>default_attrs</tt>, which points to an array of
+pointers to <tt>attribute</tt> structures:</p>
+
+<pre>struct attribute {
+    char *name;
+    struct module *owner;
+    mode_t mode;
+};</pre><br>
+
+
+<p class="docText">In this structure, <tt>name</tt> is the name of the
+attribute (as it appears within the kobject's sysfs
+directory), <tt>owner</tt> is a pointer to the module (if
+any) that is responsible for the implementation of this attribute,
+and <tt>mode</tt> is the protection bits that are to be
+applied to this attribute. The mode is usually
+<tt>S_IRUGO</tt> for read-only attributes; if the attribute
+is writable, you can toss in <tt>S_IWUSR</tt> to give write
+access to root only (the macros for modes are defined in
+<i>&lt;linux/stat.h&gt;</I>). The last entry in the
+<tt>default_attrs</tt> list must be zero-filled.</p>
+
+<p class="docText">The <tt>default_attrs</tt> array says what the attributes
+are but does not tell sysfs how to actually implement those
+attributes. That task falls to the
+<tt>kobj_type-&gt;sysfs_ops</tt> field, which points to a
+structure defined as:</P>
+
+<pre>struct sysfs_ops {
+    ssize_t (*show)(struct kobject *kobj, struct attribute *attr, 
+                    char *buffer);
+    ssize_t (*store)(struct kobject *kobj, struct attribute *attr, 
+                     const char *buffer, size_t size);
+};</pre><BR>
+
+
+<p class="docText">Whenever an attribute is read from user space, the
+<span class="docEmphasis">show</span><a name="chp-14-ITERM-6662"></a>
+<a name="chp-14-ITERM-6663"></a>
+method is called with a pointer to the kobject and the appropriate
+<tt>attribute</tt> structure. That method should encode the
+value of the given attribute into <tt>buffer</tt>, being
+sure not to overrun it (it is <tt>PAGE_SIZE</tt> bytes),
+and return the actual length of the returned data. The conventions
+for sysfs state that each attribute should contain a single,
+human-readable value; if you have a lot of information to return, you
+may want to consider splitting it into multiple attributes.</p>
+
+<p class="docText">The same <span class="docEmphasis">show</span> method is used for all attributes
+associated with a given kobject. The <tt>attr</tt> pointer
+passed into the function can be used to determine which attribute is
+being requested. Some <span class="docEmphasis">show</span> methods include a
+series of tests on the attribute name. Other implementations embed
+the <tt>attribute</tt> structure within another structure
+that contains the information needed to return the
+attribute's value; in this case,
+<span class="docEmphasis">container_of</span> may be used within the
+<span class="docEmphasis">show</span> method to obtain a pointer to the embedding
+structure.</p>
+
+<p class="docText">The <span class="docEmphasis">store</span><a name="chp-14-ITERM-6664"></a>
+<a name="chp-14-ITERM-6665"></a>
+<a name="chp-14-ITERM-6666"></a> method is similar; it should decode
+the data stored in <tt>buffer</tt> (<tt>size</tt>
+contains the length of that data, which does not exceed
+<tt>PAGE_SIZE</tt>), store and respond to the new value in
+whatever way makes sense, and return the number of bytes actually
+decoded. The <span class="docEmphasis">store</span> method can be called only if
+the attribute's permissions allow writes. When
+writing a <span class="docEmphasis">store</span> method, never forget that you
+are receiving arbitrary information from user space; you should
+validate it very carefully before taking any action in response. If
+the incoming data does not match expectations, return a negative
+error value rather than possibly doing something unwanted and
+unrecoverable. If your device exports a
+<tt>self_destruct</tt> attribute, you should require that a
+specific string be written there to invoke that functionality; an
+accidental, random write should yield only an error.</p>
+
+
+<a name="chp-14-sect-2.2"></a>
+<H4 class="docSection2Title">14.2.2. Nondefault Attributes</h4>
+
+<p class="docText">In many cases, the <a name="chp-14-ITERM-6667"></a>
+<a name="chp-14-ITERM-6668"></a>
+<a name="chp-14-ITERM-6669"></a>kobject type's
+<tt>default_attrs</tt> field describes all the attributes
+that kobject will ever have. But that's not a
+restriction in the design; attributes can be added and removed to
+kobjects at will. If you wish to add a new attribute to a
+kobject's sysfs directory, simply fill in an
+<tt>attribute</tt> structure and pass it to:</P>
+
+<pre>int sysfs_create_file(struct kobject *kobj, struct attribute *attr);</pre><BR>
+
+
+<p class="docText">If all goes well, the file is created with the name given in the
+<tt>attribute</tt> structure, and the return value is
+<tt>0</tt>; otherwise, the usual negative error code is
+returned.</P>
+
+<p class="docText">Note that the same <span class="docEmphasis">show( )</span> and <span class="docEmphasis">store(
+)</span> functions are called to implement operations on the new
+attribute. Before you add a new, nondefault attribute to a kobject,
+you should take whatever steps are necessary to ensure that those
+functions know how to implement that attribute.</p>
+
+<p class="docText">To remove an attribute,
+<a name="chp-14-ITERM-6670"></a>
+<a name="chp-14-ITERM-6671"></a>call:</p>
+
+<pre>int sysfs_remove_file(struct kobject *kobj, struct attribute *attr);</pre><br>
+
+
+<p class="docText">After the call, the attribute no longer appears in the
+kobject's sysfs entry. Do be aware, however, that a
+user-space process could have an open file descriptor for that
+attribute and that <span class="docEmphasis">show</span> and
+<span class="docEmphasis">store</span> calls are still possible after the
+attribute has been removed.</p>
+
+
+<a name="chp-14-sect-2.3"></a>
+<H4 class="docSection2Title">14.2.3. Binary Attributes</H4>
+
+<p class="docText">The sysfs conventions call <a name="chp-14-ITERM-6672"></a>
+<a name="chp-14-ITERM-6673"></a>for all attributes to contain a
+single value in a human-readable text format. That said, there is an
+occasional, rare need for the creation of attributes that can handle
+larger chunks of binary data. That need really only comes about when
+data must be passed, untouched, between user space and the device.
+For example, uploading firmware to devices requires this feature.
+When such a device is encountered in the system, a user-space program
+can be started (via the hotplug mechanism); that program then passes
+the firmware code to the kernel via a binary sysfs attribute, as is
+shown in <a class="docLink" href="chp-14-sect-8.shtml#chp-14-sect-8.1">Section 14.8.1</a>.</P>
+
+<p class="docText">Binary attributes are described with a
+<tt>bin_attribute</tt><a name="chp-14-ITERM-6674"></a>
+<a name="chp-14-ITERM-6675"></a>
+structure:</p>
+
+<pre>struct bin_attribute {
+    struct attribute attr;
+    size_t size;
+    ssize_t (*read)(struct kobject *kobj, char *buffer, 
+                    loff_t pos, size_t size);
+    ssize_t (*write)(struct kobject *kobj, char *buffer, 
+                    loff_t pos, size_t size);
+};</pre><BR>
+
+
+<p class="docText">Here, <tt>attr</tt> is an <tt>attribute</tt>
+structure giving the name, owner, and permissions for the binary
+attribute, and <tt>size</tt> is the maximum size of the
+binary attribute (or <tt>0</tt> if there is no maximum).
+The <span class="docEmphasis">read</span> and <span class="docEmphasis">write</span> methods
+work similarly to the normal char driver equivalents; they can be
+called multiple times for a single load with a maximum of one page
+worth of data in each call. There is no way for sysfs to signal the
+last of a set of write operations, so code implementing a binary
+attribute must be able to determine the end of the data some other
+way.</P>
+
+<p class="docText">Binary attributes must be created explicitly; they cannot be set up
+as default attributes. To create a binary attribute, call:</p>
+
+<pre>int sysfs_create_bin_file(struct kobject *kobj, 
+                          struct bin_attribute *attr);</pre><br>
+
+
+<p class="docText">Binary attributes can be removed with:</p>
+
+<pre>int sysfs_remove_bin_file(struct kobject *kobj, 
+                          struct bin_attribute *attr);</pre><br>
+
+
+
+<a name="chp-14-sect-2.4"></a>
+<H4 class="docSection2Title">14.2.4. Symbolic Links</h4>
+
+<p class="docText">The sysfs filesystem <a name="chp-14-ITERM-6676"></a> <a name="chp-14-ITERM-6677"></a>
+<a name="chp-14-ITERM-6678"></a>has the usual tree structure, reflecting
+the hierarchical organization of the kobjects it represents. The
+relationships between objects in the kernel are often more
+complicated than that, however. For example, one sysfs subtree
+(<i>/sys/devices</I>) represents all of the devices
+known to the system, while other subtrees (under
+<i>/sys/bus</i>) represent the device drivers. These
+trees do not, however, represent the relationships between the
+drivers and the devices they manage. Showing these additional
+relationships requires extra pointers which, in sysfs, are
+implemented through symbolic links.</P>
+
+<p class="docText">Creating a symbolic link within sysfs is easy:</p>
+
+<pre>int sysfs_create_link(struct kobject *kobj, struct kobject *target,
+                      char *name);</pre><BR>
+
+
+<p class="docText">This function creates a link (called <tt>name</tt>)
+pointing to <tt>target</tt>'s sysfs entry
+as an attribute of <tt>kobj</tt>. It is a relative link, so
+it works regardless of where sysfs is mounted on any particular
+system.</p>
+
+<p class="docText">The link persists even if <tt>target</tt> is removed from
+the system. If you are creating symbolic links to other kobjects, you
+should probably have a way of knowing about changes to those
+kobjects, or some sort of assurance that the target kobjects will not
+disappear. The consequences (dead symbolic links within sysfs) are
+not particularly grave, but they are not representative of the best
+<a name="chp-14-ITERM-6679"></a>
+<a name="chp-14-ITERM-6680"></a>
+<a name="chp-14-ITERM-6681"></a>
+<a name="chp-14-ITERM-6682"></a>
+<a name="chp-14-ITERM-6683"></a>
+<a name="chp-14-ITERM-6684"></a>programming style and<a name="chp-14-ITERM-6685"></a> <a name="chp-14-ITERM-6686"></a> <a name="chp-14-ITERM-6687"></a> <a name="chp-14-ITERM-6688"></a> can cause
+confusion in user space.</p>
+
+<p class="docText">Symbolic links can
+be<a name="chp-14-ITERM-6689"></a> removed with:</p>
+
+<pre>void sysfs_remove_link(struct kobject *kobj, char *name);</pre><br>
+
+
+
+
+<ul></ul></td></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-14-sect-1.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-14-sect-3.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

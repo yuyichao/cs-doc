@@ -1,0 +1,1251 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>一元多项式求根算法 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>一元多项式求根算法
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="FindRoot.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="FindRoot.html#sec1">Jenkins-Traub算法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="FindRoot.html#sec2">算法引入</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec3">收敛速度和一些细节说明</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec4">一种Cauchy零点模估计</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="FindRoot.html#sec5">Laguerre 算法</a>
+  </dt>
+  <dt>
+    <a href="FindRoot.html#sec6">实一元多项式求实根算法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="FindRoot.html#sec7">Sturm序列</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec8">实根隔离算法</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="FindRoot.html#sec9">代数模方程求解</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="FindRoot.html#sec10"><img src="latex/latex2png-FindRoot_92825302_-5.gif" alt="$\field{p}$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">中的开平方算法</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec11">模<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">代数方程求解</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="FindRoot.html#sec12">分圆多项式(Cyclotomic polynomial)</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="FindRoot.html#sec13">分圆多项式的定义及生成</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec14">分圆多项式的检测</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec15">Euler反函数(Inverse <img src="latex/latex2png-FindRoot_205747260_-4.gif" alt="$\phi$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">)方法</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec16">位移分圆多项式(Shifted cyclotomic polynomials)检测</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="FindRoot.html#sec17">(一元)复合函数分解(Functional Decomposition)</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="FindRoot.html#sec18">Functional Decomposition算法</a>
+      </dt>
+      <dt>
+	<a href="FindRoot.html#sec19">形式幂级数的一些基本操作</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Jenkins-Traub算法</h2>
+
+<h3><a name="sec2" id="sec2"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>算法引入</h3>
+
+<p class="first">Mathematica中的NSolve即是用此算法求根,该方法也是迭代算法,比牛顿迭代法要快.关于这一方面,可以参考文献<span class="cite"><a class="cite" href="FindRoot.html#ref-1" name="cite-1">[1]</a></span>,<span class="cite"><a class="cite" href="FindRoot.html#ref-2" name="cite-2">[2]</a></span>对此也有简要介绍.</p>
+
+<p>方便起见,首先我们引入下面一符号：</p>
+
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name"></span>
+对于我们考虑的多项式<img src="latex/latex2png-FindRoot_79992386_-8.gif" alt="$P(z)=\prod_{j=1}^k(z-\alpha_j)^{m_j}\in\mathbb{C}[x]$" class="latex-inline" style="vertical-align: -8px" width="223" height="24">,记<img src="latex/latex2png-FindRoot_171473691_-5.gif" alt="$P_j(z)=P(z)/(z-\alpha_j)$" class="latex-inline" style="vertical-align: -5px" width="162" height="18">,易知<img src="latex/latex2png-FindRoot_199725393_-8.gif" alt="$P'(z)=\sum_{j=1}^km_jP_j(z)$" class="latex-inline" style="vertical-align: -8px" width="164" height="24">.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义2<a name=""></a></span><span class="theorem-name"></span>
+定义多项式序列<img src="latex/latex2png-FindRoot_130783391_-5.gif" alt="$\{H^{(\lambda)}(z)|\lambda\in\mathbb{N}\}$" class="latex-inline" style="vertical-align: -5px" width="116" height="20">满足<img src="latex/latex2png-FindRoot_141453708_.gif" alt="$$\exists c_j^{(\lambda)}\in\mathbb{C}\left(H^{(\lambda)}(z)=\sum_{j=1}^kc_j^{(\lambda)}P_j(z)\right).$$" class="latex-display" width="580" height="60">
+
+<p>且<img src="latex/latex2png-FindRoot_200385679_-5.gif" alt="$H^{(0)}(z)=P'(z)$" class="latex-inline" style="vertical-align: -5px" width="114" height="20">.我们具体构造时任取一复数序列<img src="latex/latex2png-FindRoot_199102861_-5.gif" alt="$\{s_{\lambda}\}$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">,使得多项式序列由下面递推关系生成:<img src="latex/latex2png-FindRoot_250393862_.gif" alt="$$H^{(\lambda+1)}(z)=\frac{1}{z-s_{\lambda}}\left[H^{(\lambda)}(z)-\frac{H^{(\lambda)}(s_{\lambda})}{P(s_{\lambda})}P(z)\right].$$" class="latex-display" width="580" height="43"></p>
+
+
+</div>
+
+<p>很容易由下面的推导得到系数<img src="latex/latex2png-FindRoot_238390568_-8.gif" alt="$c_j^{(\lambda)}$" class="latex-inline" style="vertical-align: -8px" width="24" height="26">的递推关系：
+<img src="latex/latex2png-FindRoot_124332567_.gif" alt="
+\begin{align*}
+H^{(\lambda+1)}&=\frac{P(z)}{z-s_{\lambda}}\left[\sum_{j=1}^k\frac{c_j^{(\lambda)}}{z-\alpha_j}-\sum_{j=1}^k\frac{c_j^{(\lambda)}}{s_{\lambda}-\alpha_j}
+\right]\\
+&=\sum_{j=1}^{k}\frac{c_j^{(\lambda)}P(z)}{(z-\alpha_j)(\alpha_j-s_{\lambda})}\\
+&=\sum_{j=1}^kc_j^{(\lambda+1)}P_j(z),
+\end{align*}
+" class="latex-display" width="580" height="181">
+因此有<img src="latex/latex2png-FindRoot_3601429_.gif" alt="$$c_j^{(\lambda+1)}=\frac{c_j^{(\lambda)}}{\alpha_j-s_{\lambda}}=\cdots=\frac{m_j}{\prod_{t=0}^{\lambda}(\alpha_j-s_t)}.$$" class="latex-display" width="580" height="52"></p>
+
+<p>Jenkin和Traub给出如下算法描述：</p>
+
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name"></span>
+多项式<img src="latex/latex2png-FindRoot_15161675_-5.gif" alt="$f\in\mathbb{C}[x]$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">的首一化多项式定义为<img src="latex/latex2png-FindRoot_234243874_-5.gif" alt="$\overline{f}=f/\mathrm{lc}(f)$" class="latex-inline" style="vertical-align: -5px" width="84" height="20">.
+
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name="al:JT1"></a></span><span class="theorem-name">(Jenkins-Traub算法)</span>
+
+<p>步骤1:No-shift process</p>
+
+<p><img src="latex/latex2png-FindRoot_233377312_.gif" alt="$$H^{(0)}(z)=P'(z),$$" class="latex-display" width="580" height="21"></p>
+
+<p><img src="latex/latex2png-FindRoot_161816564_.gif" alt="$$H^{(\lambda+1)}(z)=\frac{1}{z}\left[H^{(\lambda)}(z)-\frac{H^{(\lambda)}(0)}{P(0)}P(z)\right]\quad(\lambda=0,1,\ldots,M-1).$$" class="latex-display" width="580" height="43"></p>
+
+<p>步骤2:Fixed-shift process</p>
+
+<p>取正数<img src="latex/latex2png-FindRoot_33257137_-4.gif" alt="$\beta$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">满足<img src="latex/latex2png-FindRoot_81431528_-6.gif" alt="$\beta\le\min_{1\le j\le k}|\alpha_j|$" class="latex-inline" style="vertical-align: -6px" width="130" height="19">,随机选取复数<img src="latex/latex2png-FindRoot_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">满足<img src="latex/latex2png-FindRoot_76840001_-5.gif" alt="$|s|=\beta$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">,且<img src="latex/latex2png-FindRoot_265539155_-5.gif" alt="$|s-\alpha_1|\le|s-\alpha_j|(j=2,3,\ldots,k)$" class="latex-inline" style="vertical-align: -5px" width="243" height="18">,这里<img src="latex/latex2png-FindRoot_11701858_-2.gif" alt="$\alpha_1$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">取为离所选<img src="latex/latex2png-FindRoot_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">最近的根.再做如下迭代：</p>
+
+<p><img src="latex/latex2png-FindRoot_158562730_.gif" alt="$$H^{(\lambda+1)}(z)=\frac{1}{z-s}\left[H^{(\lambda)}(z)-\frac{H^{(\lambda)}(s)}{P(s)}P(z)\right],\quad(\lambda=M,M+1,\ldots,L-1).$$" class="latex-display" width="580" height="43"></p>
+
+<p>步骤3:Variable-shift process</p>
+
+<p>设<img src="latex/latex2png-FindRoot_53958391_-12.gif" alt="$s_L=s-\frac{P(s)}{\overline{H^{(L)}}(s)}$" class="latex-inline" style="vertical-align: -12px" width="116" height="29">,再做如下迭代：</p>
+
+<p><img src="latex/latex2png-FindRoot_176869560_.gif" alt="$$H^{(\lambda+1)}(z)=\frac{1}{z-s_{\lambda}}\left[H^{(\lambda)}-\frac{H^{(\lambda)}(s_{\lambda})}{P(s_{\lambda})}P(z)\right],$$" class="latex-display" width="580" height="43"></p>
+
+<p><img src="latex/latex2png-FindRoot_263466476_.gif" alt="$$s_{\lambda+1}=s_{\lambda}-\frac{P(s_{\lambda})}{\overline{H^{(\lambda+1)}}(s_{\lambda})},\quad(\lambda=L,L+1,\cdots).$$" class="latex-display" width="580" height="44"></p>
+
+<p>我们得到<img src="latex/latex2png-FindRoot_256597423_-2.gif" alt="$s_{\lambda}\rightarrow\alpha_1$" class="latex-inline" style="vertical-align: -2px" width="58" height="11">,全局收敛.</p>
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name"></span>
+记<img src="latex/latex2png-FindRoot_199972502_-6.gif" alt="$R=\min_{2\le j\le k}|\alpha_1-\alpha_j|$" class="latex-inline" style="vertical-align: -6px" width="171" height="19">,若<img src="latex/latex2png-FindRoot_143022678_-5.gif" alt="$|s_L-\alpha_1|<R/2$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">,<img src="latex/latex2png-FindRoot_251404221_-4.gif" alt="$c_1^{(L)}\neq 0$" class="latex-inline" style="vertical-align: -4px" width="58" height="22">,<img src="latex/latex2png-FindRoot_51157280_-8.gif" alt="$D_L=\sum_{j=2}^k|c_j^{(L)}|/|c_1^{(L)}|<1/3$" class="latex-inline" style="vertical-align: -8px" width="218" height="26">,则<img src="latex/latex2png-FindRoot_256597423_-2.gif" alt="$s_{\lambda}\rightarrow\alpha_1$" class="latex-inline" style="vertical-align: -2px" width="58" height="11">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+若记<img src="latex/latex2png-FindRoot_257014790_-17.gif" alt="$\displaystyle r_j^{(\lambda)}=\frac{s_{\lambda}-\alpha_1}{s_{\lambda}-\alpha_j}$" class="latex-inline" style="vertical-align: -17px" width="106" height="36">,<img src="latex/latex2png-FindRoot_92968587_-20.gif" alt="$\displaystyle d_j^{(\lambda)}=\frac{c_j^{(\lambda)}}{c_1^{(\lambda)}}$" class="latex-inline" style="vertical-align: -20px" width="79" height="51">,<img src="latex/latex2png-FindRoot_3397281_-17.gif" alt="$T_{\lambda}=\left|\displaystyle\frac{s_{\lambda+1}-\alpha_1}{s_{\lambda}-\alpha_1}\right|$" class="latex-inline" style="vertical-align: -17px" width="125" height="42">,则我们只需要证明存在<img src="latex/latex2png-FindRoot_266302524_0.gif" alt="$\tau$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">使得<img src="latex/latex2png-FindRoot_7524743_-5.gif" alt="$\forall\lambda\le L(T_{\lambda}\le\tau<1)$" class="latex-inline" style="vertical-align: -5px" width="144" height="18">即可证明收敛性.
+
+<p>而
+<img src="latex/latex2png-FindRoot_211841371_.gif" alt="
+\begin{align*}
+\frac{s_{\lambda+1}-\alpha_1}{s_{\lambda}-\alpha_1}=&\frac{s_{\lambda}-\frac{P(s_{\lambda})}{\overline{H^{(\lambda+1)}}(s_{\lambda})}-\alpha_1}{s_{\lambda}-\alpha_1}\\
+&=1-\frac{P(s_{\lambda})}{\overline{H^{(\lambda+1)}}(s_{\lambda})(s_{\lambda}-\alpha_1)}\\
+&=1-\frac{P(s_{\lambda})\sum_{1\le j\le k}c_j^{(\lambda)}/(\alpha_j-s_{\lambda})}{P(s_{\lambda})\sum_{1\le j\le k}\frac{c_j^{(\lambda)}}{(\alpha_j-s_{\lambda})(s_{\lambda}-\alpha_j)}(s_{\lambda}-\alpha_1)}\\
+&=1-\frac{\sum_{1\le j\le k}c_j^{(\lambda)}(s_{\lambda}-\alpha_1)/(s_{\lambda}-\alpha_j)}{\sum_{1\le j\le k}c_j^{(\lambda)}(s_{\lambda}-\alpha_1)^2/(s_{\lambda}-\alpha_j)^2}\\
+&=1-\frac{1+\sum_{2\le j\le k}d_j^{(\lambda)}r_j^{(\lambda)}}{1+\sum_{2\le j\le k}d_j^{(\lambda)}[r_j^{(\lambda)}]^2}\\
+&=\frac{\sum_{2\le j\le k}[r_j^{(\lambda)}]^2d_j^{(\lambda)}-\sum_{2\le j\le k}r_j^{(\lambda)}d_j^{(\lambda)}}{1+\sum_{2\le j\le k}[r_j^{(\lambda)}]^2d_j^{(\lambda)}},
+\end{align*}
+" class="latex-display" width="580" height="350">
+由于<img src="latex/latex2png-FindRoot_192336793_-8.gif" alt="$|r_j^{(L)}|<1$" class="latex-inline" style="vertical-align: -8px" width="66" height="26">,则<img src="latex/latex2png-FindRoot_42862603_.gif" alt="$$T_L\le\frac{\sum_{2\le j\le k}|d_j^{(L)}|+\sum_{2\le j\le k}|d_j^{(L)}|}{1-\sum_{2\le j\le k}|d_j^{(L)}|}=\frac{2D_L}{1-D_L}<1,$$" class="latex-display" width="580" height="56">
+令<img src="latex/latex2png-FindRoot_255095452_-5.gif" alt="$\tau=2D_L/(1-D_L)$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">,即得<img src="latex/latex2png-FindRoot_85194571_-3.gif" alt="$T_L\le\tau<1$" class="latex-inline" style="vertical-align: -3px" width="80" height="15">.</p>
+
+<p>假设<img src="latex/latex2png-FindRoot_57347581_-4.gif" alt="$T_L,T_{L+1},\ldots,T_{\lambda-1}\le\tau<1$" class="latex-inline" style="vertical-align: -4px" width="196" height="16">,则对<img src="latex/latex2png-FindRoot_184024985_-4.gif" alt="$t=L,L+1,\ldots,\lambda$" class="latex-inline" style="vertical-align: -4px" width="133" height="16">,有<img src="latex/latex2png-FindRoot_221368487_.gif" alt="$$|s_t-\alpha_1|\le|s_L-\alpha_1|<R/2,$$" class="latex-display" width="580" height="18"> <img src="latex/latex2png-FindRoot_245463443_.gif" alt="$$|s_t-\alpha_j|\ge|\alpha_1-\alpha_j|-|s_t-\alpha_1|>R/2,$$" class="latex-display" width="580" height="19"> 即仍有<img src="latex/latex2png-FindRoot_84358126_-8.gif" alt="$|r_j^{(t)}|<1(t=L,L+1,\ldots,\lambda)$" class="latex-inline" style="vertical-align: -8px" width="208" height="26">,又由于<img src="latex/latex2png-FindRoot_101957548_.gif" alt="$$d_j^{(\lambda)}=\frac{c_j^{(\lambda)}}{c_1^{(\lambda)}}=\frac{c_j^{(\lambda-1)}}{\alpha_j-s_{\lambda-1}}\frac{\alpha_1-s_{\lambda-1}}{c_1^{(\lambda-1)}}=r_j^{(\lambda-1)}d_j^{(\lambda-1)},$$" class="latex-display" width="580" height="51"> 则<img src="latex/latex2png-FindRoot_145962302_-9.gif" alt="$\sum_{2\le j\le k}|d_j^{(\lambda)}\le D_L$" class="latex-inline" style="vertical-align: -9px" width="138" height="27">,于是<img src="latex/latex2png-FindRoot_70546649_-3.gif" alt="$T_{\lambda}\le\tau<1$" class="latex-inline" style="vertical-align: -3px" width="79" height="15">,我们归纳证明了<img src="latex/latex2png-FindRoot_28282627_-5.gif" alt="$T_{\lambda}\le\tau<1(\forall\lambda\ge L)$" class="latex-inline" style="vertical-align: -5px" width="144" height="18">.</p>
+
+<p>为了说明迭代的合理性,我们仍要证明<img src="latex/latex2png-FindRoot_239552182_-5.gif" alt="$H^{(\lambda)}(s_{\lambda})\neq 0$" class="latex-inline" style="vertical-align: -5px" width="94" height="20">,因为
+<img src="latex/latex2png-FindRoot_63166983_.gif" alt="
+\begin{align*}
+\overline{H^{(\lambda)}}(s_{\lambda})&=\frac{\sum_{1\le j\le k}c_j^{(\lambda)}/(\alpha_j-s_{\lambda})\cdot P_j(s_{\lambda})}{\sum_{1\le j\le k}c_j^{(\lambda)}/(\alpha_j-s_{\lambda})}\\
+&=P_1(s_{\lambda})\left[\frac{1+\sum_{2\le j\le k}d_j^{(\lambda)}[r_j^{(\lambda)}]^2}{1+\sum_{2\le j\le k}d_j^{(\lambda)}r_j^{(\lambda)}}\right],
+\end{align*}
+" class="latex-display" width="580" height="117">
+我们假定<img src="latex/latex2png-FindRoot_163216446_-5.gif" alt="$P(s_{\lambda})\neq 0$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">,且又由<img src="latex/latex2png-FindRoot_145631563_-9.gif" alt="$|\sum_{2\le j\le k}d_j^{(\lambda)}[r_j^{(\lambda)}]^2|<1/3$" class="latex-inline" style="vertical-align: -9px" width="191" height="27">知<img src="latex/latex2png-FindRoot_178260554_-5.gif" alt="$|\overline{H^{(\lambda+1)}}(s_{\lambda})|>0$" class="latex-inline" style="vertical-align: -5px" width="119" height="22">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>有了上面的定理,下面证明收敛性:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name=""></a></span><span class="theorem-name"></span>
+令<img src="latex/latex2png-FindRoot_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">为满足算法<a class="ref-th" href="FindRoot.html#al:JT1">1</a>步骤2中条件的复数,则当迭代步数<img src="latex/latex2png-FindRoot_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">足够大时,步骤3中迭代是收敛的.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+很容易知道:<img src="latex/latex2png-FindRoot_253274737_.gif" alt="$$H^{(L)}(z)=\sum_{1\le j\le k}m_j\alpha_j^{-M}(\alpha_j-s)^{-(L-M)}P_j(z)=\sum_{1\le j\le k}c_j^{(L)}p_j(z),$$" class="latex-display" width="580" height="42">
+
+<p>于是<img src="latex/latex2png-FindRoot_265267916_.gif" alt="$$\sum_{2\le j\le k}d_j^{(L)}=\sum_{2\le j\le k}\frac{m_j}{m_1}\left(\frac{\alpha_1}{\alpha_j}\right)^M\left(\frac{\alpha_1-s}{\alpha_j-s}\right)^{L-M},$$" class="latex-display" width="580" height="52"></p>
+
+<p>固定<img src="latex/latex2png-FindRoot_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">后,取<img src="latex/latex2png-FindRoot_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">充分大,可使上式足够小,故我们可以取到<img src="latex/latex2png-FindRoot_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">使得<img src="latex/latex2png-FindRoot_198705583_-5.gif" alt="$D_L<1/3$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">.</p>
+
+<p>我们再取<img src="latex/latex2png-FindRoot_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">足够大使<img src="latex/latex2png-FindRoot_237670267_-5.gif" alt="$2D_L/(1-D_L)$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">足够小使<img src="latex/latex2png-FindRoot_15569055_-7.gif" alt="$|s_L-\alpha_1|=|s-\alpha_1|\frac{2D_L}{1-D_L}<R/2$" class="latex-inline" style="vertical-align: -7px" width="233" height="22">,则前述定理条件均满足,由是,<img src="latex/latex2png-FindRoot_256597423_-2.gif" alt="$s_{\lambda}\rightarrow\alpha_1$" class="latex-inline" style="vertical-align: -2px" width="58" height="11">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>收敛速度和一些细节说明</h3>
+
+<p class="first">下面给出对收敛速度的估计,</p>
+
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-FindRoot_198705583_-5.gif" alt="$D_L<1/3$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">,<img src="latex/latex2png-FindRoot_251404221_-4.gif" alt="$c_1^{(L)}\neq 0$" class="latex-inline" style="vertical-align: -4px" width="58" height="22">,<img src="latex/latex2png-FindRoot_143022678_-5.gif" alt="$|s_L-\alpha_1|<R/2$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">,则<img src="latex/latex2png-FindRoot_28458685_.gif" alt="$$C(\lambda)=\frac{|s_{L+\lambda+1}-\alpha_1|}{|s_{L+\lambda}-\alpha_1|^2}\le\frac{2}{R}\tau^{\lambda(\lambda-1)/2}.$$" class="latex-display" width="580" height="41">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+首先<img src="latex/latex2png-FindRoot_153820056_.gif" alt="$$\frac{s_{L+\lambda=1}-\alpha-1}{s_{L+\lambda}-\alpha-1}=\frac{\sum_{2\le j\le k}\frac{r_j^{(L+\lambda)}d_j^{(L+\lambda)}}{s_{L+\lambda}-\alpha_j}-\sum_{2\le j\le k}\frac{d_j^{(L+\lambda)}}{s_{L+\lambda}-\alpha_j}}{1+\sum_{2\le j\le k}[r_j^{(L+\lambda)}]^2d_j^{(L+\lambda)}},$$" class="latex-display" width="580" height="64">
+
+<p>由于<img src="latex/latex2png-FindRoot_143022678_-5.gif" alt="$|s_L-\alpha_1|<R/2$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">,则<img src="latex/latex2png-FindRoot_123631433_-5.gif" alt="$|s_{L+\lambda}-\alpha_1|<R/2*\tau^{\lambda}$" class="latex-inline" style="vertical-align: -5px" width="167" height="19">,又<img src="latex/latex2png-FindRoot_133152533_-5.gif" alt="$|s_{L+\lambda}-\alpha_j|>R/2$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">,则<img src="latex/latex2png-FindRoot_43321687_-8.gif" alt="$|r_j^{(L+\lambda}|<\tau^{\lambda}$" class="latex-inline" style="vertical-align: -8px" width="89" height="26">.于是<img src="latex/latex2png-FindRoot_141986156_.gif" alt="$$|d_j^{(L+\lambda)}|=|r_j^{(L+\lambda-1)}||d_j^{(L+\lambda-1)}|=\cdots\le\tau^{\lambda-1}\tau^{\lambda-2}\cdots\tau|d_j^{(L)}|=\tau^{(\lambda-1)\lambda/2}|d_j^{(L)}|,$$" class="latex-display" width="580" height="26"></p>
+
+<p>则<img src="latex/latex2png-FindRoot_91990484_-9.gif" alt="$\sum_{2\le j\le k}|d_j^{(L+\lambda)}|\le\tau^{\lambda(\lambda-1)/2}D_L\le\frac{1}{3}\tau^{\lambda(\lambda-1)/2}$" class="latex-inline" style="vertical-align: -9px" width="327" height="27">.</p>
+
+<p>且由<img src="latex/latex2png-FindRoot_66787699_-9.gif" alt="$\frac{1}{|s_{L+\lambda}-\alpha_j|}\le\frac{2}{R}$" class="latex-inline" style="vertical-align: -9px" width="101" height="24">,代入前面表达式可得<img src="latex/latex2png-FindRoot_162342879_.gif" alt="$$C(\lambda)\le\frac{2}{R}\tau^{\lambda(\lambda-1)/2}.$$" class="latex-display" width="580" height="35"></p>
+
+<p>证毕.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>由此可以看到,Jenkins-Traub算法是至少二阶收敛的,它比普通的牛顿迭代法要快.</p>
+
+<div class="corollary">
+<span class="theorem-header">推论1<a name=""></a></span><span class="theorem-name"></span>
+当上面定理条件满足时,对于<img src="latex/latex2png-FindRoot_150186964_-3.gif" alt="$\lambda\ge 1$" class="latex-inline" style="vertical-align: -3px" width="38" height="15">有<img src="latex/latex2png-FindRoot_57185770_-6.gif" alt="$|s_{L+\lambda}-\alpha_1|\le\frac{1}{2}R\tau^{\eta}$" class="latex-inline" style="vertical-align: -6px" width="144" height="21">,其中<img src="latex/latex2png-FindRoot_147295133_-6.gif" alt="$\eta=\frac{1}{2}[3\cdot 2^{\lambda}-(\lambda^2+\lambda+2)]$" class="latex-inline" style="vertical-align: -6px" width="195" height="21">.
+
+
+</div>
+
+<p>对于算法细节的说明：</p>
+
+<div class="remark">
+<span class="proof-header">注1<a name=""></a></span><span class="theorem-name"></span>
+步骤1中<img src="latex/latex2png-FindRoot_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">的选取是非必需的,此处只是要强调小零点.计算的经验表明一般取<img src="latex/latex2png-FindRoot_251169772_-1.gif" alt="$M=5$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">较合适.
+
+
+</div>
+<div class="remark">
+<span class="proof-header">注2<a name=""></a></span><span class="theorem-name"></span>
+在步骤2中对于方程<img src="latex/latex2png-FindRoot_157365654_-5.gif" alt="$P(z)=z^k+a_{k-1}z^{k-1}+\cdots+a_1z+a_0=0$" class="latex-inline" style="vertical-align: -5px" width="312" height="19">零点最小模的估计,我们取<img src="latex/latex2png-FindRoot_33257137_-4.gif" alt="$\beta$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">为方程<img src="latex/latex2png-FindRoot_140791893_-5.gif" alt="$z^k+|a_{k-1}|z^{k-1}+\cdots+|a_1|z-|a_0|=0$" class="latex-inline" style="vertical-align: -5px" width="283" height="19">的唯一正根即可.
+
+
+</div>
+<div class="remark">
+<span class="proof-header">注3<a name=""></a></span><span class="theorem-name"></span>
+关于步骤2的终止,即<img src="latex/latex2png-FindRoot_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的选取,前面给出的应当来说是一个充分条件,而且在算法实现时我们并不知道所有根的分布情况,因此在实践中取下面的收敛性判别条件：令<img src="latex/latex2png-FindRoot_89788869_-12.gif" alt="$t_{\lambda}=s-\frac{P(s)}{\overline{H^{(\lambda)}}(s)}$" class="latex-inline" style="vertical-align: -12px" width="113" height="29">,若在一定迭代步数(例如20步)内能够满足下面条件：<img src="latex/latex2png-FindRoot_53139757_.gif" alt="$$|t_{\lambda+1}-t_{\lambda}|\le|t_{\lambda}|/2,\quad |t_{\lambda+2}-t_{\lambda+1}|\le|t_{\lambda+1}|/2,$$" class="latex-display" width="580" height="18"> 则终止.
+
+
+</div>
+<div class="remark">
+<span class="proof-header">注4<a name=""></a></span><span class="theorem-name"></span>
+步骤3终止的条件则由计算精度的要求来设置.
+
+
+</div>
+步骤3中的迭代事实上是牛顿迭代,我们有下面的
+
+<div class="theorem">
+<span class="theorem-header">定理4<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-FindRoot_122255378_-9.gif" alt="$w^{(\lambda)}(z)=\frac{P(z)}{H^{(\lambda)}(z)}$" class="latex-inline" style="vertical-align: -9px" width="123" height="26">,则每一步迭代过程相当于<img src="latex/latex2png-FindRoot_182217936_.gif" alt="$$s_{\lambda+1}=s_{\lambda}-\frac{P(s_{\lambda})}{\overline{H^{(\lambda+1)}}(s_{\lambda})}=s_{\lambda}-\frac{w^{\lambda}(s_{\lambda})}{(w^{\lambda})'(s_{\lambda})}.$$" class="latex-display" width="580" height="45">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+定义<img src="latex/latex2png-FindRoot_104258137_-9.gif" alt="$v^{(\lambda)}(z)=\frac{H^{(\lambda)}(z)}{P(z)}=1/w^{(\lambda)}(z)$" class="latex-inline" style="vertical-align: -9px" width="211" height="29">,则由<img src="latex/latex2png-FindRoot_88946478_-5.gif" alt="$H^{(\lambda)}(z)$" class="latex-inline" style="vertical-align: -5px" width="54" height="20">的递推生成式可知:<img src="latex/latex2png-FindRoot_248052064_-5.gif" alt="$v^{(\lambda+1)}=(v^{(\lambda)})'$" class="latex-inline" style="vertical-align: -5px" width="111" height="20">,<img src="latex/latex2png-FindRoot_187319296_-5.gif" alt="$\mathrm{lc}(H^{(\lambda+1)}(z))=-v^{(\lambda)}(s_{\lambda})$" class="latex-inline" style="vertical-align: -5px" width="188" height="20">.
+
+<p>于是
+<img src="latex/latex2png-FindRoot_137140146_.gif" alt="
+\begin{align*}
+s_{\lambda+1}&=s_{\lambda}-\frac{P(s_{\lambda})\mathrm{lc}(H^{(\lambda+1)}(z))}{H^{(\lambda+1)}(s_{\lambda})}=s_{\lambda}+\frac{v^{(\lambda)}(s_{\lambda})}{v^{(\lambda+1)}(s_{\lambda})}=s_{\lambda}+\frac{v^{(\lambda)}(s_{\lambda})}{(v^{(\lambda)}(s_{\lambda}))'}\\
+&=s_{\lambda}-\frac{w^{(\lambda)}(s_{\lambda})}{(w^{(\lambda)}(s_{\lambda}))'},
+\end{align*}
+" class="latex-display" width="580" height="92">
+证毕.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+<h3><a name="sec4" id="sec4"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一种Cauchy零点模估计</h3>
+
+<p class="first">我们再对多项式零点模的大小做一估计(由Cauchy给出),首先有下面的引理:</p>
+
+<div class="lemma">
+<span class="theorem-header">引理1<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-FindRoot_153024038_-4.gif" alt="$a_{k-1},\ldots,a_0$" class="latex-inline" style="vertical-align: -4px" width="86" height="12">均非负,且<img src="latex/latex2png-FindRoot_154334758_-4.gif" alt="$a_{k-1},\ldots,a_l$" class="latex-inline" style="vertical-align: -4px" width="84" height="12">不全为零,<img src="latex/latex2png-FindRoot_153024294_-4.gif" alt="$a_{l-1},\ldots,a_0$" class="latex-inline" style="vertical-align: -4px" width="83" height="12">不全为零,则方程<img src="latex/latex2png-FindRoot_232074514_.gif" alt="$$P(z)=z^k+a_{k-1}z^{k-1}+\cdots+a_lz^l-a_{l-1}z^{l-1}-\cdots-a_1z-a_0=0$$" class="latex-display" width="580" height="20">有唯一正根<img src="latex/latex2png-FindRoot_266177516_-3.gif" alt="$r_0$" class="latex-inline" style="vertical-align: -3px" width="13" height="11">,且<img src="latex/latex2png-FindRoot_163531389_-5.gif" alt="$P(r)<0(\forall 0<r<r_0)$" class="latex-inline" style="vertical-align: -5px" width="160" height="18">,<img src="latex/latex2png-FindRoot_215288202_-5.gif" alt="$P(r)>0(\forall r>r_0)$" class="latex-inline" style="vertical-align: -5px" width="130" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+考虑多项式<img src="latex/latex2png-FindRoot_145490070_.gif" alt="$$Q(z)=\frac{P(z)}{z^l}=z^{k-l}+a_{k-1}z^{k-l-1}+\cdots+a_{l+1}z+a_l-\frac{a_{l-1}}{z}-\cdots-\frac{a_0}{z^l},$$" class="latex-display" width="580" height="36"> 易知其在<img src="latex/latex2png-FindRoot_60128146_-5.gif" alt="$(0,+\infty)$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">上单增,且<img src="latex/latex2png-FindRoot_26222516_.gif" alt="$$\lim_{z\rightarrow 0}Q(z)=-\infty,\quad \lim_{z\rightarrow +\infty}Q(z)=+\infty,$$" class="latex-display" width="580" height="25"> 故<img src="latex/latex2png-FindRoot_45386693_-5.gif" alt="$Q(z)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">有唯一正实根<img src="latex/latex2png-FindRoot_266177516_-3.gif" alt="$r_0$" class="latex-inline" style="vertical-align: -3px" width="13" height="11">,从而也是<img src="latex/latex2png-FindRoot_223048763_-5.gif" alt="$P(z)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">的唯一正根,且由单调性可知<img src="latex/latex2png-FindRoot_159151137_-5.gif" alt="$\{r|r>0\wedge P(r)>0\}=(r_0,+\infty)$" class="latex-inline" style="vertical-align: -5px" width="235" height="18">.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理5<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-FindRoot_186980744_-4.gif" alt="$a_{k-1},\ldots,a_0\in\mathbb{C}$" class="latex-inline" style="vertical-align: -4px" width="119" height="16">,<img src="latex/latex2png-FindRoot_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">为多项式方程<img src="latex/latex2png-FindRoot_166451619_.gif" alt="$$P(z)=z^k+a_{k-1}z^{k-1}+\cdots+a_1z+a_0=0$$" class="latex-display" width="580" height="20">的任一根,并设<img src="latex/latex2png-FindRoot_266177516_-3.gif" alt="$r_0$" class="latex-inline" style="vertical-align: -3px" width="13" height="11">是方程<img src="latex/latex2png-FindRoot_203664622_.gif" alt="$$Q(z)=z^k-|a_{k-1}|z^{k-1}-\cdots-|a_1|z-|a_0|=0$$" class="latex-display" width="580" height="20">的唯一正根,则<img src="latex/latex2png-FindRoot_105769839_-5.gif" alt="$|r|\le r_0$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">.
+
+<p>再设<img src="latex/latex2png-FindRoot_266111980_-2.gif" alt="$r_1$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">是方程<img src="latex/latex2png-FindRoot_203651822_.gif" alt="$$R(z)=z^k+|a_{k-1}|z^{k-1}+\cdots+|a_1|z-|a_0|=0$$" class="latex-display" width="580" height="20">的唯一正根,则<img src="latex/latex2png-FindRoot_105704383_-5.gif" alt="$|r|\ge r_1$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">.</p>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+首先由<img src="latex/latex2png-FindRoot_218275134_-5.gif" alt="$P(r)=0$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">可知
+<img src="latex/latex2png-FindRoot_255375493_.gif" alt="
+\begin{align*}
+|r|^k&=|-a_{k-1}r^{k-1}-\cdots-a_1r-a_0|\\
+&\le |a_{k-1}||r|^{k-1}+\cdots+|a_1||r|+|a_0|,
+\end{align*}
+" class="latex-display" width="580" height="51">
+即<img src="latex/latex2png-FindRoot_217355515_-5.gif" alt="$Q(|r|)\le 0$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">,故<img src="latex/latex2png-FindRoot_105769839_-5.gif" alt="$|r|\le r_0$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">.
+
+<p>由<img src="latex/latex2png-FindRoot_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">和<img src="latex/latex2png-FindRoot_266111980_-2.gif" alt="$r_1$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">的定义知道<img src="latex/latex2png-FindRoot_197364716_-5.gif" alt="$1/r$" class="latex-inline" style="vertical-align: -5px" width="22" height="18">,<img src="latex/latex2png-FindRoot_2324102_-5.gif" alt="$1/r_1$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">分别是方程<img src="latex/latex2png-FindRoot_124097585_.gif" alt="$$z^k+\frac{a_1}{a_0}z^{k-1}+\cdots+\frac{a_{k-1}}{a_0}z+\frac{1}{a_0}=0$$" class="latex-display" width="580" height="37">和<img src="latex/latex2png-FindRoot_79012930_.gif" alt="$$z^{k}-\frac{|a_1|}{|a_0|}z^{k-1}-\cdots-\frac{|a_{k-1}|}{|a_0|}-\frac{1}{|a_0|}$$" class="latex-display" width="580" height="41">的根,则根据上面的证明我们有<img src="latex/latex2png-FindRoot_264510090_-5.gif" alt="$1/|r|\le 1/r_1$" class="latex-inline" style="vertical-align: -5px" width="84" height="18">,亦即<img src="latex/latex2png-FindRoot_105704383_-5.gif" alt="$|r|\ge r_1$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+
+<h2><a name="sec5" id="sec5"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Laguerre 算法</h2>
+
+<p class="first">该方法也是一种比牛顿迭代快的算法(见<span class="cite"><a class="cite" href="FindRoot.html#ref-2" name="cite-2">[2]</a></span>2.9节),用到了多项式的二阶导数.考虑复多项式<img src="latex/latex2png-FindRoot_223048763_-5.gif" alt="$P(z)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">,其有<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个根<img src="latex/latex2png-FindRoot_188924194_-4.gif" alt="$r_1,r_2,\ldots,r_n$" class="latex-inline" style="vertical-align: -4px" width="89" height="12">,定义如下一些多项式:
+<img src="latex/latex2png-FindRoot_50053896_.gif" alt="$$S_1(z)=\frac{P'(z)}{P(z)}=\sum_{i=1}^n\frac{1}{z-r_i},$$" class="latex-display" width="580" height="45">
+<img src="latex/latex2png-FindRoot_204403824_.gif" alt="$$S_2(z)=-S_1'(z)=\sum_{i=1}^n\frac{1}{(z-r_i)^2},$$" class="latex-display" width="580" height="45">
+对于某个固定的<img src="latex/latex2png-FindRoot_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,记<img src="latex/latex2png-FindRoot_131759385_.gif" alt="$$\alpha(z)=\frac{1}{z-r_j},\quad \beta(z)=\frac{1}{n-1}\sum_{1\le i\le n,i\neq j}\frac{1}{z-r_i},\quad \delta_i(z)=\frac{1}{z-r_i}-\beta(z),(i\neq j),$$" class="latex-display" width="580" height="46"></p>
+
+<p>于是<img src="latex/latex2png-FindRoot_83120990_-5.gif" alt="$S_1=\alpha+(n-1)\beta$" class="latex-inline" style="vertical-align: -5px" width="130" height="18">,若定义<img src="latex/latex2png-FindRoot_227033200_-8.gif" alt="$\delta^2=\sum_{i\neq j}\delta_i^2$" class="latex-inline" style="vertical-align: -8px" width="94" height="22">,则还有
+<img src="latex/latex2png-FindRoot_141024910_.gif" alt="
+\begin{align*}
+S_2&=\alpha^2+\sum_{i\neq j}(\beta+\delta_i)^2=\alpha^2+(n-1)\beta^2+2\beta\sum_{i\neq j}\delta_i+\sum_{i\neq j}\delta_i^2\\
+&=\alpha^2+(n-1)\beta^2+\delta^2.
+\end{align*}
+" class="latex-display" width="580" height="70"></p>
+
+<p>若消去<img src="latex/latex2png-FindRoot_33257137_-4.gif" alt="$\beta$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">,可得到关于<img src="latex/latex2png-FindRoot_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的二次方程:<img src="latex/latex2png-FindRoot_68674014_.gif" alt="$$n\alpha^2-2S_1\alpha+S_1^2-(n-1)(S_2-\delta^2)=0$$" class="latex-display" width="580" height="20"> 解之得 <img src="latex/latex2png-FindRoot_245786657_.gif" alt="$$\alpha=\frac{S_1\pm\sqrt{(n-1)(nS_2-S_1^2-n\delta^2)}}{n}.$$" class="latex-display" width="580" height="38"></p>
+
+<p>由<img src="latex/latex2png-FindRoot_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的定义我们可以得到<img src="latex/latex2png-FindRoot_179051716_.gif" alt="$$r_j=z-\frac{n}{S_1\pm\sqrt{(n-1)(nS_2-S_1^2-n\delta^2)}},$$" class="latex-display" width="580" height="39"> 但若我们令<img src="latex/latex2png-FindRoot_167185_-1.gif" alt="$\delta^2=0$" class="latex-inline" style="vertical-align: -1px" width="46" height="15">,注意到当<img src="latex/latex2png-FindRoot_43283474_0.gif" alt="$z$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">接近零点<img src="latex/latex2png-FindRoot_264997868_-5.gif" alt="$r_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">时,在<img src="latex/latex2png-FindRoot_115117036_-2.gif" alt="$S_1$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">,<img src="latex/latex2png-FindRoot_115051500_-2.gif" alt="$S_2$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">表达式中各项只有含<img src="latex/latex2png-FindRoot_264997868_-5.gif" alt="$r_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">的一项占主导地位,是奇异部分,因此迭代过程中这样的假设是合理的.于是我们得到逼近<img src="latex/latex2png-FindRoot_264997868_-5.gif" alt="$r_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">的序列<img src="latex/latex2png-FindRoot_212882311_-8.gif" alt="$\{z_j^{(k)}\}$" class="latex-inline" style="vertical-align: -8px" width="41" height="26">的迭代式,即Laguerre迭代公式：<img src="latex/latex2png-FindRoot_72760104_.gif" alt="$$z_j^{(k+1)}=z_j^{(k)}-\frac{n}{S_1\pm\sqrt{(n-1)(nS_2-S_1^2)}}.$$" class="latex-display" width="580" height="39"></p>
+
+<p>该迭代算法对于单根是三阶收敛,对于多重根是一阶线性收敛.下面的改进算法给出单根时的四阶收敛：
+<img src="latex/latex2png-FindRoot_144926981_.gif" alt="$$z_j^{(k+1)}=z_j^{(k)}-\frac{n}{S_1\pm\sqrt{(n-1)(nS_2-S_1^2-n\delta_j^2)}},$$" class="latex-display" width="580" height="49">
+其中<img src="latex/latex2png-FindRoot_186534127_.gif" alt="$$\delta_j=\sum_{i\neq j}\left[\frac{1}{z_j^{(k)}-z_i^{(k)}}-\beta_j\right]^2,\quad \beta_j=\frac{1}{n-1}\sum_{i\neq j}\frac{1}{z_j^{(k)}-z_i^{(k)}}.$$" class="latex-display" width="580" height="56"></p>
+
+
+<h2><a name="sec6" id="sec6"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>实一元多项式求实根算法</h2>
+
+<h3><a name="sec7" id="sec7"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Sturm序列</h3>
+
+<p class="first">Sturm序列可用来在实轴上隔离实一元多项式的根,这一节我们先介绍这方面的理论.首先定义(可参见<span class="cite"><a class="cite" href="FindRoot.html#ref-3" name="cite-3">[3]</a></span>P170):</p>
+
+<div class="definition">
+<span class="theorem-header">定义4<a name=""></a></span><span class="theorem-name">(广义Sturm序列)</span>
+设<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">无平方,称<img src="latex/latex2png-FindRoot_6701570_-4.gif" alt="$p=p_0,\ldots,p_k$" class="latex-inline" style="vertical-align: -4px" width="99" height="12">为广义Sturm序列,如果它们满足
+
+<ol>
+<li><img src="latex/latex2png-FindRoot_119641145_-5.gif" alt="$p(a)p(b)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">,</li>
+
+<li><img src="latex/latex2png-FindRoot_260358765_-5.gif" alt="$\mathrm{sgn}(p_k)$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">在<img src="latex/latex2png-FindRoot_35152_-5.gif" alt="$[a,b]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">上是常量,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_72223259_-5.gif" alt="$p_i(\xi)=0(1\le i\le k-1,\xi\in[a,b])$" class="latex-inline" style="vertical-align: -5px" width="242" height="18">,则<img src="latex/latex2png-FindRoot_137255919_-5.gif" alt="$p_{i-1}(\xi)p_{i+1}(\xi)<0$" class="latex-inline" style="vertical-align: -5px" width="135" height="18"></li>
+
+<li>对于<img src="latex/latex2png-FindRoot_41974224_-5.gif" alt="$c\in[a,b]$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">,若<img src="latex/latex2png-FindRoot_50160451_-5.gif" alt="$p(c)=0$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">,则<img src="latex/latex2png-FindRoot_98083316_-5.gif" alt="$p(x)p_1(x)$" class="latex-inline" style="vertical-align: -5px" width="68" height="18">在<img src="latex/latex2png-FindRoot_41776146_0.gif" alt="$c$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">的邻域内与<img src="latex/latex2png-FindRoot_217222124_0.gif" alt="$x-c$" class="latex-inline" style="vertical-align: 0px" width="37" height="8">符号相同.</li>
+</ol>
+
+<p>此时对于<img src="latex/latex2png-FindRoot_192905792_-4.gif" alt="$y\in\mathbb{R}$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">,定义<img src="latex/latex2png-FindRoot_222000187_-5.gif" alt="$V(y)$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">为序列<img src="latex/latex2png-FindRoot_240936153_-5.gif" alt="$p_0(y),p_1(y),\ldots,p_k(y)$" class="latex-inline" style="vertical-align: -5px" width="157" height="18">的变号次数,即<img src="latex/latex2png-FindRoot_192008754_.gif" alt="$$V(y)=\#\{i|p_i(y)p_{i+1}(y)<0\}.$$" class="latex-display" width="580" height="18"> 对于<img src="latex/latex2png-FindRoot_129745126_-4.gif" alt="$y=\pm\infty$" class="latex-inline" style="vertical-align: -4px" width="60" height="15">可同样定义.</p>
+
+
+</div>
+
+<p>广义Sturm序列有如下性质:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理6<a name=""></a></span><span class="theorem-name"></span>
+对于<img src="latex/latex2png-FindRoot_35152_-5.gif" alt="$[a,b]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">上的广义Sturm序列,<img src="latex/latex2png-FindRoot_241446868_-5.gif" alt="$V(a)-V(b)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">为<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">在<img src="latex/latex2png-FindRoot_35152_-5.gif" alt="$[a,b]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">上实根的个数.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-FindRoot_165015564_-5.gif" alt="$x_1,x_2\in[a,b]$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">,<img src="latex/latex2png-FindRoot_165213641_-2.gif" alt="$x_1<x_2$" class="latex-inline" style="vertical-align: -2px" width="54" height="11">,若<img src="latex/latex2png-FindRoot_85972563_-5.gif" alt="$[x_1,x_2]$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">中无<img src="latex/latex2png-FindRoot_184312235_-5.gif" alt="$p_i(0\le i\le k)$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">的根,则<img src="latex/latex2png-FindRoot_126924488_-5.gif" alt="$V(x_1)=V(x_2)$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">,此时函数<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">不发生变化.
+
+<p>(1)设<img src="latex/latex2png-FindRoot_17009010_-1.gif" alt="$a<c<b$" class="latex-inline" style="vertical-align: -1px" width="67" height="13">且<img src="latex/latex2png-FindRoot_50160451_-5.gif" alt="$p(c)=0$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">,则由定义中第4条知<img src="latex/latex2png-FindRoot_96844635_-1.gif" alt="$\exists\varepsilon>0$" class="latex-inline" style="vertical-align: -1px" width="46" height="13">使得<img src="latex/latex2png-FindRoot_209432763_-5.gif" alt="$x\in(c-\varepsilon,c)$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">时,<img src="latex/latex2png-FindRoot_98544009_-5.gif" alt="$p(x)p_1(x)<0$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,此区间内变一次号,当<img src="latex/latex2png-FindRoot_49640318_-5.gif" alt="$x\in(c,c+\varepsilon)$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">时<img src="latex/latex2png-FindRoot_96446857_-5.gif" alt="$p(x)p_1(x)>0$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,此区间内不变号,此时若将<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">限定在从<img src="latex/latex2png-FindRoot_220951610_-5.gif" alt="$p(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">到<img src="latex/latex2png-FindRoot_47473420_-5.gif" alt="$p_1(x)$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">的变号,则有<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">会减小1.</p>
+
+<p>(2)设<img src="latex/latex2png-FindRoot_17009010_-1.gif" alt="$a<c<b$" class="latex-inline" style="vertical-align: -1px" width="67" height="13">且对某个<img src="latex/latex2png-FindRoot_5589130_-5.gif" alt="$i(1\le i\le k-1)$" class="latex-inline" style="vertical-align: -5px" width="113" height="18">,<img src="latex/latex2png-FindRoot_47491251_-5.gif" alt="$p_i(c)=0$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,则由定义中第3条知<img src="latex/latex2png-FindRoot_123927407_-5.gif" alt="$x\in(c-\varepsilon,c+\varepsilon)$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">时,<img src="latex/latex2png-FindRoot_91029665_-5.gif" alt="$p_{i-1}(x)p_{i+1}(x)<0$" class="latex-inline" style="vertical-align: -5px" width="138" height="18">,此时若将<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">限定在从<img src="latex/latex2png-FindRoot_101705752_-5.gif" alt="$p_{i-1}(x)$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">到<img src="latex/latex2png-FindRoot_101705720_-5.gif" alt="$p_{i+1}(x)$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">的变号上时,函数<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">在小区间上不变.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>需要郑重说明的一点是,从上面定理的证明过程来看,实际上我们不仅要求<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">在<img src="latex/latex2png-FindRoot_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">两点上不为零,还要求诸<img src="latex/latex2png-FindRoot_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">在此两点也不为零.因为根据我们对于变号的定义,序列
+<img src="latex/latex2png-FindRoot_244041962_.gif" alt="$$-1,\pm\varepsilon,1$$" class="latex-display" width="580" height="15">
+的变号数为<img src="latex/latex2png-FindRoot_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">,对于连续函数情形我们可以对<img src="latex/latex2png-FindRoot_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">进行微小移动使得序列成为
+<img src="latex/latex2png-FindRoot_219396696_.gif" alt="$$-1+\varepsilon_1,0,1+\varepsilon_2,$$" class="latex-display" width="580" height="15">
+则变号数变为<img src="latex/latex2png-FindRoot_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">.于是对于序列中各个多项式<img src="latex/latex2png-FindRoot_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">,需要满足<img src="latex/latex2png-FindRoot_122781402_-5.gif" alt="$p_i(a)p_i(b)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">.</p>
+
+<p>如何找到一个这样的广义Sturm序列呢？下面的定义给出了一个具体的实例.</p>
+
+<div class="definition">
+<span class="theorem-header">定义5<a name=""></a></span><span class="theorem-name">(Sturm序列)</span>
+对于无平方因子多项式<img src="latex/latex2png-FindRoot_15817050_-5.gif" alt="$p\in\mathbb{R}[x]$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">,其Sturm序列是指多项式序列<img src="latex/latex2png-FindRoot_55362645_-5.gif" alt="$p=p_0(x),p_1(x),\ldots,p_k(x)\in\mathbb{R}[x]$" class="latex-inline" style="vertical-align: -5px" width="240" height="18">,其中<img src="latex/latex2png-FindRoot_115183195_.gif" alt="$$p_1=p',p_i=-p_{i-2}\bmod p_{i-1}(2\le i\le k),$$" class="latex-display" width="580" height="19">直至<img src="latex/latex2png-FindRoot_47473419_-5.gif" alt="$p_k(x)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">为一常数多项式.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理7<a name=""></a></span><span class="theorem-name"></span>
+Sturm序列是广义Sturm序列.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+第一个条件<img src="latex/latex2png-FindRoot_119641145_-5.gif" alt="$p(a)p(b)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">我们总可以取到.
+
+<p>第二个条件由<img src="latex/latex2png-FindRoot_190236704_-4.gif" alt="$p_k\in\mathbb{R}$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">也可得到.</p>
+
+<p>第三个条件:对于<img src="latex/latex2png-FindRoot_172872097_-5.gif" alt="$p_i(\xi)=0(\xi\in[a,b])$" class="latex-inline" style="vertical-align: -5px" width="139" height="18">,首先<img src="latex/latex2png-FindRoot_187813371_-5.gif" alt="$p_{i-1}(\xi)p_{i+1}(\xi)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">.倘若其中有一个是零,不妨设<img src="latex/latex2png-FindRoot_251061494_-5.gif" alt="$p_{i-1}(\xi)=0$" class="latex-inline" style="vertical-align: -5px" width="83" height="18">,则<img src="latex/latex2png-FindRoot_68242269_-5.gif" alt="$(x-\xi)|\gcd(p_{i-1},p_i)=\gcd(p,p')\Rightarrow p$" class="latex-inline" style="vertical-align: -5px" width="270" height="18">有重因子,矛盾.再由<img src="latex/latex2png-FindRoot_7571826_-4.gif" alt="$p_{i+1}=-p_{i-1}\bmod p_i$" class="latex-inline" style="vertical-align: -4px" width="152" height="16">知<img src="latex/latex2png-FindRoot_137255919_-5.gif" alt="$p_{i-1}(\xi)p_{i+1}(\xi)<0$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">.</p>
+
+<p>第四个条件:对于<img src="latex/latex2png-FindRoot_244747726_-5.gif" alt="$p(c)=0(c\in[a,b])$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">,由于其无平方,<img src="latex/latex2png-FindRoot_21983495_-5.gif" alt="$p_1(c)=p'(c)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="122" height="18">,由导数的定义知<img src="latex/latex2png-FindRoot_239039079_.gif" alt="$$p_1(c)=\lim_{x\rightarrow c}\frac{p(x)-p(c)}{x-c}=\lim_{x\rightarrow c}\frac{p(x)}{x-c},$$" class="latex-display" width="580" height="36">则在<img src="latex/latex2png-FindRoot_41776146_0.gif" alt="$c$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">的某个去心邻域内有<img src="latex/latex2png-FindRoot_108486609_-5.gif" alt="$p(x)/(x-c)$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">与<img src="latex/latex2png-FindRoot_47473420_-5.gif" alt="$p_1(x)$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">同号.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>由上面的定理可以得到如下推论:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理8<a name=""></a></span><span class="theorem-name">(Sturm定理)</span>
+<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">是无平方多项式,<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">是<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的Sturm序列在<img src="latex/latex2png-FindRoot_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">点的变号数,则<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">在区间<img src="latex/latex2png-FindRoot_35152_-5.gif" alt="$[a,b]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">上实根的个数为<img src="latex/latex2png-FindRoot_241446868_-5.gif" alt="$V(a)-V(b)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">.
+
+<p>这里变号数<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">定义为:
+<img src="latex/latex2png-FindRoot_236877179_.gif" alt="$$V(x)=\#\{i|p_i(x)p_{i+1}(x)<0\}+\#\{i|p_i(x)=0\}.$$" class="latex-display" width="580" height="18"></p>
+
+
+</div>
+
+<p>我们对这里变号数<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">的重新定义做一些说明.前文我们已经说过,对于各个<img src="latex/latex2png-FindRoot_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">也需要它们在<img src="latex/latex2png-FindRoot_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">两点不为零.事实上,假若<img src="latex/latex2png-FindRoot_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">在<img src="latex/latex2png-FindRoot_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">点值为零,则在<img src="latex/latex2png-FindRoot_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的足够小的邻域内是可以得到正确变号数的.其实若根据广义Sturm序列满足的第3个条件可知,此时必有<img src="latex/latex2png-FindRoot_177406160_-5.gif" alt="$p_{i-1}(a)p_{i+1}(a)<0$" class="latex-inline" style="vertical-align: -5px" width="136" height="18">,此处<img src="latex/latex2png-FindRoot_17959852_-5.gif" alt="$p_{i-1}(a),p_{i}(a),p_{i+1}(a)$" class="latex-inline" style="vertical-align: -5px" width="155" height="18">应取为<img src="latex/latex2png-FindRoot_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">.显然我们可以得到重新定义的<img src="latex/latex2png-FindRoot_220951611_-5.gif" alt="$V(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">的表达式.</p>
+
+
+<h3><a name="sec8" id="sec8"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>实根隔离算法</h3>
+
+<p class="first">区间隔离算法本质上是一种分治法的思想.我们利用Sturm序列不断将根的隔离,最终将每个根都隔离开(见<span class="cite"><a class="cite" href="FindRoot.html#ref-4" name="cite-4">[4]</a></span>).</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name="al:rootseparate"></a></span><span class="theorem-name">(实根隔离算法)</span>
+
+<p>输入:无平方因子多项式<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">,区间<img src="latex/latex2png-FindRoot_85972563_-5.gif" alt="$[x_1,x_2]$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">,且<img src="latex/latex2png-FindRoot_247323303_-5.gif" alt="$p(x_1)p(x_2)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">,</p>
+
+<p>输出:<img src="latex/latex2png-FindRoot_85972563_-5.gif" alt="$[x_1,x_2]$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">上所有根的隔离区间的集合<img src="latex/latex2png-FindRoot_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">.</p>
+
+<ol>
+<li><img src="latex/latex2png-FindRoot_209957466_-5.gif" alt="$T=\{[x_1,x_2]\}$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,</li>
+
+<li>任取区间<img src="latex/latex2png-FindRoot_37909570_-5.gif" alt="$[a,b]\in T$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,令<img src="latex/latex2png-FindRoot_13097473_-5.gif" alt="$T=T\setminus\{[a,b]\}$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">,若<img src="latex/latex2png-FindRoot_96417440_-5.gif" alt="$V(a)-V(b)=1$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">,则<img src="latex/latex2png-FindRoot_64880345_-5.gif" alt="$S=S\bigcup\{[a,b]\}$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">,转6步,若<img src="latex/latex2png-FindRoot_96351904_-5.gif" alt="$V(a)-V(b)=0$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">则直接转第6步,</li>
+
+<li>此时必有<img src="latex/latex2png-FindRoot_97466016_-5.gif" alt="$V(a)-V(b)>1$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">,令<img src="latex/latex2png-FindRoot_245592016_-5.gif" alt="$c=(a+b)/2$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">,<img src="latex/latex2png-FindRoot_13097473_-5.gif" alt="$T=T\setminus\{[a,b]\}$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_64901916_-5.gif" alt="$p(c)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">,考虑<img src="latex/latex2png-FindRoot_242495444_-5.gif" alt="$V(a)-V(c)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">,<img src="latex/latex2png-FindRoot_241447380_-5.gif" alt="$V(c)-V(b)$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,若<img src="latex/latex2png-FindRoot_172018016_-5.gif" alt="$V(a)-V(c)=1$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">则<img src="latex/latex2png-FindRoot_203555111_-5.gif" alt="$S=S\bigcup\{[a,c]\}$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">,否则<img src="latex/latex2png-FindRoot_220397863_-5.gif" alt="$T=T\bigcup\{[a,c]\}$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">,对于<img src="latex/latex2png-FindRoot_241447380_-5.gif" alt="$V(c)-V(b)$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">和<img src="latex/latex2png-FindRoot_35152_-5.gif" alt="$[c,b]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">同样操作,转6步,</li>
+
+<li>否则有<img src="latex/latex2png-FindRoot_50160451_-5.gif" alt="$p(c)=0$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">,<img src="latex/latex2png-FindRoot_203555143_-5.gif" alt="$S=S\bigcup\{[c,c]\}$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">,作代换<img src="latex/latex2png-FindRoot_51213991_-4.gif" alt="$y=x-c$" class="latex-inline" style="vertical-align: -4px" width="68" height="12">,并令<img src="latex/latex2png-FindRoot_266883212_-5.gif" alt="$p_1(y)=p(y+c)/y$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">,则<img src="latex/latex2png-FindRoot_43146428_-5.gif" alt="$p_1(0)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="68" height="18">,求其根的绝对值的下界<img src="latex/latex2png-FindRoot_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">,则对于<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">有<img src="latex/latex2png-FindRoot_71788368_-5.gif" alt="$V(c-M)=V(c+M)+1$" class="latex-inline" style="vertical-align: -5px" width="193" height="18">.若<img src="latex/latex2png-FindRoot_121240948_-5.gif" alt="$V(a)-V(c-M)=1$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">则<img src="latex/latex2png-FindRoot_39548531_-5.gif" alt="$S=S\bigcup\{[a,c-M]\}$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">,否则<img src="latex/latex2png-FindRoot_22771314_-5.gif" alt="$T=T\bigcup\{[a,c-M]\}$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">.同样利用<img src="latex/latex2png-FindRoot_76116951_-5.gif" alt="$V(c+M)-V(b)$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">来决定将<img src="latex/latex2png-FindRoot_135922_-5.gif" alt="$[c+M,b]$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">放在<img src="latex/latex2png-FindRoot_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">或<img src="latex/latex2png-FindRoot_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">中,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_145846811_-2.gif" alt="$T=\emptyset$" class="latex-inline" style="vertical-align: -2px" width="42" height="15">则输出<img src="latex/latex2png-FindRoot_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">,否则转2步.</li>
+</ol>
+
+
+
+</div>
+
+<p>接下来我们可以用二分法缩小区间,或用Newton迭代法求根的数值解.</p>
+
+
+
+<h2><a name="sec9" id="sec9"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>代数模方程求解</h2>
+
+<p class="first">这一小节我们讨论有限域中的代数方程求解,关于此问题,可以参考<span class="cite"><a class="cite" href="FindRoot.html#ref-5" name="cite-5">[5]</a></span>1.5节.对于一次模方程,我们可以很简单地直接解出,下面我们先介绍一下有限域中的开平方算法,这些与数论中的二次剩余理论均有联系.</p>
+
+<h3><a name="sec10" id="sec10"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a><img src="latex/latex2png-FindRoot_92825302_-5.gif" alt="$\field{p}$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">中的开平方算法</h3>
+
+<p class="first">先看一些比较殊的情况.我们考虑问题<img src="latex/latex2png-FindRoot_237929105_-5.gif" alt="$x^2\equiv a\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="112" height="19">,其中<img src="latex/latex2png-FindRoot_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">是模<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的二次剩余,其Jacobi符号<img src="latex/latex2png-FindRoot_90825794_-16.gif" alt="$\genfrac{(}{)}{}{0}{a}{p}=1$" class="latex-inline" style="vertical-align: -16px" width="59" height="40">.此时必有<img src="latex/latex2png-FindRoot_104903276_-5.gif" alt="$a^{(p-1)/2}\equiv 1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="152" height="20">.</p>
+
+<p>若素数<img src="latex/latex2png-FindRoot_111246706_-5.gif" alt="$p\equiv 3\pmod{4}$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">,则令<img src="latex/latex2png-FindRoot_262810867_-5.gif" alt="$x\equiv a^{(p+1)/4}\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="153" height="20">即可.</p>
+
+<p>若素数<img src="latex/latex2png-FindRoot_106921330_-5.gif" alt="$p\equiv 5\pmod{8}$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">,此时<img src="latex/latex2png-FindRoot_199031562_-5.gif" alt="$a^{(p-1)/4}\equiv\pm 1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="165" height="20">,若取正号,则命<img src="latex/latex2png-FindRoot_267005173_-5.gif" alt="$x\equiv a^{(p+3)/8}\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="153" height="20">,否则由<img src="latex/latex2png-FindRoot_106921330_-5.gif" alt="$p\equiv 5\pmod{8}$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">有<img src="latex/latex2png-FindRoot_99307302_-5.gif" alt="$2^{(p-1)/2}\equiv -1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="164" height="20">,于是命<img src="latex/latex2png-FindRoot_267057270_-5.gif" alt="$x\equiv 2a(4a)^{(p-5)/8}\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="191" height="20">.</p>
+
+<p>对于一般情况,我们可以尝试有限域上的因子分解算法.Schoof提出了一种非概率性的方法,并且是多项式时间的算法,因为它要利用椭圆曲线,过程过于复杂,所以我们介绍另一种概率性的Tonelli <img src="latex/latex2png-FindRoot_166229010_-1.gif" alt="$\&$" class="latex-inline" style="vertical-align: -1px" width="12" height="13"> Shanks算法.</p>
+
+<p>首先我们可以将<img src="latex/latex2png-FindRoot_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">中的2的幂次分离出来,即<img src="latex/latex2png-FindRoot_3134497_-4.gif" alt="$\exists e,q$" class="latex-inline" style="vertical-align: -4px" width="31" height="16">,<img src="latex/latex2png-FindRoot_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是奇数,<img src="latex/latex2png-FindRoot_41907218_0.gif" alt="$e$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">是自然数使得<img src="latex/latex2png-FindRoot_38020194_-4.gif" alt="$p-1=2^eq$" class="latex-inline" style="vertical-align: -4px" width="84" height="15">.因为乘法群<img src="latex/latex2png-FindRoot_80638932_-7.gif" alt="$\field{p}^*$" class="latex-inline" style="vertical-align: -7px" width="17" height="19">与加群<img src="latex/latex2png-FindRoot_83799746_-5.gif" alt="$\mathbb{Z}/(p-1)\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,则其2-Sylow子群<img src="latex/latex2png-FindRoot_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">是一个<img src="latex/latex2png-FindRoot_132156396_0.gif" alt="$2^e$" class="latex-inline" style="vertical-align: 0px" width="14" height="11">阶的循环群,设<img src="latex/latex2png-FindRoot_43283474_0.gif" alt="$z$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">是<img src="latex/latex2png-FindRoot_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">的生成元,则<img src="latex/latex2png-FindRoot_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">中平方数的阶整除<img src="latex/latex2png-FindRoot_6941769_0.gif" alt="$2^{e-1}$" class="latex-inline" style="vertical-align: 0px" width="30" height="14">且是<img src="latex/latex2png-FindRoot_43283474_0.gif" alt="$z$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的偶数次幂.</p>
+
+<p>当<img src="latex/latex2png-FindRoot_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">是模<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">中的二次剩余时,我们有<img src="latex/latex2png-FindRoot_75018895_-5.gif" alt="$a^{(p-1)/2}=(a^q)^{(2^{e-1})}\equiv 1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="242" height="22">,于是<img src="latex/latex2png-FindRoot_255681571_-4.gif" alt="$b=a^q\bmod p$" class="latex-inline" style="vertical-align: -4px" width="94" height="16">是<img src="latex/latex2png-FindRoot_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">中的平方数,故存在偶数<img src="latex/latex2png-FindRoot_133993721_-5.gif" alt="$k(0\le k<2^e)$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">使得<img src="latex/latex2png-FindRoot_120284922_0.gif" alt="$a^qz^k=1$" class="latex-inline" style="vertical-align: 0px" width="62" height="14">.此时若令
+<img src="latex/latex2png-FindRoot_219294991_.gif" alt="$$x=a^{(q+1)/2}z^{k/2},$$" class="latex-display" width="580" height="20">
+则有<img src="latex/latex2png-FindRoot_227717206_-5.gif" alt="$x^2=a^{q+1}z^k\equiv a\pmod {p}$" class="latex-inline" style="vertical-align: -5px" width="184" height="19">.</p>
+
+<p>下面给出求平方根的算法:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法3<a name="al:shanks"></a></span><span class="theorem-name">(Shanks算法)</span><span class="cite"><a class="cite" href="FindRoot.html#ref-5" name="cite-5">[5]</a></span>
+输入:奇素数<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">,<img src="latex/latex2png-FindRoot_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">,以及<img src="latex/latex2png-FindRoot_750612_-4.gif" alt="$e,q$" class="latex-inline" style="vertical-align: -4px" width="23" height="12">使得<img src="latex/latex2png-FindRoot_38020194_-4.gif" alt="$p-1=2^eq$" class="latex-inline" style="vertical-align: -4px" width="84" height="15">,<img src="latex/latex2png-FindRoot_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是奇数,
+
+<p>输出:<img src="latex/latex2png-FindRoot_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">使得<img src="latex/latex2png-FindRoot_237929105_-5.gif" alt="$x^2\equiv a\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="112" height="19">,或者不存在.</p>
+
+<ol>
+<li>随机任取<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">使得<img src="latex/latex2png-FindRoot_160741612_-16.gif" alt="$\genfrac{(}{)}{}{0}{n}{p}=-1$" class="latex-inline" style="vertical-align: -16px" width="74" height="40">,令<img src="latex/latex2png-FindRoot_267557851_-4.gif" alt="$z=n^q\bmod p$" class="latex-inline" style="vertical-align: -4px" width="97" height="16">,</li>
+
+<li>令<img src="latex/latex2png-FindRoot_182160364_-4.gif" alt="$y=z$" class="latex-inline" style="vertical-align: -4px" width="39" height="12">,<img src="latex/latex2png-FindRoot_235893780_0.gif" alt="$r=e$" class="latex-inline" style="vertical-align: 0px" width="37" height="8">,<img src="latex/latex2png-FindRoot_548205_-4.gif" alt="$x=a^{(q-1)/2} \bmod p$" class="latex-inline" style="vertical-align: -4px" width="138" height="19">,<img src="latex/latex2png-FindRoot_195101732_-4.gif" alt="$b=ax^2 \bmod p$" class="latex-inline" style="vertical-align: -4px" width="104" height="18">,<img src="latex/latex2png-FindRoot_39375870_-4.gif" alt="$x=ax\bmod p$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_91323762_-5.gif" alt="$b\equiv 1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">,则输出<img src="latex/latex2png-FindRoot_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">并终止,否则找到最小的<img src="latex/latex2png-FindRoot_255040706_-3.gif" alt="$m\ge 1$" class="latex-inline" style="vertical-align: -3px" width="44" height="14">使得<img src="latex/latex2png-FindRoot_88341820_-5.gif" alt="$b^{2^m}\equiv 1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="120" height="20">,若<img src="latex/latex2png-FindRoot_152859668_0.gif" alt="$m=r$" class="latex-inline" style="vertical-align: 0px" width="44" height="8">,则输出<img src="latex/latex2png-FindRoot_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">非二次剩余并终止,</li>
+
+<li>令<img src="latex/latex2png-FindRoot_35488975_-4.gif" alt="$t=y^{2^{r-m-1}}\bmod p$" class="latex-inline" style="vertical-align: -4px" width="134" height="21">,<img src="latex/latex2png-FindRoot_7074853_-4.gif" alt="$y=t^2\bmod p$" class="latex-inline" style="vertical-align: -4px" width="93" height="18">,<img src="latex/latex2png-FindRoot_148102149_-4.gif" alt="$r=m\bmod p$" class="latex-inline" style="vertical-align: -4px" width="94" height="16">,<img src="latex/latex2png-FindRoot_40866814_-4.gif" alt="$x=xt\bmod p$" class="latex-inline" style="vertical-align: -4px" width="96" height="16">,<img src="latex/latex2png-FindRoot_207217662_-4.gif" alt="$b=by\bmod p$" class="latex-inline" style="vertical-align: -4px" width="94" height="16">,并转3步.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注5<a name=""></a></span><span class="theorem-name"></span>
+算法第1步是用随机算法求<img src="latex/latex2png-FindRoot_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">的生成元<img src="latex/latex2png-FindRoot_43283474_0.gif" alt="$z$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">.可以看出<img src="latex/latex2png-FindRoot_43283474_0.gif" alt="$z$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">是生成元当且仅当<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">非模<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">二次剩余.(等价于<img src="latex/latex2png-FindRoot_150394349_-5.gif" alt="$z^{2^{e-1}}\equiv -1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="145" height="22">)
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注6<a name=""></a></span><span class="theorem-name"></span>
+显式地找<img src="latex/latex2png-FindRoot_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是困难的,因此Shanks提出了上面的算法.注意到在算法开始时我们有下面的等式成立:
+<img src="latex/latex2png-FindRoot_19601879_.gif" alt="$$ab=x^2,\quad y^{2^{r-1}}=-1,\quad b^{2^{r-1}}=1.$$" class="latex-display" width="580" height="22">
+记<img src="latex/latex2png-FindRoot_222065684_-2.gif" alt="$G_r$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">是群<img src="latex/latex2png-FindRoot_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">中阶整除<img src="latex/latex2png-FindRoot_131304428_0.gif" alt="$2^r$" class="latex-inline" style="vertical-align: 0px" width="14" height="11">的元素组成的子群,则<img src="latex/latex2png-FindRoot_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是<img src="latex/latex2png-FindRoot_222065684_-2.gif" alt="$G_r$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">的生成元且<img src="latex/latex2png-FindRoot_255868543_-2.gif" alt="$b\in G_{r-1}$" class="latex-inline" style="vertical-align: -2px" width="63" height="14">,因此<img src="latex/latex2png-FindRoot_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">是群<img src="latex/latex2png-FindRoot_222065684_-2.gif" alt="$G_r$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">中的二次剩余.
+
+<p>显然每次循环之后,<img src="latex/latex2png-FindRoot_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">都会严格地减小.设某次循环前各量用下标0表示,循环后各量用下标1表示,则<img src="latex/latex2png-FindRoot_53410318_-5.gif" alt="$b_1=b_0y_0^{2^{r-m}}$" class="latex-inline" style="vertical-align: -5px" width="91" height="20">,<img src="latex/latex2png-FindRoot_260927922_-5.gif" alt="$x_1=x_0y_0^{2^{r-m-1}}$" class="latex-inline" style="vertical-align: -5px" width="110" height="22">,<img src="latex/latex2png-FindRoot_58006710_-5.gif" alt="$y_1=y_0^{2^{r-m}}$" class="latex-inline" style="vertical-align: -5px" width="77" height="20">,于是
+<img src="latex/latex2png-FindRoot_117622156_.gif" alt="$$ab_1=ab_0y_0^{2^{r-m}}=x_0^2y_0^{2^{r-m}}=x_1^2,$$" class="latex-display" width="580" height="21">
+<img src="latex/latex2png-FindRoot_120965912_.gif" alt="$$y_1^{2^{m-1}}=y_0^{2^{r-1}}=-1,$$" class="latex-display" width="580" height="23">
+<img src="latex/latex2png-FindRoot_87546773_.gif" alt="$$b_1^{2^{m-1}}=b_0^{2^{m-1}}y_0^{2^{r-1}}=(-1)(-1)=1,$$" class="latex-display" width="580" height="23">
+即由数学归纳法可证每次循环后上面三个等式均成立.当<img src="latex/latex2png-FindRoot_13394670_-3.gif" alt="$r\le 1$" class="latex-inline" style="vertical-align: -3px" width="37" height="14">时,我们有<img src="latex/latex2png-FindRoot_33328108_0.gif" alt="$b=1$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">,于是算法是可终止的.</p>
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例1<a name=""></a></span><span class="theorem-name"></span>
+求<img src="latex/latex2png-FindRoot_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">使<img src="latex/latex2png-FindRoot_253091399_-5.gif" alt="$x^2\equiv 10\pmod{13}$" class="latex-inline" style="vertical-align: -5px" width="128" height="19">.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+<img src="latex/latex2png-FindRoot_88976306_-1.gif" alt="$13=2^2\times 3$" class="latex-inline" style="vertical-align: -1px" width="82" height="15">,故<img src="latex/latex2png-FindRoot_218625303_-4.gif" alt="$e=2,q=3$" class="latex-inline" style="vertical-align: -4px" width="84" height="15">.取<img src="latex/latex2png-FindRoot_168064020_0.gif" alt="$n=2$" class="latex-inline" style="vertical-align: 0px" width="40" height="11">,则<img src="latex/latex2png-FindRoot_160652634_-16.gif" alt="$\genfrac{(}{)}{}{0}{2}{13}=-1$" class="latex-inline" style="vertical-align: -16px" width="80" height="40">,<img src="latex/latex2png-FindRoot_763133_-1.gif" alt="$z=2^3\bmod 13=8$" class="latex-inline" style="vertical-align: -1px" width="134" height="15">.
+
+<p>首先<img src="latex/latex2png-FindRoot_183864300_-4.gif" alt="$y=8$" class="latex-inline" style="vertical-align: -4px" width="39" height="15">,<img src="latex/latex2png-FindRoot_235172884_0.gif" alt="$r=2$" class="latex-inline" style="vertical-align: 0px" width="38" height="11">,<img src="latex/latex2png-FindRoot_31431983_-1.gif" alt="$x=10^{(3-1)/2}\bmod 13=10$" class="latex-inline" style="vertical-align: -1px" width="192" height="16">,<img src="latex/latex2png-FindRoot_248800072_-1.gif" alt="$b=10\times 10^2\bmod 13=12$" class="latex-inline" style="vertical-align: -1px" width="186" height="15">,<img src="latex/latex2png-FindRoot_236074188_-1.gif" alt="$x=10\times 10\bmod 13=9$" class="latex-inline" style="vertical-align: -1px" width="173" height="13">.</p>
+
+<p>因为<img src="latex/latex2png-FindRoot_80350180_-4.gif" alt="$b\neq 1$" class="latex-inline" style="vertical-align: -4px" width="36" height="16">,且使<img src="latex/latex2png-FindRoot_193178260_0.gif" alt="$b^{2^m}=1$" class="latex-inline" style="vertical-align: 0px" width="55" height="15">的最小的<img src="latex/latex2png-FindRoot_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">为<img src="latex/latex2png-FindRoot_151221268_0.gif" alt="$m=1$" class="latex-inline" style="vertical-align: 0px" width="44" height="11">,故<img src="latex/latex2png-FindRoot_134340302_-1.gif" alt="$t=8^{2^{2-1-1}}\bmod 13=8$" class="latex-inline" style="vertical-align: -1px" width="167" height="18">,<img src="latex/latex2png-FindRoot_262704345_-4.gif" alt="$y=8^2\bmod 13=12$" class="latex-inline" style="vertical-align: -4px" width="142" height="18">,<img src="latex/latex2png-FindRoot_235107348_0.gif" alt="$r=1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">,<img src="latex/latex2png-FindRoot_199726426_-1.gif" alt="$x=9\times 8\bmod 13=7$" class="latex-inline" style="vertical-align: -1px" width="156" height="13">,<img src="latex/latex2png-FindRoot_267772211_-1.gif" alt="$b=12\times 12\bmod 13=1$" class="latex-inline" style="vertical-align: -1px" width="170" height="13">.故此时输出<img src="latex/latex2png-FindRoot_200707052_-1.gif" alt="$x=7$" class="latex-inline" style="vertical-align: -1px" width="40" height="13">.</p>
+
+
+</div>
+
+
+<h3><a name="sec11" id="sec11"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>模<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">代数方程求解</h3>
+
+<p><span class="cite"><a class="cite" href="FindRoot.html#ref-5" name="cite-5">[5]</a></span>中提供了求解模<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">下代数方程的方法.实际上在域中解多项式方程时,可以看作是求多项式的因子分解问题.而在有限域上,因子分解算法本身是简单的（见有限域上因子分解有关章节,事实上当时也已提出了一个<img src="latex/latex2png-FindRoot_68858419_-5.gif" alt="$\mathbb{F}_p$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">代数方程求根算法）,因此我们期望用因子分解的算法来求根.事实上我们将看到<span class="cite"><a class="cite" href="FindRoot.html#ref-5" name="cite-5">[5]</a></span>中提供的求根算法就是有限域因子分解算法.</p>
+
+<p>下面我们给出算法,再对算法中的每一步进行分析.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法4<a name=""></a></span><span class="theorem-name">(模<img src="latex/latex2png-FindRoot_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">代数方程求根算法)</span>
+输入:素数<img src="latex/latex2png-FindRoot_255171826_-4.gif" alt="$p\ge 3$" class="latex-inline" style="vertical-align: -4px" width="39" height="15">,<img src="latex/latex2png-FindRoot_220645909_-5.gif" alt="$f\in\field{p}[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,
+
+<p>输出:<img src="latex/latex2png-FindRoot_92825302_-5.gif" alt="$\field{p}$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">中<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根.</p>
+
+<ol>
+<li>求<img src="latex/latex2png-FindRoot_17081868_-5.gif" alt="$g=\gcd(x^p-x,f)$" class="latex-inline" style="vertical-align: -5px" width="131" height="18">,若<img src="latex/latex2png-FindRoot_218274861_-5.gif" alt="$g(0)=0$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">,输出<img src="latex/latex2png-FindRoot_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">并令<img src="latex/latex2png-FindRoot_230525291_-5.gif" alt="$g=g/x$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_53244963_-4.gif" alt="$\deg g=0$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">,则结束,若<img src="latex/latex2png-FindRoot_53310499_-4.gif" alt="$\deg g=1$" class="latex-inline" style="vertical-align: -4px" width="66" height="16">,即<img src="latex/latex2png-FindRoot_44841355_-4.gif" alt="$g=g_1x+g_0$" class="latex-inline" style="vertical-align: -4px" width="90" height="14">,则输出<img src="latex/latex2png-FindRoot_179664587_-5.gif" alt="$-g_0/g_1$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">并终止,若<img src="latex/latex2png-FindRoot_53376035_-4.gif" alt="$\deg g=2$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">,<img src="latex/latex2png-FindRoot_118170724_-4.gif" alt="$g=g_2x^2+g_1x+g_0$" class="latex-inline" style="vertical-align: -4px" width="142" height="18">,则令<img src="latex/latex2png-FindRoot_205257849_-4.gif" alt="$d=g_1^2-4g_0g_2$" class="latex-inline" style="vertical-align: -4px" width="105" height="18">,计算<img src="latex/latex2png-FindRoot_13990927_-2.gif" alt="$e=\sqrt{d}$" class="latex-inline" style="vertical-align: -2px" width="53" height="17">,输出<img src="latex/latex2png-FindRoot_66243805_-15.gif" alt="$\displaystyle\frac{-g_1\pm e}{2g_2}$" class="latex-inline" style="vertical-align: -15px" width="57" height="37">并终止,</li>
+
+<li>随机取<img src="latex/latex2png-FindRoot_40395863_-5.gif" alt="$a\in\field{p}$" class="latex-inline" style="vertical-align: -5px" width="46" height="17">,<img src="latex/latex2png-FindRoot_260839930_-5.gif" alt="$h(x)=\gcd((x+a)^{(p-1)/2}-1,g)$" class="latex-inline" style="vertical-align: -5px" width="235" height="20">,若<img src="latex/latex2png-FindRoot_70022179_-4.gif" alt="$\deg h=0$" class="latex-inline" style="vertical-align: -4px" width="68" height="16">或<img src="latex/latex2png-FindRoot_229262926_-4.gif" alt="$\deg h=\deg g$" class="latex-inline" style="vertical-align: -4px" width="96" height="16">,则重做此步,</li>
+
+<li>递归调用本算法输出<img src="latex/latex2png-FindRoot_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">和<img src="latex/latex2png-FindRoot_64195564_-5.gif" alt="$a/b$" class="latex-inline" style="vertical-align: -5px" width="24" height="18">的根,注意调用时不必再执行第1步.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注7<a name=""></a></span><span class="theorem-name"></span>
+第1步实际上是将<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">中一次不可约因子的乘积提取出来,只考虑在<img src="latex/latex2png-FindRoot_92825302_-5.gif" alt="$\field{p}$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">中的根,并且将0根做了预处理,从而从<img src="latex/latex2png-FindRoot_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">中排除掉.
+
+<p>第2步是进行一些平凡的处理,即对于一次和二次的<img src="latex/latex2png-FindRoot_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">直接由代数运算或求根公式求得其根.</p>
+
+<p>第3步实际上是同次因子分解算法.只不过这里随机取的多项式是<img src="latex/latex2png-FindRoot_219450348_-2.gif" alt="$x+a$" class="latex-inline" style="vertical-align: -2px" width="38" height="12">,<span class="cite"><a class="cite" href="FindRoot.html#ref-5" name="cite-5">[5]</a></span>中的解释是一次因子的幂次计算起来要容易一些.</p>
+
+
+</div>
+<div class="remark">
+<span class="proof-header">注8<a name=""></a></span><span class="theorem-name"></span>
+该算法与同次因子分解算法不同之处再于对于二次多项式有一个直接处理过程,而不必再通过概率算法分解为两个一次因子.
+
+
+</div>
+
+
+
+<h2><a name="sec12" id="sec12"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>分圆多项式(Cyclotomic polynomial)</h2>
+
+<p class="first">本章之前所介绍的各种一元多项式求根算法均是数值算法(有限域上求根除外),而下面要介绍的分圆多项式,对于多项式根的精确求解是有帮助的.</p>
+
+<h3><a name="sec13" id="sec13"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>分圆多项式的定义及生成</h3>
+
+<div class="definition">
+<span class="theorem-header">定义6<a name=""></a></span><span class="theorem-name"></span>
+定义多项式<img src="latex/latex2png-FindRoot_170799742_.gif" alt="$$\Phi_n=\prod_{\substack{1\le k<n\\ \gcd(k,n)=1}}(x-e^{2\pi ik/n})$$" class="latex-display" width="580" height="52">为<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶分圆多项式(<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">th cyclotomic polynomial).
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理9<a name=""></a></span><span class="theorem-name"></span>
+分圆多项式都是整系数不可约多项式(见<span class="cite"><a class="cite" href="FindRoot.html#ref-6" name="cite-6">[6]</a></span>P224-227).
+
+
+</div>
+
+<p>很容易看出,<img src="latex/latex2png-FindRoot_121151014_-2.gif" alt="$\Phi_n$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">的次数为<img src="latex/latex2png-FindRoot_57797418_-5.gif" alt="$\phi(n)$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">,<img src="latex/latex2png-FindRoot_205747260_-4.gif" alt="$\phi$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">为Euler函数.分圆多项式与<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位根有很大的联系,我们同时有下面的引理.</p>
+
+<div class="lemma">
+<span class="theorem-header">引理2<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-FindRoot_250860801_-24.gif" alt="$\displaystyle x^n-1=\prod_{d|n}\Phi_d$" class="latex-inline" style="vertical-align: -24px" width="112" height="41">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+不妨设<img src="latex/latex2png-FindRoot_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为一<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位根,其阶为<img src="latex/latex2png-FindRoot_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,显然<img src="latex/latex2png-FindRoot_25719828_-5.gif" alt="$d|n$" class="latex-inline" style="vertical-align: -5px" width="24" height="18">,并且<img src="latex/latex2png-FindRoot_202260843_-5.gif" alt="$\Phi_d(\omega)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">.由此可以知道欲证等式两端有相同的根.再由两端均是无平方因子多项式且首一,故等式成立.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>引理的等式可以写为<img src="latex/latex2png-FindRoot_247238947_-8.gif" alt="$\ln(x^n-1)=\sum_{d|n}\ln\Phi_d$" class="latex-inline" style="vertical-align: -8px" width="172" height="21">,由Mobius反演变换可得<img src="latex/latex2png-FindRoot_195945163_-8.gif" alt="$\ln\Phi_n=\sum_{d|n}\mu(n/d)\ln(x^d-1)$" class="latex-inline" style="vertical-align: -8px" width="223" height="22">,即<img src="latex/latex2png-FindRoot_138998991_.gif" alt="$$\Phi_n=\prod_{d|n}(x^d-1)^{\mu(n/d)}.$$" class="latex-display" width="580" height="40"></p>
+
+<div class="corollary">
+<span class="theorem-header">推论2<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-FindRoot_28848216_-24.gif" alt="$\displaystyle\Phi_n=\prod_{d|n}(x^d-1)^{\mu(n/d)}$" class="latex-inline" style="vertical-align: -24px" width="161" height="41">.
+
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理3<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-FindRoot_151352340_-4.gif" alt="$n,k$" class="latex-inline" style="vertical-align: -4px" width="26" height="16">是正整数,我们有:
+
+<ol>
+<li>若<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是素数,则<img src="latex/latex2png-FindRoot_155891361_-2.gif" alt="$\Phi_n=x^{n-1}+x^{n-2}+\cdots+x+1$" class="latex-inline" style="vertical-align: -2px" width="230" height="16">,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是奇数,则<img src="latex/latex2png-FindRoot_108592672_-5.gif" alt="$\Phi_{2n}=\Phi_n(-x)$" class="latex-inline" style="vertical-align: -5px" width="103" height="18">,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_221405301_-5.gif" alt="$\gcd(k,n)=1$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,则<img src="latex/latex2png-FindRoot_267952979_-5.gif" alt="$\Phi_{kn}\Phi_n=\Phi_n(x^k)$" class="latex-inline" style="vertical-align: -5px" width="121" height="19">,</li>
+
+<li>若<img src="latex/latex2png-FindRoot_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的素因子均整除<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,则<img src="latex/latex2png-FindRoot_132881927_-5.gif" alt="$\Phi_{kn}=\Phi_n(x^k)$" class="latex-inline" style="vertical-align: -5px" width="100" height="19">.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+分条证明如下:
+
+<p>(1)当<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是素数时,由<img src="latex/latex2png-FindRoot_104353631_-5.gif" alt="$\phi(n)=n-1$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">即得.</p>
+
+<p>(2)可以验证<img src="latex/latex2png-FindRoot_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的阶是<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">当且仅当<img src="latex/latex2png-FindRoot_248649955_0.gif" alt="$-\omega$" class="latex-inline" style="vertical-align: 0px" width="22" height="8">的阶是<img src="latex/latex2png-FindRoot_124285970_0.gif" alt="$2n$" class="latex-inline" style="vertical-align: 0px" width="18" height="11">.</p>
+
+<p>(3)(<span class="cite"><a class="cite" href="FindRoot.html#ref-7" name="cite-7">[7]</a></span>Exercise 14.45解答)当<img src="latex/latex2png-FindRoot_221405301_-5.gif" alt="$\gcd(k,n)=1$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">时有<img src="latex/latex2png-FindRoot_198914492_-5.gif" alt="$\phi(kn)=\phi(k)\phi(n)=(k-1)\phi(n)$" class="latex-inline" style="vertical-align: -5px" width="232" height="18">(假设<img src="latex/latex2png-FindRoot_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是一素数).若<img src="latex/latex2png-FindRoot_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的阶是<img src="latex/latex2png-FindRoot_142111762_0.gif" alt="$kn$" class="latex-inline" style="vertical-align: 0px" width="19" height="12">,则<img src="latex/latex2png-FindRoot_256868259_0.gif" alt="$\omega^k$" class="latex-inline" style="vertical-align: 0px" width="18" height="14">的阶是<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">.同样地若<img src="latex/latex2png-FindRoot_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的阶是<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,则<img src="latex/latex2png-FindRoot_256868259_0.gif" alt="$\omega^k$" class="latex-inline" style="vertical-align: 0px" width="18" height="14">的阶也是<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,因此由二者均无平方因子,次数相同且首一可知等号成立.</p>
+
+<p>(4)由条件可知<img src="latex/latex2png-FindRoot_134362862_-5.gif" alt="$\phi(kn)=k\phi(n)$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">.若<img src="latex/latex2png-FindRoot_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的阶是<img src="latex/latex2png-FindRoot_142111762_0.gif" alt="$kn$" class="latex-inline" style="vertical-align: 0px" width="19" height="12">,可得<img src="latex/latex2png-FindRoot_256868259_0.gif" alt="$\omega^k$" class="latex-inline" style="vertical-align: 0px" width="18" height="14">的阶是<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">.同样由二者均无平方因子,次数相同且首一可知等号成立.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>引理表明各分圆多项式实际上都是整系数的,并且我们可以构造如下生成分圆多项式的算法(<span class="cite"><a class="cite" href="FindRoot.html#ref-7" name="cite-7">[7]</a></span>):</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法5<a name=""></a></span><span class="theorem-name">(分圆多项式的生成算法)</span>
+
+<p>输入:正整数<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">和它的互不相同的素因子<img src="latex/latex2png-FindRoot_263935742_-4.gif" alt="$p_1,\ldots,p_r$" class="latex-inline" style="vertical-align: -4px" width="68" height="12">,</p>
+
+<p>输出:<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶分圆多项式<img src="latex/latex2png-FindRoot_121151014_-2.gif" alt="$\Phi_n$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">.</p>
+
+<ol>
+<li><img src="latex/latex2png-FindRoot_50722870_-4.gif" alt="$f_0=x-1$" class="latex-inline" style="vertical-align: -4px" width="74" height="16">,</li>
+
+<li>对<img src="latex/latex2png-FindRoot_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">从<img src="latex/latex2png-FindRoot_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">循环到<img src="latex/latex2png-FindRoot_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">,做<img src="latex/latex2png-FindRoot_133849392_-15.gif" alt="$f_i=\displaystyle\frac{f_{i-1}(x^{p_i})}{f_{i-1}}$" class="latex-inline" style="vertical-align: -15px" width="103" height="39">,</li>
+
+<li>输出<img src="latex/latex2png-FindRoot_171468171_-5.gif" alt="$f_r(x^{n/(p_1p_2\cdots p_r)})$" class="latex-inline" style="vertical-align: -5px" width="114" height="20">.</li>
+</ol>
+
+
+</div>
+
+
+<h3><a name="sec14" id="sec14"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>分圆多项式的检测</h3>
+
+<p class="first">如果我们能有效地进行分圆多项式的检测,则对于一些多项式的精确求解是有帮助的.文献<span class="cite"><a class="cite" href="FindRoot.html#ref-8" name="cite-8">[8]</a></span>提出了两种有效的检测方法,并给出了有位移的分圆多项式(Shifted cyclotomic polynomial)的检测方法.下面介绍其中一个算法:Graeffe方法.下一节将介绍另一算法:Inverse <img src="latex/latex2png-FindRoot_205747260_-4.gif" alt="$\phi$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">方法.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法6<a name="al:graeffe1"></a></span><span class="theorem-name">(Graeffe过程)</span>
+输入:多项式<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,
+
+<p>输出:多项式<img src="latex/latex2png-FindRoot_7933764_-5.gif" alt="$f_1=\mathrm{graeffe}(f)$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">,其根的集合为<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根的平方的集合.</p>
+
+<ol>
+<li>将<img src="latex/latex2png-FindRoot_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">表达为奇偶两部分和的形式,即<img src="latex/latex2png-FindRoot_57297247_-5.gif" alt="$f(x)=g(x^2)+xh(x^2)$" class="latex-inline" style="vertical-align: -5px" width="160" height="19">,其中<img src="latex/latex2png-FindRoot_21732399_-5.gif" alt="$g(x^2)$" class="latex-inline" style="vertical-align: -5px" width="37" height="19">和<img src="latex/latex2png-FindRoot_21891135_-5.gif" alt="$xh(x^2)$" class="latex-inline" style="vertical-align: -5px" width="47" height="19">分别是<img src="latex/latex2png-FindRoot_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">的偶和奇函数部分,</li>
+
+<li>令<img src="latex/latex2png-FindRoot_33319904_-5.gif" alt="$f_1(x)=g(x)^2-xh(x)^2$" class="latex-inline" style="vertical-align: -5px" width="164" height="19">,</li>
+
+<li>乘以适当常数使<img src="latex/latex2png-FindRoot_84425753_-5.gif" alt="$\plc{f_1}$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">为正数并输出.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法有效性)</span>
+
+<p>设<img src="latex/latex2png-FindRoot_218274847_-5.gif" alt="$f(x)=0$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">,则<img src="latex/latex2png-FindRoot_196573237_-5.gif" alt="$f_1(x^2)=g(x^2)^2-x^2h(x^2)^2=(g(x^2)-xh(x^2))(g(x^2)+xh(x^2))=0$" class="latex-inline" style="vertical-align: -5px" width="490" height="19">.</p>
+
+<p>设<img src="latex/latex2png-FindRoot_180047501_-5.gif" alt="$f_1(x^2)=0$" class="latex-inline" style="vertical-align: -5px" width="75" height="19">,则我们有<img src="latex/latex2png-FindRoot_112279852_-5.gif" alt="$g(x^2)-xh(x^2)=0$" class="latex-inline" style="vertical-align: -5px" width="138" height="19">或<img src="latex/latex2png-FindRoot_114377004_-5.gif" alt="$g(x^2)+xh(x^2)=0$" class="latex-inline" style="vertical-align: -5px" width="138" height="19">,无论哪种情形,均有<img src="latex/latex2png-FindRoot_218274847_-5.gif" alt="$f(x)=0$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">或<img src="latex/latex2png-FindRoot_218428612_-5.gif" alt="$f(-x)=0$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">.</p>
+
+<p>由证明过程还可以看出,这两者之间是一一对应的.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法7<a name="al:graeffe2"></a></span><span class="theorem-name">(Graeffe检测方法)</span>
+输入:不可约多项式<img src="latex/latex2png-FindRoot_15161698_-5.gif" alt="$f\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">,
+
+<p>输出:<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是否是分圆多项式.</p>
+
+<p>设<img src="latex/latex2png-FindRoot_7933764_-5.gif" alt="$f_1=\mathrm{graeffe}(f)$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">,则:</p>
+
+<ol>
+<li>若<img src="latex/latex2png-FindRoot_246462747_-5.gif" alt="$f_1(x)=f(x)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,则<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是分圆多项式.</li>
+
+<li>若<img src="latex/latex2png-FindRoot_194469558_-5.gif" alt="$f_1(x)=f(-x)$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">,且<img src="latex/latex2png-FindRoot_232032622_-5.gif" alt="$f(-x)$" class="latex-inline" style="vertical-align: -5px" width="42" height="18">是分圆多项式,则<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是分圆多项式.</li>
+
+<li>若<img src="latex/latex2png-FindRoot_177772838_-4.gif" alt="$f_1=f_2^2$" class="latex-inline" style="vertical-align: -4px" width="53" height="18">,其中<img src="latex/latex2png-FindRoot_69497876_-4.gif" alt="$f_2$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">是分圆多项式,则<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是分圆多项式.</li>
+
+<li>对于其它情况,<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">均不是分圆多项式.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法有效性)</span>
+
+<p>(1)任取<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个根<img src="latex/latex2png-FindRoot_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,由<img src="latex/latex2png-FindRoot_84965014_-4.gif" alt="$f_1=f$" class="latex-inline" style="vertical-align: -4px" width="46" height="16">可知<img src="latex/latex2png-FindRoot_58444099_-4.gif" alt="$\alpha^2,\alpha^4,\ldots,\alpha^{2^k},\cdots$" class="latex-inline" style="vertical-align: -4px" width="131" height="21">均是<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根,故必存在<img src="latex/latex2png-FindRoot_255040674_-3.gif" alt="$k\ge 1$" class="latex-inline" style="vertical-align: -3px" width="38" height="15">使得<img src="latex/latex2png-FindRoot_251592623_0.gif" alt="$\alpha^k=1$" class="latex-inline" style="vertical-align: 0px" width="48" height="14">.再由<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不可约性可知<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是以<img src="latex/latex2png-FindRoot_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为一本原单位根生成的分圆多项式.</p>
+
+<p>(2)若<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是奇数,则<img src="latex/latex2png-FindRoot_115934067_-5.gif" alt="$(-x)^n-1=-(x^n+1)|(x^{2n}-1)$" class="latex-inline" style="vertical-align: -5px" width="237" height="19">,否则<img src="latex/latex2png-FindRoot_103862272_-5.gif" alt="$(-x)^n-1=x^n-1|(x^{2n}-1)$" class="latex-inline" style="vertical-align: -5px" width="211" height="19">,无论哪种情况均可由<img src="latex/latex2png-FindRoot_232032622_-5.gif" alt="$f(-x)$" class="latex-inline" style="vertical-align: -5px" width="42" height="18">是分圆多项式得到<img src="latex/latex2png-FindRoot_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">是分圆多项式.</p>
+
+<p>(3)此时<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根是一个分圆多项式根的平方根,且<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">不可约,因此<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">也是分圆多项式.</p>
+
+<p>(4)反过来我们设<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是一个分圆多项式,设<img src="latex/latex2png-FindRoot_151386024_-5.gif" alt="$f|x^n-1$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">,若<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是奇数,则将2乘到<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的简化剩余系上仍然是一个简化剩余系,即<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根的平方均列出了<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根,因此<img src="latex/latex2png-FindRoot_84965014_-4.gif" alt="$f_1=f$" class="latex-inline" style="vertical-align: -4px" width="46" height="16">.若<img src="latex/latex2png-FindRoot_7042106_-4.gif" alt="$n=2q$" class="latex-inline" style="vertical-align: -4px" width="48" height="15">,<img src="latex/latex2png-FindRoot_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是奇数,则<img src="latex/latex2png-FindRoot_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">的根是<img src="latex/latex2png-FindRoot_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">次的本原单位根,故其相反数是<img src="latex/latex2png-FindRoot_7042106_-4.gif" alt="$n=2q$" class="latex-inline" style="vertical-align: -4px" width="48" height="15">次本原单位根.若<img src="latex/latex2png-FindRoot_108497900_-5.gif" alt="$4|n$" class="latex-inline" style="vertical-align: -5px" width="23" height="18">,由于<img src="latex/latex2png-FindRoot_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">的根均是<img src="latex/latex2png-FindRoot_153383956_-5.gif" alt="$n/2$" class="latex-inline" style="vertical-align: -5px" width="26" height="18">次本原单位根,但是<img src="latex/latex2png-FindRoot_213085922_-5.gif" alt="$\phi(n)=2\phi(n/4)=2\phi(n/2)$" class="latex-inline" style="vertical-align: -5px" width="190" height="18">,每个根均出现2次,因而是一分圆多项式的平方.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注9<a name=""></a></span><span class="theorem-name"></span>
+对Graeffe检测方法我们这里尚需说明一点,由于Graeffe过程产生的多项式<img src="latex/latex2png-FindRoot_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">其首项系数为正,故在算法前3步三个判断中我们需使相应的多项式首项系数也为正.即第1步中的<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,第二步中的<img src="latex/latex2png-FindRoot_232032622_-5.gif" alt="$f(-x)$" class="latex-inline" style="vertical-align: -5px" width="42" height="18">和第3步中的<img src="latex/latex2png-FindRoot_69497876_-4.gif" alt="$f_2$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">.
+
+
+</div>
+
+
+<p>下面我们举例说明算法.</p>
+
+<div class="problem">
+<span class="proof-header">例2<a name=""></a></span><span class="theorem-name"></span>
+考虑<img src="latex/latex2png-FindRoot_241785253_-4.gif" alt="$f=x^8-x^7+x^5-x^4+x^3-x+1$" class="latex-inline" style="vertical-align: -4px" width="254" height="18">.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+由于<img src="latex/latex2png-FindRoot_180010861_-5.gif" alt="$f=x^8-x^4+1+x(-x^6+x^4+x^2-1)$" class="latex-inline" style="vertical-align: -5px" width="288" height="19">,则
+<img src="latex/latex2png-FindRoot_152732587_.gif" alt="$$f_1(x)=(x^4-x^2+1)^2-x(-x^3+x^2+x-1)^2=x^8-x^7+x^5-x^4+x^3-x+1=f(x),$$" class="latex-display" width="580" height="20">
+故<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是分圆多项式.事实上<img src="latex/latex2png-FindRoot_114866312_-4.gif" alt="$f=\Phi_{15}$" class="latex-inline" style="vertical-align: -4px" width="56" height="16">.
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例3<a name=""></a></span><span class="theorem-name"></span>
+我们再举一个例子,取<img src="latex/latex2png-FindRoot_267409824_-4.gif" alt="$f=x^8-x^6+x^4-x^2+1$" class="latex-inline" style="vertical-align: -4px" width="187" height="18">.
+<span class="example-end">◇</span>
+
+</div>
+<div class="solution">
+<span class="proof-header">解</span>
+<img src="latex/latex2png-FindRoot_100562439_.gif" alt="$$f_1(x)=(x^4-x^3+x^2-x+1)^2=f_2^2,$$" class="latex-display" width="580" height="20">
+而对于<img src="latex/latex2png-FindRoot_265114178_-5.gif" alt="$f_2=(x^4+x^2+1)+x(-x^2-1)$" class="latex-inline" style="vertical-align: -5px" width="232" height="19">,可得
+<img src="latex/latex2png-FindRoot_214241301_.gif" alt="$$f_3=(x^2+x+1)^2-x(-x-1)^2=x^4+x^3+x^2+x+1=f_2(-x)$$" class="latex-display" width="580" height="20">
+是分圆多项式,综上<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是分圆多项式.事实上<img src="latex/latex2png-FindRoot_126400648_-4.gif" alt="$f=\Phi_{20}$" class="latex-inline" style="vertical-align: -4px" width="56" height="16">.
+
+
+</div>
+
+
+<h3><a name="sec15" id="sec15"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Euler反函数(Inverse <img src="latex/latex2png-FindRoot_205747260_-4.gif" alt="$\phi$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">)方法</h3>
+
+<p class="first">细心的读者可能已经注意到只用上节所说的方法虽然能够检测出多项式是否为分圆多项式,但不能判断其阶数.如果是为了精确求解方程,那么我们仍需知道其阶数<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">.本节将要介绍的方法可以解决这一问题.</p>
+
+<p>Euler反函数方法本质上是简单的.假设<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是一<img src="latex/latex2png-FindRoot_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次不可约多项式,倘若其为<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶分圆多项式,那么我们有<img src="latex/latex2png-FindRoot_16014122_-5.gif" alt="$d=\phi(n)$" class="latex-inline" style="vertical-align: -5px" width="62" height="18">,且<img src="latex/latex2png-FindRoot_151386024_-5.gif" alt="$f|x^n-1$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">.因此一个比较朴素的想法就是列举可能的<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,再进行试除.为了列举所有可能的<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">值,我们给出对函数<img src="latex/latex2png-FindRoot_57797418_-5.gif" alt="$\phi(n)$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">的一个估计:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理10<a name=""></a></span><span class="theorem-name">(Euler函数的估计)</span>
+对于函数<img src="latex/latex2png-FindRoot_57797418_-5.gif" alt="$\phi(n)$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">,我们有如下估计(见<span class="cite"><a class="cite" href="FindRoot.html#ref-8" name="cite-8">[8]</a></span>P247):
+
+<ol>
+<li><img src="latex/latex2png-FindRoot_256418415_-5.gif" alt="$n\le 3\phi(n)^{3/2},\quad\forall n\ge 2$" class="latex-inline" style="vertical-align: -5px" width="167" height="20">,</li>
+
+<li>直接计算可得<img src="latex/latex2png-FindRoot_180621517_-5.gif" alt="$n\le 5\phi(n),\quad\forall n<3000$" class="latex-inline" style="vertical-align: -5px" width="171" height="18">.</li>
+</ol>
+
+
+</div>
+
+<p>除了利用试除法检测,我们还可以通过提升多项式根的幂次来检测.即对于<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶的分圆多项式,其根经过<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次幂后,必为<img src="latex/latex2png-FindRoot_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">.由上一小节的Graeffe过程我们可以知道,Graeffe多项式
+<img src="latex/latex2png-FindRoot_164636468_.gif" alt="$$f_1=\mathrm{graeffe}(f)$$" class="latex-display" width="580" height="18">
+的所有根恰为<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根的平方.事实上通过下面的定理,我们可以利用结式来计算<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶Graeffe多项式
+<img src="latex/latex2png-FindRoot_119065647_.gif" alt="$$f_1=\mathrm{graeffe}_n(f),$$" class="latex-display" width="580" height="18">
+使得其所有的根恰为<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根的<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次幂.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理11<a name="th:nthgraeffe"></a></span><span class="theorem-name">(n阶Graeffe多项式)</span>
+<img src="latex/latex2png-FindRoot_30922919_.gif" alt="$$\mathrm{graeffe}_n(f(x))=\mathrm{res}_y(f(y),y^n-x).$$" class="latex-display" width="580" height="19">
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例4<a name=""></a></span><span class="theorem-name"></span>
+仍然考虑<img src="latex/latex2png-FindRoot_241785253_-4.gif" alt="$f=x^8-x^7+x^5-x^4+x^3-x+1$" class="latex-inline" style="vertical-align: -4px" width="254" height="18">.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+<img src="latex/latex2png-FindRoot_168653859_-4.gif" alt="$d=\deg f=8$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,于是<img src="latex/latex2png-FindRoot_10163078_-1.gif" alt="$n<5 d=40$" class="latex-inline" style="vertical-align: -1px" width="87" height="13">,经检验发现<img src="latex/latex2png-FindRoot_264448138_-5.gif" alt="$f|x^{15}-1$" class="latex-inline" style="vertical-align: -5px" width="64" height="19">,因此<img src="latex/latex2png-FindRoot_114866312_-4.gif" alt="$f=\Phi_{15}$" class="latex-inline" style="vertical-align: -4px" width="56" height="16">.
+
+<p>如果不用试除法,则通过计算<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶Graeffe多项式可以知道
+<img src="latex/latex2png-FindRoot_74363440_.gif" alt="$$\mathrm{graeffe}_{15}(f)=(1-x)^8,$$" class="latex-display" width="580" height="20">
+于是也可得到<img src="latex/latex2png-FindRoot_114866312_-4.gif" alt="$f=\Phi_{15}$" class="latex-inline" style="vertical-align: -4px" width="56" height="16">.</p>
+
+
+</div>
+
+
+<h3><a name="sec16" id="sec16"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>位移分圆多项式(Shifted cyclotomic polynomials)检测</h3>
+
+<p class="first">设<img src="latex/latex2png-FindRoot_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">是一个分圆多项式,<img src="latex/latex2png-FindRoot_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">为一整数,则我们如何才能检测出如<img src="latex/latex2png-FindRoot_259759135_-5.gif" alt="$f(x+m)$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">的形式呢?</p>
+
+<p>首先我们注意到分圆多项式的常数项均为<img src="latex/latex2png-FindRoot_120813234_-1.gif" alt="$\pm 1$" class="latex-inline" style="vertical-align: -1px" width="19" height="12">,因此对于给定的任何一个整系数多项式<img src="latex/latex2png-FindRoot_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">,若要找到<img src="latex/latex2png-FindRoot_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">使<img src="latex/latex2png-FindRoot_259759135_-5.gif" alt="$f(x+m)$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">是分圆多项式,则必有<img src="latex/latex2png-FindRoot_255848770_-5.gif" alt="$f(m)=\pm 1$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">.因此我们要解一个方程<img src="latex/latex2png-FindRoot_170564389_-5.gif" alt="$f(x)\pm 1=0$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">的整数根.而求一整系数方程的整数根时,我们可以用有限域因子分解算法一章中提到的算法,也可以取<img src="latex/latex2png-FindRoot_162809602_-5.gif" alt="$f(x)\pm 1$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">的常系数的所有整数因子来尝试其是不是该方程的根.</p>
+
+<p>下面给出一个具体的例子来说明这一方法.</p>
+
+<div class="problem">
+<span class="proof-header">例5<a name=""></a></span><span class="theorem-name"></span>
+考虑<img src="latex/latex2png-FindRoot_187358070_-4.gif" alt="$f=x^8+16x^7+111x^6+436x^5+1061x^4+1640x^3+1575x^2+860+205$" class="latex-inline" style="vertical-align: -4px" width="527" height="18">.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+可以求出<img src="latex/latex2png-FindRoot_86671677_-5.gif" alt="$f(x)+1=0$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">无整根,而<img src="latex/latex2png-FindRoot_86671678_-5.gif" alt="$f(x)-1=0$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">有整根<img src="latex/latex2png-FindRoot_117666834_0.gif" alt="$-1$" class="latex-inline" style="vertical-align: 0px" width="19" height="11">,<img src="latex/latex2png-FindRoot_117732370_0.gif" alt="$-2$" class="latex-inline" style="vertical-align: 0px" width="20" height="11">,<img src="latex/latex2png-FindRoot_117797906_-1.gif" alt="$-3$" class="latex-inline" style="vertical-align: -1px" width="20" height="12">,其中将<img src="latex/latex2png-FindRoot_117732370_0.gif" alt="$-2$" class="latex-inline" style="vertical-align: 0px" width="20" height="11">代入可得
+<img src="latex/latex2png-FindRoot_131731313_.gif" alt="$$f(x-2)=x^8-x^6+x^4-x^2+1,$$" class="latex-display" width="580" height="20">
+正是分圆多项式<img src="latex/latex2png-FindRoot_133740678_-3.gif" alt="$\Phi_{20}$" class="latex-inline" style="vertical-align: -3px" width="24" height="15">.
+
+
+</div>
+
+
+
+<h2><a name="sec17" id="sec17"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>(一元)复合函数分解(Functional Decomposition)</h2>
+
+<h3><a name="sec18" id="sec18"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Functional Decomposition算法</h3>
+
+<p class="first">这一小节我们来处理一些复合函数分解的问题.函数复合我们已经很了解了,即对于两个多项式<img src="latex/latex2png-FindRoot_33715220_-4.gif" alt="$g,h$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">,我们可以求出它们的复合函数<img src="latex/latex2png-FindRoot_74724760_-5.gif" alt="$f=g\circ h=g(h)$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">.现在我们要考虑的是它的逆问题,即对于给定的<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,能不能找到这样的<img src="latex/latex2png-FindRoot_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">和<img src="latex/latex2png-FindRoot_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,以及如何找到他们.</p>
+
+<p>为什么要考虑这个问题呢?我们知道,对于代数方程精确求解来说,我们已知能精确求解的有低于4次的多项式以及前面所述的分圆多项式,事实上,某些高于4次的多项式,如<img src="latex/latex2png-FindRoot_91705930_.gif" alt="$$f=x^6+2x^3+1,$$" class="latex-display" width="580" height="19">也可以看作2次方程来精确求解,这里就要用到复合函数分解的算法,即<img src="latex/latex2png-FindRoot_90424328_-4.gif" alt="$f=g\circ h$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,其中<img src="latex/latex2png-FindRoot_82455200_-4.gif" alt="$g=x^2+2x+1$" class="latex-inline" style="vertical-align: -4px" width="113" height="18">,<img src="latex/latex2png-FindRoot_102069910_0.gif" alt="$h=x^3$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">.</p>
+
+<p>对于本算法所依赖的有关形式幂级数的算术,在本节后面几小节将会提到.</p>
+
+<p>本节内容可参考<span class="cite"><a class="cite" href="FindRoot.html#ref-9" name="cite-9">[9]</a></span>.</p>
+
+<p>我们来考虑一元情形.即对于一元<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-FindRoot_48462230_-5.gif" alt="$f\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">,对于<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的一个因子<img src="latex/latex2png-FindRoot_236090388_-1.gif" alt="$r>0$" class="latex-inline" style="vertical-align: -1px" width="38" height="12">,令<img src="latex/latex2png-FindRoot_113477983_-5.gif" alt="$s=n/r$" class="latex-inline" style="vertical-align: -5px" width="54" height="18">,我们要找到多项式<img src="latex/latex2png-FindRoot_40204697_-5.gif" alt="$g,h\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="76" height="18">使得它们的次数分别为<img src="latex/latex2png-FindRoot_218985492_-4.gif" alt="$r,s$" class="latex-inline" style="vertical-align: -4px" width="21" height="12">且<img src="latex/latex2png-FindRoot_74724760_-5.gif" alt="$f=g\circ h=g(h)$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">.我们这里考虑所谓非&quot;病态&quot;的情形(&quot;tame&quot; case, 见<span class="cite"><a class="cite" href="FindRoot.html#ref-9" name="cite-9">[9]</a></span>),即域<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的特征<img src="latex/latex2png-FindRoot_202018607_-5.gif" alt="$p=\mathrm{char}(F)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">不整除<img src="latex/latex2png-FindRoot_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">.</p>
+
+<p>我们有下面的关于复合函数分解的唯一性定理:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理12<a name="th:ritt"></a></span><span class="theorem-name">(Ritt第一定理)</span>
+完全分解(complete decomposition)<img src="latex/latex2png-FindRoot_83152031_-4.gif" alt="$f=f_1\circ f_2\circ \cdots\circ f_k$" class="latex-inline" style="vertical-align: -4px" width="144" height="16">(其中<img src="latex/latex2png-FindRoot_104704098_-4.gif" alt="$f_1,\ldots,f_k$" class="latex-inline" style="vertical-align: -4px" width="66" height="16">均为不可分解的),在不计以下变换的意义下是唯一的:
+
+<p><img src="latex/latex2png-FindRoot_155428212_-5.gif" alt="$\forall f\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="69" height="18">,<img src="latex/latex2png-FindRoot_97155399_-5.gif" alt="$c,d\in F(c\neq 0)$" class="latex-inline" style="vertical-align: -5px" width="105" height="18">,<img src="latex/latex2png-FindRoot_257770690_-4.gif" alt="$r,m\ge 2$" class="latex-inline" style="vertical-align: -4px" width="59" height="15">,</p>
+
+<ol>
+<li><img src="latex/latex2png-FindRoot_212913396_-5.gif" alt="$f\circ (cx+d)\circ ((x-d)/c)=f$" class="latex-inline" style="vertical-align: -5px" width="210" height="18">.</li>
+
+<li><img src="latex/latex2png-FindRoot_211733450_-5.gif" alt="$(x^m\cdot f^r)\circ x^r=x^r\circ(x^m\cdot f(x^r))$" class="latex-inline" style="vertical-align: -5px" width="235" height="18">.</li>
+
+<li><img src="latex/latex2png-FindRoot_192064435_-2.gif" alt="$T_r\circ T_m=T_m\circ T_r=T_{rm}$" class="latex-inline" style="vertical-align: -2px" width="183" height="14">,其中<img src="latex/latex2png-FindRoot_97291244_-2.gif" alt="$T_i$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">是<img src="latex/latex2png-FindRoot_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">阶切比雪夫多项式(<img src="latex/latex2png-FindRoot_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">th Chebyshev polynomial).</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注10<a name=""></a></span><span class="theorem-name"></span>
+关于Chebyshev多项式,其定义为
+<img src="latex/latex2png-FindRoot_26820203_.gif" alt="$$T_n(x)=\cos(n\cos^{-1}x),$$" class="latex-display" width="580" height="20">
+于是有
+<img src="latex/latex2png-FindRoot_212772956_.gif" alt="$$T_r\circ T_m=\cos(r\cos^{-1}(\cos(m\cos^{-1}x)))=\cos(rm\cos^{-1}x)=T_{rm}.$$" class="latex-display" width="580" height="20">
+
+
+</div>
+
+<p>考虑到分解在上述变换下的不定性,下面我们设<img src="latex/latex2png-FindRoot_90424328_-4.gif" alt="$f=g\circ h$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,且<img src="latex/latex2png-FindRoot_162833626_-5.gif" alt="$a=\plc{f}$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,<img src="latex/latex2png-FindRoot_165061850_-5.gif" alt="$c=\plc{h}$" class="latex-inline" style="vertical-align: -5px" width="62" height="18">,于是我们有
+<img src="latex/latex2png-FindRoot_30525789_.gif" alt="$$\frac{f}{a}=\left(\frac{1}{a}g(cx+h(0))\right)\circ\frac{h-h(0)}{c},$$" class="latex-display" width="580" height="40">
+这相当于将一个首一多项式分解为两个首一多项式的复合,并且第二个多项式(<img src="latex/latex2png-FindRoot_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">)常数项为0.考虑下面给出的定义:</p>
+
+<div class="definition">
+<span class="theorem-header">定义7<a name=""></a></span><span class="theorem-name"></span>
+记<img src="latex/latex2png-FindRoot_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">为<img src="latex/latex2png-FindRoot_6255674_-5.gif" alt="$F[x]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">中所有首一多项式的集合,定义如下集合
+<img src="latex/latex2png-FindRoot_175472869_.gif" alt="$$\mathrm{DEC}_{n,r}^F=\{(f,(g,h))\in M\times M^2|f=g\circ h,\deg f=n,\deg g=r,h(0)=0\},$$" class="latex-display" width="580" height="23">
+称为分解问题的解.
+
+
+</div>
+
+<p>下面在提出分解算法之前,为了方便先给出一个定义:</p>
+
+<div class="definition">
+<span class="theorem-header">定义8<a name=""></a></span><span class="theorem-name">(The reversal of <img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">)</span>
+设<img src="latex/latex2png-FindRoot_64604257_-5.gif" alt="$f=x^n+a_{n-1}x^{n-1}+\cdots+a_0\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="267" height="19">,记<img src="latex/latex2png-FindRoot_252034661_-5.gif" alt="$\tilde{f}=a_0x^n+\cdots+a_{n-1}x+1=x^nf(1/x)$" class="latex-inline" style="vertical-align: -5px" width="286" height="20">.
+
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法8<a name="al:unidec1"></a></span><span class="theorem-name">(单元复合函数分解)</span>
+
+<p>输入:首一多项式<img src="latex/latex2png-FindRoot_48462230_-5.gif" alt="$f\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">,其次数<img src="latex/latex2png-FindRoot_32339002_0.gif" alt="$n=rs$" class="latex-inline" style="vertical-align: 0px" width="47" height="8">,并且<img src="latex/latex2png-FindRoot_22533145_-5.gif" alt="$\mathrm{char}(F)\not|r$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">,</p>
+
+<p>输出:<img src="latex/latex2png-FindRoot_227805812_-7.gif" alt="$\mathrm{DEC}_{n,r}^F$" class="latex-inline" style="vertical-align: -7px" width="54" height="22">.</p>
+
+<ol>
+<li>计算<img src="latex/latex2png-FindRoot_173768470_-5.gif" alt="$\tilde{h}\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="60" height="20">,<img src="latex/latex2png-FindRoot_169186362_-4.gif" alt="$\deg\tilde{h}<s$" class="latex-inline" style="vertical-align: -4px" width="67" height="19">且<img src="latex/latex2png-FindRoot_213526920_-4.gif" alt="$\tilde{h}^r\equiv \tilde{f}\bmod x^s$" class="latex-inline" style="vertical-align: -4px" width="105" height="19">,<img src="latex/latex2png-FindRoot_84284317_-5.gif" alt="$\tilde{h}(0)=1$" class="latex-inline" style="vertical-align: -5px" width="60" height="20">,令<img src="latex/latex2png-FindRoot_12001316_-5.gif" alt="$h=x^s\tilde{h}(1/x)\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="147" height="20">,</li>
+
+<li>计算&quot;Taylor 展开&quot;的系数<img src="latex/latex2png-FindRoot_223892058_-5.gif" alt="$b_0,\ldots,b_r\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">如下:
+<img src="latex/latex2png-FindRoot_158019209_.gif" alt="$$f=\sum_{0\le i\le r}b_ih^i,\quad \deg b_i<\deg h(\forall i).$$" class="latex-display" width="580" height="40"></li>
+
+<li>若<img src="latex/latex2png-FindRoot_112486251_-4.gif" alt="$b_0,\ldots,b_r\in F$" class="latex-inline" style="vertical-align: -4px" width="98" height="16">,令<img src="latex/latex2png-FindRoot_49348100_-9.gif" alt="$g=\sum_{0\le i\le r}b_ix^i\in F[x]$" class="latex-inline" style="vertical-align: -9px" width="168" height="23">,并输出<img src="latex/latex2png-FindRoot_86475476_-5.gif" alt="$(f,(g,h))$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">终止,否则输出<img src="latex/latex2png-FindRoot_29265379_-2.gif" alt="$\emptyset$" class="latex-inline" style="vertical-align: -2px" width="8" height="15">终止.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法有效性)</span>
+
+<p>由<img src="latex/latex2png-FindRoot_84284317_-5.gif" alt="$\tilde{h}(0)=1$" class="latex-inline" style="vertical-align: -5px" width="60" height="20">知<img src="latex/latex2png-FindRoot_73122791_-5.gif" alt="$\plc{h}=1$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,由<img src="latex/latex2png-FindRoot_169186362_-4.gif" alt="$\deg\tilde{h}<s$" class="latex-inline" style="vertical-align: -4px" width="67" height="19">知<img src="latex/latex2png-FindRoot_218274877_-5.gif" alt="$h(0)=0$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">.反过来设<img src="latex/latex2png-FindRoot_90424328_-4.gif" alt="$f=g\circ h$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,并且满足相应条件,则<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">和<img src="latex/latex2png-FindRoot_103576596_0.gif" alt="$h^r$" class="latex-inline" style="vertical-align: 0px" width="16" height="12">的最高<img src="latex/latex2png-FindRoot_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">项相同,即<img src="latex/latex2png-FindRoot_155874898_-5.gif" alt="$\deg(f-h^r)\le n-s$" class="latex-inline" style="vertical-align: -5px" width="145" height="18">.仍记<img src="latex/latex2png-FindRoot_27843737_-5.gif" alt="$\tilde{h}=x^sh(1/x)$" class="latex-inline" style="vertical-align: -5px" width="94" height="20">,于是<img src="latex/latex2png-FindRoot_123904737_-5.gif" alt="$x^nh(1/x)^r=(x^sh(1/x))^r=\tilde{h}^r$" class="latex-inline" style="vertical-align: -5px" width="220" height="20">,且
+<img src="latex/latex2png-FindRoot_141816318_.gif" alt="$$\deg(f-h^r)\le n-s\Leftrightarrow x^n((f-h^r)(1/x))\equiv 0\pmod{x^s}\Leftrightarrow \tilde{f}-\tilde{h}^r\equiv 0\pmod{x^s}.$$" class="latex-display" width="580" height="21"></p>
+
+<p>证毕.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注11<a name=""></a></span><span class="theorem-name"></span>
+利用相关的快速算法(<span class="cite"><a class="cite" href="FindRoot.html#ref-9" name="cite-9">[9]</a></span>P283 Fact2.1),则整个算法的复杂度为<img src="latex/latex2png-FindRoot_72640302_-5.gif" alt="$O(M(n)\log n)$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">,其中<img src="latex/latex2png-FindRoot_57969606_-5.gif" alt="$M(n)$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">是两个次数为<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的多项式相乘所需的代数运算.Taylor展开只需由Euclid除法一步步计算即可.算法中要用到的多项式开方算法等一些需要补充的问题将在后面介绍.该算法的唯一性是由于开方得到的常数项为1的<img src="latex/latex2png-FindRoot_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">次根<img src="latex/latex2png-FindRoot_167278994_0.gif" alt="$\tilde{h}$" class="latex-inline" style="vertical-align: 0px" width="9" height="15">唯一.
+
+
+</div>
+
+<p>进而我们有下面的推论:</p>
+
+<div class="corollary">
+<span class="theorem-header">推论3<a name=""></a></span><span class="theorem-name"></span>
+
+<ol>
+<li>设有两个分解<img src="latex/latex2png-FindRoot_124914878_-4.gif" alt="$f=g_1\circ h_1=g_2\circ h_2$" class="latex-inline" style="vertical-align: -4px" width="148" height="16">且<img src="latex/latex2png-FindRoot_115500628_-4.gif" alt="$\deg g_1=\deg g_2=r$" class="latex-inline" style="vertical-align: -4px" width="138" height="16">,则两个分解是相似的,即它们之间可以通过三个变换中的仿射变换相联系:<img src="latex/latex2png-FindRoot_127249177_-5.gif" alt="$\exists c,d\in F(c\neq 0)$" class="latex-inline" style="vertical-align: -5px" width="113" height="18">,使得<img src="latex/latex2png-FindRoot_201286825_-5.gif" alt="$g_1=g_2(cx+d)$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">,<img src="latex/latex2png-FindRoot_248915735_-5.gif" alt="$h_1=(h_2-d)/c$" class="latex-inline" style="vertical-align: -5px" width="113" height="18">.</li>
+
+<li><img src="latex/latex2png-FindRoot_21777806_-7.gif" alt="$\#\mathrm{DEC}_{n,r}^F\le 1$" class="latex-inline" style="vertical-align: -7px" width="97" height="22">.</li>
+
+<li>设<img src="latex/latex2png-FindRoot_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的某个扩域,且<img src="latex/latex2png-FindRoot_233028498_-7.gif" alt="$(f,(g,h))\in\mathrm{DEC}_{n,r}^k$" class="latex-inline" style="vertical-align: -7px" width="141" height="22">,<img src="latex/latex2png-FindRoot_20249779_-5.gif" alt="$h=cx^s+\cdots+d\in k[x]$" class="latex-inline" style="vertical-align: -5px" width="171" height="18">,则<img src="latex/latex2png-FindRoot_193754279_-5.gif" alt="$g_1=g(cx+d)\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="155" height="18">,<img src="latex/latex2png-FindRoot_222988854_-5.gif" alt="$h_1=(h-d)/c\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">,且<img src="latex/latex2png-FindRoot_256094963_-7.gif" alt="$(f,(g_1,h_1))\in\mathrm{DEC}_{n,r}^F$" class="latex-inline" style="vertical-align: -7px" width="155" height="22">.</li>
+</ol>
+
+
+</div>
+
+<p>利用复合分解算法,我们可以进行一元多项式的完全复合分解.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法9<a name="al:comdec1"></a></span><span class="theorem-name">(Complete decomposition)</span>
+
+<p>输入:首一<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-FindRoot_122765751_-5.gif" alt="$f\in M\subset F[x]$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">,且<img src="latex/latex2png-FindRoot_22271001_-5.gif" alt="$\mathrm{char}(F)\not|n$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">,</p>
+
+<p>输出:<img src="latex/latex2png-FindRoot_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的完全复合函数分解.</p>
+
+<ol>
+<li>计算整数<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的因子分解<img src="latex/latex2png-FindRoot_44117106_-5.gif" alt="$n=p_1^{e_1}\cdots p_k^{e_k}$" class="latex-inline" style="vertical-align: -5px" width="99" height="17">,令<img src="latex/latex2png-FindRoot_190907131_-5.gif" alt="$d(n)=(e_1+1)\cdots(e_k+1)$" class="latex-inline" style="vertical-align: -5px" width="191" height="18">为<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的正因子个数,且记<img src="latex/latex2png-FindRoot_262022994_-6.gif" alt="$r_1=1<r_2<\cdots<r_{d(n)}=n$" class="latex-inline" style="vertical-align: -6px" width="212" height="17">为其正因子,</li>
+
+<li>对<img src="latex/latex2png-FindRoot_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">从<img src="latex/latex2png-FindRoot_41186322_0.gif" alt="$2$" class="latex-inline" style="vertical-align: 0px" width="8" height="11">循环到<img src="latex/latex2png-FindRoot_201563134_-5.gif" alt="$d(n)-1$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">,求解问题<img src="latex/latex2png-FindRoot_113170087_-8.gif" alt="$\mathrm{DEC}_{n,r_j}^F$" class="latex-inline" style="vertical-align: -8px" width="59" height="23">,对于寻找到的第一个解<img src="latex/latex2png-FindRoot_86475476_-5.gif" alt="$(f,(g,h))$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,递归调用本算法求解<img src="latex/latex2png-FindRoot_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的分解问题,得到分解<img src="latex/latex2png-FindRoot_46268553_-4.gif" alt="$h=f_2\circ f_3\circ\cdots\circ f_k$" class="latex-inline" style="vertical-align: -4px" width="144" height="16">,</li>
+
+<li>输出<img src="latex/latex2png-FindRoot_67303702_-5.gif" alt="$(f_1,\ldots,f_k)$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">.</li>
+</ol>
+
+
+</div>
+
+
+<h3><a name="sec19" id="sec19"></a>
+<a href="FindRoot.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>形式幂级数的一些基本操作</h3>
+
+<p><span class="cite"><a class="cite" href="FindRoot.html#ref-10" name="cite-10">[10]</a></span>中形式幂级数的一些基本的算术作了介绍.</p>
+
+<div class="definition">
+<span class="theorem-header">定义9<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-FindRoot_131239637_-4.gif" alt="$f=a_0+a_1x+a_2x^2+\cdots+a_nx^n+\cdots$" class="latex-inline" style="vertical-align: -4px" width="281" height="18">称为形式幂级数(formal power series),其中系数<img src="latex/latex2png-FindRoot_13405164_-2.gif" alt="$a_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">在域中.
+
+
+</div>
+
+<p>我们可以考虑有限域或复数域上的形式幂级数,这里我们假定都是在<img src="latex/latex2png-FindRoot_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">上讨论.虽然一般计算机上是无法表达无穷项的形式幂级数,好似浮点数都是有限精度的,但我们仍有讨论它们的必要.一般而言,我们也只考虑形式幂级数的前若干项.这样,问题就化为了在模<img src="latex/latex2png-FindRoot_96842759_-5.gif" alt="$x^N(N\in\mathbb{N})$" class="latex-inline" style="vertical-align: -5px" width="81" height="19">下的多项式算术问题.</p>
+
+<p>首先,很明显我们可以得到形式幂级数的乘法算法:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法10<a name=""></a></span><span class="theorem-name">(形式幂级数乘法算法)</span>
+
+<p>输入:形式幂级数<img src="latex/latex2png-FindRoot_263672873_-9.gif" alt="$g=\sum_{0\le i\le\infty}g_ix^i$" class="latex-inline" style="vertical-align: -9px" width="125" height="23">,<img src="latex/latex2png-FindRoot_263672905_-9.gif" alt="$h=\sum_{0\le i\le\infty}h_ix^i$" class="latex-inline" style="vertical-align: -9px" width="127" height="23">,</p>
+
+<p>输出:<img src="latex/latex2png-FindRoot_20083770_-4.gif" alt="$f=gh$" class="latex-inline" style="vertical-align: -4px" width="49" height="16">的第<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次幂的系数<img src="latex/latex2png-FindRoot_70808596_-4.gif" alt="$f_n$" class="latex-inline" style="vertical-align: -4px" width="15" height="16">.</p>
+
+<p><img src="latex/latex2png-FindRoot_110111057_.gif" alt="$$f_n=\sum_{k=0}^ng_kh_{n-k}.$$" class="latex-display" width="580" height="46"></p>
+
+
+</div>
+
+<p>由上面算法,我们可以很方便地得到除法算法:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法11<a name=""></a></span><span class="theorem-name">(形式幂级数除法算法)</span>
+输入:形式幂级数<img src="latex/latex2png-FindRoot_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,<img src="latex/latex2png-FindRoot_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,各符号意义同上,其中<img src="latex/latex2png-FindRoot_38233572_-4.gif" alt="$h_0\neq 0$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">,
+
+<p>输出:<img src="latex/latex2png-FindRoot_231573868_-5.gif" alt="$f=g/h$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">.</p>
+
+<p>由<img src="latex/latex2png-FindRoot_160418698_.gif" alt="$$f_n=\left(g_n-\sum_{k=0}^{n-1}f_kh_{n-k}\right)/h_0$$" class="latex-display" width="580" height="50">依次可得<img src="latex/latex2png-FindRoot_61874605_-4.gif" alt="$f_0,f_1,\cdots$" class="latex-inline" style="vertical-align: -4px" width="63" height="16"></p>
+
+
+</div>
+
+<p>下面考虑求幂算法,此算法和前文复合函数分解中所依赖的开方算法息息相关.考虑一个幂级数<img src="latex/latex2png-FindRoot_47483846_-5.gif" alt="$g(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">,对于某个实数<img src="latex/latex2png-FindRoot_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,欲求级数<img src="latex/latex2png-FindRoot_18337540_-5.gif" alt="$f(x)=g(x)^{\alpha}$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">,首先我们可设<img src="latex/latex2png-FindRoot_47483846_-5.gif" alt="$g(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">有如下形式:
+<img src="latex/latex2png-FindRoot_202481612_.gif" alt="$$g(x)=g_mx^m\left(1+\frac{g_{m+1}}{g_m}x^{m+1}+\cdots\right),$$" class="latex-display" width="580" height="40">
+则其<img src="latex/latex2png-FindRoot_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次幂为:
+<img src="latex/latex2png-FindRoot_199682178_.gif" alt="$$f(x)=g_m^{\alpha}x^{m\alpha}\left(1+\frac{g_{m+1}}{g_m}x^{m+1}+\cdots\right)^{\alpha},$$" class="latex-display" width="580" height="41">
+由上式可以看出问题归结为一个常数项为<img src="latex/latex2png-FindRoot_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">的形式幂级数的幂次计算,下面给出两种方法.设<img src="latex/latex2png-FindRoot_251544659_-5.gif" alt="$g(x)=1+h(x)$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">,其中<img src="latex/latex2png-FindRoot_218274877_-5.gif" alt="$h(0)=0$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">,首先我们利用二项式定理展开可得:
+<img src="latex/latex2png-FindRoot_247334785_.gif" alt="$$g(x)^{\alpha}=(1+h(x))^{\alpha}=1+\genfrac{(}{)}{0pt}{}{\alpha}{1}h(x)+\cdots+\genfrac{(}{)}{0pt}{}{\alpha}{n}h(x)^n+\cdots.$$" class="latex-display" width="580" height="40"></p>
+
+<p>另一种方法是由Euler所发现,由<img src="latex/latex2png-FindRoot_18337540_-5.gif" alt="$f(x)=g(x)^{\alpha}$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">,我们求其微分可以得到:
+<img src="latex/latex2png-FindRoot_259595090_.gif" alt="$$f'(x)=\alpha g(x)^{\alpha-1}g'(x),$$" class="latex-display" width="580" height="20">
+亦即
+<img src="latex/latex2png-FindRoot_160015909_.gif" alt="$$f'(x)g(x)=\alpha f(x)g'(x),$$" class="latex-display" width="580" height="19">
+若将其系数展开,并取<img src="latex/latex2png-FindRoot_261486007_0.gif" alt="$x^{n-1}$" class="latex-inline" style="vertical-align: 0px" width="33" height="14">项的系数可得等式:
+<img src="latex/latex2png-FindRoot_191984993_.gif" alt="$$\sum_{k=0}^nkf_kg_{n-k}=\alpha\sum_{k=0}^n(n-k)f_kg_{n-k},$$" class="latex-display" width="580" height="46">
+于是
+<img src="latex/latex2png-FindRoot_247398991_.gif" alt="
+\begin{align*}
+f_n&=\sum_{k=1}^n\left(\frac{\alpha+1}{n}k-1\right)g_kf_{n-k}\\
+&=((\alpha+1-n)g_1f_{n-1}+(2\alpha+2-n)g_2f_{n-2}+\cdots+n\alpha g_nf_0)/n.
+\end{align*}
+" class="latex-display" width="580" height="77"></p>
+
+<p>从上式可以看出,Euler给出的算法是<img src="latex/latex2png-FindRoot_21732654_-5.gif" alt="$O(n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">级的,一般地,我们采用上面的二项式展开算法或Euler给出的方法即可,但若要追求效率,<span class="cite"><a class="cite" href="FindRoot.html#ref-9" name="cite-9">[9]</a></span>中提到该算法效率可达<img src="latex/latex2png-FindRoot_95878374_-5.gif" alt="$M(n)\log r$" class="latex-inline" style="vertical-align: -5px" width="75" height="18">,其中<img src="latex/latex2png-FindRoot_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是考虑的项式,<img src="latex/latex2png-FindRoot_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">是开方次数(<img src="latex/latex2png-FindRoot_238682191_-5.gif" alt="$\alpha=1/r$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">情形),此由文献<span class="cite"><a class="cite" href="FindRoot.html#ref-11" name="cite-11">[11]</a></span>给出的Newton迭代等算法可以达到.关于形式幂级数操作的快速算法可以参考该文,另外对于形式幂级数的求倒也可参考<span class="cite"><a class="cite" href="FindRoot.html#ref-12" name="cite-12">[12]</a></span>等文献,这里就不再赘述了.</p>
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="FindRoot.html#cite-1" name="ref-1">[1]</a><span class="ref-author">M. A. Jenkins and J. F. Traub, </span><span class="ref-title">A three-stage variable-shift iteration for polynomial zeros in relation to generalized Rayleigh iteration, </span><span class="ref-journal">Numer. Math. </span><span class="ref-volume">14 </span><span class="ref-year">(1970), </span><span class="ref-pages">252-263. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Wankere R. Mekwi, </span><span class="ref-title">Iterative Methods for Roots of Polynomials, </span><span class="ref-school">Exeter College, University of Oxford, </span><span class="ref-year">2001. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-3" name="ref-3">[3]</a><span class="ref-author">王东明，夏壁灿, </span><span class="ref-title-chs">计算机代数, </span><span class="ref-publisher">清华大学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2004. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-4" name="ref-4">[4]</a><span class="ref-author">张树功，雷娜，刘停战, </span><span class="ref-title-chs">计算机代数基础---代数与符号计算的基本原理, </span><span class="ref-publisher">科学出版社, </span><span class="ref-year">2005. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-5" name="ref-5">[5]</a><span class="ref-author">Cohen, Henri, </span><span class="ref-title">A course in computational algebraic number theory, </span><span class="ref-publisher">Springer, </span><span class="ref-address">Berlin; Heidelberg; New York, </span><span class="ref-year">1996. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-6" name="ref-6">[6]</a><span class="ref-author">聂灵沼，丁石孙, </span><span class="ref-title-chs">代数学引论, </span><span class="ref-publisher">高等教育出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2000. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-7" name="ref-7">[7]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-8" name="ref-8">[8]</a><span class="ref-author">R. J. Bradford and J. H. Davenport, </span><span class="ref-title">Effective tests for cyclotomic polynomials, </span><span class="ref-booktitle">Symbolic and Algebraic Computation, </span><span class="ref-series">Lecture Notes in Computer Science, </span><span class="ref-volume">358 </span><span class="ref-publisher">Springer Berlin/ Heidelberg, </span><span class="ref-year">1989, </span><span class="ref-pages">244-251. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-9" name="ref-9">[9]</a><span class="ref-author">J. von zur Gathen, </span><span class="ref-title">Functional decomposition of polynomials: the tame case, </span><span class="ref-journal">Journal of Symbolic Computation </span><span class="ref-volume">9 </span><span class="ref-year">(1990), </span><span class="ref-pages">281-299. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-10" name="ref-10">[10]</a><span class="ref-author">Donald E. Knuth, </span><span class="ref-title">The art of computer programming, volume 2 (3rd ed.): seminumerical algorithms, </span><span class="ref-publisher">Addison-Wesley Longman Publishing Co., Inc., </span><span class="ref-address">Boston, MA, USA, </span><span class="ref-year">1997. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-11" name="ref-11">[11]</a><span class="ref-author">Brent R. P. and Kung H. T., </span><span class="ref-title">Fast algorithms for manipulating formal power series, </span><span class="ref-journal">J. Assoc. Comput. Mach. </span><span class="ref-volume">25 </span><span class="ref-year">(1978), </span><span class="ref-number">no.4, </span><span class="ref-pages">581-595. </span></p>
+<p class="ref"><a class="ref" href="FindRoot.html#cite-12" name="ref-12">[12]</a><span class="ref-author">Kung H. T., </span><span class="ref-title">On Computing Reciprocals of Power Series, </span><span class="ref-journal">Numer. Math. </span><span class="ref-volume">22 </span><span class="ref-year">(1974), </span><span class="ref-pages">341-348. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年03月18日 16:44:07
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

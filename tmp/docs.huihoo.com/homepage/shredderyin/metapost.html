@@ -1,0 +1,539 @@
+<!DOCTYPE html public "-//W3C//DTD HTML 4.01 Transitional//EN"     "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<HTML>
+<HEAD>
+	<TITLE>MetaPost</TITLE>
+	<META http-equiv="Content-Type" content="text/html; charset=gb2312">
+	<LINK rel="stylesheet" href="main.css" media="screen">
+</HEAD>
+
+<body>
+<H1>MetaPost: 强大的图形语言</H1>
+<H2>什么是 MetaPost?</H2>
+<P>MetaPost 是由 Bell Labs 的 John Hobby 设计的一种绘图语言, 它的语法近似于 MetaFont，是一种描述性的绘图语言。</P>
+
+<P>用它可以作出非常漂亮的图形. 特别适合于精确的图形. MetaPost 可以生成高质量的 EPS 文件，方便的插入到 TeX 文件里。MetaPost 图片里可以插入TeX对象，跟TeX很完美的结合。</P>
+
+<H2>为什么要用 MetaPost?</H2>
+<p>你能用鼠标画出所有你需要的图形吗？能？不要那么肯定。看看这些：
+<OL>
+<LI>点a和点b相距2cm, 在它们连线的 2/3 处，有一条线段，与ab成60度角，交点处要画一个半径 3pt 的圆圈。
+<p><a href="src/mp/example.mp"><img src="ex1.png"></a>
+<LI>从线段外一点作它的平行线。想不到吧？这么简单的图，你最后发现无法用一个鼠标的工具完成！
+<p><a href="src/mp/example.mp"><img src="ex2.png"></a>
+<LI>箭头ab，从圆圈 a 的中心出发，开始时向右，然后进入圆圈b的中心，进入时方向是向下的，箭头在圆圈内的部分不画出来。而圆圈 a 和 b 现在的位置还不能确定，需要根据其它圆圈的位置定位。
+<p><a href="src/mp/example.mp"><img src="ex3.png"></a>
+<LI>这样的每个弧线只有几个参数有规律的变化的图片：
+<p><a href="src/mp/example.mp"><img src="ex4.png"></a>
+<p>不好办吧？点击以上4个图形就可以知道如何用 MetaPost 得到他们，注意这个短短的文件包含了所有这4个图形。再看看这些：
+<p><img src="metapostexample_files/metapost_094.gif"> <img src="metapostexample_files/metapost_055.gif"><img src="metapostexample_files/metapost_200.gif"><img src="metapostexample_files/metapost_243.gif"><img src="metapostexample_files/metapost_260.gif"><img src="metapostexample_files/metapost_139.gif"><img src="metapostexample_files/metapost_248.gif"><img src="metapostexample_files/metapost_170.gif">
+<LI>画了一棵很大的二叉树，后来发现下面部分太大了，需要把上面的结点张角全部长大 20% 才行。
+<LI>一个 100x100 的点阵，里面的每个坐标全为质数的点之间都有连线。
+<p>上面两个留作练习。
+</OL>
+<H2>怎样用 MetaPost?</H2>
+<p>MetaPost 和 LaTeX 结合使用非常简单。
+<OL>
+<LI>首先编辑一个 MetaPost 文件，假设句名 fig.mp。里面有你的绘图语句:
+<pre>
+beginfig(1);
+........
+.......
+endfig;
+beginfig(2);
+...........
+.........
+endfig;
+..........
+..........
+..........
+end
+</pre>
+<LI>然后运行 
+<pre class=example>
+mpost fig.mp
+</pre>
+
+就会得到几个文件： fig.1, fig.2, ... 它们都是 eps 文件。你把它们用
+<pre>
+\includegraphics{fig.1}
+</pre>
+这样的语句插入 LaTeX 文档就可以了。
+</OL>
+
+<H2>怎样在 MetaPost 中使用汉字？</H2>
+<p>MetaPost 缺省使用的是 plain TeX 来处理括在 btex...etex 之间的标号
+但是我们可以想一个办法使用 LaTeX 来处理这些，这样我们就可以方便的使用 CJK.
+<p>其实每一个纯 TeX 文件的第一行如果出现以下内容：
+
+<pre class=example>
+%&latex                                        
+</pre>
+
+<p>TeX 就会读入 latex 格式
+
+<p>所以利用这个小把戏就可以这样做：
+<OL>
+<LI>在mp文件开头加入：              
+<pre class=example>
+verbatimtex
+%&latex
+\documentclass{article}
+\usepackage{CJK}       
+\begin{CJK}{GBK}{song}
+\begin{document}      
+etex            
+</pre>
+
+<LI>在最后加入：
+<pre class=example>
+verbatimtex
+\end{CJK}  
+\end{document}
+etex          
+</pre>
+
+<LI>标号时把标号都用 btex...etex 括起来。比如：
+<pre class=example>
+label.top(btex 原点 etex, origin);         
+</pre>
+
+</OL>
+
+
+<p>给个完整的例子，我已经测试通过了：
+<pre class=example>
+verbatimtex                                          
+%&latex 
+\documentclass{article}
+\usepackage{CJK}       
+\begin{CJK}{GBK}{song}
+\begin{document}      
+etex            
+
+beginfig(1);
+drawarrow origin--(0,100);
+drawarrow origin--(100,0);
+drawdot origin withpen pencircle scaled 2pt;
+label.bot(btex 原点 etex, origin);
+label.lft(btex $y$ etex, (0,100));
+label.lrt(btex $x$ etex, (100,0));
+endfig;
+
+verbatimtex
+\end{CJK}
+\end{document}
+etex
+
+end
+</pre>
+<p>结果是这样：
+<p><img src="metapost-chinese.png">
+<p>其实 <pre>mpost -tex=latex file.mp</pre> 或者把环境变量 TEX 设为 latex，也可以让 MetaPost 使用 LaTeX. 
+<H2>怎样才能使 gsview 显示含有 label 的 MetaPost 图形？<a name=gs></a></H2>
+<p>原文：<a href="http://bbs.ctex.org/cgi-bin/topic.cgi?forum=9&topic=69&start=0&show=" target=_blank>bbs.ctex.org</a>。原作者 cxterm。
+
+<p>经我修改后如下：
+<p>metapost 是一个很好的绘图工具。但如果在其中使用了 TeX 字体或中文字体的话，
+在 gsview 中不能显示，有些不方便。下面介绍一种方法，可让这些 metapost 图形
+正常的在 gsview 中显示。
+
+<p>造成 gsview 无法显示的主要原因是 gs 找不到相应的字体。所以，首先要让
+gs 能够找到所需的字体。现在提供两种办法：
+
+<OL>
+<LI>办法1. 适用于懒人：只需要设置环境变量
+
+<pre>
+export GS_FONTPATH=$TEXMF/fonts/type1/bluesky/cm
+</pre>
+
+<p>如果你有另外的字体目录，用:(冒号)分开路径。
+不过这样会使gs每次启动时检查目录里所有字体文件。启动速度变慢。
+而且似乎对中文字体有点问题。
+不过对于经常改变字体的情况确实很方便。
+
+
+<LI>办法2. 适用于勤快人(启动更快)：
+可以在你的每个TeX字体目录下编辑一个叫 Fontmap 的文件，里面记录一些字体映射关系。比如，
+
+<p>文件 $TEXMF/fonts/type1/bluesky/cm/Fontmap 里有如下内容：
+
+<pre>
+/CMB10 (cmb10.pfb);
+/CMBSY10 (cmbsy10.pfb);
+/CMBX10 (cmbx10.pfb);
+/CMBX12 (cmbx12.pfb);
+/CMBX5 (cmbx5.pfb);
+...
+</pre>
+
+(注意大小写！)
+
+<p>文件 $TEXMFLOCAL/fonts/type1/chinese/gbksong/Fontmap 里有如下内容：
+<pre>
+/gbksong01 (gbksong01.pfb);
+/gbksong02 (gbksong02.pfb);
+/gbksong03 (gbksong03.pfb);
+/gbksong04 (gbksong04.pfb);
+/gbksong05 (gbksong05.pfb);
+/gbksong06 (gbksong06.pfb);
+...
+</pre>
+
+<p>然后把这些路径都放到 GS_LIB 环境变量里：
+
+<pre>
+export GS_LIB=/usr/share/ghostscript/7.05/lib
+ :$TEXMFMAIN/fonts/type1/bluesky/cm:$TEXMFLOCAL/fonts/type1/chinese/gbksong
+ :$TEXMFLOCAL/fonts/type1/chinese/gbkstcaiyun
+</pre>
+
+(为了美观，断了行，在你的 ~/.bashrc 里可不能这样！)
+
+<p>以后在 mp 文件最开头加入 prologues:=1; 搞定。
+
+<p>这里说的环境变量设置都是 UNIX 的 Bourne Shell 用法。csh 和 ksh 用户以及 Windows 用户可以灵活变通一下。
+
+<h2>如何在MetaPost图形里插入已有的EPS图片</h2>
+<p>使用 epsincl 可以往MetaPost里插入已有的EPS图片。epsincl 由两个文件epsincl.mp和epsincl.awk 组成。epsincl.mp 放在 MetaPost 的系统目录里。epsincl.awk 是AWK语言脚本，需要 AWK 解释执行。</p>
+<p>下面是一个例子。use_eps会用EPS文件构造一个picture类型的对象。它可以被作为 label 放在任何地方。</p>
+<pre>
+input epsincl;
+
+tertiarydef p scaledto x = p scaled (x/xpart(urcorner(p)-llcorner(p))) enddef;
+
+beginfig(100);
+
+  dist:=5cm;
+  z0=origin;
+  z1=z0+(dist,0);
+
+  picture tex,meta;
+  tex=use_eps("tex.eps");
+  meta=use_eps("meta.eps");
+  
+  label(tex scaledto 100, z0);
+  label(meta scaledto 100, z1);
+
+  label(btex $\sqrt{x^2+y^2}$ etex rotated 60 scaled 1.44, .5[z0,z1]);
+  
+endfig;
+
+end</pre>
+
+<p>之后运行 MetaPost，再运行AWK 脚本处理生成的文件。假设这里我们的文件是 texmeta.mp。那么用这样的命令行： 
+<pre>
+mpost texmeta.mp
+gawk -f epsincl.awk texmeta.100 >texmeta.eps
+</pre>
+
+<p>之后得到的图片会是这个样子：
+<p><img src="images/mpost-epsincl.png" width="346" height="330">
+<H2>怎样在 MetaPost 里绘制数学函数和数据文件图形？</H2>
+
+
+<h3>使用 mpgraph 宏包</h3>
+
+<p>MetaPost 提供了一个 graph 宏包可以根据一个数据文件绘制 2D plot。
+<p>graph 有非常多样的样式，你并不受它的约束，你只是拥有了更多的处理外部数据的方式，而且有了“自动坐标缩放”。
+
+<p>你自己看看<a href="src/mpgraph.pdf">说明</a>就知道了。你可以用 graph.mp 提供的 gdata 宏来从任意的数据文件读取数据：
+
+<p>首先你需要
+<pre>
+input graph;
+</pre>
+
+<p>你必须把你画图表的语句都放在
+<pre>
+draw begingraph(图表宽度,图表高度);
+...
+endgraph;
+</pre>
+<p>之间。
+
+<p>比如你的一个数据文件 countries.d 有这些内容：
+
+<pre>
+20.910 75.7 US
+1.831 66.7 Alg
+1.694 70.9 Arg
+16.430 77.3 Aus
+0.180 53.0 Ban
+...
+</pre>
+
+<p>你写一个 MetaPost 文件来绘制这样一幅图：
+<p><img src="countries.png">
+<p>把第3个域的那个国家名字，比如 "US", "Alg", ... 标在前两个域指出的坐标的位置。
+
+<p>你可以这样写：
+<pre>
+beginfig(5);
+draw begingraph(3in,2in);
+gdata("countries.d", s, glabel(s3,s1,s2););
+endgraph;
+endfig;
+</pre>
+
+其中，
+<pre>
+gdata("文件名", 一个变量名，你的操作);
+</pre>
+
+<p>可以对这些数据进行任意的操作。“一个变量名”是你任意给的名字，比如你给一个 s, 那么数据文件的第一列 会被赋值给 s1, 第二列 s2, 第3列 s3, ...
+
+
+<p>其实 gdata 功能太强了，大部分时候 gdraw 已经能满足你的需要。
+<pre>
+gdraw("文件名"); 
+</pre>
+<p>就可以把你存在一个文件里的像这样的数据：
+
+<pre>
+00 4.011
+01 3.969
+02 3.806
+...
+</pre>
+
+<p>画成图表，太简单了！你还可以在 gdraw("文件名") 之后使用任何 MetaPost 绘图选项，比如 withcolor ... withpen ...。你还可以用一个特别的参数 plot，比如:
+
+<pre class=example>
+gdraw("file") plot btex $\bullet$ etex; 
+</pre>
+
+<p>就可以在每个数据点上画上一个 TeX 的 $\bullet$ 符号。看下面这些就是用同样的数据点画出的不同样式的图：
+<p><img src="graph1.png"><img src="graph2.png"><img src="graph3.png"><img src="graph4.png">
+
+
+<p>mpgraph 缺省会把数据文件里所有的数据点都画出来。如果你想
+限制数据点的范围可以用 setrange, 但是 setrange 只是把图片的
+外框修改了一下，实际上曲线会超出外框显示。这个问题直接用
+graph 宏包提供的接口无法解决，必须进行 hack. 请看<a
+href="wiki/MetaPost.html">这里</a>。
+
+
+<h3>使用其它工具输出 MetaPost</h3>
+
+<p>某些绘图工具可以输出 MetaPost 图形文件。你还可以自己修改这个文件，得到非常好的效果。比如 <a href="http://www.gnuplot.info" target=_blank>gnuplot</a> 就可以输出 MetaPost 图形文件。你只要在 gnuplot 里输入：
+<pre>
+set terminal mp
+set output "gnuplot.mp"
+set isosamples 40
+splot [-2.5:2.5] [-2.5:2.5] (x**2+3*y**2)*exp(1-(x**2+y**2))
+</pre>
+<p>就可以把输出写到一个叫做 gnuplot.mp 的 MetaPost 文件里。由 MetaPost 处理生成 eps 再插入 LaTeX 文档。下面就是一个例子，里面的标号是我手工修改的。
+<p><img src="metapost-gnuplot.png">
+
+
+<p>其实 gnuplot 可以画出很多好看的数学图形。请参考 <a
+href="tex_tools.html">这个网页</a>。
+<p><img src="images/gnuplot.png">
+
+<H2>MetaPost 里怎样才能显示程序生成的数字呢？</H2>
+<p>有人想要用
+<pre>
+u:=.5cm;
+for p=1 upto 100: label(btex $10^p$ etex, (p*u,p*u)); endfor
+</pre>
+这样的语句在100个位置标注 10<sup>1</sup>, 10<sup>2</sup>, 10<sup>3</sup> ... 这样的标号。这是不行的。因为 btex ... etex 之间的部分是原封不动交给 TeX 处理的，这样你得到的是100个10<sup>p</sup>。如果你要使用很大的数字，想要用科学计数法表示，那么可以用 format 宏包，如果你想使用这些大数字计算，可以用 sarith 宏包来计算。
+
+<OL>
+<LI>format 宏包。
+
+<p>format 宏包就可以处理数字的格式化，你首先 input format, 然后你可以用
+
+<pre>
+init_numbers(s, m, x, sn, e); 
+</pre>
+<p>设定你的 TeX 数字格式，其中：
+
+<pre>
+s: 表示负数开头用什么符号表示它是负数。一般这个符号是 btex$-$etex
+m: 一个TeX的一位数，随便给一个数字就行，比如 btex$1$etex
+x: 科学计数法里面怎样表示 x10^{...}, 通常这样做： btex${\times}10$etex
+sn: 上标的负号怎么表示？ 一般是 btex${}^-$etex
+e: 上标的示例数，用来计算上标占的位置，随便给它一个 btex${}^2$etex 之类的就行。
+</pre>
+
+<p>MetaPost 有一个缺省的设定是：
+<pre>
+init_numbers(btex$-$etex, btex$1$etex, btex${\times}10$etex,
+   btex${}^-$etex, btex${}^2$etex);
+</pre>
+
+<p>只有当你对缺省的格式不满意才需要改变 init_numbers 的设定。
+
+<p>当你用 format(格式串，数字) 时 format 会为你生成漂亮的 TeX 数字。
+格式串可以是 %e, %f, %g, %G 之一，可以在字母前加数字表示有效数字，比如 "%10f"。
+
+<p>你可以试试：
+<pre>
+label.bot(format("%3g","6.022e23"), origin);
+</pre>
+
+<LI>sarith 宏包
+<p>MetaPost 继承了 METAFONT 的定点运算方式。因为印在纸上的东西尺寸不会很大，所以 MetaPost 只允许输入 32768 以内的数。这不是一个很严重的限制，因为你用 MetaPost 画的只是一些很小的样例图片，你不会把一个 10000x10000 的矩阵印在纸上，对吧？但是如果你的图形里需要计算少量的大数，你可以用 sarith 宏包。
+
+<p>sarith 宏包可以计算用字符串表示的数字，你可以用很多种方式表示你的数字，非常自由，比如 "6.022e23"。
+
+<p>数字之间的操作必需用专门的 sarith 提供的运算符 Sadd, Ssub, Smul, Sdiv。Sabs 可以得到一个数字的绝对值。
+
+<p>Scvnum 可以把一个字符串表示的数转换成 MetaPost 使用的 numeral，如果这不会使 MetaPost 的定点计算溢出的话。如果你的数字里没有 "e"，就可以用 scantokens 来得到一个字符串表示的数字的值。因为 scantokens 把后面的字符串当成一段 MetaPost 的输入。
+
+<p>下面是一个比较 hack 一点的例子，我把 format 内部的宏 dofmt_ 挖出来，这样就可以随便表示任意的上标数了。
+
+<pre>
+input format;
+input marith;
+
+init_numbers(btex$-$etex, btex$1$etex, btex${\times}10$etex,
+   btex${}^-$etex, btex${}^2$etex);
+
+%Fe_plus:="*" infont defaultfont;
+beginfig(1);
+u:=2cm;
+n:=3;
+pickup pencircle scaled 1pt;
+for i=0 upto n: draw (0*u,i*u)--(n*u,i*u); endfor;
+for i=0 upto n: draw (i*u,0*u)--(i*u,n*u); endfor;
+
+string mylabel;
+for i=0 upto n-1:
+for j=0 upto n-1:
+l:=j*n+i+1;
+label(dofmt_.relax("%3f",(l*1000,l)), (i*u+0.5u,j*u+0.5u));
+endfor;
+endfor;
+
+a=Mlog_Str("3213000000");
+label.bot(Mformat("%e",a), (0,0));
+
+endfig;
+end
+</pre>
+
+<p><img src="formatgrid.png">
+
+<p>还有不清楚的就自己看看 sarith 和 format 的 mp 文件。
+</OL>
+
+<H2>怎样从外部文件读入数据？</H2>
+<p>很多人想要从外部文件得到数据进行绘图，可是 MetaPost manual 里没有介绍怎么做。因为这个功能是 0.60 版本以后才有的。
+<p>你可以用
+<pre>readfrom "文件"
+</pre>
+
+<p>得到一行数据。再次使用 readfrom 就会得到后面的行。如果到达文件末尾，readfrom 会返回一个空字符串 EOF，你可以根据这个来判断数据是否画完了。
+
+<p>读入的数据都是作为一个字符串，如果你想要得到数字，你必须用 scantokens 把字符串 evaluate 一下。举个例子，比如你的一个文件 points.dat 里有这些内容：
+<pre>
+40,60,70
+....
+</pre>
+<p>你可以编辑一个 MetaPost 文件：
+<pre>
+beginfig(8);
+j:=1;
+draw
+for p=scantokens readfrom "points.dat":
+(j*10,p)--
+hide(j:=j+1)
+endfor (j*10,80);
+
+endfig;
+</pre>
+
+<p>来根据这个文件里每行提供的离散数据画图。
+
+<p>另外，你可以用 
+<pre>
+write &lt;string expression&gt; to &lt;file name&gt;
+</pre>
+<p>把字串内容写到一个外部文件。
+
+<H2>MetaPost 能绘制饼状图(piechart)和柱状图(bar chart)吗？<a name=piechart></a></H2>
+<p><img src="piechart.gif"><img src="barchart.png">
+<p>显然 piechart 对于 MetaPost 来说是小事一桩，但是我没有找到专门用来画这种图的 MetaPost 宏包。因为对于大多数场合， piechart 都是一个不好的选择。心理学研究表明，piechart 不适合表示重要的数据，因为人脑对于 piechart 表示的数值关系不敏感，不能有深刻的印象。
+
+<p>但是如果你的项目很少，比如 2&ndash;5 个，而且数值之间差别很大，而且你不是用在很正式的场合，你可以用一个小程序叫做 <a href="http://biolpc22.york.ac.uk/linux/plotutils" target=_blank>ascii_chart</a> 来画 piechart，它用起来极其简单，可以输出很多种格式。ascii_chart 也可以作 bar chart.
+
+<p>另外 <a href="http://www.usf.uni-osnabrueck.de/~breiter/tools/piechart/piecharts.en.html" target=_blank>piechart</a> 程序可以作出有“拉出效果的” piechart。ascii_chart 和 piechart 都需要 <a href="ftp://ftp.gnu.org/gnu/plotutils" target=_blank>GNU plotutil 库</a>。你可以到 GNU 的 ftp 服务器下载。
+
+<H2>哪里有更多的 MetaPost 的材料?</H2>
+<OL>
+<LI>John Hobby 写的 MetaPost <a href="src/mpman.pdf">说明书</a>
+<p>这当然是 MetaPost 的权威指南。
+
+<LI><a href="src/metafun-s.pdf">MetaFun</a>
+<p>这是 ConTeXt 的 MetaFun 说明书 &mdash; 一个图文并茂，非常漂亮的全屏幕 PDF 文档。前面讲的都是 MetaPost，有很多实例。特别注意的是，这个文档本身的背景，按钮，……都是 MetaPost 绘制的。
+
+<LI>METAFONTbook
+<a href="http://sunburn.stanford.edu/~knuth/abcde.html#mfbk" target=_blank><img src="mfbk.jpeg" style="float:left"></a>
+<p>D. E. Knuth 的大作 <a href="http://sunburn.stanford.edu/~knuth/abcde.html#mfbk" target=_blank>The METAFONTbook</a>. 由于 MetaPost 实际上用了 MetaFont 的语言，学习 MetaPost 实际上学会了 MetaFont 的一部分。MetaFont 是 Knuth 跟 TeX 配套设计的一种用来制造字体的程序语言。MATAFONTbook 可以在这里下载 PDF 版本, 请[<a href="src/mfbook.pdf">点击</a>]。
+
+<LI><a href="http://www.math.jussieu.fr/~zoonek/LaTeX/Metapost/metapost.html" target=_blank>大量实例</a>
+<p>一个法国人提供的大量实例。你也可以看看我这里的“<a href="metapostexample.html">本地版</a>”，我美化过的 :)
+
+<LI>用 MetaPost 做三维动画
+<p><a href="http://www.loria.fr/~roegel/animations.html" target=_blank>http://www.loria.fr/~roegel/animations.html</a>介绍怎样用MetaPost制作三维动画。
+
+<LI><a href="http://heplix.ikp.physik.tu-darmstadt.de/~ohl/#computing" target=_blank>用MetaPost画Feynman图</a>
+<p>一个用来绘制专业级质量 Feynman 图的 MetaPost 宏包，它已经被 <a href="http://www.cern.ch" target=_blank>CERN</a>(欧洲原子能研究中心)采用。用它可以用简简单单几行字就画出非常漂亮的 Feynman 图：
+<p><img src="feyn1.png"><img src="feyn2.png"><img src="feyn3.png"><img src="feyn4.png">
+
+<p>我不懂粒子物理，根本不知道这些图什么意思 //blush …… 如果你有兴趣可以看看这个<a href="src/feynMF.ps.gz">说明</a>。
+
+<LI><a href="http://w3.mecanica.upm.es/metapost/metagraf.php" target=_blank>MetaGraf</a>: 一个Java程序，可以“随手”画出 MetaPost 图形。这个程序可以弥补 MetaPost 的太精确的缺点，你可以用 MetaGraf 画出一些随手图形插到你的精确的文件里 :)
+<p><img src="metagraf.png">
+<LI>其它资料请参考<a href="http://cm.bell-labs.com/who/hobby/MetaPost.html" target=_blank>John Hobby 的主页</a>
+</OL>
+
+<H2>给几个例子吧</H2>
+
+<p>下面给出一些我用 MetaPost 画出的简单图形。点击图片可以看到对应的 MetaPost 源文件。我开始时用 MetaPost 还不是很熟，有时会用一些“笨”办法来画东西，但是我每次看 MetaPost 说明书都会发现新的东西。我能用不同的方法，更好的方法完成我曾经做过的事情。这恐怕是所有优秀工具的特点。</p>
+<OL>
+
+<LI>我的本科毕业论文里的 Linux 内核 vfs 结构示意图：
+<p><a href="src/mp/vfs.mp"><img src="vfs.png"></a>
+
+<LI>我上次作的有关串扰布线的报告里的图片。
+
+<p>第一幅电路图的所有元件都是我自己设计的 MetaPost 宏产生的，我可以多次复用这些宏，而且可以随意制造自己需要的元件图。
+<p><a href="src/mp/circuit.mp"><img src="circuit.png"></a>
+<p><a href="src/mp/bpi.mp"><img src="bpi.png"></a>
+<p><a href="src/mp/mcregion.mp"><img src="mcregion.png"></a>
+<p><a href="src/mp/flow.mp"><img src="flow.png"></a>
+<p><a href="src/mp/exchange.mp"><img src="exchange.png"></a>
+
+<LI>我的VLSI布图理论考试答案里的图片
+<p>时延树<br><a href="src/mp/tree.mp"><img src="tree.png"></a>
+<p>迷宫算法<br><a href="src/mp/maze.mp"><img src="maze.png"></a>
+<p>steiner 树<br><a href="src/mp/steiner.mp"><img src="steiner.png"></a>
+<p>最小生成树<br><a href="src/mp/mst.mp"><img src="mst.png"></a>
+
+<LI>我的计算几何作业里的图片
+<p><a href="src/mp/chain.mp"><img src="chain.png"></a>
+<p><a href="src/mp/x.mp"><img src="X.png"></a>
+<p><a href="src/mp/x.mp"><img src="X1.png"></a>
+
+<li>Scheme 48 的模块名字解析示意图
+
+<p><a href="src/mp/s48.mp"><img src="images/s48module2.png"></a>
+
+<li>DrScheme 的标志
+
+<p><a href="src/mp/lambda.mp"><img src="images/lambda.png"></a>
+
+<li>我用程序生成的一个图片
+
+<p>显示了 rectilinear Delaunay triangulation 对应的 minimum
+spanning tree 和 triple center
+
+<p><img src="images/mst.png">
+
+</OL>
+<hr>
+<a href="comp.html" target="_parent">返回</a>
+</HTML>

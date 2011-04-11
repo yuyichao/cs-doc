@@ -1,0 +1,458 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Appendix E. Porting to Other Systems</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="news.html" title="Appendix D. MySQL Change History"><link rel="next" href="environment-variables.html" title="Appendix F. Environment Variables">
+<style>
+<!--
+div.Section1
+	{page:Section1;}
+span.GramE
+	{}
+-->
+</style>
+</head><body><div class="appendix"><div class="titlepage"><div><div><h2 class="title"><a name="porting"></a>
+	附录E：移植到其它系统</h2></div></div></div><div class="toc"><p><b>目录</b></p><dl><dt><span class="section">
+		<a href="#debugging-server">E.1. 调试MySQL服务器</a></span></dt><dd><dl><dt><span class="section">
+			<a href="#compiling-for-debugging">E.1.1. 针对调试编译MySQL</a></span></dt><dt><span class="section">
+			<a href="#making-trace-files">E.1.2. 创建跟踪文件</a></span></dt><dt><span class="section">
+			<a href="#using-gdb-on-mysqld">E.1.3. <span><strong class="command">
+			在gdb</strong></span>环境下调试<span><strong class="command">mysqld</strong></span></a></span></dt><dt><span class="section">
+			<a href="#using-stack-trace">E.1.4. 使用堆栈跟踪</a></span></dt><dt><span class="section">
+			<a href="#using-log-files">E.1.5. 使用日志文件找出<span><strong class="command">mysqld</strong>出错原因</span></a></span></dt><dt><span class="section">
+			<a href="#reproduceable-test-case">E.1.6. 如果出现表格崩溃，请生成测试案例</a></span></dt></dl></dd><dt><span class="section">
+		<a href="#debugging-client">E.2. 测试MySQL 客户端</a></span></dt><dt><span class="section">
+		<a href="#the-dbug-package">E.3. DBUG 软件包</a></span></dt><dt><span class="section">
+		<a href="#rts-threads">E.4. 关于RTS线程的注释</a></span></dt><dt><span class="section">
+		<a href="#thread-packages">E.5. 线程软件包之间的差异</a></span></dt></dl></div><a class="indexterm" name="id3099586"></a><p>
+    这个附录帮助你把MySQL移植到其它操作系统。请先查看一下当前支持操作系统列表。请参阅http://www.mysql.com/），推荐给其它的用户。
+  </p><p>
+    注意：如果你创建一个新的MySQL移植，你可以在GPL许可证下任意复制和发布它，但这不能使你成为MySQL的版权持有者。</p><p>
+    这个服务器需要一个正在工作的POSIX 线程库在。在Solaris
+    2.5 上我们使用Sun PThreads （在2.4版和更早的版本上，原生线程支持得不是很好），在Linux上，我们使用Xavier Leroy&lt;<a href="mailto:Xavier.Leroy@inria.fr">Xavier.Leroy@inria.fr</a>&gt;的LinuxThreads。
+  </p><p>
+    对于那些对原生线程支持不好的新Unix变体，移植到其上的艰难部分大概就是移植MIT-pthreads包。请参阅mit-pthreads/README 
+	和Programming POSIX
+    Threads (<a href="http://www.humanfactor.com/pthreads/" target="_top">http://www.humanfactor.com/pthreads/</a>)。</p><p>
+    直到MySQL 4.0.2版，MySQL发布包包括来自MIT经过补丁的Chris Provenzano的Pthreads（请参阅MIT Pthreads 
+	网页<a href="http://www.mit.edu/afs/sipb/project/pthreads/" target="_top">http://www.mit.edu/afs/sipb/project/pthreads/</a>
+    以及<a href="http://www.mit.edu:8001/people/proven/IAP_2000/" target="_top">http://www.mit.edu:8001/people/proven/IAP_2000/</a>上的编程指导）。对于某些没有POSIX线程的操作系统可能有用。请参阅<a href="installing.html#mit-pthreads" title="2.8.5. MIT-pthreads Notes">2.8.5节，“MIT-pthreads 
+	注意事项”</a>。</p><p>
+    也可能会用到另一个名为 FSU Pthreads的用户级线程软件包（请参阅<a href="http://moss.csc.ncsu.edu/~mueller/pthreads/" target="_top">http://moss.csc.ncsu.edu/~mueller/pthreads/</a>）。 
+	这个工具被用来到SCO的移植。</p><p>
+    参阅
+    mysys目录下的thr_lock.c 
+	和thr_alarm.c 程序获取一些关于这些问题的测试/例子。
+  </p><p>
+    服务器和客户端需要一个能用的C++编译器。我们在很多平台上使用<span><strong class="command">gcc</strong>。其它编译器，据了解，可用的编译器是</span>SPARCworks, Sun Forte, Irix <span><strong class="command">cc</strong></span>,
+    HP-UX <span><strong class="command">aCC</strong></span>, IBM AIX <span><strong class="command">xlC_r</strong></span>),
+    Intel <span><strong class="command">ecc/icc</strong></span> 和 Compaq <span><strong class="command">cxx</strong></span>)。
+  </p><p>
+    要仅编译客户端，请使用<span><strong class="command">./configure
+    --without-server</strong></span>.
+  </p><p>
+    现在不支持仅编译服务器，也不能加这个功能，除非有人找出一个好的理由。
+  </p><p>
+    如果你想/需要改变任何Makefile 或配置脚本，你也会需要到GNU Automake 和 Autoconf。请参阅<a href="installing.html#installing-source-tree" title="2.8.3. Installing from the Development Source Tree">2.8.3节
+	，“从开发源树安装”</a>。
+  </p><p>
+    所有步骤需要从最基本的文件重新生成（remake）所有东西。</p><pre class="programlisting">/bin/rm */.deps/*.P
+/bin/rm -f config.cache
+aclocal
+autoheader
+aclocal
+automake
+autoconf
+./configure --with-debug=full --prefix='your installation directory'
+
+# The makefiles generated above need GNU make 3.75 or newer.
+# (called gmake below)
+gmake clean all install init-db
+</pre><p>
+    如果在新移植MySQL上遇到问题，最好做一些调试！请参阅<a href="#debugging-server" title="E.1. Debugging a MySQL Server">E.1节，“调试MySQL服务器”</a>。
+  </p><p>
+    <span class="bold"><strong>注意</strong></span>：在你开始调试<span><strong class="command">mysqld</strong>之前，首先要让测试程序</span>mysys/thr_alarm<span>和</span>mysys/thr_lock<span>工作。这会确保你的线程安装只有非常小的机会能运行！</span>
+  </p><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="debugging-server"></a>E.1. 调试MySQL服务器</h2></div></div></div><div class="toc"><dl><dt><span class="section">
+		<a href="#compiling-for-debugging">E.1.1. 为调试编译MySQL</a></span></dt><dt><span class="section">
+		<a href="#making-trace-files">E.1.2. 创建追踪文件</a></span></dt><dt><span class="section">
+		<a href="#using-gdb-on-mysqld">E.1.3. 在<span><strong class="command">gdb</strong></span>环境下调试 </a></span></dt><dt><span class="section">
+		<a href="#using-stack-trace">E.1.4. 使用堆栈跟踪</a></span></dt><dt><span class="section">
+		<a href="#using-log-files">E.1.5. 使用日志文件找出<span><strong class="command">mysqld</strong></span>错误原因 </a></span></dt><dt><span class="section">
+		<a href="#reproduceable-test-case">E.1.6. 如果发生表崩溃则做一个测试案例</a></span></dt></dl></div><a class="indexterm" name="id3099809"></a><a class="indexterm" name="id3099819"></a><a class="indexterm" name="id3099829"></a><p>
+      如果你使用MySQL某些非常新的功能，你可以带--skip-new参数（这个选项禁止掉所有新的潜在不安全的功能）或带 --safe-mode参数（它禁止掉很多可能导致问题的优化设置）来运行<span><strong class="command">mysqld</strong>。</span> 
+		请参阅<a href="problems.html#crashing" title="A.4.2. What to Do If MySQL Keeps Crashing">A.4.2节，“如果MySQL依旧崩溃，应该做什么”</a>。
+    </p><p>
+      如果 <span><strong class="command">mysqld</strong></span> 
+		不启动，你应该查证有没有干扰你的设置的my.cnf文件。你可以用<span><strong class="command">mysqld
+      --print-defaults</strong></span><strong class="command">...</strong>检查my.cnf参量，并用<span><strong class="command">mysqld 
+		--no-defaults</strong>来启动去</span>避免它们。</p><p>
+      如果<span><strong class="command">mysqld</strong></span> 
+		启动耗尽CPU或内存资源，或者它“挂”了起来，你可以使用 <span><strong class="command">mysqladmin
+      processlist status</strong></span>去找出是否有人执行了一个占用很长时间的查询。如果你正面临着性能问题或新客户端不能连
+		之时的问题，在某些窗口中运行<span><strong class="command">mysqladmin -i10 processlist status</strong>可能是</span>一个好主意。
+    </p><p>
+      <span><strong class="command">mysqladmin debug</strong></span> 
+		命令把一些有关使用中的锁，使用的内存以及查询使用的信息转储到MySQL日志文件里。这将有助于解决一些问题。即使你没有为调试编译MySQL，这个命令也提供一些有用的信息！</p><p>
+      如果问题是一些表变得越来越慢，你应该试着用PTIMIZE TABLE或<span><strong class="command">myisamchk</strong></span>优化表。I请参阅第<a href="database-administration.html" title="Chapter 5. Database Administration">5章：<i>数据库管理</i></a>。你也可以用EXPLAIN检查慢
+		的查询。&nbsp;
+    </p><p>
+      对那些于你的环境是独特的问题，你也应该查阅这个手册里OS规格的部分请参阅<a href="installing.html#operating-system-specific-notes" title="2.12. Operating System-Specific Notes"> 2.12节，“操作系统系统的注意事项”</a>。
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="compiling-for-debugging"></a>E.1.1. 针对调试编译MySQL</h3></div></div></div><p>
+        如果你遇到一些非常明确的问题，你可以总是试着调试MySQL。要调试MySQL，你必须用--with-debug或--with-debug=full选项来配置MySQL。你可以检查MySQL是否是通过<span><strong class="command">mysqld
+        --help</strong></span>来和调试一起编译的。如果--debug标记和选项一起被列出了，你就可以调试了。在这种情况<span><strong class="command">mysqladmin ver</strong></span>下把<span><strong class="command">mysqld</strong></span>版本列成<span><strong class="command">mysql ...
+        --debug</strong>。</span>
+      </p><p>
+        如果你使用<span><strong class="command">gcc</strong></span> 或
+        <span><strong class="command">egcs</strong>，推荐的<strong class="command">configure</strong></span> 
+		行如下：</p><pre class="programlisting">CC=gcc CFLAGS="-O2" CXX=gcc CXXFLAGS="-O2 -felide-constructors \
+   -fno-exceptions -fno-rtti" ./configure --prefix=/usr/local/mysql \
+   --with-debug --with-extra-charsets=complex
+</pre><p>
+        这避免了libstdc++库和C++异常（很多编译器在线程代码里有C++异常的问题）的问题，并编译了一个支持所有字符集的MySQL版本。
+      </p><p>
+        如果你怀疑内存溢出错误，你可以用--with-debug=full来配置MySQL，这会安装一个内存分配（SAFEMALLOC）检查器。可是，运行SAFEMALLOC是非常慢的，所以如果你遇到性能上的问题，你应该
+		用--skip-safemalloc选项启动<span><strong class="command">mysqld</strong></span>。这样禁止掉对调用malloc()和free()的内存检查。</p><p>
+        当你用--with-debug编译<span><strong class="command">mysqld</strong>时，如果它不再崩溃，你大致已经在MySQL内找到一个编译器缺陷或计时缺陷。这种情况下，你可以试着把</span>-g<span>加到上面的</span>CFLAGS<span>和</span>CXXFLAGS<span>变量，并且不使用</span>--with-debug。如果<span><strong class="command">mysqld</strong></span>失败，你至少可以<span><strong class="command">gdb</strong></span>用附着上它或使用核心文件上的<span><strong class="command">gdb</strong></span>去找出发生什么问题。
+      </p><p>
+        当你为调试配置MySQL时，你就自动允许许多额外的监视<span><strong class="command">mysqld</strong></span>健康的安全检查函数。如果它们发现一些“不期望”的事，会写一个条目到stderr，<span><strong class="command">safe_mysqld</strong><strong class="command">，</strong></span>指引这个stderr到错误日志！这也意味着如果MySQL发生什么意外的问题，并且你正使用一个源文件发布版本，那么你要做的第一件事就是去为调试配置MySQL！（第二件事是发邮件到MySQL邮件列表请求帮助）。请参阅<a href="introduction.html#mailing-list" title="1.7.1.1. The MySQL Mailing Lists">1.7.1.1节，“MySQL邮件列表”</a>。请根据你使用的MySQL版本对所有缺陷报告或问题使用<span><strong class="command">mysqlbug</strong></span>脚本！</p><p>
+        在Windows MySQL发布包里，mysqld.exe默认编译为支持追踪文件。</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="making-trace-files"></a>E.1.2. 创建跟踪文件</h3></div></div></div><p>
+        如果<span><strong class="command">mysqld</strong></span> 
+		服务器没有启动或者你可以快速地使其崩溃，你可以创建一个跟踪文件来找出问题。
+      </p><p>
+        要这么做的话，你必须有一个编译了支持调试的<span><strong class="command">mysqld</strong>，<strong class="command"> </strong>
+		你可以通过执行</span>mysqld -V<span>来检查一下。如果版本号后面跟着</span>-debug，它就是被编译成支持跟踪文件。（在 Windows中，调试服务器被命名为<span><strong class="command">mysqld-debug</strong></span> 
+		而不是象MySQL 4.1 那样的<span><strong class="command">mysqld</strong></span> ）。</p><p>
+        如下命令，启动带跟踪文件的 <span><strong class="command">mysqld</strong></span> 
+		服务器，跟踪文件位于Unix上的/tmp/mysqld.trace目录里，Windows上
+		的C:\mysqld.trace目录里：
+      </p><pre class="programlisting">shell&gt; <strong class="userinput">mysqld --debug</strong>
+</pre><p>
+        在Windows上，你也可以使用--standalone参数，启动<span><strong class="command">mysqld</strong>让它不</span>作为服务。在控制台窗口，使用这个命令：
+      </p><pre class="programlisting">C:\&gt; <strong class="userinput">mysqld-debug --debug --standalone</strong>
+</pre><p>
+        完毕之后，你可以使用第二个窗口中的 mysql.exe 
+		命令行工具重新制造问题。你可以用<span><strong class="command">mysqladmin shutdown</strong></span>命令停止<span><strong class="command">mysqld</strong></span>服务器。
+      </p><p>
+        注意，跟踪文件会变得<span class="bold"><strong>很大</strong></span>！如果你想生成一个小一点的跟踪文件，你可以使用类似这样的调制选项：
+      </p><p>
+        <span><strong class="command">mysqld
+        --debug=d,info,error,query,general,where:O,/tmp/mysqld.trace</strong></span>
+      </p><p>
+        这样就仅把带最感兴趣标记的信息写进跟踪文件里.
+      </p><p>
+        如果你生成一个有关于此的缺陷报告，请只用把跟踪文件中的相关行发送到恰当的邮件列表去，那里关注你报告出问题的部分。如果你不能找出哪里出问题，你可以ftp上载整个跟踪文件到<a href="ftp://ftp.mysql.com/pub/mysql/upload/" target="_top">ftp://ftp.mysql.com/pub/mysql/upload/</a>，并附有完全的缺陷报告，MySQL开发人员会看到它的。
+      </p><p>
+        追踪文件是由Fred Fish用<span class="bold"><strong>DBUG</strong></span>软件包生成的，请参阅<a href="#the-dbug-package" title="E.3. The DBUG Package">E.3节，“DBUG软件包”</a>。
+      </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="using-gdb-on-mysqld"></a>E.1.3. 在<span><strong class="command">gdb</strong>环境下调试<strong class="command">mysqld</strong></span></h3></div></div></div><a class="indexterm" name="id3100337"></a><p>
+        如果<span><strong class="command">mysqld</strong></span>崩溃了，在大多数系统上，你也可是从<span><strong class="command">gdb</strong></span>启动<span><strong class="command">mysqld</strong></span>来获取更多信息。
+      </p><p>
+        Linux上，有一些老版本的<span><strong class="command">gdb</strong></span>，如果你想要能调试<span><strong class="command">mysqld</strong></span>线程，你必须使用run --one-threadsome。在这种情况下，你可以一次只激活一个线程。我们推荐你升级到gdb 5.1 ASAP 
+		，这个版本上线程调试工作得更好！
+      </p><p>
+        NTPL 线程（Linux上的新线程库）可能会在<span><strong class="command">gdb</strong></span>下运行<span><strong class="command">mysqld</strong></span>时遇到问题。一些症状如下：</p><div class="itemizedlist"><ul type="disc"><li><p>
+            <span><strong class="command">mysqld</strong></span> 在启动过程中挂起（在它写ready for connections之前）。
+          </p></li><li><p>
+            <span><strong class="command">mysqld</strong></span> 在调用pthread_mutex_lock()或pthread_mutex_unlock()过程中崩溃。
+          </p></li></ul></div><p>
+        在这种情况下你应该在启动<span><strong class="command">gdb</strong></span>之前在外壳上设置如下环境变量：
+      </p><pre class="programlisting">LD_ASSUME_KERNEL=2.4.1
+export LD_ASSUME_KERNEL
+</pre><p>
+        在<span><strong class="command">gdb</strong></span>下运行<span><strong class="command">mysqld</strong></span>时，你应该用--skip-stack-trace来禁止堆栈跟踪，以便能捕获<span><strong class="command">gdb</strong></span>内的段错误。</p><p>
+        在MySQL 4.0.14和以上版本，你应该对mysqld使用--gdb选项。 这会为SIGINT安装一个中断处理器（需要用^C停止<span><strong class="command">mysqld</strong></span>来设置断点），并且禁止堆栈跟踪和核心文件处理。</p><p>
+        当<span><strong class="command">gdb</strong></span>没有给旧线程释放内存的整个时间里，如果你做了大量的新连接，在<span><strong class="command">gdb</strong></span>下调试MySQL是非常困难的。你可以通过带 -O thread_cache_size= 'max_connections
+        +1' 启动<span><strong class="command">mysqld</strong> 
+		来避免这个问题。在多数情况下，只使用</span>-O
+        thread_cache_size=5'就受益无穷了！
+      </p><p>
+        如果<span><strong class="command">mysqld</strong>带着</span>SIGSEGV信号死掉了，而你想在Linux上转储核心，你可以带--core-file选项启动<span><strong class="command">mysqld</strong>。这个核心文件可以被用来生成
+		向后跟踪，它可以帮你找出<strong class="command">mysqld</strong> 
+		为何死掉：</span>
+      </p><pre class="programlisting">shell&gt; <strong class="userinput">gdb mysqld core</strong>
+gdb&gt;   backtrace full
+gdb&gt;   exit
+</pre><p>
+        请参阅<a href="problems.html#crashing" title="A.4.2. What to Do If MySQL Keeps Crashing">A.4.2节，“如果MySQL依旧崩溃，该如何去做”</a>。
+      </p><p>
+        如果你在Linux上使用<span><strong class="command">gdb</strong></span> 4.17.x 
+		或以上版本，你应该安装一个带有如下信息的 .gdb 文件到你当前目录：
+      </p><pre class="programlisting">set print sevenbit off
+handle SIGUSR1 nostop noprint
+handle SIGUSR2 nostop noprint
+handle SIGWAITING nostop noprint
+handle SIGLWP nostop noprint
+handle SIGPIPE nostop
+handle SIGALRM nostop
+handle SIGHUP nostop
+handle SIGTERM nostop noprint
+</pre><p>
+        如果你用<span><strong class="command">gdb</strong></span>调试线程遇到问题，你应该下载gdb 5.x版本并用它试一下调试。新版本的 <span><strong class="command">gdb</strong></span> 
+		大大改善了线程处理！
+      </p><p>
+        下面是如何调试mysqld的例子：</p><pre class="programlisting">shell&gt; <strong class="userinput">gdb /usr/local/libexec/mysqld</strong>
+gdb&gt; run
+...
+backtrace full # Do this when mysqld crashes
+</pre><p>
+        把上面的输入写进一个用<span><strong class="command">mysqlbug</strong></span>生成的邮件里，发送到综合MySQL邮件列表。请参阅<a href="introduction.html#mailing-list" title="1.7.1.1. The MySQL Mailing Lists">1.7.1.1节，“MySQL 
+		邮件列表”</a>。
+      </p><p>
+        如果<span><strong class="command">mysqld</strong></span> 挂起，你可以试着用一些诸如strace 
+		或
+        /usr/proc/bin/pstack 这样的系统工具连检查<span><strong class="command">mysqld</strong></span> 
+		在哪里挂起。
+      </p><pre class="programlisting">strace /tmp/log libexec/mysqld
+</pre><a class="indexterm" name="id3100636"></a><a class="indexterm" name="id3100645"></a><a class="indexterm" name="id3100654"></a><a class="indexterm" name="id3100663"></a><p>
+        如果你使用 Perl DBI 接口，你可以使用trace方法或设置DBI_TRACE环境变量来打开调试信息。
+      </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="using-stack-trace"></a>E.1.4. 使用堆栈跟踪</h3></div></div></div><p>
+        在一些操作系统上，如果<span><strong class="command">mysqld</strong></span>意外死掉，错误日志包含一个堆栈跟踪。你可以用它来找出<span><strong class="command">mysqld</strong></span>
+        在哪里（也许可能找出为什么）死掉。请参阅<a href="database-administration.html#error-log" title="5.11.1. The Error Log">5.11.1节，“错误日志”</a>。要获得堆栈跟踪，你不能用-fomit-frame-pointer 
+		选项编译<span><strong class="command">mysqld</strong></span> 为gcc。 请参阅<a href="#compiling-for-debugging" title="E.1.1. Compiling MySQL for Debugging">E.1.1节，“针对调试编译MySQL”</a>。
+      </p><p>
+        如果错误文件包含类似下面的一些内容：</p><pre class="programlisting">mysqld got signal 11;
+The manual section 'Debugging a MySQL server' tells you how to use a
+stack trace and/or the core file to produce a readable backtrace that may
+help in finding out why mysqld died
+Attempting backtrace. You can use the following information to find out
+where mysqld died.  If you see no messages after this, something went
+terribly wrong...
+stack range sanity check, ok, backtrace follows
+0x40077552
+0x81281a0
+0x8128f47
+0x8127be0
+0x8127995
+0x8104947
+0x80ff28f
+0x810131b
+0x80ee4bc
+0x80c3c91
+0x80c6b43
+0x80c1fd9
+0x80c1686
+</pre><p>
+        你可以使用如下步骤找出<span><strong class="command">mysqld</strong></span>在什么地方出现问题：</p><div class="orderedlist"><ol type="1"><li><p>
+            复制前面的数字到一个文件，如mysqld.stack。
+          </p></li><li><p>
+            为 <span><strong class="command">mysqld</strong></span> 服务器生成符号文件：
+          </p><pre class="programlisting">nm -n libexec/mysqld &gt; /tmp/mysqld.sym
+</pre><p>
+            注意，多数MySQL二进制发布包（"debug" 软件包，包含这些信息的地方就在二进制发布包本身之内）带上述文件，在其中这些文件名为mysqld.sym.gz。在这种情况下，你可以简单地解压缩它：
+          </p><pre class="programlisting">gunzip &lt; bin/mysqld.sym.gz &gt; /tmp/mysqld.sym
+</pre></li><li><p>
+            执行 resolve_stack_dump -s /tmp/mysqld.sym -n
+            mysqld.stack.
+          </p><p>
+            这个命令会打印出<span><strong class="command">mysqld</strong></span>死在哪里。如果这个不能帮你找出<span><strong class="command">mysqld</strong></span>为什么死掉，你应该生成一个缺陷报告，并在缺陷报告里包含上述命令的输出结果。</p><p>
+            注意，尽管在多数情况下，仅有一个堆栈跟踪不能帮助我们找出问题的原因。为了定位缺陷或找到一个大致范围，我们在大多数情况下需要知道杀掉<span><strong class="command">mysqld</strong></span>的查询，并最好知道一个测试案例
+			，以便我们能重复问题！请参阅<a href="introduction.html#bug-reports" title="1.7.1.3. How to Report Bugs or Problems">1.7.1.3节，“如何报告缺陷和问题”</a>。
+          </p></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="using-log-files"></a>E.1.5. 使用日志文件找出<span><strong class="command">mysqld中</strong></span>的错误原因 </h3></div></div></div><p>
+        注意，在带--log选项启动 <span><strong class="command">mysqld</strong></span>之前，你应该用<span><strong class="command">myisamchk</strong></span>检查所有的表。请参阅<a href="database-administration.html" title="Chapter 5. Database Administration">第5章：<i>数据库管理</i></a>.
+      </p><p>
+        如果 <span><strong class="command">mysqld</strong></span> 死了或挂起，你应该用--log启动
+        <span><strong class="command">mysqld</strong></span> 。当<span><strong class="command">mysqld</strong></span> 
+		再次死掉时，你可以检查日志文件的最后，找出杀掉<span><strong class="command">mysqld</strong></span>的查询。</p><p>
+        如果你不带文件名使用 --log ，日志被保存在<em class="replaceable">名为host_name</em>.log的数据库目录里。在多数情况下，日志文件中的最后一个查询杀掉<span><strong class="command">mysqld</strong>，但如果有可能，你应该重启<strong class="command">mysqld</strong>并从<strong class="command">mysq</strong>命令行工具执行找到的查询来验证一下。如果这个查询杀掉<strong class="command">了mysqld</strong>，你也应该测试所有没有完成的复杂查询</span>。
+      </p><p>
+        你也可以在所有占用长时间的SELECT声明上用命令EXPLAIN来确认 <span><strong class="command">mysqld</strong></span>正适当地使用索引。请参阅<a href="optimization.html#explain" title="7.2.1. EXPLAIN Syntax (Get Information About a SELECT)">7.2.1节，“EXPLAIN 
+		语法（获得关于SELECT<span>的信息</span>）”</a>。
+      </p><p>
+        你可以带
+        --log-slow-queries启动<span><strong class="command">mysqld</strong></span>来找出占用长时间来执行的查询。请参阅<a href="database-administration.html#slow-query-log" title="5.11.4. The Slow Query Log">5.11.4节
+		，“缓慢查询日志”</a>。
+      </p><p>
+        如果你在错误日志文件（通常名为hostname.err）中发现 mysqld restarted 
+		字样，你大致已经找到导致<span><strong class="command">mysqld</strong></span>的查询。如果发生这种情况，你应该用<span><strong class="command">myisamchk</strong></span>检查所有表（参阅 
+		<a href="database-administration.html" title="Chapter 5. Database Administration">
+		第5章：<i>数据库管理</i></a>），并在MySQL日志文件中测试这些查询看是否有不执行的。如果找到这样一个查询，试着升级到最新的MySQL版本。如果这样不能帮助你，你不能在mysql邮件存档中发现任何相关内容，你应该把缺陷报告给MySQL邮件列表。邮件列表在<a href="http://lists.mysql.com/" target="_top">http://lists.mysql.com/</a>订阅，这个地址上也有连到在线列表存档的链接。
+      </p><p>
+        如果你已经用myisam-recover启动了<span><strong class="command">mysqld</strong></span>，MySQL自动检查并试着修复MyISAM 
+		表，看是否它们被标志为“未正常关闭”或“崩溃”。如果发生这种情况，MySQL在文件hostname.err
+        写一个条目'Warning: Checking table ...'，后面跟着警告：如果表需要修复，请修复它。如果你遇上大量的这些错误而<span><strong class="command">mysqld</strong></span>没有意外死掉，那就是有问题了，需要进一步调查。请参阅<a href="database-administration.html#server-options" title="5.3.1. mysqld Command-Line Options">5.3.1节，“<strong class="command"><span>mysqld</span></strong>命令行选项”</a>。
+      </p><p>
+        如果<span><strong class="command">mysqld</strong></span>意外死掉，这可不是一个好兆头，但在这种情况下不用研究Checking table...信息，而是要找出<span><strong class="command">mysqld</strong></span>为什么死掉。</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="reproduceable-test-case"></a>E.1.6. 如果出现表崩溃，请生成测试案例</h3></div></div></div><p>
+        如果在一些更新命令之后，<span><strong class="command">mysqld</strong></span>总是当掉，或者如果你遇到被破坏的表，你可以用下面的操作测试看这个缺陷是否是可重复产生的：
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+            卸掉MySQL守护进程（用<span><strong class="command">mysqladmin
+            shutdown</strong>）。</span>
+          </p></li><li><p>
+            给该表做备份（防止修复操作反而搞坏这种很不可能出现的情况）。
+          </p></li><li><p>
+            用 <span><strong class="command">myisamchk -s
+            database/*.MYI</strong> 检查所有的表，用<strong class="command">myisamchk -r
+            database/<em class="replaceable">table</em>.MYI</strong>修理有错误的表。</span>
+          </p></li><li><p>
+            对该表做第二次备份。
+          </p></li><li><p>
+            如果需要更多的空间就从MySQL数据库目录删除（或移走）旧日志文件。
+          </p></li><li><p>
+            带--log-bin启动Start <span><strong class="command">mysqld</strong></span> 
+			。请参阅<a href="database-administration.html#binary-log" title="5.11.3. The Binary Log">5.11.3节，“二进制日志”</a>。如果你想找出搞<span>垮<strong class="command">mysqld</strong></span>的查询，你应该使用use
+            --log --log-bin。
+          </p></li><li><p>
+            当你已经遭遇一个被破坏的表时，请停止mysqld server 。</p></li><li><p>
+            还原备份。
+          </p></li><li><p>
+            不带--log-bin重启动<span><strong class="command">mysqld</strong></span> 
+			服务器。&nbsp;
+          </p></li><li><p>
+            重新执行<span><strong class="command">mysqlbinlog
+            update-log-file | mysql</strong></span>命令。更新的日志用名字hostname-bin.#保存在MySQL数据库目录下。
+          </p></li><li><p>
+            如果该表再次被破坏，或者你可用上诉命令让<span><strong class="command">mysqld</strong></span> 
+			死掉，你就已经找到可重复产生的缺陷，它应该很容易被修复！可以ftp上传表和二进制日志到
+            <a href="ftp://ftp.mysql.com/pub/mysql/upload/" target="_top">ftp://ftp.mysql.com/pub/mysql/upload/</a> 
+			然后把它输入我们在
+            <a href="http://bugs.mysql.com/" target="_top">http://bugs.mysql.com/</a>上的缺陷系统。（请注意，/pub/mysql/upload/ 
+			在FTP时是不可以列出（内容）的，所以不能在FTP客户端看见你已经上载的东西。）如果你是一个支持客户，你可以使用 MySQL客户支持中心<a href="https://support.mysql.com/" target="_top">https://support.mysql.com/</a> 
+			来 提醒MySQL 技术人员这个问题，让这个问题尽快得到解决。
+          </p></li></ul></div><p>
+        如果你想缩小问题的范围，你也可以使用 mysql_find_rows脚本来只执行一些
+		更新语句。
+      </p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="debugging-client"></a>E.2. 调试MySQL客户端</h2></div></div></div><a class="indexterm" name="id3101320"></a><a class="indexterm" name="id3101330"></a><p>
+      为能够用集成的调试软件包调试MySQL客户端 ，你应该用--with-debug或--with-debug=full配置MySQL。请参阅<a href="installing.html#configure-options" title="2.8.2. Typical configure Options">2.8.2节，“典型的配置选项”</a>。
+    </p><a class="indexterm" name="id3101358"></a><a class="indexterm" name="id3101368"></a><p>
+      在运行客户端之前，你应该设置
+      MYSQL_DEBUG环境变量：</p><pre class="programlisting">shell&gt; <strong class="userinput">MYSQL_DEBUG=d:t:O,/tmp/client.trace</strong>
+shell&gt; <strong class="userinput">export MYSQL_DEBUG</strong>
+</pre><p>
+      这会导致客户端在
+      /tmp/client.trace目录产生一个跟踪文件。
+    </p><p>
+      如果你自己的客户端代码有问题，你应该试着连接到服务器，用已知可用的客户端运行你的查询。在调试模式下，按下面命令运行（假设你已经带调试编译了MySQL）：
+    </p><pre class="programlisting">shell&gt; <strong class="userinput">mysql --debug=d:t:O,/tmp/client.trace</strong>
+</pre><p>
+      万一你要发送一个缺陷报告邮件，这会提供给你有用的信息。请查阅<a href="introduction.html#bug-reports" title="1.7.1.3. How to Report Bugs or Problems">“如何报告缺陷或问题”</a>。
+    </p><p>
+      如果你的客户端在一些看起来合法的代码处崩溃了，你应该检查你的mysql.h文件是否包括匹配你的MySQL库文件。一个常见的错误就是用新的版本的MySQL库使用一个来自老版本安装的mysql.h文件。
+    </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="the-dbug-package"></a>
+		E.3.&nbsp;DBUG软件包</h2></div></div></div><a class="indexterm" name="id3101464"></a><p>
+      MySQL服务器和多数MySQL客户端都带着由Fred Fish初创的DBUG 软件包编译成的。当你为调试配置MytSQL之时，这个软件使你可以得到一个程序正在调试什么的跟踪文件。请参阅<a href="#making-trace-files" title="E.1.2. Creating Trace Files">E.1.2节，“创建跟踪文件”</a>。
+    </p><p>
+      这一节总结了你对已建立支持调试的MySQL程序在命令行的调试选项处可以指定的参量值。要获取更多使用DBUG软件包来编程的信息，请参阅MySQL源发布包里dbug目录下的DBUG手册。最好使用最近的MySQL 
+		5.1发布包以获得最近更新的DBUG手册。</p><p>
+      你通过用--debug="..."或the -#...
+      选项调用一个程序来使用调试软件包。</p><p>
+      多数MySQL程序有默认的调试字符串，如果你不给--debug指定一个选项，就使用这个默认的。默认的跟踪文件通常是/tmp/program_name.trace（在Unix上）和\program_name.trace 
+		（在Windows上）。
+    </p><p>
+      调试字符串是一系列冒号隔开的区段，如下：</p><pre class="programlisting">&lt;field_1&gt;:&lt;field_2&gt;:...:&lt;field_N&gt;
+</pre><p>
+      每个区段包含一个强制标志字符，后面跟着已和可选的 ‘,’ 以及一列用逗号隔开的修改量：
+    </p><pre class="programlisting">flag[,modifier,modifier,...,modifier]
+</pre><p>
+      当前被识别的标记符号是：
+    </p><div class="informaltable"><table border="1"><colgroup><col><col></colgroup><tbody><tr><td><span class="bold"><strong>
+			标记</strong></span></td><td><span class="bold"><strong>描述</strong></span></td></tr><tr><td>d</td><td>
+				允许对当前状态从DBUG_&lt;N&gt;宏输出。可能跟着一列关键词，这些关键词仅对那些带有关键词的DBUG宏选择输出。一个空的关键词列意味着对所有宏输出。</td></tr><tr><td>D</td><td>
+				在每个调试起输出行后延迟。参量一个十分之一秒为单位来延迟的数，它受限于机器的能力。比如 -#D,20
+              	指定一个2秒的延迟。</td></tr><tr><td>f</td><td>
+				限制调试和/或跟踪，以及简单设定于列出名字的函数。注意，空列将禁止所用函数。应该给出适当的d 
+				或
+              t 标记，如果它们被允许了，这个标记仅限制它们的动作。</td></tr><tr><td>F</td><td>
+				对调试或跟踪输出的每一行识别源文件名。</td></tr><tr><td>i</td><td>
+				对调试或跟踪输出的每一行用PID或线程ID识别进程。</td></tr><tr><td>g</td><td>
+				允许解析，创建名为的dbugmon.out文件，它包含可用来简单设定程序的信息。可能跟着一列关键词，它们是选择只对列中的函数做简单设定。一个空列意味着所有函数都要考虑到。</td></tr><tr><td>L</td><td>
+				为调试或跟踪输出的每一行识别源文件行号。</td></tr><tr><td>n</td><td>
+				为调试或跟踪输出的每一行打印当前函数嵌套深度。</td></tr><tr><td>N</td><td>
+				给调试输出的每一行编号。</td></tr><tr><td>o</td><td>
+				重定向调试器输出流到指定文件。默认输出是stderr 文件。</td></tr><tr><td>O</td><td>
+				类似于 o，但是文件在每次写操作之间被冲刷。当需要之时，文件在每次写操作之间被关闭然后重新打开。</td></tr><tr><td>p</td><td>
+				限制调试器作用于指定进程。为使调试器动作，一个进程必须用DBUG_PROCESS宏来识别，且匹配列表中的一个。</td></tr><tr><td>P</td><td>
+				为调试或跟踪输出的每一行打印当前进程名字。</td></tr><tr><td>r</td><td>
+				当推出一个新状态时，不继承前状态的操作嵌套深度级别。当输出在左边空白开始时有用。</td></tr><tr><td>S</td><td>
+				在每个调试过的函数做_sanity(_file_,_line_)函数直到 _sanity() 
+				返回不同于0的结果。（大多数的时候与safemalloc 
+				一起用来找出内存漏洞）。</td></tr><tr><td>t</td><td>
+				允许函数调用/退出跟踪行。可能跟着一个给出最大跟踪级别的数字列（只含一个修改量），超过这个数字，调试中或跟踪中的宏不能产生任何输出。
+				默认为一个编译时间选项。</td></tr></tbody></table></div><p>
+      可能出现在外壳命令行（-# 典型地被用来引入一个控制字符串到一个应用程序中） 
+		的调试控制字符串的一些例子如下：</p><pre class="programlisting">-#d:t
+-#d:f,main,subr1:F:L:t,20
+-#d,input,output,files:n
+-#d:t:i:O,\\mysqld.trace
+</pre><p>
+      在MySQL中, 打印的一般标记是（用 d
+      选项）是 enter, exit,
+      error, warning,
+      info, 和 loop 。
+    </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="rts-threads"></a>E.4. 关于RTS线程的注释</h2></div></div></div><a class="indexterm" name="id3101904"></a><a class="indexterm" name="id3101911"></a><p>
+      我曾尝试让MySQL使用RTS线程软件包，但是在下面的问题上遇到阻碍：
+    </p><p>
+      RTS线程软件包很多老版本的POSIX调用，对所有函数的写封装就很枯燥。我倾向于认为把线程库换成最新的POSIX规格，会更容易些。。</p><p>
+      一些封装正在编写中。更多信息请参阅mysys/my_pthread.c 文件。</p><p>
+      至少下面说道的应该改变一下：</p><p>
+      pthread_get_specific该使用一个参量。
+      sigwait应该使用两个参量。很多函数（至少pthread_cond_wait,
+      pthread_cond_timedwait()）应该返回错误的错误代码。现在它们返回 -1 
+		且设置
+      errno。</p><p>
+      另一个问题是，用户级线程使用ALRM信号，这会终止很多函数（read, write,
+      open...）。MySQL应该重试一下所有这上面的中断，但是这并非很容易去验证。
+    </p><p>
+      最大的未解决问题如下：</p><p>
+      要获得线程级警报，我使用pthread_cond_timedwait()改变
+      mysys/thr_alarm.c，让它在警报之间等待。但是它发生EINTR错误，终止了。我试着调试线程库找出为什么会出这个错误，但是找不到一个简便
+		的解决办法。
+    </p><p>
+      如果人人想要用RTS线程跑一下MySQL，我建议以下几点：</p><div class="itemizedlist"><ul type="disc"><li><p>
+          把MySQL使用的函数从线程库变到POSIX。这不会占据那么长时间。
+        </p></li><li><p>
+          用-DHAVE_rts_threads编译所有库。</p></li><li><p>
+          编译thr_alarm。
+        </p></li><li><p>
+          若在执行中有一些小的差异，可以改变my_pthread.h和my_pthread.c来修复它们。
+        </p></li><li><p>
+          运行thr_alarm。如果它没有任何警告，错误或终止信息地运行，你就做对了。这里是一个在Solaris成功运行的例子：
+        </p><pre class="programlisting">Main thread: 1
+Thread 0 (5) started
+Thread: 5  Waiting
+process_alarm
+Thread 1 (6) started
+Thread: 6  Waiting
+process_alarm
+process_alarm
+thread_alarm
+Thread: 6  Slept for 1 (1) sec
+Thread: 6  Waiting
+process_alarm
+process_alarm
+thread_alarm
+Thread: 6  Slept for 2 (2) sec
+Thread: 6  Simulation of no alarm needed
+Thread: 6  Slept for 0 (3) sec
+Thread: 6  Waiting
+process_alarm
+process_alarm
+thread_alarm
+Thread: 6  Slept for 4 (4) sec
+Thread: 6  Waiting
+process_alarm
+thread_alarm
+Thread: 5  Slept for 10 (10) sec
+Thread: 5  Waiting
+process_alarm
+process_alarm
+thread_alarm
+Thread: 6  Slept for 5 (5) sec
+Thread: 6  Waiting
+process_alarm
+process_alarm
+
+...
+thread_alarm
+Thread: 5  Slept for 0 (1) sec
+end
+</pre></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="thread-packages"></a>E.5. 线程软件包之间的差异</h2></div></div></div><a class="indexterm" name="id3102117"></a><p>
+      MySQL非常依赖使用中的线程软件包。 所以当为MySQL选择一个好平台的时候，线程软件包就非常重要。</p><p>
+      至少有三种线程软件包：</p><div class="itemizedlist"><ul type="disc"><li><p>
+          用户线程在单个进程中。线程切换用警报管理，线程库用锁管理所有非线程安全函数。读，写和选择操作通常被线程专有的切换器管理，
+			如果运行中的线程要等待数据，这个切换器就会切换操作到另一个线程。如果用户线程软件包集成在标准库（FreeBSD 和 BSDI 线程软件包）里，这样的
+			线程软件包比那些不得不映射所有不安全调用（MIT-pthreads, FSU Pthreads 和 RTS 线程软件包）的线程软件包需要更少的系统开销。在某些环境下（如SCO），所有系统调用都是线程安全的，所以映射非常容易（SCO上的FSU Pthreads包）。不足之处是：所有映射的调用占用很少的时间，于是想要能处理所有的情况就相当繁杂。有一些系统调用通常不被线程软件包（类似MIT-pthreads 
+			and sockets包）处理。线程计划不总是最优化的。
+        </p></li><li><p>
+          在分离进程中的用户线程。线程切换是由内核来做，且所有的数据在线程之间共享。线程软件包管理标准线程调用，允许在线程之间共享数据。LinuxThreads包就使用这种方法。不足之处：太多进程。线程创建得慢，如果一个线程死掉了，其余得线程通常就挂起来，你必须在重启之前杀掉这些挂起的线程。线程切换开销有些大。</p></li><li><p>
+          内核线程。线程切换由线程库或内核来做，并且非常快。一个进程就可以了。但在一些系统中<span><strong class="command">ps</strong>可能显示不同线程。如果一个线程终止，整个进程就终止了。多数系统
+			调用是线程安全的，并且只要非常小的系统开销。</span>Solaris, HP-UX, AIX 
+			和OSF/1
+          都有内核线程。</p></li></ul></div><p>
+      在一些系统中内核线程被系统库中整合用户级线程管理。在这种情况下，线程切换只能由线程库来做，而内核并不是真正的“线程感知”的。</p></div></div><div><hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，<span class="GramE">请访问</span><a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。 
+		原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</p></div>
+</body></html>

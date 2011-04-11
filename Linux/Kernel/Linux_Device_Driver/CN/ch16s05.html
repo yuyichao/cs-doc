@@ -1,0 +1,173 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>16.5.&#160;快速参考-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch16.html" title="第&#160;16&#160;章&#160;块驱动">
+<link rel="prev" href="ch16s04.html" title="16.4.&#160;一些其他的细节">
+<link rel="next" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">16.5.&#160;快速参考</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch16s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;16&#160;章&#160;块驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="BlockDriversqr.sect1"></a>16.5.&#160;快速参考</h2></div></div></div>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>#include &lt;linux/fs.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int register_blkdev(unsigned int major, const char *name);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int unregister_blkdev(unsigned int major, const char *name);</span></span></dt>
+<dd><p>register_blkdev 注册一个块驱动到内核, 并且, 可选地, 获得一个主编号. 一个驱动可被注销, 使用 unregister_blkdev.</p></dd>
+<dt><span class="term"><span>struct block_device_operations </span></span></dt>
+<dd><p>持有大部分块驱动的方法的结构.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/genhd.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct gendisk;</span></span></dt>
+<dd><p>描述内核中单个块设备的结构.</p></dd>
+<dt><span class="term"><span>struct gendisk *alloc_disk(int minors);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void add_disk(struct gendisk *gd);</span></span></dt>
+<dd><p>分配 gendisk 结构的函数, 并且返回它们到系统. </p></dd>
+<dt><span class="term"><span>void set_capacity(struct gendisk *gd, sector_t sectors);</span></span></dt>
+<dd><p>存储设备能力(以 512-字节)在 gendisk 结构中. </p></dd>
+<dt><span class="term"><span>void add_disk(struct gendisk *gd);</span></span></dt>
+<dd><p>添加一个磁盘到内核. 一旦调用这个函数, 你的磁盘的方法可被内核调用. </p></dd>
+<dt><span class="term"><span>int check_disk_change(struct block_device *bdev);</span></span></dt>
+<dd><p>一个内核函数, 检查在给定磁盘驱动器中的介质改变, 并且采取要求的清理动作当检测到这样一个改变.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/blkdev.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>request_queue_t blk_init_queue(request_fn_proc *request, spinlock_t *lock);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_cleanup_queue(request_queue_t *);</span></span></dt>
+<dd><p>处理块请求队列的创建和删除的函数.</p></dd>
+<dt><span class="term"><span>struct request *elv_next_request(request_queue_t *queue);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void end_request(struct request *req, int success);</span></span></dt>
+<dd><p>elv_next_request 从一个请求队列中获得下一个请求; end_request 可用在每个简单驱动器中来标识一个(或部分)请求完成.</p></dd>
+<dt><span class="term"><span>void blkdev_dequeue_request(struct request *req);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void elv_requeue_request(request_queue_t *queue, struct request *req);</span></span></dt>
+<dd><p>从队列中除去一个请求, 并且放回它的函数如果需要.</p></dd>
+<dt><span class="term"><span>void blk_stop_queue(request_queue_t *queue);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_start_queue(request_queue_t *queue);</span></span></dt>
+<dd><p>如果你需要阻止对你的请求函数的进一步调用, 调用 blk_stop_queue 来完成. 调用 blk_start_queue 来使你的请求方法被再次调用.</p></dd>
+<dt><span class="term"><span>void blk_queue_bounce_limit(request_queue_t *queue, u64 dma_addr);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_max_sectors(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_max_phys_segments(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_max_hw_segments(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_max_segment_size(request_queue_t *queue, unsigned int max);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>blk_queue_segment_boundary(request_queue_t *queue, unsigned long mask);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_dma_alignment(request_queue_t *queue, int mask);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_hardsect_size(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd><p>设置各种队列参数的函数, 来控制请求如何被创建给一个特殊设备; 这些参数在"队列控制函数"一节中描述.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/bio.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct bio;</span></span></dt>
+<dd><p>低级函数, 表示一个块 I/O 请求的一部分.</p></dd>
+<dt><span class="term"><span>bio_sectors(struct bio *bio);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>bio_data_dir(struct bio *bio);</span></span></dt>
+<dd><p>2 个宏定义, 表示一个由 bio 结构描述的传送的大小和方向.</p></dd>
+<dt><span class="term"><span>bio_for_each_segment(bvec, bio, segno);</span></span></dt>
+<dd><p>一个伪控制结构, 用来循环组成一个 bio 结构的各个段.</p></dd>
+<dt><span class="term"><span>char *__bio_kmap_atomic(struct bio *bio, int i, enum km_type type);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void __bio_kunmap_atomic(char *buffer, enum km_type type);</span></span></dt>
+<dd><p>__bio_kmap_atomic 可用来创建一个内核虚拟地址给一个在 bio 结构中的给定的段. 映射必须使用 __bio_kunmap_atomic 来恢复.</p></dd>
+<dt><span class="term"><span>struct page *bio_page(struct bio *bio);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int bio_offset(struct bio *bio);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int bio_cur_sectors(struct bio *bio);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>char *bio_data(struct bio *bio);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>char *bio_kmap_irq(struct bio *bio, unsigned long *flags);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void bio_kunmap_irq(char *buffer, unsigned long *flags);</span></span></dt>
+<dd><p>一组存取者宏定义, 提供对一个 bio 结构中的"当前"段的存取.</p></dd>
+<dt><span class="term"><span>void blk_queue_ordered(request_queue_t *queue, int flag);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int blk_barrier_rq(struct request *req);</span></span></dt>
+<dd><p>如果你的驱动实现屏障请求, 调用 blk_queue_ordered -- 如同它应当做的. 宏 blk_barrier_rq 返回一个非零值如果当前请求是一个屏障请求.</p></dd>
+<dt><span class="term"><span>int blk_noretry_request(struct request *req);</span></span></dt>
+<dd><p>这个宏返回一个非零值, 如果给定的请求不应当在出错时重新尝试.</p></dd>
+<dt><span class="term"><span>int end_that_request_first(struct request *req, int success, int count);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void end_that_request_last(struct request *req);</span></span></dt>
+<dd><p>使用 end_that_request_firest 来指示一个块 I/O 请求的一部分完成. 当那个函数返回 0, 请求完成并且应当被传递给 end_that_request_last.</p></dd>
+<dt><span class="term"><span>rq_for_each_bio(bio, request)</span></span></dt>
+<dd><p>另一个用宏定义来实现的控制结构; 它步入构成一个请求的每个 bio.</p></dd>
+<dt><span class="term"><span>int blk_rq_map_sg(request_queue_t *queue, struct request *req, struct scatterlist *list);</span></span></dt>
+<dd><p>为一次 DMA 传送填充给定的散布表, 用需要来映射给定请求中的缓冲的信息</p></dd>
+<dt><span class="term"><span>typedef int (make_request_fn) (request_queue_t *q, struct bio *bio);</span></span></dt>
+<dd><p>make_request 函数的原型.</p></dd>
+<dt><span class="term"><span>void bio_endio(struct bio *bio, unsigned int bytes, int error);</span></span></dt>
+<dd><p>指示一个给定 bio 的完成. 这个函数应当只用在你的驱动直接获取 bio , 通过 make_request 函数从块层.</p></dd>
+<dt><span class="term"><span>request_queue_t *blk_alloc_queue(int flags);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_make_request(request_queue_t *queue, make_request_fn *func);</span></span></dt>
+<dd><p>使用 blk_alloc_queue 来分配由定制的 make_request 函数使用的请求队列, . 那个函数应当使用 blk_queue_make_request 来设置.</p></dd>
+<dt><span class="term"><span>typedef int (prep_rq_fn) (request_queue_t *queue, struct request *req);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_prep_rq(request_queue_t *queue, prep_rq_fn *func);</span></span></dt>
+<dd><p>一个命令准备函数的原型和设置函数, 它可用来准备必要的硬件命令, 在请求被传递给你的请求函数之前.</p></dd>
+<dt><span class="term"><span>int blk_queue_init_tags(request_queue_t *queue, int depth, struct blk_queue_tag *tags);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int blk_queue_resize_tags(request_queue_t *queue, int new_depth);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int blk_queue_start_tag(request_queue_t *queue, struct request *req);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_end_tag(request_queue_t *queue, struct request *req);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct request *blk_queue_find_tag(request_queue_t *qeue, int tag);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_invalidate_tags(request_queue_t *queue);</span></span></dt>
+<dd><p>驱动使用被标记的命令队列的支持函数.</p></dd>
+</dl></div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch16s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch16.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">16.4.&#160;一些其他的细节&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;第&#160;17&#160;章&#160;网络驱动</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

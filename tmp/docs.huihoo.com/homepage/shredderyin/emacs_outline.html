@@ -1,0 +1,165 @@
+<!DOCTYPE html public "-//W3C//DTD HTML 4.01 Transitional//EN"     "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<HTML lang=cn>
+<HEAD>
+<TITLE>Emacs Outline Mode</title>
+<META http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="main.css" media="screen">
+</HEAD>
+
+<body>
+<h1 id=header>Emacs Outline Mode 示例</h1>
+
+<p class=note><q>Outline mode</q> 是 Emacs 的一个强有力的模式。它可以使你轻松的操纵结构
+化的文档。它可以让你只显示文档的某一个分支，只显示主干，只显示一个子树。
+
+<p>下面就是一个 LaTeX 文档的各种 outline 操作的结果示范。由于
+outline-minor-mode 的键绑定前缀 C-c @ 过于复杂，大部分经常使用 outline 
+的人想把它设置为另一个键，所以以后我在叙述时直接称呼函数名字和简化前缀
+的键绑定。具体的键绑定请用 C-h w 查询。
+
+<p>更改前缀可以在启动 outline-minor-mode 之前，用改变 
+outline-minor-mode-prefix 变量的办法一次完成。比如：
+
+<pre>
+(setq outline-minor-mode-prefix [(control o)])
+</pre>
+
+就可以把前缀改成 C-o. 以后我们实例中的键绑定都使用 C-o.
+
+<h2>本文的 Outline</h2>
+
+<p>首先，给大家一个 outline 的总体印象。我们使用 outline 来看看本文的主要内容 :)
+
+<p><img src="emacs-outline-self.png">
+
+<h2>原文档<a name="original"></a></h2>
+
+<p>这是一个非常简单的 LaTeX 文档: <a href="http://learn.tsinghua.edu.cn:8080/2001315450/src/outline.tex">outline.tex</a>
+
+<p><img src="emacs-outline-original.png">
+
+<p>我们来把文档的各部分术语解释一下。
+
+<ol>
+<li>heading: 是指文档里的标题，比如 Chapter 1, Chapter 2, Section 1,
+... 的那些行。
+<li>branch: 是指一颗子树下所有 heading 的集合。想一想“树干”。
+<li>entry: 是指文档里不是 heading 的那些内容。比如，"Entry for topmost
+level", "Entry for Chapter 1", "Entry for Chapter 2", ... 这些才是文档
+的主要内容。
+<li>leaves: 是指一棵子树里的所有 entry。
+<li>body: 是指文档里所有 entry 的集合。注意这个概念跟 leaves 的区别是
+范围上的区别。
+
+</ol>
+
+<h2>启动 Outline</h2>
+
+<p>M-x outline-minor-mode 就可以启动 Outline。还有一个 outline-mode 是
+一个 major mode，一般都不用它。
+
+<h2>全局隐藏操作</h2>
+
+<p>光标在任何位置，只要执行这些操作，文档的显示就会变化成需要的样子。
+
+<h3>hide-sublevels(C-o C-q)</h3>
+
+<p>这个操作如果不带参数，隐藏所有文档子结构，只剩最上层。
+
+<p><img src="emacs-outline-hide-sublevels.png">
+
+<h3>M-4 hide-sublevels(M-4 C-o C-q)</h3>
+
+<p>这是参数为4的操作，显示至文档第4层子结构。
+<p><img src="emacs-outline-M-4-hide-sublevels.png">
+
+<h3>hide-body(C-o C-t)</h3>
+
+<p>文档的所有 Entry 都被隐藏。只显示主干。
+
+<p><img src="emacs-outline-hide-body.png">
+
+<h2>对一个子树(Chapter 1)的隐藏操作</h2>
+
+<h3>hide-subtree(C-o C-d)</h3>
+
+<p>所有文档部分展开时，光标移动到 Chapter 1，执行 hide-subtree。整个 Chapter 1 的子树被折叠起来。
+
+<p><img src="emacs-outline-hide-subtree.png">
+
+<h3>hide-other(C-o C-o)</h3>
+
+<p>所有文档部分展开时，光标移动到 Chapter 1，执行 hide-other。除了 Chapter 1，
+其它子树全部被折叠起来。这个操作正好与 hide-subtree 互补。
+
+<p><img src="emacs-outline-hide-other.png">
+
+<h3>hide-leaves(C-o C-l)</h3>
+
+<p>所有文档部分展开时，光标移动到 Chapter 1，执行 hide-leaves。所有 
+Chapter 1 子树下的所有级别的 entry 被隐藏。也就是说，Chapter 1 下，只
+显示 branch.
+
+<p><img src="emacs-outline-hide-leaves.png">
+
+<h3>hide-entry(C-o C-c)</h3>
+<p>所有文档部分展开时，光标移动到 Chapter 1，执行 hide-entry。Chapter
+1 的 Entry 被隐藏，但是所有子树都不动。
+
+<p><img src="emacs-outline-hide-entry.png">
+
+
+<h2>全局显示操作</h2>
+<h3>show-all(C-o C-a)</h3>
+
+<p>显示所有文档。结果就是<a href="emacs_outline.html#original">原文档</a>。
+
+<h2>对一个子树的显示操作</h2>
+
+<p>为了演示，我们从全部隐藏的情况开始：
+
+<p><img src="emacs-outline-hide-sublevels.png">
+
+<h3>show-children(C-o C-i)</h3>
+
+<p>show-children 只显示直接的下一代子树，而不显示间接的下一代。这里，
+\begin{document} 的直接的下一代就是 \chapter{...}。
+
+<p><img src="emacs-outline-show-children.png">
+
+<h3>show-entry(C-o C-e)</h3>
+
+<p>把光标移动到 Chapter 1，执行 show-entry。Chapter 1 的 Entry 被显示，
+但是所有子结构还是保持隐藏。
+<img src="emacs-outline-show-entry.png">
+
+<h3>show-branches(C-o C-k)</h3>
+
+<p>把光标移动到 Chapter 1，执行 show-branches。Chapter 1 这棵子树之下
+的各级“树干”被显示，但是各级 entry 还是保持隐藏。Chapter 1 自己的
+entry，由于我们上一步已经显示，所以保持不变。
+
+<p><img src="emacs-outline-show-branches.png">
+
+<h3>show-subtree(C-o C-s)</h3>
+
+<p>把光标移动到 Chapter 1，执行 show-subtree。Chapter 1 及其所有子结构
+全部被扩展。
+
+<p><img src="emacs-outline-show-subtree.png">
+
+<h2>Outline mode 下的移动操作</h2>
+
+<p>在 outline 模式下，有几种特殊方便的移动方式。
+<ol>
+<li>C-o C-n (outline-next-visible-heading) 移动到下一个可见标题。
+<li>C-o C-p (outline-previous-visible-heading) 移动到上一个可见标题。
+<li>C-o C-f (outline-forward-same-level) 移动到下一个同级可见标题。
+<li>C-o C-b (outline-backward-same-level) 移动到上一个同级可见标题。
+<li>C-o C-u (outline-up-heading) 到上一级标题。
+</ol>
+
+<hr>
+<a href="emacs_tips.html" target="_parent">返回</a>
+</body>
+</html>

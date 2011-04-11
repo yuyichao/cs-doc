@@ -1,0 +1,588 @@
+Sed
+
+
+sed 是一个精简的、非交互式的编辑器。它能执行与编辑vi和emacs相同的编辑任务。sed编辑器不提供交互使用方式：只能在命令行输入编辑命令、指定文件名，然后在屏幕上察看输出。sed编辑器没有破坏性。它不会修改文件，除非用shell重定向来保存输出结果。缺省情况下，所以的输出都被打印到屏幕上。
+
+
+sed 编辑器在shell脚本中很有用，因为在shell脚本中使用像vi或emacs这类交互式编辑器，要求脚本用户精通该编辑器，而且还会导致用户对打开的 文件做出不需要的修改。如果需要执行多项编辑任务，或是不想为shell命令行上的sed命令加引号，也可以把sed命令写在一个叫做sed脚本的文件里。记住，在命令行输入命令时，shell会设法转换命令中所有的元字符或空白。sed命令中凡是可能被shell解释的字符都必须加引号进行保护。
+
+
+sed 是一种在线编辑器，它一次处理一行内容。处理时，把当前处理的行存储在临时缓冲区中，称为“模式空间”（pattern space），接着用sed命令处理缓冲区中的内容，处理完成后，把缓冲区的内容送往屏幕。接着处理下一行，这样不断重复，直到文件末尾。文件内容并没有
+改变，除非你使用重定向存储输出。Sed主要用来自动编辑一个或多个文件；简化对文件的反复操作；编写转换程序等。以下介绍的是Gnu版本的Sed 3.02。
+
+
+1. 定址功能
+可以通过定址来定位你所希望编辑的行，该地址用数字构成，用逗号分隔的两个行数表示以这两行为起止的行的范围（包括行数表示的那两行）。如1，3表示1，2，3行，美元符号($)表示最后一行。范围可以通过数据，正则表达式或者二者结合的方式确定。 
+2.sed命令调用格式
+调用sed命令有两种形式：
+   * sed [options] 'command' file(s)
+   * sed [options] -f scrīptfile file(s)
+
+
+a\ 在当前行后面加入一行文本。
+b lable 分支到脚本中带有标记的地方，如果分支不存在则分支到脚本的末尾。 
+c\ 用新的文本改变本行的文本。 
+d 从模板块（Pattern space）位置删除行。 
+D 删除模板块的第一行。 
+i\ 在当前行上面插入文本。 
+h 拷贝模板块的内容到内存中的缓冲区。 
+H 追加模板块的内容到内存中的缓冲区。 
+g 获得内存缓冲区的内容，并替代当前模板块中的文本。 
+G 获得内存缓冲区的内容，并追加到当前模板块文本的后面。 
+l 列表不能打印字符的清单。 
+n 读取下一个输入行，用下一个命令处理新的行而不是用第一个命令。 
+N 追加下一个输入行到模板块后面并在二者间嵌入一个新行，改变当前行号码。 
+p 打印模板块的行。 
+P（大写） 打印模板块的第一行。 
+q 退出Sed。 
+r file 从file中读行。 
+t label if分支，从最后一行开始，条件一旦满足或者T，t命令，将导致分支到带有标号的命令处，或者到脚本的末尾。 
+T label 错误分支，从最后一行开始，一旦发生错误或者T，t命令，将导致分支到带有标号的命令处，或者到脚本的末尾。 
+w file 写并追加模板块到file末尾。 
+W file 写并追加模板块的第一行到file末尾。 
+! 表示后面的命令对所有没有被选定的行发生作用。 
+s/re/string 用string替换正则表达式re。 
+= 打印当前行号码。
+*把注释扩展到下一个换行符以前。 
+以下的是替换标记 
+       *     g表示行内全面替换。
+       *     p表示打印行。
+       *     w表示把行写入一个文件。
+       *     x表示互换模板块中的文本和缓冲区中的文本。
+       *     y表示把一个字符翻译为另外的字符（但是不用于正则表达式）
+3. 选项 -e command, --expression=command 
+
+允许多台编辑。
+-h, --help 打印帮助，并显示bug列表的地址。
+-n, --quiet, --silent 取消默认输出。
+-f, --filer=scrīpt-file 引导sed脚本文件名。
+-V, --version 打印版本和版权信息。
+
+
+4. 元字符集 
+^ 锚定行的开始 如：/^sed/匹配所有以sed开头的行。 
+$ 锚定行的结束 如：/sed$/匹配所有以sed结尾的行。 
+. 匹配一个非换行符的字符 如：/s.d/匹配s后接一个任意字符，然后是d。
+* 匹配零或多个字符 如：/*sed/匹配所有模板是一个或多个空格后紧跟sed的行。 
+[] 匹配一个指定范围内的字符，如/[Ss]ed/匹配sed和Sed。 
+[^] 匹配一个不在指定范围内的字符，如：/[^A-RT-Z]ed/匹配不包含A-R和T-Z的一个字母开头，紧跟ed的行。 
+\(..\) 保存匹配的字符，如s/\(love\)able/\1rs，loveable被替换成lovers。 
+& 保存搜索字符用来替换其他字符，如s/love/**&**/，love这成**love**。 
+\ 锚定单词的结束，如/love\>/匹配包含以love结尾的单词的行。 x\{m\} 重复字符x，m次，如：/0\{5\}/匹配包含5个o的行。
+x\{m,\} 重复字符x,至少m次，如：/o\{5,\}/匹配至少有5个o的行。 x\{m,n\} 重复字符x，至少m次，不多于n次，如：/o\{5,10\}/匹配5--10个o的行。
+
+
+5. 实例 
+5.1删除：d命令
+       *   $ sed '2d' example-----删除example文件的第二行。
+       *   $ sed '2,$d'
+example-----删除example文件的第二行到末尾所有行。
+       *   $ sed '$d' example-----删除example文件的最后一行。
+       *   $ sed '/test/'d
+example-----删除example文件所有包含test的行。
+5.2替换：s命令
+       *   $ sed 's/test/mytest/g'
+example-----在整行范围内把test替换为mytest。如果没有g标记，则只有每行第一个匹配的test被替换成mytest。
+       *   $ sed -n
+'s/^test/mytest/p' example-----(-n)选项和p标志一起使用表示只打印那些发生替换的行。也就是说，如果某一行开头的test被替换成mytest，就打印它。
+       *   $ sed
+'s/^192.168.0.1/&localhost/' example-----&符号表示替换换字符串中被找到的部份。所有以192.168.0.1开头的行都会被替换成它自已加
+localhost，变成192.168.0.1localhost。
+       *   $ sed -n
+'s/\(love\)able/\1rs/p' example-----love被标记为1，所有loveable会被替换成lovers，而且替换的行会被打印出来。
+       *   $ sed 's#10#100#g'
+example-----不论什么字符，紧跟着s命令的都被认为是新的分隔符，所以，“#”在这里是分隔符，代替了默认的“/”分隔符。表示把所有10替换成100。
+5.3选定行的范围：逗号
+       *   $ sed -n
+'/test/,/check/p' example-----所有在模板test和check所确定的范围内的行都被打印。
+       *   $ sed -n '5,/^test/p'
+example-----打印从第五行开始到第一个包含以test开始的行之间的所有行。
+       *   $ sed
+'/test/,/check/s/$/sed test/' example-----对于模板test和west之间的行，每行的末尾用字符串sed test替换。
+5.4多点编辑：e命令 
+       *   $ sed -e '1,5d' -e
+'s/test/check/' example-----(-e)选项允许在同一行里执行多条命令。如例子所示，第一条命令删除1至5行，第二条命令用check替换test。命令的执
+行顺序对结果有影响。如果两个命令都是替换命令，那么第一个替换命令将影响第二个替换命令的结果。
+ *   $ sed
+--expression='s/test/check/' --expression='/love/d' example-----一个比-e更好的命令是--expression。它能给sed表达式赋值。
+5.5从文件读入：r命令 
+       *   $ sed '/test/r file'
+example-----file里的内容被读进来，显示在与test匹配的行后面，如果匹配多行，则file的内容将显示在所有匹配行的下面。
+5.6写入文件：w命令
+       *   $ sed -n '/test/w file'
+example-----在example中所有包含test的行都被写入file里。
+5.7追加命令：a命令
+       *   $ sed
+'/^test/a\\--->this is a example' example
+
+
+awk
+
+
+awk是一种程序语言，对文档资料的处理具有很强的功能。awk名称是由它三个最初设计者的姓氏的第一个字母而命名的： Alfred V.Aho、Peter J. We i n b e rg e r、Brian W. Kernighan。
+
+
+awk 最初在1 9 7 7年完成。1985年发表了一个新版本的awk，它的功能比旧版本增强了不少。awk能够用很短的程序对文档里的资料做修改、比较、提取、打印等处理。如果使用C 或Pascal等语言编写程序完成上述的任务会十分不方便而且很花费时间，所写的程序也会很大。
+awk不仅仅是一个编程语言，它还是linux系统管理员和程序员的一个不可缺少的工具。
+awk语言本身十分好学，易于掌握，并且特别的灵活。
+gawk是G N U计划下所做的awk，gawk最初在1 9 8 6年完成，之后不断地被改进、更新。
+gawk 包含awk 的所有功能。
+
+
+1.gawk的主要功能
+gawk 的主要功能是针对文件的每一行( l i n e )，也就是每一条记录，搜寻指定的格式。当某一行符合指定的格式时，gawk 就会在此行执行被指定的动作。gawk
+依此方式自动处理输入文件的每一行直到输入文件档案结束。
+gawk经常用在如下的几个方面：
+&#8226; 根据要求选择文件的某几行，几列或部分字段以供显示输出。
+&#8226; 分析文档中的某一个字出现的频率、位置等。
+&#8226; 根据某一个文档的信息准备格式化输出。
+&#8226; 以一个功能十分强大的方式过滤输出文档。
+&#8226; 根据文档中的数值进行计算。
+
+
+2.如何执行gawk程序
+基本上有两种方法可以执行gawk程序。
+如果gawk 程序很短，则可以将gawk 直接写在命令行，如下所示：
+gawk 'program' input-file1 input-file2 ...
+其中program 包括一些pattern和action。
+如果gawk 程序较长，较为方便的做法是将gawk 程序存在一个文件中，
+gawk 的格式如下所示：
+gawk -f program-file input-file1 input-file2 ...
+gawk 程序的文件不止一个时，执行gawk 的格式如下所示：
+gawk -f program-file1 -f program-file2 ... input-file1 input-file2 ...
+
+
+3.文件、记录和字段
+一般情况下，gawk可以处理文件中的数值数据，但也可以处理字符串信息。如果数据没有存储在文件中，可以通过管道命令和其他的重定向方法给gawk提供输入。当然，
+gawk只能处理文本文件（A S C I I码文件）。 
+电话号码本就是一个gawk可以处理的文件的简单例子。电话号码本由很多条目组成，每一个条目都有同样的格式：姓、名、地址、电话号码。每一个条目都是按字母顺序排列。
+在gawk中，每一个这样的条目叫做一个记录。它是一个完整的数据的集合。例如，电话号码本中的Smith John这个条目，包括他的地址和电话号码，就是一条记录。
+记录中的每一项叫做一个字段。在gawk中，字段是最基本的单位。多个记录的集合组成了一个文件。
+大多数情况下，字段之间由一个特殊的字符分开，像空格、TAB、分号等。这些字符叫做字段分隔符。请看下面这个/etc/passwd文件：
+tparker;t36s62hs;501;101;TimParker;/home/tparker;/bin/bash
+etreijs;2ys639dj3;502;101;EdTreijs;/home/etreijs;/bin/tcsh 
+ychow;1h27sj;503;101;Yvonne Chow;/home/ychow;/bin/bash
+你可以看出/etc/passwd文件使用分号作为字段分隔符。/etc/passwd文件中的每一行都包括七个字段：用户名；口令；用户I D；工作组I D；注释；
+h o m e目录；启始的外壳。如果你想要查找第六个字段，只需数过五个分号即可。
+但考虑到以下电话号码本的例子，你就会发现一些问题：
+Smith John 13 Wilson St. 555-1283
+Smith John 2736 Artside Dr Apt 123 555-2736
+Smith John 125 Westmount Cr 555-1726
+虽 然我们能够分辨出每个记录包括四个字段，但g a w k却无能为力。电话号码本使用空格作为分隔符，所以gawk认为Smith是第一个字段，John是第二个字段，13是第三个字段，依次类推。就gawk
+而言，如果用空格作为字段分隔符的话，则第一个记录有六个字段，而第二个记录有八个字段。
+所以，我们必须找出一个更好的字段分隔符。例如，像下面一样使用斜杠作为字段分隔符：
+Smith/John/13 Wilson St./555-1283
+Smith/John/2736 Artside Dr/Apt/123/555-2736
+Smith/John/125 Westmount Cr/555-1726
+如果你没有指定其他的字符作为字段分隔符，那么gawk将缺省地使用空格或TAB作为字段分隔符。
+
+
+4.模式和动作
+在gawk语言中每一个命令都由两部分组成：一个模式（pattern）和一个相应的动作
+（action）。只要模式符合，gawk就会执行相应的动作。其中模式部分用两个斜杠括起来，而动
+作部分用一对花括号括起来。例如：
+/pattern1/{action1}
+/pattern2/{action2}
+/pattern3/{action3}
+所有的gawk程序都是由这样的一对对的模式和动作组成的。其中模式或动作都能够被省
+略，但是两个不能同时被省略。如果模式被省略，则对于作为输入的文件里面的每一行，动作
+都会被执行。如果动作被省略，则缺省的动作被执行，既显示出所有符合模式的输入行而不做
+任何的改动。
+下面是一个简单的例子，因为gawk 程序很短，所以将gawk 程序直接写在外壳命令行：
+gawk '/tparker/' /etc/passwd 
+此程序在上面提到的/etc/passwd 文件中寻找符合tparker模式的记录并显示（此例中没有动作，所以缺省的动作被执行）。
+让我们再看一个例子：
+gawk '/UNIX/{print $2}' file2.data
+此命令将逐行查找file2.data文件中包含UNIX的记录，并打印这些记录的第二个字段。
+你也可以在一个命令中使用多个模式和动作对，例如：
+gawk '/scandal/{print $1} /rumor/{print $2}' gossip_file
+此命令搜索文件gossip_file中包括scandal的记录，并打印第一个字段。然后再从头搜索
+gossip_file中包括rumor的记录，并打印第二个字段。
+
+
+5.比较运算和数值运算
+gawk有很多比较运算符，下面列出重要的几个：
+= = 相等
+! = 不相等
+> 大于
+= 大于等于
+100' testfile
+将会显示文件testfile 中那些第四个字段大于1 0 0的记录。
+下表列出了gawk中基本的数值运算符。
+运算符说明示例
++ 加法运算2+6
+- 减法运算6-3
+* 乘法运算2*5
+/ 除法运算8/4
+^ 乘方运算3^2 (=9)
+% 求余数9%4 (=1)
+例如：
+{print $3/2}
+显示第三个字段被2除的结果。
+在gawk中，运算符的优先权和一般的数学运算的优先权一样。例如：
+{print $1+$2*$3}
+显示第二个字段和第三个字段相乘，然后和第一个字段相加的结果。
+你也可以用括号改变优先次序。例如：
+{print ($1+$2)*$3}
+显示第一个字段和第二个字段相加，然后和第三个字段相乘的结果。
+
+
+6.内部函数
+gawk中有各种的内部函数，现在介绍如下： 
+6.1 随机数和数学函数
+sqrt(x) 求x 的平方根
+sin(x) 求x 的正弦函数
+cos(x) 求x 的余弦函数
+atan2(x，y) 求x / y的余切函数
+log(x) 求x 的自然对数
+exp(x) 求x 的e 次方
+int(x) 求x 的整数部分
+rand() 求0 和1之间的随机数
+srand(x) 将x 设置为rand()的种子数
+6.2 字符串的内部函数 
+&#8226; index( in，find) 在字符串in中寻找字符串find 第一次出现的地方，返回值是字符串
+find 出现在字符串in 里面的位置。如果在字符串in 里面找不到字符串find，则返回值为0。
+例如：
+print index("peanut"，" a n " )
+显示结果3。
+&#8226; length(string) 求出string 有几个字符。
+例如：
+length("abcde")
+显示结果5。
+&#8226; match(string，regexp) 在字符串string 中寻找符合regexp的最长、最靠左边的子字符串。返回值是regexp 在string 的开始位置，即index值。match
+函数将会设置系统变量
+RSTART等于index的值，系统变量RLENGTH 等于符合的字符个数。如果不符合，则会
+设置RSTART为0、RLENGTH 为- 1。
+&#8226; sprintf( format，expression1，. . . ) 和printf 类似，但是sprintf 并不显示，而是返回字符串。
+例如：
+sprintf("pi = %.2f (approx.)"，2 2 / 7 )
+返回的字符串为pi = 3.14 (approx.)
+&#8226; s u b ( r e g e x p，r e p l a c e m e n t，t a rg e t ) 在字符串t a rget 中寻找符合regexp
+的最长、最靠左的
+地方，以字串replacement 代替最左边的r e g e x p。
+例如：
+str = "water，water，everywhere"
+sub( /at/， "ith"，str)
+结果字符串str会变成wither，water，everywhere
+&#8226; gsub(regexp，replacement，target) 与前面的sub类似。在字符串target 中寻找符合regexp的所有地方，以字符串replacement
+代替所有的regexp。
+例如：
+str = "water，water，everywhere"
+gsub( /at/， "ith"，str)
+结果字符串str会变成wither，wither，everywhere
+&#8226; substr(string，start，length)返回字符串string 的子字符串，这个子字符串的长度为length，从第start个位置开始。
+例如：
+substr("washington"，5，3)
+返回值为ing
+如果没有length，则返回的子字符串是从第start 个位置开始至结束。
+例如：
+substr("washington"，5)
+返回值为ington。
+&#8226; tolower(string) 将字符串s t r i n g的大写字母改为小写字母。
+例如：
+tolower("MiXeD cAsE 123")
+返回值为mixed case 123。
+&#8226; toupper(string) 将字符串s t r i n g的小写字母改为大写字母。
+例如：
+toupper("MiXeD cAsE 123")
+返回值为MIXED CASE 123。
+
+
+6.3 输入输出的内部函数
+&#8226; close(filename) 将输入或输出的文件filename 关闭。
+&#8226; system(command) 此函数允许用户执行操作系统的指令，执行完毕后将回到gawk程序。
+例如：
+BEGIN {system("ls")}
+7.字符串和数字
+字符串就是一连串的字符，它可以被gawk逐字地翻译。字符串用双引号括起来。数字不能用双引号括起来，并且gawk将它当作一个数值。例如：
+gawk '$1 != "Tim" {print}' testfile
+此命令将显示第一个字段和Tim不相同的所有记录。如果命令中Tim两边不用双引号，gawk将不能正确执行。
+再如：
+gawk '$1 == "50" {print}' testfile
+此命令将显示所有第一个字段和5 0这个字符串相同的记录。g a w k不管第一字段中的数值
+的大小，而只是逐字地比较。这时，字符串5 0和数值5 0并不相等。
+8.格式化输出
+我们可以让动作显示一些比较复杂的结果。例如：
+gawk '$1 != "Tim" {print $1，$ 5，$ 6，$2}' testfile
+将显示testfile文件中所有第一个字段和Ti m不相同的记录的第一、第五、第六和第二个字段。
+进一步，你可以在p r i n t动作中加入字符串，例如：
+gawk '$1 != "Tim" {print "The entry for "，$ 1，"is not
+Tim. "，$2}' testfile 
+print动作的每一部分用逗号隔开。
+借用C语言的格式化输出指令，可以让gawk的输出形式更为多样。这时，应该用printf而不是print。例如：
+{printf "%5s likes this language\n"，$ 2 }
+printf中的%5s 部分告诉gawk如何格式化输出字符串，也就是输出5个字符长。它的值由printf 的最后部分指出，在此是第二个字段。\n是回车换行符。如果第二个字段中存储的是人名，则输出结果大致如下：
+Tim likes this language
+Geoff likes this language
+Mike likes this language
+Joe likes this language
+gawk 语言支持的其他格式控制符号如下：
+&#8226; c 如果是字符串，则显示第一个字符；如果是整数，则将数字以ASCII 字符的形式显示。
+例如：
+printf “% c”，65
+结果将显示字母A。
+&#8226; d 显示十进制的整数。
+&#8226; i 显示十进制的整数。
+&#8226; e 将浮点数以科学记数法的形式显示。
+例如：
+print “$ 4 . 3 e”，1950
+结果将显示1.950e+03。
+&#8226; f 将数字以浮点的形式显示。
+&#8226; g 将数字以科学记数法的形式或浮点的形式显示。数字的绝对值如果大于等于0 . 0 0 0 1则
+以浮点的形式显示，否则以科学记数法的形式显示。
+&#8226; o 显示无符号的八进制整数。
+&#8226; s 显示一个字符串。
+&#8226; x 显示无符号的十六进制整数。1 0至1 5以a至f表示。
+&#8226; X 显示无符号的十六进制整数。1 0至1 5以A至F表示。
+&#8226; % 它并不是真正的格式控制字符，% %将显示%。
+当你使用这些格式控制字符时，你可以在控制字符前给出数字，以表示你将用的几位或几个字符。例如，6 d表示一个整数有6位。再请看下面的例子：
+{printf "%5s works for %5s and earns %2d an hour"，$1，$2，$3}
+将会产生类似如下的输出：
+Joe works for Mike and earns 12 an hour
+当处理数据时，你可以指定数据的精确位数
+{printf "%5s earns $%.2f an hour"，$ 3，$ 6 }
+其输出将类似于：
+Joe earns $12.17 an hour
+你也可以使用一些换码控制符格式化整行的输出。之所以叫做换码控制符，是因为gawk对这些符号有特殊的解释。下面列出常用的换码控制符：
+\a 警告或响铃字符。
+\b 后退一格。
+\f 换页。
+\n 换行。
+\r 回车。
+\t Ta b。
+\v 垂直的t a b。
+
+
+9.改变字段分隔符
+在g a w k中，缺省的字段分隔符一般是空格符或TA B。但你可以在命令行使用- F选项改变字符分隔符，只需在- F后面跟着你想用的分隔符即可。
+gawk -F" ;"'/tparker/{print}' /etc/passwd
+在此例中，你将字符分隔符设置成分号。注意： - F必须是大写的，而且必须在第一个引号之前。
+
+
+10.元字符
+gawk语言在格式匹配时有其特殊的规则。例如， cat能够和记录中任何位置有这三个字符的字段匹配。但有时你需要一些更为特殊的匹配。如果你想让cat只和concatenate匹配，则需要在格式两端加上空格：
+/ cat / {print}
+再例如，你希望既和cat又和CAT匹配，则可以使用或（|）：
+/ cat | CAT / {print}
+在gawk中，有几个字符有特殊意义。下面列出可以用在gawk格式中的这些字符：
+&#8226; ^ 表示字段的开始。
+例如：
+$3 ~ /^b/
+如果第三个字段以字符b开始，则匹配。
+&#8226; $ 表示字段的结束。
+例如：
+$3 ~ /b$/
+如果第三个字段以字符b结束，则匹配。
+&#8226; . 表示和任何单字符m匹配。
+例如：
+$3 ~ /i.m/
+如果第三个字段有字符i，则匹配。
+&#8226; | 表示“或”。
+例如：
+/ c a t | C AT/
+和cat 或C AT字符匹配。
+&#8226; * 表示字符的零到多次重复。
+例如：
+/UNI*X/
+和U N X、U N I X、U N I I X、U N I I I X等匹配。
+&#8226; + 表示字符的一次到多次重复。 
+例如：
+/UNI+X/
+和U N I X、U N I I X等匹配。
+&#8226; \{a，b\} 表示字符a次到b次之间的重复。
+例如：
+/ U N I \ { 1，3 \ } X
+和U N I X、U N I I X和U N I I I X匹配。
+&#8226; ? 表示字符零次和一次的重复。
+例如：
+/UNI?X/
+和UNX 和U N I X匹配。
+&#8226; [] 表示字符的范围。
+例如：
+/I[BDG]M/
+和I B M、I D M和I G M匹配
+&#8226; [^] 表示不在[ ]中的字符。
+例如：
+/I[^DE]M/
+和所有的以I开始、M结束的包括三个字符的字符串匹配，除了IDM和IEM之外。
+
+
+11.调用gawk程序
+当需要很多对模式和动作时，你可以编写一个gawk程序（也叫做gawk脚本）。在gawk程序中，你可以省略模式和动作两边的引号，因为在gawk程序中，模式和动作从哪开始和从哪结束时是很显然的。
+你可以使用如下命令调用g a w k程序：
+gawk -f scrīpt filename
+此命令使gawk对文件filename执行名为scrīpt的gawk程序。
+如果你不希望使用缺省的字段分隔符，你可以在f选项后面跟着F选项指定新的字段分隔符（当然你也可以在gawk程序中指定），例如，使用分号作为字段分隔符：
+gawk -f scrīpt -F";" filename
+如果希望gawk 程序处理多个文件，则把各个文件名罗列其后：
+gawk -f scrīpt filename1 filename2 filename3 ...
+缺省情况下， gawk的输出将送往屏幕。但你可以使用Linux的重定向命令使gawk的输出送往一个文件：
+gawk -f scrīpt filename > save_file
+
+
+12.BEGIN和END
+有两个特殊的模式在gawk中非常有用。BEGIN模式用来指明gawk开始处理一个文件之前执行一些动作。BEGIN经常用来初始化数值，设置参数等。END模式用来在文件处理完成后执行一些指令，一般用作总结或注释。
+BEGIN 和END中所有要执行的指令都应该用花括号括起来。BEGIN 和END必须使用大写。
+请看下面的例子：
+BEGIN { print "Starting the process the file" }
+$1 == "UNIX" {print}
+$2 > 10 {printf "This line has a value of %d"，$ 2 }
+END { print "Finished processing the file. Bye!"}
+此程序中，先显示一条信息： Starting the process the file，然后将所有第一个字段等于
+UNIX的整条记录显示出来，然后再显示第二个字段大于10 的记录，最后显示信息： Finished processing the file. Bye!
+
+
+13.变量
+在gawk中，可以用等号( = )给一个变量赋值：
+var1=10
+在gawk中，你不必事先声明变量类型。
+请看下面的例子：
+$1 == "Plastic" { count = count + 1 }
+如果第一个字段是Plastic，则count的值加1。在此之前，我们应当给count赋予过初值，一般是在BEGIN部分。
+下面是比较完整的例子：
+BEGIN { count = 0 }
+$5 == "UNIX" { count = count + 1 }
+END { printf "%d occurrences of UNIX were found"，count }
+变量可以和字段和数值一起使用，所以，下面的表达式均为合法：
+count = count + $6
+count = $5 - 8
+count = $5 + var1
+变量也可以是格式的一部分，例如：
+$2 > max_value {print "Max value exceeded by "，$2 - max_value}
+$4 - var1  $2){
+print "The first column is larger"
+}
+else {
+print "The second column is larger"
+} )
+
+
+15.2 while 循环
+while 循环的语法如下：
+while (expression){
+c o m m a n d s
+}
+例如：
+# interest calculation computes compound interest
+# inputs from a file are the amount，interest_rateand years
+{var = 1
+while (var  0){
+print line[var]
+v a r - -
+}
+}
+此段程序读取一个文件的每一行，并用相反的顺序显示出来。我们使用NR作为数组的下标来存储文件的每一条记录，然后在从最后一条记录开始，将文件逐条地显示出来.
+17.用户自定义函数
+复杂的gawk 程序常常可以使用自己定义的函数来简化。调用用户自定义函数与调用内部函数的方法一样。函数的定义可以放在gawk 程序的任何地方。
+用户自定义函数的格式如下：
+function name (parameter-list) {
+b o d y - o f - f u n c t i o n
+}
+name 是所定义的函数的名称。一个正确的函数名称可包括一序列的字母、数字、下标线(underscores)，但是不可用数字做开头。parameter-
+list 是函数的全部参数的列表，各个参数之间以逗点隔开。body-of-function 包含gawk 的表达式，它是函数定义里最重要的部分，它决定函数实际要做的事情。
+下面这个例子，会将每个记录的第一个字段的值的平方与第二个字段的值的平方加起来。
+{print "sum ="，S q u a r e S u m ( $ 1，$ 2 ) }
+function SquareSum(x，y) {
+s u m = x * x + y * y
+return sum
+}
+到此，我们已经知道了gawk的基本用法。gawk语言十分易学好用，例如，你可以用gawk编写一段小程序来计算一个目录中所有文件的个数和容量。如果用其他的语言，如C语言，则会十分的麻烦，相反，gawk只需要几行就可以完成此工作。
+
+
+18.几个实例
+最后，再举几个gawk的例子：
+gawk '{if (NF > max) max = NF}
+END {print max}'
+此程序会显示所有输入行之中字段的最大个数。
+gawk 'length($0) > 80'
+此程序会显示出超过80 个字符的每一行。此处只有模式被列出，动作是采用缺省值显示整个记录。
+gawk 'NF > 0'
+显示拥有至少一个字段的所有行。这是一个简单的方法，将一个文件里的所有空白行删除。
+gawk 'BEGIN {for (i = 1; i 
+grep
+grep （global search regular expression(RE) and print out the line,全面搜索正则表达式并把行打印出来）是一种强大的文本搜索工具，它能使用正则表达式搜索文本，并把匹配的行打印出来。Unix的grep家族包 括grep、egrep和fgrep。egrep和fgrep的命令只跟grep有很小不同。egrep是grep的扩展，支持更多的re元字符， fgrep就是fixed grep或fast grep，它们把所有的字母都看作单词，也就是说，正则表达式中的元字符表示回其自身的字面意义，不再特殊。linux使用GNU版本的grep。它功能 更强，可以通过-G、-E、-F命令行选项来使用egrep和fgrep的功能。
+grep的工作方式是这样的:它在一个或多个文件中搜索字符串模板。如果模板包括空格，则必须被引用，模板后的所有字符串被看作文件名。搜索的结果被送到屏幕，不影响原文件内容。
+grep可用于shell脚本，因为grep通过返回一个状态值来说明搜索的状态，如果模板搜索成功，则返回0，如果搜索不成功，则返回1，如果搜索的文件不存在，则返回2。我们利用这些返回值就可进行一些自动化的文本处理工作。
+
+
+1. grep正则表达式元字符集（基本集）
+^ 锚定行的开始 如：'^grep'匹配所有以grep开头的行。
+$ 锚定行的结束 如：'grep$'匹配所有以grep结尾的行。
+. 匹配一个非换行符的字符 如：'gr.p'匹配gr后接一个任意字符，然后是p。 
+* 匹配零个或多个先前字符 如：'*grep'匹配所有一个或多个空格后紧跟grep的行。 .*一起用代表任意字符。
+[] 匹配一个指定范围内的字符，如'[Gg]rep'匹配Grep和grep。
+[^] 匹配一个不在指定范围内的字符，如：'[^A-FH-Z]rep'匹配不包含A-R和T-Z的一个字母开头，紧跟rep的行。
+\(..\) 标记匹配字符，如'\(love\)'，love被标记为1。
+\锚定单词的开始，如:'\匹配包含以grep开头的单词的行。
+\> 锚定单词的结束，如'grep\>'匹配包含以grep结尾的单词的行。
+x\{m\} 重复字符x，m次，如：'0\{5\}'匹配包含5个o的行。
+x\{m,\} 重复字符x,至少m次，如：'o\{5,\}'匹配至少有5个o的行。
+x\{m,n\} 重复字符x，至少m次，不多于n次，如：'o\{5,10\}'匹配5--10个o的行。
+\w 匹配文字和数字字符，也就是[A-Za-z0-9]，如：'G\w*p'匹配以G后跟零个或多个文字或数字字符，然后是p。 
+\W \w的反置形式，匹配一个或多个非单词字符，如点号句号等。
+\b 单词锁定符，如: '\bgrepb\'只匹配grep。
+
+
+2. 用于egrep和 grep -E的元字符扩展集
++ 匹配一个或多个先前的字符。如：'[a-z]+able'，匹配一个或多个小写字母后跟able的串，如loveable,enable,disable等。
+? 匹配零个或多个先前的字符。如：'gr?p'匹配gr后跟一个或没有字符，然后是p的行。
+a|b|c 匹配a或b或c。如：grep|sed匹配grep或sed
+() 分组符号，如：love(able|rs)ov+匹配loveable或lovers，匹配一个或多个ov。
+x{m},x{m,},x{m,n} 作用同x\{m\},x\{m,\},x\{m,n\}
+
+
+4. POSIX字符类
+为了在不同国家的字符编码中保持一至，POSIX(The Portable
+Operating System Interface)增加了特殊的字符类，如[:alnum:]是A-Za-z0-9的另一个写法。要把它们放到[]号内才能成为正则表达式，如[A- Za-z0-9]或[[:alnum:]]。在linux下的grep除fgrep外，都支持POSIX的字符类。
+[:alnum:] 文字数字字符
+[:alpha:]文字字符
+[:digit:] 数字字符 
+[:graph:] 非空字符（非空格、控制字符） 
+[:lower:] 小写字符 
+[:cntrl:] 控制字符 
+[:print:] 非空字符（包括空格） 
+[:punct:] 标点符号 
+[:space:] 所有空白字符（新行，空格，制表符） 
+[:upper:] 大写字符 
+[:xdigit:] 十六进制数字（0-9，a-f，A-F）
+4. Grep命令选项
+-? 同时显示匹配行上下的？行，如：grep -2 pattern filename同时显示匹配行的上下2行。
+-b，--byte-offset 打印匹配行前面打印该行所在的块号码。
+-c,--count 只打印匹配的行数，不显示匹配的内容。
+-f File，--file=File 从文件中提取模板。空文件中包含0个模板，所以什么都不匹配。
+-h，--no-filename 当搜索多个文件时，不显示匹配文件名前缀。
+-i，--ignore-case 忽略大小写差别。
+-q，--quiet 取消显示，只返回退出状态。0则表示找到了匹配的行。
+-l，--files-with-matches 打印匹配模板的文件清单。
+-L，--files-without-match 打印不匹配模板的文件清单。
+-n，--line-number 在匹配的行前面打印行号。
+-s，--silent 不显示关于不存在或者无法读取文件的错误信息。
+-v，--revert-match 反检索，只显示不匹配的行。
+-w，--word-regexp 如果被\和\>引用，就把表达式做为一个单词搜索。
+-V，--version 显示软件版本信息。
+
+
+5. 实例
+要用好grep这个工具，其实就是要写好正则表达式，所以这里不对grep的所有功能进行实例讲解，只列几个例子，讲解一个正则表达式的写法。
+$ ls -l | grep '^a' 
+通过管道过滤ls -l输出的内容，只显示以a开头的行。
+$ grep 'test' d* 
+显示所有以d开头的文件中包含test的行。
+$ grep 'test' aa bb cc 
+显示在aa，bb，cc文件中匹配test的行。
+$ grep '[a-z]\{5\}' aa 
+显示所有包含每个字符串至少有5个连续小写字符的字符串的行。
+$ grep 'w\(es\)t.*\1' aa 
+如果west被匹配，则es就被存储到内存中，并标记为1，然后搜索任意个字符（.*），这些字符后面紧跟着另外一个es（\1），找到就显示该行。如果用egrep或grep -E，就不用"\"号进行转义，直接写成'w(es)t.*\1'就可以了。
+
+
+
+
+
+
+
+ 
+
+
+
+

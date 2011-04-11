@@ -1,0 +1,345 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>分栏窗口构件 Paned Window Widgets</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="容器构件 Container Widgets"
+HREF="c1289.html"><LINK
+REL="PREVIOUS"
+TITLE="比例框架 Aspect Frames"
+HREF="x1380.html"><LINK
+REL="NEXT"
+TITLE="视角 Viewports"
+HREF="x1415.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1380.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>容器构件 Container Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1415.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-PANEDWINDOWWIDGETS">分栏窗口构件 Paned Window Widgets</H1
+><P
+>如果想要将一个窗口分成两个部分，可以使用分栏窗口构件(The paned window widgets)。窗口两部分的尺寸由用户控制，它们之间有一个凹槽，上面有一个手柄，用户可以拖动此手柄改变两部分的比例。窗口划分可以是水平(HPaned)或垂直的(VPaned)。</P
+><P
+>用以下函数之一创建一个新的分栏窗口：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_hpaned_new (void);
+
+GtkWidget *gtk_vpaned_new (void);</PRE
+></TD
+></TR
+></TABLE
+><P
+>创建了分栏窗口构件后，可以在它的两边添加子构件。用下面的函数完成：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_paned_add1 (GtkPaned *paned, GtkWidget *child);
+
+void gtk_paned_add2 (GtkPaned *paned, GtkWidget *child);</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>gtk_paned_add1()</TT
+>将子构件添加到分栏窗口的左边或顶部。<TT
+CLASS="LITERAL"
+>gtk_paned_add2()</TT
+>将子构件添加到分栏窗口的右边或下部。</P
+><P
+>在下面的示例中，创建了一个假想的email程序的用户界面。窗口被垂直划分为两个部分，上面部分显示一个email信息列表，下部显示email文本信息。程序大部分都是漂亮直接的。有两点要注意：在文本构件实例化(realized)前文本不能加到文本构件中。但你可以调用 gtk_widget_realize() 函数完成，不过，作为一个可变通技巧的展示，我们为构件的 "realize" 信号设置一个信号处理函数，并在这个函数里面添加文本。还有，我们需要为表格(table)中包含文本窗口和它的滚动条的格子设置<TT
+CLASS="LITERAL"
+>GTK_SHRINK</TT
+>选项，以便当窗口的下面部分变小时，下部的构件能够自动地缩小，而不是被压到窗口的底部去，只部分显示。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/paned.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdio.h&#62;
+#include &#60;gtk/gtk.h&#62;
+   
+/* 创建一个"信息"列表 */
+GtkWidget *create_list( void )
+{
+
+    GtkWidget *scrolled_window;
+    GtkWidget *tree_view;
+    GtkListStore *model;
+    GtkTreeIter iter;
+    GtkCellRenderer *cell;
+    GtkTreeViewColumn *column;
+
+    int i;
+   
+    /* 创建一个新的滚动窗口(scrolled window)，只有需要时，滚动条才出现 */
+    scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
+				    GTK_POLICY_AUTOMATIC, 
+				    GTK_POLICY_AUTOMATIC);
+   
+    model = gtk_list_store_new (1, G_TYPE_STRING);
+    tree_view = gtk_tree_view_new ();
+    gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scrolled_window), 
+                                           tree_view);
+    gtk_tree_view_set_model (GTK_TREE_VIEW (tree_view), GTK_TREE_MODEL (model));
+    gtk_widget_show (tree_view);
+   
+    /* 在窗口中添加一些消息 */
+    for (i = 0; i &#60; 10; i++) {
+        gchar *msg = g_strdup_printf ("Message #%d", i);
+        gtk_list_store_append (GTK_LIST_STORE (model), &#38;iter);
+        gtk_list_store_set (GTK_LIST_STORE (model), 
+	                    &#38;iter,
+                            0, msg,
+	                    -1);
+	g_free (msg);
+    }
+   
+    cell = gtk_cell_renderer_text_new ();
+
+    column = gtk_tree_view_column_new_with_attributes ("Messages",
+                                                       cell,
+                                                       "text", 0,
+                                                       NULL);
+  
+    gtk_tree_view_append_column (GTK_TREE_VIEW (tree_view),
+	  		         GTK_TREE_VIEW_COLUMN (column));
+
+    return scrolled_window;
+}
+   
+/* 向文本构件中添加一些文本 - 这是当窗口被实例化(realized)时调用的回调函数。
+ * 我们也可以用 gtk_widget_realize 强行将窗口实例化，但这必须在它的层次关系
+ *  确定后(be part of a hierarchy)才行。 */
+ // 译者注： 构件的层次关系就是其parent被确定。将一个子构件加到一个容器中
+ // 时，其parent就是这个容器。层次关系被确定要求，其parent的parent...也
+ // 确定了。顶级窗口可以不要parent。只是我的经验理解。
+
+void insert_text (GtkTextBuffer *buffer)
+{
+   GtkTextIter iter;
+ 
+   gtk_text_buffer_get_iter_at_offset (buffer, &#38;iter, 0);
+
+   gtk_text_buffer_insert (buffer, &#38;iter,   
+    "From: pathfinder@nasa.gov\n"
+    "To: mom@nasa.gov\n"
+    "Subject: Made it!\n"
+    "\n"
+    "We just got in this morning. The weather has been\n"
+    "great - clear but cold, and there are lots of fun sights.\n"
+    "Sojourner says hi. See you soon.\n"
+    " -Path\n", -1);
+}
+   
+/* 创建一个滚动文本区域，用于显示一个"信息" */
+GtkWidget *create_text( void )
+{
+   GtkWidget *scrolled_window;
+   GtkWidget *view;
+   GtkTextBuffer *buffer;
+
+   view = gtk_text_view_new ();
+   buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (view));
+
+   scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
+		   	           GTK_POLICY_AUTOMATIC,
+				   GTK_POLICY_AUTOMATIC);
+
+   gtk_container_add (GTK_CONTAINER (scrolled_window), view);
+   insert_text (buffer);
+
+   gtk_widget_show_all (scrolled_window);
+
+   return scrolled_window;
+}
+   
+int main( int   argc,
+          char *argv[] )
+{
+    GtkWidget *window;
+    GtkWidget *vpaned;
+    GtkWidget *list;
+    GtkWidget *text;
+
+    gtk_init (&#38;argc, &#38;argv);
+   
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title (GTK_WINDOW (window), "Paned Windows");
+    g_signal_connect (G_OBJECT (window), "destroy",
+	              G_CALLBACK (gtk_main_quit), NULL);
+    gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+    gtk_widget_set_size_request (GTK_WIDGET (window), 450, 400);
+
+    /* 在顶级窗口上添加一个垂直分栏窗口构件 */
+   
+    vpaned = gtk_vpaned_new ();
+    gtk_container_add (GTK_CONTAINER (window), vpaned);
+    gtk_widget_show (vpaned);
+   
+    /* 在分栏窗口的两部分各添加一些构件 */
+   
+    list = create_list ();
+    gtk_paned_add1 (GTK_PANED (vpaned), list);
+    gtk_widget_show (list);
+   
+    text = create_text ();
+    gtk_paned_add2 (GTK_PANED (vpaned), text);
+    gtk_widget_show (text);
+    gtk_widget_show (window);
+
+    gtk_main ();
+
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1380.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1415.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>比例框架 Aspect Frames</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1289.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>视角 Viewports</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

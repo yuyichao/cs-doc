@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>调整对象 Adjustments</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="PREVIOUS"
+TITLE="单选按钮 Radio Buttons"
+HREF="x607.html"><LINK
+REL="NEXT"
+TITLE="轻松使用调整对象"
+HREF="x652.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x607.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x652.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="CH-ADJUSTMENTS">调整对象 Adjustments</H1
+><P
+>GTK 有多种构件能够由用户通过鼠标或键盘进行调整，比如<A
+HREF="c696.html"
+>范围构件</A
+>。还有一些构件，比如说 GtkText 和 GtkViewport，内部都有一些可调整的属性。</P
+><P
+>很明显，当用户调整范围构件的值时，应用程序需要对值的变化进行响应。一种办法就是当构件的调整值发生变化时，让每个构件引发自己的信号,将新值传递到信号处理函数中，或者让它在构件的内部数据结构中查找构件的值。但是，也许需要将这个调整值同时连接到几个构件上，使得调整一个值时，其它的构件都随之响应。最明显的示例就是将一个滚动条连接到一个视角构件(viewport)或者滚动的文本区(text area)上。如果每个构件都要有自己的设置或获取调整值的方法，程序员或许需要自己编写很复杂的信号处理函数，以便将这些不同构件之间的变化同步或相关联。</P
+><P
+>GTK 用一个调整对象(Adjustment object)解决了这个问题。调整对象不是构件，但是为构件提供了一种以抽象、灵活的方法来传递调整值信息。调整对象最明显的用处就是为范围构件(比如滚动条和比例构件)储存配置参数和值。然而，因为调整对象是从Object派生的，在其正常的数据结构之外，它还具有一些特殊的功能。最重要的是，它们能够引发信号，就像构件一样，这些信号不仅能够让程序对用户在可调整构件上的输入进行响应，还能在可调整构件之间透明地传播调整值。</P
+><P
+>在许多其它的构件中都能够看到调整对象的用处。比如<A
+HREF="x892.html"
+>进度条</A
+>、<A
+HREF="x1415.html"
+>视角</A
+>、<A
+HREF="x1431.html"
+>滚动窗口</A
+>等。</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-CREATINGANADJUSTMENT">创建一个调整对象</H1
+><P
+>许多使用调整对象的构件都能够自动创建它，但是有些情况下，必须自己手工创建。用下面的函数创建调整对象：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkObject *gtk_adjustment_new( gdouble value,
+                               gdouble lower,
+                               gdouble upper,
+                               gdouble step_increment,
+                               gdouble page_increment,
+                               gdouble page_size );</PRE
+></TD
+></TR
+></TABLE
+><P
+>其中的<TT
+CLASS="LITERAL"
+>value</TT
+>参数是要赋给调整对象的初始值，通常对应于一个可调整构件的最高或最低位置。<TT
+CLASS="LITERAL"
+>lower</TT
+>参数指定调整对象能取的最低值，<TT
+CLASS="LITERAL"
+>step_increment</TT
+>参数指定用户能小步增加的值，<TT
+CLASS="LITERAL"
+>page_increment</TT
+>是用户能大步调整的值。<TT
+CLASS="LITERAL"
+>page_size</TT
+>参数通常用于设置分栏构件(panning widget)的可视区域。<TT
+CLASS="LITERAL"
+>upper</TT
+>参数用于表示分栏构件的子构件的最底部或最右边的坐标。因而，它<I
+CLASS="EMPHASIS"
+>不</I
+>一定总是<TT
+CLASS="LITERAL"
+>value</TT
+>能取的最大值，因为这些构件的<TT
+CLASS="LITERAL"
+>page_size</TT
+>通常是非零值(value能取的最大值一般是upper-page_size)。</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x607.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x652.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>单选按钮 Radio Buttons</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>轻松使用调整对象</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

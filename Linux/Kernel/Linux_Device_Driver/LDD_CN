@@ -1,0 +1,669 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>Linux 设备驱动 Edition 3-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="next" href="ch01.html" title="第&#160;1&#160;章&#160;第一章 设备驱动简介">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">Linux 设备驱动 Edition 3</th></tr>
+<tr>
+<td width="20%" align="left">&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch01.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="book" lang="zh-cn">
+<div class="titlepage">
+<div>
+<div><h1 class="title">
+<a name="id344748"></a>Linux 设备驱动 Edition 3</h1></div>
+<div><div class="author"><h3 class="author"><span class="firstname">By Jonathan Corbet, Alessandro Rubini, and Greg Kroah-Hartman</span></h3></div></div>
+<div>
+<p class="releaseinfo">
+				</p>
+<p>由 quickwhale 翻译的简体中文版 V0.1.0 2006-6-2 </p>
+<p class="releaseinfo">
+</p>
+<p>
+				遵循原版的版权声明. 还在完善中. 欢迎任何意见, 请给我邮件. 请发信至 quickwhale 的邮箱
+				<code class="email">&lt;<a href="mailto:quickwhale@hotmail.com">quickwhale@hotmail.com</a>&gt;</code>
+</p>
+<p class="releaseinfo">
+
+</p>
+</div>
+<div><p class="copyright">版权 &#169; 2005, 2001, 1998 O’Reilly Media, Inc. All rights reserved. </p></div>
+<div><div class="legalnotice">
+<a name="id406157"></a><p>
+Printed in the United States of America. Published by O’Reilly Media, Inc., 1005 Gravenstein Highway North, Sebastopol, CA 95472. O’Reilly books may be purchased for educational, business, or sales promotional use. Online editions are also available for most titles (safari.oreilly.com). For more information, contact our corporate/insti-tutional sales department: (800) 998-9938 or corporate@oreilly.com. 
+	</p>
+<p>
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 2.0 License. To view a copy of this license, visit 
+<a href="http://creativecommons.org/licenses/by-sa/2.0/" target="_top">http://creativecommons.org/licenses/by-sa/2.0/</a>
+or send a letter to Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA. 
+	</p>
+</div></div>
+</div>
+<hr>
+</div>
+<div class="dedication" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="id352046"></a>感谢</h2></div></div></div>
+<p>感谢本书原版的作者 Jonathan Corbet, Alessandro Rubini 和 Greg Kroah-Hartman</p>
+<p>感谢我的家人 爸爸<sup>2</sup>, 妈妈<sup>2</sup>, PIGY<sub>nuonuo</sub> </p>
+</div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="chapter"><a href="ch01.html">1. 第一章 设备驱动简介</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch01.html#TheRoleoftheDeviceDriver.sect1">1.1. 驱动程序的角色</a></span></dt>
+<dt><span class="sect1"><a href="ch01s02.html">1.2. 划分内核</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch01s02.html#LoadableModules.sect2">1.2.1. 可加载模块</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch01s03.html">1.3. 设备和模块的分类</a></span></dt>
+<dt><span class="sect1"><a href="ch01s04.html">1.4. 安全问题</a></span></dt>
+<dt><span class="sect1"><a href="ch01s05.html">1.5. 版本编号</a></span></dt>
+<dt><span class="sect1"><a href="ch01s06.html">1.6. 版权条款</a></span></dt>
+<dt><span class="sect1"><a href="ch01s07.html">1.7. 加入内核开发社团</a></span></dt>
+<dt><span class="sect1"><a href="ch01s08.html">1.8. 本书的内容</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch02.html">2. 建立和运行模块</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch02.html#SettingUpYourTestSystem.sect1">2.1. 设置你的测试系统</a></span></dt>
+<dt><span class="sect1"><a href="ch02s02.html">2.2. Hello World 模块</a></span></dt>
+<dt><span class="sect1"><a href="ch02s03.html">2.3. 内核模块相比于应用程序</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch02s03.html#UserSpaceandKernelSpace.sect2">2.3.1. 用户空间和内核空间</a></span></dt>
+<dt><span class="sect2"><a href="ch02s03.html#ConcurrencyintheKernel.sect2">2.3.2. 内核的并发</a></span></dt>
+<dt><span class="sect2"><a href="ch02s03.html#TheCurrentProcess.sect2">2.3.3. 当前进程</a></span></dt>
+<dt><span class="sect2"><a href="ch02s03.html#AFewOtherDetails.sect2">2.3.4. 几个别的细节</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch02s04.html">2.4. 编译和加载</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch02s04.html#CompilingModules.sect2">2.4.1. 编译模块</a></span></dt>
+<dt><span class="sect2"><a href="ch02s04.html#LoadingandUnloadingModules.sect2">2.4.2. 加载和卸载模块</a></span></dt>
+<dt><span class="sect2"><a href="ch02s04.html#VersionDependency.sect2">2.4.3. 版本依赖</a></span></dt>
+<dt><span class="sect2"><a href="ch02s04.html#PlatformDependency.sect2">2.4.4. 平台依赖性</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch02s05.html">2.5. 内核符号表</a></span></dt>
+<dt><span class="sect1"><a href="ch02s06.html">2.6. 预备知识</a></span></dt>
+<dt><span class="sect1"><a href="ch02s07.html">2.7. 初始化和关停</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch02s07.html#TheCleanupFunction.sect2">2.7.1. 清理函数</a></span></dt>
+<dt><span class="sect2"><a href="ch02s07.html#ErrorHandlingDuringInitialization.sect2">2.7.2. 初始化中的错误处理</a></span></dt>
+<dt><span class="sect2"><a href="ch02s07.html#ModuleLoadingRaces.sect2">2.7.3. 模块加载竞争</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch02s08.html">2.8. 模块参数</a></span></dt>
+<dt><span class="sect1"><a href="ch02s09.html">2.9. 在用户空间做</a></span></dt>
+<dt><span class="sect1"><a href="ch02s10.html">2.10. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch03.html">3. 字符驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch03.html#TheDesignofscull.sect">3.1. scull 的设计</a></span></dt>
+<dt><span class="sect1"><a href="ch03s02.html">3.2. 主次编号</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch03s02.html#TheInternalRepresentationofDeviceNumber.sect">3.2.1. 设备编号的内部表示</a></span></dt>
+<dt><span class="sect2"><a href="ch03s02.html#AllocatingandFreeingDeviceNumbers.sect">3.2.2. 分配和释放设备编号</a></span></dt>
+<dt><span class="sect2"><a href="ch03s02.html#DynamicAllocaionofMajorNumbers.sect">3.2.3. 主编号的动态分配</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch03s03.html">3.3. 一些重要数据结构</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch03s03.html#FileOperation.sect">3.3.1. 文件操作</a></span></dt>
+<dt><span class="sect2"><a href="ch03s03.html#ThefileStructure.sect">3.3.2. 文件结构</a></span></dt>
+<dt><span class="sect2"><a href="ch03s03.html#TheinodeStructure.sect">3.3.3. inode 结构</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch03s04.html">3.4. 字符设备注册</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch03s04.html#DeviceRegistrationinscull.sect">3.4.1. scull 中的设备注册</a></span></dt>
+<dt><span class="sect2"><a href="ch03s04.html#TheOlderWay.sect">3.4.2. 老方法</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch03s05.html">3.5. open 和 release</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch03s05.html#TheopenMethod.sect">3.5.1. open 方法</a></span></dt>
+<dt><span class="sect2"><a href="ch03s05.html#ThereleaseMethod.sect">3.5.2. release 方法</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch03s06.html">3.6. scull 的内存使用</a></span></dt>
+<dt><span class="sect1"><a href="ch03s07.html">3.7. 读和写</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch03s07.html#ThereadMethod.sect">3.7.1. read 方法</a></span></dt>
+<dt><span class="sect2"><a href="ch03s07.html#ThewriteMethod.sect">3.7.2. write 方法</a></span></dt>
+<dt><span class="sect2"><a href="ch03s07.html#readvandwritev.sect">3.7.3. readv 和 writev</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch03s08.html">3.8. 使用新设备</a></span></dt>
+<dt><span class="sect1"><a href="ch03s09.html">3.9. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch04.html">4. 调试技术</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch04.html#DebuggingSupportintheKernel.sect">4.1. 内核中的调试支持</a></span></dt>
+<dt><span class="sect1"><a href="ch04s02.html">4.2. 用打印调试</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch04s02.html#printk">4.2.1. printk</a></span></dt>
+<dt><span class="sect2"><a href="ch04s02.html#RedirectingConsoleMessages">4.2.2. 重定向控制台消息</a></span></dt>
+<dt><span class="sect2"><a href="ch04s02.html#HowMessageGetLogged">4.2.3. 消息是如何记录的</a></span></dt>
+<dt><span class="sect2"><a href="ch04s02.html#TurningtheMessagesOnandOff">4.2.4. 打开和关闭消息</a></span></dt>
+<dt><span class="sect2"><a href="ch04s02.html#RateLimiting">4.2.5. 速率限制</a></span></dt>
+<dt><span class="sect2"><a href="ch04s02.html#PrintingDeviceNumbers">4.2.6. 打印设备编号</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch04s03.html">4.3. 用查询来调试</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch04s03.html#UsingtheprocFilesystem">4.3.1. 使用 /proc 文件系统</a></span></dt>
+<dt><span class="sect2"><a href="ch04s03.html#TheioctlMethod.sect">4.3.2. ioctl 方法</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch04s04.html">4.4. 使用观察来调试</a></span></dt>
+<dt><span class="sect1"><a href="ch04s05.html">4.5. 调试系统故障</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch04s05.html#OopsMessages.scet">4.5.1. oops 消息</a></span></dt>
+<dt><span class="sect2"><a href="ch04s05.html#SystemHange.sect">4.5.2. 系统挂起</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch04s06.html">4.6. 调试器和相关工具</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch04s06.html#Usinggdb.sect">4.6.1. 使用 gdb</a></span></dt>
+<dt><span class="sect2"><a href="ch04s06.html#ThekdbKernelDebugger.sect">4.6.2. kdb 内核调试器</a></span></dt>
+<dt><span class="sect2"><a href="ch04s06.html#ThekgdbPatches.sect">4.6.3. kgdb 补丁</a></span></dt>
+<dt><span class="sect2"><a href="ch04s06.html#TheUserModeLinuxPort.sect">4.6.4. 用户模式 Linux 移植</a></span></dt>
+<dt><span class="sect2"><a href="ch04s06.html#TheLinuxTraceToolkit.sect">4.6.5. Linux 追踪工具</a></span></dt>
+<dt><span class="sect2"><a href="ch04s06.html#DynamicProbes.sect">4.6.6. 动态探针</a></span></dt>
+</dl></dd>
+</dl></dd>
+<dt><span class="chapter"><a href="ch05.html">5. 并发和竞争情况</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch05.html#Pitfallsinscull.sect">5.1. scull 中的缺陷</a></span></dt>
+<dt><span class="sect1"><a href="ch05s02.html">5.2. 并发和它的管理</a></span></dt>
+<dt><span class="sect1"><a href="ch05s03.html">5.3. 旗标和互斥体</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s03.html#TheLinuxSemaphoreImplementation.sect">5.3.1. Linux 旗标实现</a></span></dt>
+<dt><span class="sect2"><a href="ch05s03.html#UsingSemaphoresinscull.sect">5.3.2. 在 scull 中使用旗标</a></span></dt>
+<dt><span class="sect2"><a href="ch05s03.html#ReaderWriterSemphores.sect">5.3.3. 读者/写者旗标</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s04.html">5.4. Completions 机制</a></span></dt>
+<dt><span class="sect1"><a href="ch05s05.html">5.5. 自旋锁</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s05.html#IntroductiontotheSpinlockAPI.sect">5.5.1. 自旋锁 API 简介</a></span></dt>
+<dt><span class="sect2"><a href="ch05s05.html#SpinlocksandAtomicContext.sect">5.5.2. 自旋锁和原子上下文</a></span></dt>
+<dt><span class="sect2"><a href="ch05s05.html#TheSpinlockFunctions.sect">5.5.3. 自旋锁函数</a></span></dt>
+<dt><span class="sect2"><a href="ch05s05.html#ReaderWriterSpinlocks.sect">5.5.4. 读者/写者自旋锁</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s06.html">5.6. 锁陷阱</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s06.html#AmbiguousRules.sect">5.6.1. 模糊的规则</a></span></dt>
+<dt><span class="sect2"><a href="ch05s06.html#LockOrderingRules.sect">5.6.2. 加锁顺序规则</a></span></dt>
+<dt><span class="sect2"><a href="ch05s06.html#FineVersusCoarseGrainedLocking.sect">5.6.3. 细 -粗- 粒度加锁</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s07.html">5.7. 加锁的各种选择</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch05s07.html#LockFreeAlgorithms.sect">5.7.1. 不加锁算法</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#AtomicVariables.sect">5.7.2. 原子变量</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#BitOperations.sect">5.7.3. 位操作</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#seqlocks.sect">5.7.4. seqlock 锁</a></span></dt>
+<dt><span class="sect2"><a href="ch05s07.html#ReadCopyUpdate.sect">5.7.5. 读取-拷贝-更新</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch05s08.html">5.8. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch06.html">6. 高级字符驱动操作</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch06.html#ioctl.sect1">6.1. ioctl 接口</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch06.html#ChoosingtheioctlCommands.sect2">6.1.1. 选择 ioctl 命令</a></span></dt>
+<dt><span class="sect2"><a href="ch06.html#TheReturnValue.sect2">6.1.2. 返回值</a></span></dt>
+<dt><span class="sect2"><a href="ch06.html#ThePredefinedCommands.sect2">6.1.3. 预定义的命令</a></span></dt>
+<dt><span class="sect2"><a href="ch06.html#UsingtheioctlArgument.sect2">6.1.4. 使用 ioctl 参数</a></span></dt>
+<dt><span class="sect2"><a href="ch06.html#CapabilitiesandRestrictedOperations.sect2">6.1.5. 兼容性和受限操作</a></span></dt>
+<dt><span class="sect2"><a href="ch06.html#TheImplementationoftheioctl.sect2">6.1.6. ioctl 命令的实现</a></span></dt>
+<dt><span class="sect2"><a href="ch06.html#DeviceControlWithoutioctl.sect2">6.1.7. 不用 ioctl 的设备控制</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch06s02.html">6.2. 阻塞 I/O</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch06s02.html#IntroductiontoSleeping.sect2">6.2.1. 睡眠的介绍</a></span></dt>
+<dt><span class="sect2"><a href="ch06s02.html#SimpleSleeping.sect2">6.2.2. 简单睡眠</a></span></dt>
+<dt><span class="sect2"><a href="ch06s02.html#BlockingandNonblockingOperations.sect2">6.2.3. 阻塞和非阻塞操作 </a></span></dt>
+<dt><span class="sect2"><a href="ch06s02.html#ABlockingIOExample.sect2">6.2.4. 一个阻塞 I/O 的例子</a></span></dt>
+<dt><span class="sect2"><a href="ch06s02.html#AdvancedSleeping.sect2">6.2.5. 高级睡眠</a></span></dt>
+<dt><span class="sect2"><a href="ch06s02.html#TestingtheScullpipeDriver.sect2">6.2.6. 测试 scullpipe 驱动</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch06s03.html">6.3. poll 和 select</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch06s03.html#Interactionwithreadandwrite.sect2">6.3.1. 与 read 和 write 的交互</a></span></dt>
+<dt><span class="sect2"><a href="ch06s03.html#TheUnderlyingDataStructure.sect2">6.3.2. 底层的数据结构</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch06s04.html">6.4. 异步通知</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch06s04.html#TheDriversPointofView.sect2">6.4.1. 驱动的观点</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch06s05.html">6.5. 移位一个设备</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch06s05.html#ThellseekImplementation.sect2">6.5.1. llseek 实现</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch06s06.html">6.6. 在一个设备文件上的存取控制</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch06s06.html#SingleOpenDevices.sect2">6.6.1. 单 open 设备</a></span></dt>
+<dt><span class="sect2"><a href="ch06s06.html#RestrictingAccesstoaSingleUserataTime.sect2">6.6.2. 一次对一个用户限制存取</a></span></dt>
+<dt><span class="sect2"><a href="ch06s06.html#BlockingopenasanAlternativetoEBUSY.sect2">6.6.3. 阻塞 open 作为对 EBUSY 的替代</a></span></dt>
+<dt><span class="sect2"><a href="ch06s06.html#CloningtheDeviceonopen.sect2">6.6.4. 在 open 时复制设备</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch06s07.html">6.7. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch07.html">7. 时间, 延时, 和延后工作</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch07.html#MeasuringTimeLapes.sect">7.1. 测量时间流失</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07.html#UsingthejiffesCounter.sect">7.1.1. 使用 jiffies 计数器</a></span></dt>
+<dt><span class="sect2"><a href="ch07.html#PorcessorSpecificRegisters.sect">7.1.2. 处理器特定的寄存器</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch07s02.html">7.2. 获知当前时间</a></span></dt>
+<dt><span class="sect1"><a href="ch07s03.html">7.3. 延后执行</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07s03.html#LongDelays.sect">7.3.1. 长延时</a></span></dt>
+<dt><span class="sect2"><a href="ch07s03.html#ShortDelays.sect">7.3.2. 短延时</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch07s04.html">7.4. 内核定时器</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07s04.html#TheTimerAPI.sect">7.4.1. 定时器 API</a></span></dt>
+<dt><span class="sect2"><a href="ch07s04.html#TheImplementaionofKernelTimers.sect">7.4.2. 内核定时器的实现</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch07s05.html">7.5. Tasklets 机制</a></span></dt>
+<dt><span class="sect1"><a href="ch07s06.html">7.6. 工作队列</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch07s06.html#TheSharedQueue.sect">7.6.1. 共享队列</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch07s07.html">7.7. 快速参考</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch07s07.html#Timekeeping.sect">7.7.1. 时间管理</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#Delays.sect">7.7.2. 延迟</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#KernelTimers.sect">7.7.3. 内核定时器</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#Taskletsqr.sect">7.7.4. Tasklets 机制</a></span></dt>
+<dt><span class="sect2"><a href="ch07s07.html#workqueueskr.sect">7.7.5. 工作队列</a></span></dt>
+</dl></dd>
+</dl></dd>
+<dt><span class="chapter"><a href="ch08.html">8. 分配内存</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch08.html#TheRealStoryofkmalloc.sect">8.1. kmalloc 的真实故事</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch08.html#TheFlagsArgument.sect">8.1.1. flags 参数</a></span></dt>
+<dt><span class="sect2"><a href="ch08.html#TheSizeArgument.sect">8.1.2.  size 参数</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch08s02.html">8.2. 后备缓存</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch08s02.html#AscullBasedontheSlabCachesscullc.sect">8.2.1. 一个基于 Slab 缓存的 scull: scullc</a></span></dt>
+<dt><span class="sect2"><a href="ch08s02.html#MemoryPools.sect">8.2.2. 内存池</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch08s03.html">8.3. get_free_page 和其友</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch08s03.html#AscullUsingWholePagesscullp.sect">8.3.1. 一个使用整页的 scull: scullp</a></span></dt>
+<dt><span class="sect2"><a href="ch08s03.html#TheallocpagesInterface.sect">8.3.2. alloc_pages 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch08s03.html#vallocandFriends.sect">8.3.3. vmalloc 和 其友</a></span></dt>
+<dt><span class="sect2"><a href="ch08s03.html#AscullUsingVirtualAddressesscullv.sect">8.3.4. 一个使用虚拟地址的 scull : scullv</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch08s04.html">8.4. 每-CPU 的变量</a></span></dt>
+<dt><span class="sect1"><a href="ch08s05.html">8.5. 获得大量缓冲</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch08s05.html#AcquiringaDedicatedBufferatBootTime.sect">8.5.1. 在启动时获得专用的缓冲</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch08s06.html">8.6. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch09.html">9. 与硬件通讯</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch09.html#IOPortsandIOMemor.sect">9.1. I/O 端口和 I/O 内存</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch09.html#IORegistersandConventionalMemory.sect">9.1.1. I/O 寄存器和常规内存</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch09s02.html">9.2. 使用 I/O 端口</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch09s02.html#IOPortAllocation.sect">9.2.1. I/O 端口分配</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#ManipulatingIOports.sect">9.2.2. 操作 I/O 端口</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#IOPortAccessfromUserSpace.sect">9.2.3. 从用户空间的 I/O 存取</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#StringOperations.sect">9.2.4. 字串操作</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#PausingIO.sect">9.2.5. 暂停 I/O</a></span></dt>
+<dt><span class="sect2"><a href="ch09s02.html#PlatformDependencies.sect">9.2.6. 平台依赖性</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch09s03.html">9.3. 一个 I/O 端口例子</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch09s03.html#AnOverviewoftheParallelPort.sect">9.3.1. 并口纵览</a></span></dt>
+<dt><span class="sect2"><a href="ch09s03.html#ASampleDriver.sect">9.3.2. 一个例子驱动</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch09s04.html">9.4. 使用 I/O 内存</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch09s04.html#IOMemoryAllocationandMapping.sect">9.4.1. I/O 内存分配和映射</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#AccessingIOMemory.sect">9.4.2. 存取 I/O 内存</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#PortsasIOMemory.sect">9.4.3. 作为 I/O 内存的端口</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#ReusingshortforIOMemory.sect">9.4.4. 重用 short 为 I/O 内存</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#ISAMemoryBelow1MB.sect">9.4.5. 在 1 MB 之下的 ISA 内存</a></span></dt>
+<dt><span class="sect2"><a href="ch09s04.html#isareadbandFriends.sect">9.4.6. isa_readb 和其友</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch09s05.html">9.5. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch10.html">10. 中断处理</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch10.html#PreparingtheParallelPort.sect">10.1. 准备并口</a></span></dt>
+<dt><span class="sect1"><a href="ch10s02.html">10.2. 安装一个中断处理</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch10s02.html#TheprocInterface.sect">10.2.1. /proc 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#AutodetectingtheIRQNumber.sect">10.2.2. 自动检测 IRQ 号</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#FastandSlowHandlers.sect">10.2.3. 快速和慢速处理</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#ImplementingaHandler.sect">10.2.4. 实现一个处理</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#HandlerArgumentsandReturnValue.sect">10.2.5. 处理者的参数和返回值</a></span></dt>
+<dt><span class="sect2"><a href="ch10s02.html#EnablingandDisablingInterrupts.sect">10.2.6. 使能和禁止中断</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch10s03.html">10.3. 前和后半部</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch10s03.html#Tasklet.sect">10.3.1. Tasklet 实现</a></span></dt>
+<dt><span class="sect2"><a href="ch10s03.html#Workqueues.sect">10.3.2. 工作队列</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch10s04.html">10.4. 中断共享</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch10s04.html#InstallingaSharedHandler.sect">10.4.1. 安装一个共享的处理者</a></span></dt>
+<dt><span class="sect2"><a href="ch10s04.html#RunningtheHandler.sect">10.4.2. 运行处理者</a></span></dt>
+<dt><span class="sect2"><a href="ch10s04.html#TheprocInterfaceandShardInterrupts.sect">10.4.3. /proc 接口和共享中断</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch10s05.html">10.5. 中断驱动 I/O</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch10s05.html#AWriteBufferingExample.sect">10.5.1. 一个写缓存例子</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch10s06.html">10.6. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch11.html">11. 内核中的数据类型</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch11.html#UseofStandardCTypes.sect">11.1. 标准 C 类型的使用</a></span></dt>
+<dt><span class="sect1"><a href="ch11s02.html">11.2. 安排一个明确大小给数据项</a></span></dt>
+<dt><span class="sect1"><a href="ch11s03.html">11.3. 接口特定的类型</a></span></dt>
+<dt><span class="sect1"><a href="ch11s04.html">11.4. 其他移植性问题</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch11s04.html#TimeIntervals.sect">11.4.1. 时间间隔</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#PageSize.sect">11.4.2. 页大小</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#ByteOrder.sect">11.4.3. 字节序</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#DataAlignment.sect">11.4.4. 数据对齐</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#PointersandErrorValues.sect">11.4.5. 指针和错误值</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch11s05.html">11.5. 链表</a></span></dt>
+<dt><span class="sect1"><a href="ch11s06.html">11.6. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch12.html">12. PCI 驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch12.html#ThePCIInterface.sect1">12.1. PCI 接口</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch12.html#PCIAddressing.sect2">12.1.1. PCI 寻址</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#BootTime.sect2">12.1.2. 启动时间</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#ConfigurationRegistersandInitialization.sect2">12.1.3. 配置寄存器和初始化</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#MODULEDEVICETABLE.sect2">12.1.4. MODULEDEVICETABLE 宏</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#RegisteringaPCIDriver.sect2">12.1.5. 注册一个 PCI 驱动</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#OldStypePCIProbing.sect2">12.1.6. 老式 PCI 探测</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#EnablingthePCIDevice.sect2">12.1.7. 使能 PCI 设备</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#AccessingtheConfigurationSpace.sect2">12.1.8. 存取配置空间</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#AccessingtheIOandMemorySpaces.sect2">12.1.9. 存取 I/O 和内存空间</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#PCIInterrupts.sect2">12.1.10. PCI 中断</a></span></dt>
+<dt><span class="sect2"><a href="ch12.html#HardwareAbstractions.sect2">12.1.11. 硬件抽象</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch12s02.html">12.2. 回顾: ISA</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch12s02.html#HardwareResources.sect2">12.2.1. 硬件资源</a></span></dt>
+<dt><span class="sect2"><a href="ch12s02.html#ISAProgramming.sect2">12.2.2. ISA 编程</a></span></dt>
+<dt><span class="sect2"><a href="ch12s02.html#ThePlugandPlaySpecification.sect2">12.2.3. 即插即用规范</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch12s03.html">12.3. PC/104 和 PC/104+</a></span></dt>
+<dt><span class="sect1"><a href="ch12s04.html">12.4. 其他的 PC 总线</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch12s04.html#MCA.sect2">12.4.1. MCA 总线</a></span></dt>
+<dt><span class="sect2"><a href="ch12s04.html#EISA.sect2">12.4.2. EISA 总线</a></span></dt>
+<dt><span class="sect2"><a href="ch12s04.html#VLB.sect2">12.4.3. VLB 总线</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch12s05.html">12.5. SBus</a></span></dt>
+<dt><span class="sect1"><a href="ch12s06.html">12.6. NuBus 总线</a></span></dt>
+<dt><span class="sect1"><a href="ch12s07.html">12.7. 外部总线</a></span></dt>
+<dt><span class="sect1"><a href="ch12s08.html">12.8. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch13.html">13. USB 驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch13.html#USBDeviceBasics.sect1">13.1. USB 设备基础知识</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13.html#Endpoints.sect2">13.1.1. 端点</a></span></dt>
+<dt><span class="sect2"><a href="ch13.html#Interfaces.sect2">13.1.2. 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch13.html#Congurations.sect2">13.1.3. 配置</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s02.html">13.2. USB 和 sysfs</a></span></dt>
+<dt><span class="sect1"><a href="ch13s03.html">13.3. USB 的 Urbs</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13s03.html#structurb.sect2">13.3.1. 结构 struct urb</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#CreatingandDestroyingUrbs.sect2">13.3.2. 创建和销毁 urb</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#SubmittingUrbs.sect2">13.3.3. 提交 urb</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#CompletingUrbsTheCompletionCallbackHandler.sect2">13.3.4. 完成 urb: 完成回调处理者</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#CancelingUrbs.sect2">13.3.5. 取消 urb</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s04.html">13.4. 编写一个 USB 驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13s04.html#WhatDevicesDoestheDriverSupport.sect2">13.4.1. 驱动支持什么设备</a></span></dt>
+<dt><span class="sect2"><a href="ch13s04.html#RegisteringaUSBDriver.sect2">13.4.2. 注册一个 USB 驱动</a></span></dt>
+<dt><span class="sect2"><a href="ch13s04.html#SubmittingandControllingaUrb.sect2">13.4.3. 提交和控制一个 urb</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s05.html">13.5. 无 urb 的 USB 传送</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13s05.html#usb_bulk_msg.sect2">13.5.1. usb_bulk_msg 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch13s05.html#usb_control_msg.sect2">13.5.2. usb_control_msg 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch13s05.html#OtherUSBDataFunctions.sect2">13.5.3. 使用 USB 数据函数</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s06.html">13.6. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch14.html">14. Linux 设备模型</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch14.html#KobjectsKsetsandSubsystems.sect">14.1. Kobjects, Ksets 和 Subsystems </a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14.html#KobjectBasics.sect">14.1.1. Kobject 基础</a></span></dt>
+<dt><span class="sect2"><a href="ch14.html#KobjectHierachiesKsetsandSubsystems.sect">14.1.2. kobject 层次, kset, 和子系统</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch14s02.html">14.2. 低级 sysfs 操作</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14s02.html#DefaultAttributes.sect">14.2.1. 缺省属性</a></span></dt>
+<dt><span class="sect2"><a href="ch14s02.html#NondefaultAttributes.sect">14.2.2. 非缺省属性</a></span></dt>
+<dt><span class="sect2"><a href="ch14s02.html#BinaryAttributes.sect">14.2.3. 二进制属性</a></span></dt>
+<dt><span class="sect2"><a href="ch14s02.html#SymbolicLinks.sect">14.2.4. 符号连接</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch14s03.html">14.3. 热插拔事件产生</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch14s03.html#HotplugOperations.sect">14.3.1. 热插拔操作</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch14s04.html">14.4. 总线, 设备, 和驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14s04.html#Buses.sect">14.4.1. 总线</a></span></dt>
+<dt><span class="sect2"><a href="ch14s04.html#Devices.sect">14.4.2. 设备</a></span></dt>
+<dt><span class="sect2"><a href="ch14s04.html#DeviceDrivers.sect2">14.4.3. 设备驱动</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch14s05.html">14.5. 类</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14s05.html#TheclasssimpleInterface.sect2">14.5.1. class_simple 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch14s05.html#TheFullClassInterface.sect2">14.5.2. 完整的类接口</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch14s06.html">14.6. 集成起来</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14s06.html#AddaDevice.sect2">14.6.1. 添加一个设备</a></span></dt>
+<dt><span class="sect2"><a href="ch14s06.html#RemoveaDevice.sect2">14.6.2. 去除一个设备</a></span></dt>
+<dt><span class="sect2"><a href="ch14s06.html#AddaDriver.sect2">14.6.3. 添加一个驱动</a></span></dt>
+<dt><span class="sect2"><a href="ch14s06.html#RemoveaDriver.sect2">14.6.4. 去除一个驱动</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch14s07.html">14.7. 热插拔</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14s07.html#DynamicDevices.sect2">14.7.1. 动态设备</a></span></dt>
+<dt><span class="sect2"><a href="ch14s07.html#ThesbinhotplugUtility.sect2">14.7.2. /sbin/hotplug 工具</a></span></dt>
+<dt><span class="sect2"><a href="ch14s07.html#Usingsbinhotplug.sect2">14.7.3. 使用 /sbin/hotplug </a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch14s08.html">14.8. 处理固件</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14s08.html#TheKernelFirmwareInterface.sect2">14.8.1. 内核固件接口</a></span></dt>
+<dt><span class="sect2"><a href="ch14s08.html#HowItWorks.sect2">14.8.2. 它如何工作</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch14s09.html">14.9. 快速参考</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch14s09.html#Kobjects.sect2">14.9.1. Kobjects结构</a></span></dt>
+<dt><span class="sect2"><a href="ch14s09.html#SysfsOperations.sect2">14.9.2. sysfs 操作</a></span></dt>
+<dt><span class="sect2"><a href="ch14s09.html#BusesDevicesandDrivers.sect2">14.9.3. 总线, 设备, 和驱动</a></span></dt>
+<dt><span class="sect2"><a href="ch14s09.html#Classes.sect2">14.9.4. 类</a></span></dt>
+<dt><span class="sect2"><a href="ch14s09.html#Firmware.sect2">14.9.5. 固件</a></span></dt>
+</dl></dd>
+</dl></dd>
+<dt><span class="chapter"><a href="ch15.html">15. 内存映射和 DMA </a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch15.html#MemoryManagementinLinux.sect1">15.1. Linux 中的内存管理</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch15.html#AddressTypes.sect2">15.1.1. 地址类型</a></span></dt>
+<dt><span class="sect2"><a href="ch15.html#PhsicalAddressesandPages.sect2">15.1.2. 物理地址和页</a></span></dt>
+<dt><span class="sect2"><a href="ch15.html#HighandLowMemory.sect2">15.1.3. 高和低内存</a></span></dt>
+<dt><span class="sect2"><a href="ch15.html#TheMemoryMapandStructPage.sect2">15.1.4. 内存映射和 struct page</a></span></dt>
+<dt><span class="sect2"><a href="ch15.html#PageTables.sect2">15.1.5. 页表</a></span></dt>
+<dt><span class="sect2"><a href="ch15.html#VirtualMemoryAreas.sect2">15.1.6. 虚拟内存区</a></span></dt>
+<dt><span class="sect2"><a href="ch15.html#TheProcessMemoryMap.sect2">15.1.7. 进程内存映射</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch15s02.html">15.2. mmap 设备操作</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch15s02.html#Usingremap_pfn_range.sect2">15.2.1. 使用 remap_pfn_range</a></span></dt>
+<dt><span class="sect2"><a href="ch15s02.html#ASimpleImplementation.sect2">15.2.2. 一个简单的实现</a></span></dt>
+<dt><span class="sect2"><a href="ch15s02.html#AddingVMAOperations.sect2">15.2.3. 添加 VMA 的操作</a></span></dt>
+<dt><span class="sect2"><a href="ch15s02.html#MappingMemorywithnopage.sect2">15.2.4. 使用 nopage 映射内存</a></span></dt>
+<dt><span class="sect2"><a href="ch15s02.html#RemappingSpecificIORegions.sect2">15.2.5. 重新映射特定 I/O 区</a></span></dt>
+<dt><span class="sect2"><a href="ch15s02.html#RemappingRAM.sect2">15.2.6. 重新映射 RAM</a></span></dt>
+<dt><span class="sect2"><a href="ch15s02.html#RemappingKernelVirtualAddresses.sect2">15.2.7. 重映射内核虚拟地址</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch15s03.html">15.3. 进行直接 I/O</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch15s03.html#AsynchronousIO.sect2">15.3.1. 异步 I/O</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch15s04.html">15.4. 直接内存存取</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch15s04.html#OverviewofDMADataTransfer.sect2">15.4.1. 一个 DMA 数据传输的概况</a></span></dt>
+<dt><span class="sect2"><a href="ch15s04.html#AllocationgtheDMABuffer.sect2">15.4.2. 分配 DMA 缓冲</a></span></dt>
+<dt><span class="sect2"><a href="ch15s04.html#BusAddresses.sect2">15.4.3. 总线地址</a></span></dt>
+<dt><span class="sect2"><a href="ch15s04.html#TheGenericDMALayer.sect2">15.4.4. 通用 DMA 层</a></span></dt>
+<dt><span class="sect2"><a href="ch15s04.html#DMAforISADevices.sect2">15.4.5. ISA 设备的 DMA</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch15s05.html">15.5. 快速参考</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch15s05.html#IntroductoryMaterial.sect2">15.5.1. 介绍性材料</a></span></dt>
+<dt><span class="sect2"><a href="ch15s05.html#Implementingmmap.sect2">15.5.2. 实现 mmap</a></span></dt>
+<dt><span class="sect2"><a href="ch15s05.html#ImplementingDirectIO.sect2">15.5.3. 实现直接 I/O</a></span></dt>
+<dt><span class="sect2"><a href="ch15s05.html#DirectMemoryAccess.sect2">15.5.4. 直接内存存取</a></span></dt>
+</dl></dd>
+</dl></dd>
+<dt><span class="chapter"><a href="ch16.html">16. 块驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch16.html#Registration.sect1">16.1. 注册</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16.html#BlockDriverRegistration.sect2">16.1.1. 块驱动注册</a></span></dt>
+<dt><span class="sect2"><a href="ch16.html#DiskRegistration.sect2">16.1.2. 磁盘注册</a></span></dt>
+<dt><span class="sect2"><a href="ch16.html#Initializationinsbull.sect2">16.1.3. 在 sbull 中的初始化</a></span></dt>
+<dt><span class="sect2"><a href="ch16.html#ANoteonSectorSizes.sect2">16.1.4. 注意扇区大小</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s02.html">16.2. 块设备操作</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16s02.html#TheopenandreleaseMethods.sect2">16.2.1. open 和 release 方法</a></span></dt>
+<dt><span class="sect2"><a href="ch16s02.html#SupportingRemovableMedia.sect2">16.2.2. 支持可移出的介质</a></span></dt>
+<dt><span class="sect2"><a href="ch16s02.html#TheioctlMethod.sect2">16.2.3. ioctl 方法</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s03.html">16.3. 请求处理</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16s03.html#IntroductiontotherequestMethod.sect2">16.3.1. 对请求方法的介绍</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#ASimplerequestMethod.sect2">16.3.2. 一个简单的请求方法</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#RequestQueues.sect2">16.3.3. 请求队列</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#TheAnatomyofaRequest.sect2">16.3.4. 请求的分析</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#RequestCompletionFunctions.sect2">16.3.5. 请求完成函数</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s04.html">16.4. 一些其他的细节</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16s04.html#CommandPrePreparation.sect2">16.4.1. 命令预准备</a></span></dt>
+<dt><span class="sect2"><a href="ch16s04.html#TaggedCommandQueueing.sect2">16.4.2. 被标识的命令排队</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s05.html">16.5. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch17.html">17. 网络驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch17.html#HowsnullIsdesigned">17.1. snull 是如何设计的</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17.html#AssigningIPNumbers">17.1.1. 分配 IP 号</a></span></dt>
+<dt><span class="sect2"><a href="ch17.html#ThePhysicalTransportofPacket">17.1.2. 报文的物理传送</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s02.html">17.2. 连接到内核</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17s02.html#DeviceRegistration">17.2.1. 设备注册</a></span></dt>
+<dt><span class="sect2"><a href="ch17s02.html#InitializingEachDevice">17.2.2. 初始化每一个设备</a></span></dt>
+<dt><span class="sect2"><a href="ch17s02.html#ModuleUnloading">17.2.3. 模块卸载</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s03.html">17.3. net_device 结构的详情</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17s03.html#GlobalInformation">17.3.1. 全局信息</a></span></dt>
+<dt><span class="sect2"><a href="ch17s03.html#HardwareInformation">17.3.2. 硬件信息</a></span></dt>
+<dt><span class="sect2"><a href="ch17s03.html#InterfaceInformation">17.3.3. 接口信息</a></span></dt>
+<dt><span class="sect2"><a href="ch17s03.html#TheDeviceMethods">17.3.4. 设备方法</a></span></dt>
+<dt><span class="sect2"><a href="ch17s03.html#UtilityFields">17.3.5. 公用成员</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s04.html">17.4. 打开与关闭</a></span></dt>
+<dt><span class="sect1"><a href="ch17s05.html">17.5. 报文传送</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17s05.html#ControllingTransmissionConcurrency">17.5.1. 控制发送并发</a></span></dt>
+<dt><span class="sect2"><a href="ch17s05.html#TransmissionTimeouts">17.5.2. 传送超时</a></span></dt>
+<dt><span class="sect2"><a href="ch17s05.html#ScatterGathreIO">17.5.3. 发散/汇聚 I/O</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s06.html">17.6. 报文接收</a></span></dt>
+<dt><span class="sect1"><a href="ch17s07.html">17.7. 中断处理</a></span></dt>
+<dt><span class="sect1"><a href="ch17s08.html">17.8. 接收中断缓解</a></span></dt>
+<dt><span class="sect1"><a href="ch17s09.html">17.9. 连接状态的改变</a></span></dt>
+<dt><span class="sect1"><a href="ch17s10.html">17.10. Socket 缓存</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17s10.html#TheImportFields">17.10.1. 重要成员变量</a></span></dt>
+<dt><span class="sect2"><a href="ch17s10.html#FunctionsActingonSocketBuffers">17.10.2. 作用于 socket 缓存的函数</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s11.html">17.11. MAC 地址解析</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17s11.html#UsingARPwithEthernet">17.11.1. 以太网使用 ARP</a></span></dt>
+<dt><span class="sect2"><a href="ch17s11.html#OverridingARP">17.11.2. 不考虑 ARP</a></span></dt>
+<dt><span class="sect2"><a href="ch17s11.html#NonEthernetHeader">17.11.3. 非以太网头部</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s12.html">17.12. 定制 ioctl 命令</a></span></dt>
+<dt><span class="sect1"><a href="ch17s13.html">17.13. 统计信息</a></span></dt>
+<dt><span class="sect1"><a href="ch17s14.html">17.14. 多播</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17s14.html#KernelSupportforMulticasting">17.14.1. 多播的内核支持</a></span></dt>
+<dt><span class="sect2"><a href="ch17s14.html#ATypicalImplementation">17.14.2. 典型实现</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s15.html">17.15. 几个其他细节</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch17s15.html#MediaIndependentInterfaceSupport">17.15.1. 独立于媒介的接口支持</a></span></dt>
+<dt><span class="sect2"><a href="ch17s15.html#EthtoolSupport">17.15.2. ethtool 支持</a></span></dt>
+<dt><span class="sect2"><a href="ch17s15.html#Netpoll">17.15.3. netpoll</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch17s16.html">17.16. 快速参考</a></span></dt>
+</dl></dd>
+<dt><span class="chapter"><a href="ch18.html">18. TTY 驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect1"><a href="ch18.html#ASmallTTYDriver.sect">18.1. 一个小 TTY 驱动</a></span></dt>
+<dd><dl><dt><span class="sect2"><a href="ch18.html#structtermios.sect">18.1.1. 结构 struct termios</a></span></dt></dl></dd>
+<dt><span class="sect1"><a href="ch18s02.html">18.2. tty_driver 函数指针</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch18s02.html#openandclose.sect">18.2.1. open 和 close</a></span></dt>
+<dt><span class="sect2"><a href="ch18s02.html#FlowofData.sect">18.2.2. 数据流</a></span></dt>
+<dt><span class="sect2"><a href="ch18s02.html#OtherBufferingFunctions.sect">18.2.3. 其他缓冲函数</a></span></dt>
+<dt><span class="sect2"><a href="ch18s02.html#NoreadFunction.sect">18.2.4. 无 read 函数?</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch18s03.html">18.3. TTY 线路设置</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch18s03.html#settermios.sect">18.3.1. set_termios 函数</a></span></dt>
+<dt><span class="sect2"><a href="ch18s03.html#tiocmgetandtiocmset.sect">18.3.2. tiocmget 和 tiocmset</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch18s04.html">18.4. ioctls 函数</a></span></dt>
+<dt><span class="sect1"><a href="ch18s05.html">18.5. TTY 设备的 proc 和 sysfs 处理</a></span></dt>
+<dt><span class="sect1"><a href="ch18s06.html">18.6. tty_driver 结构的细节</a></span></dt>
+<dt><span class="sect1"><a href="ch18s07.html">18.7. tty_operaions 结构的细节</a></span></dt>
+<dt><span class="sect1"><a href="ch18s08.html">18.8. tty_struct 结构的细节</a></span></dt>
+<dt><span class="sect1"><a href="ch18s09.html">18.9. 快速参考</a></span></dt>
+</dl></dd>
+</dl>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch01.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right" valign="top">&#160;第&#160;1&#160;章&#160;第一章 设备驱动简介</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

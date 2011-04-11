@@ -1,0 +1,34 @@
+1.4 在VMware Workstation 4.x中使用SoftICE
+
+Q: 如何在VMware Workstation 4.x中直接使用SoftICE，即Ctrl-D之后可以看到调试
+   界面。
+
+A: tk <tombkeeper@nsfocus.com> 2003-10-13
+
+归根结底仍然是显卡驱动的问题。为了支持"Universal Video Driver"，SoftICE需
+要DirectDraw，这个是古老问题了。
+
+下述办法在VMware Workstation 4.x中测试无误，但3.x不支持这种办法，切记。首
+先有两个前提:
+
+1) 在cmd.exe中执行DirectX诊断工具dxdiag.exe，在显示面版中确认DirectDraw加
+   速已启用。如果这里是灰掉的禁用，请遗忘本文内容。
+
+2) 在SoftICE的设置界面中测试"Universal Video Driver"时显示测试成功。
+
+在上述前提下，打开VMware配置文件(*.vmx)，在未尾增加如下两行内容:
+
+vmmouse.present = "FALSE"
+svga.maxFullscreenRefreshTick = "5"
+
+现在启动VMware，Ctrl-D即可看到调试界面。
+
+D: scz <scz@nsfocus.com> 2003-03-20 09:04
+
+如果只想进行远程调试，考虑设置如下注册表项:
+
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NTice
+
+NullVGA REG_DWORD 1(缺省为0)
+
+其本意是，如果远程呼叫SoftICE，在被调试端看不到SoftICE窗口，否则可以看到。

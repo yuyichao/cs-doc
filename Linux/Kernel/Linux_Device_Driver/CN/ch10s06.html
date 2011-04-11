@@ -1,0 +1,101 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>10.6.&#160;快速参考-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch10.html" title="第&#160;10&#160;章&#160;中断处理">
+<link rel="prev" href="ch10s05.html" title="10.5.&#160;中断驱动 I/O">
+<link rel="next" href="ch11.html" title="第&#160;11&#160;章&#160;内核中的数据类型">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">10.6.&#160;快速参考</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch10s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;10&#160;章&#160;中断处理</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch11.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="InterruptHandlingqr.sect"></a>10.6.&#160;快速参考</h2></div></div></div>
+<p>本章中介绍了这些关于中断管理的符号:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>#include &lt;linux/interrupt.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int request_irq(unsigned int irq, irqreturn_t (*handler)( ), unsigned long flags, const char *dev_name, void *dev_id);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void free_irq(unsigned int irq, void *dev_id);</span></span></dt>
+<dd><p>调用这个注册和注销一个中断处理.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/irq.h.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int can_request_irq(unsigned int irq, unsigned long flags);</span></span></dt>
+<dd><p>这个函数, 在 i386 和 x86_64 体系上有, 返回一个非零值如果一个分配给定中断线的企图成功.</p></dd>
+<dt><span class="term"><span>#include &lt;asm/signal.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>SA_INTERRUPT</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>SA_SHIRQ</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>SA_SAMPLE_RANDOM </span></span></dt>
+<dd><p>给 request_irq 的标志. SA_INTERRUPT 请求安装一个快速处理者( 相反是一个慢速的). SA_SHIRQ 安装一个共享的处理者, 并且第 3 个 flag 声称中断时戳可用来产生系统熵.</p></dd>
+<dt><span class="term"><span>/proc/interrupts</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>/proc/stat </span></span></dt>
+<dd><p>报告硬件中断和安装的处理者的文件系统节点.</p></dd>
+<dt><span class="term"><span>unsigned long probe_irq_on(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int probe_irq_off(unsigned long);</span></span></dt>
+<dd><p>驱动使用的函数, 当它不得不探测来决定哪个中断线被设备在使用. probe_irq_on 的结果必须传回给 probe_irq_off 在中断产生之后. probe_irq_off 的返回值是被探测的中断号.</p></dd>
+<dt><span class="term"><span>IRQ_NONE</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>IRQ_HANDLED</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>IRQ_RETVAL(int x)</span></span></dt>
+<dd><p>从一个中断处理返回的可能值, 指示是否一个来自设备的真正的中断出现了.</p></dd>
+<dt><span class="term"><span>void disable_irq(int irq);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void disable_irq_nosync(int irq);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void enable_irq(int irq);</span></span></dt>
+<dd><p>驱动可以使能和禁止中断报告. 如果硬件试图在中断禁止时产生一个中断, 这个中断永远丢失了. 一个使用一个共享处理者的驱动必须不使用这个函数.</p></dd>
+<dt><span class="term"><span>void local_irq_save(unsigned long flags);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void local_irq_restore(unsigned long flags);</span></span></dt>
+<dd><p>使用 local_irq_save 来禁止本地处理器的中断并且记住它们之前的状态. flags 可以被传递给 local_irq_restore 来恢复之前的中断状态.</p></dd>
+<dt><span class="term"><span>void local_irq_disable(void);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void local_irq_enable(void);</span></span></dt>
+<dd><p>在当前处理器熵无条件禁止和使能中断的函数.</p></dd>
+</dl></div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch10s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch10.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch11.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">10.5.&#160;中断驱动 I/O&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;第&#160;11&#160;章&#160;内核中的数据类型</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

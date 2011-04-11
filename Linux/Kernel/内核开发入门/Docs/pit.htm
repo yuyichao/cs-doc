@@ -1,0 +1,240 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+		<title>
+			Bran的内核开发指南：可编程间隔定时器(PIT)
+		</title>
+		<link href="layout.css" type="text/css" rel="stylesheet">
+	</head>
+
+	<body>
+		<h2><font face="Tahoma">可编程间隔定时器：一个系统时钟</font></h2>
+
+		<p>
+			<span style="font-size: 12.0pt; font-family: Tahoma">可编程间隔定时器（</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">Programmable 
+			Interval Timer</span><span style="font-size: 12.0pt; font-family: Tahoma">，</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">PIT</span><span style="font-size: 12.0pt; font-family: Tahoma">，</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma"> 
+			8253</span><span style="font-size: 12.0pt; font-family: Tahoma">或</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">8254</span><span style="font-size: 12.0pt; font-family: Tahoma">模型），也叫做系统时钟，是一个非常有用的芯片，可以在一定时间间隔精确地产生中断。芯片本身有</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">3</span><span style="font-size: 12.0pt; font-family: Tahoma">个通道：通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0</span><span style="font-size: 12.0pt; font-family: Tahoma">绑定到</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">IRQ0</span><span style="font-size: 12.0pt; font-family: Tahoma">，在可预知和规则的时间中断</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">CPU</span><span style="font-size: 12.0pt; font-family: Tahoma">；通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">1</span><span style="font-size: 12.0pt; font-family: Tahoma">特定于系统；通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">2</span><span style="font-size: 12.0pt; font-family: Tahoma">则连接到系统扬声器。就像你看到的一样，单个的芯片为系统提供了几个非常重要的服务。</span></p>
+
+		<p>
+			<span style="font-size: 12.0pt; font-family: Tahoma">你所需要关注的通道是通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0</span><span style="font-size: 12.0pt; font-family: Tahoma">和通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">2</span><span style="font-size: 12.0pt; font-family: Tahoma">。你可以利用通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">2</span><span style="font-size: 12.0pt; font-family: Tahoma">让计算机发出“嘟嘟”声。在本指南的这一节，我们只关注映射到</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">IRQ0</span><span style="font-size: 12.0pt; font-family: Tahoma">的通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0</span><span style="font-size: 12.0pt; font-family: Tahoma">。计时器的这个通道使你可以精确地调度进程，使其开始运行，也可以让当前任务等待一段时间（这将简单地证明）。默认情况下，计时器的这个通道被设置为每秒产生</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">18.222</span><span style="font-size: 12.0pt; font-family: Tahoma">次</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">IRQ0</span><span style="font-size: 12.0pt; font-family: Tahoma">。这是</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">IBM</span><span style="font-size: 12.0pt; font-family: Tahoma">兼容机</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">BIOS</span><span style="font-size: 12.0pt; font-family: Tahoma">的默认设置。本指南的一个读者告诉我，这个</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">18.222Hz
+			</span><span style="font-size: 12.0pt; font-family: Tahoma">
+			的嘀哒速率是用来适应</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0.055</span><span style="font-size: 12.0pt; font-family: Tahoma">秒的时钟周期的。如果使用一个</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">16</span><span style="font-size: 12.0pt; font-family: Tahoma">位的时钟滴嗒计数器，计数器将每个小时溢出一次并回绕至零。</span></p>
+
+		<p>
+			<span style="font-size: 12.0pt; font-family: Tahoma">要设置计时器的通道</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0</span><span style="font-size: 12.0pt; font-family: Tahoma">激活</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">IRQ0</span><span style="font-size: 12.0pt; font-family: Tahoma">的速率，我们必须使用我们的“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">outportb</span><span style="font-size: 12.0pt; font-family: Tahoma">”函数来向</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">I/O</span><span style="font-size: 12.0pt; font-family: Tahoma">做写操作。计时器的</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">3</span><span style="font-size: 12.0pt; font-family: Tahoma">个通道都有一个数据寄存器，分别位于</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0x40</span><span style="font-size: 12.0pt; font-family: Tahoma">，</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0x41</span><span style="font-size: 12.0pt; font-family: Tahoma">和</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0x42</span><span style="font-size: 12.0pt; font-family: Tahoma">，在</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0x43</span><span style="font-size: 12.0pt; font-family: Tahoma">还有一个指令寄存器。数据速率实际上是这个设备的一个“除数”寄存器。 
+			计时器将用你所给出的、存放在数据寄存器的值去除它的输入时钟——</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">1.19MHz</span><span style="font-size: 12.0pt; font-family: Tahoma">（</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">1193180Hz</span><span style="font-size: 12.0pt; font-family: Tahoma">），从而得到每秒需要激活的信号数。在写入数据</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">/</span><span style="font-size: 12.0pt; font-family: Tahoma">除数寄存器之前，你首先需要选择所要通过指令寄存器进行更新的通道。下面两个表所展示的是指令寄存器每位的定义以及一些计时模式。</span><font face="Tahoma">
+			</font>
+		</p>
+
+		<table>
+			<tr>
+				<td width="300" valign="top">
+					<table>
+						<tr>
+							<td>
+								<table cols="25, 25, 25, 25, 50, 25, 25">
+									<tr>
+										<td width="25" align="left">
+										<font face="Tahoma">7</font></td>
+										<td width="25" align="right">
+										<font face="Tahoma">6</font></td>
+										<td width="25" align="left">
+										<font face="Tahoma">5</font></td>
+										<td width="25" align="right">
+										<font face="Tahoma">4</font></td>
+										<td width="50" align="left">
+										<font face="Tahoma">3</font></td>
+										<td width="25" align="right">
+										<font face="Tahoma">1</font></td>
+										<td width="25" align="center">
+										<font face="Tahoma">0</font></td>
+									</tr>
+							</table>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<table border="1" bordercolor="#808080" cols="50, 50, 75, 25">
+									<tr>
+										<td width="50"><font face="Tahoma">CNTR</font></td>
+										<td width="50"><font face="Tahoma">RW</font></td>
+										<td width="75"><font face="Tahoma">Mode</font></td>
+										<td width="25"><font face="Tahoma">BCD</font></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">
+								CNTR</span><span style="font-size: 12.0pt; font-family: Tahoma">－计数器号（</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0</span><span style="font-size: 12.0pt; font-family: Tahoma">－</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">2</span><span style="font-size: 12.0pt; font-family: Tahoma">）</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma"><br>
+								RW</span><span style="font-size: 12.0pt; font-family: Tahoma">－读写模式</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma"><br>
+								(1 = LSB, 2 = MSB, 3 = LSB then MSB)<br>
+								Mode</span><span style="font-size: 12.0pt; font-family: Tahoma">－见右表</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma"><br>
+								BCD - (0 = 16</span><span style="font-size: 12.0pt; font-family: Tahoma">位计数器，</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma"><br>
+								1 = 4x BCD</span><span style="font-size: 12.0pt; font-family: Tahoma">十进制计数器</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">)
+								</span>
+							</td>
+						</tr>
+					</table>				
+				</td>
+				<td>
+					<table border="1" bordercolor="#808080" width="251">
+						<tr>
+							<th><b>
+							<span style="font-size: 12.0pt; font-family: Tahoma">
+							模式</span></b></th>
+							<th width="185"><b>
+							<span style="font-size: 12.0pt; font-family: Tahoma">
+							描述</span></b></th>
+						</tr>
+						<tr>
+							<td><font face="Tahoma">0</font></td>
+							<td width="185">
+							<span style="font-size: 12.0pt; font-family: Tahoma">
+							中端计数中断</span></td>
+						</tr>
+						<tr>
+							<td><font face="Tahoma">1</font></td>
+							<td width="185">
+							硬件可重触发单稳态方式</td>
+						</tr>
+						<tr>
+							<td><font face="Tahoma">2</font></td>
+							<td width="185">
+							<span style="font-size: 12.0pt; font-family: Tahoma">
+							速率发生器</span></td>
+						</tr>
+						<tr>
+							<td><font face="Tahoma">3</font></td>
+							<td width="185">
+							<span style="font-size: 12.0pt; font-family: Tahoma">
+							方波模式</span></td>
+						</tr>
+						<tr>
+							<td><font face="Tahoma">4</font></td>
+							<td width="185">
+							<span style="font-size: 12.0pt; font-family: Tahoma">
+							软件门</span></td>
+						</tr>
+						<tr>
+							<td><font face="Tahoma">5</font></td>
+							<td width="185">
+							<span style="font-size: 12.0pt; font-family: Tahoma">
+							硬件门</span></td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		<b>
+<span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">8253</span><span style="font-size: 12.0pt; font-family: Tahoma">和</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">8254</span><span style="font-size: 12.0pt; font-family: Tahoma">芯片位于</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">0x43</span><span style="font-size: 12.0pt; font-family: Tahoma">的指令寄存器的位定义</span></b><font face="Tahoma">
+		</font>
+
+		<p><span style="font-family: Tahoma">要设置通道</span><font face="Tahoma"><span lang="EN-US">0</span></font><span style="font-family: Tahoma">的数据寄存器，我们先需要选择计数器</span><font face="Tahoma"><span lang="EN-US">0</span></font><span style="font-family: Tahoma">和指令寄存器的一些模式。我们想要写入数据寄存器的除数值是一个</span><font face="Tahoma"><span lang="EN-US">16</span></font><span style="font-family: Tahoma">位的值，所以我们需要传输</span><font face="Tahoma"><span lang="EN-US">MSB</span></font><span style="font-family: Tahoma">（最大有效字节）和</span><font face="Tahoma"><span lang="EN-US">LSB</span></font><span style="font-family: Tahoma">（最小有效字节）到数据寄存器。这是一个</span><font face="Tahoma"><span lang="EN-US">16</span></font><span style="font-family: Tahoma">位的值，我们并不是以</span><font face="Tahoma"><span lang="EN-US">BCD</span></font><span style="font-family: Tahoma">（十进制数的二进制编码）的形式传送数据，所以</span><font face="Tahoma"><span lang="EN-US">BCD</span></font><span style="font-family: Tahoma">域应该设置为</span><font face="Tahoma"><span lang="EN-US">0</span></font><span style="font-family: Tahoma">。最后，我们想要产生一个方波：模式</span><font face="Tahoma"><span lang="EN-US">3</span></font><span style="font-family: Tahoma">。我们应该设置到指令寄存器的合成字节是</span><font face="Tahoma"><span lang="EN-US">0x36</span></font><span style="font-family: Tahoma">。前两段和表可以总结到这个函数中。你可以使用它，但是在本指南中不这样用，这样过于简单了。为了精确和简单地保持时间，我建议在实际内核中设置为</span><font face="Tahoma"><span lang="EN-US">100Hz</span></font><span style="font-family: Tahoma">。</span></p>
+		<table border="1" width="100%" id="table4" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" size="2">void timer_phase(int hz)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; int divisor = 1193180 / hz; /* 计算我们的除数。 */<br>
+&nbsp;&nbsp;&nbsp; outportb(0x43, 0x36); /* 设置我们的指令字节x36。 */<br>
+&nbsp;&nbsp;&nbsp; outportb(0x40, divisor &amp; 0xFF); /* 设置除数的低字节。*/<br>
+&nbsp;&nbsp;&nbsp; outportb(0x40, divisor &gt;&gt; 8); /* 设置除数的高字节。*/<br>
+				}</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2">不错吧？呵呵。</font></b></td>
+			</tr>
+		</table>
+
+		<p>
+			<span style="font-size: 12.0pt; font-family: Tahoma">创建名为“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">timer.c</span><span style="font-size: 12.0pt; font-family: Tahoma">”的文件，就想本指南的前面章节提到的一样把它加入你的“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">build.bat</span><span style="font-size: 12.0pt; font-family: Tahoma">”。如果你分析下面的代码，你就会发现我们记录了计时器所激发的嘀哒数。这在你的内核变得复杂的时候可以作为“系统正常运行时间计数”。这里的时钟中断简单地使用默认值</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">18.222Hz</span><span style="font-size: 12.0pt; font-family: Tahoma">来计算什么时候应该显示一段简单的信息：“一秒已经过去”，并且每秒都显示一次。如果你决定在你的代码中使用“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">timer_phase</span><span style="font-size: 12.0pt; font-family: Tahoma">”函数，你应该将“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">timer_handler</span><span style="font-size: 12.0pt; font-family: Tahoma">”中的“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">timer_ticks 
+			% 18 == 0</span><span style="font-size: 12.0pt; font-family: Tahoma">”行改为“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">timer_ticks 
+			% 100 == 0</span><span style="font-size: 12.0pt; font-family: Tahoma">”。你可以在内核中的任何函数里设置计时器相位，但是我建议在“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">'timer_install'</span><span style="font-size: 12.0pt; font-family: Tahoma">”里设置它，这样做让代码更有组织。</span></p>
+		<table border="1" width="100%" id="table5" style="border-collapse: collapse">
+			<tr>
+				<td><font size="2" color="#800000">#include &lt; system.h &gt;<br>
+				&nbsp;<br>
+				/* 这将记录系统运行已经产生了多少次嘀哒 */<br>
+				int timer_ticks = 0;<br>
+				&nbsp;<br>
+				/* 处理计时器。在本例中，这非常简单：每当计时器激活时，我们就让变量<br>
+				* “timer_ticks”加1。默认情况下，计时器每秒激活18.222次。谁<br>
+				* 也说不清楚为什么会是18.222Hz。<br>
+				*/<br>
+				void timer_handler(struct regs *r)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 增加我们的“嘀哒计数”。 */<br>
+&nbsp;&nbsp;&nbsp; timer_ticks++;<br>
+&nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; /* 每18个时钟周期（大约是1秒），我们就在屏幕上显示一段信息。 */<br>
+&nbsp;&nbsp;&nbsp; if (timer_ticks % 18 == 0)<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp; puts(&quot;One second has passed\n&quot;);<br>
+&nbsp;&nbsp;&nbsp; }<br>
+				}<br>
+				&nbsp;<br>
+				/* 安装计时器处理程序到IRQ0，设置系统时钟。 */<br>
+				void timer_install()<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 安装“timer_handler”到IRQ0。 */<br>
+&nbsp;&nbsp;&nbsp; irq_install_handler(0, timer_handler);<br>
+				}</font></td>
+			</tr>
+			<tr>
+				<td><b>
+			<font size="2" face="Tahoma">使用系统计时器的例子：“timer.c”</font></b></td>
+			</tr>
+		</table>
+
+		<p>
+			　</p>
+		<p>
+			<span style="font-size: 12.0pt; font-family: Tahoma">记住把“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">timer_install</span><span style="font-size: 12.0pt; font-family: Tahoma">”添加到“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">main.c</span><span style="font-size: 12.0pt; font-family: Tahoma">”的“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">main</span><span style="font-size: 12.0pt; font-family: Tahoma">”函数中。有问题？记住把“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">timer_install</span><span style="font-size: 12.0pt; font-family: Tahoma">”的原型添加到“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">system.h</span><span style="font-size: 12.0pt; font-family: Tahoma">”！下面的代码是进一步的示例，说明你可以用系统计时器做什么。如果你仔细地看，这个简单的函数不断循环，直到经过“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">ticks</span><span style="font-size: 12.0pt; font-family: Tahoma">”时间或计时器相位。这几乎与</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">C</span><span style="font-size: 12.0pt; font-family: Tahoma">函数库中的函数“</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">delay</span><span style="font-size: 12.0pt; font-family: Tahoma">”相同，只取决于你设置的计时器相位：</span></p>
+		<table border="1" width="100%" id="table6" style="border-collapse: collapse">
+			<tr>
+				<td><font size="2" color="#800000">/* 这将不断地循环直至到达给定的时间。 */<br>
+				void timer_wait(int ticks)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; unsigned long eticks;<br>
+&nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; eticks = timer_ticks + ticks;<br>
+&nbsp;&nbsp;&nbsp; while(timer_ticks &lt; eticks);<br>
+				}</font></td>
+			</tr>
+			<tr>
+				<td><b><span style="font-family: Tahoma"><font size="2">如果你愿意，可以把它添加到“</font></span><font size="2"><font face="Tahoma"><span lang="EN-US">timer.c</span></font><span style="font-family: Tahoma">”，并在“</span><font face="Tahoma"><span lang="EN-US">system.h</span></font></font><span style="font-family: Tahoma"><font size="2">”里添加原型</font></span></b></td>
+			</tr>
+		</table>
+		<div style="text-align: left">
+			<pre style="font-size: 10.0pt; font-family: Courier New; margin-left: 0cm; margin-right: 0cm; margin-top: 0cm; margin-bottom: .0001pt">　</pre>
+
+		</div>
+
+		<p>
+			<span style="font-size: 12.0pt; font-family: Tahoma">
+			下一步，我们将讨论如何使用键盘。这涉及到在硬件</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">I/O
+			</span><span style="font-size: 12.0pt; font-family: Tahoma">
+			上为每个中断安装一个定制的</span><span lang="EN-US" style="font-size: 12.0pt; font-family: Tahoma">IRQ</span><span style="font-size: 12.0pt; font-family: Tahoma">处理程序。</span></p>
+
+		<table cols="150, *, 150" width="100%">
+			<tr>
+				<td align="left" width="150">
+					<font face="Tahoma">
+					<a href="irqs.htm">&lt;&lt; 中断请求和可编程中断控制器</a>
+					</font>
+				</td>
+				<td align="center" width="*">
+					<font face="Tahoma">
+					<a href="mailto:friesenb@gmail.com">联系 Brandon F.</a>
+					</font>
+				</td>
+				<td align="right" width="150">
+					<font face="Tahoma">
+					<a href="keyboard.htm">键盘 &gt;&gt;</a>
+				</font>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+  <head>
+    <title>Ido 的按键设置</title>
+    <meta name="generator" content="emacs-wiki.el">
+    <meta http-equiv="Content-Type"
+	  content="text/html; charset=gb2312">
+    <link rev="made" href="mailto:webmaster@wangyin.com">
+    <link rel="home" href="WelcomePage.html">
+    <link rel="index" href="WikiIndex.html">
+    <LINK rel="stylesheet" href="../main.css" media="screen">
+  </head>
+  <body>
+    <h1>Ido 的按键设置</h1>
+    <!-- Page published by Emacs Wiki begins here -->
+
+
+
+
+
+
+<p>
+新的 ido.el 不能在 Emacs 21.3 里使用，所以在旧的 ido.el 里加入：
+
+</p>
+
+<pre class="example">
+(defun ido-restrict-to-matches ()
+  &quot;Set current item list to the currently matched items.&quot;
+  (interactive)
+  (when ido-matches
+    (setq ido-cur-list ido-matches
+	  ido-text-init &quot;&quot;
+	  ido-rescan nil
+	  ido-exit 'keep)
+    (exit-minibuffer)))
+</pre>
+
+<p>
+就能得到 <em>ido-restrict-to-matches</em> 的功能，可以逐步筛选匹配的
+文件！
+
+</p>
+
+<p>
+ido 缺省的按键设置不顺手，改为：
+
+</p>
+
+<pre class="example">
+(add-hook 'ido-define-mode-map-hook 'ido-my-keys)
+
+(defun ido-my-keys ()
+  &quot;Set up the keymap for `ido'.&quot;
+
+  ;; common keys
+  (define-key ido-mode-map &quot;\C-e&quot; 'ido-edit-input)   
+  (define-key ido-mode-map &quot;\t&quot; 'ido-complete) ;; complete partial
+  (define-key ido-mode-map &quot;\C-j&quot; 'ido-select-text)
+  (define-key ido-mode-map &quot;\C-m&quot; 'ido-exit-minibuffer)
+  (define-key ido-mode-map &quot;?&quot; 'ido-completion-help) ;; list completions
+  (define-key ido-mode-map [(control ? )] 'ido-restrict-to-matches)
+  (define-key ido-mode-map [(control ?@)] 'ido-restrict-to-matches)
+
+  ;; cycle through matches
+  (define-key ido-mode-map &quot;\C-r&quot; 'ido-prev-match)
+  (define-key ido-mode-map &quot;\C-s&quot; 'ido-next-match)
+  (define-key ido-mode-map [right] 'ido-next-match)
+  (define-key ido-mode-map [left] 'ido-prev-match)
+
+  ;; toggles
+  (define-key ido-mode-map &quot;\C-t&quot; 'ido-toggle-regexp) ;; same as in isearch
+  (define-key ido-mode-map &quot;\C-p&quot; 'ido-toggle-prefix)
+  (define-key ido-mode-map &quot;\C-c&quot; 'ido-toggle-case)
+  (define-key ido-mode-map &quot;\C-a&quot; 'ido-toggle-ignore)
+
+  ;; keys used in file and dir environment
+  (when (memq ido-cur-item '(file dir))
+    (define-key ido-mode-map &quot;\C-b&quot; 'ido-enter-switch-buffer)
+    (define-key ido-mode-map &quot;\C-d&quot; 'ido-enter-dired)
+    (define-key ido-mode-map &quot;\C-f&quot; 'ido-fallback-command)
+
+    ;; cycle among directories
+    ;; use [left] and [right] for matching files
+    (define-key ido-mode-map [down] 'ido-next-match-dir)
+    (define-key ido-mode-map [up]   'ido-prev-match-dir)
+
+    ;; backspace functions
+    (define-key ido-mode-map [backspace] 'ido-delete-backward-updir)
+    (define-key ido-mode-map &quot;\d&quot;        'ido-delete-backward-updir)
+    (define-key ido-mode-map [(meta backspace)] 'ido-delete-backward-word-updir)
+    (define-key ido-mode-map [(control backspace)] 'ido-up-directory)
+
+    ;; I can't understand this
+    (define-key ido-mode-map [(meta ?d)] 'ido-wide-find-dir)
+    (define-key ido-mode-map [(meta ?f)] 'ido-wide-find-file)
+    (define-key ido-mode-map [(meta ?k)] 'ido-forget-work-directory)
+    (define-key ido-mode-map [(meta ?m)] 'ido-make-directory)
+
+    (define-key ido-mode-map [(meta down)] 'ido-next-work-directory)
+    (define-key ido-mode-map [(meta up)] 'ido-prev-work-directory)
+    (define-key ido-mode-map [(meta left)] 'ido-prev-work-file)
+    (define-key ido-mode-map [(meta right)] 'ido-next-work-file)
+
+    ;; search in the directories
+    ;; use C-_ to undo this
+    (define-key ido-mode-map [(meta ?s)] 'ido-merge-work-directories)
+    (define-key ido-mode-map [(control ?\_)] 'ido-undo-merge-work-directory)
+    )
+
+  (when (eq ido-cur-item 'file)
+    (define-key ido-mode-map &quot;\C-k&quot; 'ido-delete-file-at-head)
+    (define-key ido-mode-map &quot;\C-l&quot; 'ido-toggle-literal)
+    (define-key ido-mode-map &quot;\C-o&quot; 'ido-copy-current-word)
+    (define-key ido-mode-map &quot;\C-v&quot; 'ido-toggle-vc)
+    (define-key ido-mode-map &quot;\C-w&quot; 'ido-copy-current-file-name)
+    )
+
+  (when (eq ido-cur-item 'buffer)
+    (define-key ido-mode-map &quot;\C-b&quot; 'ido-fallback-command)
+    (define-key ido-mode-map &quot;\C-f&quot; 'ido-enter-find-file)
+    (define-key ido-mode-map &quot;\C-k&quot; 'ido-kill-buffer-at-head)
+    ))
+
+(ido-mode t)
+
+</pre>
+
+<!-- Page published by Emacs Wiki ends here -->
+    <div class="navfoot">
+    <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：2003-05-17</span>
+	  </td>
+	  <td width="60%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">王垠的主页</a> / <a href="WelcomePage.html">WiKi首页</a>/<a href="WikiIndex.html">索引</a>/<a href="wiki_frame.html" target=_parent>框架页</a>/<a href="IdoKeys.html" target=_parent>取消框架</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    
+	  </td>
+	</tr>
+      </table>
+    </div>
+
+
+  </body>
+</html>

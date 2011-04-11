@@ -1,0 +1,255 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>比例框架 Aspect Frames</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="容器构件 Container Widgets"
+HREF="c1289.html"><LINK
+REL="PREVIOUS"
+TITLE="框架 Frames"
+HREF="x1354.html"><LINK
+REL="NEXT"
+TITLE="分栏窗口构件 Paned Window Widgets"
+HREF="x1398.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1354.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>容器构件 Container Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1398.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-ASPECTFRAMES">比例框架 Aspect Frames</H1
+><P
+>比例框架构件(The aspect frame widget)和框架构件(frame widget)差不多，除了它还会使子构件的外观比例（也就是宽和长的比例）保持一定值，如果需要，还会在构件中增加额外的可用空间。这很有用，例如，想预览一个大的图片。当用户改变窗口的尺寸时，预览器的尺寸应该随之改变，但是外观比例要与原来图片的尺寸保持一致。</P
+><P
+>用下面的函数创建一个新的比例框架：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_aspect_frame_new( const gchar *label,
+                                 gfloat       xalign,
+                                 gfloat       yalign,
+                                 gfloat       ratio,
+                                 gboolean     obey_child);</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>xalign</TT
+>和<TT
+CLASS="LITERAL"
+>yalign</TT
+>参数的作用和创建对齐构件(Alignment widgets)时的一样。如果<TT
+CLASS="LITERAL"
+>obey_child</TT
+>参数设置为 TRUE，子构件的长宽比例会和它所请求的理想长宽比例相匹配。否则，比例值由<TT
+CLASS="LITERAL"
+>ratio</TT
+>参数指定。</P
+><P
+>用以下函数可以改变已有比例框架构件的选项：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_aspect_frame_set( GtkAspectFrame *aspect_frame,
+                           gfloat          xalign,
+                           gfloat          yalign,
+                           gfloat          ratio,
+                           gboolean        obey_child);</PRE
+></TD
+></TR
+></TABLE
+><P
+>在下面的示例中，程序用一个比例框架构件显示一个绘图区，纵横比例总是 2:1，而不管用户如何改变顶级窗口的尺寸。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/aspectframe.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+   
+int main( int argc,
+          char *argv[] )
+{
+    GtkWidget *window;
+    GtkWidget *aspect_frame;
+    GtkWidget *drawing_area;
+    gtk_init (&#38;argc, &#38;argv);
+   
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title (GTK_WINDOW (window), "Aspect Frame");
+    g_signal_connect (G_OBJECT (window), "destroy",
+	              G_CALLBACK (gtk_main_quit), NULL);
+    gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+   
+    /* 创建一个比例框架，将它添加到顶级窗口中 */
+   
+    aspect_frame = gtk_aspect_frame_new ("2x1", /* label */
+                                         0.5, /* center x */
+                                         0.5, /* center y */
+                                         2, /* xsize/ysize = 2 */
+                                         FALSE /* ignore child's aspect */);
+   
+    gtk_container_add (GTK_CONTAINER (window), aspect_frame);
+    gtk_widget_show (aspect_frame);
+   
+    /* 添加一个子构件到比例框架中 */
+   
+    drawing_area = gtk_drawing_area_new ();
+   
+    /* 要求一个200×200的窗口，但是比例框架会给出一个200×100
+     * 的窗口，因为我们已经指定了2×1的比例值 */
+    gtk_widget_set_size_request (drawing_area, 200, 200);
+    gtk_container_add (GTK_CONTAINER (aspect_frame), drawing_area);
+    gtk_widget_show (drawing_area);
+   
+    gtk_widget_show (window);
+    gtk_main ();
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1354.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1398.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>框架 Frames</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1289.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>分栏窗口构件 Paned Window Widgets</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

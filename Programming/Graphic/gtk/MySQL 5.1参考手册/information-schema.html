@@ -1,0 +1,2692 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 23. The INFORMATION_SCHEMA Information Database</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="views.html" title="Chapter 22. Views"><link rel="next" href="precision-math.html" title="Chapter 24. Precision Math">
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="information-schema"></a>
+	第23章：INFORMATION_SCHEMA信息数据库</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="information-schema.html#information-schema-tables">23.1. 
+			INFORMATION_SCHEMA表</a></span></dt><dd><dl><dt><span class="section"><a href="information-schema.html#schemata-table">
+				23.1.1. INFORMATION_SCHEMA SCHEMATA表</a></span></dt><dt><span class="section"><a href="information-schema.html#tables-table">
+				23.1.2. INFORMATION_SCHEMA TABLES表</a></span></dt><dt><span class="section"><a href="information-schema.html#columns-table">
+				23.1.3. INFORMATION_SCHEMA COLUMNS表</a></span></dt><dt><span class="section"><a href="information-schema.html#statistics-table">
+				23.1.4. INFORMATION_SCHEMA STATISTICS表</a></span></dt><dt><span class="section"><a href="information-schema.html#user-privileges-table">
+				23.1.5. INFORMATION_SCHEMA USER_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#schema-privileges-table">
+				23.1.6. INFORMATION_SCHEMA 
+				SCHEMA_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#table-privileges-table">
+				23.1.7. INFORMATION_SCHEMA 
+				TABLE_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#column-privileges-table">
+				23.1.8. INFORMATION_SCHEMA 
+				COLUMN_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#character-sets-table">
+				23.1.9. INFORMATION_SCHEMA CHARACTER_SETS表</a></span></dt><dt><span class="section"><a href="information-schema.html#collations-table">
+				23.1.10. INFORMATION_SCHEMA COLLATIONS表</a></span></dt><dt><span class="section"><a href="information-schema.html#collation-character-set-applicability-table">
+				23.1.11. INFORMATION_SCHEMA 
+				COLLATION_CHARACTER_SET_APPLICABILITY表</a></span></dt><dt><span class="section"><a href="information-schema.html#table-constraints-table">
+				23.1.12. INFORMATION_SCHEMA 
+				TABLE_CONSTRAINTS表</a></span></dt><dt><span class="section"><a href="information-schema.html#key-column-usage-table">
+				23.1.13. INFORMATION_SCHEMA 
+				KEY_COLUMN_USAGE表</a></span></dt><dt><span class="section"><a href="information-schema.html#routines-table">
+				23.1.14. INFORMATION_SCHEMA ROUTINES表</a></span></dt><dt><span class="section"><a href="information-schema.html#views-table">
+				23.1.15. INFORMATION_SCHEMA VIEWS表</a></span></dt><dt><span class="section"><a href="information-schema.html#triggers-table">
+				23.1.16. INFORMATION_SCHEMA TRIGGERS表</a></span></dt><dt><span class="section"><a href="information-schema.html#other-information-schema-tables">
+				23.1.17. 其他INFORMATION_SCHEMA表</a></span></dt></dl></dd><dt><span class="section"><a href="information-schema.html#extended-show">
+			23.2. SHOW语句的扩展<code class="literal"></code></a></span></dt></dl></div><a class="indexterm" name="id2999020"></a><a class="indexterm" name="id2999030"></a><a class="indexterm" name="id2999037"></a><a class="indexterm" name="id2999046"></a><a class="indexterm" name="id2999055"></a>
+	<p><span>INFORMATION_SCHEMA</span>提供了访问数据库元数据的方式。</p>
+	<p>元数据是关于数据的数据，如数据库名或表名，列的数据类型，或访问权限等。有些时候用于表述该信息的其他术语包括“数据词典”和“系统目录”。</p>
+	<p>例如：</p>
+	<pre><span>mysql&gt; <span><b>SELECT table_name, table_type, engine</b></span></span></pre>
+	<pre><span>-&gt; <span><b>FROM information_schema.tables</b></span></span></pre>
+	<pre><span>-&gt; <span><b>WHERE table_schema = &#39;db5&#39;</b></span></span></pre>
+	<pre><span>-&gt; <span><b>ORDER BY table_name DESC;</b></span></span></pre>
+	<table class="MsoTableGrid" border="1" cellspacing="0" cellpadding="0">
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;</span><span>table_name</span>（表名）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;table_type</span>（表类型）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;</span>引擎</pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;v56&nbsp; </span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;VIEW</span>（视图）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;NULL</span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;v3</span></pre>
+			</td>
+			<td valign="top">
+			<p><span>VIEW</span>（视图）</td>
+			<td valign="top">
+			<pre><span>&nbsp;NULL</span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;v2</span></pre>
+			</td>
+			<td valign="top">
+			<p><span>VIEW</span>（视图）</td>
+			<td valign="top">
+			<pre><span>&nbsp;NULL</span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;v</span></pre>
+			</td>
+			<td valign="top">
+			<p><span>VIEW</span>（视图）</td>
+			<td valign="top">
+			<pre><span>&nbsp;NULL</span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;tables </span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;t7</span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;t3</span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;t2</span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;t</span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;pk</span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;InnoDB </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;loop </span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;kurs </span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;k</span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;into </span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;goto </span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;MyISAM </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;fk2&nbsp; </span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;InnoDB </span></pre>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top">
+			<pre><span>&nbsp;fk</span></pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;BASE TABLE</span>（基本表）</pre>
+			</td>
+			<td valign="top">
+			<pre><span>&nbsp;InnoDB </span></pre>
+			</td>
+		</tr>
+	</table>
+	<pre>集合中含17行（0.01秒）。</pre>
+	<p>解释：该语句请求按逆向字母顺序列出数据库db5中的所有表，但仅显示三种信息：表名，表类型，以及表引擎。</p>
+	<p><span>INFORMATION_SCHEMA</span>是信息数据库，其中保存着关于MySQL服务器所维护的所有其他数据库的信息。在<span>INFORMATION_SCHEMA中，有数个只读表</span>。它们实际上是视图，而不是基本表，因此，你将无法看到与之相关的任何文件。</p>
+	<p>每位MySQL用户均有权访问这些表，但仅限于表中的特定行，在这类行中含有用户具有恰当访问权限的对象。</p>
+	<p><span><b>SELECT</b></span><b>的优点</b></p>
+	<p><span>SELECT ... FROM INFORMATION_SCHEMA</span>语句的目的在于提供一种更为一致的方式，以访问MySQL所支持的各种SHOW语句（<span>SHOW 
+	DATABASES</span>、<span>SHOW TABLES</span>等等）提供的信息。与SHOW相比，使用SELECT有多项优点“
+	</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>符合Codd规则。也就是说，所有访问均是在表上进行的。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>不需要了解新语句的语法。由于他们已知道SELECT的工作方式，仅需了解对象名即可。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>实现人无需操心增加关键词方面的事宜。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>有数百万种可能的输出变化，而不是一种。这样，就为对元数据有不同需求的应用程序提供了更高的灵活性。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>由于其他DBMS也采用了这类方式，移植更为容易。</p>
+	<p><a name="_Hlt123146991">然而，由于SHOW在MySQL的雇员和用户中十分流行，如果SHOW消失，可能会导致混乱，因此传统的语法方式无法给出消除SHOW的足够理由。事实上，在MySQL 
+	5.1中，还对SHOW进行了多项增强。关于这方面的介绍，请参见</a><a href="information-schema.html#extended-show" title="23.2. Extensions to SHOW Statements">23.2节，“SHOW语句的扩展<code class="literal"></code>”</a>。<span> </span></p>
+	<p><b>标准</b></p>
+	<p>在MySQL中，<span>INFORMATION_SCHEMA表结构的实施遵从<span >“</span></span>ANSI/ISO 
+	SQL:2003标准，第11部分<em><span>纲要</span></em>”。我们的目的在于，获得与SQL:2003核心特性F021“基本信息方案”的近似兼容。</p>
+	<p>SQL服务器2000（也遵从该标准）的用户可能已注意到它们高度的相似性。但是，MySQL略去了与我们的实施方式不相关的众多列，并添加了一些MySQL特有的列。其中一种列就是<span>INFORMATION_SCHEMA.TABLES</span>表中的引擎列。</p>
+	<p>尽管其他DBMS使用了不同的名称，如syscat或系统，但标准名称是<span>INFORMATION_SCHEMA</span>。</p>
+	<p>事实上，尽管不需要生成名为<span>INFORMATION_SCHEMA的文件，我们仍提供了名为INFORMATION_SCHEMA的新数据库。</span>可以使用USE语句将<span>INFORMATION_SCHEMA</span>选择为默认数据库，但访问该数据库中所含表的唯一方式是使用SELECT语句。不能在其中插入内容，不能更新它们，也不能删除其中的内容。</p>
+	<p><b>权限</b></p>
+	<p>当前权限（SHOW）要求和SELCET权限要求不存在差别。在任何一种情况下，要想查看关于它的信息，需要对某类对象拥有特定权限。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="information-schema-tables"></a>23.1. INFORMATION_SCHEMA表</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="information-schema.html#schemata-table">
+		23.1.1. INFORMATION_SCHEMA SCHEMATA表</a></span></dt><dt><span class="section"><a href="information-schema.html#tables-table">
+		23.1.2. INFORMATION_SCHEMA TABLES表</a></span></dt><dt><span class="section"><a href="information-schema.html#columns-table">
+		23.1.3. INFORMATION_SCHEMA COLUMNS表</a></span></dt><dt><span class="section"><a href="information-schema.html#statistics-table">
+		23.1.4. INFORMATION_SCHEMA STATISTICS表</a></span></dt><dt><span class="section"><a href="information-schema.html#user-privileges-table">
+		23.1.5. INFORMATION_SCHEMA USER_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#schema-privileges-table">
+		23.1.6. INFORMATION_SCHEMA SCHEMA_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#table-privileges-table">
+		23.1.7. INFORMATION_SCHEMA TABLE_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#column-privileges-table">
+		23.1.8. INFORMATION_SCHEMA COLUMN_PRIVILEGES表</a></span></dt><dt><span class="section"><a href="information-schema.html#character-sets-table">
+		23.1.9. INFORMATION_SCHEMA CHARACTER_SETS表</a></span></dt><dt><span class="section"><a href="information-schema.html#collations-table">
+		23.1.10. INFORMATION_SCHEMA COLLATIONS表</a></span></dt><dt><span class="section"><a href="information-schema.html#collation-character-set-applicability-table">
+		23.1.11. INFORMATION_SCHEMA 
+		COLLATION_CHARACTER_SET_APPLICABILITY表</a></span></dt><dt><span class="section"><a href="information-schema.html#table-constraints-table">
+		23.1.12. INFORMATION_SCHEMA TABLE_CONSTRAINTS表</a></span></dt><dt><span class="section"><a href="information-schema.html#key-column-usage-table">
+		23.1.13. INFORMATION_SCHEMA KEY_COLUMN_USAGE表</a></span></dt><dt><span class="section"><a href="information-schema.html#routines-table">
+		23.1.14. INFORMATION_SCHEMA ROUTINES表</a></span></dt><dt><span class="section"><a href="information-schema.html#views-table">
+		23.1.15. INFORMATION_SCHEMA VIEWS表</a></span></dt><dt><span class="section"><a href="information-schema.html#triggers-table">
+		23.1.16. INFORMATION_SCHEMA TRIGGERS表</a></span></dt><dt><span class="section"><a href="information-schema.html#other-information-schema-tables">
+		23.1.17. 其他INFORMATION_SCHEMA表</a></span></dt></dl></div><a class="indexterm" name="id2999389"></a>
+		<p><b>下述章节说明</b></p>
+		<p>在下面的章节中，我们选择了<span>INFORMATION_SCHEMA</span>中的表和列。对于每一列，有三类信息：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>“标准名称”：指明了列的标准SQL名称。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>“SHOW名称”：指明了最近SHOW语句中的等效字段名，如果有的话。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>“注释”给出了适用的附加信息。</p>
+		<p>为了避免使用标准或DB2、SQL服务器或Oracle中保留的名称，我们更改了标注为“SQL扩展”的列名。（例如，在TABLES表中，我们将<span>COLLATION改为TABLE_COLLATION</span>）。请参见本文末尾处给出的保留字列表。<a target="_top"  href="http://www.dbazine.com/gulutzan5.shtml">http://www.dbazine.com/gulutzan5.shtml</a>。</p>
+		<p>字符列（例如<span>TABLES.TABLE_NAME</span>）定义通常是<span>VARCHAR(<i>N</i>) 
+		CHARACTER SET utf8，其中，N至少为64。</span></p>
+		<p>在每一部分中，指明了等效于从<span>INFORMATION_SCHEMA中检索信息的SELECT语句的SHOW语句，或者不存在这类语句。</span></p>
+		<p><b>注释：</b>目前，有一些丢失的列和一些混乱的列。我们正在着手解决该问题，并随着变化情况更新文档。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="schemata-table"></a>
+			23.1.1.&nbsp;INFORMATION_SCHEMA SCHEMATA表</h3></div></div></div><a class="indexterm" name="id2999562"></a>
+			<p>该方案是数据库，因此<span>SCHEMATA表提供了关于数据库的信息。</span></p>
+			<table border="1" cellpadding="0" id="table2">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><b>注释</b></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CATALOG_NAME</span></td>
+					<td>
+					<p><span>-</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SCHEMA_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>Database</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DEFAULT_CHARACTER_SET_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DEFAULT_COLLATION_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SQL_PATH</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+			</table>
+			<p><b>注释：</b><span>SQL_PATH列的之总为NULL</span>。</p>
+			<p>下述语句是等效的：</p>
+			<pre><span>SELECT SCHEMA_NAME AS `Database</span></pre>
+			<pre><span>FROM INFORMATION_SCHEMA.SCHEMATA</span></pre>
+			<pre><span>[WHERE SCHEMA_NAME LIKE &#39;wild&#39;]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW DATABASES</span></pre>
+			<pre><span>[LIKE &#39;wild&#39;]</span></pre>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="tables-table"></a>23.1.2.&nbsp;INFORMATION_SCHEMA TABLES表</h3>
+					</div></div></div><a class="indexterm" name="id2999744"></a>
+			<p><span>TABLES表给出了关于数据库中的表的信息。</span></p>
+			<table border="1" cellpadding="0" id="table3">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p>
+					<span>Table_</span><span>...</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p>
+					<span>Table_</span><span>...</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_TYPE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ENGINE</span></td>
+					<td>
+					<p>
+					<span>Engine</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>VERSION</span></td>
+					<td>
+					<p>
+					<span>Version</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROW_FORMAT</span></td>
+					<td>
+					<p>
+					<span>Row_format</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_ROWS</span></td>
+					<td>
+					<p>
+					<span>Rows</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>AVG_ROW_LENGTH</span></td>
+					<td>
+					<p>
+					<span>Avg_row_length</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DATA_LENGTH</span></td>
+					<td>
+					<p>
+					<span>Data_length</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>MAX_DATA_LENGTH</span></td>
+					<td>
+					<p>
+					<span>Max_data_length</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>INDEX_LENGTH</span></td>
+					<td>
+					<p>
+					<span>Index_length</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DATA_FREE</span></td>
+					<td>
+					<p>
+					<span>Data_free</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>AUTO_INCREMENT</span></td>
+					<td>
+					<p>
+					<span>Auto_increment</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CREATE_TIME</span></td>
+					<td>
+					<p>
+					<span>Create_time</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>UPDATE_TIME</span></td>
+					<td>
+					<p>
+					<span>Update_time</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHECK_TIME</span></td>
+					<td>
+					<p>
+					<span>Check_time</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_COLLATION</span></td>
+					<td>
+					<p>
+					<span>Collation</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHECKSUM</span></td>
+					<td>
+					<p>
+					<span>Checksum</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CREATE_OPTIONS</span></td>
+					<td>
+					<p>
+					<span>Create_options</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_COMMENT</span></td>
+					<td>
+					<p>
+					<span>Comment</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>TABLE_SCHEMA</span>和<span>TABLE_NAME</span>是<span>SHOW显示中的单个字段，例如Table_in_db1</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>TABLE_TYPE</span>（表类型）应是<span>BASE 
+			TABLE（基本表）</span>或<span>VIEW</span>（视图）。如果表是临时性的，<span>TABLE_TYPE</span> 
+			= <span>TEMPORARY</span>。（没有临时视图，因此，因此不存在歧义）。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果表位于<span>INFORMATION_SCHEMA数据库中，TABLE_ROWS列为NULL</span>。对于<span>InnoDB表，在SQL优化中，行计数仅是大概估计值。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>没有关于表默认字符集的任何信息。<span>TABLE_COLLATION</span>处于关闭状态，原因在于校对名称以字符集名称开头。</p>
+			<p>下述语句是等效的：</p>
+			<pre><span>SELECT table_name FROM INFORMATION_SCHEMA.TABLES</span></pre>
+			<pre><span>&nbsp; [WHERE table_schema = &#39;db_name&#39;]</span></pre>
+			<pre><span>&nbsp; [WHERE|AND table_name LIKE &#39;wild&#39;]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW TABLES</span></pre>
+			<pre><span>&nbsp; [FROM db_name]</span></pre>
+			<pre><span>&nbsp; [LIKE &#39;wild&#39;]</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="columns-table"></a>
+			23.1.3.&nbsp;INFORMATION_SCHEMA COLUMNS表</h3></div></div></div><a class="indexterm" name="id3000272"></a>
+			<p><span>COLUMNS</span>表给出了表中的列信息。</p>
+			<table border="1" cellpadding="0" id="table4">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_NAME</span></td>
+					<td>
+					<p>
+					<span>Field</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ORDINAL_POSITION</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>参见注释</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_DEFAULT</span></td>
+					<td>
+					<p>
+					<span>Default</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>IS_NULLABLE</span></td>
+					<td>
+					<p>
+					<span>Null</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DATA_TYPE</span></td>
+					<td>
+					<p>
+					<span>Type</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHARACTER_MAXIMUM_LENGTH</span></td>
+					<td>
+					<p>
+					<span>Type</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHARACTER_OCTET_LENGTH</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>NUMERIC_PRECISION</span></td>
+					<td>
+					<p>
+					<span>Type</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>NUMERIC_SCALE</span></td>
+					<td>
+					<p>
+					<span>Type</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHARACTER_SET_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLLATION_NAME</span></td>
+					<td>
+					<p>
+					<span>Collation</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_TYPE</span></td>
+					<td>
+					<p>
+					<span>Type</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_KEY</span></td>
+					<td>
+					<p>
+					<span>Key</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>EXTRA</span></td>
+					<td>
+					<p>
+					<span>Extra</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_COMMENT</span></td>
+					<td>
+					<p>
+					<span>Comment</span></td>
+					<td>
+					<p><span>MySQL扩展</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在<span>SHOW中，类型显示包括</span>来自数个不同<span>COLUMNS</span>列的值。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>ORDINAL_POSITION</span>有必要，这是因为，你可能会在某一天需要<span>ORDER 
+			BY ORDINAL_POSITION（按ORDINAL_POSITION排序）</span>。不同于<span>SHOW，SELECT没有自动排序功能。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>CHARACTER_OCTET_LENGTH</span>应与<span>CHARACTER_MAXIMUM_LENGTH相同，但多字节字符集除外。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>CHARACTER_SET_NAME</span>可由<span>Collation</span>（校对）导出。例如，如果给出了“<span>SHOW 
+			FULL COLUMNS FROM t</span>”，在<span>Collation</span>（校对）列中将见到<span>latin1_swedish_ci的值，字符集由第1个下划线前的名称指明。latin1</span>.
+			</p>
+			<p>下述语句是等效的：</p>
+			<pre><span>SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT</span></pre>
+			<pre><span>&nbsp; FROM INFORMATION_SCHEMA.COLUMNS</span></pre>
+			<pre><span>&nbsp; WHERE table_name = &#39;tbl_name&#39;</span></pre>
+			<pre><span> &nbsp;[AND table_schema = &#39;db_name&#39;]</span></pre>
+			<pre><span> &nbsp;[AND column_name LIKE &#39;wild&#39;]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW COLUMNS</span></pre>
+			<pre><span> &nbsp;FROM tbl_name</span></pre>
+			<pre><span>&nbsp; [FROM db_name]</span></pre>
+			<pre><span>&nbsp; [LIKE wild]</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="statistics-table"></a>
+			23.1.4.&nbsp;INFORMATION_SCHEMA STATISTICS表</h3></div></div></div><a class="indexterm" name="id3000725"></a>
+			<p><span>STATISTICS</span>表给出了关于表索引的信息。</p>
+			<table border="1" cellpadding="0" id="table5">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>＝数据库</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p>
+					<span>Table</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>NON_UNIQUE</span></td>
+					<td>
+					<p>
+					<span>Non_unique</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>INDEX_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>＝数据库</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>INDEX_NAME</span></td>
+					<td>
+					<p>
+					<span>Key_name</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SEQ_IN_INDEX</span></td>
+					<td>
+					<p>
+					<span>Seq_in_index</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_NAME</span></td>
+					<td>
+					<p>
+					<span>Column_name</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLLATION</span></td>
+					<td>
+					<p>
+					<span>Collation</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CARDINALITY</span></td>
+					<td>
+					<p>
+					<span>Cardinality</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SUB_PART</span></td>
+					<td>
+					<p>
+					<span>Sub_part</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>PACKED</span></td>
+					<td>
+					<p>
+					<span>Packed</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>NULLABLE</span></td>
+					<td>
+					<p>
+					<span>Null</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>INDEX_TYPE</span></td>
+					<td>
+					<p>
+					<span>Index_type</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COMMENT</span></td>
+					<td>
+					<p>
+					<span>Comment</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>没有关于这些索引的标准表。上面的列表与SQL服务器2000中<span>sp_statistics返回的值类似。不同之处在于用CATALOG替换了QUALIFIER，并用SCHEMA替换了OWNER。</span></p>
+			<p>显而易见，前述表和<span>SHOW 
+			INDEX的输出均是由相同的父对象导出的。</span>因此，相关性已关闭。</p>
+			<p>下述语句是等效的：</p>
+			<pre><span>SELECT * FROM INFORMATION_SCHEMA.STATISTICS</span></pre>
+			<pre><span>&nbsp; WHERE table_name = &#39;tbl_name&#39;</span></pre>
+			<pre><span> &nbsp;[AND table_schema = &#39;db_name&#39;]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW INDEX</span></pre>
+			<pre><span> &nbsp;FROM tbl_name</span></pre>
+			<pre><span>&nbsp; [FROM db_name]</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="user-privileges-table"></a>
+			23.1.5.&nbsp;INFORMATION_SCHEMA USER_PRIVILEGES表</h3></div></div></div><a class="indexterm" name="id3001090"></a>
+			<p><span>USER_PRIVILEGES（用户权限）表给出了关于全程权限的信息。</span>该信息源自<span>mysql.user</span>授权表。</p>
+			<table border="1" cellpadding="0" id="table6">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>GRANTEE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>例如“user&#39;@&#39;host”</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>PRIVILEGE_TYPE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>IS_GRANTABLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>这是一个非标准表。其值来自<span>mysql.user</span>表。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="schema-privileges-table"></a>
+			23.1.6.&nbsp;INFORMATION_SCHEMA SCHEMA_PRIVILEGES表</h3></div></div></div><a class="indexterm" name="id3001253"></a>
+			<p><span>SCHEMA_PRIVILEGES</span>（方案权限）表给出了关于方案（数据库）权限的信息。该信息来自<span>mysql.db</span>授权表。</p>
+			<table border="1" cellpadding="0" id="table7">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>GRANTEE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>例如“user&#39;@&#39;host”</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>PRIVILEGE_TYPE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>IS_GRANTABLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>这是一个非标准表。其值来自<span>mysql.db</span>表。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="table-privileges-table"></a>
+			23.1.7.&nbsp;INFORMATION_SCHEMA TABLE_PRIVILEGES表</h3></div></div></div><a class="indexterm" name="id3001428"></a>
+			<p><span>TABLE_PRIVILEGES（表权限）</span>表给出了关于表权限的信息。该信息源自<span>mysql.tables_priv</span>授权表。</p>
+			<table border="1" cellpadding="0" id="table8">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>GRANTEE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>例如“user&#39;@&#39;host”</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>PRIVILEGE_TYPE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>IS_GRANTABLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>下述语句不等效：</p>
+			<pre>SELECT ... FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES</pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW GRANTS ...</span></pre>
+			<p><span>PRIVILEGE_TYPE</span>可以包含这些值之一（仅能一个）：<span>SELECT</span>、<span>INSERT</span>、<span>UPDATE</span>、<span>REFERENCES</span>、<span>ALTER</span>、<span>INDEX</span>、<span>DROP、CREATE 
+			VIEW</span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="column-privileges-table"></a>
+			23.1.8.&nbsp;INFORMATION_SCHEMA COLUMN_PRIVILEGES表</h3></div></div></div><a class="indexterm" name="id3001646"></a>
+			<p><span>COLUMN_PRIVILEGES</span>（列权限）表给出了关于列权限的信息。该信息源自<span>mysql.columns_priv</span>授权表。</p>
+			<table border="1" cellpadding="0" id="table9">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>GRANTEE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>例如“user&#39;@&#39;host”</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>PRIVILEGE_TYPE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>IS_GRANTABLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在<span>SHOW FULL 
+			COLUMNS（显示完整列）的输出中，权限值位于一个字段并采用小写形式，例如select、insert、update、references。</span>在<span>COLUMN_PRIVILEGES中，每种权限占一行，并为大写形式。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>PRIVILEGE_TYPE</span>可以包含这些值之一（仅能一个）：<span>SELECT</span><span>,
+			<span>INSERT</span>,
+			<span>UPDATE</span>,
+			<span>REFERENCES</span>. </span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果用户有<span>GRANT OPTION权限，</span>那么<span>IS_GRANTABLE</span>应为<span>YES</span>。否则，<span>IS_GRANTABLE</span>应为<span>NO。在输出中，不会将GRANT 
+			OPTION作为单独权限列出。</span></p>
+			<p>下述语句不等效：</p>
+			<pre><span>SELECT ... FROM INFORMATION_SCHEMA.COLUMN_PRIVILEGES</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW GRANTS ...</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="character-sets-table"></a>
+			23.1.9.&nbsp;INFORMATION_SCHEMA CHARACTER_SETS表</h3></div></div></div><a class="indexterm" name="id3001925"></a>
+			<p><span>CHARACTER_SETS（字符集）表提供了关于可用字符集的信息。</span></p>
+			<table border="1" cellpadding="0" id="table10">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHARACTER_SET_NAME</span></td>
+					<td>
+					<p>
+					<span>Charset</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DEFAULT_COLLATE_NAME</span></td>
+					<td>
+					<p>
+					<span>Default collation</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DESCRIPION</span></td>
+					<td>
+					<p>
+					<span>Description</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>MAXLEN</span></td>
+					<td>
+					<p>
+					<span>Maxlen</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>我们增加了两个非标准列，分别对应于<span>SHOW 
+			CHARACTER SET输出的Description（描述）和Maxlen（最大长度）列</span>。</p>
+			<p>下述语句是等效的：</p>
+			<pre><span>SELECT * FROM INFORMATION_SCHEMA.CHARACTER_SETS</span></pre>
+			<pre><span>&nbsp; [WHERE name LIKE &#39;wild&#39;]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW CHARACTER SET</span></pre>
+			<pre><span>&nbsp; [LIKE &#39;wild&#39;]</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="collations-table"></a>
+			23.1.10.&nbsp;INFORMATION_SCHEMA COLLATIONS表</h3></div></div></div><a class="indexterm" name="id3002110"></a>
+			<p><span>COLLATIONS表提供了关于各字符集</span>的对照信息。</p>
+			<table border="1" cellpadding="0" id="table11">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLLATION_NAME</span></td>
+					<td>
+					<p>
+					<span>Collation</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>我们增加了5个非标准列，分别对应于<span>SHOW 
+			COLLATION输出的Charset</span>、<span>Id</span>、<span>Default</span>、<span>Compiled</span>和<span>Sortlen列</span>。</p>
+			<p>下述语句是等效的：</p>
+			<pre><span>SELECT COLLATION_NAME FROM INFORMATION_SCHEMA.COLLATIONS</span></pre>
+			<pre><span>&nbsp; [WHERE collation_name LIKE &#39;wild&#39;]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SHOW COLLATION</span></pre>
+			<pre><span>&nbsp; [LIKE &#39;wild&#39;]</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="collation-character-set-applicability-table"></a>
+			23.1.11.&nbsp;INFORMATION_SCHEMA 
+			COLLATION_CHARACTER_SET_APPLICABILITY表</h3></div></div></div><a class="indexterm" name="id3002260"></a>
+			<p><span>
+			COLLATION_CHARACTER_SET_APPLICABILITY</span>表指明了可用于校对的字符集。这些列等效于<span>SHOW 
+			COLLATION的前两个显示字段。</span></p>
+			<table border="1" cellpadding="0" id="table12">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLLATION_NAME</span></td>
+					<td>
+					<p>
+					<span>Collation</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHARACTER_SET_NAME</span></td>
+					<td>
+					<p>
+					<span>Charset</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="table-constraints-table"></a>
+		23.1.12.&nbsp;INFORMATION_SCHEMA TABLE_CONSTRAINTS表</h3></div></div></div><a class="indexterm" name="id3002383"></a>
+			<p><span>TABLE_CONSTRAINTS</span>表描述了存在约束的表。</p>
+			<table border="1" cellpadding="0" id="table13">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CONSTRAINT_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CONSTRAINT_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CONSTRAINT_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CONSTRAINT_TYPE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>CONSTRAINT_TYPE的值可以是UNIQUE（唯一）</span>、<span>PRIMARY 
+			KEY（主键）</span>或<span>FOREIGN KEY</span>（外键）。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当<span>Non_unique字段为0时，UNIQUE</span>和<span>PRIMARY 
+			KEY信息与SHOW INDEX输出的Key_name字段中给出的信息基本相同。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>CONSTRAINT_TYPE</span>列可包含下述值之一：<span>UNIQUE</span>、<span>PRIMARY 
+			KEY</span>、<span>FOREIGN KEY</span>、<span>CHECK</span>。这是一个CHAR（非ENUM）列。<span>在我们支持CHECK前，CHECK值不可用。</span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="key-column-usage-table"></a>
+			23.1.13.&nbsp;INFORMATION_SCHEMA KEY_COLUMN_USAGE表</h3></div></div></div><a class="indexterm" name="id3002649"></a>
+			<p><span>KEY_COLUMN_USAGE</span>表描述了具有约束的键列。</p>
+			<table border="1" cellpadding="0" id="table14">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CONSTRAINT_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CONSTRAINT_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CONSTRAINT_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>COLUMN_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ORDINAL_POSITION</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>POSITION_IN_UNIQUE_CONSTRAINT</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>REFERENCED_TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>REFERENCED_TABLE_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>REFERENCED_COLUMN_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果约束为外键，这就是外键列，而不是外键引用的列。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>ORDINAL_POSITION的值是列在约束中的位置，而不是列在表中的位置。</span>列位置采用从1开始的数值编号。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于“唯一”和“主键”约束，<span>POSITION_IN_UNIQUE_CONSTRAINT的值为NULL。</span>对于“外键”约束，它是所引用表内键中的顺序位置。</p>
+			<p>例如，假定有两个具有下述定义的表t1和t3：</p>
+			<pre><span>CREATE TABLE t1</span></pre>
+			<pre><span>(</span></pre>
+			<pre><span>s1 INT,</span></pre>
+			<pre><span>s2 INT,</span></pre>
+			<pre><span>s3 INT,</span></pre>
+			<pre><span>PRIMARY KEY(s3)</span></pre>
+			<pre><span>) ENGINE=InnoDB;</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>CREATE TABLE t3</span></pre>
+			<pre><span>(</span></pre>
+			<pre><span>s1 INT,</span></pre>
+			<pre><span>s2 INT,</span></pre>
+			<pre><span>s3 INT,</span></pre>
+			<pre><span>KEY(s1),</span></pre>
+			<pre><span>CONSTRAINT CO FOREIGN KEY (s2) REFERENCES t1(s3)</span></pre>
+			<pre><span>) ENGINE=InnoDB;</span></pre>
+			<p>对于这两个表，<span>KEY_COLUMN_USAGE</span>表有两行：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>一行含有<span>CONSTRAINT_NAME</span>=&#39;PRIMARY&#39;,
+			<span>TABLE_NAME</span>=&#39;t1&#39;,
+			<span>COLUMN_NAME</span>=&#39;s3&#39;,
+			<span>ORDINAL_POSITION</span>=1,
+			<span>POSITION_IN_UNIQUE_CONSTRAINT</span>=NULL。</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>另一行含有<span>CONSTRAINT_NAME</span>=&#39;CO&#39;,
+			<span>TABLE_NAME</span>=&#39;t3&#39;,
+			<span>COLUMN_NAME</span>=&#39;s2&#39;,
+			<span>ORDINAL_POSITION</span>=1,
+			<span>POSITION_IN_UNIQUE_CONSTRAINT</span>=1。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="routines-table"></a>
+			23.1.14.&nbsp;INFORMATION_SCHEMA ROUTINES表</h3></div></div></div><a class="indexterm" name="id3003019"></a>
+			<p><span>ROUTINES表提供了关于存储子程序（存储程序和函数）的信息。</span>此时，<span>ROUTINES表不包含自定义</span>函数（UDF）。</p>
+			<p>名为“<span>mysql.proc</span><span class="quote"> 
+			name</span>”的列指明了对应于<span>INFORMATION_SCHEMA.ROUTINES表的mysql.proc表列</span>，如果有的话。</p>
+			<table border="1" cellpadding="0" id="table15">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>
+					mysql.proc</b></span><strong><span>名</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SPECIFIC_NAME</span></td>
+					<td>
+					<p>
+					<span>specific_name</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROUTINE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROUTINE_SCHEMA</span></td>
+					<td>
+					<p>
+					<span>db</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROUTINE_NAME</span></td>
+					<td>
+					<p>
+					<span>name</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROUTINE_TYPE</span></td>
+					<td>
+					<p>
+					<span>type</span></td>
+					<td>
+					<p>
+					<span>{PROCEDURE|FUNCTION}</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DTD_IDENTIFIER</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>（数据类型描述符）</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROUTINE_BODY</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>SQL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROUTINE_DEFINITION</span></td>
+					<td>
+					<p>
+					<span>body</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>EXTERNAL_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>EXTERNAL_LANGUAGE</span></td>
+					<td>
+					<p>
+					<span>language</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>PARAMETER_STYLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>SQL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>IS_DETERMINISTIC</span></td>
+					<td>
+					<p>
+					<span>is_deterministic</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SQL_DATA_ACCESS</span></td>
+					<td>
+					<p>
+					<span>sql_data_access</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SQL_PATH</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SECURITY_TYPE</span></td>
+					<td>
+					<p>
+					<span>security_type</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CREATED</span></td>
+					<td>
+					<p>
+					<span>created</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>LAST_ALTERED</span></td>
+					<td>
+					<p>
+					<span>modified</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SQL_MODE</span></td>
+					<td>
+					<p>
+					<span>sql_mode</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ROUTINE_COMMENT</span></td>
+					<td>
+					<p>
+					<span>comment</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DEFINER</span></td>
+					<td>
+					<p>
+					<span>definer</span></td>
+					<td>
+					<p>MySQL扩展</td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>MySQL计算<span>EXTERNAL_LANGUAGE</span>，因此：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>如果<span>mysql.proc.language=&#39;SQL&#39;</span>，那么<span>EXTERNAL_LANGUAGE</span>为<span>NULL</span>。</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>否则，<span>EXTERNAL_LANGUAGE</span>为<span>mysql.proc.language中的值</span>。然而，由于尚没有外部语言，因此该值总为<span>NULL</span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="views-table"></a>
+			23.1.15.&nbsp;INFORMATION_SCHEMA VIEWS表</h3></div></div></div><a class="indexterm" name="id3003489"></a>
+			<p><span>VIEWS</span>表给出了关于数据库中的视图的信息。</p>
+			<table border="1" cellpadding="0" id="table16">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TABLE_NAME</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>VIEW_DEFINITION</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CHECK_OPTION</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>IS_UPDATABLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>DEFINER</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SECURITY_TYPE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>有一种新的权限<span>SHOW 
+			VIEW，如果没有它，将无法看到VIEWS</span>表。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>VIEW_DEFINITION列含有你在SHOW 
+			CREATE VIEW所生成的Create Table字段中见到的大多数信息。</span>跳过<span>SELECT前的单词，并跳过</span>具有<span>CHECK 
+			OPTION（检查选项）的单词</span>。例如，如果初始语句是：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE VIEW v AS</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;SELECT s2,s1 FROM t</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;WHERE s1 &gt; 5</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;ORDER BY s1</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;WITH CHECK OPTION;</span></pre>
+			<p>那么视图定义为：</p>
+			<pre><span>SELECT s2,s1 FROM t WHERE s1 &gt; 5 ORDER BY s1</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>CHECK_OPTION</span>列的值总为<span>NONE</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果视图是可更新的，<span>IS_UPDATABLE列的值为YES，如果</span>视图是不可更新的，<span>IS_UPDATABLE列的值为NO。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>DEFINER列指明了定义视图的人</span>。<span>SECURITY_TYPE</span>的值为<span>DEFINER</span>或<span>INVOKER</span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="triggers-table"></a>
+			23.1.16.&nbsp;INFORMATION_SCHEMA TRIGGERS表</h3></div></div></div><a class="indexterm" name="id3003798"></a>
+			<p><span>TRIGGERS表提供了关于触发程序的信息。</span></p>
+			<p>必须有<span>SUPER权限才能查看该表。</span></p>
+			<table border="1" cellpadding="0" id="table17">
+				<tr>
+					<td>
+					<p><strong><span>
+					标准名称</span></strong></td>
+					<td>
+					<p><span><b>SHOW</b></span><strong><span>名称</span></strong></td>
+					<td>
+					<p><strong><span>
+					注释</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TRIGGER_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TRIGGER_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>TRIGGER_NAME</span></td>
+					<td>
+					<p>
+					<span>Trigger</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>EVENT_MANIPULATION</span></td>
+					<td>
+					<p>
+					<span>Event</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>EVENT_OBJECT_CATALOG</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>EVENT_OBJECT_SCHEMA</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>EVENT_OBJECT_TABLE</span></td>
+					<td>
+					<p>
+					<span>Table</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_ORDER</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>0</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_CONDITION</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_STATEMENT</span></td>
+					<td>
+					<p>
+					<span>Statement</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_ORIENTATION</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>ROW</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_TIMING</span></td>
+					<td>
+					<p>
+					<span>Timing</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_REFERENCE_OLD_TABLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_REFERENCE_NEW_TABLE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_REFERENCE_OLD_ROW</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>OLD</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>ACTION_REFERENCE_NEW_ROW</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NEW</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CREATED</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p>
+					<span>NULL</span><span> (<span>0</span>)</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>SQL_MODE</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>注释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>TRIGGER_SCHEMA</span>和<span>TRIGGER_NAME列中分别含有相应数据库的名称以及触发程序的名称，在该数据库中，含有该触发程序。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>EVENT_MANIPULATION</span>列含有下述值之一：<span>INSERT、DELETE、或UPDATE。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>正如<a href="triggers.html">第21章：</a><a href="triggers.html" title="Chapter 21. Triggers"><i>触发程序</i></a>中指出的那样，每个触发程序均与一个表准确相关。<span>EVENT_OBJECT_SCHEMA</span>和<span>EVENT_OBJECT_TABLE列包含相应的数据库和表名，在该数据库中，含有该表。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>ACTION_ORDER</span>语句含有触发程序动作（在相同表上所有类似触发程序列表中）的顺序位置。目前该值总为0，这是因为在相同表上具有相同<span>EVENT_MANIPULATION</span>和<span>ACTION_TIMING的触发程序不能超过1个。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>ACTION_STATEMENT列含有激活了触发程序时将要执行的语句。</span>这与<span>SHOW 
+			TRIGGERS输出的Statement（语句）列中显示的文本相同。</span>注意，该文本采用了UTF-8编码方式。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>ACTION_ORIENTATION</span>列总含有值“<span>ROW<span >”</span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>ACTION_TIMING列含有下述两种值之一：<span >“</span>BEFORE<span >”</span>或<span >“</span>AFTER<span >”</span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>列<span>ACTION_REFERENCE_OLD_ROW</span>和<span>ACTION_REFERENCE_NEW_ROW分别含有旧的和新的列标识符</span>。这意味着<span>ACTION_REFERENCE_OLD_ROW</span>总含有值“<span>OLD<span >”</span>，ACTION_REFERENCE_NEW_ROW</span>总含有值“<span>NEW<span >”</span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>SQL_MODE列显示了创建触发程序时有效的服务器SQL模式（无论当前的服务器SQL模式为何，只要激活了触发程序，它将保持有效）</span>。该列的可能取值范围与<span>sql_mode</span>系统变量的取值范围相同。请参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在下述列中，目前总含有NULL：<span>TRIGGER_CATALOG</span>，<span>EVENT_OBJECT_CATALOG</span>，<span>ACTION_CONDITION</span>，<span>ACTION_REFERENCE_OLD_TABLE</span>，<span>ACTION_REFERENCE_NEW_TABLE</span>和<span>CREATED</span>。</p>
+			<p>例如，使用<a href="triggers.html#using-triggers" title="21.3. Using Triggers">21.3节，“使用触发程序”</a>中定义的触发程序<span>ins_sum。</span></p>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM INFORMATION_SCHEMA.TRIGGERS\G</b></span></span></pre>
+			<pre><span>*************************** 1. row ***************************</span></pre>
+			<pre><span> TRIGGER_CATALOG: NULL</span></pre>
+			<pre><span>TRIGGER_SCHEMA: test</span></pre>
+			<pre><span> TRIGGER_NAME: ins_sum</span></pre>
+			<pre><span>&nbsp; EVENT_MANIPULATION: INSERT</span></pre>
+			<pre><span>EVENT_OBJECT_CATALOG: NULL</span></pre>
+			<pre><span> EVENT_OBJECT_SCHEMA: test</span></pre>
+			<pre><span>&nbsp; EVENT_OBJECT_TABLE: account</span></pre>
+			<pre><span> ACTION_ORDER: 0</span></pre>
+			<pre><span>ACTION_CONDITION: NULL</span></pre>
+			<pre><span>ACTION_STATEMENT:&nbsp; SET @sum = @sum + NEW.amount</span></pre>
+			<pre><span>&nbsp; ACTION_ORIENTATION: ROW</span></pre>
+			<pre><span> ACTION_TIMING: BEFORE</span></pre>
+			<pre><span>ACTION_REFERENCE_OLD_TABLE: NULL</span></pre>
+			<pre><span>ACTION_REFERENCE_NEW_TABLE: NULL</span></pre>
+			<pre><span>&nbsp; ACTION_REFERENCE_OLD_ROW: OLD</span></pre>
+			<pre><span>&nbsp; ACTION_REFERENCE_NEW_ROW: NEW</span></pre>
+			<pre><span>CREATED: NULL</span></pre>
+			<pre><span>1 row in set (1.54 sec)</span></pre>
+			<p>另请参见<a href="sql-syntax.html#show-triggers" title="13.5.4.20. SHOW TRIGGERS Syntax">13.5.4.20节，“SHOW 
+		TRIGGERS语法”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="other-information-schema-tables"></a>
+			23.1.17.&nbsp;其他INFORMATION_SCHEMA表</h3></div></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		我们打算实施附加的<span>INFORMATION_SCHEMA</span>表。尤其是，我们确认了对<span>INFORMATION_SCHEMA.PARAMETERS</span>和<span>INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS的需求。</span><h2 class="title"><a name="extended-show"></a>
+		23.2.&nbsp;SHOW语句的扩展<code class="literal"></code></h2></div></div></div><a class="indexterm" name="id3004507"></a><a class="indexterm" name="id3004516"></a><a class="indexterm" name="id3004525"></a>
+		<p>某些<span>SHOW语句的扩展伴随着INFORMATION_SCHEMA</span>的实施：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>SHOW可用于获取关于INFORMATION_SCHEMA本身结构的信息。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>一些<span>SHOW语句允许使用WHERE子句，这样，在指定需要显示的行时，可更为灵活。</span></p>
+		<p><span>INFORMATION_SCHEMA</span>是一种信息数据库，因此，在<span>SHOW 
+		DATABASES</span>的输出中，包含其名称。与此类似，<span>SHOW 
+		TABLES可与INFORMATION_SCHEMA一起使用，以获取表清单。</span></p>
+		<pre><span>mysql&gt; <span><b>SHOW TABLES FROM INFORMATION_SCHEMA;</b></span></span></pre>
+		<pre><span>+---------------------------------------+</span></pre>
+		<pre><span>| Tables_in_information_schema|</span></pre>
+		<pre><span>+---------------------------------------+</span></pre>
+		<pre><span>| SCHEMATA|</span></pre>
+		<pre><span>| TABLES|</span></pre>
+		<pre><span>| COLUMNS |</span></pre>
+		<pre><span>| CHARACTER_SETS |</span></pre>
+		<pre><span>| COLLATIONS&nbsp; |</span></pre>
+		<pre><span>| COLLATION_CHARACTER_SET_APPLICABILITY |</span></pre>
+		<pre><span>| ROUTINES|</span></pre>
+		<pre><span>| STATISTICS&nbsp; |</span></pre>
+		<pre><span>| VIEWS |</span></pre>
+		<pre><span>| TRIGGERS|</span></pre>
+		<pre><span>| USER_PRIVILEGES|</span></pre>
+		<pre><span>| SCHEMA_PRIVILEGES&nbsp; |</span></pre>
+		<pre><span>| TABLE_PRIVILEGES|</span></pre>
+		<pre><span>| COLUMN_PRIVILEGES&nbsp; |</span></pre>
+		<pre><span>| TABLE_CONSTRAINTS&nbsp; |</span></pre>
+		<pre><span>| KEY_COLUMN_USAGE|</span></pre>
+		<pre><span>+---------------------------------------+</span></pre>
+		<p><span>SHOW COLUMNS</span>和<span>DESCRIBE能够显示</span>单独<span>INFORMATION_SCHEMA</span>表中的列信息。</p>
+		<p>扩展了一些<span>SHOW语句，允许使用WHERE子句：</span></p>
+		<pre><span>SHOW CHARACTER SET</span></pre>
+		<pre><span>SHOW COLLATION</span></pre>
+		<pre><span>SHOW COLUMNS</span></pre>
+		<pre><span>SHOW DATABASES</span></pre>
+		<pre><span>SHOW FUNCTION STATUS</span></pre>
+		<pre><span>SHOW KEYS</span></pre>
+		<pre><span>SHOW OPEN TABLES</span></pre>
+		<pre><span>SHOW PROCEDURE STATUS</span></pre>
+		<pre><span>SHOW STATUS</span></pre>
+		<pre><span>SHOW TABLE STATUS</span></pre>
+		<pre><span>SHOW TABLES</span></pre>
+		<pre><span>SHOW VARIABLES</span></pre>
+		<p>如果有<span>WHERE子句的话，将根据SHOW语句显示的列名进行计算。</span>例如，<span>SHOW 
+		COLLATION语句可产生这些输出列</span>：</p>
+		<p>例如，<span>SHOW CHARACTER SET语句可产生这些输出列</span>：</p>
+		<pre><span>mysql&gt; <span><b>SHOW CHARACTER SET;</b></span></span></pre>
+		<table class="MsoTableGrid" border="1" cellspacing="0" cellpadding="0">
+			<tr>
+				<td valign="top">
+				<pre><span>Charset</span></pre>
+				</td>
+				<td valign="top">
+				<pre>描述</pre>
+				</td>
+				<td valign="top">
+				<pre>默认校对</pre>
+				</td>
+				<td valign="top">
+				<pre>最大长度</pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;big5 </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;Big5 Traditional Chinese</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;big5_chinese_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;dec8 </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;DEC West European </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;dec8_swedish_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>1 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;cp850</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;DOS West European </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;cp850_general_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>1 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;hp8</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;HP West European</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;hp8_english_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>1 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;koi8r</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;KOI8-R Relcom Russian </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;koi8r_general_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>1 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;latin1</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;cp1252 West European&nbsp; </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;latin1_swedish_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>1 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;latin2</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;ISO 8859-2 Central European </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;latin2_general_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>1 </span></pre>
+				</td>
+			</tr>
+		</table>
+		<pre><span>&nbsp;</span></pre>
+		<p>要想与<span>SHOW CHARACTER 
+		SET一起使用WHERE子句，应引用这些列名称</span>。例如，在下面的语句中，给出了用于默认校对且含有字符串“<span>japanese</span>”的字符集的信息：</p>
+		<pre><span>mysql&gt; <span><b>SHOW CHARACTER SET WHERE `Default collation` LIKE &#39;%japanese%&#39;;</b></span></span></pre>
+		<table class="MsoTableGrid" border="1" cellspacing="0" cellpadding="0">
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;Charset </span></pre>
+				</td>
+				<td valign="top"
+				<pre><span>&nbsp;</span>描述<span>&nbsp; </span></pre>
+				</td>
+				<td valign="top">
+				<pre>默认校对</pre>
+				</td>
+				<td valign="top">
+				<pre>最大长度</pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;</span><span>ujis</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;EUC-JP Japanese </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;ujis_japanese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>3 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;sjis</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;Shift-JIS Japanese&nbsp; </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;sjis_japanese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;cp932</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;SJIS for Windows Japanese </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;cp932_japanese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;</span><span>eucjpms </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;UJIS for Windows Japanese </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;eucjpms_japanese_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>3 </span></pre>
+				</td>
+			</tr>
+		</table>
+		<p>该语句显示了多字节字符集。</p>
+		<pre><span>mysql&gt; <span><b>SHOW CHARACTER SET WHERE Maxlen &gt; 1;</b></span></span></pre>
+		<table class="MsoTableGrid" border="1" cellspacing="0" cellpadding="0">
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;Charset </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;</span>描述<span>&nbsp; </span></pre>
+				</td>
+				<td valign="top">
+				<pre>默认校对</pre>
+				</td>
+				<td valign="top">
+				<pre>最大长度</pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;big5</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;Big5 Traditional Chinese&nbsp; </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;big5_chinese_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;</span><span>ujis</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;EUC-JP Japanese</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;ujis_japanese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>3 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;sjis</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;Shift-JIS Japanese&nbsp; </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;sjis_japanese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;euckr</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;EUC-KR Korean </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;euckr_korean_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;gb2312&nbsp; </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;GB2312 Simplified Chinese </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;gb2312_chinese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;</span><span>gbk </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;GBK Simplified Chinese</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;gbk_chinese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;utf8</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;UTF-8 Unicode </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;utf8_general_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>3 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;ucs2</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;UCS-2 Unicode </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;ucs2_general_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;cp932</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;SJIS for Windows Japanese </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;cp932_japanese_ci</span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>2 </span></pre>
+				</td>
+			</tr>
+			<tr>
+				<td valign="top">
+				<pre><span>&nbsp;</span><span>eucjpms </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;UJIS for Windows Japanese </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>&nbsp;eucjpms_japanese_ci </span></pre>
+				</td>
+				<td valign="top">
+				<pre><span>3 </span></pre>
+				</td>
+			</tr>
+		</table>
+		<pre><span>&nbsp;</span></pre>
+		<div align="center">
+			<span><hr size="2" width="100%" align="center"></span>
+		</div>
+		<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div></div>
+</body></html>

@@ -1,0 +1,588 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>特殊线性方程组 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>特殊线性方程组
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="SpecialLinearEquation.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="SpecialLinearEquation.html#sec1"><img src="latex/latex2png-SpecialLinearEquation_214534494_0.gif" alt="$LDM^T$" class="latex-inline" style="vertical-align: 0px" width="53" height="14">和<img src="latex/latex2png-SpecialLinearEquation_231311710_0.gif" alt="$LDL^T$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">分解</a>
+  </dt>
+  <dt>
+    <a href="SpecialLinearEquation.html#sec2">Cholesky分解</a>
+  </dt>
+  <dt>
+    <a href="SpecialLinearEquation.html#sec3">Vandemonde方程组</a>
+  </dt>
+  <dt>
+    <a href="SpecialLinearEquation.html#sec4">对称正定Toeplitz阵及相关问题</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="SpecialLinearEquation.html#sec5">Yule-Walker问题的Durbin算法</a>
+      </dt>
+      <dt>
+	<a href="SpecialLinearEquation.html#sec6">一般右端向量的Levinson算法</a>
+      </dt>
+      <dt>
+	<a href="SpecialLinearEquation.html#sec7">正定对称Toeplitz阵求逆Trench算法</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p>数值分析的一个基本原则是:求解任何问题都应充分利用它的特殊的结构特性.在数值线性代数中,这意味着当问题中出现诸如对称性,定型性和稀疏性等特性时,需要将适用于求解一般矩阵的算法修改,使其效率更高.这将是本章的主题.我们的主要目的是设计一些特殊的<img src="latex/latex2png-SpecialLinearEquation_152531986_-1.gif" alt="$LU$" class="latex-inline" style="vertical-align: -1px" width="24" height="13">分解的专用算法.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="SpecialLinearEquation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a><img src="latex/latex2png-SpecialLinearEquation_214534494_0.gif" alt="$LDM^T$" class="latex-inline" style="vertical-align: 0px" width="53" height="14">和<img src="latex/latex2png-SpecialLinearEquation_231311710_0.gif" alt="$LDL^T$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">分解</h2>
+
+<p class="first">由前述<img src="latex/latex2png-SpecialLinearEquation_152531986_-1.gif" alt="$LU$" class="latex-inline" style="vertical-align: -1px" width="24" height="13">分解容易证明以下的<img src="latex/latex2png-SpecialLinearEquation_214534494_0.gif" alt="$LDM^T$" class="latex-inline" style="vertical-align: 0px" width="53" height="14">分解定理:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name"></span>如果<img src="latex/latex2png-SpecialLinearEquation_182006232_-1.gif" alt="$A\in\mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">的所有顺序主子阵都是非奇异的,则存在唯一的单位下三角阵<img src="latex/latex2png-SpecialLinearEquation_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">和<img src="latex/latex2png-SpecialLinearEquation_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">和唯一的对角阵<img src="latex/latex2png-SpecialLinearEquation_229459249_-5.gif" alt="$D=\mathrm{diag}\{d_1,\cdots,d_n\}$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">满足<img src="latex/latex2png-SpecialLinearEquation_214369998_0.gif" alt="$A=LDM^T$" class="latex-inline" style="vertical-align: 0px" width="88" height="14">.
+
+
+</div>
+
+
+<p>特别地,在<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为对称方阵的情形,成立以下<img src="latex/latex2png-SpecialLinearEquation_231311710_0.gif" alt="$LDL^T$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">分解:
+<div class="theorem">
+<span class="theorem-header">定理2<a name=""></a></span><span class="theorem-name"></span>
+如果<img src="latex/latex2png-SpecialLinearEquation_214369998_0.gif" alt="$A=LDM^T$" class="latex-inline" style="vertical-align: 0px" width="88" height="14">是非奇异对称阵<img src="latex/latex2png-SpecialLinearEquation_182006232_-1.gif" alt="$A\in\mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">的<img src="latex/latex2png-SpecialLinearEquation_214534494_0.gif" alt="$LDM^T$" class="latex-inline" style="vertical-align: 0px" width="53" height="14">分解,则<img src="latex/latex2png-SpecialLinearEquation_266374124_0.gif" alt="$L=M$" class="latex-inline" style="vertical-align: 0px" width="51" height="12">.</p>
+
+
+</div>
+
+<p>由以上定理可知,对对称阵施行<img src="latex/latex2png-SpecialLinearEquation_152531986_-1.gif" alt="$LU$" class="latex-inline" style="vertical-align: -1px" width="24" height="13">或<img src="latex/latex2png-SpecialLinearEquation_231311710_0.gif" alt="$LDL^T$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">分解时,工作量可减半.在第<img src="latex/latex2png-SpecialLinearEquation_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">步,由于<img src="latex/latex2png-SpecialLinearEquation_249662444_0.gif" alt="$M=L$" class="latex-inline" style="vertical-align: 0px" width="51" height="12">且假定<img src="latex/latex2png-SpecialLinearEquation_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的前<img src="latex/latex2png-SpecialLinearEquation_84112404_-4.gif" alt="$j-1$" class="latex-inline" style="vertical-align: -4px" width="36" height="16">列已知,则<img src="latex/latex2png-SpecialLinearEquation_114834592_-5.gif" alt="$L(j,1:j-1)$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">也为已知.定义<img src="latex/latex2png-SpecialLinearEquation_239836445_-5.gif" alt="$v(1:j)$" class="latex-inline" style="vertical-align: -5px" width="50" height="18">为<img src="latex/latex2png-SpecialLinearEquation_53935413_-5.gif" alt="$DL^Te_j$" class="latex-inline" style="vertical-align: -5px" width="50" height="19">的前<img src="latex/latex2png-SpecialLinearEquation_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">个分量,则
+<img src="latex/latex2png-SpecialLinearEquation_99444302_.gif" alt="
+\begin{equation*}
+  v(1:j)=
+  \begin{bmatrix}
+    d(1)L(j,1)\\
+    \vdots\\
+    d(j-1)L(j,j-1)\\
+    d(j)
+  \end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="109">于是,向量<img src="latex/latex2png-SpecialLinearEquation_261849248_-5.gif" alt="$v(1:j-1)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">可通过对<img src="latex/latex2png-SpecialLinearEquation_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的第<img src="latex/latex2png-SpecialLinearEquation_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">行做简单数乘得到.由<img src="latex/latex2png-SpecialLinearEquation_163249879_-5.gif" alt="$L(1:j,1:j)v=A(1:j,j)$" class="latex-inline" style="vertical-align: -5px" width="189" height="18">的第<img src="latex/latex2png-SpecialLinearEquation_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">个方程,有关系式<img src="latex/latex2png-SpecialLinearEquation_259636415_-5.gif" alt="$v(j)=A(j,j)-L(j,1:j-1)v(1:j-1)$" class="latex-inline" style="vertical-align: -5px" width="294" height="18">.</p>
+
+<p>相应地有以下算法:
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(<img src="latex/latex2png-SpecialLinearEquation_231311710_0.gif" alt="$LDL^T$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">)</span>
+如果<img src="latex/latex2png-SpecialLinearEquation_182006232_-1.gif" alt="$A\in\mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">对称且存在<img src="latex/latex2png-SpecialLinearEquation_231311710_0.gif" alt="$LDL^T$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">分解,则本算法计算单位下三角阵<img src="latex/latex2png-SpecialLinearEquation_42890258_0.gif" alt="$L$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">和对角阵<img src="latex/latex2png-SpecialLinearEquation_140669970_0.gif" alt="$D $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">,其元素覆盖<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">.
+<img src="latex/latex2png-SpecialLinearEquation_231128912_.gif" alt="
+\begin{align*}
+  \label{eq:LDLT}
+  &\text{在算法的第}j\text{步,计算}v(1:j).\\
+  &\text{由}v(j)=A(j,j)-L(j,1:j-1)v(1:j-1)\text{计算}v(1:j).\\
+  &A(j,j)\leftarrow v(j).\\
+  &A(j+1:n,j)\leftarrow (A(j+1:n,j)-A(j+1:n,1:j-1)v(1:j-1))/v(j).
+  \end{align*}
+" class="latex-display" width="580" height="111"></p>
+
+
+</div>
+
+<p>本算法大约减少了一半的工作量,需要<img src="latex/latex2png-SpecialLinearEquation_165382498_-5.gif" alt="$n^3/2$" class="latex-inline" style="vertical-align: -5px" width="33" height="19">个flop.可以证明,当<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">对称且正定时,以上算法不但能够顺利执行完,而且非常稳定<span class="cite"><a class="cite" href="SpecialLinearEquation.html#ref-1" name="cite-1">[1]</a></span>.如果<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">对称但非正定,则需要结合对称地选主元,即在算法的第<img src="latex/latex2png-SpecialLinearEquation_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">步比较<img src="latex/latex2png-SpecialLinearEquation_113758882_-5.gif" alt="$A(j:n,j:n)$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">得到其中绝对值最大的元素并通过置换阵<img src="latex/latex2png-SpecialLinearEquation_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的对称作用<img src="latex/latex2png-SpecialLinearEquation_157015370_-1.gif" alt="$A\leftarrow P^TA^TP$" class="latex-inline" style="vertical-align: -1px" width="98" height="15">将其换到<img src="latex/latex2png-SpecialLinearEquation_263480242_-5.gif" alt="$A(j,j)$" class="latex-inline" style="vertical-align: -5px" width="46" height="18">位置,使之后的算法稳定执行.</p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="SpecialLinearEquation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Cholesky分解</h2>
+
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name">(正定矩阵)</span>
+若对所有非零向量<img src="latex/latex2png-SpecialLinearEquation_70390374_-1.gif" alt="$x\in\mathbb{R}^n$" class="latex-inline" style="vertical-align: -1px" width="50" height="13">有<img src="latex/latex2png-SpecialLinearEquation_68487754_-1.gif" alt="$x^TAx>0$" class="latex-inline" style="vertical-align: -1px" width="72" height="15">,则称矩阵<img src="latex/latex2png-SpecialLinearEquation_190394840_-1.gif" alt="$a\in\mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="67" height="13">是正定的.
+
+
+</div>
+
+<p>可以证明,若<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">是正定的,则在<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的分解<img src="latex/latex2png-SpecialLinearEquation_214369998_0.gif" alt="$A=LDM^T$" class="latex-inline" style="vertical-align: 0px" width="88" height="14">中,<img src="latex/latex2png-SpecialLinearEquation_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的对角元均大于<img src="latex/latex2png-SpecialLinearEquation_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">.然而,仅仅存在<img src="latex/latex2png-SpecialLinearEquation_214534494_0.gif" alt="$LDM^T$" class="latex-inline" style="vertical-align: 0px" width="53" height="14">分解仍不足以保证分解算法的稳定性.</p>
+
+<p>以下着重介绍对称正定阵的Cholesky分解.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name">(Cholesky分解)</span>
+如果<img src="latex/latex2png-SpecialLinearEquation_205785046_-1.gif" alt="$A\in \mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">是对称正定的,则存在唯一的一个对角元大于<img src="latex/latex2png-SpecialLinearEquation_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">的下三角阵<img src="latex/latex2png-SpecialLinearEquation_105121750_-1.gif" alt="$G\in \mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="70" height="13">,满足<img src="latex/latex2png-SpecialLinearEquation_46752669_-1.gif" alt="$A=GG^T$" class="latex-inline" style="vertical-align: -1px" width="71" height="15">.
+
+
+</div>
+<div class="proof">
+<span class="proof-header">证明</span>
+由<img src="latex/latex2png-SpecialLinearEquation_231311710_0.gif" alt="$LDL^T$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">分解及<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的正定性容易得到<img src="latex/latex2png-SpecialLinearEquation_140669970_0.gif" alt="$D $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">对角元大于<img src="latex/latex2png-SpecialLinearEquation_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">,从而得到本定理.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>我们下面导出一个含有大量Gaxpy运算的Cholesky分解算法.比较等式<img src="latex/latex2png-SpecialLinearEquation_46752669_-1.gif" alt="$A=GG^T$" class="latex-inline" style="vertical-align: -1px" width="71" height="15">的第<img src="latex/latex2png-SpecialLinearEquation_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">列得到
+<img src="latex/latex2png-SpecialLinearEquation_222601482_.gif" alt="
+\begin{equation*}
+  A(:,j)=\sum\limits_{k=1}^nG(j,k)G(:,k),
+\end{equation*}
+" class="latex-display" width="580" height="45">也就是说,
+<img src="latex/latex2png-SpecialLinearEquation_19826800_.gif" alt="
+\begin{equation*}
+  G(j,j)G(:,j)=A(:,j)-\sum\limits_{k=1}^{j-1}G(j,k)G(:,k)\equiv v.
+\end{equation*}
+" class="latex-display" width="580" height="49">如果<img src="latex/latex2png-SpecialLinearEquation_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">的第<img src="latex/latex2png-SpecialLinearEquation_84112404_-4.gif" alt="$j-1$" class="latex-inline" style="vertical-align: -4px" width="36" height="16">列已知,则可计算出<img src="latex/latex2png-SpecialLinearEquation_43021330_0.gif" alt="$v$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">.由上式中各元素间的相等关系推出
+<img src="latex/latex2png-SpecialLinearEquation_44543592_.gif" alt="
+\begin{equation*}
+  G(j:n,j)=v(j:n)/\sqrt{v(j)}.
+\end{equation*}
+" class="latex-display" width="580" height="21">
+于是得到以下算法:
+<div class="algorithm">
+<span class="theorem-header">算法2<a name=""></a></span><span class="theorem-name">(Cholesky分解:基于Gaxpy运算)</span>
+给出对称正定阵<img src="latex/latex2png-SpecialLinearEquation_205785046_-1.gif" alt="$A\in \mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">,本算法计算出一个下三角阵<img src="latex/latex2png-SpecialLinearEquation_105121750_-1.gif" alt="$G\in \mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="70" height="13">满足<img src="latex/latex2png-SpecialLinearEquation_46752669_-1.gif" alt="$A=GG^T$" class="latex-inline" style="vertical-align: -1px" width="71" height="15">.对所有<img src="latex/latex2png-SpecialLinearEquation_25799752_-4.gif" alt="$i\geqslant j$" class="latex-inline" style="vertical-align: -4px" width="35" height="16">,<img src="latex/latex2png-SpecialLinearEquation_4955310_-5.gif" alt="$G(i,j)$" class="latex-inline" style="vertical-align: -5px" width="44" height="18">覆盖<img src="latex/latex2png-SpecialLinearEquation_4955214_-5.gif" alt="$A(i,j)$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">.</p>
+
+<p class="image"><img src="./latex/latex2png-SpecialLinearEquation_32053472_.gif" alt="
+\begin{align*}
+  &A(1:n,1)\leftarrow A(1:n,1)/\sqrt{A(1,1)}.\\
+  &\text{对}j>1,\text{通过以下步骤计算}G(j:n,j)\text{并覆盖}A(j:n,j):\\
+  &A(j:n,j)\leftarrow A(j:n,j)-A(j:n,1:j-1)A(j,1:j-1)^T.
+\end{align*}
+" class="latex-display" width="580" height="83"></p>
+
+
+</div>
+
+<p>本算法共需<img src="latex/latex2png-SpecialLinearEquation_165382498_-5.gif" alt="$n^3/2$" class="latex-inline" style="vertical-align: -5px" width="33" height="19">个flop.这一算法在<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">正定时相当稳定.</p>
+
+
+<h2><a name="sec3" id="sec3"></a>
+<a href="SpecialLinearEquation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Vandemonde方程组</h2>
+
+<p class="first">Vandemonde方程组与下一节将要讲到的正定对称的Toeplitz阵问题是两类重要的能在<img src="latex/latex2png-SpecialLinearEquation_21732654_-5.gif" alt="$O(n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">的计算量内稳定求解的问题.</p>
+
+<p>设<img src="latex/latex2png-SpecialLinearEquation_82757960_-5.gif" alt="$x(0:n)\in \mathbb{R}^{n+1}$" class="latex-inline" style="vertical-align: -5px" width="111" height="19">,形如
+<img src="latex/latex2png-SpecialLinearEquation_242368891_.gif" alt="
+\begin{equation*}
+  V=V(x_0,\cdots,x_n)=
+  \begin{bmatrix}
+    1& 1& \cdots& 1\\
+    x_0& x_1& \cdots& x_n\\
+    \vdots& \vdots& & \vdots\\
+    x_0^n& x_1^n& \cdots & x_n^n
+  \end{bmatrix}
+\end{equation*}
+" class="latex-display" width="580" height="109">的矩阵<img src="latex/latex2png-SpecialLinearEquation_10397694_-1.gif" alt="$V\in \mathbb{R}^{(n+1)\times(n+1)}$" class="latex-inline" style="vertical-align: -1px" width="125" height="16">被称作Vandemonde矩阵.下面我们讨论线性方程组<img src="latex/latex2png-SpecialLinearEquation_49242667_-4.gif" alt="$V^Ta=f$" class="latex-inline" style="vertical-align: -4px" width="64" height="18">及<img src="latex/latex2png-SpecialLinearEquation_200510405_-1.gif" alt="$Vx=b$" class="latex-inline" style="vertical-align: -1px" width="52" height="13">的求解.</p>
+
+<p>Vandemonde矩阵与多项式插值有密切的联系.首先注意到,若有<img src="latex/latex2png-SpecialLinearEquation_49242667_-4.gif" alt="$V^Ta=f$" class="latex-inline" style="vertical-align: -4px" width="64" height="18">,并定义<img src="latex/latex2png-SpecialLinearEquation_155638186_-18.gif" alt="$p(x)=\sum\limits_{j=0}^na_jx^j$" class="latex-inline" style="vertical-align: -18px" width="110" height="39">,则对于<img src="latex/latex2png-SpecialLinearEquation_65566359_-1.gif" alt="$i=0:n$" class="latex-inline" style="vertical-align: -1px" width="60" height="13">,<img src="latex/latex2png-SpecialLinearEquation_52373681_-5.gif" alt="$p(x_i)=f_i$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">.故若<img src="latex/latex2png-SpecialLinearEquation_164400108_-2.gif" alt="$x_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">是互异的,则可通过构造插值多项式<img src="latex/latex2png-SpecialLinearEquation_220951610_-5.gif" alt="$p(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">求解.</p>
+
+<p>第一步是计算插值多项式<img src="latex/latex2png-SpecialLinearEquation_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的Newton表达式:
+<img src="latex/latex2png-SpecialLinearEquation_223697328_.gif" alt="
+\begin{equation*}
+  p(x)=\sum\limits_{k=0}^nc_k \left(\prod\limits_{i=0}^{k-1} (x-x_i)\right),
+\end{equation*}
+" class="latex-display" width="580" height="50">常数<img src="latex/latex2png-SpecialLinearEquation_20280340_-2.gif" alt="$c_k$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">是差商,可按以下步骤确定:
+<img src="latex/latex2png-SpecialLinearEquation_37151967_.gif" alt="
+\begin{align*}
+  &c(0:n)\leftarrow f(0:n).\\
+  &\text{for } k=0:n-1\\
+  &~~~~\text{for } i=n:-1:k+1\\
+  &~~~~~~~~c_i\leftarrow (c_i-c_{i-1})/(x_i-x_{i-k-1}).\\
+  &~~~~\text{end}\\
+  &\text{end}
+\end{align*}
+" class="latex-display" width="580" height="167">
+下一步是由<img src="latex/latex2png-SpecialLinearEquation_24405011_-5.gif" alt="$c(0:n)$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">产生<img src="latex/latex2png-SpecialLinearEquation_24405043_-5.gif" alt="$a(0:n)$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">.通过迭代
+<img src="latex/latex2png-SpecialLinearEquation_162134866_.gif" alt="
+\begin{align*}
+  &p_n(x)\leftarrow c_n,\\
+  &\text{for } k=n-1:-1:0\\
+  &~~~~p_k(x)\leftarrow c_k+(x-x_k)p_{k+1}(x).\\
+  &\text{end}
+\end{align*}
+" class="latex-display" width="580" height="105">来定义多项式<img src="latex/latex2png-SpecialLinearEquation_42845109_-5.gif" alt="$p_k(x) (x=n:-1:0)$" class="latex-inline" style="vertical-align: -5px" width="150" height="18">.可求得<img src="latex/latex2png-SpecialLinearEquation_231492580_-5.gif" alt="$p(x)\equiv p_0(x)$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">.于是系数<img src="latex/latex2png-SpecialLinearEquation_228741845_-5.gif" alt="$a_i\equiv a_i^{(0)}$" class="latex-inline" style="vertical-align: -5px" width="61" height="23">可如下求得
+<img src="latex/latex2png-SpecialLinearEquation_244136723_.gif" alt="
+\begin{align*}
+  &a(0:n)\leftarrow c(0:n),\\
+  &\text{for } k=n-1:-1:0\\
+  &~~~~\text{for } i=k:n-1\\
+  &~~~~~~~~a_i\leftarrow a_i-x_ka_{i+1}.\\
+  &~~~~\text{end}\\
+  &\text{end}
+\end{align*}
+" class="latex-display" width="580" height="167">
+以上两步骤合并即得到求解<img src="latex/latex2png-SpecialLinearEquation_49242667_-4.gif" alt="$V^Ta=f$" class="latex-inline" style="vertical-align: -4px" width="64" height="18">的算法,共需<img src="latex/latex2png-SpecialLinearEquation_182150226_-5.gif" alt="$5n^2/2$" class="latex-inline" style="vertical-align: -5px" width="42" height="19">个flop.</p>
+
+<p>该算法事实上即多项式插值问题的一般算法.它事实上利用了如下分解
+<img src="latex/latex2png-SpecialLinearEquation_182300954_.gif" alt="
+\begin{equation*}
+  (V^T)^{-1}=L^TU^T= (L_0(x_0)^T \cdots L_{n-1}(x_{n-1})^T) (D_{n-1}^{-1}L_{n-1} (1)\cdots D_0^{-1}L_0 (1)),
+\end{equation*}
+" class="latex-display" width="580" height="21">其中
+<img src="latex/latex2png-SpecialLinearEquation_124182867_.gif" alt="
+\begin{displaymath}
+L_k (\alpha)=
+\left[\begin{array}{c|c}
+    I_k& O\\
+    \hline\\
+    O&
+    \begin{matrix}
+      1& \cdots& & O\\
+      -\alpha& \ddots\\
+      \vdots& \ddots& \ddots\\
+      0& \cdots&\ -\alpha& 1
+    \end{matrix}
+  \end{array}\right],
+\end{displaymath}
+\begin{equation*}
+  D_k=\mathrm{diag} (\underbrace{1,\cdots. 1}_{k+1},x_{k+1}-x_0,\cdots,x_n-x_{n-k-1}).
+\end{equation*}
+" class="latex-display" width="580" height="222">于是对于方程组<img src="latex/latex2png-SpecialLinearEquation_166955973_-1.gif" alt="$Vz=b$" class="latex-inline" style="vertical-align: -1px" width="51" height="13">,只要利用<img src="latex/latex2png-SpecialLinearEquation_180704744_-1.gif" alt="$V^{-1}=UL$" class="latex-inline" style="vertical-align: -1px" width="77" height="15">即可得到其三角阵分解,从而求解方程组.</p>
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="SpecialLinearEquation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>对称正定Toeplitz阵及相关问题</h2>
+
+<p class="first">设<img src="latex/latex2png-SpecialLinearEquation_112982058_-1.gif" alt="$T\in \mathbb{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="70" height="13">,存在<img src="latex/latex2png-SpecialLinearEquation_245106856_-4.gif" alt="$r_{-n+1},\cdots,r_0,\cdots,r_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="169" height="12">对所有<img src="latex/latex2png-SpecialLinearEquation_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">和<img src="latex/latex2png-SpecialLinearEquation_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">满足<img src="latex/latex2png-SpecialLinearEquation_115391565_-5.gif" alt="$a_{ij}=r_{j-i}$" class="latex-inline" style="vertical-align: -5px" width="71" height="13">,则<img src="latex/latex2png-SpecialLinearEquation_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">称为Toeplitz阵.Toeplitz阵属于一个更大的反向对称(persymmetric)矩阵类 (即沿反对角线进行&quot;转置&quot;不改变).容易验证,Toeplitz阵及非奇异Toeplitz阵的逆也是反向对称的.本节将利用这一特性给出对称正定Toeplitz阵的<img src="latex/latex2png-SpecialLinearEquation_21732654_-5.gif" alt="$O(n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">的算法.不失一般性,以下均设<img src="latex/latex2png-SpecialLinearEquation_67335842_-3.gif" alt="$r_0=1$" class="latex-inline" style="vertical-align: -3px" width="44" height="14">.</p>
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="SpecialLinearEquation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Yule-Walker问题的Durbin算法</h3>
+
+<p class="first">Yule-Walker问题是系数矩阵为Toeplitz阵<img src="latex/latex2png-SpecialLinearEquation_96963564_-2.gif" alt="$T_n$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">,非齐次项<img src="latex/latex2png-SpecialLinearEquation_221648107_-5.gif" alt="$-r=- (r_1,\cdots,r_n)^T$" class="latex-inline" style="vertical-align: -5px" width="149" height="19">的线性方程组<img src="latex/latex2png-SpecialLinearEquation_266400179_-4.gif" alt="$T_ny=-r$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">.可以看到,这种问题具有很大的特殊性,即它的非齐次项与系数矩阵有密切关系,但它是进一步讨论的基础.设我们已经求解了<img src="latex/latex2png-SpecialLinearEquation_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">阶的Yule-Walker方程组<img src="latex/latex2png-SpecialLinearEquation_216173081_-5.gif" alt="$T_ky=-r=- (r_1,\cdots,r_k)$" class="latex-inline" style="vertical-align: -5px" width="186" height="18">.下面给出如何在<img src="latex/latex2png-SpecialLinearEquation_61115333_-5.gif" alt="$O(k)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">内求解<img src="latex/latex2png-SpecialLinearEquation_29657474_-5.gif" alt="$(k+1)$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">阶Yule-Walker方程组,其中<img src="latex/latex2png-SpecialLinearEquation_188052500_-2.gif" alt="$E_k$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">为<img src="latex/latex2png-SpecialLinearEquation_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">阶反向置换阵:
+<img src="latex/latex2png-SpecialLinearEquation_171326223_.gif" alt="
+\begin{equation*}
+  E_k=
+  \begin{bmatrix}
+    & & 1\\
+    & \adots& \\
+    1& &
+  \end{bmatrix}
+\end{equation*}
+" class="latex-display" width="580" height="79">
+<img src="latex/latex2png-SpecialLinearEquation_5460856_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    T_k& E_kr\\
+    r^TE_k& 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    z\\
+    \alpha
+  \end{bmatrix}
+=-
+\begin{bmatrix}
+  r\\
+  r_{k+1}
+\end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="50">
+注意到
+<img src="latex/latex2png-SpecialLinearEquation_83344103_.gif" alt="
+\begin{gather*}
+  z=T_k^{-1} (-r-\alpha E_kr)=y-\alpha T_k^{-1}E_kr,\\
+\alpha=-r_{k+1}-r^TE_kz,
+\end{gather*}
+" class="latex-display" width="580" height="51">由于<img src="latex/latex2png-SpecialLinearEquation_32041055_-2.gif" alt="$T_kE_k=E_kT_k$" class="latex-inline" style="vertical-align: -2px" width="98" height="14">,故有
+<img src="latex/latex2png-SpecialLinearEquation_96094374_.gif" alt="
+\begin{equation*}
+  z=y-\alpha E_kT_k^{-1}r=y+\alpha E_ky.
+\end{equation*}
+" class="latex-display" width="580" height="20">代入<img src="latex/latex2png-SpecialLinearEquation_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">表达式
+<img src="latex/latex2png-SpecialLinearEquation_115235721_.gif" alt="
+\begin{equation*}
+  \alpha=-r_k-r^T (y+\alpha E_ky)=- (r_{k+1}+r^TE_ky)/(1+r^Ty),
+\end{equation*}
+" class="latex-display" width="580" height="20">其中<img src="latex/latex2png-SpecialLinearEquation_195532610_-4.gif" alt="$\beta\equiv 1+r^Ty$" class="latex-inline" style="vertical-align: -4px" width="87" height="18">是大于<img src="latex/latex2png-SpecialLinearEquation_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">的,因Toeplitz阵<img src="latex/latex2png-SpecialLinearEquation_26603943_-4.gif" alt="$T_{k+1}$" class="latex-inline" style="vertical-align: -4px" width="33" height="16">为正定的:
+<img src="latex/latex2png-SpecialLinearEquation_124420273_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    I& E_ky\\
+    0& 1
+  \end{bmatrix}
+^T
+\begin{bmatrix}
+  T_k& E_kr\\
+  r^TE_k& 1
+\end{bmatrix}
+\begin{bmatrix}
+  I& E_ky\\
+  0& 1
+\end{bmatrix}
+=
+\begin{bmatrix}
+  T_k& \\
+  & 1+r^Ty
+\end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="55">进一步利用<img src="latex/latex2png-SpecialLinearEquation_104371032_-5.gif" alt="$\beta^{(k)}=1+ (r^{(k)})^Ty^{(k)}= (1-\alpha_{k-1}^2)\beta_{k-1}$" class="latex-inline" style="vertical-align: -5px" width="289" height="20">,即得到完整的Durbin算法,需<img src="latex/latex2png-SpecialLinearEquation_202667065_0.gif" alt="$2n^2$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">个flop.</p>
+
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="SpecialLinearEquation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一般右端向量的Levinson算法</h3>
+
+<p class="first">可以用类似方法求解右端为任意向量的Toeplitz方程组<img src="latex/latex2png-SpecialLinearEquation_200499787_-2.gif" alt="$T_nx=b$" class="latex-inline" style="vertical-align: -2px" width="57" height="14">.</p>
+
+<p>假设已解出<img src="latex/latex2png-SpecialLinearEquation_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">阶Toeplitz方程组<img src="latex/latex2png-SpecialLinearEquation_207289411_-5.gif" alt="$T_kx=b= (b_1,\cdots,b_k)^T$" class="latex-inline" style="vertical-align: -5px" width="171" height="19">,现需求解
+<img src="latex/latex2png-SpecialLinearEquation_253770675_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    T_k& E_kr\\
+    r^TE_k& 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    v\\
+    \mu
+  \end{bmatrix}
+=
+\begin{bmatrix}
+  b\\
+  b_{k+1}
+\end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="50">同时假定<img src="latex/latex2png-SpecialLinearEquation_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">阶Yule-Walker方程组<img src="latex/latex2png-SpecialLinearEquation_266400182_-4.gif" alt="$T_ky=-r$" class="latex-inline" style="vertical-align: -4px" width="69" height="16">的解也已得到.由<img src="latex/latex2png-SpecialLinearEquation_253297469_-4.gif" alt="$T_kv+\mu I_kr=b$" class="latex-inline" style="vertical-align: -4px" width="109" height="16">可知
+<img src="latex/latex2png-SpecialLinearEquation_68660633_.gif" alt="
+\begin{gather*}
+  v=T_k^{-1} (b-\mu E_kr)=x-\mu T_k^{-1}E_kr=x+\mu E_ky,\\
+  \mu=b_{k+1}-r^TE_kv= (b_{k+1}-r^TE_kx)/ (1+r^Ty).
+\end{gather*}
+" class="latex-display" width="580" height="51">这样,我们可在<img src="latex/latex2png-SpecialLinearEquation_61115333_-5.gif" alt="$O(k)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">个flop内完成<img src="latex/latex2png-SpecialLinearEquation_98792468_-2.gif" alt="$k+1$" class="latex-inline" style="vertical-align: -2px" width="36" height="14">阶方程组的求解.全部算法共需<img src="latex/latex2png-SpecialLinearEquation_202667065_0.gif" alt="$4n^2$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">个flop.</p>
+
+
+<h3><a name="sec7" id="sec7"></a>
+<a href="SpecialLinearEquation.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>正定对称Toeplitz阵求逆Trench算法</h3>
+
+<p class="first">对称正定的Toeplitz阵<img src="latex/latex2png-SpecialLinearEquation_96963564_-2.gif" alt="$T_n$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">的最令人吃惊的性质之一是它的逆可以在<img src="latex/latex2png-SpecialLinearEquation_21732654_-5.gif" alt="$O(n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">个flop内算出.为了得到这个算法,我们将<img src="latex/latex2png-SpecialLinearEquation_9508821_-4.gif" alt="$T_n^{-1}$" class="latex-inline" style="vertical-align: -4px" width="28" height="18">做如下划分:
+<img src="latex/latex2png-SpecialLinearEquation_162476344_.gif" alt="
+\begin{equation*}
+  T_n^{-1}=
+  \begin{bmatrix}
+    A& Er\\
+    r^TE& 1
+  \end{bmatrix}
+^{-1}=
+\begin{bmatrix}
+  B& v\\
+  v^T& \gamma
+\end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="55">由
+<img src="latex/latex2png-SpecialLinearEquation_171749200_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    A& Er\\
+    r^TE 1
+  \end{bmatrix}
+  \begin{bmatrix}
+    v\\
+    \gamma
+  \end{bmatrix}
+=
+\begin{bmatrix}
+  0\\ 1
+\end{bmatrix}
+\end{equation*}
+" class="latex-display" width="580" height="50">得到
+<img src="latex/latex2png-SpecialLinearEquation_64428496_.gif" alt="
+\begin{gather*}
+  Av=-\gamma Er,\\
+  \gamma=1-r^TEv.
+\end{gather*}
+" class="latex-display" width="580" height="47">若<img src="latex/latex2png-SpecialLinearEquation_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是<img src="latex/latex2png-SpecialLinearEquation_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">阶Yule-Walker方程组<img src="latex/latex2png-SpecialLinearEquation_266570088_-4.gif" alt="$Ay=-r$" class="latex-inline" style="vertical-align: -4px" width="63" height="16">的解,则
+<img src="latex/latex2png-SpecialLinearEquation_20814338_.gif" alt="
+\begin{gather*}
+  \gamma=1/(1+r^Ty),\\
+  v=\gamma Ey.
+\end{gather*}
+" class="latex-display" width="580" height="50">于是我们得到了<img src="latex/latex2png-SpecialLinearEquation_9508821_-4.gif" alt="$T_n^{-1}$" class="latex-inline" style="vertical-align: -4px" width="28" height="18">的最后一列.</p>
+
+<p>因为<img src="latex/latex2png-SpecialLinearEquation_80210003_-2.gif" alt="$AB+Erv^T=I_{n-1}$" class="latex-inline" style="vertical-align: -2px" width="140" height="16">,故<img src="latex/latex2png-SpecialLinearEquation_181382570_-5.gif" alt="$B=A^{-1}- (A^{-1}Er)v^T=A^{-1}+vv^T/\gamma$" class="latex-inline" style="vertical-align: -5px" width="287" height="19">.由于<img src="latex/latex2png-SpecialLinearEquation_219373991_-2.gif" alt="$A=T_{n-1}$" class="latex-inline" style="vertical-align: -2px" width="69" height="14">是非奇异的Toeplitz阵,其逆是反向对称的,于是
+<img src="latex/latex2png-SpecialLinearEquation_172695265_.gif" alt="
+\begin{equation*}
+\begin{split}
+  b_{ij}&= (A^{-1})_{ij}+\frac{v_iv_j}{\gamma}\\
+  &= (A^{-1})_{n-j,n-i}+\frac{v_iv_j}{\gamma}\\
+  &= b_{n-j,n-i}-\frac{v_{n-j}v_{n-i}}{\gamma}+\frac{v_iv_j}{\gamma}\\
+  &=b_{n-j,n-i}-\frac{1}{\gamma} (v_iv_j-v_{n-j}v_{n-i}),
+\end{split}
+\end{equation*}
+" class="latex-display" width="580" height="157">于是我们可以&quot;从外向里&quot;地确定<img src="latex/latex2png-SpecialLinearEquation_138572818_-4.gif" alt="$B $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,以<img src="latex/latex2png-SpecialLinearEquation_41448466_-1.gif" alt="$6$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">阶矩阵为例形象地描述如下:</p>
+
+<p>假定<img src="latex/latex2png-SpecialLinearEquation_9508821_-4.gif" alt="$T_n^{-1}$" class="latex-inline" style="vertical-align: -4px" width="28" height="18">的最后一行和最后一列已知
+<img src="latex/latex2png-SpecialLinearEquation_156933742_.gif" alt="
+\begin{equation*}
+  T_n^{-1}=
+  \begin{bmatrix}
+    *& *& *& *& *& k\\
+    *& *& *& *& *& k\\
+    *& *& *& *& *& k\\
+    *& *& *& *& *& k\\
+    *& *& *& *& *& k\\
+    k& k& k& k& k& k
+  \end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="150">这里<img src="latex/latex2png-SpecialLinearEquation_40662034_0.gif" alt="$*$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">和<img src="latex/latex2png-SpecialLinearEquation_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">分别代表未知元素和已知元素.交替利用<img src="latex/latex2png-SpecialLinearEquation_81820399_-4.gif" alt="$T_{n-1}^{-1}$" class="latex-inline" style="vertical-align: -4px" width="34" height="19">的反向对称性和前述递推式,可求出<img src="latex/latex2png-SpecialLinearEquation_23580402_-5.gif" alt="$(n-1)\times(n-1)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">的顺序子块<img src="latex/latex2png-SpecialLinearEquation_42234898_-4.gif" alt="$B$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">如下:</p>
+
+<p class="image"><img src="latex/latex2png-SpecialLinearEquation_261692265_.gif" alt="
+\begin{gather*}
+  \underrightarrow{\text{反向对称}}
+  \begin{bmatrix}
+    k& k& k& k& k& k\\
+    k& *& *& *& *& k\\
+    k& *& *& *& *& k\\
+    k& *& *& *& *& k\\
+    k& *& *& *& *& k\\
+    k& k& k& k& k& k
+  \end{bmatrix}
+\underrightarrow{\text{递推关系}}
+\begin{bmatrix}
+  k& k& k& k& k& k\\
+  k& *& *& *& k& k\\
+  k& *& *& *& k& k\\
+  k& *& *& *& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k
+\end{bmatrix}\\
+\underrightarrow{\text{反向对称}}
+\begin{bmatrix}
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& *& *& k& k\\
+  k& k& *& *& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k
+\end{bmatrix}
+\underrightarrow{\text{递推关系}}
+\begin{bmatrix}
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& *& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k
+\end{bmatrix}\\
+\underrightarrow{\text{反向对称}}
+\begin{bmatrix}
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k\\
+  k& k& k& k& k& k
+\end{bmatrix}.
+\end{gather*}
+" class="latex-display" width="580" height="474">
+当然,当求解一个既对称又反对称的矩阵时,只需求解矩阵的&quot;上楔形&quot;即可,即
+<img src="latex/latex2png-SpecialLinearEquation_163397872_.gif" alt="
+\begin{equation*}
+\begin{matrix}
+  *& *& *& *& *& *\\
+   & *& *& *& *\\
+   &  & *& *
+\end{matrix}
+(n=6).
+\end{equation*}
+" class="latex-display" width="580" height="60">
+由以上分析,不难得到对于<img src="latex/latex2png-SpecialLinearEquation_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶正定对称Toeplitz阵的求逆算法,称为Trench算法.它需要<img src="latex/latex2png-SpecialLinearEquation_181868402_-5.gif" alt="$13n^2/4$" class="latex-inline" style="vertical-align: -5px" width="49" height="19">个flop.</p>
+
+<p>Cybenko(1978)年对上述各算法做了误差分析,认为其稳定性与Cholesky方法相当.</p>
+
+<p>最后指出,以上两节涉及到的Vandermonde矩阵和Toeplitz矩阵与快速Fourier变换(FFT)有密切的关系，使得特定形式的矩阵与向量乘法可以FFT速度计算。可参见<span class="cite"><a class="cite" href="SpecialLinearEquation.html#ref-2" name="cite-2">[2]</a></span>和<span class="cite"><a class="cite" href="SpecialLinearEquation.html#ref-3" name="cite-3">[3]</a></span>.</p>
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="SpecialLinearEquation.html#cite-1" name="ref-1">[1]</a></p>
+<p class="ref"><a class="ref" href="SpecialLinearEquation.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Golub G. H. and Van Loan C. F.著，袁亚湘等译, </span><span class="ref-title-chs">矩阵计算, </span><span class="ref-publisher">科学出版社, </span><span class="ref-year">2001. </span></p>
+<p class="ref"><a class="ref" href="SpecialLinearEquation.html#cite-3" name="ref-3">[3]</a><span class="ref-author">Van Loan C. F., </span><span class="ref-title">Computational Frameworks for the Fast Fourier Transform, </span><span class="ref-publisher">SIAM Publications, </span><span class="ref-address">Philadelphia, PA, </span><span class="ref-year">1992. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

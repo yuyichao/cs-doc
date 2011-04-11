@@ -1,0 +1,1268 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>6.2. Blocking I/O</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-6-sect-1.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-6-sect-3.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><TD valign="top"><a name="chp-6-sect-2"></a>
+<h3 class="docSection1Title">6.2. Blocking I/O</h3>
+
+<p class="docText">Back in <a class="docLink" href="chp-3.shtml#chp-3">Chapter 3</a>, we looked at
+how to<a name="chp-6-ITERM-5220"></a> <a name="chp-6-ITERM-5221"></a>
+<a name="chp-6-ITERM-5222"></a>
+<a name="chp-6-ITERM-5223"></a>
+<a name="chp-6-ITERM-5224"></a>
+implement the <span class="docEmphasis">read</span> and
+<span class="docEmphasis">write</span> driver methods. At that point, however, we
+skipped over one important issue: how does a driver respond if it
+cannot immediately satisfy the request? A call to
+<span class="docEmphasis">read</span> may come when no data is available, but
+more is expected in the future. Or a process could attempt to
+<span class="docEmphasis">write</span>, but your device is not ready to accept
+the data, because your output buffer is full. The calling process
+usually does not care about such issues; the programmer simply
+expects to call <span class="docEmphasis">read</span> or
+<span class="docEmphasis">write</span> and have the call return after the
+necessary work has been done. So, in such cases, your driver should
+(by default) <i>block</I> the process, putting it to
+sleep until the request can proceed.</p>
+
+<p class="docText">This section shows how to put a process to sleep and wake it up again
+later on. As usual, however, we have to explain a few concepts first.</P>
+
+<a name="chp-6-sect-2.1"></a>
+<H4 class="docSection2Title">6.2.1. Introduction to Sleeping</H4>
+
+<p class="docText">What does it mean for a process to
+"sleep"? When a process is put to
+sleep, it is marked as being in a special state and removed from the
+scheduler's run queue. Until something comes along
+to change that state, the process will not be scheduled on any CPU
+and, therefore, will not run. A sleeping process has been shunted off
+to the side of the system, waiting for some future event to happen.</p>
+
+<p class="docText">Causing a process to sleep is an easy thing for a Linux device driver
+to do. There are, however, a couple of rules that you must keep in
+mind to be able to code sleeps in a safe manner.</p>
+
+<p class="docText">The first of these rules is: never sleep when you are running in an
+atomic context. 
+An atomic context is
+simply a state where multiple steps must be performed without any
+sort of concurrent access. What that means, with regard to sleeping,
+is that your driver cannot sleep while holding a spinlock, seqlock,
+or RCU lock. You also cannot sleep if you have disabled interrupts.
+It <span class="docEmphasis">is</span> legal to sleep while holding a semaphore,
+but you should look very carefully at any code that does so. If code
+sleeps while holding a semaphore, any other thread waiting for that
+semaphore also sleeps. So any sleeps that happen while holding
+semaphores should be short, and you should convince yourself that, by
+holding the semaphore, you are not blocking the process that will
+eventually wake you up.</p>
+
+<p class="docText">Another thing to remember with sleeping is that, when you wake up,
+you never know how long your process may have been out of the CPU or
+what may have changed in the mean time. You also do not usually know
+if another process may have been sleeping for the same event; that
+process may wake before you and grab whatever resource you were
+waiting for. The end result is that you can make no assumptions about
+the state of the system after you wake up, and you must check to
+ensure that the condition you were waiting for is, indeed, true.</p>
+
+<p class="docText">One other relevant point, of course, is that your process cannot
+sleep unless it is assured that somebody else, somewhere, will wake
+it up. The code doing the awakening must also be able to find your
+process to be able to do its job. Making sure that a wakeup happens
+is a matter of thinking through your code and knowing, for each
+sleep, exactly what series of events will bring that sleep to an end.
+Making it possible for your sleeping process to be found is, instead,
+accomplished through a data structure called a <I>wait
+queue</I><a name="chp-6-ITERM-5225"></a>
+<a name="chp-6-ITERM-5226"></a>.
+A wait queue is just what it sounds like: a list of processes, all
+waiting for a specific event.</P>
+
+<p class="docText">In Linux, a wait queue is managed by means of a
+"wait queue head," a structure of
+type <tt>wait_queue_head_t</tt>, which is defined in
+<i>&lt;linux/wait.h&gt;</I>. A wait queue head can be
+defined and initialized statically with:</P>
+
+<pre>DECLARE_WAIT_QUEUE_HEAD(name);</pre><br>
+
+
+<p class="docText">or dynamicly as follows:</p>
+
+<pre>wait_queue_head_t my_queue;
+init_waitqueue_head(&amp;my_queue);</pre><br>
+
+
+<p class="docText">We will return to the structure of wait queues shortly, but we know
+enough now to take a first look at sleeping and waking up.</p>
+
+
+<a name="chp-6-sect-2.2"></a>
+<H4 class="docSection2Title">6.2.2. Simple Sleeping</h4>
+
+<p class="docText">When a process sleeps, it does so<a name="chp-6-ITERM-5227"></a> in expectation that some condition
+will become true in the future. As we noted before, any process that
+sleeps must check to be sure that the condition it was waiting for is
+really true when it wakes up again. The simplest way of sleeping in
+the Linux kernel is a macro called
+<span class="docEmphasis">wait_event</span><a name="chp-6-ITERM-5228"></a>
+<a name="chp-6-ITERM-5229"></a>
+(with a few variants); it combines handling the details of sleeping
+with a check on the condition a process is waiting for. The forms of
+<span class="docEmphasis">wait_event</span> are:</p>
+
+<pre>wait_event(queue, condition)
+wait_event_interruptible(queue, condition)
+wait_event_timeout(queue, condition, timeout)
+wait_event_interruptible_timeout(queue, condition, timeout)</pre><BR>
+
+
+<p class="docText">In all of the above forms, <tt>queue</tt> is the wait queue
+head to use. Notice that it is passed "by
+value." The <tt>condition</tt> is an
+arbitrary boolean expression that is evaluated by the macro before
+and after sleeping; until <tt>condition</tt> evaluates to a
+true value, the process continues to sleep. Note that
+<tt>condition</tt> may be evaluated an arbitrary number of
+times, so it should not have any side effects.</p>
+
+<p class="docText">If you use <span class="docEmphasis">wait_event</span>, your process is put into
+an uninterruptible sleep which, as we have mentioned before, is
+usually not what you want. The preferred alternative is
+<span class="docEmphasis">wait_event_interruptible</span>, which can be
+interrupted by signals. This version returns an integer value that
+you should check; a nonzero value means your sleep was interrupted by
+some sort of signal, and your driver should probably return
+<tt>-ERESTARTSYS</tt>. The final versions
+(<span class="docEmphasis">wait_event_timeout</span> and
+<span class="docEmphasis">wait_event_interruptible_timeout</span>) wait for a
+limited time; after that time period (expressed in jiffies, which we
+will discuss in <a class="docLink" href="chp-7.shtml#chp-7">Chapter 7</a>)
+expires, the macros return with a value of <tt>0</tt>
+regardless of how <tt>condition</tt> evaluates.</p>
+
+<p class="docText">The other half of the picture, of course, is waking up. Some other
+thread of execution (a different process, or an interrupt handler,
+perhaps) has to perform the wakeup for you, since your process is, of
+course, asleep. The basic function that wakes up sleeping processes
+is called <span class="docEmphasis">wake_up</span><a name="chp-6-ITERM-5230"></a>
+<a name="chp-6-ITERM-5231"></a>.
+It comes in several forms (but we look at only two of them now):</P>
+
+<pre>void wake_up(wait_queue_head_t *queue);
+void wake_up_interruptible(wait_queue_head_t *queue);</pre><br>
+
+
+<p class="docText"><span class="docEmphasis">wake_up</span> wakes up all processes waiting on the
+given <tt>queue</tt> (though the situation is a little more
+complicated than that, as we will see later). The other form
+(<span class="docEmphasis">wake_up_interruptible</span>) restricts itself to
+processes performing an interruptible sleep. In general, the two are
+indistinguishable (if you are using interruptible sleeps); in
+practice, the convention is to use <span class="docEmphasis">wake_up</span> if
+you are using <span class="docEmphasis">wait_event</span> and
+<span class="docEmphasis">wake_up_interruptible</span> if you use
+<span class="docEmphasis">wait_event_interruptible</span>.</P>
+
+<p class="docText">We now know enough to look at a simple example of sleeping and waking
+up. In the sample source, you can find a module called
+<span class="docEmphasis">sleepy</span>. It implements a device with simple
+behavior: any process that attempts to read from the device is put to
+sleep. Whenever a process writes to the device, all sleeping
+processes are awakened. This behavior is implemented with the
+following <span class="docEmphasis">read</span> and <span class="docEmphasis">write</span>
+methods:</p>
+
+<pre>static DECLARE_WAIT_QUEUE_HEAD(wq);
+static int flag = 0;
+
+ssize_t sleepy_read (struct file *filp, char _ _user *buf, size_t count, loff_t *pos)
+{
+    printk(KERN_DEBUG "process %i (%s) going to sleep\n",
+            current-&gt;pid, current-&gt;comm);
+    wait_event_interruptible(wq, flag != 0);
+    flag = 0;
+    printk(KERN_DEBUG "awoken %i (%s)\n", current-&gt;pid, current-&gt;comm);
+    return 0; /* EOF */
+}
+
+ssize_t sleepy_write (struct file *filp, const char _ _user *buf, size_t count,
+        loff_t *pos)
+{
+    printk(KERN_DEBUG "process %i (%s) awakening the readers...\n",
+            current-&gt;pid, current-&gt;comm);
+    flag = 1;
+    wake_up_interruptible(&amp;wq);
+    return count; /* succeed, to avoid retrial */
+}</pre><br>
+
+
+<p class="docText">Note the use of the <tt>flag</tt> variable in this example.
+Since <span class="docEmphasis">wait_event_interruptible</span> checks for a
+condition that must become true, we use <tt>flag</tt> to
+create that condition.</p>
+
+<p class="docText">It is interesting to consider what happens if
+<span class="docEmphasis">two</span> processes are waiting when
+<span class="docEmphasis">sleepy_write</span> is called. Since
+<span class="docEmphasis">sleepy_read</span> resets <tt>flag</tt> to
+<tt>0</tt> once it wakes up, you might think that the
+second process to wake up would immediately go back to sleep. On a
+single-processor system, that is almost always what happens. But it
+is important to understand why you cannot count on that behavior. The
+<span class="docEmphasis">wake_up_interruptible</span> call
+<span class="docEmphasis">will</span> cause both sleeping processes to wake up.
+It is entirely possible that they will both note that
+<tt>flag</tt> is nonzero before either has the opportunity
+to reset it. For this trivial module, this race condition is
+unimportant. In a real driver, this kind of race can create rare
+crashes that are difficult to diagnose. If correct operation required
+that exactly one process see the nonzero value, it would have to be
+tested in an atomic manner. We will see how a real driver handles
+such situations shortly. But first we have to cover one other topic.</p>
+
+
+<a name="chp-6-sect-2.3"></a>
+<h4 class="docSection2Title">6.2.3. Blocking and Nonblocking Operations</h4>
+
+<p class="docText"><a name="chp-6-ITERM-5232"></a><a name="chp-6-ITERM-5233"></a><a name="chp-6-ITERM-5234"></a><a name="chp-6-ITERM-5235"></a><a name="chp-6-ITERM-5236"></a><a name="chp-6-ITERM-5237"></a><a name="chp-6-ITERM-5238"></a>One last point we need to touch
+on<a name="chp-6-ITERM-5239"></a>
+<a name="chp-6-ITERM-5240"></a>
+<a name="chp-6-ITERM-5241"></a>
+<a name="chp-6-ITERM-5242"></a>
+<a name="chp-6-ITERM-5243"></a>
+before we look at the implementation of full-featured
+<span class="docEmphasis">read</span> and <span class="docEmphasis">write</span> methods is
+deciding when to put a process to sleep. There are times when
+implementing proper Unix semantics requires that an operation not
+block, even if it cannot be completely carried out.</p>
+
+<p class="docText">There are also times when the calling process informs you that it
+does not <span class="docEmphasis">want</span> to block, whether or not its I/O
+can make any progress at all. Explicitly nonblocking I/O is indicated
+by the <tt>O_NONBLOCK</tt> flag in
+<tt>filp-&gt;f_flags</tt>. The flag is defined in
+<i>&lt;linux/fcntl.h&gt;</i>, which is automatically
+included by <i>&lt;linux/fs.h&gt;</i>. The flag gets
+its name from "open-nonblock,"
+because it can be specified at open time (and originally could be
+specified only there). If you browse the source code, you find some
+references to an <tt>O_NDELAY</tt> flag; this is an
+alternate name for <tt>O_NONBLOCK</tt>, accepted for
+compatibility with System V code. The flag is cleared by default,
+because the normal behavior of a process waiting for data is just to
+sleep. In the case of a blocking operation, which is the default, the
+following behavior should be implemented in order to adhere to the
+standard semantics:</p>
+
+<ul><LI><p class="docList">If a process calls <span class="docEmphasis">read</span> but no data is (yet)
+available, the process must block. The process is awakened as soon as
+some data arrives, and that data is returned to the caller, even if
+there is less than the amount requested in the
+<tt>count</tt> argument to the method.</p></LI><LI><p class="docList"><a name="chp-6-ITERM-5244"></a>If a process calls
+<span class="docEmphasis">write</span> and there is no space in the buffer, the
+process must block, and it must be on a different wait queue from the
+one used for reading. When some data has been written to the hardware
+device, and space becomes free in the output buffer, the process is
+awakened and the <span class="docEmphasis">write</span> call succeeds, although
+the data may be only partially written if there
+isn't room in the buffer for the
+<tt>count</tt> bytes that were requested.</p></li></ul>
+<p class="docText">Both these statements assume that there are
+<a name="chp-6-ITERM-5245"></a>both
+input and output buffers; in practice, almost every device driver has
+them. The input buffer is required to avoid losing data that arrives
+when nobody is reading. In contrast, data can't be
+lost on <span class="docEmphasis">write</span>, because if the system call
+doesn't accept data bytes, they remain in the
+user-space buffer. Even so, the output buffer is almost always useful
+for squeezing more performance out of the hardware.</P>
+
+<p class="docText"><a name="chp-6-ITERM-5246"></a>
+<a name="chp-6-ITERM-5247"></a><a name="chp-6-ITERM-5248"></a>The performance gain of
+implementing an output buffer in the driver results from the reduced
+number of context switches and user-level/kernel-level transitions.
+Without an output buffer (assuming a slow device), only one or a few
+characters are accepted by each system call, and while one process
+sleeps in <span class="docEmphasis">write</span>, another process runs
+(that's one context switch). When the first process
+is awakened, it resumes (another context switch),
+<span class="docEmphasis">write</span> returns (kernel/user transition), and the
+process reiterates the system call to write more data (user/kernel
+transition); the call blocks and the loop continues. The addition of
+an output buffer allows the driver to accept larger chunks of data
+with each <span class="docEmphasis">write</span> call, with a corresponding
+increase in performance. If that buffer is big enough, the
+<span class="docEmphasis">write</span> call succeeds on the first
+attempt—the buffered data will be pushed out to the device
+later—without control needing to go back to user space for a
+second or third <span class="docEmphasis">write</span> call. The choice of a
+suitable size for the output buffer is clearly device-specific.</p>
+
+<p class="docText">We don't use an input buffer in
+<span class="docEmphasis">scull</span>, because data is already available when
+<span class="docEmphasis">read</span> is issued. Similarly, no output buffer is
+used, because data is simply copied to the memory area associated
+with the device. Essentially, the device <span class="docEmphasis">is</span> a
+buffer, so the implementation of additional buffers would be
+superfluous. We'll see the use of buffers in <a class="docLink" href="chp-10.shtml#chp-10">Chapter 10</a>.</P>
+
+<p class="docText">The behavior of <span class="docEmphasis">read</span> and
+<span class="docEmphasis">write</span> is different if
+<tt>O_NONBLOCK</tt> is specified. In this case, the calls
+simply return <tt>-EAGAIN</tt> ("TRy it
+again") if a process calls <span class="docEmphasis">read</span>
+when no data is available or if it calls <span class="docEmphasis">write</span>
+when there's no space in the buffer.</P>
+
+<p class="docText">As you might expect, nonblocking operations return immediately,
+allowing the application to poll for data. Applications must be
+careful when using the <span class="docEmphasis">stdio</span> functions while
+dealing with nonblocking files, because they can easily mistake a
+nonblocking return for <tt>EOF</tt>. They always have to
+check <tt>errno</tt>.</p>
+
+<p class="docText">Naturally, <tt>O_NONBLOCK</tt> is meaningful in the
+<span class="docEmphasis">open</span> method also. This happens when the call can
+actually block for a long time; for example, when opening (for read
+access) a FIFO that has no writers (yet), or accessing a disk file
+with a pending lock. Usually, opening a device either succeeds or
+fails, without the need to wait for external events. Sometimes,
+however, opening the device requires a long initialization, and you
+may choose to support <tt>O_NONBLOCK</tt> in your
+<span class="docEmphasis">open</span> method by returning immediately with
+<tt>-EAGAIN</tt> if the flag is set, after starting the
+device initialization process. The driver may also implement a
+blocking <span class="docEmphasis">open</span> to support access policies in a
+way similar to file locks. We'll see one such
+implementation in <a class="docLink" href="chp-6-sect-6.shtml#chp-6-sect-6.3">Section 6.6.3</a> later in this chapter.</p>
+
+<p class="docText">Some drivers may also implement special semantics for
+<tt>O_NONBLOCK</tt>; for example, an open of a tape device
+usually blocks until a tape has been inserted. If the tape drive is
+opened with <tt>O_NONBLOCK</tt>, the open succeeds
+immediately regardless of whether the media is present or not.</p>
+
+<p class="docText">Only the <span class="docEmphasis">read</span>, <span class="docEmphasis">write</span>, and
+<span class="docEmphasis">open</span> file operations are affected by the
+nonblocking flag.</p>
+
+
+<a name="chp-6-sect-2.4"></a>
+<H4 class="docSection2Title">6.2.4. A Blocking I/O Example</H4>
+
+<p class="docText">Finally, we get to an example of a <a name="chp-6-ITERM-5249"></a> <a name="chp-6-ITERM-5250"></a>real driver method that implements
+blocking I/O. This example is taken from the
+<span class="docEmphasis">scullpipe</span> driver; it is a special form of
+<span class="docEmphasis">scull</span> that implements a pipe-like device.</P>
+
+<p class="docText">Within a driver, a process blocked in a <span class="docEmphasis">read</span>
+call is awakened when data arrives; usually the hardware issues an
+interrupt to signal such an event, and the driver awakens waiting
+processes as part of handling the interrupt. The
+<span class="docEmphasis">scullpipe</span> driver works differently, so that it
+can be run without requiring any particular hardware or an interrupt
+handler. We chose to use another process to generate the data and
+wake the reading process; similarly, reading processes are used to
+wake writer processes that are waiting for buffer space to become
+available.</p>
+
+<p class="docText">The device driver uses a device structure that contains two wait
+queues and a buffer. The size of the buffer is configurable in the
+usual ways (at compile time, load time, or runtime).</P>
+
+<pre>struct scull_pipe {
+        wait_queue_head_t inq, outq;       /* read and write queues */
+        char *buffer, *end;                /* begin of buf, end of buf */
+        int buffersize;                    /* used in pointer arithmetic */
+        char *rp, *wp;                     /* where to read, where to write */
+        int nreaders, nwriters;            /* number of openings for r/w */
+        struct fasync_struct *async_queue; /* asynchronous readers */
+        struct semaphore sem;              /* mutual exclusion semaphore */
+        struct cdev cdev;                  /* Char device structure */
+};</pre><BR>
+
+
+<p class="docText">The <span class="docEmphasis">read</span> implementation manages both blocking
+and nonblocking input and looks like this:</p>
+
+<pre>static ssize_t scull_p_read (struct file *filp, char _ _user *buf, size_t count,
+                loff_t *f_pos)
+{
+    struct scull_pipe *dev = filp-&gt;private_data;
+
+    if (down_interruptible(&amp;dev-&gt;sem))
+        return -ERESTARTSYS;
+
+    while (dev-&gt;rp =  = dev-&gt;wp) { /* nothing to read */
+        up(&amp;dev-&gt;sem); /* release the lock */
+        if (filp-&gt;f_flags &amp; O_NONBLOCK)
+            return -EAGAIN;
+        PDEBUG("\"%s\" reading: going to sleep\n", current-&gt;comm);
+        if (wait_event_interruptible(dev-&gt;inq, (dev-&gt;rp != dev-&gt;wp)))
+            return -ERESTARTSYS; /* signal: tell the fs layer to handle it */
+        /* otherwise loop, but first reacquire the lock */
+        if (down_interruptible(&amp;dev-&gt;sem))
+            return -ERESTARTSYS;
+    }
+    /* ok, data is there, return something */
+    if (dev-&gt;wp &gt; dev-&gt;rp)
+        count = min(count, (size_t)(dev-&gt;wp - dev-&gt;rp));
+    else /* the write pointer has wrapped, return data up to dev-&gt;end */
+        count = min(count, (size_t)(dev-&gt;end - dev-&gt;rp));
+    if (copy_to_user(buf, dev-&gt;rp, count)) {
+        up (&amp;dev-&gt;sem);
+        return -EFAULT;
+    }
+    dev-&gt;rp += count;
+    if (dev-&gt;rp =  = dev-&gt;end)
+        dev-&gt;rp = dev-&gt;buffer; /* wrapped */
+    up (&amp;dev-&gt;sem);
+
+    /* finally, awake any writers and return */
+    wake_up_interruptible(&amp;dev-&gt;outq);
+    PDEBUG("\"%s\" did read %li bytes\n",current-&gt;comm, (long)count);
+    return count;
+}</pre><br>
+
+
+<p class="docText">As you can see, we left some <tt>PDEBUG</tt> statements in
+the code. When you compile the driver, you can enable messaging to
+make it easier to follow the interaction of different processes.</p>
+
+<p class="docText">Let us look carefully at how <span class="docEmphasis">scull_p_read</span>
+handles waiting for data. The <tt>while</tt> loop tests the
+buffer with the device semaphore held. If there is data there, we
+know we can return it to the user immediately without sleeping, so
+the entire body of the loop is skipped. If, instead, the buffer is
+empty, we must sleep. Before we can do that, however, we must drop
+the device semaphore; if we were to sleep holding it, no writer would
+ever have the opportunity to wake us up. Once the semaphore has been
+dropped, we make a quick check to see if the user has requested
+non-blocking I/O, and return if so. Otherwise, it is time to call
+<span class="docEmphasis">wait_event_interruptible</span>.</p>
+
+<p class="docText">Once we get past that call, something has woken us up, but we do not
+know what. One possibility is that the process received a signal.
+<a name="chp-6-ITERM-5251"></a>The
+<tt>if</tt> statement that contains the
+<span class="docEmphasis">wait_event_interruptible</span> call checks for this
+case. This statement ensures the proper and expected reaction to
+signals, which could have been responsible for waking up the process
+(since we were in an interruptible sleep). If a signal has arrived
+and it has not been blocked by the process, the proper behavior is to
+let upper layers of the kernel handle the event. To this end, the
+driver returns <tt>-ERESTARTSYS</tt> to the caller; this
+value is used internally by the virtual filesystem (VFS) layer, which
+either restarts the system call or returns <tt>-EINTR</tt>
+to user space. We use the same type of check to deal with signal
+handling for every <span class="docEmphasis">read</span> and
+<span class="docEmphasis">write</span> implementation.</P>
+
+<p class="docText">However, even in the absence of a signal, we do not yet know for sure
+that there is data there for the taking. Somebody else could have
+been waiting for data as well, and they might win the race and get
+the data first. So we must acquire the device semaphore again; only
+then can we test the read buffer again (in the
+<tt>while</tt> loop) and truly know that we can return the
+data in the buffer to the user. The end result of all this code is
+that, when we exit from the <tt>while</tt> loop, we know
+that the semaphore is held and the buffer contains data that we can
+use.</p>
+
+<p class="docText">Just for completeness, let us note that
+<span class="docEmphasis">scull_p_read</span> can sleep in another spot after we
+take the device semaphore: the call to
+<span class="docEmphasis">copy_to_user</span>. If <span class="docEmphasis">scull</span>
+sleeps while copying data between kernel and user space, it sleeps
+with the device semaphore held. Holding the semaphore in this case is
+justified since it does not deadlock the system (we know that the
+kernel will perform the copy to user space and wakes us up without
+trying to lock the same semaphore in the process), and since it is
+important that the device memory array not change while the driver
+sleeps.</p>
+
+
+<a name="chp-6-sect-2.5"></a>
+<H4 class="docSection2Title">6.2.5. Advanced Sleeping</h4>
+
+<p class="docText">Many drivers are able to meet their sleeping requirements with the
+functions we have covered so far. There are situations, however, that
+call for a deeper understanding of how the Linux wait queue mechanism
+works. Complex locking or performance requirements can force a driver
+to use lower-level functions to effect a sleep. In this section, we
+look at the lower level to get an understanding of what is really
+going on when a process sleeps.</p>
+
+<a name="chp-6-sect-2.5.1"></a>
+<H5 class="docSection3Title">6.2.5.1 How a process sleeps</h5>
+
+<p class="docText">If you look inside <I>&lt;linux/wait.h&gt;</i>, you see
+that the data structure behind the
+<tt>wait_queue_head_t</tt> type is quite simple; it
+consists of a spinlock and a linked list. What goes on to that list
+is a wait queue entry, which is declared with the type
+<tt>wait_queue_t</tt>. This structure contains information
+about the sleeping process and exactly how it would like to be woken
+up.</p>
+
+<p class="docText">The first step in putting a process to sleep is usually the
+allocation and initialization of a <tt>wait_queue_t</tt>
+structure, followed by its addition to the proper wait queue. When
+everything is in place, whoever is charged with doing the wakeup will
+be able to find the right processes.</p>
+
+<p class="docText">The next step is to set the state of the process to mark it as being
+asleep. There are several task states defined in
+<i>&lt;linux/sched.h&gt;</i>.
+<tt>TASK_RUNNING</tt> means that the process is able to
+run, although it is not necessarily executing in the processor at any
+specific moment. There are two states that indicate that a process is
+asleep: <tt>TASK_INTERRUPTIBLE</tt> and
+<tt>TASK_UNINTERRUPTIBLE</tt>; they correspond, of course,
+to the two types of sleep. The other states are not normally of
+concern to driver writers.</p>
+
+<p class="docText">In the 2.6 kernel, it is not normally necessary for driver code to
+manipulate the process state directly. However, should you need to do
+so, the call to use is:</p>
+
+<pre>void set_current_state(int new_state);</pre><br>
+
+
+<p class="docText">In older code, you often see something like this instead:</p>
+
+<pre>current-&gt;state = TASK_INTERRUPTIBLE;</pre><br>
+
+
+<p class="docText">But changing <tt>current</tt> directly in that manner is
+discouraged; such code breaks easily when data structures change. The
+above code does show, however, that changing the current state of a
+process does not, by itself, put it to sleep. By changing the current
+state, you have changed the way the scheduler treats a process, but
+you have not yet yielded the processor.</p>
+
+<p class="docText">Giving up the processor is the final step, but there is one thing to
+do first: you must check the condition you are sleeping for first.
+Failure to do this check invites a race condition; what happens if
+the condition came true while you were engaged in the above process,
+and some other thread has just tried to wake you up? You could miss
+the wakeup altogether and sleep longer than you had intended.
+Consequently, down inside code that sleeps, you typically see
+something such as:</p>
+
+<pre>if (!condition)
+    schedule(  );</pre><br>
+
+
+<p class="docText">By checking our condition <span class="docEmphasis">after</span> setting the
+process state, we are covered against all possible sequences of
+events. If the condition we are waiting for had come about before
+setting the process state, we notice in this check and not actually
+sleep. If the wakeup happens thereafter, the process is made runnable
+whether or not we have actually gone to sleep yet.</P>
+
+<p class="docText">The call to <span class="docEmphasis">schedule</span> is, of course, the way to
+invoke the scheduler and yield the CPU. Whenever you call this
+function, you are telling the kernel to consider which process should
+be running and to switch control to that process if necessary. So you
+never know how long it will be before <span class="docEmphasis">schedule</span>
+returns to your code.</p>
+
+<p class="docText">After the <tt>if</tt> test and possible call to (and return
+from) <span class="docEmphasis">schedule</span>, there is some cleanup to be
+done. Since the code no longer intends to sleep, it must ensure that
+the task state is reset to <tt>TASK_RUNNING</tt>. If the
+code just returned from <span class="docEmphasis">schedule</span>, this step is
+unnecessary; that function does not return until the process is in a
+runnable state. But if the call to <span class="docEmphasis">schedule</span> was
+skipped because it was no longer necessary to sleep, the process
+state will be incorrect. It is also necessary to remove the process
+from the wait queue, or it may be awakened more than once.</P>
+
+
+
+<a name="chp-6-sect-2.5.2"></a>
+<H5 class="docSection3Title">6.2.5.2 Manual sleeps</h5>
+
+<p class="docText">In previous versions of<a name="chp-6-ITERM-5252"></a>
+<a name="chp-6-ITERM-5253"></a>
+the Linux kernel, nontrivial sleeps required the programmer to handle
+all of the above steps manually. It was a tedious process involving a
+fair amount of error-prone boilerplate code. Programmers can still
+code a manual sleep in that manner if they want to;
+<i>&lt;linux/sched.h&gt;</i> contains all the requisite
+definitions, and the kernel source abounds with examples. There is an
+easier way, however.</P>
+
+<p class="docText">The first step is the creation and initialization of a
+<a name="chp-6-ITERM-5254"></a> <a name="chp-6-ITERM-5255"></a>
+<a name="chp-6-ITERM-5256"></a>wait
+queue entry. That is usually done with this macro:</p>
+
+<pre>DEFINE_WAIT(my_wait);</pre><BR>
+
+
+<p class="docText">in which <tt>name</tt> is the name of the wait queue entry
+variable. You can also do things in two steps:</P>
+
+<pre>wait_queue_t my_wait;
+init_wait(&amp;my_wait);</pre><BR>
+
+
+<p class="docText">But it is usually easier to put a <tt>DEFINE_WAIT</tt> line
+at the top of the loop that implements your sleep.</p>
+
+<p class="docText">The next step is to add your wait queue entry to the queue, and set
+the process state. Both of those tasks are handled by this function:</p>
+
+<pre>void prepare_to_wait(wait_queue_head_t *queue,
+                     wait_queue_t *wait,
+                     int state);</pre><br>
+
+
+<p class="docText">Here, <tt>queue</tt> and <tt>wait</tt> are the
+wait queue head and the process entry, respectively.
+<tt>state</tt> is the new state for the process; it should
+be either <tt>TASK_INTERRUPTIBLE</tt> (for interruptible
+sleeps, which is usually what you want) or
+<tt>TASK_UNINTERRUPTIBLE</tt> (for uninterruptible
+sleeps)<a name="chp-6-ITERM-5257"></a>.</p>
+
+<p class="docText">After calling <span class="docEmphasis">prepare_to_wait</span>, the process can
+call <span class="docEmphasis">schedule</span>—after it has checked to be
+sure it still needs to wait. Once <span class="docEmphasis">schedule</span>
+returns, it is cleanup time. That task, too, is handled by a special
+function:</P>
+
+<pre>void finish_wait(wait_queue_head_t *queue, wait_queue_t *wait);</pre><BR>
+
+
+<p class="docText">Thereafter, your code can test its state and see if it needs to wait
+again.</P>
+
+<p class="docText">We are far past due for an example. Previously we looked at the
+<span class="docEmphasis">read</span> method for <span class="docEmphasis">scullpipe</span>,
+which uses <span class="docEmphasis">wait_event</span>. The
+<span class="docEmphasis">write</span> method in the same driver does its waiting
+with <span class="docEmphasis">prepare_to_wait</span> and
+<span class="docEmphasis">finish_wait</span>, instead. Normally you would not mix
+methods within a single driver in this way, but we did so in order to
+be able to show both ways of handling sleeps.</p>
+
+<p class="docText">First, for completeness, let's look at the
+<span class="docEmphasis">write</span> method itself:</P>
+
+<pre>/* How much space is free? */
+static int spacefree(struct scull_pipe *dev)
+{
+    if (dev-&gt;rp =  = dev-&gt;wp)
+        return dev-&gt;buffersize - 1;
+    return ((dev-&gt;rp + dev-&gt;buffersize - dev-&gt;wp) % dev-&gt;buffersize) - 1;
+}
+
+static ssize_t scull_p_write(struct file *filp, const char _ _user *buf, size_t count,
+                loff_t *f_pos)
+{
+    struct scull_pipe *dev = filp-&gt;private_data;
+    int result;
+
+    if (down_interruptible(&amp;dev-&gt;sem))
+        return -ERESTARTSYS;
+
+    /* Make sure there's space to write */
+    result = scull_getwritespace(dev, filp);
+    if (result)
+        return result; /* scull_getwritespace called up(&amp;dev-&gt;sem) */
+
+    /* ok, space is there, accept something */
+    count = min(count, (size_t)spacefree(dev));
+    if (dev-&gt;wp &gt;= dev-&gt;rp)
+        count = min(count, (size_t)(dev-&gt;end - dev-&gt;wp)); /* to end-of-buf */
+    else /* the write pointer has wrapped, fill up to rp-1 */
+        count = min(count, (size_t)(dev-&gt;rp - dev-&gt;wp - 1));
+    PDEBUG("Going to accept %li bytes to %p from %p\n", (long)count, dev-&gt;wp, buf);
+    if (copy_from_user(dev-&gt;wp, buf, count)) {
+        up (&amp;dev-&gt;sem);
+        return -EFAULT;
+    }
+    dev-&gt;wp += count;
+    if (dev-&gt;wp =  = dev-&gt;end)
+        dev-&gt;wp = dev-&gt;buffer; /* wrapped */
+    up(&amp;dev-&gt;sem);
+
+    /* finally, awake any reader */
+    wake_up_interruptible(&amp;dev-&gt;inq);  /* blocked in read(  ) and select(  ) */
+
+    /* and signal asynchronous readers, explained late in chapter 5 */
+    if (dev-&gt;async_queue)
+        kill_fasync(&amp;dev-&gt;async_queue, SIGIO, POLL_IN);
+    PDEBUG("\"%s\" did write %li bytes\n",current-&gt;comm, (long)count);
+    return count;
+}</pre><BR>
+
+
+<p class="docText">This code looks similar to the <span class="docEmphasis">read</span> method,
+except that we have pushed the code that sleeps into a separate
+function called
+<span class="docEmphasis">scull_getwritespace</span><a name="chp-6-ITERM-5258"></a>
+<a name="chp-6-ITERM-5259"></a>.
+Its job is to ensure that there is space in the buffer for new data,
+sleeping if need be until that space comes available. Once the space
+is there, <span class="docEmphasis">scull_p_write</span> can simply copy the
+user's data there, adjust the pointers, and wake up
+any processes that may have been waiting to read data.</p>
+
+<p class="docText">The code that handles
+the<a name="chp-6-ITERM-5260"></a>
+actual sleep is:</p>
+
+<pre>/* Wait for space for writing; caller must hold device semaphore.  On
+ * error the semaphore will be released before returning. */
+static int scull_getwritespace(struct scull_pipe *dev, struct file *filp)
+{
+    while (spacefree(dev) =  = 0) { /* full */
+        DEFINE_WAIT(wait);
+        
+        up(&amp;dev-&gt;sem);
+        if (filp-&gt;f_flags &amp; O_NONBLOCK)
+            return -EAGAIN;
+        PDEBUG("\"%s\" writing: going to sleep\n",current-&gt;comm);
+        prepare_to_wait(&amp;dev-&gt;outq, &amp;wait, TASK_INTERRUPTIBLE);
+        if (spacefree(dev) =  = 0)
+            schedule(  );
+        finish_wait(&amp;dev-&gt;outq, &amp;wait);
+        if (signal_pending(current))
+            return -ERESTARTSYS; /* signal: tell the fs layer to handle it */
+        if (down_interruptible(&amp;dev-&gt;sem))
+            return -ERESTARTSYS;
+    }
+    return 0;
+}</pre><br>
+
+
+<p class="docText">Note once again the containing <tt>while</tt> loop. If
+space is available without sleeping, this function simply returns.
+Otherwise, it must drop the device semaphore and wait. The code uses
+<span class="docEmphasis">DEFINE_WAIT</span> to set up a wait queue entry and
+<span class="docEmphasis">prepare_to_wait</span> to get ready for the actual
+sleep. Then comes the obligatory check on the buffer; we must handle
+the case in which space becomes available in the buffer after we have
+entered the <tt>while</tt> loop (and dropped the semaphore)
+but before we put ourselves onto the wait queue. Without that check,
+if the reader processes were able to completely empty the buffer in
+that time, we could miss the only wakeup we would ever get and sleep
+forever. Having satisfied ourselves that we must sleep, we can call
+<span class="docEmphasis">schedule</span>.</p>
+
+<p class="docText">It is worth looking again at this case: what happens if the wakeup
+happens between the test in the <tt>if</tt> statement and
+the call to <span class="docEmphasis">schedule</span>? In that case, all is well.
+The wakeup resets the process state to
+<tt>TASK_RUNNING</tt> and <span class="docEmphasis">schedule</span>
+returns—although not necessarily right away. As long as the
+test happens after the process has put itself on the wait queue and
+changed its state, things will work.</P>
+
+<p class="docText">To finish up, we call <span class="docEmphasis">finish_wait</span>. The call to
+<span class="docEmphasis">signal_pending</span> tells us whether we were awakened
+by a signal; if so, we need to return to the user and let them try
+again later. Otherwise, we reacquire the semaphore, and test again
+for free space as usual.</p>
+
+
+
+<a name="chp-6-sect-2.5.3"></a>
+<h5 class="docSection3Title">6.2.5.3 Exclusive waits</H5>
+
+<p class="docText">We have seen <a name="chp-6-ITERM-5261"></a>that when a process calls
+<span class="docEmphasis">wake_up</span><a name="chp-6-ITERM-5262"></a>
+<a name="chp-6-ITERM-5263"></a>
+on a wait queue, all processes waiting on that queue are made
+runnable. In many cases, that is the correct behavior. In others,
+however, it is possible to know ahead of time that only one of the
+processes being awakened will succeed in obtaining the desired
+resource, and the rest will simply have to sleep again. Each one of
+those processes, however, has to obtain the processor, contend for
+the resource (and any governing locks), and explicitly go back to
+sleep. If the number of processes in the wait queue is large, this
+"thundering herd" behavior can
+seriously degrade the performance of the system.</p>
+
+<p class="docText">In response to real-world thundering herd problems, the
+kernel<a name="chp-6-ITERM-5264"></a> developers added an
+"exclusive wait" option to the
+kernel. An exclusive wait acts very much like a normal sleep, with
+two important differences:</p>
+
+<UL><li><p class="docList">When a wait queue entry has the
+<tt>WQ_FLAG_EXCLUSIVE</tt><a name="chp-6-ITERM-5265"></a> flag set, it is added to the end of
+the wait queue. Entries without that flag are, instead, added to the
+beginning.</P></li><li><p class="docList">When <span class="docEmphasis">wake_up</span> is called on a wait queue, it stops
+after waking the first process that has the
+<tt>WQ_FLAG_EXCLUSIVE</tt> flag set.</p></li></ul>
+<p class="docText">The end result is that processes performing exclusive waits are
+awakened one at a time, in an orderly manner, and do not create
+thundering herds. The kernel still wakes up all nonexclusive waiters
+every time, however.</p>
+
+<p class="docText">Employing exclusive waits within a driver is worth considering if two
+conditions are met: you expect significant contention for a resource,
+and waking a single process is sufficient to completely consume the
+resource when it becomes available. Exclusive waits work well for the
+Apache web server, for example; when a new connection comes in,
+exactly one of the (often many) Apache processes on the system should
+wake up to deal with it. We did not use exclusive waits in the
+<span class="docEmphasis">scullpipe</span> driver, however; it is rare to see
+readers contending for data (or writers for buffer space), and we
+cannot know that one reader, once awakened, will consume all of the
+available data.</p>
+
+<p class="docText">Putting a process into an interruptible wait is a simple matter of
+calling <span class="docEmphasis">prepare_to_wait_exclusive</span>:</p>
+
+<pre>void prepare_to_wait_exclusive(wait_queue_head_t *queue,
+                               wait_queue_t *wait,
+                               int state);</pre><br>
+
+
+<p class="docText">This call, when used in place of
+<span class="docEmphasis">prepare_to_wait</span>, sets the
+"exclusive" flag in the wait queue
+entry and adds the process to the end of the wait queue. Note that
+there is no way to perform exclusive waits with
+<span class="docEmphasis">wait_event</span> and its variants.</p>
+
+
+
+<a name="chp-6-sect-2.5.4"></a>
+<h5 class="docSection3Title">6.2.5.4 The details of waking up</h5>
+
+<p class="docText">The view we have presented of the wakeup process is simpler than what
+really happens inside the kernel. The actual behavior that results
+when a process is awakened is controlled by a function in the wait
+queue entry. The default wakeup function<sup class="docFootnote"><a class="docLink" href="chp-6-sect-2.shtml#chp-6-FNOTE-3">[3]</a></sup> sets the process into a runnable state and, possibly,
+performs a context switch to that process if it has a higher
+priority. Device drivers should never need to supply a different wake
+function; should yours prove to be the exception, see
+<i>&lt;linux/wait.h&gt;</I> for information on how to
+do it.</p><blockquote><p class="docFootnote"><sup><a name="chp-6-FNOTE-3">[3]</a></sup> It has the
+imaginative name <span class="docEmphasis">default_wake_function</span>.</P></blockquote>
+
+<p class="docText">We have not yet seen all the variations of
+<span class="docEmphasis">wake_up</span>. Most driver writers never need the
+others, but, for completeness, here is the full set:</P>
+
+<dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wake_up(wait_queue_head_t *queue);</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wake_up_interruptible(wait_queue_head_t *queue);</span></span></span></dt></P>
+<dd>
+<p class="docList"><span class="docEmphasis">wake_up</span> awakens every process on the queue that
+is not in an exclusive wait, and exactly one exclusive waiter, if it
+exists. <span class="docEmphasis">wake_up_interruptible</span> does the same,
+with the exception that it skips over processes in an uninterruptible
+sleep. These functions can, before returning, cause one or more of
+the processes awakened to be scheduled (although this does not happen
+if they are called from an atomic context).</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wake_up_nr(wait_queue_head_t *queue, int nr);</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wake_up_interruptible_nr(wait_queue_head_t *queue, int nr);</span></span></span></dt></P>
+<dd>
+<p class="docList">These functions perform similarly to <span class="docEmphasis">wake_up</span>,
+except they can awaken up to <tt>nr</tt> exclusive waiters,
+instead of just one. Note that passing 0 is interpreted as asking for
+<span class="docEmphasis">all</span> of the exclusive waiters to be awakened,
+rather than none of them.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wake_up_all(wait_queue_head_t *queue);</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wake_up_interruptible_all(wait_queue_head_t *queue);</span></span></span></dt></p>
+<dd>
+<p class="docList">This form of <span class="docEmphasis">wake_up</span> awakens all processes
+whether they are performing an exclusive wait or not (though the
+interruptible form still skips processes doing uninterruptible
+waits).</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">wake_up_interruptible_sync(wait_queue_head_t *queue);</span></span></span></dt></p>
+<dd>
+<p class="docList">Normally, a process that is awakened may preempt the current process
+and be scheduled into the processor before
+<span class="docEmphasis">wake_up</span> returns. In other words, a call to
+<span class="docEmphasis">wake_up</span> may not be atomic. If the process
+calling <span class="docEmphasis">wake_up</span> is running in an atomic context
+(it holds a spinlock, for example, or is an interrupt handler), this
+rescheduling does not happen. Normally, that protection is adequate.
+If, however, you need to explicitly ask to not be scheduled out of
+the processor at this time, you can use the
+"sync" variant of
+<span class="docEmphasis">wake_up_interruptible</span>. This function is most
+often used when the caller is about to reschedule anyway, and it is
+more efficient to simply finish what little work remains first.</p>
+</dd>
+</dl>
+
+<p class="docText">If all of the above is not entirely clear on a first reading,
+don't worry. Very few drivers ever need to call
+anything except <span class="docEmphasis">wake_up_interruptible</span>.</P>
+
+
+
+<a name="chp-6-sect-2.5.5"></a>
+<h5 class="docSection3Title">6.2.5.5 Ancient history: sleep_on</h5>
+
+<p class="docText">If you spend any time digging through the kernel source, you will
+likely encounter two functions that we have neglected to discuss so
+far:</P>
+
+<pre>void sleep_on(wait_queue_head_t *queue);
+void interruptible_sleep_on(wait_queue_head_t *queue);</pre><br>
+
+
+<p class="docText">As you might expect, these functions unconditionally put the current
+process to sleep on the given <tt>queue</tt>. These
+functions are strongly deprecated, however, and you should never use
+them. The problem is obvious if you think about it:
+<span class="docEmphasis">sleep_on</span><a name="chp-6-ITERM-5266"></a>
+<a name="chp-6-ITERM-5267"></a>
+offers no way to protect against race conditions. There is always a
+window between when your code decides it must sleep and when
+<span class="docEmphasis">sleep_on</span> actually effects that sleep. A wakeup
+that arrives during that window is missed. For this reason, code that
+calls <span class="docEmphasis">sleep_on</span> is never entirely safe.</P>
+
+<p class="docText">Current plans call for <span class="docEmphasis">sleep_on</span> and its variants
+(there are a couple of time-out forms we haven't
+shown) to be removed from the kernel in the not-too-distant future.</p>
+
+
+
+<a name="chp-6-sect-2.6"></a>
+<h4 class="docSection2Title">6.2.6. Testing the Scullpipe Driver</h4>
+
+<p class="docText">We have seen
+how<a name="chp-6-ITERM-5268"></a> the <span class="docEmphasis">scullpipe</span>
+driver implements blocking I/O. If you wish to try it out, the source
+to this driver can be found with the rest of the book examples.
+Blocking I/O in action can be seen by opening two windows. The first
+can run a command such as <tt>cat</tt>
+<tt>/dev/scullpipe</tt>. If you then, in another window,
+copy a file to <span class="docEmphasis">/dev/scullpipe</span>, you should see
+that file's contents appear in the first window.</p>
+
+<p class="docText">Testing nonblocking activity is trickier, because the conventional
+programs available to a shell don't perform
+nonblocking operations. The
+<i>misc-progs</i><a name="chp-6-ITERM-5269"></a>
+<a name="chp-6-ITERM-5270"></a> source directory contains the
+following simple program, called
+<span class="docEmphasis">nbtest</span><a name="chp-6-ITERM-5271"></a>
+<a name="chp-6-ITERM-5272"></a>,
+for testing nonblocking operations. All it does is copy its input to
+its output, using nonblocking I/O and delaying between retries. The
+delay time is passed on the command line and is one second by
+default.</p>
+
+<pre>int main(int argc, char **argv)
+{
+    int delay = 1, n, m = 0;
+
+    if (argc &gt; 1)
+        delay=atoi(argv[1]);
+    fcntl(0, F_SETFL, fcntl(0,F_GETFL) | O_NONBLOCK); /* stdin */
+    fcntl(1, F_SETFL, fcntl(1,F_GETFL) | O_NONBLOCK); /* stdout */
+
+    while (1) {
+        n = read(0, buffer, 4096);
+        if (n &gt;= 0)
+            m = write(1, buffer, n);
+        if ((n &lt; 0 || m &lt; 0) &amp;&amp; (errno != EAGAIN))
+            break;
+        sleep(delay);
+    }
+    perror(n &lt; 0 ? "stdin" : "stdout");
+    exit(1);
+}</pre><br>
+
+
+<p class="docText">If you run this program under a process tracing utility such
+as<a name="chp-6-ITERM-5273"></a>
+<a name="chp-6-ITERM-5274"></a>
+<span class="docEmphasis">strace</span>, you can see the success or failure of
+each operation,<a name="chp-6-ITERM-5275"></a> <a name="chp-6-ITERM-5276"></a> <a name="chp-6-ITERM-5277"></a> <a name="chp-6-ITERM-5278"></a> <a name="chp-6-ITERM-5279"></a> depending on<a name="chp-6-ITERM-5280"></a> <a name="chp-6-ITERM-5281"></a> whether data is
+available when the operation is tried.</p>
+
+
+
+<ul></ul></td></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-6-sect-1.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-6-sect-3.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,303 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 22. Views</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="triggers.html" title="Chapter 21. Triggers"><link rel="next" href="information-schema.html" title="Chapter 23. The INFORMATION_SCHEMA Information Database">
+<style>
+<!--
+ div.MsoNormal
+	{mso-style-parent:"";
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	
+	; margin-left:0cm; margin-right:0cm; margin-top:0cm}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="views"></a>
+	第22章：视图</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="views.html#alter-view">22.1. 
+			ALTER VIEW语法</a></span></dt><dt><span class="section"><a href="views.html#create-view">22.2. 
+			CREATE VIEW语法</a></span></dt><dt><span class="section"><a href="views.html#drop-view">22.3. 
+			DROP VIEW语法</a></span></dt><dt><span class="section"><a href="views.html#show-create-view">22.4. 
+			SHOW CREATE VIEW语法</a></span></dt></dl></div><a class="indexterm" name="id2997370"></a>
+	<p>在<span>5.1</span>版<span>MySQL</span>服务器中提供了视图功能（包括可更新视图）。</p>
+	<p>本章讨论了下述主题：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>使用<span>CREATE 
+	VIEW</span>或<span><span>ALTER VIEW</span>创建或更改视图。</span></p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>使用<span><span>DROP 
+	VIEW</span>销毁视图。</span></p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>使用<span><span>SHOW CREATE 
+	VIEW</span>显示视图元数据。</span></p>
+	<p>关于使用视图方面的限制，请参见<a href="restrictions.html" title="Appendix I. Feature Restrictions">附录I：特性限制</a>。</p>
+	<p>如果你已从不支持视图的较旧版本升级到<span>MySQL 5.1</span>，要想使用视图，应升级授权表，使之包含与视图有关的权限。请参见<a href="installing.html#upgrading-grant-tables" title="2.10.2. Upgrading the Grant Tables">2.10.2节，“升级授权表”</a>。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="alter-view"></a>22.1. ALTER 
+		VIEW语法</h2></div></div></div><a class="indexterm" name="id2997459"></a>
+		<pre><span>ALTER [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}]</span></pre>
+		<pre><span>&nbsp;&nbsp; &nbsp;VIEW <span><i>view_name</i></span> [(<span><i>column_list</i></span>)]</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; AS <span><i>select_statement</i></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; [WITH [CASCADED | LOCAL] CHECK OPTION]</span></pre>
+		<p>该语句用于更改已有视图的定义。其语法与<span><span>CREATE 
+		VIEW</span>类似</span>。请参见<a href="views.html#create-view" title="22.2. CREATE VIEW Syntax">22.2节，“CREATE 
+		VIEW语法”</a>。该语句需要具有针对视图的<span>CREATE 
+		VIEW</span>和<span><span>DROP</span>权限，也需要针对<span>SELECT</span>语句中引用的每一列的某些权限。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="create-view"></a>22.2. CREATE 
+		VIEW语法</h2></div></div></div><a class="indexterm" name="id2997551"></a><a class="indexterm" name="id2997558"></a><a class="indexterm" name="id2997568"></a>
+		<pre><span>CREATE [OR REPLACE] [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}]</span></pre>
+		<pre><span>&nbsp;&nbsp; &nbsp;VIEW <span><i>view_name</i></span> [(<span><i>column_list</i></span>)]</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; AS <span><i>select_statement</i></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; [WITH [CASCADED | LOCAL] CHECK OPTION]</span></pre>
+		<p>该语句能创建新的视图，如果给定了<span><span>OR 
+		REPLACE</span>子句，该语句还能</span>替换已有的视图。<span><i><span>select_statement</span></i></span>是一种<span><span>SELECT</span>语句，它给出了视图的定义。该语句可从基表或其他视图进行选择。</span></p>
+		<p>该语句要求具有针对视图的<span><span>CREATE VIEW</span>权限，以及针对由<span>SELECT</span>语句选择的每一列上的某些权限。</span>对于在<span><span>SELECT</span>语句中其他地方使用的列，</span>必须具有<span><span>SELECT</span>权限。</span>如果还有<span><span>OR 
+		REPLACE</span>子句，必须在视图上具有<span>DROP</span></span>权限。</p>
+		<p>视图属于数据库。在默认情况下，将在当前数据库创建新视图。要想在给定数据库中明确创建视图，创建时，应将名称指定为<span><i><span>db_name.view_name</span></i></span>。</p>
+		<pre><span>mysql&gt; <span><b>CREATE VIEW test.v AS SELECT * FROM t;</b></span></span></pre>
+		<p>表和视图共享数据库中相同的名称空间，因此，数据库不能包含具有相同名称的表和视图。</p>
+		<p>视图必须具有唯一的列名，不得有重复，就像基表那样。默认情况下，由<span>SELECT</span>语句检索的列名将用作视图列名。要想为视图列定义明确的名称，可使用可选的<span><i><span>column_list</span></i></span>子句，列出由逗号隔开的<span>ID</span>。<span><i><span>column_list</span></i></span>中的名称数目必须等于<span>SELECT</span>语句检索的列数。</p>
+		<p><span>SELECT</span>语句检索的列可以是对表列的简单引用。也可以是使用函数、常量值、操作符等的表达式。</p>
+		<p>对于<span>SELECT</span>语句中不合格的表或视图，将根据默认的数据库进行解释。通过用恰当的数据库名称限定表或视图名，视图能够引用表或其他数据库中的视图。</p>
+		<p>能够使用多种<span>SELECT</span>语句创建视图。视图能够引用基表或其他视图。它能使用联合、<span>UNION</span>和子查询。<span><span>SELECT</span>甚至不需引用任何表。</span>在下面的示例中，定义了从另一表选择两列的视图，并给出了根据这些列计算的表达式：</p>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t (qty INT, price INT);</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO t VALUES(3, 50);</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE VIEW v AS SELECT qty, price, qty*price AS value FROM t;</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT * FROM v;</b></span></span></pre>
+		<pre><span>+------+-------+-------+</span></pre>
+		<pre><span>| qty&nbsp; | price | value |</span></pre>
+		<pre><span>+------+-------+-------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp; 50 |&nbsp;&nbsp; 150 |</span></pre>
+		<pre><span>+------+-------+-------+</span></pre>
+		<p>视图定义服从下述限制：</p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>SELECT</span>语句不能包含<span>FROM</span>子句中的子查询。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><span>SELECT</span>语句不能引用</span>系统或用户变量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><span>SELECT</span>语句不能</span>引用预处理语句参数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在存储子程序内，定义不能引用子程序参数或局部变量。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		在定义中引用的表或视图必须存在。但是，创建了视图后，能够舍弃定义引用的表或视图。要想检查视图定义是否存在这类问题，可使用<span>CHECK 
+		TABLE</span>语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在定义中不能引用<span><span>TEMPORARY</span>表，</span>不能创建<span>TEMPORARY</span>视图。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在视图定义中命名的表必须已存在。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>不能将触发程序与视图关联在一起。</p>
+		<p><span>在视图定义中允许使用<span>ORDER BY</span>，但是，如果从特定视图进行了选择，而该视图使用了具有自己<span>ORDER 
+		BY</span>的语句，它将被忽略。</span></p>
+		<p>对于定义中的其他选项或子句，它们将被增加到引用视图的语句的选项或子句中，但效果未定义。例如，如果在视图定义中包含<span><span>LIMIT</span>子句，而且从特定视图进行了选择，而该视图使用了具有自己<span>LIMIT</span>子句的语句</span>，那么对使用哪个<span>LIMIT</span>未作定义。相同的原理也适用于其他选项，如跟在<span>SELECT</span>关键字后的<span>ALL</span>、<span>DISTINCT</span>或<span><span>SQL_SMALL_RESULT</span>，</span>并适用于其他子句，如<span>INTO</span>、<span>FOR 
+		UPDATE</span>、<span><span>LOCK 
+		IN SHARE MODE</span>、以及<span>PROCEDURE</span></span>。</p>
+		<p>如果创建了视图，并通过更改系统变量更改了查询处理环境，会影响从视图获得的结果：</p>
+		<pre><span>mysql&gt; <span><b>CREATE VIEW v AS SELECT CHARSET(CHAR(65)), COLLATION(CHAR(65));</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SET NAMES &#39;latin1&#39;;</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT * FROM v;</b></span></span></pre>
+		<pre><span>+-------------------+---------------------+</span></pre>
+		<pre><span>| CHARSET(CHAR(65)) | COLLATION(CHAR(65)) |</span></pre>
+		<pre><span>+-------------------+---------------------+</span></pre>
+		<pre><span>| latin1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | latin1_swedish_ci&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-------------------+---------------------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SET NAMES &#39;utf8&#39;;</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT * FROM v;</b></span></span></pre>
+		<pre><span>+-------------------+---------------------+</span></pre>
+		<pre><span>| CHARSET(CHAR(65)) | COLLATION(CHAR(65)) |</span></pre>
+		<pre><span>+-------------------+---------------------+</span></pre>
+		<pre><span>| utf8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | utf8_general_ci&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-------------------+---------------------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<p>可选的<span>ALGORITHM</span>子句是对标准<span>SQL</span>的<span>MySQL</span>扩展。<span><span>ALGORITHM</span>可取三个值：<span>MERGE</span></span>、<span>TEMPTABLE</span>或<span><span>UNDEFINED</span>。如果没有<span>ALGORITHM</span>子句，默认算法是<span>UNDEFINED</span>（未定义的）</span>。算法会影响<span>MySQL</span>处理视图的方式。</p>
+		<p>对于<span><span>MERGE</span>，会</span>将引用视图的语句的文本与视图定义合并起来，使得视图定义的某一部分取代语句的对应部分。</p>
+		<p>对于<span><span>TEMPTABLE</span>，视图的结果将被置于临时表中，然后使用它执行语句。</span></p>
+		<p>对于<span><span>UNDEFINED</span>，</span><span>MySQL</span>将选择所要使用的算法。如果可能，它倾向于<span>MERGE</span>而不是<span><span>TEMPTABLE</span>，这是因为<span>MERGE</span>通常更有效，而且如果使用了临时表，视图是不可更新的。</span></p>
+		<p>明确选择<span><span>TEMPTABLE</span>的<span>1</span>个原因在于，创建临时表之后、并在完成语句处理之前，能够释放基表上的锁定。与<span>MERGE</span>算法相比，锁定释放的速度更快，这样，使用视图的其他客户端不会被屏蔽过长时间。</span></p>
+		<p>视图算法可以是<span><span>UNDEFINED</span>，有三种方式：</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在<span><span>CREATE VIEW</span>语句中没有<span>ALGORITHM</span>子句。</span></p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>CREATE VIEW</span>语句有<span>1</span>个显式<span>ALGORITHM 
+		= UNDEFINED</span>子句。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>为仅能用临时表处理的视图指定<span>ALGORITHM 
+		= MERGE</span>。在这种情况下，</span><span>MySQL</span>将生成告警，并将算法设置为<span>UNDEFINED</span>。</p>
+		<p>正如前面所介绍的那样，通过将视图定义中的对应部分合并到引用视图的语句中，对<span><span>MERGE</span>进行处理。在下面的示例中，简要介绍了<span>MERGE</span>的工作方式。在该示例中，假定有<span>1</span>个具有下述定义的</span>视图<span>v_merge</span>：</p>
+		<pre><span>CREATE ALGORITHM = MERGE VIEW v_merge (vc1, vc2) AS</span></pre>
+		<pre><span>SELECT c1, c2 FROM t WHERE c3 &gt; 100;</span></pre>
+		<p>示例<span>1</span>：假定发出了下述语句：</p>
+		<pre><span>SELECT * FROM v_merge;</span></pre>
+		<p><span>MySQL</span>以下述方式处理语句：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>v_merge</span>成为<span>t</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>*</span>成为<span><span>vc1</span>、<span>vc2</span>，</span>与<span><span>c1</span>、<span>c2</span>对应</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>增加视图<span><span>WHERE</span>子句</span></p>
+		<p>所产生的将执行的语句为：</p>
+		<pre><span>SELECT c1, c2 FROM t WHERE c3 &gt; 100;</span></pre>
+		<p>示例<span>2</span>：假定发出了下述语句：</p>
+		<pre><span>SELECT * FROM v_merge WHERE vc1 &lt; 100;</span></pre>
+		<p>该语句的处理方式与前面介绍的类似，但<span><span>vc1 &lt; 
+		100</span>变为<span>c1 &lt; 100</span>，</span>并使用<span>AND</span>连接词将视图的<span><span>WHERE</span>子句添加到语句的<span>WHERE</span>子句中（增加了圆括号以确保以正确的优先顺序执行子句部分）。所得的将要执行的语句变为：</span></p>
+		<pre><span>SELECT c1, c2 FROM t WHERE (c3 &gt; 100) AND (c1 &lt; 100);</span></pre>
+		<p>事实上，将要执行的语句是具有下述形式的<span>WHERE</span>子句：</p>
+		<pre><span>WHERE (select WHERE) AND (view WHERE)</span></pre>
+		<p><span><span>MERGE</span>算法要求视图中的行和基表中的行具有一对一的关系。如果不具有该关系。必须使用临时表取而代之。如果视图包含下述结构中的任何一种，将失去一对一的关系：</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>聚合函数（<span>SUM()</span><span>,
+		<span>MIN()</span>,
+		<span>MAX()</span>,
+		<span>COUNT()</span></span><span>等）。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>DISTINCT</span><span>
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>GROUP BY</span><span>
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>HAVING</span><span>
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>UNION</span>或<span>UNION 
+		ALL</span><span> </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>仅引用文字值（在该情况下，没有基本表）。</p>
+		<p>某些视图是可更新的。也就是说，可以在诸如<span>UPDATE</span>、<span>DELETE</span>或<span><span>INSERT</span>等语句中使用它们，以更新基表的内容。对于可更新的视图，在视图中的行和基表中的行之间必须具有一对一的关系</span>。还有一些特定的其他结构，这类结构会使得视图不可更新。更具体地讲，<span>如果视图包含下述结构中的任何一种，那么它就是不可更新的：</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>聚合函数（<span>SUM()</span><span>,
+		<span>MIN()</span>,
+		<span>MAX()</span>,
+		<span>COUNT()</span></span>等）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>DISTINCT</span><span>
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>GROUP BY</span><span>
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>HAVING</span><span>
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>UNION</span>或<span>UNION 
+		ALL</span><span> </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>位于选择列表中的子查询</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>Join </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>FROM</span>子句中的不可更新视图</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><span>WHERE</span>子句中的子查询，引用<span>FROM</span>子句中的表。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>仅引用文字值（在该情况下，没有要更新的基本表）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><span>ALGORITHM = 
+		TEMPTABLE</span>（使用临时表总会使视图成为不可更新的）</span>。</p>
+		<p>关于可插入性（可用<span><span>INSERT</span>语句更新）</span>，如果它也满足关于视图列的下述额外要求，可更新的视图也是可插入的：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>不得有重复的视图列名称。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>视图必须包含没有默认值的基表中的所有列。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>视图列必须是简单的列引用而不是导出列。导出列不是简单的列引用，而是从表达式导出的。下面给出了一些导出列示例：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>3.14159</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>col1 + 3</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>UPPER(col2)</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>col3 / col4</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>(<span><i>subquery</i></span>)</span></pre>
+		<p>混合了简单列引用和导出列的视图是不可插入的，但是，如果仅更新非导出列，视图是可更新的。考虑下述视图：</p>
+		<pre><span>CREATE VIEW v AS SELECT col1, 1 AS col2 FROM t;</span></pre>
+		<p>该视图是不可插入的，这是因为<span><span>col2</span>是从表达式导出的。但是，如果更新时不更新<span>col2</span>，它是可更新的。这类更新是允许的：</span></p>
+		<pre><span>UPDATE v SET col1 = 0;</span></pre>
+		<p>下述更新是不允许的，原因在于，它试图更新导出列：</p>
+		<pre><span>UPDATE v SET col2 = 0;</span></pre>
+		<p>在某些情况下，能够更新多表视图，假定它能使用<span>MERGE</span>算法进行处理。为此，视图必须使用内部联合（而不是外部联合或<span><span>UNION</span>）。</span>此外，仅能更新视图定义中的单个表，因此，<span><span>SET</span>子句必须仅命名视图中某一表的列。即使从理论上讲也是可更新的，不允许使用<span>UNION 
+		ALL</span>的视图，这是因为，在实施中将使用临时表来处理它们。</span></p>
+		<p>对于多表可更新视图，如果是将其插入单个表中，<span><span>INSERT</span>能够工作。</span>不支持<span><span>DELETE</span>。</span></p>
+		<p>对于可更新视图，可给定<span><span>WITH CHECK 
+		OPTION</span>子句来防止插入或更新行，除非作用在行上的<i><span>select_statement</span></i></span>中的<span>WHERE</span>子句为“真”。</p>
+		<p>在关于可更新视图的<span><span>WITH CHECK 
+		OPTION</span>子句中，当视图是根据另一个视图定义的时，<span>LOCAL</span></span>和<span><span>CASCADED</span>关键字</span>决定了检查测试的范围。<span><span>LOCAL</span>关键字对<span>CHECK 
+		OPTION</span>进行了限制，使其仅作用在定义的视图上，<span>CASCADED</span>会对将进行评估的基表进行检查。如果未给定任一关键字，默认值为<span>CASCADED</span></span>。请考虑下述表和视图集合的定义：</p>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t1 (a INT);</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE VIEW v1 AS SELECT * FROM t1 WHERE a &lt; 2</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>WITH CHECK OPTION;</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE VIEW v2 AS SELECT * FROM v1 WHERE a &gt; 0</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>WITH LOCAL CHECK OPTION;</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE VIEW v3 AS SELECT * FROM v1 WHERE a &gt; 0</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>WITH CASCADED CHECK OPTION;</b></span></span></pre>
+		<p>这里，视图<span><span>v2</span>和<span>v3</span>是根据另一视图<span>v1</span>定义的</span>。<span><span>v2</span>具有<span>LOCAL</span>检查选项，因此，仅会针对<span>v2</span>检查对插入项进行测试。<span>v3</span></span>具有<span><span>CASCADED</span>检查选项，因此，不仅会针对它自己的检查对插入项进行测试，</span>也会针对基本视图的检查<span>对插入项进行测试</span>。在下面的语句中，介绍了这些差异：</p>
+		<pre><span>ql&gt; INSERT INTO v2 VALUES (2);</span></pre>
+		<pre><span>Query OK, 1 row affected (0.00 sec)</span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO v3 VALUES (2);</b></span></span></pre>
+		<pre><span>ERROR 1369 (HY000): CHECK OPTION failed &#39;test.v3&#39;</span></pre>
+		<p>视图的可更新性可能会受到系统变量<span><span>updatable_views_with_limit</span>的值的影响。</span>请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+		<p><span>INFORMATION_SCHEMA</span>包含<span>1</span>个<span><span>VIEWS</span>表，从该表可获取关于视图对象的信息</span>。请参见<a href="information-schema.html#views-table" title="23.1.15. The INFORMATION_SCHEMA VIEWS Table">23.1.15节，“INFORMATION_SCHEMA VIEWS表”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="drop-view"></a>22.3. DROP 
+		VIEW语法</h2></div></div></div><a class="indexterm" name="id2998843"></a>
+		<pre><span>DROP VIEW [IF EXISTS]</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; <span><i>view_name</i></span> [, <span><i>view_name</i></span>] ...</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; [RESTRICT | CASCADE]</span></pre>
+		<p><span><span>DROP VIEW</span>能够删除<span>1</span>个或多个视图。必须在每个视图上拥有<span>DROP</span>权限。</span></p>
+		<p>可以使用关键字<span><span>IF EXISTS</span>来防止</span>因不存在的视图而<span>出错。</span>给定了该子句时，将为每个不存在的视图生成<span><span>NOTE</span>。</span>请参见<a href="sql-syntax.html#show-warnings" title="13.5.4.22. SHOW WARNINGS Syntax">13.5.4.22节，“SHOW 
+		WARNINGS语法”</a>。</p>
+		<p><span>如果给定了<span>RESTRICT</span></span>和<span><span>CASCADE</span>，将解析并忽略它们。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="show-create-view"></a>22.4. SHOW 
+		CREATE VIEW语法</h2></div></div></div><a class="indexterm" name="id2998946"></a>
+		<pre><span>SHOW CREATE VIEW <span><i>view_name</i></span></span></pre>
+		<p>该语句给出了<span>1</span>个创建给定视图的<span><span>CREATE 
+		VIEW</span>语句。</span></p>
+		<pre><span>mysql&gt; <span><b>SHOW CREATE VIEW v;</b></span></span></pre>
+		<pre><span>+------+----------------------------------------------------+</span></pre>
+		<pre><span>| View | Create View&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;|</span></pre>
+		<pre><span>+------+----------------------------------------------------+</span></pre>
+		<pre><span>| v&nbsp;&nbsp;&nbsp; | CREATE VIEW `test`.`v` AS select 1 AS `a`,2 AS `b` |</span></pre>
+		<pre><span>+------+----------------------------------------------------+</span></pre>
+		<div align="center">
+			<span><hr size="2" width="100%" align="center"></span>
+		</div>
+		<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div></div>
+</body></html>

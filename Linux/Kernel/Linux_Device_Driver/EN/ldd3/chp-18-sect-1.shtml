@@ -1,0 +1,601 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>18.1. A Small TTY Driver</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-18.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-18-sect-2.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-18-sect-1"></a>
+<H3 class="docSection1Title">18.1. A Small TTY Driver</H3>
+
+<p class="docText">To explain how the tty core works, we create a small tty driver that
+can be loaded, written to and read from, and unloaded. The main data
+structure of any tty driver is the <tt>struct</tt>
+<tt>tty_driver</tt>. It it used to register and unregister
+a tty driver with the tty core and is described in the kernel header
+file <i>&lt;linux/tty_driver.h&gt;</i>.</p>
+
+<p class="docText">To create a <tt>struct</tt> <tt>tty_driver</tt>,
+the function <a name="chp-18-ITERM-7892"></a>
+<a name="chp-18-ITERM-7893"></a><span class="docEmphasis">alloc_tty_driver</span>
+must be called with the number of tty devices this driver supports as
+the paramater. This can be done with the following brief code:</p>
+
+<pre>/* allocate the tty driver */
+tiny_tty_driver = alloc_tty_driver(TINY_TTY_MINORS);
+if (!tiny_tty_driver)
+    return -ENOMEM;</pre><BR>
+
+
+<p class="docText">After the <span class="docEmphasis">alloc_tty_driver</span> function is
+successfully called, the <tt>struct</tt>
+<tt>tty_driver</tt> should be initialized with the proper
+information based on the needs of the tty driver. This structure
+contains a lot of different fields, but not all of them have to be
+initialized in order to have a working tty driver. Here is an example
+that shows how to initialize the structure and sets up enough of the
+fields to create a working tty driver. It uses the
+<span class="docEmphasis">tty_set_operations</span> function to help copy over
+the set of function operations that is defined in the driver:</p>
+
+<pre>static struct tty_operations serial_ops = {
+    .open = tiny_open,
+    .close = tiny_close,
+    .write = tiny_write,
+    .write_room = tiny_write_room,
+    .set_termios = tiny_set_termios,
+};
+
+...
+
+    /* initialize the tty driver */
+    tiny_tty_driver-&gt;owner = THIS_MODULE;
+    tiny_tty_driver-&gt;driver_name = "tiny_tty";
+    tiny_tty_driver-&gt;name = "ttty";
+    tiny_tty_driver-&gt;devfs_name = "tts/ttty%d";
+    tiny_tty_driver-&gt;major = TINY_TTY_MAJOR,
+    tiny_tty_driver-&gt;type = TTY_DRIVER_TYPE_SERIAL,
+    tiny_tty_driver-&gt;subtype = SERIAL_TYPE_NORMAL,
+    tiny_tty_driver-&gt;flags = TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS,
+    tiny_tty_driver-&gt;init_termios = tty_std_termios;
+    tiny_tty_driver-&gt;init_termios.c_cflag = B9600 | CS8 | CREAD | HUPCL | CLOCAL;
+    tty_set_operations(tiny_tty_driver, &amp;serial_ops);</pre><br>
+
+
+<p class="docText">The variables and functions listed above, and how this structure is
+used, are explained in the rest of the chapter.</P>
+
+<p class="docText">To register this driver with the tty core, the
+<tt>struct</tt> <tt>tty_driver</tt> must be
+passed to the
+<i></i><a name="chp-18-ITERM-7894"></a>
+<a name="chp-18-ITERM-7895"></a>
+<a name="chp-18-ITERM-7896"></a><span class="docEmphasis">tty_register_driver</span>
+function:</P>
+
+<pre>/* register the tty driver */
+retval = tty_register_driver(tiny_tty_driver);
+if (retval) {
+    printk(KERN_ERR "failed to register tiny tty driver");
+    put_tty_driver(tiny_tty_driver);
+    return retval;
+}</pre><br>
+
+
+<p class="docText">When <span class="docEmphasis">tty_register_driver</span> is called, the kernel
+creates all of the different sysfs tty files for the whole range of
+minor devices that this tty driver can have. If you use
+<span class="docEmphasis">devfs</span> (not covered in this book) and unless the
+<tt>TTY_DRIVER_NO_DEVFS</tt> flag is specified,
+<span class="docEmphasis">devfs</span> files are created, too. The flag may be
+specified if you want to call
+<span class="docEmphasis">tty_register_device</span> only for the devices that
+actually exist on the system, so the user always has an up-to-date
+view of the devices present in the kernel, which is what
+<span class="docEmphasis">devfs</span> users expect.</P>
+
+<p class="docText">After registering itself, the driver registers the devices it
+controls through the <span class="docEmphasis">tty_register_device</span>
+function. This function has three arguments:</p>
+
+<ul><li><p class="docList">A pointer to the <tt>struct</tt>
+<tt>tty_driver</tt> that the device belongs to.</p></li><li><p class="docList">The minor number of the device.</p></li><li><p class="docList">A pointer to the <tt>struct</tt> <tt>device</tt>
+that this tty device is bound to. If the tty device is not bound to
+any <tt>struct</tt> <tt>device</tt>, this
+argument can be set to <tt>NULL</tt>.</p></li></ul>
+<p class="docText">Our driver registers all of the tty devices at once, as they are
+virtual and not bound to any physical devices:</p>
+
+<pre>for (i = 0; i &lt; TINY_TTY_MINORS; ++i)
+    tty_register_device(tiny_tty_driver, i, NULL);</pre><BR>
+
+
+<p class="docText">To unregister the driver with the tty core, all tty devices that were
+registered by calling <span class="docEmphasis">tty_register_device</span> need
+to be cleaned up with a call to
+<span class="docEmphasis">tty_unregister_device</span>. Then the
+<tt>struct</tt> <tt>tty_driver</tt> must
+be<a name="chp-18-ITERM-7897"></a>
+<a name="chp-18-ITERM-7898"></a>
+unregistered with a call to
+<span class="docEmphasis">tty_unregister_driver</span>:</p>
+
+<pre>for (i = 0; i &lt; TINY_TTY_MINORS; ++i)
+    tty_unregister_device(tiny_tty_driver, i);
+tty_unregister_driver(tiny_tty_driver);</pre><BR>
+
+
+<a name="chp-18-sect-1.1"></a>
+<H4 class="docSection2Title">18.1.1. struct termios</h4>
+
+<p class="docText">The <tt>init_termios</tt> variable<a name="chp-18-ITERM-7899"></a>
+<a name="chp-18-ITERM-7900"></a> <a name="chp-18-ITERM-7901"></a> <a name="chp-18-ITERM-7902"></a> in the
+<tt>struct</tt> <tt>tty_driver</tt> is a
+<tt>struct</tt> <tt>termios</tt>. This variable
+is used to provide a sane set of line settings if the port is used
+before it is initialized by a user. The driver initializes the
+variable with a standard set of values, which is copied from the
+<tt>tty_std_termios</tt> variable.
+<tt>tty_std_termios</tt> is defined in the tty core as:</p>
+
+<pre>struct termios tty_std_termios = {
+    .c_iflag = ICRNL | IXON,
+    .c_oflag = OPOST | ONLCR,
+    .c_cflag = B38400 | CS8 | CREAD | HUPCL,
+    .c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK |
+               ECHOCTL | ECHOKE | IEXTEN,
+    .c_cc = INIT_C_CC
+};</pre><br>
+
+
+<p class="docText">The <tt>struct termios</tt> structure is used to hold all
+of the current line settings for a specific port on the tty device.
+These line settings control the current baud rate, data size, data
+flow settings, and many other values. The different fields of this
+structure are:</P>
+
+<dl class="docList"><dt><span class="docPubcolor"> <span class="docPubcolor"><span class="docMonofont">tcflag_t c_iflag;</span></span> </span></dt></P>
+<dd>
+<p class="docList">The input mode flags</P>
+</dd>
+<dt><span class="docPubcolor"> <span class="docPubcolor"><span class="docMonofont">tcflag_t c_oflag;</span></span> </span></dt></p>
+<dd>
+<p class="docList">The output mode flags</p>
+</dd>
+<dt><span class="docPubcolor"> <span class="docPubcolor"><span class="docMonofont">tcflag_t c_cflag;</span></span> </span></dt></P>
+<dd>
+<p class="docList">The control mode flags</p>
+</dd>
+<dt><span class="docPubcolor"> <span class="docPubcolor"><span class="docMonofont">tcflag_t c_lflag;</span></span> </span></dt></p>
+<dd>
+<p class="docList">The local mode flags</p>
+</dd>
+<dt><span class="docPubcolor"> <span class="docPubcolor"><span class="docMonofont">cc_t c_line;</span></span> </span></dt></P>
+<dd>
+<p class="docList">The line discipline type</p>
+</dd>
+<dt><span class="docPubcolor"> <span class="docPubcolor"><span class="docMonofont">cc_t c_cc[NCCS];</span></span> </span></dt></p>
+<dd>
+<p class="docList">An array of control characters</p>
+</dd>
+</dl>
+
+<p class="docText">All of the mode flags are defined as a large bitfield. The different
+values of the modes, and what they are used for, can be seen in the
+termios manpages available in any Linux distribution. The kernel
+provides a set of useful macros to get at the different bits. These
+macros are defined in the header file
+<I>include/linux/tty.h</i>.</P>
+
+<p class="docText">All the fields that were defined in the
+<tt>tiny_tty_driver</tt><a name="chp-18-ITERM-7903"></a>
+<a name="chp-18-ITERM-7904"></a>
+<a name="chp-18-ITERM-7905"></a> variable are necessary to have a
+working tty driver. The <tt>owner</tt> field is necessary
+in order to prevent the tty driver from being unloaded while the tty
+port is open. In previous kernel versions, it was up to the tty
+driver itself to handle the module reference counting logic. But
+kernel programmers determined that it would to be difficult to solve
+all of the different possible race conditions, and so the tty core
+now handles all of this control for the tty drivers.</p>
+
+<p class="docText">The <tt>driver_name</tt> and <tt>name</tt> fields
+look very similar, yet are used for different purposes. The
+<tt>driver_name</tt> variable should be set to something
+short, descriptive, and unique among all tty drivers in the kernel.
+This is because it shows up in the
+<i>/proc/tty/drivers</i> file to describe the driver to
+the user and in the sysfs tty class directory of tty drivers
+currently loaded. The <tt>name</tt> field is used to define
+a name for the individual tty nodes assigned to this tty driver in
+the <i>/dev</i> tree. This string is used to create a
+tty device by appending the number of the tty device being used at
+the end of the string. It is also used to create the device name in
+the sysfs <i>/sys/class/tty/</i> directory. If devfs is
+enabled in the kernel, this name should include any subdirectory that
+the tty driver wants to be placed into. As an example, the serial
+driver in the kernel sets the name field to <tt>tts/</tt>
+if devfs is enabled and <tt>ttyS</tt> if it is not. This
+string is also displayed in the
+<i>/proc/tty/drivers</i> file.</p>
+
+<p class="docText">As we mentioned, the <i>/proc/tty/drivers</i> file
+shows all of the currently registered tty drivers. With the
+<span class="docEmphasis">tiny_tty</span> driver registered in the kernel and no
+<span class="docEmphasis">devfs</span>, this file looks something like the
+following:</p>
+
+<pre>$ <B>cat /proc/tty/drivers</b>
+tiny_tty             /dev/ttty     240     0-3 serial
+usbserial            /dev/ttyUSB   188   0-254 serial
+serial               /dev/ttyS       4  64-107 serial
+pty_slave            /dev/pts      136   0-255 pty:slave
+pty_master           /dev/ptm      128   0-255 pty:master
+pty_slave            /dev/ttyp       3   0-255 pty:slave
+pty_master           /dev/pty        2   0-255 pty:master
+unknown              /dev/vc/        4    1-63 console
+/dev/vc/0            /dev/vc/0       4       0 system:vtmaster
+/dev/ptmx            /dev/ptmx       5       2 system
+/dev/console         /dev/console    5       1 system:console
+/dev/tty             /dev/tty        5       0 system:/dev/tty</pre><br>
+
+
+<p class="docText">Also, the <a name="chp-18-ITERM-7906"></a>
+<a name="chp-18-ITERM-7907"></a> <a name="chp-18-ITERM-7908"></a>sysfs directory
+<I>/sys/class/tty</I> looks something like the
+following when the tiny_tty driver is registered with the tty core:</p>
+
+<pre>$ <b>tree /sys/class/tty/ttty*</b>
+/sys/class/tty/ttty0
+`-- dev
+/sys/class/tty/ttty1
+`-- dev
+/sys/class/tty/ttty2
+`-- dev
+/sys/class/tty/ttty3
+`-- dev
+
+$ <b>cat /sys/class/tty/ttty0/dev</b> 
+240:0</pre><BR>
+
+
+<p class="docText">The major variable describes what the major number for this driver
+is. The type and subtype variables declare what type of tty driver
+this driver is. For our example, we are a serial driver of a
+"normal" type. The only other
+subtype for a tty driver would be a
+"callout" type. Callout devices
+were traditionally used to control the line settings of a device. The
+data would be sent and received through one device node, and any line
+setting changes would be sent to a different device node, which was
+the callout device. This required the use of two minor numbers for
+every single tty device. Thankfully, almost all drivers handle both
+the data and line settings on the same device node, and the callout
+type is rarely used for new drivers.</p>
+
+<p class="docText">The <tt>flags</tt> variable is used by both the tty driver
+and the tty core to indicate the current state of the driver and what
+kind of tty driver it is. Several bitmask macros are defined that you
+must use when testing or manipulating the flags. Three bits in the
+<tt>flags</tt> variable can be set by the driver:</P>
+
+<a name="chp-18-ITERM-7909"></a><a name="chp-18-ITERM-7910"></a><a name="chp-18-ITERM-7911"></a><a name="chp-18-ITERM-7912"></a><a name="chp-18-ITERM-7913"></a><a name="chp-18-ITERM-7914"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_DRIVER_RESET_TERMIOS</span></span><a name="chp-18-ITERM-7909"></a>
+<a name="chp-18-ITERM-7910"></a> </span></dt></p>
+<dd>
+<p class="docList">This flag states that the tty core resets the termios setting
+whenever the last process has closed the device. This is useful for
+the console and pty drivers. For instance, suppose the user leaves a
+terminal in a weird state. With this flag set, the terminal is reset
+to a normal value when the user logs out or the process that
+controlled the session is "killed."</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_DRIVER_REAL_RAW</span></span><a name="chp-18-ITERM-7911"></a>
+<a name="chp-18-ITERM-7912"></a> </span></dt></P>
+<dd>
+<p class="docList">This flag states that the tty driver guarantees to send notifications
+of parity or break characters up-to-the-line discipline. This allows
+the line discipline to process received characters in a much quicker
+manner, as it does not have to inspect every character received from
+the tty driver. Because of the speed benefits, this value is usually
+set for all tty drivers.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">TTY_DRIVER_NO_DEVFS</span></span><a name="chp-18-ITERM-7913"></a>
+<a name="chp-18-ITERM-7914"></a> </span></dt></P>
+<dd>
+<p class="docList">This flag states that when the call to
+<span class="docEmphasis">tty_register_driver</span> is made, the tty core does
+not create any devfs entries for the tty devices. This is useful for
+any driver that dynamically creates and destroys the minor devices.
+Examples of drivers that set this are the USB-to-serial drivers, the
+USB modem driver, the USB Bluetooth tty driver, and a number of the
+standard serial port drivers.</P>
+</dd>
+</dl>
+<p class="docText">When the tty driver later wants to register a specific tty device
+with the tty core, it must call
+<span class="docEmphasis">tty_register_device</span>, with a pointer to the tty
+driver, and the minor number of the device that has been created. If
+this is not done, the tty core still passes all calls to the tty
+driver, but some of the internal tty-related functionality might not
+be present. This includes <i>/sbin/hotplug</i>
+notification of new tty devices and sysfs representation of the tty
+device. When the registered tty device is removed from the machine,
+the tty driver must call <span class="docEmphasis">tty_unregister_device</span>.</p>
+
+<p class="docText">The one remaining bit in this variable is controlled by the tty core
+and is called <tt>TTY_DRIVER_INSTALLED</tt>. This flag is
+set by the tty core after the driver has been registered and should
+never be set by a <a name="chp-18-ITERM-7915"></a> <a name="chp-18-ITERM-7916"></a> <a name="chp-18-ITERM-7917"></a> <a name="chp-18-ITERM-7918"></a>tty driver.</p>
+
+
+
+<UL></ul></td></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-18.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-18-sect-2.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

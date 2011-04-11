@@ -1,0 +1,369 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>文本输入构件 Text Entries</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="状态栏 Statusbars"
+HREF="x982.html"><LINK
+REL="NEXT"
+TITLE="微调按钮 Spin Buttons"
+HREF="x1030.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x982.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1030.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-TEXTENTRIES">文本输入构件 Text Entries</H1
+><P
+>文本输入构件(Entry widget)允许在一个单行文本框里输入和显示一行文本。文本可以用函数进行操作，如将新的文本替换、前插、追加到文本输入构件的当前内容中。</P
+><P
+>用下面的函数创建一个文本输入构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_entry_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>下面的函数改变文本输入构件当前的文本内容。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_entry_set_text( GtkEntry    *entry,
+                         const gchar *text );</PRE
+></TD
+></TR
+></TABLE
+><P
+>gtk_entry_set_text() 函数用新的内容(contents)取代文本输入构件当前的内容。你可以注意到文本输入构件的类(class Entry)体现了可编辑的接口(Editable interface)(是的,gobject提供了类似Java的接口),它包含更多的函数来操作内容。</P
+><P
+>文本输入构件的内容可以用下面的函数获取。这在下面介绍的回调函数中是很有用的。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>const gchar *gtk_entry_get_text( GtkEntry *entry );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个函数返回的值在其内部被使用，不要用free()或g_free()释放它。</P
+><P
+>如果我们不想用户通过输入文字改变文本输入构件的内容，我们可以改变它的可编辑状态。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_editable_set_editable( GtkEditable *entry,
+                                gboolean     editable );</PRE
+></TD
+></TR
+></TABLE
+><P
+>上面的函数可以让我们通过传递一个TRUE或 FALSE 值作为<TT
+CLASS="LITERAL"
+>editable</TT
+>参数来改变文本输入构件的可编辑状态。</P
+><P
+>如果想让文本输入构件输入的文本不回显(比如用于接收口令)，可以使用下面的函数，它也是取一个布尔值作为参数</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_entry_set_visibility( GtkEntry *entry,
+                               gboolean  visible );</PRE
+></TD
+></TR
+></TABLE
+><P
+>文本你的某一部分可以用下面的函数设置为被选中。这个常在为文本输入构件设置了一个缺省值时使用，以方便用户删除它。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_editable_select_region( GtkEditable *entry,
+                                 gint         start,
+                                 gint         end );</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果我们想在用户输入文本时进行响应，可以为<TT
+CLASS="LITERAL"
+>activate</TT
+>或<TT
+CLASS="LITERAL"
+>changed</TT
+>信号设置回调函数。当用户在文本输入构件内部按回车键时引发Activate信号；在每次文本输入构件的文本发生变化时引发Changed信号，比如，每输入或删除一个字符。</P
+><P
+>下面的代码是一个使用文本输入构件的示例。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/entry.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdio.h&#62;
+#include &#60;stdlib.h&#62;
+#include &#60;gtk/gtk.h&#62;
+
+void enter_callback( GtkWidget *widget,
+                     GtkWidget *entry )
+{
+  const gchar *entry_text;
+  entry_text = gtk_entry_get_text (GTK_ENTRY (entry));
+  printf("Entry contents: %s\n", entry_text);
+}
+
+void entry_toggle_editable( GtkWidget *checkbutton,
+                            GtkWidget *entry )
+{
+  gtk_editable_set_editable (GTK_EDITABLE (entry),
+                             GTK_TOGGLE_BUTTON (checkbutton)-&#62;active);
+}
+
+void entry_toggle_visibility( GtkWidget *checkbutton,
+                              GtkWidget *entry )
+{
+  gtk_entry_set_visibility (GTK_ENTRY (entry),
+			    GTK_TOGGLE_BUTTON (checkbutton)-&#62;active);
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+
+    GtkWidget *window;
+    GtkWidget *vbox, *hbox;
+    GtkWidget *entry;
+    GtkWidget *button;
+    GtkWidget *check;
+    gint tmp_pos;
+
+    gtk_init (&#38;argc, &#38;argv);
+
+    /* 创建一个新窗口 */
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_widget_set_size_request (GTK_WIDGET (window), 200, 100);
+    gtk_window_set_title (GTK_WINDOW (window), "GTK Entry");
+    g_signal_connect (G_OBJECT (window), "destroy",
+                      G_CALLBACK (gtk_main_quit), NULL);
+    g_signal_connect_swapped (G_OBJECT (window), "delete_event",
+                              G_CALLBACK (gtk_widget_destroy), 
+                              window);
+
+    vbox = gtk_vbox_new (FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_widget_show (vbox);
+
+    entry = gtk_entry_new ();
+    gtk_entry_set_max_length (GTK_ENTRY (entry), 50);
+    g_signal_connect (G_OBJECT (entry), "activate",
+		      G_CALLBACK (enter_callback),
+		      entry);
+    gtk_entry_set_text (GTK_ENTRY (entry), "hello");
+    tmp_pos = GTK_ENTRY (entry)-&#62;text_length;
+    gtk_editable_insert_text (GTK_EDITABLE (entry), " world", -1, &#38;tmp_pos);
+    gtk_editable_select_region (GTK_EDITABLE (entry),
+			        0, GTK_ENTRY (entry)-&#62;text_length);
+    gtk_box_pack_start (GTK_BOX (vbox), entry, TRUE, TRUE, 0);
+    gtk_widget_show (entry);
+
+    hbox = gtk_hbox_new (FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (vbox), hbox);
+    gtk_widget_show (hbox);
+                                  
+    check = gtk_check_button_new_with_label ("Editable");
+    gtk_box_pack_start (GTK_BOX (hbox), check, TRUE, TRUE, 0);
+    g_signal_connect (G_OBJECT (check), "toggled",
+	              G_CALLBACK (entry_toggle_editable), entry);
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (check), TRUE);
+    gtk_widget_show (check);
+    
+    check = gtk_check_button_new_with_label ("Visible");
+    gtk_box_pack_start (GTK_BOX (hbox), check, TRUE, TRUE, 0);
+    g_signal_connect (G_OBJECT (check), "toggled",
+	              G_CALLBACK (entry_toggle_visibility), entry);
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (check), TRUE);
+    gtk_widget_show (check);
+                                   
+    button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
+    g_signal_connect_swapped (G_OBJECT (button), "clicked",
+			      G_CALLBACK (gtk_widget_destroy),
+			      window);
+    gtk_box_pack_start (GTK_BOX (vbox), button, TRUE, TRUE, 0);
+    GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+    gtk_widget_grab_default (button);
+    gtk_widget_show (button);
+    
+    gtk_widget_show (window);
+
+    gtk_main();
+
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x982.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1030.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>状态栏 Statusbars</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>微调按钮 Spin Buttons</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

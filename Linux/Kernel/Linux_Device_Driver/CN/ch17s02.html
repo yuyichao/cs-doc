@@ -1,0 +1,164 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.2.&#160;连接到内核-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="next" href="ch17s03.html" title="17.3.&#160;net_device 结构的详情">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.2.&#160;连接到内核</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ConnectingtotheKernel"></a>17.2.&#160;连接到内核</h2></div></div></div>
+<p>我们从分析 snull 的源码来查看网络驱动的结构开始. 把几个驱动的源码留在手边, 对于下面的讨论和得知真实世界中的 Linux 网络驱动如何运行是会有帮助的.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="DeviceRegistration"></a>17.2.1.&#160;设备注册</h3></div></div></div>
+<p>当一个驱动模块加载进一个运行着的内核中, 它请求资源并提供功能; 这里没有新内容. 并且在资源是如何请求上也没有新东西. 驱动应当探测它的设备和它的硬件位置( I/O 端口和 IRQ 线 ) -- 但是不注册它们 --如在第 10 章的" 安装一个中断处理程序 "中所述. 一个网络驱动通过它的模块初始化函数注册的方式与字符和块驱动是不同的. 因为没有对等的主次编号给网络接口, 一个网络驱动不请求这样一个号. 相反, 驱动为每个刚刚探测到的接口在一个全局的网络设备列表里插入一个数据结构.</p>
+<p>每个接口由一个结构 net_device 项来描述, 它在 &lt;linux/netdevice.h&gt; 里定义. snull 驱动留有指向两个这样结构的指针, 在一个简单数组里.</p>
+
+struct net_device *snull_devs[2]; 
+<p>net_device 结构, 如同许多其他内核结构, 包含一个 kobject, 以及因此它可被引用计数并通过 sysfs 输出. 如同别的这样的结构, 它必须动态分配. 进行这种分配的内核函数是 alloc_netdev, 它有下列原型:</p>
+<pre class="programlisting">
+struct net_device *alloc_netdev(int sizeof_priv,
+                                            const char *name,
+                                            void (*setup)(struct net_device *));
+</pre>
+<p>这里, sizeof_priv 是驱动的的"私有数据"区的大小; 对于网络驱动, 这个区是同 net_device 结构一起分配的. 实际上, 这两个是是在一个大内存块中一起分配的, 但是驱动作者应当假装不知道这一点. name 是这个接口的名子, 如同用户空间看到的一样; 这个名子可以有一个 printf 风格的 %d 在里面. 内核用下一个可用的接口号来替换这个 %d. 最后, setup 是一个初始化函数的指针, 被调用来设置 net_device 结构的剩余部分. 我们即将进入这个初始化函数, 但是现在, 为强化起见, snull 以这样的方式分配它的两个设备结构:</p>
+<pre class="programlisting">
+snull_devs[0] = alloc_netdev(sizeof(struct snull_priv), "sn%d",
+                             snull_init);
+snull_devs[1] = alloc_netdev(sizeof(struct snull_priv), "sn%d",
+                             snull_init);
+if (snull_devs[0] == NULL || snull_devs[1] == NULL)
+    goto out;
+</pre>
+<p>象通常一样, 我们必须检查返回值来确保分配成功.</p>
+<p>网络子系统为各种接口提供了一些帮助函数, 包裹着 alloc_netdev. 最通用的是 alloc_etherdev, 定义在 &lt;linux/etherdevice.h&gt;:</p>
+<pre class="programlisting">
+struct net_device *alloc_etherdev(int sizeof_priv); 
+</pre>
+<p>这个函数分配一个网络设备使用 eth%d 作为参数 name. 它提供了自己的初始化函数 ( ether_setup )来设置几个 net_device 字段, 使用对以太网设备合适的值. 因此, 没有驱动提供的初始化函数给 alloc_etherdev; 驱动应当只完成它要求的初始化, 直接在一个成功的分配之后. 其他类型驱动的编写者可能想利用这些帮助函数的其中一个, 例如 alloc_fcdev ( 定义在 &lt;linux/fcdevice.h&gt; ) 为 fiber-channel 设备, alloc_fddidev (&lt;linux/fddidevice.h&gt;) 为 FDDI 设备, 或者 aloc_trdev (&lt;linux/trdevice.h&gt;) 为令牌环设备.</p>
+<p>snull 可以顺利使用 alloc_etherdev; 我们选择使用 alloc_netdev 来代替, 作为演示低层接口的方式, 并且给我们控制安排给接口的名子.</p>
+<p>一旦 net_device 结构完成初始化, 完成这个过程就只是传递这个结构给 register_netdev. 在 snull 中, 调用看来如同这样:</p>
+<pre class="programlisting">
+for (i = 0; i &lt; 2; i++)
+    if ((result = register_netdev(snull_devs[i])))
+        printk("snull: error %i registering device \"%s\"\n",
+               result, snull_devs[i]-&gt;name);
+</pre>
+<p>一些经常的注意问题这里提一下: 在你调用 register_netdev 时, 你的驱动可能会马上被调用来操作设备. 因此, 你不应当注册设备直到所有东西都已经完全初始化.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="InitializingEachDevice"></a>17.2.2.&#160;初始化每一个设备</h3></div></div></div>
+<p>我们已经看到了 net_device 结构的分配和注册, 但是我们越过了中间的完全初始化这个结构的步骤. 注意 net_device 结构在运行时一直是放在一起; 它不能如同一个 file_operations 或者 block_device_opreations 结构一样在编译时设置. 必须在调用 register_netdev 之前完成初始化. net_device 结构又大又复杂; 幸运的是, 内核负责了一些以太网范围中的缺省值, 通过 ether_setup 函数(由 alloc_etherdev 调用).</p>
+<p>因为 snull 使用 alloc_netdev, 它有单独的初始化函数. 该函数的核心( snull_init )如下:</p>
+<pre class="programlisting">
+ether_setup(dev); /* assign some of the fields */
+dev-&gt;open = snull_open;
+dev-&gt;stop = snull_release;
+dev-&gt;set_config = snull_config;
+dev-&gt;hard_start_xmit = snull_tx;
+dev-&gt;do_ioctl = snull_ioctl;
+dev-&gt;get_stats = snull_stats;
+dev-&gt;rebuild_header = snull_rebuild_header;
+dev-&gt;hard_header = snull_header;
+dev-&gt;tx_timeout = snull_tx_timeout;
+dev-&gt;watchdog_timeo = timeout;
+/* keep the default flags, just add NOARP */
+dev-&gt;flags |= IFF_NOARP;
+dev-&gt;features |= NETIF_F_NO_CSUM;
+dev-&gt;hard_header_cache = NULL; /* Disable caching */
+</pre>
+<p>上面的代码是对 net_device 结构的例行初始化; 大部分是存储我们的各种驱动函数指针. 代码的单个不寻常的特性是设置 IFF_NOARP 在 flags 里面. 这个指出该接口不能使用 ARP. ARP 是一个低层以太网协议; 它的工作是将 IP 地址转变成以太网介质存取控制 (MAC) 地址. 因为由 snull 模拟的远程系统并不存在, 就没人回答对它们的 ARP 请求. 不想因为增加 ARP 实现使 snull 变复杂, 我们选择标识接口作为不能处理这个协议. 其中的对 hard_header_cache 赋值是同样理由: 它关闭了这个接口的(不存在的) ARP 回答. 这个主题在本章后面的" MAC 地址解析"一节中详述.</p>
+<p>代码初始化也设置了几个和发送超时的处理有关的几个变量( tx_timeout 和 watchdog_time ). 我们在"发送超时"一节完整地涉及这个主题.</p>
+<p>我们现在看结构 net_device 的另一个成员, priv. 它的角色近似于我们用在字符驱动上的 private_data 指针. 不同于 fops-&gt;private_data, 这个 priv 指针是随 net_device 结构一起分配的. 也不鼓励直接存取 priv 成员, 由于性能和灵活性的原因. 当一个驱动需要存取私有数据指针, 应当使用 netdev_priv 函数. 因此, snull 驱动充满着这样的声明:</p>
+<pre class="programlisting">
+struct snull_priv *priv = netdev_priv(dev); 
+</pre>
+<p>snull 模块声明了一个 snull_priv 数据结构来给 priv 使用:</p>
+<pre class="programlisting">
+struct snull_priv {
+    struct net_device_stats stats;
+    int status;
+    struct snull_packet *ppool;
+    struct snull_packet *rx_queue; /* List of incoming packets */
+    int rx_int_enabled;
+    int tx_packetlen;
+    u8 *tx_packetdata;
+    struct sk_buff *skb;
+    spinlock_t lock;
+
+};
+</pre>
+<p>这个结构包括, 还有其他东西, 一个 net_device_stats 结构的实例, 这是放置接口统计量的标准地方. 下面的在 snull_init 中的各行分配并初始化 dev-&gt;priv:</p>
+<pre class="programlisting">
+priv = netdev_priv(dev);
+memset(priv, 0, sizeof(struct snull_priv));
+spin_lock_init(&amp;priv-&gt;lock);
+snull_rx_ints(dev, 1); /* enable receive interrupts */
+</pre>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ModuleUnloading"></a>17.2.3.&#160;模块卸载</h3></div></div></div>
+<p>模块卸载时没什么特别的. 模块的清理函数只是注销接口, 进行任何需要的内部清理, 释放 net_device 结构回系统.</p>
+<pre class="programlisting">
+void snull_cleanup(void)
+{
+    int i;
+
+    for (i = 0; i &lt; 2; i++) {
+        if (snull_devs[i]) {
+            unregister_netdev(snull_devs[i]);
+            snull_teardown_pool(snull_devs[i]);
+            free_netdev(snull_devs[i]);
+
+        }
+    }
+    return;
+}
+</pre>
+<p>对 unregister_netdev 的调用从系统中去除了接口; free_netdev 归还 net_device 结构给内核. 如果某个地方有对这个结构的引用, 它可能继续存在, 但是你的驱动不需要关心这个. 一旦你已经注销了接口, 内核不再调用它的方法.</p>
+<p>注意我们的内部清理( 在 snull_teardown_pool 里所做的 )直到已经注销了设备后才能进行. 它必须, 但是, 在我们返回 net_device 结构给系统之前进行; 一旦我们已调用了 free_netdev, 我们再不能对这个设备或者我们的私有数据做任何引用.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;17&#160;章&#160;网络驱动&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.3.&#160;net_device 结构的详情</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

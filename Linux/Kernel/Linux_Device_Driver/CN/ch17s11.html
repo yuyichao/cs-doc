@@ -1,0 +1,99 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.11.&#160;MAC 地址解析-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s10.html" title="17.10.&#160;Socket 缓存">
+<link rel="next" href="ch17s12.html" title="17.12.&#160;定制 ioctl 命令">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.11.&#160;MAC 地址解析</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s10.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s12.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="MACAddressResolution"></a>17.11.&#160;MAC 地址解析</h2></div></div></div>
+<p>以太网通讯的一个有趣的方面是如何将 MAC 地址( 接口的唯一硬件 ID )和 IP 编号结合起来. 大部分协议有类似的问题, 但我们这里集中于类以太网的情况. 我们试图提供这个问题的完整描述, 因此我们展示三个情形: ARP, 无 ARP 的以太网头部( 例如 plip), 以及非以太网头部.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="UsingARPwithEthernet"></a>17.11.1.&#160;以太网使用 ARP</h3></div></div></div>
+<p>处理地址解析的通常方法是使用 Address Resolution Protocol (ARP). 幸运的是, ARP 由内核来管理, 并且一个以太网接口不需要做特别的事情来支持 ARP. 只要 dev-&gt;addr 和 dev-&gt;addr_len 在 open 时正确的赋值了, 驱动就不需要担心解决 IP 编号对应于 MAC 地址; ether_setup 安排正确的设备方法给 dev-&gt;hard_header 和 dev_rebuild_header.</p>
+<p>尽管通常内核处理地址解析的细节(并且缓存结果), 它需要接口驱动来帮助建立报文. 毕竟, 驱动知道物理层头部细节, 然而网络代码的作者已经试图隔离内核其他部分. 为此, 内核调用驱动的 hard_header 方法使用 ARP 查询的结果来布置报文. 正常地, 以太网驱动编写者不需要知道这个过程 -- 公共的以太网代码负责了所有事情.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="OverridingARP"></a>17.11.2.&#160;不考虑 ARP</h3></div></div></div>
+<p>简单的点对点网络接口, 例如 plip, 可能从使用以太网头部中受益, 而避免来回发送 ARP 报文的开销. snull 中的例子代码也属于这一类的网络设备. snull 不能使用 ARP 因为驱动改变发送报文中的 IP 地址, ARP 报文也交换 IP 地址. 尽管我们可能轻易实现了一个简单 ARP 应答发生器, 更多的是演示性的来展示如何直接处理网络层头部.</p>
+<p>如果你的设备想使用通常的硬件头而不运行 ARP, 你需要重写缺省的 dev-&gt;hard_header 方法. 这是 snull 的实现, 作为一个非常短的函数:</p>
+<pre class="programlisting">
+int snull_header(struct sk_buff *skb, struct net_device *dev,
+                 unsigned short type, void *daddr, void *saddr,
+                 unsigned int len)
+{
+    struct ethhdr *eth = (struct ethhdr *)skb_push(skb,ETH_HLEN);
+    eth-&gt;h_proto = htons(type);
+    memcpy(eth-&gt;h_source, saddr ? saddr : dev-&gt;dev_addr, dev-&gt;addr_len);
+    memcpy(eth-&gt;h_dest,  daddr ? daddr : dev-&gt;dev_addr, dev-&gt;addr_len);
+    eth-&gt;h_dest[ETH_ALEN-1]  ^= 0x01;  /* dest is us xor 1 */
+    return (dev-&gt;hard_header_len);
+}
+</pre>
+<p>这个函数仅仅用内核提供的信息并把它格式成标准以太网头. 它也翻转目的以太网地址的 1 位, 理由下面叙述.</p>
+<p>当接口收到一个报文, eth_type_trans 以几种方法来使用硬件头部. 我们已经在 snull_rx 看到这个调用.</p>
+<pre class="programlisting">
+skb-&gt;protocol = eth_type_trans(skb, dev);
+</pre>
+<p>这个函数抽取协议标识(	ETH_P_IP, 在这个情况下 )从以太网头; 它也赋值 skb-&gt;mac.raw, 从报文 data (使用 skb_pull)去掉硬件头部, 并且设置 skb-&gt;pkt_type. 最后一项在 skb 分配是缺省为 PACKET_HOST(指示报文是发向这个主机的), eth_type_trans 改变它来反映以太网目的地址: 如果这个地址不匹配接收它的接口地址, pkt_type 成员被设为 PACKET_OTHERHOST. 结果, 除非接口处于混杂模式或者内核打开了报文转发, netif_rx 丢弃任何类型为 PACKET_OTHERHOST 的报文. 因为这样, snull_header 小心地使目的硬件地址匹配接收接口.</p>
+<p>如果你的接口是点对点连接, 你不会想收到不希望的多播报文. 为避免这个问题, 记住, 第一个字节的最低位(LSB)为 0 的目的地址是方向一个单个主机(即, 要么 PACKET_HOST, 要么 PACKET_OTHERHOST). plip 驱动使用 0xfc 作为它的硬件地址的第一个字节, 而 snull 使用 0x00. 两个地址都导致一个工作中的类似以太网的点对点连接.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="NonEthernetHeader"></a>17.11.3.&#160;非以太网头部</h3></div></div></div>
+<p>我们刚刚看过硬件头部除目的地址外包含了一些信息, 最重要的是通讯协议. 我们现在描述硬件头部如何用来封装相关的信息. 如果你需要知道细节, 你可从内核源码里抽取它们或者从特定传送媒介的技术文档中. 大部分驱动编写者能够忽略这个讨论只是使用以太网实现.</p>
+<p>值得一提的是不是所有信息都由每个协议提供. 一个点对点连接例如 plip 或者 snull 可能在不失去通用性的情况下避免传送这个以太网头部. hard_header 设备方法, 由 snull_header 实现所展示的, 接收自内核的递交的信息( 协议级别和硬件地址 ). 它也在 type 参数中接收 16 位协议编号; IP, 例如, 标识为 ETH_P_IP. 驱动应该正确递交报文数据和协议编号给接收主机. 一个点对点连接可能它的硬件头部的地址, 只传送协议编号, 因为保证递交是独立于源和目的地址的. 一个只有 IP 的连接甚至可能不发送任何硬件头部.</p>
+<p>当报文在连接的另一端被收到, 接收函数应当正确设置成员 skb-&gt;protocol, skb-&gt;pkt_type, 和 skb-&gt;mac.raw.</p>
+<p>skb-&gt;mac.raw 是一个字符指针, 由在高层的网络代码(例如, net/ipv4/arp.c)所实现的地址解析机制使用. 它必须指向一个匹配 dev-&gt;type 的机器地址. 设备类型的可能的值在 &lt;linux/if_arp.h&gt; 中定义; 以太网接口使用 ARPHRD_ETHER. 例如, 这是 eth_type_trans 如何处理收到的报文的以太网头:</p>
+<pre class="programlisting">
+skb-&gt;mac.raw = skb-&gt;data;
+skb_pull(skb, dev-&gt;hard_header_len);
+</pre>
+<p>在最简单的情况下( 一个没有头的点对点连接 ), skb-&gt;mac.raw 可指向一个静态缓存, 包含接口的硬件地址, protocol 可设置为 ETH_P_IP, 并且 packet_type 可让它是缺省的值 PACKET_HOST.</p>
+<p>因为每个硬件类型是独特的, 给出超出已经讨论的特别的设备是困难的. 内核中满是例子, 但是. 例如, 可查看 AppleTalk 驱动( drivers/net/appletalk/cops.c), 红外驱动(例如, driver/net/irds/smc_ircc.c), 或者 PPP 驱动( drivers/net/ppp_generic.c).</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s10.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s12.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.10.&#160;Socket 缓存&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.12.&#160;定制 ioctl 命令</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,101 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.6.&#160;报文接收-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s05.html" title="17.5.&#160;报文传送">
+<link rel="next" href="ch17s07.html" title="17.7.&#160;中断处理">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.6.&#160;报文接收</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s07.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="PacketReception"></a>17.6.&#160;报文接收</h2></div></div></div>
+<p>从网络上接收报文比发送它要难一些, 因为必须分配一个 sk_buff 并从一个原子性上下文中递交给上层. 网络驱动可以实现 2 种报文接收的模式: 中断驱动和查询. 大部分驱动采用中断驱动技术, 这是我们首先要涉及的. 有些高带宽适配卡的驱动也可能采用查询技术; 我们在"接收中断缓解"一节中了解这个方法.</p>
+<p>snull 的实现将"硬件"细节从设备独立的常规事务中分离. 因此, 函数 snull_rx 在硬件收到报文后从 snull 的"中断"处理中调用, 并且报文现在已经在计算机的内存中. snull_rx 收到一个数据指针和报文长度; 它唯一的责任是发走这个报文和运行附加信息给上层的网络代码. 这个代码独立于获得数据指针和长度的方式.</p>
+<pre class="programlisting">
+void snull_rx(struct net_device *dev, struct snull_packet *pkt)
+{
+    struct sk_buff *skb;
+    struct snull_priv *priv = netdev_priv(dev);
+    /*
+    *
+    The packet has been retrieved from the transmission
+
+    *
+    medium. Build an skb around it, so upper layers can handle it
+    */
+    skb = dev_alloc_skb(pkt-&gt;datalen + 2);
+    if (!skb) {
+
+        if (printk_ratelimit())
+            printk(KERN_NOTICE "snull rx: low on mem - packet dropped\n"); priv-&gt;stats.rx_dropped++; goto out;
+    }
+    memcpy(skb_put(skb, pkt-&gt;datalen), pkt-&gt;data, pkt-&gt;datalen);
+
+    /* Write metadata, and then pass to the receive level */
+    skb-&gt;dev = dev;
+    skb-&gt;protocol = eth_type_trans(skb, dev);
+    skb-&gt;ip_summed = CHECKSUM_UNNECESSARY; /* don't check it */
+    priv-&gt;stats.rx_packets++;
+    priv-&gt;stats.rx_bytes += pkt-&gt;datalen;
+    netif_rx(skb);
+out:
+    return;
+}
+</pre>
+<p>这个函数足够普通以作为任何网络驱动的一个模板, 但是在你有信心重用这个代码段前需要一些解释.</p>
+<p>第一步是分配一个缓存区来保存报文. 注意缓存分配函数 (dev_alloc_skb) 需要知道数据长度. 函数用这些信息来给缓存区分配空间. dev_alloc_skb 使用 atomic 优先级调用 kmalloc , 因此它可以在中断时间安全使用. 内核提供了其他接口给 socket 缓存分配, 但是它们不值得在此介绍; socket 缓存在"socket 缓存"一节中详细介绍.</p>
+<p>当然, dev_alloc_skb 的返回值必须检查, snull 这样做了. 我们调用 printk_ratelimit 在抱怨失败之前, 但是. 每秒钟产生成百上千的控制台消息是完全陷死系统和隐藏问题的真正源头的好方法; printk_ratelimit 帮助阻止这个问题, 通过在有太多输出到了控制台时返回 0, 事情需要慢下来一点.</p>
+<p>一旦有一个有效的 skb 指针, 通过调用 memcpy, 报文数据被拷贝到缓存区; skb_put 函数更新缓存中的数据末尾指针并返回指向新建空间的指针.</p>
+<p>如果你在编写一个高性能驱动, 为一个可以进行完全总线占据 I/O 的接口, 一个可能的优化值得在此考虑下. 一些驱动在报文接收前分配 sokcet 缓存, 接着使接口将报文数据直接放入 socket 缓存空间. 网络层通过在可 DMA 的空间( 如果你的设备设置了 NETIF_F_HIGHDMA 标志, 这个空间有可能在高端内存)中分配所有 socket 缓存来配合这个策略. 这样避免了单独的填充 socket 缓存的拷贝操作, 但是需要小心缓存区的大小, 因为你无法提前知道进来的报文大小. change_mtu 方法的实现在这种情况下也重要, 因为它允许驱动对最大报文大小改变作出响应.</p>
+<p>网络层在搞懂报文的意思前需要清楚一些事情. 为此, dev 和 protocol 成员必须在缓存向上传递前赋值. 以太网支持代码输出一个帮助函数( eth_type_trans ), 它发现一个合适值来赋给 protocol. 接着我们需要指出校验和要如何进行或者已经在报文上完成( snull 不需要做任何校验和 ). 对于 skb-&gt;ip_summed 可能的策略有:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>CHECKSUM_HW</span></span></dt>
+<dd><p>设备已经在硬件里做了校验. 一个硬件校验的例子使 APARC HME 接口.</p></dd>
+<dt><span class="term"><span>CHECKSUM_NONE</span></span></dt>
+<dd><p>校验和还没被验证, 必须由系统软件来完成这个任务. 这个是缺省的, 在新分配的缓存中.</p></dd>
+<dt><span class="term"><span>CHECKSUM_UNNECESSARY</span></span></dt>
+<dd><p>不要做任何校验. 这是 snull 和 环回接口的策略.</p></dd>
+</dl></div>
+<p>你可能奇怪为什么校验和状态必须在这里指定, 当我们已经在我们的 net_device 结构的特性成员中设置了标志. 答案是特性标志告诉内核我们的设备如何对待外出的报文. 它不用于进入的报文, 相反, 进入报文必须单独标记.</p>
+<p>最后, 驱动更新它的统计计数来记录收到一个报文。 统计结构由几个成员组成; 最重要的是 rx_packet, rx_bytes, 和 tx_bytes, 分别含有收到的报文数目, 发送的数目, 和发送的字节总数. 所有的成员在"统计信息"一节中完全描述.</p>
+<p>报文接收的最后一步由 netif_rx 进行, 它递交 socket 缓存给上层. 实际上 netif_rx 返回一个整数; NET_RX_SUCCESS(0) 意思是报文成功接收; 任何其他值指示错误. 有 3 个返回值 (NET_RX_CN_LOW, NET_RX_CN_MOD, 和 NET_RX_CN_HIGH )指出网络子系统的递增的拥塞级别; NET_RX_DROP 意思是报文被丢弃. 一个驱动在拥塞变高时可能使用这些值来停止输送报文给内核, 但是, 实际上, 大部分驱动忽略从 netif_rx 的返回值. 如果你在编写一个高带宽设备的驱动, 并且希望正确处理拥塞, 最好的办法是实现 NAPI, 我们在快速讨论中断处理后讨论它.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s07.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.5.&#160;报文传送&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.7.&#160;中断处理</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

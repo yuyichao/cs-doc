@@ -1,0 +1,414 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>事件处理</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="涂鸦板，一个简单的绘图程序"
+HREF="c2370.html"><LINK
+REL="PREVIOUS"
+TITLE="涂鸦板，一个简单的绘图程序"
+HREF="c2370.html"><LINK
+REL="NEXT"
+TITLE="绘图区构件和绘图"
+HREF="x2418.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c2370.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>涂鸦板，一个简单的绘图程序</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2418.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-EVENTHANDLING">事件处理</H1
+><P
+>我们已经讨论了 GTK 信号中的高级的事件，如单选菜单项。然而，有时学习一些低级的事件也是有好用的，如鼠标移动或按一个键。在 GTK 中有信号与这些低级<I
+CLASS="EMPHASIS"
+>事件</I
+>联系。这些信号的处理函数有额外的参数，该函数是一个结构指针，包含事件的信息。例如，传递给移动事件处理函数的参数是一个 GdkEventMotion 类型的结构指针，如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct _GdkEventMotion
+{
+  GdkEventType type;
+  GdkWindow *window;
+  guint32 time;
+  gdouble x;
+  gdouble y;
+  ...
+  guint state;
+  ...
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>type</TT
+>会设置为事件的类型，如移动事件是<TT
+CLASS="LITERAL"
+>GDK_MOTION_NOTIFY</TT
+>，window是发生事件的窗口。<TT
+CLASS="LITERAL"
+>x</TT
+>和<TT
+CLASS="LITERAL"
+>y</TT
+>给出事件的座标。<TT
+CLASS="LITERAL"
+>state</TT
+>指出事件发生时的状态(按下了那个修正键或鼠标键)。它是如下值的位或：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GDK_SHIFT_MASK  
+GDK_LOCK_MASK   
+GDK_CONTROL_MASK
+GDK_MOD1_MASK   
+GDK_MOD2_MASK   
+GDK_MOD3_MASK   
+GDK_MOD4_MASK   
+GDK_MOD5_MASK   
+GDK_BUTTON1_MASK
+GDK_BUTTON2_MASK
+GDK_BUTTON3_MASK
+GDK_BUTTON4_MASK
+GDK_BUTTON5_MASK</PRE
+></TD
+></TR
+></TABLE
+><P
+>至于其它信号，我们调用函数<TT
+CLASS="LITERAL"
+>gtk_signal_connect()</TT
+>来决定事件发生时调用的处理函数。但是我们也需要让 GTK 知道我们想接收的事件。可以用如下函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_widget_set_events (GtkWidget *widget,
+                            gint      events);</PRE
+></TD
+></TR
+></TABLE
+><P
+>第二个参数为我们感兴趣的事件。它为不同类型事件的位或。事件类型的列表如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GDK_EXPOSURE_MASK
+GDK_POINTER_MOTION_MASK
+GDK_POINTER_MOTION_HINT_MASK
+GDK_BUTTON_MOTION_MASK     
+GDK_BUTTON1_MOTION_MASK    
+GDK_BUTTON2_MOTION_MASK    
+GDK_BUTTON3_MOTION_MASK    
+GDK_BUTTON_PRESS_MASK      
+GDK_BUTTON_RELEASE_MASK    
+GDK_KEY_PRESS_MASK         
+GDK_KEY_RELEASE_MASK       
+GDK_ENTER_NOTIFY_MASK      
+GDK_LEAVE_NOTIFY_MASK      
+GDK_FOCUS_CHANGE_MASK      
+GDK_STRUCTURE_MASK         
+GDK_PROPERTY_CHANGE_MASK   
+GDK_PROXIMITY_IN_MASK      
+GDK_PROXIMITY_OUT_MASK     </PRE
+></TD
+></TR
+></TABLE
+><P
+>当调用函数<TT
+CLASS="LITERAL"
+>gtk_widget_set_events()</TT
+>时，有几点需注意。首先，该函数必须在一个 GTK 构件的 X 窗口创建之前调用。实际上，意味者你应该在创建一个构件之后立即调用该函数。其次，构件必须有一个相关联的 X 窗口。为了提高效益，许多构件类型没有属于自己的窗口，它们绘制在父窗口上。这些构件是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkAlignment
+GtkArrow
+GtkBin
+GtkBox
+GtkImage
+GtkItem
+GtkLabel
+GtkPixmap
+GtkScrolledWindow
+GtkSeparator
+GtkTable
+GtkAspectFrame
+GtkFrame
+GtkVBox
+GtkHBox
+GtkVSeparator
+GtkHSeparator</PRE
+></TD
+></TR
+></TABLE
+><P
+>为了捕获这些构件的事件，你需要使用事件盒构件。详见 <A
+HREF="c1289.html#SEC-EVENTBOX"
+>事件盒</A
+>。</P
+><P
+>对于我们的绘图程序，我们想知道什么时候鼠标键按下和什么时候鼠标移动，因此我们要用<TT
+CLASS="LITERAL"
+>GDK_POINTER_MOTION_MASK</TT
+>和<TT
+CLASS="LITERAL"
+>GDK_BUTTON_PRESS_MASK</TT
+>。我们也想知道什么时候窗口需要重新绘制，因此我们也要用<TT
+CLASS="LITERAL"
+>GDK_EXPOSURE_MASK</TT
+>。虽然我们也想在窗口尺寸改变时得到消息，不过我们不必用<TT
+CLASS="LITERAL"
+>GDK_STRUCTURE_MASK</TT
+>标志，因为所有的窗口都自动设了该标志。</P
+><P
+>只用<TT
+CLASS="LITERAL"
+>GDK_POINTER_MOTION_MASK</TT
+>是有问题的。这会使服务器在每次用户移动鼠标时向事件队列添加一个移动事件。假设处理一个移动事件需要0.1秒，但是X服务器每0.05秒添加一个新的移动事件。如果用户绘制要花5秒，那么在释放鼠标键后我们的程序会中断5秒！我们所需要的只是为我们处理的每个事件的获取一个移动事件。解决这个问题的方法是要用<TT
+CLASS="LITERAL"
+>GDK_POINTER_MOTION_HINT_MASK</TT
+>。</P
+><P
+>当我们用<TT
+CLASS="LITERAL"
+>GDK_POINTER_MOTION_HINT_MASK</TT
+>时，在指针进入我们的窗口之后、或在一个按钮按下或释放事件之后，服务器在指针首次移动时向我们发送一个移动事件。后发的移动事件都会被压制，直到我们用如下函数去获取鼠标指针的位置：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GdkWindow*    gdk_window_get_pointer     (GdkWindow       *window,
+					  gint            *x,
+					  gint            *y,
+					  GdkModifierType *mask);</PRE
+></TD
+></TR
+></TABLE
+><P
+>(还有另外一个函数<TT
+CLASS="LITERAL"
+>gtk_widget_get_pointer()</TT
+>，它有相似的接口，不过它不是很有用，因为它仅仅获取鼠标指针的位置，而不管按下了那个键。)</P
+><P
+>设置我们的窗口事件的代码如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  gtk_signal_connect (GTK_OBJECT (drawing_area), "expose_event",
+		      (GtkSignalFunc) expose_event, NULL);
+  gtk_signal_connect (GTK_OBJECT(drawing_area),"configure_event",
+		      (GtkSignalFunc) configure_event, NULL);
+  gtk_signal_connect (GTK_OBJECT (drawing_area), "motion_notify_event",
+		      (GtkSignalFunc) motion_notify_event, NULL);
+  gtk_signal_connect (GTK_OBJECT (drawing_area), "button_press_event",
+		      (GtkSignalFunc) button_press_event, NULL);
+
+  gtk_widget_set_events (drawing_area, GDK_EXPOSURE_MASK
+			 | GDK_LEAVE_NOTIFY_MASK
+			 | GDK_BUTTON_PRESS_MASK
+			 | GDK_POINTER_MOTION_MASK
+			 | GDK_POINTER_MOTION_HINT_MASK);</PRE
+></TD
+></TR
+></TABLE
+><P
+>我们对在下一节讲解"expose_event"和"configure_event"的处理函数。"motion_notify_event"和"button_press_event"的处理函数很简单：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static gint
+button_press_event (GtkWidget *widget, GdkEventButton *event)
+{
+  if (event-&#62;button == 1 &#38;&#38; pixmap != NULL)
+      draw_brush (widget, event-&#62;x, event-&#62;y);
+
+  return TRUE;
+}
+
+static gint
+motion_notify_event (GtkWidget *widget, GdkEventMotion *event)
+{
+  int x, y;
+  GdkModifierType state;
+
+  if (event-&#62;is_hint)
+    gdk_window_get_pointer (event-&#62;window, &#38;x, &#38;y, &#38;state);
+  else
+    {
+      x = event-&#62;x;
+      y = event-&#62;y;
+      state = event-&#62;state;
+    }
+    
+  if (state &#38; GDK_BUTTON1_MASK &#38;&#38; pixmap != NULL)
+    draw_brush (widget, x, y);
+  
+  return TRUE;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c2370.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2418.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>涂鸦板，一个简单的绘图程序</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2370.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>绘图区构件和绘图</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

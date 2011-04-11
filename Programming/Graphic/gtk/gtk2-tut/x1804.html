@@ -1,0 +1,334 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>获取选中区信息</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="操作选中区"
+HREF="c1788.html"><LINK
+REL="PREVIOUS"
+TITLE="操作选中区"
+HREF="c1788.html"><LINK
+REL="NEXT"
+TITLE="提供选中区"
+HREF="x1827.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c1788.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>操作选中区</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1827.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-RETRIEVINGTHESELECTION">获取选中区信息</H1
+><P
+>获取选中区信息是一个异步的过程。开始这个过程，调用：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gboolean gtk_selection_convert( GtkWidget *widget, 
+                                GdkAtom    selection, 
+                                GdkAtom    target,
+                                guint32    time );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个将选中区内容<I
+CLASS="EMPHASIS"
+>转换</I
+>为<TT
+CLASS="LITERAL"
+>target</TT
+>指定的目标形式。如果可能，time参数应该为选中区被触发事件产生的时间。这对确认事件以用户要求它们的顺序产生有帮助。然而，如果不行(例如，转换由 "clicked" 信号触发)，你也可以使用<TT
+CLASS="LITERAL"
+>GDK_CURRENT_TIME</TT
+>常量。</P
+><P
+>当选中区所有者响应要求时，会发送一个 "selection_received" 信号到你的程序。对应的信号处理函数将得到一个指向<TT
+CLASS="LITERAL"
+>GtkSelectionData</TT
+>结构的指针，它的定义如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct _GtkSelectionData
+{
+  GdkAtom selection;
+  GdkAtom target;
+  GdkAtom type;
+  gint    format;
+  guchar *data;
+  gint    length;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>你可以将<TT
+CLASS="LITERAL"
+>selection</TT
+>和<TT
+CLASS="LITERAL"
+>target</TT
+>值传给<TT
+CLASS="LITERAL"
+>gtk_selection_convert()</TT
+>函数。<TT
+CLASS="LITERAL"
+>type</TT
+>是一个标识选中区所有者返回数据的类型的原子。一些可能值是："STRING"，由拉丁-1(latin-1)字符组成的字符串，"ATOM"，一些原子，"INTEGER"，一个整数，等等。大多数目标只能返回一种类型。<TT
+CLASS="LITERAL"
+>format</TT
+>给定其单位(比如字符型)的比特数。通常，接收数据时你不必关心这个。<TT
+CLASS="LITERAL"
+>data</TT
+>是一个指向返回数据的指针，<TT
+CLASS="LITERAL"
+>length</TT
+>指定返回数据的长度，以字节为单位。如果<TT
+CLASS="LITERAL"
+>length</TT
+>是负数，则表示发生错误且选中区的信息无法获得。这可能在没有应用程序拥有选中区时发生，或者你要求了一个应用程序不支持的目标形式。缓冲区实际上总会比<TT
+CLASS="LITERAL"
+>length</TT
+>指示的长一个字节；增加的这一字节总为0值,这样就不必为了使字符串以NULL结尾而另外复制一份。</P
+><P
+>在下面的示例里，我们获取"TARGETS"形式的目标，它是一个选中区内容能转换为的目标形式的列表。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdlib.h&#62;
+#include &#60;gtk/gtk.h&#62;
+
+void selection_received( GtkWidget        *widget, 
+                         GtkSelectionData *selection_data, 
+                         gpointer          data );
+
+/* 当用户点击"Get Targets"按钮时调用的信息处理函数 */
+void get_targets( GtkWidget *widget,
+                  gpointer data )
+{
+  static GdkAtom targets_atom = GDK_NONE;
+  GtkWidget *window = (GtkWidget *)data;	
+
+  /* 得到"TARGETS"字符串对应的原子 */
+  if (targets_atom == GDK_NONE)
+    targets_atom = gdk_atom_intern ("TARGETS", FALSE);
+
+  /* 要求获取主选中区的"TARGETS"形式的目标 */
+  gtk_selection_convert (window, GDK_SELECTION_PRIMARY, targets_atom,
+			 GDK_CURRENT_TIME);
+}
+
+/* 当选中区所有者返回数据时调用的信号处理函数 */
+void selection_received( GtkWidget        *widget,
+                         GtkSelectionData *selection_data, 
+		         gpointer          data )
+{
+  GdkAtom *atoms;
+  GList *item_list;
+  int i;
+
+  /* **** 重要 **** 检测获取信息是否成功  */
+  if (selection_data-&#62;length &#60; 0)
+    {
+      g_print ("Selection retrieval failed\n");
+      return;
+    }
+  /* 确认得到的数据为原来要求的形式 */
+  if (selection_data-&#62;type != GDK_SELECTION_TYPE_ATOM)
+    {
+      g_print ("Selection \"TARGETS\" was not returned as atoms!\n");
+      return;
+    }
+  
+  /* 打印接收到的原子 */
+  atoms = (GdkAtom *)selection_data-&#62;data;
+
+  item_list = NULL;
+  for (i = 0; i &#60; selection_data-&#62;length / sizeof(GdkAtom); i++)
+    {
+      char *name;
+      name = gdk_atom_name (atoms[i]);
+      if (name != NULL)
+	g_print ("%s\n",name);
+      else
+	g_print ("(bad atom)\n");
+    }
+
+  return;
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+  GtkWidget *window;
+  GtkWidget *button;
+  
+  gtk_init (&#38;argc, &#38;argv);
+
+  /* 创建顶级窗口 */
+
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title (GTK_WINDOW (window), "Event Box");
+  gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+
+  g_signal_connect (G_OBJECT (window), "destroy",
+	            G_CALLBACK (exit), NULL);
+
+  /* 创建一个按钮，用户按它以获取目标 */
+
+  button = gtk_button_new_with_label ("Get Targets");
+  gtk_container_add (GTK_CONTAINER (window), button);
+
+  g_signal_connect (G_OBJECT (button), "clicked",
+		    G_CALLBACK (get_targets), window);
+  g_signal_connect (G_OBJECT (window), "selection_received",
+		    G_CALLBACK (selection_received), NULL);
+
+  gtk_widget_show (button);
+  gtk_widget_show (window);
+  
+  gtk_main ();
+  
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c1788.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1827.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>操作选中区</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1788.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>提供选中区</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

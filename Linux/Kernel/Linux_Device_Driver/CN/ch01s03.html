@@ -1,0 +1,68 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>1.3.&#160;设备和模块的分类-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch01.html" title="第&#160;1&#160;章&#160;第一章 设备驱动简介">
+<link rel="prev" href="ch01s02.html" title="1.2.&#160;划分内核">
+<link rel="next" href="ch01s04.html" title="1.4.&#160;安全问题">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">1.3.&#160;设备和模块的分类</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch01s02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;1&#160;章&#160;第一章 设备驱动简介</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch01s04.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ClassesofDevicesand.sect1"></a>1.3.&#160;设备和模块的分类</h2></div></div></div>
+<p>以 LInux 的方式看待设备可区分为 3 种基本设备类型. 每个模块常常实现 3 种类型中的 1 种, 因此可分类成字符模块, 块模块, 或者一个网络模块. 这种将模块分成不同类型或类别的方法并非是固定不变的; 程序员可以选择建立在一个大块代码中实现了不同驱动的巨大模块. 但是, 好的程序员, 常常创建一个不同的模块给每个它们实现的新功能, 因为分解是可伸缩性和可扩张性的关键因素.</p>
+<p>3 类驱动如下:</p>
+<div class="variablelist">
+<p>既然不是一个面向流的设备, 一个网络接口就不象 /dev/tty1 那么容易映射到文件系统的一个结点上. Unix 的提供对接口的存取的方式仍然是通过分配一个名子给它们( 例如 eth0 ), 但是这个名子在文件系统中没有对应的入口. 内核与网络设备驱动间的通讯与字符和块设备驱动所用的完全不同. 不用 read 和 write, 内核调用和报文传递相关的函数.</p>
+<dl>
+<dt><span class="term"><span>字符设备</span></span></dt>
+<dd><p>一个字符( char ) 设备是一种可以当作一个字节流来存取的设备( 如同一个文件 ); 一个字符驱动负责实现这种行为. 这样的驱动常常至少实现 open, close, read, 和 write 系统调用. 文本控制台( /dev/console )和串口( /dev/ttyS0 及其友 )是字符设备的例子, 因为它们很好地展现了流的抽象. 字符设备通过文件系统结点来存取, 例如 /dev/tty1 和 /dev/lp0. 在一个字符设备和一个普通文件之间唯一有关的不同就是, 你经常可以在普通文件中移来移去, 但是大部分字符设备仅仅是数据通道, 你只能顺序存取.然而, 存在看起来象数据区的字符设备, 你可以在里面移来移去. 例如, frame grabber 经常这样, 应用程序可以使用 mmap 或者 lseek 存取整个要求的图像.</p></dd>
+<dt><span class="term"><span>块设备</span></span></dt>
+<dd><p>如同字符设备, 块设备通过位于 /dev 目录的文件系统结点来存取. 一个块设备(例如一个磁盘)应该是可以驻有一个文件系统的. 在大部分的 Unix 系统, 一个块设备只能处理这样的 I/O 操作, 传送一个或多个长度经常是 512 字节( 或一个更大的 2 的幂的数 )的整块. Linux, 相反, 允许应用程序读写一个块设备象一个字符设备一样 -- 它允许一次传送任意数目的字节. 结果就是, 块和字符设备的区别仅仅在内核在内部管理数据的方式上, 并且因此在内核/驱动的软件接口上不同. 如同一个字符设备, 每个块设备都通过一个文件系统结点被存取的, 它们之间的区别对用户是透明的. 块驱动和字符驱动相比, 与内核的接口完全不同.</p></dd>
+<dt><span class="term"><span>网络接口</span></span></dt>
+<dd><p>任何网络事务都通过一个接口来进行, 就是说, 一个能够与其他主机交换数据的设备. 通常, 一个接口是一个硬件设备, 但是它也可能是一个纯粹的软件设备, 比如环回接口. 一个网络接口负责发送和接收数据报文, 在内核网络子系统的驱动下, 不必知道单个事务是如何映射到实际的被发送的报文上的. 很多网络连接( 特别那些使用 TCP 的)是面向流的, 但是网络设备却常常设计成处理报文的发送和接收. 一个网络驱动对单个连接一无所知; 它只处理报文.</p></dd>
+</dl>
+</div>
+<p>有其他的划分驱动模块的方式, 与上面的设备类型是正交的. 通常, 某些类型的驱动与给定类型设备的其他层的内核支持函数一起工作. 例如, 你可以说 USB 模块, 串口模块, SCSI 模块, 等等. 每个 USB 设备由一个 USB 模块驱动, 与 USB 子系统一起工作, 但是设备自身在系统中表现为一个字符设备( 比如一个 USB 串口 ), 一个块设备( 一个 USB 内存读卡器 ), 或者一个网络设备( 一个 USB 以太网接口 ).</p>
+<p>另外的设备驱动类别近来已经添加到内核中, 包括 FireWire 驱动和 I2O 驱动. 以它们处理 USB 和 SCSI 驱动相同的方式, 内核开发者集合了类别范围内的特性, 并把它们输出给驱动实现者, 以避免重复工作和 bug, 因此简化和加强了编写类似驱动的过程.</p>
+<p>在设备驱动之外, 别的功能, 不论硬件和软件, 在内核中都是模块化的. 一个普通的例子是文件系统. 一个文件系统类型决定了在块设备上信息是如何组织的, 以便能表示一棵目录与文件的树. 这样的实体不是设备驱动, 因为没有明确的设备与信息摆放方式相联系; 文件系统类型却是一种软件驱动, 因为它将低级数据结构映射为高级的数据结构. 文件系统决定一个文件名多长, 以及在一个目录入口中存储每个文件的什么信息. 文件系统模块必须实现最低级的系统调用, 来存取目录和文件, 通过映射文件名和路径( 以及其他信息, 例如存取模式 )到保存在数据块中的数据结构. 这样的一个接口是完全与数据被传送来去磁盘( 或其他介质 )相互独立, 这个传送是由一个块设备驱动完成的.</p>
+<p>如果你考虑一个 Unix 系统是多么依赖下面的文件系统, 你会认识到这样的一个软件概念对系统操作是至关重要的. 解码文件系统信息的能力处于内核层级中最低级, 并且是最重要的; 甚至如果你为你的新 CD-ROM 编写块驱动, 如果你对上面的数据不能运行 ls 或者 cp 就毫无用处. Linux 支持一个文件系统模块的概念, 其软件接口声明了不同操作, 可以在一个文件系统节点, 目录, 文件和超级块上进行操作. 对一个程序员来说, 居然需要编写一个文件系统模块是非常不常见的, 因为官方内核已经包含了大部分重要的文件系统类型的代码. </p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch01s02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch01.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch01s04.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">1.2.&#160;划分内核&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;1.4.&#160;安全问题</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

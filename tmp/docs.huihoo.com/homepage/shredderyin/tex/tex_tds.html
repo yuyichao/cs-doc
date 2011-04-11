@@ -1,0 +1,53 @@
+<html>
+<head>
+<title>TDS</title>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="tex.css" media="screen">
+</head>
+
+<body bgcolor="#FFF4FF">
+<H1>TeX 目录树结构(TDS)</H1>
+<pre>
+texlive
+    |
+    |____bin
+    |      |
+    |      |__i386-linux
+    |      |__win32
+    |      |__sparc64-solaris7
+    |      |__.....
+    |
+    |____texmf
+    |      |
+    |      |__dvips
+    |      |__tex
+    |      |__pdftex
+    |      |__.....
+    |
+    |
+    |____texmf-local
+           |
+           |__dvips
+           |__tex
+           |__pdftex
+           |__.....
+    
+</pre>
+<p>TeX 系统的目录结构叫做 TDS (TeX Directory Structure). 它是几棵具有相似结构的树。其中一棵叫做 $TEXMFMAIN，这是TeX发行版本所有文件所在的目录树，它在你的操作系统上一般叫做 texmf, 比如 teTeX 常常装在 /usr/share/texmf. 那么 /usr/share/texmf 就叫做 $TEXMF.
+
+<p>基于 WEB2C 的 TeX 系统的总配置文件就是 $TEXMFMAIN/web2c/texmf.cnf
+
+<p>还有一棵树叫做 $TEXMFLOCAL, 你在 $TEXMFMAIN/web2c/texmf.cnf 里搜索 TEXMFLOCAL 就可以知道它应该叫什么名字。在有的 teTeX 中，它在操作系统下叫做 texmf.local, 而在其它的发行有时叫做 texmf-local, texmflocal, localtexmf, ... 具体的看看你的 texmf.cnf 就知道了。
+
+<p>TeX 系统下有成千上万的文件：宏包，字体，配置，……。程序如何知道它需要的文件在哪里呢？TeX 系统使用了一个程序叫做 kpathsea 来寻找需要的文件，kpathsea 对每个目录树维护一个文件名数据库。一般就是那棵树根上的 ls-lR 文件。
+
+<p>TeX 系统的程序如果使用了 kpathsea 寻找一个配置文件叫做 config.ps. kpathsea 一般会首先在 $TEXMFLOCAL 里寻找这个文件，如果没有找到才在 $TEXMFMAIN里找。这样用户可以把自己修改过的配置文件放在 $TEXMFLOCAL. 这样就可以不修改系统的配置文件而使用自己的设置。而且这样做了之后，更换主目录树的时候就不用每次都去修改那些文件了。用户的所有字体，宏包，都可以放在 $TEXMFLOCAL 里。推荐大家这样做。
+
+<p>kpathsea 可能不先在 $TEXMFLOCAL 里寻找文件。它的行为是由 texmf.cnf 里对 TEXMF 的设定决定的。比如，我的系统 texmf.cnf 有如下内容：
+<pre>
+TEXMF = {$HOMETEXMF,!!$VARTEXMF,$TEXMFLOCAL,!!$TEXMFMAIN}
+</pre>
+
+<p>这就是说， kpathsea 会首先在用户目录 ~/texmf 下寻找文件，如果这个目录存在的话。没有找到才依次寻找 VARTEXMF, TEXMFLOCAL, TEXMFMAIN.
+
+<p>这里有一份<a href="http://learn.tsinghua.edu.cn:8080/2001315450/tex/tds_en.html">详细的TDS 文档</a>

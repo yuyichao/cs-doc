@@ -1,0 +1,64 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.9.&#160;连接状态的改变-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s08.html" title="17.8.&#160;接收中断缓解">
+<link rel="next" href="ch17s10.html" title="17.10.&#160;Socket 缓存">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.9.&#160;连接状态的改变</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s08.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s10.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ChangeinLinkState"></a>17.9.&#160;连接状态的改变</h2></div></div></div>
+<p>网络连接, 根据定义, 打交道本地系统之外的世界. 因此, 它们常常受外界事件的影响, 并且它们可能是短暂的东西. 网络子系统需要知道网络连接的上或下, 它提供了几个驱动可用来传达这种信息的函数.</p>
+<p>大部分涉及实际的物理连接的网络技术提供有一个载波状态; 载波存在说明硬件存在并准备好. 以太网适配器, 例如, 在电线上感知载波信号; 当一个用户绊倒一根电缆, 载波消失, 连接断开. 缺省地, 网络设备假设有载波信号存在. 驱动可以明确改变这个状态, 但是, 使用这些函数:</p>
+<pre class="programlisting">
+void netif_carrier_off(struct net_device *dev);
+void netif_carrier_on(struct net_device *dev);
+</pre>
+<p>如果你的驱动检测到它的一个设备载波丢失, 它应当调用 netif_carrier_off 来通知内核这个改变. 当载波回来时, 应当调用 netif_carrier_on. 一些驱动也调用 netif_carrier_off 当进行大的配置改变时(例如媒介类型); 一旦适配器已经完成复位它自身, 新载波被检测并且恢复流量.</p>
+<p>一个整数函数也存在:</p>
+<pre class="programlisting">
+int netif_carrier_ok(struct net_device *dev); 
+</pre>
+<p>它可用于测试当前载波状态( 如同设备结构中所反映的 );</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s08.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s10.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.8.&#160;接收中断缓解&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.10.&#160;Socket 缓存</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

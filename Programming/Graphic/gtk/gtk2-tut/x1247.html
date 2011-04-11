@@ -1,0 +1,380 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>颜色选择 Color Selection</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="日历 Calendar"
+HREF="x1163.html"><LINK
+REL="NEXT"
+TITLE="文件选择 File Selections"
+HREF="x1270.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1163.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1270.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-COLORSELECTION">颜色选择 Color Selection</H1
+><P
+>颜色选择(color selection)构件是一个用来交互式地选择颜色的构件。这个组合构件让用户通过操纵RGB值(红绿蓝)和HSV值(色度、饱和度、纯度)来选择颜色。这是通过调整滑动条(sliders)的值或者文本输入构件的值，或者从一个色度/饱和度/纯度条上选择相应的颜色来实现的。你还可以通过它来设置颜色的透明性。</P
+><P
+>目前，颜色选择构件只能引发一种信号： color_changed。它是在构件你的颜色值发生变化时，或者通过 gtk_color_selection_set_color() 函数显式设置构件的颜色值时引发。</P
+><P
+>现在可以看一下颜色选择构件能够为我们提供一些什么。这个构件有两种风格：GtkColorSelection 和 GtkColorSelectionDialog。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_color_selection_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>你将很少直接使用这个函数。它创建一个孤立的颜色选择构件，并需要将其放在某个窗口上。颜色选择构件是从VBox构件派生的。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_color_selection_dialog_new( const gchar *title );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这是最常用的颜色选择构件的构建函数，它创建一个颜色选择对话框。它内部有一个框架构件，框架构件中包含了一个颜色选择构件、一个垂直分隔线构件、一个包含了Ok、Cancel、Help三个按钮的横向盒。你可以通过访问颜色选择对话框构件结构中的"ok_button", "cancel_button"和"help_button"构件来访问它们(例如：<TT
+CLASS="LITERAL"
+>GTK_COLOR_SELECTION_DIALOG (colorseldialog)-&#62;ok_button</TT
+>))。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_color_selection_set_has_opacity_control( GtkColorSelection *colorsel,
+                                                  gboolean           has_opacity );</PRE
+></TD
+></TR
+></TABLE
+><P
+>颜色选择构件支持调整颜色的不透明性(一般也称为alpha通道)。缺省值是禁用这个特性。调用下面的函数，将has_opacity设置为TRUE启用该特性。同样，has_opacity 设置为 FALSE 时将禁用此特性。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_color_selection_set_current_color( GtkColorSelection *colorsel,
+                                            GdkColor          *color );
+
+void gtk_color_selection_set_current_alpha( GtkColorSelection *colorsel,
+                                            guint16            alpha );</PRE
+></TD
+></TR
+></TABLE
+><P
+>可以调用 gtk_color_selection_set_current_color() 函数显式地设置颜色选择构件的当前颜色，其中的color参数是一个指向GdkColor的指针。gtk_color_selection_set_current_alpha()用来设置不透明度(alpha通道)。其中的alpha值应该在0(完全透明)和65636(完全不透明)之间。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_color_selection_get_current_color( GtkColorSelection *colorsel,
+	                                    GdkColor *color );
+
+void gtk_color_selection_get_current_alpha( GtkColorSelection *colorsel,
+                                            guint16           *alpha );</PRE
+></TD
+></TR
+></TABLE
+><P
+>当需要查询当前颜色值时，典型情况是接收到一个 "color_changed" 信号时，使用这些函数。</P
+><P
+></P
+><P
+>下面是一个简单的示例，它演示了如何使用颜色选择对话框构件。这个程序显示了一个包含绘图区的窗口。点击它会打开一个颜色选择对话框，改变颜色选择对话框中的颜色，会改变绘图区的背景色。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/colorsel.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;glib.h&#62;
+#include &#60;gdk/gdk.h&#62;
+#include &#60;gtk/gtk.h&#62;
+
+GtkWidget *colorseldlg = NULL;
+GtkWidget *drawingarea = NULL;
+GdkColor color;
+
+/* 颜色改变信号的处理函数 */
+
+void color_changed_cb( GtkWidget         *widget,
+                       GtkColorSelection *colorsel )
+{
+  GdkColor ncolor;
+
+  gtk_color_selection_get_current_color (colorsel, &#38;ncolor);
+  gtk_widget_modify_bg (drawingarea, GTK_STATE_NORMAL, &#38;ncolor);       
+}
+
+/* 绘图区事件处理函数 */
+
+gint area_event( GtkWidget *widget,
+                 GdkEvent  *event,
+                 gpointer   client_data )
+{
+  gint handled = FALSE;
+  gint response;
+  GtkColorSelection *colorsel;
+
+  /* 检查是否接收到一个鼠标按键按下事件 */
+
+  if (event-&#62;type == GDK_BUTTON_PRESS)
+    {
+      handled = TRUE;
+
+       /* 创建颜色选择对话框 */
+      if (colorseldlg == NULL)
+        colorseldlg = gtk_color_selection_dialog_new ("Select background color");
+
+      /* 获取颜色选择构件 */
+      colorsel = GTK_COLOR_SELECTION (GTK_COLOR_SELECTION_DIALOG (colorseldlg)-&#62;colorsel);
+
+      gtk_color_selection_set_previous_color (colorsel, &#38;color);
+      gtk_color_selection_set_current_color (colorsel, &#38;color);
+      gtk_color_selection_set_has_palette (colorsel, TRUE);
+
+      /* 为 "color_changed" 信号设置回调函数，将用户数据设置为
+       * 颜色选择构件 */
+      g_signal_connect (G_OBJECT (colorsel), "color_changed",
+                        G_CALLBACK (color_changed_cb), (gpointer)colorsel);
+
+      /* 显示对话框 */
+      response = gtk_dialog_run (GTK_DIALOG (colorseldlg));
+
+      if (response == GTK_RESPONSE_OK)
+        gtk_color_selection_get_current_color (colorsel, &#38;color);
+      else 
+        gtk_widget_modify_bg (drawingarea, GTK_STATE_NORMAL, &#38;color);
+
+      gtk_widget_hide (colorseldlg);
+    }
+
+  return handled;
+}
+
+/* 关闭、退出的事件处理函数 */
+
+gint destroy_window( GtkWidget *widget,
+                     GdkEvent  *event,
+                     gpointer   client_data )
+{
+  gtk_main_quit ();
+  return TRUE;
+}
+
+/* 主函数 */
+
+gint main( gint   argc,
+           gchar *argv[] )
+{
+  GtkWidget *window;
+
+  /* 初始化，处理并删去跟 gtk 有关的命令参数 */
+
+  gtk_init (&#38;argc, &#38;argv);
+
+  /* 创建顶级窗口，设置标题，以及窗口是否可缩放 */
+
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title (GTK_WINDOW (window), "Color selection test");
+  gtk_window_set_policy (GTK_WINDOW (window), TRUE, TRUE, TRUE);
+
+  /* 为 "delete" 和 "destroy" 事件设置回调函数以便退出 */
+
+  g_signal_connect (GTK_OBJECT (window), "delete_event",
+                    GTK_SIGNAL_FUNC (destroy_window), (gpointer)window);
+  
+  /* 创建绘图区，设置尺寸，捕获鼠标按键事件 */
+
+  drawingarea = gtk_drawing_area_new ();
+
+  color.red = 0;
+  color.blue = 65535;
+  color.green = 0;
+  gtk_widget_modify_bg (drawingarea, GTK_STATE_NORMAL, &#38;color);       
+
+  gtk_widget_set_size_request (GTK_WIDGET (drawingarea), 200, 200);
+
+  gtk_widget_set_events (drawingarea, GDK_BUTTON_PRESS_MASK);
+
+  g_signal_connect (GTK_OBJECT (drawingarea), "event", 
+	            GTK_SIGNAL_FUNC (area_event), (gpointer)drawingarea);
+  
+  /* 将绘图区添加到窗口中，然后显示它们 */
+
+  gtk_container_add (GTK_CONTAINER (window), drawingarea);
+
+  gtk_widget_show (drawingarea);
+  gtk_widget_show (window);
+  
+  /* 进入gtk主循环(这个函数从不会返回) */
+
+  gtk_main ();
+
+  /* 满足性情暴躁的编译器 */
+
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1163.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1270.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>日历 Calendar</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>文件选择 File Selections</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>容器构件 Container Widgets</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="PREVIOUS"
+TITLE="文件选择 File Selections"
+HREF="x1270.html"><LINK
+REL="NEXT"
+TITLE="对齐构件 The Alignment widget"
+HREF="x1306.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1270.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1306.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="CH-CONTAINERWIDGETS">容器构件 Container Widgets</H1
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-EVENTBOX">事件盒 The EventBox</H1
+><P
+>一些 GTK 构件没有与之相关联的 X 窗口，所以它们只在其父构件上显示其外观。由于这个原因，它们不能接收任何事件，并且，如果它们尺寸设置不正确，它们也不会自动剪裁(译者注：裁剪就是使构件只显示一部分)，这样可能会把界面弄得乱糟糟的。如果要想构件接收事件，可以使用事件盒(EventBox)。</P
+><P
+>初一看，事件盒构件好像完全没有什么用。它在屏幕上什么也不画，并且对事件也不做响应。但是，它有一个功能：为它的子构件提供一个 X 窗口。因为许多G T K构件并没有相关联的 X 窗口，所以这一点很重要。虽然没有 X 窗口会节省内存，提高系统性能，但它也有一些弱点。没有 X 窗口的构件不能接收事件，并且对它的任何内容不能实施剪裁。虽然事件盒构件的名称<I
+CLASS="EMPHASIS"
+>事件盒</I
+>强调了它的事件处理功能，它也能用于剪裁构件(更多的信息请看下面的示例)。</P
+><P
+>用以下函数创建一个新的事件盒构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    GtkWidget *gtk_event_box_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>然后子构件就可以添加到这个事件盒里面：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_container_add (GTK_CONTAINER (event_box), child_widget);</PRE
+></TD
+></TR
+></TABLE
+><P
+>下面的示例演示了事件盒的用途：创建一个标签，将它剪裁，放到一个小盒子里面，然后设置让鼠标点击时程序退出。改变窗口的尺寸会使标签构件的尺寸发生变化。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/eventbox.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdlib.h&#62;
+#include &#60;gtk/gtk.h&#62;
+
+int main( int argc,
+          char *argv[] )
+{
+    GtkWidget *window;
+    GtkWidget *event_box;
+    GtkWidget *label;
+    
+    gtk_init (&#38;argc, &#38;argv);
+    
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    
+    gtk_window_set_title (GTK_WINDOW (window), "Event Box");
+    
+    g_signal_connect (G_OBJECT (window), "destroy",
+	              G_CALLBACK (exit), NULL);
+    
+    gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+    
+    /* 创建一个事件盒，然后将它加到顶级窗口上 */
+    
+    event_box = gtk_event_box_new ();
+    gtk_container_add (GTK_CONTAINER (window), event_box);
+    gtk_widget_show (event_box);
+    
+    /* 创建一个长标签 */
+    
+    label = gtk_label_new ("Click here to quit, quit, quit, quit, quit");
+    gtk_container_add (GTK_CONTAINER (event_box), label);
+    gtk_widget_show (label);
+    
+    /* 将标签剪裁短。 */
+    gtk_widget_set_size_request (label, 110, 20);
+    
+    /* 为它绑定一个动作 */
+    gtk_widget_set_events (event_box, GDK_BUTTON_PRESS_MASK);
+    g_signal_connect (G_OBJECT (event_box), "button_press_event",
+	              G_CALLBACK (exit), NULL);
+    
+    /* 又是一个要有 X 窗口的东西... */  
+       //译者注： 要设置鼠标式样也要有 X 窗口。gtk_widget_realize使构件在没有show之前就形成 X 窗口。
+    
+    gtk_widget_realize (event_box);
+    gdk_window_set_cursor (event_box-&#62;window, gdk_cursor_new (GDK_HAND1));
+    
+    gtk_widget_show (window);
+    
+    gtk_main ();
+    
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1270.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1306.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>文件选择 File Selections</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>对齐构件 The Alignment widget</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

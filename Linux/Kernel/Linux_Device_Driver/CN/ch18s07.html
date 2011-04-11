@@ -1,0 +1,101 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>18.7.&#160;tty_operaions 结构的细节-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+<link rel="prev" href="ch18s06.html" title="18.6.&#160;tty_driver 结构的细节">
+<link rel="next" href="ch18s08.html" title="18.8.&#160;tty_struct 结构的细节">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">18.7.&#160;tty_operaions 结构的细节</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch18s06.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;18&#160;章&#160;TTY 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch18s08.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ThettyoperationsStructureinDetail.sect"></a>18.7.&#160;tty_operaions 结构的细节</h2></div></div></div>
+<p>tty_operations 结构包含所有的函数回调, 可以被一个 tty 驱动设置和被 tty 核心调用. 当前, 所有包含在这个结构中的的函数指针也在 tty_driver 结构中, 但是会很快被只有一个这个结构的实例来替代.</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>int (*open)(struct tty_struct * tty, struct file * filp);</span></span></dt>
+<dd><p>open 函数.</p></dd>
+<dt><span class="term"><span>void (*close)(struct tty_struct * tty, struct file * filp);</span></span></dt>
+<dd><p>close 函数.</p></dd>
+<dt><span class="term"><span>int (*write)(struct tty_struct * tty, const unsigned char *buf, int count);</span></span></dt>
+<dd><p>write 函数.</p></dd>
+<dt><span class="term"><span>void (*put_char)(struct tty_struct *tty, unsigned char ch);</span></span></dt>
+<dd><p>单字节写函数. 这个函数被 tty 核心调用当单个字节被写入设备. 如果一个 tty 驱动没有定义这个函数, write 函数被调用来替代, 当 tty 核心想发送一个单个字节.</p></dd>
+<dt><span class="term"><span>void (*flush_chars)(struct tty_struct *tty);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void (*wait_until_sent)(struct tty_struct *tty, int timeout);</span></span></dt>
+<dd><p>刷新数据到硬件的函数.</p></dd>
+<dt><span class="term"><span>int (*write_room)(struct tty_struct *tty);</span></span></dt>
+<dd><p>指示多少缓冲空闲的函数.</p></dd>
+<dt><span class="term"><span>int (*chars_in_buffer)(struct tty_struct *tty);</span></span></dt>
+<dd><p>指示多少缓冲满数据的函数.</p></dd>
+<dt><span class="term"><span>int (*ioctl)(struct tty_struct *tty, struct file * file, unsigned int cmd, unsigned long arg);</span></span></dt>
+<dd><p>ioctl 函数. 这个函数被 tty 核心调用, 当 ioctl(2)在设备节点上被调用时.</p></dd>
+<dt><span class="term"><span>void (*set_termios)(struct tty_struct *tty, struct termios * old);</span></span></dt>
+<dd><p>set_termios 函数. 这个函数被 tty 核心调用, 当设备的 termios 设置已被改变时.</p></dd>
+<dt><span class="term"><span>void (*throttle)(struct tty_struct * tty);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void (*unthrottle)(struct tty_struct * tty);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void (*stop)(struct tty_struct *tty);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void (*start)(struct tty_struct *tty);</span></span></dt>
+<dd><p>数据抑制函数. 这些函数用来帮助控制 tty 核心的输入缓存. 这个抑制函数被调用当 tty 核心的输入缓冲满. tty 驱动应当试图通知设备不应当发送字符给它. unthrottle 函数被调用当 tty 核心的输入缓冲已被清空, 并且它现在可以接收更多数据. tty 驱动应当接着通知设备可以接收数据. stop 和  start 函数非常象 throttle 和 unthrottle 函数, 但是它们表示 tty 驱动应当停止发送数据给设备以及以后恢复发送数据.</p></dd>
+<dt><span class="term"><span>void (*hangup)(struct tty_struct *tty);</span></span></dt>
+<dd><p>挂起函数. 这个函数被调用当 tty 驱动应当挂起 tty 设备. 任何需要做的特殊的硬件操作应当在此时发生.</p></dd>
+<dt><span class="term"><span>void (*break_ctl)(struct tty_struct *tty, int state);</span></span></dt>
+<dd><p>线路中断控制函数. 这个函数被调用当这个 tty 驱动要打开或关闭线路的 BREAK 状态在 RS-232 端口上. 如果状态设为 -1, BREAK 状态应当打开. 如果状态设为 0, BREAK 状态应当关闭. 如果这个函数由 tty 驱动实现, tty 核心将处理 TCSBRK, TCSBRKP, TIOCSBRK, 和 TIOCCBRK ioctl. 否则, 这些 ioctls 被发送给驱动 ioctl 函数.</p></dd>
+<dt><span class="term"><span>void (*flush_buffer)(struct tty_struct *tty);</span></span></dt>
+<dd><p>刷新缓冲和丢失任何剩下的数据.</p></dd>
+<dt><span class="term"><span>void (*set_ldisc)(struct tty_struct *tty);</span></span></dt>
+<dd><p>设置线路规程的函数. 这个函数被调用当 tty 核心已改变这个 tty 驱动的线路规程. 这个函数通常不用并且不应当被一个驱动定义.</p></dd>
+<dt><span class="term"><span>void (*send_xchar)(struct tty_struct *tty, char ch);</span></span></dt>
+<dd><p>发送 X-类型 字符 的函数. 这个函数用来发送一个高优先级 XON 或者 XOFF 字符给 tty 设备. 要被发送的字符在 ch 变量中指定.</p></dd>
+<dt><span class="term"><span>int (*read_proc)(char *page, char **start, off_t off, int count, int *eof, void *data);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int (*write_proc)(struct file *file, const char *buffer, unsigned long count, void *data);</span></span></dt>
+<dd><p>/proc 读和写函数.</p></dd>
+<dt><span class="term"><span>int (*tiocmget)(struct tty_struct *tty, struct file *file);</span></span></dt>
+<dd><p>获得当前的特定 tty 设备的线路设置. 如果从 tty 设备成功获取到, 应当返回这个值给调用者.</p></dd>
+<dt><span class="term"><span>int (*tiocmset)(struct tty_struct *tty, struct file *file, unsigned int set, unsigned int clear);</span></span></dt>
+<dd><p>设置当前的特定 tty 设备的线路设置. set 和 clear 包含了去设置或者清除的不同的线路设置.</p></dd>
+</dl></div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch18s06.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch18.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch18s08.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">18.6.&#160;tty_driver 结构的细节&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;18.8.&#160;tty_struct 结构的细节</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

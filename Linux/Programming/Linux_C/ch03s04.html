@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4. 全局变量、局部变量和作用域</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch03.html" title="第 3 章 简单函数" /><link rel="prev" href="ch03s03.html" title="3. 形参和实参" /><link rel="next" href="ch04.html" title="第 4 章 分支语句" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">4. 全局变量、局部变量和作用域</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s03.html">上一页</a> </td><th width="60%" align="center">第 3 章 简单函数</th><td width="20%" align="right"> <a accesskey="n" href="ch04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2714471"></a>4. 全局变量、局部变量和作用域</h2></div></div></div><p>我们把函数中定义的变量称为局部变量（Local Variable）<a id="id2714481" class="indexterm"></a>，由于形参相当于函数中定义的变量，所以形参也是一种局部变量。在这里“<span class="quote">局部</span>”有两层含义：</p><p>1、一个函数中定义的变量不能被另一个函数使用。例如<code class="literal">print_time</code>中的<code class="literal">hour</code>和<code class="literal">minute</code>在<code class="literal">main</code>函数中没有定义，不能使用，同样<code class="literal">main</code>函数中的局部变量也不能被<code class="literal">print_time</code>函数使用。如果这样定义：</p><pre class="programlisting">void print_time(int hour, int minute)
+{
+	printf("%d:%d\n", hour, minute);
+}
+
+int main(void)
+{
+	int hour = 23, minute = 59;
+	print_time(hour, minute);
+	return 0;
+}</pre><p><code class="literal">main</code>函数中定义了局部变量<code class="literal">hour</code>，<code class="literal">print_time</code>函数中也有参数<code class="literal">hour</code>，虽然它们名称相同，但仍然是两个不同的变量，代表不同的存储单元。<code class="literal">main</code>函数的局部变量<code class="literal">minute</code>和<code class="literal">print_time</code>函数的参数<code class="literal">minute</code>也是如此。</p><p>2、每次调用函数时局部变量都表示不同的存储空间。局部变量在每次函数调用时分配存储空间，在每次函数返回时释放存储空间，例如调用<code class="literal">print_time(23, 59)</code>时分配<code class="literal">hour</code>和<code class="literal">minute</code>两个变量的存储空间，在里面分别存上23和59，函数返回时释放它们的存储空间，下次再调用<code class="literal">print_time(12, 20)</code>时又分配<code class="literal">hour</code>和<code class="literal">minute</code>的存储空间，在里面分别存上12和20。</p><p>与局部变量的概念相对的是全局变量（Global Variable）<a id="id2714634" class="indexterm"></a>，全局变量定义在所有的函数体之外，它们在程序开始运行时分配存储空间，在程序结束时释放存储空间，在任何函数中都可以访问全局变量，例如：</p><div class="example"><a id="id2714644"></a><p class="title"><b>例 3.5. 全局变量</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int hour = 23, minute = 59;
+
+void print_time(void)
+{
+	printf("%d:%d in print_time\n", hour, minute);
+}
+
+int main(void)
+{
+	print_time();
+	printf("%d:%d in main\n", hour, minute);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>正因为全局变量在任何函数中都可以访问，所以在程序运行过程中全局变量被读写的顺序从源代码中是看不出来的，源代码的书写顺序并不能反映函数的调用顺序。程序出现了Bug往往就是因为在某个不起眼的地方对全局变量的读写顺序不正确，如果代码规模很大，这种错误是很难找到的。而对局部变量的访问不仅局限在一个函数内部，而且局限在一次函数调用之中，从函数的源代码很容易看出访问的先后顺序是怎样的，所以比较容易找到Bug。因此，<span class="emphasis"><em>虽然全局变量用起来很方便，但一定要慎用，能用函数传参代替的就不要用全局变量</em></span>。</p><p>如果全局变量和局部变量重名了会怎么样呢？如果上面的例子改为：</p><div class="example"><a id="id2714690"></a><p class="title"><b>例 3.6. 作用域</b></p><div class="example-contents"><div><img src="images/func.scope.png" /></div></div></div><br class="example-break" /><p>则第一次调用<code class="literal">print_time</code>打印的是全局变量的值，第二次直接调用<code class="literal">printf</code>打印的则是<code class="literal">main</code>函数局部变量的值。在C语言中每个标识符都有特定的作用域，全局变量是定义在所有函数体之外的标识符，它的作用域从定义的位置开始直到源文件结束，而<code class="literal">main</code>函数局部变量的作用域仅限于<code class="literal">main</code>函数之中。如上图所示，设想整个源文件是一张大纸，也就是全局变量的作用域，而<code class="literal">main</code>函数是盖在这张大纸上的一张小纸，也就是<code class="literal">main</code>函数局部变量的作用域。在小纸上用到标识符<code class="literal">hour</code>和<code class="literal">minute</code>时应该参考小纸上的定义，因为大纸（全局变量的作用域）被盖住了，如果在小纸上用到某个标识符却没有找到它的定义，那么再去翻看下面的大纸上有没有定义，例如上图中的变量<code class="literal">x</code>。</p><p>到目前为止我们在初始化一个变量时都是用常量做Initializer，其实也可以用表达式做Initializer，但要注意一点：<span class="emphasis"><em>局部变量可以用类型相符的任意表达式来初始化，而全局变量只能用常量表达式（Constant Expression）<a id="id2714780" class="indexterm"></a>初始化</em></span>。例如，全局变量<code class="literal">pi</code>这样初始化是合法的：</p><pre class="programlisting">double pi = 3.14 + 0.0016;</pre><p>但这样初始化是不合法的：</p><pre class="programlisting">double pi = acos(-1.0);</pre><p>然而局部变量这样初始化却是可以的。程序开始运行时要用适当的值来初始化全局变量，所以初始值必须保存在编译生成的可执行文件中，因此初始值在<span class="emphasis"><em>编译时</em></span>就要计算出来，然而上面第二种Initializer的值必须在程序<span class="emphasis"><em>运行时</em></span>调用<code class="literal">acos</code>函数才能得到，所以不能用来初始化全局变量。请注意区分编译时和运行时这两个概念。为了简化编译器的实现，C语言从语法上规定全局变量只能用常量表达式来初始化，因此下面这种全局变量初始化是不合法的：</p><pre class="programlisting">int minute = 360;
+int hour = minute / 60;</pre><p>虽然在编译时计算出<code class="literal">hour</code>的初始值是可能的，但是<code class="literal">minute / 60</code>不是常量表达式，不符合语法规定，所以编译器不必想办法去算这个初始值。</p><p>如果全局变量在定义时不初始化则初始值是0，如果局部变量在定义时不初始化则初始值是不确定的。所以，<span class="emphasis"><em>局部变量在使用之前一定要先赋值</em></span>，如果基于一个不确定的值做后续计算肯定会引入Bug。</p><p>如何证明“<span class="quote">局部变量的存储空间在每次函数调用时分配，在函数返回时释放</span>”？当我们想要确认某些语法规则时，可以查教材，也可以查C99，但最快捷的办法就是编个小程序验证一下：</p><div class="example"><a id="id2714872"></a><p class="title"><b>例 3.7. 验证局部变量存储空间的分配和释放</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void foo(void)
+{
+	int i;
+	printf("%d\n", i);
+	i = 777;
+}
+
+int main(void)
+{
+	foo();
+	foo();
+	return 0;
+}</pre></div></div><br class="example-break" /><p>第一次调用<code class="literal">foo</code>函数，分配变量<code class="literal">i</code>的存储空间，然后打印<code class="literal">i</code>的值，由于<code class="literal">i</code>未初始化，打印的应该是一个不确定的值，然后把<code class="literal">i</code>赋值为777，函数返回，释放<code class="literal">i</code>的存储空间。第二次调用<code class="literal">foo</code>函数，分配变量<code class="literal">i</code>的存储空间，然后打印<code class="literal">i</code>的值，由于<code class="literal">i</code>未初始化，如果打印的又是一个不确定的值，就证明了“<span class="quote">局部变量的存储空间在每次函数调用时分配，在函数返回时释放</span>”。分析完了，我们运行程序看看是不是像我们分析的这样：</p><pre class="screen">134518128
+777</pre><p>结果出乎意料，第二次调用打印的<code class="literal">i</code>值正是第一次调用末尾赋给<code class="literal">i</code>的值777。有一种初学者是这样，原本就没有把这条语法规则记牢，或者对自己的记忆力没信心，看到这个结果就会想：哦那肯定是我记错了，改过来记吧，应该是“<span class="quote">函数中的局部变量具有一直存在的固定的存储空间，每次函数调用时使用它，返回时也不释放，再次调用函数时它应该还能保持上次的值</span>”。还有一种初学者是怀疑论者或不可知论者，看到这个结果就会想：教材上明明说“<span class="quote">局部变量的存储空间在每次函数调用时分配，在函数返回时释放</span>”，那一定是教材写错了，教材也是人写的，是人写的就难免出错，哦，连C99也这么写的啊，C99也是人写的，也难免出错，或者C99也许没错，但是反正运行结果就是错了，计算机这东西真靠不住，太容易受电磁干扰和宇宙射线影响了，我的程序写得再正确也有可能被干扰得不能正确运行。</p><p>这是初学者最常见的两种心态。不从客观事实和逻辑推理出发分析问题的真正原因，而仅凭主观臆断胡乱给问题定性，“<span class="quote">说你有罪你就有罪</span>”。先不要胡乱怀疑，我们再做一次实验，在两次<code class="literal">foo</code>函数调用之间插一个别的函数调用，结果就大不相同了：</p><pre class="programlisting">int main(void)
+{
+	foo();
+	printf("hello\n");
+	foo();
+	return 0;
+}</pre><p>结果是：</p><pre class="screen">134518200
+hello
+0</pre><p>这一回，第二次调用<code class="literal">foo</code>打印的<code class="literal">i</code>值又不是777了而是0，“<span class="quote">局部变量的存储空间在每次函数调用时分配，在函数返回时释放</span>”这个结论似乎对了，但另一个结论又不对了：全局变量不初始化才是0啊，不是说“<span class="quote">局部变量不初始化则初值不确定</span>”吗？</p><p>关键的一点是，我说“<span class="quote">初值不确定</span>”，有没有说这个不确定值不能是0？有没有说这个不确定值不能是上次调用赋的值？在这里“<span class="quote">不确定</span>”的准确含义是：每次调用这个函数时局部变量的初值可能不一样，运行环境不同，函数的调用次序不同，都会影响到局部变量的初值。在运用逻辑推理时一定要注意，<span class="emphasis"><em>不要把必要条件（Necessary Condition）<a id="id2715069" class="indexterm"></a>当充分条件（Sufficient Condition）<a id="id2715076" class="indexterm"></a></em></span>，这一点在Debug时尤其重要，看到错误现象不要轻易断定原因是什么，一定要考虑再三，找出它的真正原因。例如，不要看到第二次调用打印777就下结论“<span class="quote">函数中的局部变量具有一直存在的固定的存储空间，每次函数调用时使用它，返回时也不释放，再次调用函数时它应该还能保持上次的值</span>”，这个结论倒是能推出777这个结果，但反过来由777这个结果却不能推出这样的结论。所以说777这个结果是该结论的必要条件，但不是充分条件。也不要看到第二次调用打印0就断定“<span class="quote">局部变量未初始化则初值为0</span>”，0这个结果是该结论的必要条件，但也不是充分条件。至于为什么会有这些现象，为什么这个不确定的值刚好是777，或者刚好是0，等学到<a class="xref" href="ch19s01.html#asmc.func">例 19.1 “研究函数的调用过程”</a>就能解释这些现象了。</p><p>从<a class="xref" href="ch03s02.html#func.ourfirstfunc">第 2 节 “自定义函数”</a>介绍的语法规则可以看出，非定义的函数声明也可以写在局部作用域中，例如：</p><pre class="programlisting">int main(void)
+{
+	void print_time(int, int);
+	print_time(23, 59);
+	return 0;
+}</pre><p>这样声明的标识符<code class="literal">print_time</code>具有局部作域，只在<code class="literal">main</code>函数中是有效的函数名，出了<code class="literal">main</code>函数就不存在<code class="literal">print_time</code>这个标识符了。</p><p>写非定义的函数声明时参数可以只写类型而不起名，例如上面代码中的<code class="literal">void print_time(int, int);</code>，只要告诉编译器参数类型是什么，编译器就能为<code class="literal">print_time(23, 59)</code>函数调用生成正确的指令。另外注意，虽然在一个函数体中可以声明另一个函数，但不能定义另一个函数，C语言不允许嵌套定义函数<sup>[<a id="id2715167" href="#ftn.id2715167" class="footnote">5</a>]</sup>。</p><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2715167" href="#id2715167" class="para">5</a>] </sup>但<code class="literal">gcc</code>的扩展特性允许嵌套定义函数，本书不做详细讨论。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s03.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">3. 形参和实参 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 第 4 章 分支语句</td></tr></table></div></body></html>

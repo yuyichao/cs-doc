@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 二叉树</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch26.html" title="第 26 章 链表、二叉树和哈希表" /><link rel="prev" href="ch26s01.html" title="1. 链表" /><link rel="next" href="ch26s03.html" title="3. 哈希表" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 二叉树</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch26s01.html">上一页</a> </td><th width="60%" align="center">第 26 章 链表、二叉树和哈希表</th><td width="20%" align="right"> <a accesskey="n" href="ch26s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2845871"></a>2. 二叉树</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2845875"></a>2.1. 二叉树的基本概念</h3></div></div></div><p>链表的每个节点可以有一个后继，而二叉树（Binary Tree）<a id="id2845884" class="indexterm"></a>的每个节点可以有两个后继。比如这样定义二叉树的节点：</p><pre class="programlisting">typedef struct node *link;
+struct node {
+	unsigned char item;
+	link l, r;
+};</pre><p>这样的节点可以组织成下图所示的各种形态。</p><div class="figure"><a id="id2845902"></a><p class="title"><b>图 26.9. 二叉树的定义和举例</b></p><div class="figure-contents"><div><img src="images/linkedlist.binarytree.png" alt="二叉树的定义和举例" /></div></div></div><br class="figure-break" /><p>二叉树可以这样递归地定义：</p><div class="orderedlist"><ol type="1"><li><p>就像链表有头指针一样，每个二叉树都有一个根指针（上图中的<code class="literal">root</code>指针）指向它。根指针可以是<code class="literal">NULL</code>，表示空二叉树，或者</p></li><li><p>根指针可以指向一个节点，这个节点除了有数据成员之外还有两个指针域，这两个指针域又分别是另外两个二叉树（左子树和右子树）的根指针。</p></li></ol></div><p>上图举例示意了几种情况。</p><div class="itemizedlist"><ul type="disc"><li><p>单节点的二叉树：左子树和右子树都是空二叉树。</p></li><li><p>只有左子树的二叉树：右子树是空二叉树。</p></li><li><p>只有右子树的二叉树：左子树是空二叉树。</p></li><li><p>一般的二叉树：左右子树都不为空。注意右侧由圈和线段组成的简化图示，以后我们都采用这种简化图示法，在圈中标上该节点数据成员的值。</p></li></ul></div><p>链表的遍历方法是显而易见的：从前到后遍历即可。二叉树是一种树状结构，如何做到把所有节点都走一遍不重不漏呢？有以下几种方法：</p><div class="figure"><a id="id2845990"></a><p class="title"><b>图 26.10. 二叉树的遍历</b></p><div class="figure-contents"><div><img src="images/linkedlist.binarytraverse.png" alt="二叉树的遍历" /></div></div></div><br class="figure-break" /><p>前序（Pre-order Traversal）、中序（In-order Traversal）、后序遍历（Post-order Traversal）和深度优先搜索的顺序类似，层序遍历（Level-order Traversal）和广度优先搜索的顺序类似。</p><p>前序和中序遍历的结果合在一起可以唯一确定二叉树的形态，也就是说根据遍历结果可以构造出二叉树。过程如下图所示：</p><div class="figure"><a id="id2846022"></a><p class="title"><b>图 26.11. 根据前序和中序遍历结果构造二叉树</b></p><div class="figure-contents"><div><img src="images/linkedlist.constructbinary.png" alt="根据前序和中序遍历结果构造二叉树" /></div></div></div><br class="figure-break" /><p>想一想，根据中序和后序遍历结果能否构造二叉树？根据前序和后序遍历结果能否构造二叉树？</p><div class="example"><a id="id2846041"></a><p class="title"><b>例 26.3. 二叉树</b></p><div class="example-contents"><pre class="programlisting">/* binarytree.h */
+#ifndef BINARYTREE_H
+#define BINARYTREE_H
+
+typedef struct node *link;
+struct node {
+     unsigned char item;
+     link l, r;
+};
+
+link init(unsigned char VLR[], unsigned char LVR[], int n);
+void pre_order(link t, void (*visit)(link));
+void in_order(link t, void (*visit)(link));
+void post_order(link t, void (*visit)(link));
+int count(link t);
+int depth(link t);
+void destroy(link t);
+
+#endif</pre><pre class="programlisting">/* binarytree.c */
+#include &lt;stdlib.h&gt;
+#include "binarytree.h"
+
+static link make_node(unsigned char item)
+{
+	link p = malloc(sizeof *p);
+	p-&gt;item = item;
+	p-&gt;l = p-&gt;r = NULL;
+	return p;
+}
+
+static void free_node(link p)
+{
+	free(p);
+}
+
+link init(unsigned char VLR[], unsigned char LVR[], int n)
+{
+	link t;
+	int k;
+	if (n &lt;= 0)
+		return NULL;
+	for (k = 0; VLR[0] != LVR[k]; k++);
+	t = make_node(VLR[0]);
+	t-&gt;l = init(VLR+1, LVR, k);
+	t-&gt;r = init(VLR+1+k, LVR+1+k, n-k-1);
+	return t;
+}
+
+void pre_order(link t, void (*visit)(link))
+{
+	if (!t)
+		return;
+	visit(t);
+	pre_order(t-&gt;l, visit);
+	pre_order(t-&gt;r, visit);
+}
+
+void in_order(link t, void (*visit)(link))
+{
+	if (!t)
+		return;
+	in_order(t-&gt;l, visit);
+	visit(t);
+	in_order(t-&gt;r, visit);
+}
+
+void post_order(link t, void (*visit)(link))
+{
+	if (!t)
+		return;
+	post_order(t-&gt;l, visit);
+	post_order(t-&gt;r, visit);
+	visit(t);
+}
+
+int count(link t)
+{
+	if (!t)
+		return 0;
+	return 1 + count(t-&gt;l) + count(t-&gt;r);
+}
+
+int depth(link t)
+{
+	int dl, dr;
+	if (!t)
+		return 0;
+	dl = depth(t-&gt;l);
+	dr = depth(t-&gt;r);
+	return 1 + (dl &gt; dr ? dl : dr);
+}
+
+void destroy(link t)
+{
+	post_order(t, free_node);
+}</pre><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+#include "binarytree.h"
+
+void print_item(link p)
+{
+	printf("%d", p-&gt;item);
+}
+
+int main()
+{
+	unsigned char pre_seq[] = { 4, 2, 1, 3, 6, 5, 7 };
+	unsigned char in_seq[] = { 1, 2, 3, 4, 5, 6, 7 };
+	link root = init(pre_seq, in_seq, 7);
+	pre_order(root, print_item);
+	putchar('\n');
+	in_order(root, print_item);
+	putchar('\n');
+	post_order(root, print_item);
+	putchar('\n');
+	printf("count=%d depth=%d\n", count(root), depth(root));
+	destroy(root);
+	return 0;
+}</pre></div></div><br class="example-break" /><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2846092"></a>习题</h4></div></div></div><p>1、本节描述了二叉树的递归定义，想一想单链表的递归定义应该怎么表述？请仿照本节的例子用递归实现单链表的各种操作函数：</p><pre class="programlisting">link init(unsigned char elements[], int n);
+void pre_order(link t, void (*visit)(link));
+void post_order(link t, void (*visit)(link));
+int count(link t);
+void destroy(link t);</pre></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2846120"></a>2.2. 排序二叉树</h3></div></div></div><p>排序二叉树（BST，Binary Search Tree）<a id="id2846126" class="indexterm"></a>具有这样的性质：对于二叉树中的任意节点，如果它有左子树或右子树，则该节点的数据成员大于左子树所有节点的数据成员，且小于右子树所有节点的数据成员。排序二叉树的中序遍历结果是从小到大排列的，其实上一节的<a class="xref" href="ch26s02.html#linkedlist.binarytraverse">图 26.10 “二叉树的遍历”</a>就是排序二叉树。</p><div class="example"><a id="id2846146"></a><p class="title"><b>例 26.4. 排序二叉树</b></p><div class="example-contents"><pre class="programlisting">/* bst.h */
+#ifndef BST_H
+#define BST_H
+
+typedef struct node *link;
+struct node {
+     unsigned char item;
+     link l, r;
+};
+
+link search(link t, unsigned char key);
+link insert(link t, unsigned char key);
+link delete(link t, unsigned char key);
+void print_tree(link t);
+
+#endif</pre><pre class="programlisting">/* bst.c */
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include "bst.h"
+
+static link make_node(unsigned char item)
+{
+	link p = malloc(sizeof *p);
+	p-&gt;item = item;
+	p-&gt;l = p-&gt;r = NULL;
+	return p;
+}
+
+static void free_node(link p)
+{
+	free(p);
+}
+
+link search(link t, unsigned char key)
+{
+	if (!t)
+		return NULL;
+	if (t-&gt;item &gt; key)
+		return search(t-&gt;l, key);
+	if (t-&gt;item &lt; key)
+		return search(t-&gt;r, key);
+	/* if (t-&gt;item == key) */
+	return t;
+}
+
+link insert(link t, unsigned char key)
+{
+	if (!t)
+		return make_node(key);
+	if (t-&gt;item &gt; key) /* insert to left subtree */
+		t-&gt;l = insert(t-&gt;l, key);
+	else /* if (t-&gt;item &lt;= key), insert to right subtree */
+		t-&gt;r = insert(t-&gt;r, key);
+	return t;
+}
+
+link delete(link t, unsigned char key)
+{
+	link p;
+	if (!t)
+		return NULL;
+	if (t-&gt;item &gt; key) /* delete from left subtree */
+		t-&gt;l = delete(t-&gt;l, key);
+	else if (t-&gt;item &lt; key) /* delete from right subtree */
+		t-&gt;r = delete(t-&gt;r, key);
+	else { /* if (t-&gt;item == key) */
+		if (t-&gt;l == NULL &amp;&amp; t-&gt;r == NULL) { /* if t is leaf node */
+			free_node(t);
+			t = NULL;
+		} else if (t-&gt;l) { /* if t has left subtree */
+			/* replace t with the rightmost node in left subtree */
+			for (p = t-&gt;l; p-&gt;r; p = p-&gt;r);
+			t-&gt;item = p-&gt;item;
+			t-&gt;l = delete(t-&gt;l, t-&gt;item);
+		} else { /* if t has right subtree */
+			/* replace t with the leftmost node in right subtree */
+			for (p = t-&gt;r; p-&gt;l; p = p-&gt;l);
+			t-&gt;item = p-&gt;item;
+			t-&gt;r = delete(t-&gt;r, t-&gt;item);
+		}
+	}
+	return t;
+}
+
+void print_tree(link t)
+{
+	if (t) {
+		printf("(");
+		printf("%d", t-&gt;item);
+		print_tree(t-&gt;l);
+		print_tree(t-&gt;r);
+		printf(")");
+	} else
+		printf("()");
+}</pre><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+#include "bst.h"
+
+#define RANGE 100
+#define N 6
+
+void print_item(link p)
+{
+	printf("%d", p-&gt;item);
+}
+
+int main()
+{
+	int i, key;
+	link root = NULL;
+	srand(time(NULL));
+	for (i = 0; i &lt; N; i++)
+		root = insert(root, rand() % RANGE);
+	printf("\t\\tree");
+	print_tree(root);
+	printf("\n\n");
+	while (root) {
+		key = rand() % RANGE;
+		if (search(root, key)) {
+			printf("delete %d in tree\n", key);
+			root = delete(root, key);
+			printf("\t\\tree");
+			print_tree(root);
+			printf("\n\n");
+		}
+	}
+}</pre></div></div><br class="example-break" /><pre class="screen">$ ./a.out
+	\tree(83(77(15()(35()()))())(86()(93()())))
+
+delete 86 in tree
+	\tree(83(77(15()(35()()))())(93()()))
+
+delete 35 in tree
+	\tree(83(77(15()())())(93()()))
+
+delete 93 in tree
+	\tree(83(77(15()())())())
+
+delete 15 in tree
+	\tree(83(77()())())
+
+delete 83 in tree
+	\tree(77()())
+
+delete 77 in tree
+	\tree()</pre><p>程序的运行结果可以用Greg Lee编写的The Tree Preprocessor（<a class="ulink" href="http://www.essex.ac.uk/linguistics/clmt/latex4ling/trees/tree/" target="_top">http://www.essex.ac.uk/linguistics/clmt/latex4ling/trees/tree/</a>）转换成树形：</p><pre class="screen">$ ./a.out | ./tree/tree
+	     83
+          ___|___
+          |     |
+          77    86
+         _|__  _|__
+         |  |  |  |
+         15       93
+        _|__     _|__
+        |  |     |  |
+           35
+          _|__
+          |  |
+
+delete 86 in tree
+	     83
+          ___|___
+          |     |
+          77    93
+         _|__  _|__
+         |  |  |  |
+         15
+        _|__
+        |  |
+           35
+          _|__
+          |  |
+
+delete 35 in tree
+	     83
+          ___|___
+          |     |
+          77    93
+         _|__  _|__
+         |  |  |  |
+         15
+        _|__
+        |  |
+
+delete 93 in tree
+	   83
+          _|__
+          |  |
+          77
+         _|__
+         |  |
+         15
+        _|__
+        |  |
+
+delete 15 in tree
+	  83
+         _|__
+         |  |
+         77
+        _|__
+        |  |
+
+delete 83 in tree
+	 77
+        _|__
+        |  |
+
+delete 77 in tree</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch26s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch26.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch26s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 链表 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 哈希表</td></tr></table></div></body></html>

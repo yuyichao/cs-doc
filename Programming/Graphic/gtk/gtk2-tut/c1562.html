@@ -1,0 +1,468 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>菜单构件</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="PREVIOUS"
+TITLE="笔记本 Notebooks"
+HREF="x1513.html"><LINK
+REL="NEXT"
+TITLE="手工菜单示例"
+HREF="x1639.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1513.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1639.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="CH-MENUWIDGET">菜单构件</H1
+><P
+>有两种创建菜单的方法：一个容易的，一种难的。它们各有各的用处，不过一般你可以使用套件(Itemfactory)（容易的方法）。“难”的方法是直接使用各调用来创建所有的菜单。容易的方法是使用 gtk_item_factory 调用。这要简单得多，但每种方法各有优点和缺点。</P
+><P
+>套件要容易使用得多，加新的菜单也方便些，虽然用手工方法写一些封装(wrapper)函数来创建菜单能对可用性大有帮助。使用套件，不能在菜单上增加图片或 '/' 字符。</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-MANUALMENUCREATION">手工创建菜单</H1
+><P
+>按照现实教学中的惯例，我们将先介绍难的方法。</P
+><P
+>创建菜单栏和子菜单时要用到三种构件：</P
+><P
+></P
+><UL
+><LI
+><P
+>一个菜单项(menu item)，就是用户要选择的东西，比如，"Save"</P
+></LI
+><LI
+><P
+>一个菜单(menu)，作为菜单项的容器，以及</P
+></LI
+><LI
+><P
+>一个菜单栏(menubar)，是各个单独菜单的容器。</P
+></LI
+></UL
+><P
+>菜单项构件有两个不同的用处，这情况有一点复杂。既有组装到菜单里的构件，也有组装到菜单栏中，当被选中时激活菜单的构件。</P
+><P
+>让我们看一下用来创建菜单和菜单栏的函数。第一个函数用来创建一个新的菜单栏。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_menu_bar_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个相当自我解释的函数创建一个新的菜单栏。你用 gtk_container_add() 组装它到一个窗口，或盒组装(box_pack)函数来将它组装到一个盒子中 － 就像按钮一样。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_menu_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个函数返回指向一个新菜单的指针。它从不会真正显示（用 gtk_widget_show()），它只是一个菜单项的容器。我希望你看了后面的示例后会弄清楚一些。</P
+><P
+>接下来的三个调用用来创建被组装到菜单（和菜单栏）中的菜单项。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_menu_item_new( void );
+
+GtkWidget *gtk_menu_item_new_with_label( const char *label );
+
+GtkWidget *gtk_menu_item_new_with_mnemnonic( const char *label );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这些调用用来创建将显示的菜单项。记住要区别用 gtk_menu_new() 创建的“菜单”和用 gtk_menu_item_new() 函数创建的“菜单项”。有了相关联动作的菜单项将是一个真实的按钮，而菜单将是一个包含菜单项的容器。</P
+><P
+>gtk_menu_item_new_with_label() 和 gtk_menu_item_new() 函数正如你读了按钮部分后料想的一样。其一创建一个已经有一个标签组装进来了的新的菜单项，另一个仅仅创建一个空白的菜单项。</P
+><P
+>在创建一个菜单项后你要将它放到一个菜单里。用函数 gtk_menu_append 就行了。为了截取何时这个项被用户选中，我们要用平常的方法连接到<TT
+CLASS="LITERAL"
+>activate</TT
+>信号。所以，如果我们要创建一个标准的<TT
+CLASS="LITERAL"
+>File</TT
+>菜单，包括<TT
+CLASS="LITERAL"
+>Open</TT
+>，<TT
+CLASS="LITERAL"
+>Save</TT
+>和<TT
+CLASS="LITERAL"
+>Quit</TT
+>选项，代码将像这样：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    file_menu = gtk_menu_new ();    /* 不必显示菜单 */
+
+    /* 创建菜单项 */
+    open_item = gtk_menu_item_new_with_label ("Open");
+    save_item = gtk_menu_item_new_with_label ("Save");
+    quit_item = gtk_menu_item_new_with_label ("Quit");
+
+    /* 将它们加到菜单中 */
+    gtk_menu_append (GTK_MENU (file_menu), open_item);
+    gtk_menu_append (GTK_MENU (file_menu), save_item);
+    gtk_menu_append (GTK_MENU (file_menu), quit_item);
+
+    /* 将回调函数绑定到activate信号 */
+    g_signal_connect_swapped (G_OBJECT (open_item), "activate",
+                              G_CALLBACK (menuitem_response),
+                              (gpointer) "file.open");
+    g_signal_connect_swapped (G_OBJECT (save_item), "activate",
+                              G_CALLBACK (menuitem_response),
+                              (gpointer) "file.save");
+
+    /* 我们可以绑定Quit菜单项到我们的退出函数 */
+    g_signal_connect_swapped (G_OBJECT (quit_item), "activate",
+                              G_CALLBACK (destroy),
+                              (gpointer) "file.quit");
+
+    /* 一定要显示菜单项 */
+    gtk_widget_show (open_item);
+    gtk_widget_show (save_item);
+    gtk_widget_show (quit_item);</PRE
+></TD
+></TR
+></TABLE
+><P
+>这时我们有了我们的菜单。现在我们要创建一个菜单栏，并为<TT
+CLASS="LITERAL"
+>File</TT
+>条目(entry)创建一个菜单项，我们的菜单就加在这个上。代码看起来像这样：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    menu_bar = gtk_menu_bar_new ();
+    gtk_container_add (GTK_CONTAINER (window), menu_bar);
+    gtk_widget_show (menu_bar);
+
+    file_item = gtk_menu_item_new_with_label ("File");
+    gtk_widget_show (file_item);</PRE
+></TD
+></TR
+></TABLE
+><P
+>现在我们要把菜单和<TT
+CLASS="LITERAL"
+>file_item</TT
+>关联起来。用这个函数可以做到：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_menu_item_set_submenu( GtkMenuItem *menu_item,
+                                GtkWidget   *submenu );</PRE
+></TD
+></TR
+></TABLE
+><P
+>那么，我们的示例接下来就是</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_menu_item_set_submenu (GTK_MENU_ITEM (file_item), file_menu);</PRE
+></TD
+></TR
+></TABLE
+><P
+>所有剩下要做的就是将菜单加到菜单栏，用这个函数完成：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_menu_bar_append( GtkMenuBar *menu_bar,
+                          GtkWidget  *menu_item );</PRE
+></TD
+></TR
+></TABLE
+><P
+>在我们的情况下就像这样了：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    gtk_menu_bar_append (GTK_MENU_BAR (menu_bar), file_item);</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果我们想让菜单在菜单栏上右对齐，例如帮助菜单就经常是这样，我们可以在绑定它到菜单栏之前使用下面的函数（本例中又是对<TT
+CLASS="LITERAL"
+>file_item</TT
+>使用）。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_menu_item_right_justify( GtkMenuItem *menu_item );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这里是一个对创建一个附带了菜单的菜单栏所需步骤的概要：</P
+><P
+></P
+><UL
+><LI
+><P
+> 用 gtk_menu_new() 创建一个新的菜单</P
+></LI
+><LI
+><P
+> 多次调用 gtk_menu_item_new() 创建每个你想在你的菜单上出现的菜单项。并使用 gtk_menu_append() 将每个新的菜单项放到菜单上。</P
+></LI
+><LI
+><P
+> 用 gtk_menu_item_new() 创建一个菜单项。这将是菜单的根(root)，上面显示的文本将自己出现在菜单栏上。</P
+></LI
+><LI
+><P
+> 用 gtk_menu_item_set_submenu() 将菜单绑定到根菜单项（就是上一步创建的那个）。</P
+></LI
+><LI
+><P
+> 用 gtk_menu_bar_new 创建一个新的菜单栏。在一个菜单栏上创建一系列菜单时这步只要做一次就行了。</P
+></LI
+><LI
+><P
+> 用 gtk_menu_bar_append() 将根菜单项放到菜单栏上。</P
+></LI
+></UL
+><P
+>创建一个弹出菜单几乎也一样。不同的是菜单不会被菜单栏“自动”弹出，而是在button-press事件（例如）里调用函数 gtk_menu_popup() 时明确地弹出。有这些步骤：</P
+><P
+></P
+><UL
+><LI
+><P
+>创建一个事件处理函数。它要有如下原型：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static gint handler (GtkWidget *widget,
+                     GdkEvent  *event);</PRE
+></TD
+></TR
+></TABLE
+><P
+>并且它会根据event得到菜单弹出的地方。</P
+></LI
+><LI
+><P
+>在事件处理函数里，如果这是一个鼠标按钮按下事件，把<TT
+CLASS="LITERAL"
+>event</TT
+>当作鼠标按键事件（本来就是）并像示例代码那样利用它传递信息给gtk_menu_popup()。</P
+></LI
+><LI
+><P
+>绑定那个事件处理函数到一个构件用</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    g_signal_connect_swapped (G_OBJECT (widget), "event",
+                              G_CALLBACK (handler),
+                              G_OBJECT (menu));</PRE
+></TD
+></TR
+></TABLE
+><P
+>其中<TT
+CLASS="LITERAL"
+>widget</TT
+>是你要绑定到的构件，<TT
+CLASS="LITERAL"
+>handler</TT
+>是处理函数，而<TT
+CLASS="LITERAL"
+>menu</TT
+>是一个用 gtk_menu_new() 创建的菜单。它可以是一个也被菜单栏弹出的菜单，示例代码里就做了示范。</P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1513.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1639.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>笔记本 Notebooks</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>手工菜单示例</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

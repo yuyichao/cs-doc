@@ -1,0 +1,1260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>多元多项式最大公因子及因子分解 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>多元多项式最大公因子及因子分解
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="MultiPoly.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="MultiPoly.html#sec1">多元多项式插值方法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="MultiPoly.html#sec2">稠密插值</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec3">稀疏插值</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="MultiPoly.html#sec4">Euclid算法和一般模算法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="MultiPoly.html#sec5">概述</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec6"><img src="latex/latex2png-MultiPoly_143085366_-5.gif" alt="$\mathbb{Z}_p[x_1,x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">上最大公因子</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec7">多元多项式的&quot;Mignotte&quot;界</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec8"><img src="latex/latex2png-MultiPoly_121903957_-5.gif" alt="$\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">上最大公因子</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="MultiPoly.html#sec9">Zippel稀疏插值模算法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="MultiPoly.html#sec10">一个具体的例子</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec11">算法描述</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="MultiPoly.html#sec12">求GCD的其它方法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="MultiPoly.html#sec13">启发式算法(Heuristic GCD)</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec14">EZ-GCD</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="MultiPoly.html#sec15">多元多项式因子分解的Kronecker算法</a>
+  </dt>
+  <dt>
+    <a href="MultiPoly.html#sec16">利用Hensel提升的因子分解算法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="MultiPoly.html#sec17">概述</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec18">Extended Zassenhaus 算法</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec19">因子还原</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec20">预先确定因子的首项系数</a>
+      </dt>
+      <dt>
+	<a href="MultiPoly.html#sec21">EEZ算法</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p>在前面的章节中,我们已经具体地讨论了各种一元多项式环上的GCD问题以及因子分解问题,本章我们讨论多元多项式的相关问题.由于我们研究的是“精确”符号代数,因此这里只考虑整系数环上的多元多项式,亦即在<img src="latex/latex2png-MultiPoly_121903957_-5.gif" alt="$\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">中.</p>
+
+<p>对于多元多项式的最大公因子和因子分解问题,我们也主要采用各种同态象的方法,以求将多元问题转化为一元问题求解.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>多元多项式插值方法</h2>
+
+<p class="first">回忆我们在<img src="latex/latex2png-MultiPoly_27044286_-5.gif" alt="$\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">中处理问题时所用的方法.为了有效避免系数膨胀问题,我们无论求最大公因子还是做因子分解,都采用了模素数的做法,将其化为有限域上多项式问题,并且最后用中国剩余定理以及若干特殊的技术（如因子组合,格中短矢量等）将其恢复.对于多元多项式环,不仅要模素数在<img src="latex/latex2png-MultiPoly_68858421_-5.gif" alt="$\mathbb{Z}_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">中讨论问题,还要将多元问题化为一元问题,这里我们主要都是采用赋值同态的方法.即同态映射
+<img src="latex/latex2png-MultiPoly_224635241_.gif" alt="$$\Phi_{x_i-a}(f)=f\bmod (x_i-a)=f(x_1,\ldots,x_{i-1},a,x_{i+1},\ldots,x_n).$$" class="latex-display" width="580" height="18">
+这样相当于给某些未定元取赋值点,最后我们需要用中国剩余定理,或者说是插值的方法还原多项式.</p>
+
+<p>前面我们曾经提到过多点的Lagrange插值快速算法,鉴于我们后面的算法可能是逐点插值,甚至还有所谓的“稀疏插值”,因此本节将介绍稠密插值和稀疏插值算法<span class="cite"><a class="cite" href="MultiPoly.html#ref-1" name="cite-1">[1]</a></span>.它们对于多元多项式最大公因子的模算法是很有用的.</p>
+
+<h3><a name="sec2" id="sec2"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>稠密插值</h3>
+
+<p class="first">插值问题要解决的问题是已知若干个点<img src="latex/latex2png-MultiPoly_242205010_-4.gif" alt="$u_1,u_2,\ldots,u_k$" class="latex-inline" style="vertical-align: -4px" width="95" height="12">和<img src="latex/latex2png-MultiPoly_260030818_-4.gif" alt="$v_1,v_2,\ldots,v_k$" class="latex-inline" style="vertical-align: -4px" width="90" height="12">,求多项式<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">使得<img src="latex/latex2png-MultiPoly_187697777_-4.gif" alt="$\forall i=1,2,\ldots,k$" class="latex-inline" style="vertical-align: -4px" width="107" height="16">有<img src="latex/latex2png-MultiPoly_205563727_-5.gif" alt="$f(u_i)=v_i$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">.下面直接给出Newton插值算法,很容易验证算法的正确性.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name="al:newtoninterpolation"></a></span><span class="theorem-name">(Newton插值)</span>
+输入和输出同前描述.
+
+<ol>
+<li>赋初值<img src="latex/latex2png-MultiPoly_72057151_-5.gif" alt="$f(x)=v_1$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,<img src="latex/latex2png-MultiPoly_258503020_-5.gif" alt="$q(x)=(x-u_1)$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">,</li>
+
+<li>对于<img src="latex/latex2png-MultiPoly_43539346_-4.gif" alt="$i=2,3,\ldots,k$" class="latex-inline" style="vertical-align: -4px" width="98" height="16">,顺次计算
+<img src="latex/latex2png-MultiPoly_157492988_.gif" alt="$$f(x)=f(x)+\frac{q(x)(v_i-f(u_i))}{q(u_i)},\quad q(x)=(x-u_i)q(x),$$" class="latex-display" width="580" height="41"></li>
+
+<li>输出<img src="latex/latex2png-MultiPoly_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">.</li>
+</ol>
+
+
+</div>
+
+<p>多元多项式的稠密插值基于的思想十分简单,例如我们有一个函数<img src="latex/latex2png-MultiPoly_110430999_-5.gif" alt="$F(x_1,\ldots,x_n)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,可以求得它在某些点上的函数值,我们的任务是找到一个各个变元次数均不超过<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的多元多项式<img src="latex/latex2png-MultiPoly_111086359_-5.gif" alt="$P(x_1,\ldots,x_n)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,使得它们在各整点上的值相同.注意到我们在这里的问题的提法是很具有一般性的,不仅可以将GCD问题化为这种形式,甚至也可以将诸如多项式的乘法等问题这样提出来.</p>
+
+<p>稠密插值的基本思想就是递归地依次将各个变元插值回来,假设我们有一初值点<img src="latex/latex2png-MultiPoly_205743845_-5.gif" alt="$(x_{10},x_{20},\ldots,x_{n0})$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,我们首先可以固定<img src="latex/latex2png-MultiPoly_25317952_-4.gif" alt="$x_{20},\ldots,x_{n0}$" class="latex-inline" style="vertical-align: -4px" width="83" height="12">,而再取<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个<img src="latex/latex2png-MultiPoly_165448684_-2.gif" alt="$x_1$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">的值,由一元插值方法(Newton法或Lagrange法)求得多项式<img src="latex/latex2png-MultiPoly_88788870_-5.gif" alt="$P(x_1,x_{20},\ldots,x_{n0})$" class="latex-inline" style="vertical-align: -5px" width="134" height="18">,依次再确定各变元<img src="latex/latex2png-MultiPoly_138455426_-4.gif" alt="$x_2,\ldots,x_n$" class="latex-inline" style="vertical-align: -4px" width="71" height="12">即可.</p>
+
+<p>若我们设<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次一元多项式插值问题的复杂度为<img src="latex/latex2png-MultiPoly_68455366_-5.gif" alt="$M(d)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">,则易知本算法的复杂度为<img src="latex/latex2png-MultiPoly_78933910_-5.gif" alt="$n(d+1)^{n-1}M(d)$" class="latex-inline" style="vertical-align: -5px" width="124" height="19"><span class="cite"><a class="cite" href="MultiPoly.html#ref-2" name="cite-2">[2]</a></span>.</p>
+
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>稀疏插值</h3>
+
+<h4><a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>问题引入</h4>
+
+<p class="first">如果我们先用一个例子来介绍稀疏插值算法,将会对它有一个更好的了解.</p>
+
+<p>从上节稠密插值算法过程我们可以看出,对<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个变元次数不超过<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的多项式的插值我们大约要对函数<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">求值<img src="latex/latex2png-MultiPoly_13967360_-5.gif" alt="$(d+1)^n$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">次.为了便于说明,我们用<span class="cite"><a class="cite" href="MultiPoly.html#ref-2" name="cite-2">[2]</a></span>中所用的例子:对于多项式
+<img src="latex/latex2png-MultiPoly_204631208_.gif" alt="$$P(x,y,z)=x^5z^2+x^5z+xy^4+xyz^5+y^5z,$$" class="latex-display" width="580" height="20">
+其需要计算函数值<img src="latex/latex2png-MultiPoly_255413461_-5.gif" alt="$(5+1)^3=216$" class="latex-inline" style="vertical-align: -5px" width="102" height="19">次！事实上,这么多插值次数对于这样稀疏的多项式显然是极其不划算的.我们重复一下插值的过程以说明稀疏插值是如何减少插值次数的.</p>
+
+<p>首先可以由赋值点<img src="latex/latex2png-MultiPoly_135779061_-5.gif" alt="$(x_i,y_0,z_0),i=0,\ldots,5$" class="latex-inline" style="vertical-align: -5px" width="161" height="18">通过稠密插值得到<img src="latex/latex2png-MultiPoly_244436928_-5.gif" alt="$P(x,y_0,z_0)=ax^5+bx+c$" class="latex-inline" style="vertical-align: -5px" width="193" height="19">.下一步即要再选择5个<img src="latex/latex2png-MultiPoly_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的赋值点<img src="latex/latex2png-MultiPoly_147622892_-4.gif" alt="$y_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">,计算<img src="latex/latex2png-MultiPoly_257746812_-5.gif" alt="$P(x,y_i,z_0)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">才能由此插值得到<img src="latex/latex2png-MultiPoly_190358867_-5.gif" alt="$P(x,y,z_0)$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">.如果是稠密插值法,此时对于每个<img src="latex/latex2png-MultiPoly_147622892_-4.gif" alt="$y_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">,我们都需取6个<img src="latex/latex2png-MultiPoly_164400108_-2.gif" alt="$x_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">来插值,但是如果<img src="latex/latex2png-MultiPoly_147622892_-4.gif" alt="$y_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">选的值恰当(所谓恰当的意义,后文定义<a class="ref-th" href="MultiPoly.html#def:preciseevaluationpoint">2</a>和定理<a class="ref-th" href="MultiPoly.html#th:preciseevaluationpoint">1</a>将会给出说明),我们完全可以假设对于<img src="latex/latex2png-MultiPoly_69480021_-5.gif" alt="$y_i(1\le i\le 5)$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">,也有
+<img src="latex/latex2png-MultiPoly_20710315_.gif" alt="$$P(x,y_i,z_0)=a_ix^5+b_ix+c,$$" class="latex-display" width="580" height="20">
+于是,对每个<img src="latex/latex2png-MultiPoly_147622892_-4.gif" alt="$y_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">只需取3个<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的赋值点来插值,通过解方程的方法计算系数<img src="latex/latex2png-MultiPoly_6779976_-4.gif" alt="$a_i,b_i,c_i$" class="latex-inline" style="vertical-align: -4px" width="54" height="16">.</p>
+
+<p>这样,我们总共计算函数值的次数为<img src="latex/latex2png-MultiPoly_22621556_-2.gif" alt="$6+3\times 5=21$" class="latex-inline" style="vertical-align: -2px" width="103" height="13">,从而得到了<img src="latex/latex2png-MultiPoly_190358867_-5.gif" alt="$P(x,y,z_0)$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">,注意从这一步开始,我们已经节省了插值次数,从原来的需要求值<img src="latex/latex2png-MultiPoly_23987725_-1.gif" alt="$6\times 6=36$" class="latex-inline" style="vertical-align: -1px" width="75" height="12">次降到了21次.并且可设求得的<img src="latex/latex2png-MultiPoly_190358867_-5.gif" alt="$P(x,y,z_0)$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">具有形式:
+<img src="latex/latex2png-MultiPoly_209060570_.gif" alt="$$P(x,y,z_0)=ax^5+bxy^4+cxy+dy^5.$$" class="latex-display" width="580" height="20"></p>
+
+<p>接下来的步骤就比较顺理成章了,我们同样要再计算<img src="latex/latex2png-MultiPoly_125900011_-5.gif" alt="$P(x,y,z_i),1\le i\le 5$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">,此时可假设各多项式具有形式
+<img src="latex/latex2png-MultiPoly_52105264_.gif" alt="$$P(x,y,z_i)=a_ix^5+b_ixy^4+c_ixy+d_iy^5,$$" class="latex-display" width="580" height="20">
+则需再求值<img src="latex/latex2png-MultiPoly_245889523_-1.gif" alt="$4\times 5=20$" class="latex-inline" style="vertical-align: -1px" width="75" height="12">次,总共求值次数<img src="latex/latex2png-MultiPoly_125006866_0.gif" alt="$41$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">次.</p>
+
+
+<h4><a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>稀疏插值算法</h4>
+
+<p class="first">为了叙述方便,给出如下记号.设多项式<img src="latex/latex2png-MultiPoly_205587904_-5.gif" alt="$P(X)=P(X_1,X_2,\ldots,X_n)\in F[X]$" class="latex-inline" style="vertical-align: -5px" width="254" height="18">,<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为某个域,每个变元<img src="latex/latex2png-MultiPoly_30182380_-2.gif" alt="$X_i$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">的次数都不超过<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,并且<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的的单项式项式为<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">(对于稀疏多项式有<img src="latex/latex2png-MultiPoly_5332951_-5.gif" alt="$T\ll (d+1)^n$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">).设<img src="latex/latex2png-MultiPoly_220989719_-5.gif" alt="$v=(v_1,\ldots,v_n)$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">为一<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">元有序对,定义单项式记号
+<img src="latex/latex2png-MultiPoly_69687279_.gif" alt="$$X^v=X_1^{v_1}X_2^{v_2}\cdots X_n^{v_n},$$" class="latex-display" width="580" height="17">
+则多项式<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">可记为
+<img src="latex/latex2png-MultiPoly_31737018_.gif" alt="$$P=c_1X^{e_1}+c_2X^{e_2}+\cdots+c_TX^{e_T},$$" class="latex-display" width="580" height="16">
+其中<img src="latex/latex2png-MultiPoly_89040978_-4.gif" alt="$e_1,\ldots,e_T$" class="latex-inline" style="vertical-align: -4px" width="70" height="12">均为<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">元序对.</p>
+
+<p>从某种意义上说,集合<img src="latex/latex2png-MultiPoly_73653886_-5.gif" alt="$\{e_1,e_2,\ldots,e_T\}$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">反映了多项式<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的“结构”,因而我们定义下面的:
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name">(模板集)</span>
+记多项式指数的集合为
+<img src="latex/latex2png-MultiPoly_58392726_.gif" alt="$$\mathrm{skel}P=\{e_1,e_2,\ldots,e_T\},$$" class="latex-display" width="580" height="18">
+简称其模板集(<span class="cite"><a class="cite" href="MultiPoly.html#ref-2" name="cite-2">[2]</a></span>中称为skeleton).并记其在前<img src="latex/latex2png-MultiPoly_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">维上的投影为
+<img src="latex/latex2png-MultiPoly_213007759_.gif" alt="$$\mathrm{skel}_kP=\{(e_1,\ldots,e_k)|\exists e=(e_1,\ldots,e_T)\in\mathrm{skel}P\}.$$" class="latex-display" width="580" height="18"></p>
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义2<a name="def:preciseevaluationpoint"></a></span><span class="theorem-name">(精确求值点)</span>
+设<img src="latex/latex2png-MultiPoly_74178010_-5.gif" alt="$(x_1,\ldots,x_n)\in F^n$" class="latex-inline" style="vertical-align: -5px" width="126" height="18">,若<img src="latex/latex2png-MultiPoly_152687136_-5.gif" alt="$\forall k(1<k<n)$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">,有
+<img src="latex/latex2png-MultiPoly_227804050_.gif" alt="$$\mathrm{skel}P(X_1,\ldots,X_k,x_{k+1},\ldots,x_n)=\mathrm{skel}_kP(X),$$" class="latex-display" width="580" height="18">
+则称其为精确求值点(precise evaluation point).
+
+
+</div>
+
+<p>注意到一般情况下只有
+<img src="latex/latex2png-MultiPoly_88314297_.gif" alt="$$\mathrm{skel}P(X_1,\ldots,X_k,x_{k+1},\ldots,x_n)\subset\mathrm{skel}_kP(X),$$" class="latex-display" width="580" height="18">
+欲使两者相等,则必须<img src="latex/latex2png-MultiPoly_27588102_-4.gif" alt="$x_{k+1},\ldots,x_n$" class="latex-inline" style="vertical-align: -4px" width="88" height="12">的取值使得以<img src="latex/latex2png-MultiPoly_4041218_-4.gif" alt="$X_1,\ldots,X_k$" class="latex-inline" style="vertical-align: -4px" width="79" height="16">为主变元的多项式<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的各项系数(<img src="latex/latex2png-MultiPoly_181933144_-5.gif" alt="$\in F[X_{k+1},\ldots,X_n]$" class="latex-inline" style="vertical-align: -5px" width="134" height="18">)均在其上不为零.据此,我们可以给出精确求值点的概率估计.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name="th:preciseevaluationpoint"></a></span><span class="theorem-name">(精确求值点概率估计)</span>
+设<img src="latex/latex2png-MultiPoly_229340219_-5.gif" alt="$P(X)$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">是一整环上的<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">元多项式,其每个变元次数不超过<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,总共有T项,设<img src="latex/latex2png-MultiPoly_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">为一有限赋值点集合,<img src="latex/latex2png-MultiPoly_119371440_-4.gif" alt="$\#S=s$" class="latex-inline" style="vertical-align: -4px" width="53" height="16">,取求值点<img src="latex/latex2png-MultiPoly_201495078_-5.gif" alt="$x=(x_1,\ldots,x_n)\in S^n$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">,则其不是精确求值点的概率不超过
+<img src="latex/latex2png-MultiPoly_81750096_.gif" alt="$$\frac{n(n-1)dT}{s}.$$" class="latex-display" width="580" height="36">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+根据引理<a class="ref-th-external" href="PolyGCD.html#le:gcdpro1">5</a>我们知道对于<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">以<img src="latex/latex2png-MultiPoly_4041218_-4.gif" alt="$X_1,\ldots,X_k$" class="latex-inline" style="vertical-align: -4px" width="79" height="16">为主变元的某个系数多项式来说,<img src="latex/latex2png-MultiPoly_27391494_-4.gif" alt="$x_{k+1},\ldots,x_k$" class="latex-inline" style="vertical-align: -4px" width="87" height="12">为其零点的概率不超过<img src="latex/latex2png-MultiPoly_258227495_-5.gif" alt="$(n-k)d/s$" class="latex-inline" style="vertical-align: -5px" width="75" height="18">.因为系数最多有<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">项,则概率不超过<img src="latex/latex2png-MultiPoly_106298001_-5.gif" alt="$(n-k)dT/s$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">.再对<img src="latex/latex2png-MultiPoly_80482209_-4.gif" alt="$k=1,2,\ldots,n-1$" class="latex-inline" style="vertical-align: -4px" width="129" height="16">求和即有概率不超过
+<img src="latex/latex2png-MultiPoly_201495561_.gif" alt="$$\frac{(n-1)dT}{s}+\frac{(n-2)dT}{s}+\cdots+\frac{dT}{s}=\frac{n(n-1)dT}{s}.$$" class="latex-display" width="580" height="36">
+证毕.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>取足够大的<img src="latex/latex2png-MultiPoly_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">可以减小此概率,这正是我们每一步稀疏插值时假设目标多项式具有同样的模板的概率依据.</p>
+
+<p>下面，我们把整个插值还原的过程描述如下:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name="sparseinterpolation"></a></span><span class="theorem-name">(稀疏插值算法)</span>
+输入:一个可以求值的函数<img src="latex/latex2png-MultiPoly_109908760_-5.gif" alt="$f(X_1,\ldots,X_n)$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">，精确求值点<img src="latex/latex2png-MultiPoly_131019575_-5.gif" alt="$(x_{10},\ldots,x_{n0})$" class="latex-inline" style="vertical-align: -5px" width="96" height="18">,各变元次数均不超过的<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,
+
+<p>输出:多项式<img src="latex/latex2png-MultiPoly_125966492_-5.gif" alt="$P(X_1,\ldots,X_n)\in F[X]$" class="latex-inline" style="vertical-align: -5px" width="163" height="18">,使得<img src="latex/latex2png-MultiPoly_200248300_-4.gif" alt="$P=f$" class="latex-inline" style="vertical-align: -4px" width="44" height="16">.</p>
+
+<ol>
+<li>随机任取<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个值<img src="latex/latex2png-MultiPoly_8590362_-4.gif" alt="$x_{11},x_{12},\ldots,x_{1d}$" class="latex-inline" style="vertical-align: -4px" width="114" height="12">,利用求得的值<img src="latex/latex2png-MultiPoly_73433241_-5.gif" alt="$f(x_{1i},x_{20},\ldots,x_{n0})(0\le i\le d)$" class="latex-inline" style="vertical-align: -5px" width="215" height="18">,用一元插值算法(如算法<a class="ref-th" href="MultiPoly.html#al:newtoninterpolation">1</a>)求出多项式<img src="latex/latex2png-MultiPoly_88264582_-5.gif" alt="$P(X_1,x_{20},\ldots,x_{n0})$" class="latex-inline" style="vertical-align: -5px" width="139" height="18">,</li>
+
+<li><img src="latex/latex2png-MultiPoly_47722610_-5.gif" alt="$S=\mathrm{skel}P(X_1,x_{20},\ldots,x_{n0})$" class="latex-inline" style="vertical-align: -5px" width="198" height="18">,设<img src="latex/latex2png-MultiPoly_108132467_-5.gif" alt="$S=\{s_1,s_2,\ldots,s_q\}$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,</li>
+
+<li>将<img src="latex/latex2png-MultiPoly_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">顺次由<img src="latex/latex2png-MultiPoly_41186322_0.gif" alt="$2$" class="latex-inline" style="vertical-align: 0px" width="8" height="11">循环到<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,做如下4-6步,</li>
+
+<li>随机任取<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个值<img src="latex/latex2png-MultiPoly_258730982_-4.gif" alt="$x_{i1},x_{i2},\ldots,x_{id}$" class="latex-inline" style="vertical-align: -4px" width="109" height="12">,对于每个<img src="latex/latex2png-MultiPoly_88992873_-5.gif" alt="$x_{ij}(1\le j\le d)$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">,设
+<img src="latex/latex2png-MultiPoly_175255481_.gif" alt="$$P(X_1,\ldots,X_{i-1},x_{ij},x_{i+1,0},\ldots,x_{n0})$$" class="latex-display" width="580" height="19">
+具有如下形式
+<img src="latex/latex2png-MultiPoly_28452420_.gif" alt="$$p_1X^{s_1}+p_2X^{s_2}+\cdots+p_qX^{s_q},$$" class="latex-display" width="580" height="18">
+取<img src="latex/latex2png-MultiPoly_42693650_0.gif" alt="$q$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">组赋值点<img src="latex/latex2png-MultiPoly_61380696_-5.gif" alt="$(x_{1k},x_{2k},\ldots,x_{i-1,k})(1\le k\le q)$" class="latex-inline" style="vertical-align: -5px" width="229" height="18">构造独立的线性方程组来求出<img src="latex/latex2png-MultiPoly_122517637_-5.gif" alt="$p_1,\ldots,p_q\in F$" class="latex-inline" style="vertical-align: -5px" width="102" height="17">,于是得到<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个多项式
+<img src="latex/latex2png-MultiPoly_64976220_.gif" alt="$$P(X_1,\ldots,X_{i-1},x_{ij},x_{i+1,0},\ldots,x_{n0}),(1\le j\le d)$$" class="latex-display" width="580" height="19"></li>
+
+<li>利用第4步求出的<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个多项式对每个系数<img src="latex/latex2png-MultiPoly_90415221_-5.gif" alt="$p_k(1\le k\le q)$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">进行一元插值算法求出<img src="latex/latex2png-MultiPoly_56907631_-5.gif" alt="$p_k(X_i)$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">,则
+<img src="latex/latex2png-MultiPoly_72536263_.gif" alt="$$P(X_1,\ldots,X_i,x_{i+1,0},\ldots,x_{n0})=p_1(X_i)X^{s_1}+p_2(X_i)X^{s_2}+\cdots+p_q(X_i)X^{s_q},$$" class="latex-display" width="580" height="19"></li>
+
+<li><img src="latex/latex2png-MultiPoly_56371931_-5.gif" alt="$S=\mathrm{skel}P(X_1,\ldots,X_i,x_{i+1,0},\ldots,x_{n0})$" class="latex-inline" style="vertical-align: -5px" width="273" height="18">,设<img src="latex/latex2png-MultiPoly_96758642_-5.gif" alt="$S=\{s_1,\ldots,s_q\}$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">,</li>
+
+<li>输出<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注1<a name=""></a></span><span class="theorem-name"></span>
+在算法第4步取<img src="latex/latex2png-MultiPoly_42693650_0.gif" alt="$q$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">组赋值点时,要使得它们对于要求解的变元<img src="latex/latex2png-MultiPoly_264001278_-5.gif" alt="$p_1,\ldots,p_q$" class="latex-inline" style="vertical-align: -5px" width="68" height="13">构成非奇异的独立线性方程组,否则需要重新选取某些赋值点.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注2<a name=""></a></span><span class="theorem-name"></span>
+我们可以选取一组赋值点<img src="latex/latex2png-MultiPoly_68903235_-5.gif" alt="$(x_{1},x_{2},\ldots,x_{i-1})$" class="latex-inline" style="vertical-align: -5px" width="121" height="18">,然后令<img src="latex/latex2png-MultiPoly_42693650_0.gif" alt="$q$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">组赋值点为
+<img src="latex/latex2png-MultiPoly_54926575_.gif" alt="$$(1,\ldots,1),(x_{1}^1,\ldots,x_{i-1}^1),(x_{1}^2,\ldots,x_{i-1}^2),\ldots,(x_{1}^{q-1},\ldots,x_{i-1}^{q-1}),$$" class="latex-display" width="580" height="21">
+这样对需求解的<img src="latex/latex2png-MultiPoly_42693650_0.gif" alt="$q$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个变元来说，可以得到如下Vandermonde线性方程
+<img src="latex/latex2png-MultiPoly_140215990_.gif" alt="$$
+\begin{pmatrix}
+1 &1 &\cdots &1\\
+X^{s_1} &X^{s_2} &\cdots &X^{s_q}\\
+\vdots &\vdots & &\vdots\\
+(X^{s_1})^{q-1} &(X^{s_2})^{q-1} &\cdots &(X_{s_q})^{q-1}
+\end{pmatrix}
+\begin{pmatrix}
+p_1\\p_2\\ \vdots\\p_q
+\end{pmatrix}
+=
+\begin{pmatrix}
+f(1,\ldots,1,x_{ij},x_{i+1,0},\ldots,x_{n0})\\
+f(x_1,\ldots,x_{i-1},x_{ij},x_{i+1,0},\ldots,x_{n0})\\
+\vdots\\
+f(x_1^{q-1},\ldots,x_{i-1}^{q-1},x_{ij},x_{i+1,0},\ldots,x_{n0})
+\end{pmatrix}.
+$$" class="latex-display" width="580" height="109">
+
+
+</div>
+利用此方法的好处是求解线性方程时,Vandermonde方程其系数矩阵具有特殊性,因而有特别的线性代数的处理方法,求解复杂度低于一般的线性方程.另一方面,Vandermonde行列式的非奇异性很容易得到保证,只需<img src="latex/latex2png-MultiPoly_18628149_-4.gif" alt="$X^{s_1},\ldots,X^{s_q}$" class="latex-inline" style="vertical-align: -4px" width="92" height="16">各不相同即可.
+
+<p>对于特征为零的域,这一点是很容易做到的,只需将<img src="latex/latex2png-MultiPoly_170406815_-4.gif" alt="$x_1,\ldots,x_{i-1}$" class="latex-inline" style="vertical-align: -4px" width="84" height="12">取为前<img src="latex/latex2png-MultiPoly_67335188_0.gif" alt="$i-1$" class="latex-inline" style="vertical-align: 0px" width="33" height="12">个素数即可,或者当有限域的特征足够大(特征<img src="latex/latex2png-MultiPoly_62068662_-5.gif" alt="$p>(2\times 3\times\cdots\times p_n)^d$" class="latex-inline" style="vertical-align: -5px" width="165" height="19">)时也可如此取赋值点,此时算法仅可能当初始点非精确赋值点时失败,因此根据定理<a class="ref-th" href="MultiPoly.html#th:preciseevaluationpoint">1</a>,我们知道失败的概率为
+<img src="latex/latex2png-MultiPoly_92261690_.gif" alt="$$\varepsilon<\frac{n(n-1)dT}{s}.$$" class="latex-display" width="580" height="36"></p>
+
+<p>另一方面,当域的特征<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">有限时,此时我们随机选取这样<img src="latex/latex2png-MultiPoly_67335188_0.gif" alt="$i-1$" class="latex-inline" style="vertical-align: 0px" width="33" height="12">个赋值点,当其非精确赋值点或Vandermonde行列式奇异时均会失败,其概率(<span class="cite"><a class="cite" href="MultiPoly.html#ref-2" name="cite-2">[2]</a></span>P240-242)
+<img src="latex/latex2png-MultiPoly_266903965_.gif" alt="$$\varepsilon<\frac{n(n-1)dT}{p-1}+\frac{dT(T-1)}{2(p-1)}<\frac{dT(2n^2+T)}{p-1}.$$" class="latex-display" width="580" height="42"></p>
+
+
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Euclid算法和一般模算法</h2>
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>概述</h3>
+
+<p class="first">我们已经解决了一元多项式的GCD问题,对于多元情形,我们仍然只考虑整系数环上的多项式,即<img src="latex/latex2png-MultiPoly_241639235_-5.gif" alt="$\mathbb{Z}[X]=\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">中的多项式.首先根据Guass引理,我们有:
+<img src="latex/latex2png-MultiPoly_91280344_.gif" alt="
+\begin{align*}
+\gcd(f,g)&=\mathrm{cont}_{x_n}(\gcd\nolimits_{x_n}(f,g))\mathrm{pp}_{x_n}(\gcd\nolimits_{x_n}(f,g))\\
+&=\gcd(\mathrm{cont}_{x_n}(f),\mathrm{cont}_{x_n}(g))\gcd\nolimits_{x_n}(\mathrm{pp}_{x_n}(f),\mathrm{pp}_{x_n}(g)).
+\end{align*}
+" class="latex-display" width="580" height="50"></p>
+
+<p>于是,我们顺利地将<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">元问题化为了<img src="latex/latex2png-MultiPoly_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">元子问题.将此过程递归地进行,最终化为一元问题可求解.显而易见,这种算法系数的增长是十分迅速的,不宜采用.</p>
+
+<p>回忆前面处理一元问题采用模算法的思想,我们希望利用<img src="latex/latex2png-MultiPoly_121903957_-5.gif" alt="$\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">上的模算术来简化问题的计算.若我们取一个一次多项式<img src="latex/latex2png-MultiPoly_199935613_-5.gif" alt="$p=y-a(a\in\mathbb{Z})$" class="latex-inline" style="vertical-align: -5px" width="121" height="18">,<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为一UFD,考虑<img src="latex/latex2png-MultiPoly_218788327_-5.gif" alt="$R=D[y][x]$" class="latex-inline" style="vertical-align: -5px" width="84" height="18">上的多项式,并记<img src="latex/latex2png-MultiPoly_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">到<img src="latex/latex2png-MultiPoly_248743661_-5.gif" alt="$R/\idea{p}$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">的同态像为<img src="latex/latex2png-MultiPoly_246200453_-5.gif" alt="$\Phi_p(f)$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">或<img src="latex/latex2png-MultiPoly_212247402_-4.gif" alt="$\overline{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">,则有下面的定理:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-MultiPoly_126057374_-4.gif" alt="$f,g\in R$" class="latex-inline" style="vertical-align: -4px" width="57" height="16">均为本原多项式,<img src="latex/latex2png-MultiPoly_196369664_-5.gif" alt="$h=\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,设<img src="latex/latex2png-MultiPoly_10096380_-4.gif" alt="$\overline{h}\neq 0$" class="latex-inline" style="vertical-align: -4px" width="40" height="19">,则<img src="latex/latex2png-MultiPoly_180140956_-5.gif" alt="$\overline{h}=h_p(=\gcd(\overline{f},\overline{g})$" class="latex-inline" style="vertical-align: -5px" width="135" height="20">当且仅当<img src="latex/latex2png-MultiPoly_160418303_-5.gif" alt="$p=y-a\not|\mathrm{res}_x(f/h,g/h)$" class="latex-inline" style="vertical-align: -5px" width="185" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+本定理基本上是定理<a class="ref-th-external" href="PolyGCD.html#th:sdsf">15</a>的推广,证明也与其类似.
+
+<p>首先根据模同态的性质,我们显然有<img src="latex/latex2png-MultiPoly_247375758_-5.gif" alt="$\overline{h}|h_p$" class="latex-inline" style="vertical-align: -5px" width="32" height="20">,若<img src="latex/latex2png-MultiPoly_66860966_-5.gif" alt="$\deg_xh_p=0$" class="latex-inline" style="vertical-align: -5px" width="84" height="17">,则<img src="latex/latex2png-MultiPoly_21059700_-5.gif" alt="$\overline{h}=h_p$" class="latex-inline" style="vertical-align: -5px" width="49" height="20">显然.设<img src="latex/latex2png-MultiPoly_74973682_-5.gif" alt="$\deg_xh_p\ge 1$" class="latex-inline" style="vertical-align: -5px" width="83" height="17">,此是有<img src="latex/latex2png-MultiPoly_235828244_-4.gif" alt="$s,t$" class="latex-inline" style="vertical-align: -4px" width="19" height="15">使得<img src="latex/latex2png-MultiPoly_17123616_-5.gif" alt="$sf/h+tg/h=\mathrm{res}_x(f/h,g/h)$" class="latex-inline" style="vertical-align: -5px" width="211" height="18">,因此<img src="latex/latex2png-MultiPoly_15334470_-5.gif" alt="$\overline{s}\overline{f}+\overline{t}\overline{g}=\overline{\mathrm{res}_x(f/h,g/h)}\overline{h}$" class="latex-inline" style="vertical-align: -5px" width="188" height="20">,由于<img src="latex/latex2png-MultiPoly_243597989_-5.gif" alt="$\overline{\mathrm{res}_x(f/h,g/h)}\neq 0$" class="latex-inline" style="vertical-align: -5px" width="133" height="20">,所有<img src="latex/latex2png-MultiPoly_207503290_-5.gif" alt="$h_p|\overline{h}$" class="latex-inline" style="vertical-align: -5px" width="32" height="20">,即<img src="latex/latex2png-MultiPoly_21059700_-5.gif" alt="$\overline{h}=h_p$" class="latex-inline" style="vertical-align: -5px" width="49" height="20">,充分性得证.(必要性证明略去)
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>于是我们可以得到类似于一元情形的一种赋值同态模算法<span class="cite"><a class="cite" href="MultiPoly.html#ref-3" name="cite-3">[3]</a></span>,这里不再详细将算法列出,然而我们需要注意的是这里会有一个领项系数的问题,例如两多项式的最大公因子为<img src="latex/latex2png-MultiPoly_151632280_-5.gif" alt="$h(x,y)=(y-1)x$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">,对<img src="latex/latex2png-MultiPoly_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">进行赋值同态时我们可能会取如下值:
+<img src="latex/latex2png-MultiPoly_36015291_.gif" alt="$$y=5,\quad h(x,5)=4x,$$" class="latex-display" width="580" height="18">
+<img src="latex/latex2png-MultiPoly_2460347_.gif" alt="$$y=7,\quad h(x,7)=6x,$$" class="latex-display" width="580" height="18">
+这样,通过两次赋值进行插值即得<img src="latex/latex2png-MultiPoly_151632280_-5.gif" alt="$h(x,y)=(y-1)x$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">,然而若是我们“不幸”取了一个负值:
+<img src="latex/latex2png-MultiPoly_38411719_.gif" alt="$$y=-5,\quad h(x,-5)=6x,$$" class="latex-display" width="580" height="18">
+注意在<img src="latex/latex2png-MultiPoly_27044286_-5.gif" alt="$\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">中<img src="latex/latex2png-MultiPoly_120813234_-1.gif" alt="$\pm 1$" class="latex-inline" style="vertical-align: -1px" width="19" height="12">为可逆元,因而求其中的GCD问题时可相差正负号,一般情况我们取首项系数为正,此时将<img src="latex/latex2png-MultiPoly_119561447_-5.gif" alt="$h(x,-5)=6x$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">和<img src="latex/latex2png-MultiPoly_216709367_-5.gif" alt="$h(x,5)=4x$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">插值则得不到正确的结果,只有取<img src="latex/latex2png-MultiPoly_59073681_-5.gif" alt="$h(x,-5)=-6x$" class="latex-inline" style="vertical-align: -5px" width="113" height="18">时才是正确的.这个问题仅在最大公因子对主变元<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的领项系数是一非平凡多项式才会出现,对于这种情况,若要比较好地处理,则须在赋值之前对领项系数进行处理.</p>
+
+<p>我们同时注意到<img src="latex/latex2png-MultiPoly_68858421_-5.gif" alt="$\mathbb{Z}_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">作为一个域的简单性和其能有效抑制<img src="latex/latex2png-MultiPoly_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">上系数膨胀问题的性质,我们可以取模素数和赋值同态的综合算法求解.</p>
+
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a><img src="latex/latex2png-MultiPoly_143085366_-5.gif" alt="$\mathbb{Z}_p[x_1,x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">上最大公因子</h3>
+
+<p class="first">根据前面的分析,我们先要解决<img src="latex/latex2png-MultiPoly_143085366_-5.gif" alt="$\mathbb{Z}_p[x_1,x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">上求最大公因子的问题,此要先通过赋值同态将其转化为<img src="latex/latex2png-MultiPoly_77575670_-5.gif" alt="$\mathbb{Z}_p[x_1]$" class="latex-inline" style="vertical-align: -5px" width="43" height="18">上的问题.</p>
+
+<p>为了说明算法的方便,本算法中提到的容度<img src="latex/latex2png-MultiPoly_152854818_0.gif" alt="$\mathrm{cont}$" class="latex-inline" style="vertical-align: 0px" width="30" height="11">,本原部分<img src="latex/latex2png-MultiPoly_43681537_-4.gif" alt="$\mathrm{pp}$" class="latex-inline" style="vertical-align: -4px" width="18" height="12">,首项系数<img src="latex/latex2png-MultiPoly_8221716_0.gif" alt="$\lc$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">等都是就多项式环<img src="latex/latex2png-MultiPoly_261701375_-5.gif" alt="$\mathbb{Z}_p[x_n][x_1,\ldots,x_{n-1}]$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">而言的,亦即<img src="latex/latex2png-MultiPoly_152854818_0.gif" alt="$\mathrm{cont}$" class="latex-inline" style="vertical-align: 0px" width="30" height="11">及<img src="latex/latex2png-MultiPoly_8221716_0.gif" alt="$\lc$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">都应是<img src="latex/latex2png-MultiPoly_99595766_-5.gif" alt="$\mathbb{Z}_p[x_n]$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">中的元素.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法3<a name="al:pgcd"></a></span><span class="theorem-name">(有限域上多元多项式最大公因子算法)</span>
+输入:<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-MultiPoly_143051116_-5.gif" alt="$g\in\mathbb{Z}_p[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="128" height="18">,
+
+<p>输出:<img src="latex/latex2png-MultiPoly_196369664_-5.gif" alt="$h=\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-MultiPoly_167998484_0.gif" alt="$n=1$" class="latex-inline" style="vertical-align: 0px" width="39" height="11">则是一元问题,直接调用相关算法求得首一的<img src="latex/latex2png-MultiPoly_196369664_-5.gif" alt="$h=\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,输出<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,</li>
+
+<li>初始化<img src="latex/latex2png-MultiPoly_198834745_-5.gif" alt="$a=\gcd(\mathrm{cont}(f),\mathrm{cont}(g))\in\mathbb{Z}_p[x_n]$" class="latex-inline" style="vertical-align: -5px" width="247" height="18">(注意这是一元问题),<img src="latex/latex2png-MultiPoly_58573080_-5.gif" alt="$f=\mathrm{pp}(f)$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,<img src="latex/latex2png-MultiPoly_57520408_-5.gif" alt="$g=\mathrm{pp}(g)$" class="latex-inline" style="vertical-align: -5px" width="69" height="18">,<img src="latex/latex2png-MultiPoly_4246759_-5.gif" alt="$b=\gcd(\plc{f},\plc{g})\in\mathbb{Z}_p[x_n]$" class="latex-inline" style="vertical-align: -5px" width="208" height="18">,</li>
+
+<li>赋初值<img src="latex/latex2png-MultiPoly_218330132_-4.gif" alt="$q=1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">,<img src="latex/latex2png-MultiPoly_67335188_0.gif" alt="$h=1$" class="latex-inline" style="vertical-align: 0px" width="33" height="12">,<img src="latex/latex2png-MultiPoly_26423567_-5.gif" alt="$m=\min(\deg_1f,\deg_1g)+1$" class="latex-inline" style="vertical-align: -5px" width="200" height="18">,<img src="latex/latex2png-MultiPoly_37737493_-5.gif" alt="$vlist=\{\}$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,</li>
+
+<li>循环做下面5-10步,</li>
+
+<li>随机任取<img src="latex/latex2png-MultiPoly_71561831_-5.gif" alt="$v\in\mathbb{Z}_p$" class="latex-inline" style="vertical-align: -5px" width="47" height="17">使得<img src="latex/latex2png-MultiPoly_50299676_-5.gif" alt="$b(v)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">且<img src="latex/latex2png-MultiPoly_232852059_-4.gif" alt="$v\not\in vlist$" class="latex-inline" style="vertical-align: -4px" width="62" height="16">,将<img src="latex/latex2png-MultiPoly_43021330_0.gif" alt="$v$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">添入<img src="latex/latex2png-MultiPoly_100562596_0.gif" alt="$vlist$" class="latex-inline" style="vertical-align: 0px" width="33" height="12">中,</li>
+
+<li><img src="latex/latex2png-MultiPoly_66962101_-5.gif" alt="$f_v=f\bmod (x_n-v)$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">,<img src="latex/latex2png-MultiPoly_68010693_-5.gif" alt="$g_v=g\bmod (x_n-v)$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">,递归调用本算法求解<img src="latex/latex2png-MultiPoly_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">元子问题<img src="latex/latex2png-MultiPoly_49953874_-5.gif" alt="$h=\gcd(f_v,g_v)$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">,令<img src="latex/latex2png-MultiPoly_76515345_-4.gif" alt="$m_1=\deg_1h_v$" class="latex-inline" style="vertical-align: -4px" width="97" height="16">,<img src="latex/latex2png-MultiPoly_221476914_-5.gif" alt="$b_v=b(v)$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,</li>
+
+<li>将<img src="latex/latex2png-MultiPoly_104887316_-2.gif" alt="$h_v$" class="latex-inline" style="vertical-align: -2px" width="17" height="14">正则化使得<img src="latex/latex2png-MultiPoly_129508629_-5.gif" alt="$\plc{h_v}=b_v$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,即令<img src="latex/latex2png-MultiPoly_162087016_-5.gif" alt="$h_v=b_vh_v/\plc{h_v}$" class="latex-inline" style="vertical-align: -5px" width="124" height="18">,</li>
+
+<li>若<img src="latex/latex2png-MultiPoly_84375197_-2.gif" alt="$m_1<m$" class="latex-inline" style="vertical-align: -2px" width="58" height="11">则令<img src="latex/latex2png-MultiPoly_115146440_-4.gif" alt="$q=x_n-v$" class="latex-inline" style="vertical-align: -4px" width="77" height="12">,<img src="latex/latex2png-MultiPoly_163547498_-2.gif" alt="$h=h_v$" class="latex-inline" style="vertical-align: -2px" width="49" height="14">,<img src="latex/latex2png-MultiPoly_81561957_-2.gif" alt="$m=m_1$" class="latex-inline" style="vertical-align: -2px" width="58" height="10">,</li>
+
+<li>若上一步不成立且<img src="latex/latex2png-MultiPoly_85423773_-2.gif" alt="$m_1=m$" class="latex-inline" style="vertical-align: -2px" width="58" height="10">,则利用中国剩余定理或插值算法其出<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,使得<img src="latex/latex2png-MultiPoly_242471931_-4.gif" alt="$h\bmod q$" class="latex-inline" style="vertical-align: -4px" width="59" height="16">不变且<img src="latex/latex2png-MultiPoly_201584589_-5.gif" alt="$h\bmod (x_n-v)=h_v$" class="latex-inline" style="vertical-align: -5px" width="150" height="18">,即令
+<img src="latex/latex2png-MultiPoly_129731807_.gif" alt="$$h=h+\frac{(h_v-h\bmod(x_n-v))q(x_n)}{q(v)},\quad q(x_n)=(x_n-v)q(x_n),$$" class="latex-display" width="580" height="41"></li>
+
+<li>若<img src="latex/latex2png-MultiPoly_72532967_-5.gif" alt="$\plc{h}=b$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">则:令<img src="latex/latex2png-MultiPoly_88497896_-5.gif" alt="$pph=\mathrm{pp}(h)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,若<img src="latex/latex2png-MultiPoly_92305054_-5.gif" alt="$pph|f$" class="latex-inline" style="vertical-align: -5px" width="41" height="18">且<img src="latex/latex2png-MultiPoly_92370590_-5.gif" alt="$pph|g$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">则输出<img src="latex/latex2png-MultiPoly_214070925_-4.gif" alt="$a pph$" class="latex-inline" style="vertical-align: -4px" width="34" height="16">,否则若<img src="latex/latex2png-MultiPoly_151155732_-1.gif" alt="$m=0$" class="latex-inline" style="vertical-align: -1px" width="45" height="12">则输出<img src="latex/latex2png-MultiPoly_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">.</li>
+</ol>
+
+
+
+</div>
+
+
+<h3><a name="sec7" id="sec7"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>多元多项式的&quot;Mignotte&quot;界</h3>
+
+<p class="first">在处理整系数一元多项式最大公因子时我们曾经引进所谓的Mignotte界,这是Mignotte于1974年提出的对一元多项式因子系数界的估计.这一节我们来讨论对于整系数多元多项式同样的问题.为了后文叙述的方便,我们先回忆一下对于一元情形的Mignotte界,并表述为如下定理(见定理<a class="ref-th-external" href="PolyGCD.html#th:MignotteBound">13</a>):</p>
+
+<div class="theorem">
+<span class="theorem-header">定理3<a name="th:unibound"></a></span><span class="theorem-name">(Mignotte)</span>
+设非零多项式<img src="latex/latex2png-MultiPoly_9938588_-5.gif" alt="$f,g\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">且<img src="latex/latex2png-MultiPoly_75527188_-5.gif" alt="$g|f$" class="latex-inline" style="vertical-align: -5px" width="23" height="18">,<img src="latex/latex2png-MultiPoly_12613531_-4.gif" alt="$\deg g\le d$" class="latex-inline" style="vertical-align: -4px" width="68" height="16">,则有
+<img src="latex/latex2png-MultiPoly_61448654_.gif" alt="$$\|f\|_2\ge 2^{-d}\|g\|_{\infty}.$$" class="latex-display" width="580" height="20">
+
+
+</div>
+
+<p>为了讨论多元情形,我们给出:</p>
+
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name">(多元多项式p-范数)</span>
+设有多元多项式
+<img src="latex/latex2png-MultiPoly_78982596_.gif" alt="$$f=\sum_{i_1,i_2,\ldots,i_n}a_{i_1,i_2,\ldots,i_n}x_1^{i_1}\cdots x_n^{i_n},$$" class="latex-display" width="580" height="39">
+则定义其p-范数为:
+<img src="latex/latex2png-MultiPoly_135303683_.gif" alt="$$\|f\|_p=\left(\sum_{i_1,\ldots,i_n}a_{i_1,\ldots,i_n}^p\right)^{1/p}.$$" class="latex-display" width="580" height="65">
+
+
+</div>
+
+<p>Coron于2004年提出了二元情形下对Mignotte界的推广,有如下定理(见<span class="cite"><a class="cite" href="MultiPoly.html#ref-4" name="cite-4">[4]</a></span>和<span class="cite"><a class="cite" href="MultiPoly.html#ref-5" name="cite-5">[5]</a></span>3.2节):</p>
+
+<div class="theorem">
+<span class="theorem-header">定理4<a name="th:bibound"></a></span><span class="theorem-name">(Coron)</span>
+设有非零多项式<img src="latex/latex2png-MultiPoly_95107375_-5.gif" alt="$f,g\in\mathbb{Z}[x,y]$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">,且<img src="latex/latex2png-MultiPoly_75527188_-5.gif" alt="$g|f$" class="latex-inline" style="vertical-align: -5px" width="23" height="18">,<img src="latex/latex2png-MultiPoly_145886099_-7.gif" alt="$d=\max(\deg_xf,\deg_yf)$" class="latex-inline" style="vertical-align: -7px" width="172" height="20">,则有
+<img src="latex/latex2png-MultiPoly_71284240_.gif" alt="$$\|f\|_2\ge 2^{-(d+1)^2}\|g\|_{\infty}.$$" class="latex-display" width="580" height="23">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+令<img src="latex/latex2png-MultiPoly_138827180_-5.gif" alt="$f^*(x)=f(x,x^{d+1})$" class="latex-inline" style="vertical-align: -5px" width="133" height="19">,则有<img src="latex/latex2png-MultiPoly_115572412_-5.gif" alt="$\deg f^*\le(d+1)^2$" class="latex-inline" style="vertical-align: -5px" width="123" height="19">且<img src="latex/latex2png-MultiPoly_220961874_-5.gif" alt="$f^*(x)$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">和<img src="latex/latex2png-MultiPoly_247751649_-5.gif" alt="$f(x,y)$" class="latex-inline" style="vertical-align: -5px" width="46" height="18">有相同的整系数,因而<img src="latex/latex2png-MultiPoly_152295002_-5.gif" alt="$\|f^*\|_2=\|f\|_2$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">,同理令<img src="latex/latex2png-MultiPoly_146385492_-5.gif" alt="$g^*(x)=g(x,x^{d+1})$" class="latex-inline" style="vertical-align: -5px" width="132" height="19">,则有<img src="latex/latex2png-MultiPoly_163610097_-5.gif" alt="$\|g^*\|_{\infty}=\|g\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">.并且有<img src="latex/latex2png-MultiPoly_72310433_-5.gif" alt="$g(x,y)|f(x,y)$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">可知<img src="latex/latex2png-MultiPoly_100770089_-5.gif" alt="$g^*(x)|f^*(x)$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">,因此根据Mignotte界有
+<img src="latex/latex2png-MultiPoly_73381392_.gif" alt="$$\|f\|_2\ge 2^{-(d+1)^2}\|g\|_{\infty},$$" class="latex-display" width="580" height="23">
+证毕.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>我们很容易再从二元情况推广到多元情况,有如下定理:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理5<a name="th:multibound"></a></span><span class="theorem-name">(多元多项式因子系数界)</span>
+设有非零多项式<img src="latex/latex2png-MultiPoly_110351451_-5.gif" alt="$f,g\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">,且<img src="latex/latex2png-MultiPoly_75527188_-5.gif" alt="$g|f$" class="latex-inline" style="vertical-align: -5px" width="23" height="18">,<img src="latex/latex2png-MultiPoly_41254769_-5.gif" alt="$d=\max\{\deg_1f,\ldots,\deg_nf\}$" class="latex-inline" style="vertical-align: -5px" width="205" height="18">,则有
+<img src="latex/latex2png-MultiPoly_157631013_.gif" alt="$$\|f\|_2\ge 2^{-(d+1)^n+1}\|g\|_{\infty}.$$" class="latex-display" width="580" height="21">
+
+
+</div>
+
+<p>证明过程是类似的,只需作相应的替换<img src="latex/latex2png-MultiPoly_18354915_-5.gif" alt="$f^*(x)=f(x,x^{d+1},\ldots,x^{(d+1)^{n-1}})$" class="latex-inline" style="vertical-align: -5px" width="237" height="22">,并且注意到<img src="latex/latex2png-MultiPoly_67925012_-4.gif" alt="$f^*$" class="latex-inline" style="vertical-align: -4px" width="15" height="16">的次数实际上是不超过
+<img src="latex/latex2png-MultiPoly_47292873_.gif" alt="$$d+d(d+1)+\cdots+d(d+1)^{n-1}=d\frac{(d+1)^n-1}{(d+1)-1}=(d+1)^n-1$$" class="latex-display" width="580" height="41">
+即可.</p>
+
+<p>有了多元多项式的&quot;Mignotte&quot;界,我们在用模素数方法处理多元多项式时,至少多了一个用对系数界的估计的方法,来帮助判断多项式是否能还原到整系数中.当然,我们知道Mignotte界是对一元情形一个相当好的估计,本节定理对多元情形的估计虽从其推广而来,却不一定是最好的估计,而且其随多项式规模和未定元的个数增长有可能会变得很大,我们在实际算法中仅参考.</p>
+
+
+<h3><a name="sec8" id="sec8"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a><img src="latex/latex2png-MultiPoly_121903957_-5.gif" alt="$\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">上最大公因子</h3>
+
+<p class="first">在我们计算最大公因子的步骤
+<img src="latex/latex2png-MultiPoly_104275085_.gif" alt="$$\mathbb{Z}[x_1,\ldots,x_n]\rightarrow\mathbb{Z}_p[x_1,\ldots,x_n]\rightarrow\mathbb{Z}_p[x_1]\rightarrow\mathbb{Z}_p[x_1,\ldots,x_n]\rightarrow\mathbb{Z}[x_1,\ldots,x_n]$$" class="latex-display" width="580" height="19">
+中,第二环节和第三环节已由算法<a class="ref-th" href="MultiPoly.html#al:pgcd">3</a>完成,本节将要讨论首尾两个环节,如无特别说明,本节中<img src="latex/latex2png-MultiPoly_152854818_0.gif" alt="$\mathrm{cont}$" class="latex-inline" style="vertical-align: 0px" width="30" height="11">,<img src="latex/latex2png-MultiPoly_43681537_-4.gif" alt="$\mathrm{pp}$" class="latex-inline" style="vertical-align: -4px" width="18" height="12">等均是就整系数而言的.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法4<a name="al:mgcd"></a></span><span class="theorem-name">(整系数多元多项式最大公因子算法)</span>
+输入:<img src="latex/latex2png-MultiPoly_110351451_-5.gif" alt="$f,g\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">,
+
+<p>输出:<img src="latex/latex2png-MultiPoly_196369664_-5.gif" alt="$h=\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">.</p>
+
+<ol>
+<li>初始化<img src="latex/latex2png-MultiPoly_265125672_-5.gif" alt="$a=\gcd(\mathrm{cont}(f),\mathrm{cont}(g))$" class="latex-inline" style="vertical-align: -5px" width="180" height="18">,<img src="latex/latex2png-MultiPoly_58573080_-5.gif" alt="$f=\mathrm{pp}(f)$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,<img src="latex/latex2png-MultiPoly_57520408_-5.gif" alt="$g=\mathrm{pp}(g)$" class="latex-inline" style="vertical-align: -5px" width="69" height="18">,<img src="latex/latex2png-MultiPoly_152171709_-5.gif" alt="$b=\gcd(\plc{f},\plc{g})$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">,</li>
+
+<li>赋初值<img src="latex/latex2png-MultiPoly_67269652_-1.gif" alt="$h=0$" class="latex-inline" style="vertical-align: -1px" width="40" height="13">,<img src="latex/latex2png-MultiPoly_218330132_-4.gif" alt="$q=1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">,<img src="latex/latex2png-MultiPoly_163446125_-5.gif" alt="$m=\min(\deg_nf,\deg_ng)$" class="latex-inline" style="vertical-align: -5px" width="175" height="18">,<img src="latex/latex2png-MultiPoly_74542213_-5.gif" alt="$limit=2^m|b|\min(\|f\|_{\infty},\|g\|_{\infty})$" class="latex-inline" style="vertical-align: -5px" width="226" height="18">,<img src="latex/latex2png-MultiPoly_31446037_-5.gif" alt="$plist=\{\}$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,</li>
+
+<li>循环做下面4—9步,</li>
+
+<li>任取比较大的素数<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">直至<img src="latex/latex2png-MultiPoly_25100828_-5.gif" alt="$p\not|b$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">且<img src="latex/latex2png-MultiPoly_232852161_-4.gif" alt="$p\not\in plist$" class="latex-inline" style="vertical-align: -4px" width="62" height="16">,</li>
+
+<li>令<img src="latex/latex2png-MultiPoly_234114013_-5.gif" alt="$f_p=f\bmod p$" class="latex-inline" style="vertical-align: -5px" width="96" height="17">,<img src="latex/latex2png-MultiPoly_34325540_-5.gif" alt="$g_p=g\bmod p$" class="latex-inline" style="vertical-align: -5px" width="95" height="17">,<img src="latex/latex2png-MultiPoly_234130397_-5.gif" alt="$b_p=b\bmod p$" class="latex-inline" style="vertical-align: -5px" width="93" height="17">,调用算法<a class="ref-th" href="MultiPoly.html#al:pgcd">3</a>计算<img src="latex/latex2png-MultiPoly_256863894_-5.gif" alt="$h_p=\gcd(f_p,g_p)\in\mathbb{Z}_p[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="235" height="18">,并令<img src="latex/latex2png-MultiPoly_191526896_-5.gif" alt="$m_1=\deg_nh_p$" class="latex-inline" style="vertical-align: -5px" width="98" height="17">,</li>
+
+<li><img src="latex/latex2png-MultiPoly_80185115_-5.gif" alt="$h_p=b_p h_p/\plc{h_p}$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">,</li>
+
+<li>若<img src="latex/latex2png-MultiPoly_84375197_-2.gif" alt="$m_1<m$" class="latex-inline" style="vertical-align: -2px" width="58" height="11">则令<img src="latex/latex2png-MultiPoly_219837460_-4.gif" alt="$q=p$" class="latex-inline" style="vertical-align: -4px" width="38" height="12">,<img src="latex/latex2png-MultiPoly_163940714_-5.gif" alt="$h=h_p$" class="latex-inline" style="vertical-align: -5px" width="49" height="17">,<img src="latex/latex2png-MultiPoly_81561957_-2.gif" alt="$m=m_1$" class="latex-inline" style="vertical-align: -2px" width="58" height="10">,</li>
+
+<li>若上步判断不成立且<img src="latex/latex2png-MultiPoly_85423773_-2.gif" alt="$m_1=m$" class="latex-inline" style="vertical-align: -2px" width="58" height="10">,则用中国剩余定理计算<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">使得<img src="latex/latex2png-MultiPoly_242471931_-4.gif" alt="$h\bmod q$" class="latex-inline" style="vertical-align: -4px" width="59" height="16">不变且<img src="latex/latex2png-MultiPoly_165404026_-5.gif" alt="$h\bmod p=h_p$" class="latex-inline" style="vertical-align: -5px" width="98" height="17">,再令<img src="latex/latex2png-MultiPoly_238324678_-4.gif" alt="$q=pq$" class="latex-inline" style="vertical-align: -4px" width="46" height="12">,</li>
+
+<li>若<img src="latex/latex2png-MultiPoly_111083206_-4.gif" alt="$q>limit$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">则:令<img src="latex/latex2png-MultiPoly_88497896_-5.gif" alt="$pph=\mathrm{pp}(h)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,若<img src="latex/latex2png-MultiPoly_92305054_-5.gif" alt="$pph|f$" class="latex-inline" style="vertical-align: -5px" width="41" height="18">且<img src="latex/latex2png-MultiPoly_92370590_-5.gif" alt="$pph|g$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">则输出<img src="latex/latex2png-MultiPoly_214070925_-4.gif" alt="$a pph$" class="latex-inline" style="vertical-align: -4px" width="34" height="16">,否则若<img src="latex/latex2png-MultiPoly_151155732_-1.gif" alt="$m=0$" class="latex-inline" style="vertical-align: -1px" width="45" height="12">则输出<img src="latex/latex2png-MultiPoly_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">.</li>
+</ol>
+
+
+</div>
+
+<p>关于本算法需要做一点说明.首先在<img src="latex/latex2png-MultiPoly_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">和<img src="latex/latex2png-MultiPoly_186872852_-2.gif" alt="$m_1$" class="latex-inline" style="vertical-align: -2px" width="21" height="10">的计算中都是取了对变元<img src="latex/latex2png-MultiPoly_164072428_-2.gif" alt="$x_n$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">的次数<span class="cite"><a class="cite" href="MultiPoly.html#ref-6" name="cite-6">[6]</a></span>,实际上对所有的变元都取次数来比较也是可行的,并且可能更准确.其次,<img src="latex/latex2png-MultiPoly_111249766_0.gif" alt="$limit$" class="latex-inline" style="vertical-align: 0px" width="37" height="12">的计算本身并不是多元多项式因子系数的界,我们可以用前一节的&quot;Mignotte&quot;界来代替,也可以就用此限制,因为当<img src="latex/latex2png-MultiPoly_111083206_-4.gif" alt="$q>limit$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">后还有判断,这只是预判断.我们还可以加上一则预判断,就是<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">在中国剩余定理计算前后是否变化,当不变时再继续后面的判断.</p>
+
+
+
+<h2><a name="sec9" id="sec9"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Zippel稀疏插值模算法</h2>
+
+<p class="first">Zippel稀疏模算法是求多元多项式最大公因子一个相当有效的算法,有关这方面的文献可以参见<span class="cite"><a class="cite" href="MultiPoly.html#ref-7" name="cite-7">[7]</a></span>P80-82,<span class="cite"><a class="cite" href="MultiPoly.html#ref-1" name="cite-1">[1]</a></span>,<span class="cite"><a class="cite" href="MultiPoly.html#ref-6" name="cite-6">[6]</a></span>P312-313等.下面我们以一个文献中的具体的例子将这个问题简要地阐述一下.</p>
+
+<h3><a name="sec10" id="sec10"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一个具体的例子</h3>
+
+<div class="problem">
+<span class="proof-header">例1<a name=""></a></span><span class="theorem-name"></span>
+求多项式<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的最大公因子<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">.其中
+<img src="latex/latex2png-MultiPoly_21346949_.gif" alt="
+\begin{align*}
+f=&x^5+2yzx^4+(13yz^2-21y^3z+3)x^3\\
+&+(26y^2z^3-42y^4z^2+2)x^2+(39yz^2-63y^3z+4yz)x+6,\\
+g=&x^6+(13yz^2-21y^3z+z+y)x^4+3x^3\\
+&+(13yz^3+13y^2z^2-21y^3z^2-21y^4z)x^2\\
+&+(13yz^2-21y^3z+2z+2y)x+2.
+\end{align*}
+" class="latex-display" width="580" height="143">
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+首先我们取素数<img src="latex/latex2png-MultiPoly_264004364_-4.gif" alt="$p_1=11$" class="latex-inline" style="vertical-align: -4px" width="54" height="15">,并作如下计算:
+<img src="latex/latex2png-MultiPoly_124510483_.gif" alt="$$h_{11}(x,1,2)\equiv x^3-x+2\pmod{11},$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-MultiPoly_124509973_.gif" alt="$$h_{11}(x,3,2)\equiv x^3+x+2\pmod{11},$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-MultiPoly_194271798_.gif" alt="$$h_{11}(x,5,2)\equiv x^3+4x+2\pmod{11},$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-MultiPoly_134003240_.gif" alt="$$h_{11}(x,-4,2)\equiv x^3+5x+2\pmod{11},$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-MultiPoly_194263366_.gif" alt="$$h_{11}(x,4,2)\equiv x^3-5x+2\pmod{11},$$" class="latex-display" width="580" height="20">
+
+<p>用普通的稠密插值算法可以求得<img src="latex/latex2png-MultiPoly_221149785_-5.gif" alt="$h_{11}(x,y,2)=x^3+(-3y+2y^3)x+2\pmod{11}.$" class="latex-inline" style="vertical-align: -5px" width="339" height="19">然后我们再对<img src="latex/latex2png-MultiPoly_43283474_-1.gif" alt="$z$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">取其它赋值点来计算,此时我们假定<img src="latex/latex2png-MultiPoly_163261337_-5.gif" alt="$h_{11}(x,y,z_i)$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">具有形式<img src="latex/latex2png-MultiPoly_21810309_-5.gif" alt="$x^3+(ay+by^3)x+2$" class="latex-inline" style="vertical-align: -5px" width="149" height="19">,不必对每个<img src="latex/latex2png-MultiPoly_43283474_-1.gif" alt="$z$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的赋值点<img src="latex/latex2png-MultiPoly_130845676_-2.gif" alt="$z_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">都取5个<img src="latex/latex2png-MultiPoly_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的赋值点来算,只需取2个点来计算即可.例如当<img src="latex/latex2png-MultiPoly_488507_-1.gif" alt="$z=-5$" class="latex-inline" style="vertical-align: -1px" width="52" height="12">时,计算下面两个式子:
+<img src="latex/latex2png-MultiPoly_24992828_.gif" alt="$$h_{11}(x,-3,-5)\equiv x^3-4x+2\pmod{11},$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-MultiPoly_136530522_.gif" alt="$$h_{11}(x,2,-5)\equiv x^3+5x+2\pmod{11}.$$" class="latex-display" width="580" height="20"></p>
+
+<p>于是我们得到下面的方程组:
+<img src="latex/latex2png-MultiPoly_241678791_.gif" alt="$$-3a-5b\equiv -4\pmod{11},$$" class="latex-display" width="580" height="18">
+<img src="latex/latex2png-MultiPoly_80373887_.gif" alt="$$2a-3b\equiv 5\pmod{11},$$" class="latex-display" width="580" height="18">
+解得<img src="latex/latex2png-MultiPoly_498658_-1.gif" alt="$a=b=-5$" class="latex-inline" style="vertical-align: -1px" width="81" height="13">,因此得到<img src="latex/latex2png-MultiPoly_151753248_-5.gif" alt="$h_{11}(x,y,-5)=x^3+(-5y-5y^3)x+2\pmod{11}$" class="latex-inline" style="vertical-align: -5px" width="348" height="19">.同理我们还可以得到
+<img src="latex/latex2png-MultiPoly_106221450_.gif" alt="$$h_{11}(x,y,-3)\equiv x^3+(-4y-3y^3)x+2\pmod{11},$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-MultiPoly_251183786_.gif" alt="$$h_{11}(x,y,5)\equiv x^3+(-5y+5y^3)x+2\pmod{11}.$$" class="latex-display" width="580" height="20"></p>
+
+<p>此时利用<img src="latex/latex2png-MultiPoly_43283474_-1.gif" alt="$z$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">在4个赋值点计算的结果,利用稠密插值可以得到
+<img src="latex/latex2png-MultiPoly_120478325_.gif" alt="$$h_{11}(x,y,z)\equiv x^3+(2yz^2+y^3z)x+2\pmod{11}.$$" class="latex-display" width="580" height="20"></p>
+
+<p>其次,我们再取素数<img src="latex/latex2png-MultiPoly_4824308_-4.gif" alt="$p_2=17$" class="latex-inline" style="vertical-align: -4px" width="55" height="16">,此时也不必取前面那么多赋值点,利用稀疏性假设,我们可以认为<img src="latex/latex2png-MultiPoly_127398857_-5.gif" alt="$h_{17}(x,y,z)$" class="latex-inline" style="vertical-align: -5px" width="77" height="18">具有形式<img src="latex/latex2png-MultiPoly_114055640_-5.gif" alt="$x^3+(cyz^2+dy^3z)x+2$" class="latex-inline" style="vertical-align: -5px" width="173" height="19">,只需取两组<img src="latex/latex2png-MultiPoly_21722751_-5.gif" alt="$(y,z)$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">进行插值,例如:
+<img src="latex/latex2png-MultiPoly_134000038_.gif" alt="$$h_{17}(x,7,-4)\equiv x^3+8x+2\pmod{17},$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-MultiPoly_240822010_.gif" alt="$$h_{17}(x,-2,4)\equiv x^3+x+2\pmod{17},$$" class="latex-display" width="580" height="20">
+于是解方程可得<img src="latex/latex2png-MultiPoly_100038929_-5.gif" alt="$h_{17}(x,y,z)=x^3+(-4yz^2-4y^3z)x+2\pmod{17}$" class="latex-inline" style="vertical-align: -5px" width="360" height="19">.</p>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注3<a name=""></a></span><span class="theorem-name"></span>
+利用中国剩余定理将<img src="latex/latex2png-MultiPoly_139043924_-2.gif" alt="$\mathbb{Z}_{11}$" class="latex-inline" style="vertical-align: -2px" width="24" height="14">和<img src="latex/latex2png-MultiPoly_145335380_-3.gif" alt="$\mathbb{Z}_{17}$" class="latex-inline" style="vertical-align: -3px" width="24" height="15">中的结果合起来,即为<img src="latex/latex2png-MultiPoly_250106247_-5.gif" alt="$h=x^3+(13yz^2-21y^3z)x+2$" class="latex-inline" style="vertical-align: -5px" width="222" height="19">,经验算,其恰为所欲求的最大公因子.这里只用了13次一元多项式GCD问题求解,而若用通常的模算法,则需将近40次.由此可见,稀疏插值模算法确能有效地减少计算次数.
+
+
+</div>
+
+
+<h3><a name="sec11" id="sec11"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>算法描述</h3>
+
+<p class="first">前面我们曾经介绍过了Zippel稀疏插值算法的思想以及具体操作的方法,现在我们只需稍加改动,具体给出求值函数的形式,就可以用来计算最大公因子.本节中将要给出的算法描述可以参考<span class="cite"><a class="cite" href="MultiPoly.html#ref-2" name="cite-2">[2]</a></span>15.3节.</p>
+
+<p>先对记号做一些说明,在下面将要介绍的插值算法中,我们保留变元<img src="latex/latex2png-MultiPoly_29854700_-2.gif" alt="$X_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">,并记之为<img src="latex/latex2png-MultiPoly_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">.对集合
+<img src="latex/latex2png-MultiPoly_141022013_.gif" alt="$$\{(u_1,v_1),\ldots,(u_n,v_n)\}$$" class="latex-display" width="580" height="18">
+的插值即求多项式<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">使得<img src="latex/latex2png-MultiPoly_26544509_-5.gif" alt="$\forall i(1\le i\le n),f(u_i)=v_i$" class="latex-inline" style="vertical-align: -5px" width="177" height="18">.</p>
+
+<p>稀疏插值算法1和稀疏插值算法2两者互相递归调用.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法5<a name="al:sparsegcd1"></a></span><span class="theorem-name">(稀疏插值算法1)</span>
+输入:<img src="latex/latex2png-MultiPoly_107156248_-5.gif" alt="$l(X_1,\ldots,X_k)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,<img src="latex/latex2png-MultiPoly_57309720_-5.gif" alt="$f(X_1,\ldots,X_k,Z)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,<img src="latex/latex2png-MultiPoly_74086936_-5.gif" alt="$g(X_1,\ldots,X_k,Z)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,其中<img src="latex/latex2png-MultiPoly_120575121_-3.gif" alt="$0\le k<n$" class="latex-inline" style="vertical-align: -3px" width="72" height="15">,
+
+<p>输出:多项式<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的最大公因子的某个倍数,使得其关于<img src="latex/latex2png-MultiPoly_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的首项系数为<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-MultiPoly_117601300_-1.gif" alt="$k=0$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">则输出<img src="latex/latex2png-MultiPoly_121920770_-5.gif" alt="$l\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="69" height="18">,</li>
+
+<li>令<img src="latex/latex2png-MultiPoly_147520402_-5.gif" alt="$d=\min(\deg_kf,\deg_kg)+\deg_kl$" class="latex-inline" style="vertical-align: -5px" width="229" height="18">,并任取一赋值点<img src="latex/latex2png-MultiPoly_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">,</li>
+
+<li>递归调用本算法计算<img src="latex/latex2png-MultiPoly_31184107_-5.gif" alt="$f(X_1,\ldots,X_{k-1},x_k,Z),g(X_1,\ldots,X_{k-1},x_k,Z)$" class="latex-inline" style="vertical-align: -5px" width="333" height="18">的最大公因子<img src="latex/latex2png-MultiPoly_131266231_-5.gif" alt="$I(X_1,\ldots,X_{k-1},Z)$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,其中第一个参数输入<img src="latex/latex2png-MultiPoly_182000025_-5.gif" alt="$l(X_1,\ldots,X_{k-1},x_k)$" class="latex-inline" style="vertical-align: -5px" width="139" height="18">,</li>
+
+<li>令<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为多项式<img src="latex/latex2png-MultiPoly_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">关于<img src="latex/latex2png-MultiPoly_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的系数(<img src="latex/latex2png-MultiPoly_128593580_-5.gif" alt="$\in F[X_1,\ldots,X_{k-1}]$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">)中含最多单项式的系数的单项式个数,同时对<img src="latex/latex2png-MultiPoly_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">从<img src="latex/latex2png-MultiPoly_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">循环到<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">顺次命<img src="latex/latex2png-MultiPoly_92592741_-5.gif" alt="$\mathcal{H}_j=\{(x_k,I\text{关于}Z^j\text{的系数})\}$" class="latex-inline" style="vertical-align: -5px" width="209" height="19">,</li>
+
+<li>对<img src="latex/latex2png-MultiPoly_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">从<img src="latex/latex2png-MultiPoly_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">循环到<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">顺次做下面6,7步,</li>
+
+<li>随机取不重复的赋值点<img src="latex/latex2png-MultiPoly_147622892_-4.gif" alt="$y_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">,调用算法<a class="ref-th" href="MultiPoly.html#al:sparsegcd2">6</a>,输入<img src="latex/latex2png-MultiPoly_102087151_0.gif" alt="$\mathrm{skel}I$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">,<img src="latex/latex2png-MultiPoly_88532583_-5.gif" alt="$l(X_1,\ldots,X_{k-1},y_i)$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">,<img src="latex/latex2png-MultiPoly_24181644_-5.gif" alt="$F(X_1,\ldots,X_{k-1},y_i,Z)$" class="latex-inline" style="vertical-align: -5px" width="162" height="18">,<img src="latex/latex2png-MultiPoly_40958860_-5.gif" alt="$G(X_1,\ldots,X_{k-1},y_i,Z)$" class="latex-inline" style="vertical-align: -5px" width="161" height="18">,<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,得到稀疏插值求得的多项式<img src="latex/latex2png-MultiPoly_43611154_-1.gif" alt="$W$" class="latex-inline" style="vertical-align: -1px" width="17" height="13">,</li>
+
+<li>对<img src="latex/latex2png-MultiPoly_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">从<img src="latex/latex2png-MultiPoly_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">循环到<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">顺次命<img src="latex/latex2png-MultiPoly_22739052_-5.gif" alt="$\mathcal{H}_j=\mathcal{H}_j\cup\{(y_i,W\text{关于}Z^j\text{的系数})\}$" class="latex-inline" style="vertical-align: -5px" width="256" height="19">,</li>
+
+<li>对<img src="latex/latex2png-MultiPoly_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">从<img src="latex/latex2png-MultiPoly_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">循环到<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">顺次利用稠密插值算法由<img src="latex/latex2png-MultiPoly_154690634_-5.gif" alt="$\mathcal{H}_j$" class="latex-inline" style="vertical-align: -5px" width="22" height="17">计算到到多项式<img src="latex/latex2png-MultiPoly_58415464_-5.gif" alt="$h_j\in F[X_1,\ldots,X_k]$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,令<img src="latex/latex2png-MultiPoly_188201508_-3.gif" alt="$h=h_DZ^D+\cdots+h_0$" class="latex-inline" style="vertical-align: -3px" width="154" height="17">,</li>
+
+<li>若<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">不能同时整除<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">和<img src="latex/latex2png-MultiPoly_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">则退出整个算法重新选取赋值点（整个算法失败）,否则输出<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">.</li>
+</ol>
+
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法6<a name="al:sparsegcd2"></a></span><span class="theorem-name">(稀疏插值算法2)</span>
+输入:模板集<img src="latex/latex2png-MultiPoly_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">,多项式<img src="latex/latex2png-MultiPoly_107156248_-5.gif" alt="$l(X_1,\ldots,X_k)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,<img src="latex/latex2png-MultiPoly_57309720_-5.gif" alt="$f(X_1,\ldots,X_k,Z)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,<img src="latex/latex2png-MultiPoly_74086936_-5.gif" alt="$g(X_1,\ldots,X_k,Z)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,
+
+<p>输出:由它们计算得到稀疏插值的结果<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,也即<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-MultiPoly_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的最大公因子的某个倍数,其关于<img src="latex/latex2png-MultiPoly_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的首项系数为<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-MultiPoly_117601300_-1.gif" alt="$k=0$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">则输出<img src="latex/latex2png-MultiPoly_121920770_-5.gif" alt="$l\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="69" height="18">,</li>
+
+<li>任取<img src="latex/latex2png-MultiPoly_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个赋值点<img src="latex/latex2png-MultiPoly_113399406_-4.gif" alt="$y_1,\ldots,y_k$" class="latex-inline" style="vertical-align: -4px" width="67" height="12">,</li>
+
+<li>对<img src="latex/latex2png-MultiPoly_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">从<img src="latex/latex2png-MultiPoly_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">循环到<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">顺次做下面4,5步,</li>
+
+<li>令<img src="latex/latex2png-MultiPoly_69886474_-5.gif" alt="$W=l(y_1^i,\ldots,y_k^i)\times\gcd(f(y_1^i,\ldots,y_k^i,Z),g(y_1^i,\ldots,y_k^i,Z))$" class="latex-inline" style="vertical-align: -5px" width="412" height="19">,</li>
+
+<li>对<img src="latex/latex2png-MultiPoly_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">从<img src="latex/latex2png-MultiPoly_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">循环到<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">顺次命<img src="latex/latex2png-MultiPoly_127789939_-5.gif" alt="$\mathcal{H}_j=\mathcal{H}_j\cup\{W\text{关于}Z^j\text{的系数}\}$" class="latex-inline" style="vertical-align: -5px" width="223" height="19">,</li>
+
+<li>对<img src="latex/latex2png-MultiPoly_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">从<img src="latex/latex2png-MultiPoly_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">循环到<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">,由<img src="latex/latex2png-MultiPoly_154690634_-5.gif" alt="$\mathcal{H}_j$" class="latex-inline" style="vertical-align: -5px" width="22" height="17">,以及<img src="latex/latex2png-MultiPoly_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">中含<img src="latex/latex2png-MultiPoly_2389012_0.gif" alt="$Z^j$" class="latex-inline" style="vertical-align: 0px" width="18" height="14">的项和<img src="latex/latex2png-MultiPoly_113399406_-4.gif" alt="$y_1,\ldots,y_k$" class="latex-inline" style="vertical-align: -4px" width="67" height="12">计算出Vandermonde矩阵各元素,解线性方程组可得<img src="latex/latex2png-MultiPoly_104100884_-5.gif" alt="$h_j$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">(具体方法见注<a class="ref-th" href="MultiPoly.html#remark:detailofsparse">5</a>),</li>
+
+<li>输出<img src="latex/latex2png-MultiPoly_161987106_-3.gif" alt="$h_DZ^D+\cdots+h_0$" class="latex-inline" style="vertical-align: -3px" width="122" height="17">.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注4<a name=""></a></span><span class="theorem-name"></span>
+算法<a class="ref-th" href="MultiPoly.html#al:sparsegcd1">5</a>第1步,算法<a class="ref-th" href="MultiPoly.html#al:sparsegcd2">6</a>第1步,第4步等计算一元GCD时均是指求得其首一化的GCD.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注5<a name="remark:detailofsparse"></a></span><span class="theorem-name"></span>
+算法<a class="ref-th" href="MultiPoly.html#al:sparsegcd2">6</a>第6步计算的具体方法是:令<img src="latex/latex2png-MultiPoly_114002924_-5.gif" alt="$S_j$" class="latex-inline" style="vertical-align: -5px" width="15" height="17">为输入模板集<img src="latex/latex2png-MultiPoly_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">中最后一项指标为<img src="latex/latex2png-MultiPoly_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,即<img src="latex/latex2png-MultiPoly_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的系数为<img src="latex/latex2png-MultiPoly_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的指标在前<img src="latex/latex2png-MultiPoly_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">维上投影的集合.例如对于指标集
+<img src="latex/latex2png-MultiPoly_131379250_.gif" alt="$$\{(1,1),(1,0),(0,0)\}$$" class="latex-display" width="580" height="18">
+有<img src="latex/latex2png-MultiPoly_7686433_-5.gif" alt="$S_0=\{(1),(0)\}$" class="latex-inline" style="vertical-align: -5px" width="103" height="18">,<img src="latex/latex2png-MultiPoly_130243217_-5.gif" alt="$S_1=\{(1)\}$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">.设<img src="latex/latex2png-MultiPoly_114002924_-5.gif" alt="$S_j$" class="latex-inline" style="vertical-align: -5px" width="15" height="17">的元素个数为<img src="latex/latex2png-MultiPoly_248220652_-5.gif" alt="$s_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">,由赋值点<img src="latex/latex2png-MultiPoly_113399406_-4.gif" alt="$y_1,\ldots,y_k$" class="latex-inline" style="vertical-align: -4px" width="67" height="12">和指标集<img src="latex/latex2png-MultiPoly_114002924_-5.gif" alt="$S_j$" class="latex-inline" style="vertical-align: -5px" width="15" height="17">可以计算得到一个<img src="latex/latex2png-MultiPoly_248220652_-5.gif" alt="$s_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">阶的Vandermonde矩阵(若此矩阵奇异,则返回算法第2步重新选取赋值点).再取<img src="latex/latex2png-MultiPoly_154690634_-5.gif" alt="$\mathcal{H}_j$" class="latex-inline" style="vertical-align: -5px" width="22" height="17">的前<img src="latex/latex2png-MultiPoly_248220652_-5.gif" alt="$s_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">（肯定小于<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">）项,以此可得一线性方程组.其解配上相应的模板集<img src="latex/latex2png-MultiPoly_114002924_-5.gif" alt="$S_j$" class="latex-inline" style="vertical-align: -5px" width="15" height="17">即到多项式<img src="latex/latex2png-MultiPoly_104100884_-5.gif" alt="$h_j$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">.
+
+
+</div>
+
+<p>如果<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">和<img src="latex/latex2png-MultiPoly_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">都是关于<img src="latex/latex2png-MultiPoly_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的首一多项式,则直接调用算法<a class="ref-th" href="MultiPoly.html#al:sparsegcd1">5</a>,输入参数<img src="latex/latex2png-MultiPoly_16873094_-4.gif" alt="$1,f,g$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">即可,但是对于关于<img src="latex/latex2png-MultiPoly_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">的首项系数不为1的多项式,我们可如下给出它们的最大公因子.其中为了使我们每一步最后的试除法能够成功,调用<a class="ref-th" href="MultiPoly.html#al:sparsegcd1">5</a>时我们用<img src="latex/latex2png-MultiPoly_142636050_-4.gif" alt="$lf$" class="latex-inline" style="vertical-align: -4px" width="14" height="16">,<img src="latex/latex2png-MultiPoly_142701586_-4.gif" alt="$lg$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">.此时,为了使稠密插值的结果其首项系数为<img src="latex/latex2png-MultiPoly_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">,我们在算法<a class="ref-th" href="MultiPoly.html#al:sparsegcd1">5</a>第2步中令<img src="latex/latex2png-MultiPoly_147520402_-5.gif" alt="$d=\min(\deg_kf,\deg_kg)+\deg_kl$" class="latex-inline" style="vertical-align: -5px" width="229" height="18">.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法7<a name="sparsegcdall"></a></span><span class="theorem-name">(稀疏插值算法)</span>
+输入:多项式<img src="latex/latex2png-MultiPoly_55291032_-5.gif" alt="$f,g\in F[X_1,\ldots,X_n]$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">,
+
+<p>输出:<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的最大公因子.</p>
+
+<ol>
+<li>递归调用本算法计算<img src="latex/latex2png-MultiPoly_101723735_-5.gif" alt="$f_1=\mathrm{cont}_Z(f)$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,<img src="latex/latex2png-MultiPoly_102772327_-5.gif" alt="$g_1=\mathrm{cont}_Z(g)$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">,<img src="latex/latex2png-MultiPoly_19542914_-5.gif" alt="$a=\gcd(f_1,g_1)$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">,并令<img src="latex/latex2png-MultiPoly_216818637_-5.gif" alt="$f=f/f1$" class="latex-inline" style="vertical-align: -5px" width="66" height="18">,<img src="latex/latex2png-MultiPoly_52665411_-5.gif" alt="$g=g/g1$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">,</li>
+
+<li>递归调用本算法计算<img src="latex/latex2png-MultiPoly_261762387_-5.gif" alt="$l=\gcd(\mathrm{lc}_Z(f),\mathrm{lc}_Z(g))$" class="latex-inline" style="vertical-align: -5px" width="160" height="18">,调用算法<a class="ref-th" href="MultiPoly.html#al:sparsegcd1">5</a>,输入参数<img src="latex/latex2png-MultiPoly_259785958_-4.gif" alt="$l,lf,lg$" class="latex-inline" style="vertical-align: -4px" width="48" height="16">,得到<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,</li>
+
+<li>输出<img src="latex/latex2png-MultiPoly_58942744_-5.gif" alt="$a\mathrm{pp}(h)$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">.</li>
+</ol>
+
+
+</div>
+
+
+
+
+<h2><a name="sec12" id="sec12"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>求GCD的其它方法</h2>
+
+<p class="first">关于多元多项式的GCD问题,前述的一般算法以及Zippel稀疏插值模算法已经能够相当有效地处理,因此这一节所说的方法仅是作一些补充说明,算法的细节不再详细说明,有兴趣可以参考列出的一些文献.</p>
+
+<h3><a name="sec13" id="sec13"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>启发式算法(Heuristic GCD)</h3>
+
+<p class="first">启发式算法是一种将多元多项式GCD问题转化为大整数问题的算法.此算法的优势在于它将问题化为整数计算问题,而一般说来,对于一个计算机代数系统,其整数计算的部分都是在系统的Kernel中,因而由此提高计算效率,并且其前提为我们有一个非常高效处理整数的内核.其次,对于一般的小问题(即不是显得特别巨型冗长的多项式)来说,用启发式算法还是比插值算法可能来得快.</p>
+
+<p>本节描述参考<span class="cite"><a class="cite" href="MultiPoly.html#ref-3" name="cite-3">[3]</a></span>.至于算法的具体实现,可参考<span class="cite"><a class="cite" href="MultiPoly.html#ref-6" name="cite-6">[6]</a></span>7.7节.</p>
+
+<p>首先我们给出如下一个有用的引理:</p>
+
+<div class="lemma">
+<span class="theorem-header">引理1<a name="le:fzttsf1"></a></span><span class="theorem-name"></span>
+令<img src="latex/latex2png-MultiPoly_112966763_-5.gif" alt="$f\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,<img src="latex/latex2png-MultiPoly_184517568_-1.gif" alt="$a\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="40" height="13">,<img src="latex/latex2png-MultiPoly_243468872_-5.gif" alt="$x_k-a|f$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">,则<img src="latex/latex2png-MultiPoly_240351315_-5.gif" alt="$|a|\le\|f\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-MultiPoly_202290616_-5.gif" alt="$f=(x_k-a)g$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">,因为<img src="latex/latex2png-MultiPoly_80414692_-4.gif" alt="$f\neq 0$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">,显然<img src="latex/latex2png-MultiPoly_80414436_-4.gif" alt="$g\neq 0$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">.再设<img src="latex/latex2png-MultiPoly_253811100_-5.gif" alt="$g=g_0+\cdots+g_dx_k^d$" class="latex-inline" style="vertical-align: -5px" width="138" height="19">,其中<img src="latex/latex2png-MultiPoly_131480722_-5.gif" alt="$g_i\in\mathbb{Z}[x_1,\ldots,x_{k-1},x_{k+1},\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="238" height="18">,则
+<img src="latex/latex2png-MultiPoly_62039852_.gif" alt="$$f=-ag_0+(g_0-ag_1)x_k+\cdots+(g_{d-1}-ag_d)x_k^d+g_dx_k^{d+1},$$" class="latex-display" width="580" height="20">
+于是我们有<img src="latex/latex2png-MultiPoly_91644496_-5.gif" alt="$\|-ag_0\|_{\infty}\le\|f\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">,<img src="latex/latex2png-MultiPoly_190925102_-5.gif" alt="$\|g_{i-1}-ag_i\|_{\infty}\le\|f\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="164" height="18">,<img src="latex/latex2png-MultiPoly_111612505_-5.gif" alt="$\|g_d\|_{\infty}\le\|f\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">.若<img src="latex/latex2png-MultiPoly_58029948_-5.gif" alt="$|a|>\|f\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">,则可推出<img src="latex/latex2png-MultiPoly_50492436_-4.gif" alt="$g=0$" class="latex-inline" style="vertical-align: -4px" width="39" height="15">,矛盾.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>利用上面的引理,下面的定理给出了一种多项式GCD模算法.以下本节中的范数均指无穷范数.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理6<a name="th:fzttsf2"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_1549980_-5.gif" alt="$f,g\in\mathbb{Z}[X]$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">非零,<img src="latex/latex2png-MultiPoly_236221460_-1.gif" alt="$r>2$" class="latex-inline" style="vertical-align: -1px" width="38" height="12">且大于<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">在<img src="latex/latex2png-MultiPoly_18655678_-5.gif" alt="$\mathbb{Z}[X]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">内任何因子的范数的2倍,令<img src="latex/latex2png-MultiPoly_65849082_-5.gif" alt="$\overline{f}=\Phi_{x_n-r}(f)$" class="latex-inline" style="vertical-align: -5px" width="99" height="20">,<img src="latex/latex2png-MultiPoly_67946234_-5.gif" alt="$\overline{g}=\Phi_{x_n-r}(g)$" class="latex-inline" style="vertical-align: -5px" width="96" height="18">,<img src="latex/latex2png-MultiPoly_77180563_-5.gif" alt="$\overline{h}=\gcd(\overline{f},\overline{g})=h_0+h_1r+\cdots+h_dr^d$" class="latex-inline" style="vertical-align: -5px" width="272" height="20">,其中<img src="latex/latex2png-MultiPoly_245150152_-5.gif" alt="$h_i\in\mathbb{Z}[x_1,\ldots,x_{n-1}]$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">,令<img src="latex/latex2png-MultiPoly_77141668_-4.gif" alt="$H=h_0+h_1x_n+\cdots+h_dx_n^d$" class="latex-inline" style="vertical-align: -4px" width="204" height="18">,则
+<img src="latex/latex2png-MultiPoly_25028141_.gif" alt="$$H=\gcd(f,g)\Leftrightarrow H|f\wedge H|g.$$" class="latex-display" width="580" height="18">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+我们证明<img src="latex/latex2png-MultiPoly_120486128_-1.gif" alt="$\Leftarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">.设<img src="latex/latex2png-MultiPoly_196369664_-5.gif" alt="$h=\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,则由<img src="latex/latex2png-MultiPoly_241924402_-5.gif" alt="$H|f\wedge H|g$" class="latex-inline" style="vertical-align: -5px" width="76" height="18">知<img src="latex/latex2png-MultiPoly_226653204_-5.gif" alt="$H|h$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">,设<img src="latex/latex2png-MultiPoly_29979706_-1.gif" alt="$h=HG$" class="latex-inline" style="vertical-align: -1px" width="60" height="13">,于是
+<img src="latex/latex2png-MultiPoly_173974021_.gif" alt="$$\Phi_{x_n-r}(h)=\Phi_{x_n-r}(H)\Phi_{x_n-r}(G)=\overline{h}\Phi_{x_n-r}(G),$$" class="latex-display" width="580" height="20">
+而<img src="latex/latex2png-MultiPoly_173852733_-5.gif" alt="$h=\gcd(f,g)\Rightarrow\Phi_{x_n-r}(h)|\gcd(\overline{f},\overline{g})=\overline{h}$" class="latex-inline" style="vertical-align: -5px" width="291" height="20">,从而<img src="latex/latex2png-MultiPoly_234548973_-5.gif" alt="$\Phi_{x_n-r}(G)=\pm 1\Rightarrow G\pm 1=0\vee (x_n-r)|(G\pm 1)$" class="latex-inline" style="vertical-align: -5px" width="347" height="18">.若<img src="latex/latex2png-MultiPoly_200911684_-4.gif" alt="$G\pm 1\neq 0$" class="latex-inline" style="vertical-align: -4px" width="71" height="16">,则由引理<a class="ref-th" href="MultiPoly.html#le:fzttsf1">1</a>可知<img src="latex/latex2png-MultiPoly_71137473_-5.gif" alt="$\|G\pm 1\|\ge r$" class="latex-inline" style="vertical-align: -5px" width="86" height="18">.另一方面<img src="latex/latex2png-MultiPoly_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">是<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的因子,则<img src="latex/latex2png-MultiPoly_262995642_-5.gif" alt="$\|G\|<r/2\Rightarrow\|G\pm 1\|\le r/2$" class="latex-inline" style="vertical-align: -5px" width="206" height="18">,矛盾，故<img src="latex/latex2png-MultiPoly_181713703_-1.gif" alt="$G\pm 1=0$" class="latex-inline" style="vertical-align: -1px" width="71" height="13">,命题成立.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>因为在该定理中要估计<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">各因子的范数的上界,因此对于一元情形,可以利用Mignotte界来给出,但是对于多元情形则无法给出.下面给出一例说明用此方法做一元多项式GCD问题.</p>
+
+<div class="problem">
+<span class="proof-header">例2<a name="pro:fzttsf5"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_266421801_-4.gif" alt="$f=x^4+25x^3+145x^2-171x-360$" class="latex-inline" style="vertical-align: -4px" width="263" height="18">,<img src="latex/latex2png-MultiPoly_108563758_-4.gif" alt="$g=x^5+14x^4+15x^3-x^2-14x-15$" class="latex-inline" style="vertical-align: -4px" width="275" height="18">,由Mignotte界给出的上界<img src="latex/latex2png-MultiPoly_78735633_-2.gif" alt="$M=\sqrt{6}\cdot 2^5\times 15=1175.76$" class="latex-inline" style="vertical-align: -2px" width="202" height="17">,因此我们取<img src="latex/latex2png-MultiPoly_147677966_-1.gif" alt="$r=2400$" class="latex-inline" style="vertical-align: -1px" width="62" height="12">,则<img src="latex/latex2png-MultiPoly_35181615_-5.gif" alt="$f(2400)=33524034789240$" class="latex-inline" style="vertical-align: -5px" width="192" height="18">,<img src="latex/latex2png-MultiPoly_212788380_-5.gif" alt="$g(2400)=80090933754206385$" class="latex-inline" style="vertical-align: -5px" width="217" height="18">,于是
+<img src="latex/latex2png-MultiPoly_150544263_.gif" alt="$$\gcd(f(r),g(r))=5793615=r^2+14r+15,$$" class="latex-display" width="580" height="20">
+经检验,<img src="latex/latex2png-MultiPoly_257375613_-2.gif" alt="$H=x^2+14x+15$" class="latex-inline" style="vertical-align: -2px" width="137" height="16">确是<img src="latex/latex2png-MultiPoly_222584066_-5.gif" alt="$\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">.
+<span class="example-end">◇</span>
+
+</div>
+
+<p>由于上面的方法一则依赖Mignotte界,其系数绝对值仍然可能很大,二则对于多元情形并不适用,因此仍需对其进行改进.</p>
+
+<p>下面的Cauchy不等式给出了<img src="latex/latex2png-MultiPoly_27044309_-5.gif" alt="$\mathbb{C}[x]$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">上多项式根的模的一个估计.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理7<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_83713551_-9.gif" alt="$f=\sum_{0\le i\le n}f_ix^i\in\mathbb{C}[x]$" class="latex-inline" style="vertical-align: -9px" width="170" height="23">,<img src="latex/latex2png-MultiPoly_230643422_-4.gif" alt="$r_1,\ldots,r_n$" class="latex-inline" style="vertical-align: -4px" width="67" height="12">是它的根,则对任何一个根<img src="latex/latex2png-MultiPoly_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">均有<img src="latex/latex2png-MultiPoly_233288656_.gif" alt="$$r_<1+\displaystyle\frac{\max(|f_0|,|f_1|,\ldots,|f_{n-1}|)}{|f_n|}.$$" class="latex-display" width="580" height="41">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+若<img src="latex/latex2png-MultiPoly_10681422_-5.gif" alt="$|r|\le 1$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">,则无需证明.下面假设<img src="latex/latex2png-MultiPoly_132942166_-5.gif" alt="$|r|>1$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">,由<img src="latex/latex2png-MultiPoly_72030656_-9.gif" alt="$\sum_{0\le i\le n}f_ir^i=0$" class="latex-inline" style="vertical-align: -9px" width="118" height="23">可得
+<img src="latex/latex2png-MultiPoly_109676474_.gif" alt="
+\begin{align*}
+|f_nr^n|&=\left|\sum_{0\le i\le n-1}f_ir^i\right|\le\max_{0\le i\le n-1}|f_i|\cdot (1+|r|+\cdots+|r|^{n-1})\\
+&=\max_{0\le i\le n-1}|f_i|\cdot \frac{|r|^n-1}{|r|-1}<\max_{0\le i\le n-1}|f_i|\frac{|r|^n}{|r|-1},
+\end{align*}
+" class="latex-display" width="580" height="108">
+因此得到估计<img src="latex/latex2png-MultiPoly_2760040_-16.gif" alt="$|r|<1+\displaystyle\frac{\max_{0\le i\le n-1}|f_i|}{|f_n|}$" class="latex-inline" style="vertical-align: -16px" width="184" height="40">.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理2<a name="le:fzttsf3"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_15817058_-5.gif" alt="$p\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">非常数,<img src="latex/latex2png-MultiPoly_255040802_-3.gif" alt="$s\ge 1$" class="latex-inline" style="vertical-align: -3px" width="36" height="14">为给定正实数,整数<img src="latex/latex2png-MultiPoly_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">满足<img src="latex/latex2png-MultiPoly_25171646_-5.gif" alt="$|r|\ge\|p\|_{\infty}+s+1$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">,若<img src="latex/latex2png-MultiPoly_15882594_-5.gif" alt="$q\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">非常数且<img src="latex/latex2png-MultiPoly_243954708_-5.gif" alt="$q|p$" class="latex-inline" style="vertical-align: -5px" width="21" height="18">,则<img src="latex/latex2png-MultiPoly_104210009_-5.gif" alt="$\|\Phi_{x-r}(q)\|_{\infty}>s$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+在<img src="latex/latex2png-MultiPoly_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">中,设<img src="latex/latex2png-MultiPoly_91106460_-9.gif" alt="$p=c\prod_{1\le i\le d}(x-r_i)$" class="latex-inline" style="vertical-align: -9px" width="151" height="22">,则由Cauchy不等式估计有:<img src="latex/latex2png-MultiPoly_32941162_.gif" alt="$$
+|r_i|<1+\frac{\|p\|_{\infty}}{|c|},$$" class="latex-display" width="580" height="41">
+而<img src="latex/latex2png-MultiPoly_192227985_-12.gif" alt="$\|\Phi_{x-r}(p)\|_{\infty}\ge|c|\left|\prod_{1\le i\le d}(|r|-|r_i|)\right|$" class="latex-inline" style="vertical-align: -12px" width="266" height="32">,由于<img src="latex/latex2png-MultiPoly_25171646_-5.gif" alt="$|r|\ge\|p\|_{\infty}+s+1$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">,则<img src="latex/latex2png-MultiPoly_17430592_-9.gif" alt="$\big||r|-|r_i|\big|>1+\|p\|_{\infty}+s-(1+\frac{\|p\|_{\infty}}{|c|})\ge 0$" class="latex-inline" style="vertical-align: -9px" width="315" height="26">.故<img src="latex/latex2png-MultiPoly_63118220_-5.gif" alt="$\|\Phi_{x-r}(p)\|_{\infty}>|c|s^d\ge s$" class="latex-inline" style="vertical-align: -5px" width="171" height="19">.同理,也可得到<img src="latex/latex2png-MultiPoly_165230133_-5.gif" alt="$\|\Phi_{x-r}(q)\|_{\infty}\ge s$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>引理<a class="ref-th" href="MultiPoly.html#le:fzttsf3">2</a>可以用来引入下面的一元多项式模GCD算法.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理8<a name="th:fzttsf4"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_9938588_-5.gif" alt="$f,g\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">非零,<img src="latex/latex2png-MultiPoly_184517296_-1.gif" alt="$r\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">满足<img src="latex/latex2png-MultiPoly_194426944_-5.gif" alt="$r>1+\min(\|f\|_{\infty},\|g\|_{\infty})$" class="latex-inline" style="vertical-align: -5px" width="185" height="18">,设<img src="latex/latex2png-MultiPoly_183358775_-5.gif" alt="$\overline{h}=\gcd(\overline{f},\overline{g})=h_0+\cdots+h_dr^d$" class="latex-inline" style="vertical-align: -5px" width="227" height="20">,令<img src="latex/latex2png-MultiPoly_218794361_-3.gif" alt="$H=h_0+\cdots+h_dx^d$" class="latex-inline" style="vertical-align: -3px" width="148" height="17">,则<img src="latex/latex2png-MultiPoly_6426697_-5.gif" alt="$H=\gcd(f,g)\Leftrightarrow H|f\wedge H|g$" class="latex-inline" style="vertical-align: -5px" width="202" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+我们仍然只需要证明<img src="latex/latex2png-MultiPoly_120486128_-1.gif" alt="$\Leftarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">.同样的,我们可以设<img src="latex/latex2png-MultiPoly_29979706_-1.gif" alt="$h=HG$" class="latex-inline" style="vertical-align: -1px" width="60" height="13">,容易得到<img src="latex/latex2png-MultiPoly_133465544_-5.gif" alt="$\Phi_{x-r}(G)=\pm 1$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">.设<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">中范数较小者,则<img src="latex/latex2png-MultiPoly_59244101_-5.gif" alt="$r>1+\|p\|_{\infty}\Rightarrow r\ge 1+1+\|p\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="248" height="18">.若<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$H$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">非常数,则由引理<a class="ref-th" href="MultiPoly.html#le:fzttsf3">2</a>知<img src="latex/latex2png-MultiPoly_105914201_-5.gif" alt="$\|\Phi_{x-r}(H)\|_{\infty}>1$" class="latex-inline" style="vertical-align: -5px" width="124" height="18">,此与<img src="latex/latex2png-MultiPoly_133469640_-5.gif" alt="$\Phi_{x-r}(H)=\pm 1$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">矛盾.故<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$H$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为常数,<img src="latex/latex2png-MultiPoly_120979522_-1.gif" alt="$H=\pm 1$" class="latex-inline" style="vertical-align: -1px" width="57" height="13">.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>当我们用此算法对例<a class="ref-th" href="MultiPoly.html#pro:fzttsf5">2</a>再次讨论时,发现赋值点的选取要小得多.由于<img src="latex/latex2png-MultiPoly_68248510_-5.gif" alt="$\|g\|_{\infty}=15$" class="latex-inline" style="vertical-align: -5px" width="76" height="18">,因此我们取<img src="latex/latex2png-MultiPoly_5403706_-1.gif" alt="$r=20$" class="latex-inline" style="vertical-align: -1px" width="46" height="12">,比前面取的<img src="latex/latex2png-MultiPoly_147688391_-1.gif" alt="$2400$" class="latex-inline" style="vertical-align: -1px" width="32" height="12">要小得多.此时有<img src="latex/latex2png-MultiPoly_10831022_-5.gif" alt="$f(20)=414220$" class="latex-inline" style="vertical-align: -5px" width="109" height="18">,<img src="latex/latex2png-MultiPoly_77299940_-5.gif" alt="$g(20)=5559305$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,<img src="latex/latex2png-MultiPoly_261000014_-5.gif" alt="$\gcd(f(20),g(20))=695=20^2+14*2=+15$" class="latex-inline" style="vertical-align: -5px" width="328" height="19">,因此<img src="latex/latex2png-MultiPoly_257375613_-2.gif" alt="$H=x^2+14x+15$" class="latex-inline" style="vertical-align: -2px" width="137" height="16">.</p>
+
+<p>上述算法并不保证一定能够得到最大公因子.例如取<img src="latex/latex2png-MultiPoly_67802085_-5.gif" alt="$f=(x-1)x$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">,<img src="latex/latex2png-MultiPoly_31565833_-5.gif" alt="$g=(x+1)(x+2)$" class="latex-inline" style="vertical-align: -5px" width="131" height="18">,则对二者取赋值点后求得的GCD必为偶数,但事实上<img src="latex/latex2png-MultiPoly_47030236_-5.gif" alt="$\gcd(f,g)=1$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">,因此进一步我们必须考虑多项式的本原部分.下面的定理可以解决这一问题.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理9<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_9938588_-5.gif" alt="$f,g\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">是本原多项式,<img src="latex/latex2png-MultiPoly_184517296_-1.gif" alt="$r\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">满足<img src="latex/latex2png-MultiPoly_76520171_-5.gif" alt="$r>1+2\min(\|f\|_{\infty},\|g\|_{\infty})$" class="latex-inline" style="vertical-align: -5px" width="196" height="18">,令<img src="latex/latex2png-MultiPoly_230134672_-5.gif" alt="$\overline{h}=\gcd(\overline{f},\overline{g})$" class="latex-inline" style="vertical-align: -5px" width="94" height="20">,定义多项式<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$H$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">同前,则同样地有<img src="latex/latex2png-MultiPoly_32906594_-5.gif" alt="$\mathrm{pp}(H)=\gcd(f,g)\Leftrightarrow\mathrm{pp}(H)|f\wedge\mathrm{pp}(H)|g$" class="latex-inline" style="vertical-align: -5px" width="296" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+我们仍然只证<img src="latex/latex2png-MultiPoly_120486128_-1.gif" alt="$\Leftarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">.令<img src="latex/latex2png-MultiPoly_223060736_-5.gif" alt="$a=\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">,则有<img src="latex/latex2png-MultiPoly_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">使得<img src="latex/latex2png-MultiPoly_230612617_-5.gif" alt="$a=\mathrm{pp}(H)G$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">.且
+<img src="latex/latex2png-MultiPoly_192586467_.gif" alt="$$\Phi_{x-r}(\mathrm{pp}(H))\Phi_{x-r}(G)=\overline{a}|\overline{h},$$" class="latex-display" width="580" height="20">
+记<img src="latex/latex2png-MultiPoly_213550941_-5.gif" alt="$c=\mathrm{cont}(H)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">,则<img src="latex/latex2png-MultiPoly_218353933_-5.gif" alt="$\mathrm{pp}(H)=H/c$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">,故
+<img src="latex/latex2png-MultiPoly_223868233_.gif" alt="$$\Phi_{x-r}(\mathrm{pp}(H))=\Phi_{x-r}(H/c)=\Phi_{x-r}(H)/c=\overline{h}/c,$$" class="latex-display" width="580" height="20">
+于是<img src="latex/latex2png-MultiPoly_217893677_-5.gif" alt="$\Phi_{x-r}(G)|c$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">,即<img src="latex/latex2png-MultiPoly_250845816_-5.gif" alt="$\Phi_{x-r}(G)\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">且<img src="latex/latex2png-MultiPoly_243000852_-5.gif" alt="$\|\Phi_{x-r}(G)\|_{\infty}\le c\le r/2$" class="latex-inline" style="vertical-align: -5px" width="168" height="18">.
+
+<p>再设<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为<img src="latex/latex2png-MultiPoly_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">中无穷范数较小者,于是<img src="latex/latex2png-MultiPoly_167652691_-5.gif" alt="$r/2\ge 1+\|p\|_{\infty}$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">.故<img src="latex/latex2png-MultiPoly_17824210_-5.gif" alt="$\Phi_{x-r}(G)$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">非常数,于是由引理得<img src="latex/latex2png-MultiPoly_146394589_-5.gif" alt="$\|\Phi_{x-r}(G)\|_{\infty}>s=r/2$" class="latex-inline" style="vertical-align: -5px" width="169" height="18">.因此,<img src="latex/latex2png-MultiPoly_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">为常数,由<img src="latex/latex2png-MultiPoly_230612617_-5.gif" alt="$a=\mathrm{pp}(H)G$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">知<img src="latex/latex2png-MultiPoly_120979266_-1.gif" alt="$G=\pm 1$" class="latex-inline" style="vertical-align: -1px" width="54" height="13">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>对于多元情况,我们先引入一些记号.本节后面的命题不再重述.设<img src="latex/latex2png-MultiPoly_201372553_-4.gif" alt="$\alpha_1,\ldots,\alpha_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="90" height="12">是随机选取的一些整数,<img src="latex/latex2png-MultiPoly_112966603_-5.gif" alt="$p\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="121" height="18">是非常数多项式,且使得<img src="latex/latex2png-MultiPoly_94520130_-6.gif" alt="$\deg_{x_n}(p)=\deg_{x_n}(\Phi_I(p))$" class="latex-inline" style="vertical-align: -6px" width="178" height="19">,其中理想<img src="latex/latex2png-MultiPoly_119593581_-5.gif" alt="$I=\idea{x_1-\alpha_1,\ldots,x_{n-1}-\alpha_{n-1}}$" class="latex-inline" style="vertical-align: -5px" width="227" height="18">.记<img src="latex/latex2png-MultiPoly_94293832_-5.gif" alt="$\|p\|_I=\max(\|p\|_{\infty},\|\Phi_I(p)\|_{\infty})$" class="latex-inline" style="vertical-align: -5px" width="214" height="18">.</p>
+
+<div class="lemma">
+<span class="theorem-header">引理3<a name="le:fzttsf6"></a></span><span class="theorem-name"></span>
+设有整数<img src="latex/latex2png-MultiPoly_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">满足<img src="latex/latex2png-MultiPoly_234190767_-5.gif" alt="$|r|\ge\|p\|_I+s+1$" class="latex-inline" style="vertical-align: -5px" width="126" height="18">,<img src="latex/latex2png-MultiPoly_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">是某一正实数且<img src="latex/latex2png-MultiPoly_255040802_-3.gif" alt="$s\ge 1$" class="latex-inline" style="vertical-align: -3px" width="36" height="14">,若<img src="latex/latex2png-MultiPoly_112966587_-5.gif" alt="$q\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">非常数且是<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的因子,<img src="latex/latex2png-MultiPoly_79730483_-5.gif" alt="$\Phi_{x_n-r}(q)\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,则<img src="latex/latex2png-MultiPoly_201519950_-5.gif" alt="$\|\Phi_{x_n-r}(q)\|_{\infty}>s$" class="latex-inline" style="vertical-align: -5px" width="125" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+<img src="latex/latex2png-MultiPoly_57594811_-5.gif" alt="$\Phi_I(q)|\Phi_I(p)$" class="latex-inline" style="vertical-align: -5px" width="83" height="18">.若<img src="latex/latex2png-MultiPoly_10700667_-5.gif" alt="$\Phi_I(q)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">是常数,则设<img src="latex/latex2png-MultiPoly_31355962_-4.gif" alt="$p=qt$" class="latex-inline" style="vertical-align: -4px" width="45" height="15">,有<img src="latex/latex2png-MultiPoly_168772855_-6.gif" alt="$\deg_{x_n}\Phi_I(p)=\deg_{x_n}\Phi_I(t)\Phi_I(q)=\deg_{x_n}\Phi_I(t)\le\deg_{x_n}(t)\le\deg_{x_n}(q)+\deg_{x_n}(t)=\deg_{x_n}(p)$" class="latex-inline" style="vertical-align: -6px" width="580" height="45">,由此<img src="latex/latex2png-MultiPoly_32506643_-6.gif" alt="$\deg_{x_n}(q)$" class="latex-inline" style="vertical-align: -6px" width="61" height="19">,则<img src="latex/latex2png-MultiPoly_199969818_-5.gif" alt="$\Phi_{x_n-r}(q)=q\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,矛盾.故<img src="latex/latex2png-MultiPoly_10700667_-5.gif" alt="$\Phi_I(q)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">非常数.此时由引理<a class="ref-th" href="MultiPoly.html#le:fzttsf3">2</a>知<img src="latex/latex2png-MultiPoly_129621495_-5.gif" alt="$\|\Phi_{x_n-r}(\Phi_I(q))\|_{\infty}>s$" class="latex-inline" style="vertical-align: -5px" width="158" height="18">.
+
+<p>因为<img src="latex/latex2png-MultiPoly_79730483_-5.gif" alt="$\Phi_{x_n-r}(q)\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,则有
+<img src="latex/latex2png-MultiPoly_11928759_.gif" alt="$$\Phi_{x_n-r}(\Phi_I(q))=\Phi_I(\Phi_{x_n-r}(q))=\Phi_{x_n-r}(q),$$" class="latex-display" width="580" height="18">
+因此<img src="latex/latex2png-MultiPoly_201519950_-5.gif" alt="$\|\Phi_{x_n-r}(q)\|_{\infty}>s$" class="latex-inline" style="vertical-align: -5px" width="125" height="18">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>下面两个定理的证明和前面一元情形两个定理的证明类似,这两个定理可以用来求多元多项式的最大公因子.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理10<a name="th:fzttsf7"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-MultiPoly_110351451_-5.gif" alt="$f,g\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">是非零多项式,<img src="latex/latex2png-MultiPoly_201372553_-4.gif" alt="$\alpha_1,\ldots,\alpha_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="90" height="12">的选取同前所述,使得
+<img src="latex/latex2png-MultiPoly_43558083_.gif" alt="$$\deg_{x_n}(f)=\deg_{x_n}(\Phi_I(f)),\quad \deg_{x_n}g=\deg_{x_n}(\Phi_I(g)),$$" class="latex-display" width="580" height="19">
+<img src="latex/latex2png-MultiPoly_184517296_-1.gif" alt="$r\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">满足<img src="latex/latex2png-MultiPoly_6702923_-5.gif" alt="$r>1+\min(\|f\|_I,\|g\|_I)$" class="latex-inline" style="vertical-align: -5px" width="172" height="18">,令<img src="latex/latex2png-MultiPoly_230134672_-5.gif" alt="$\overline{h}=\gcd(\overline{f},\overline{g})$" class="latex-inline" style="vertical-align: -5px" width="94" height="20">,<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$H$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的引入同前,则
+<img src="latex/latex2png-MultiPoly_25028141_.gif" alt="$$H=\gcd(f,g)\Leftrightarrow H|f\wedge H|g.$$" class="latex-display" width="580" height="18">
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理11<a name="th:tzttsf8"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-MultiPoly_110351451_-5.gif" alt="$f,g\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">是非零本原多项式,<img src="latex/latex2png-MultiPoly_201372553_-4.gif" alt="$\alpha_1,\ldots,\alpha_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="90" height="12">的选取同定理<a class="ref-th" href="MultiPoly.html#th:fzttsf7">10</a>所述,<img src="latex/latex2png-MultiPoly_184517296_-1.gif" alt="$r\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">满足<img src="latex/latex2png-MultiPoly_99410726_-5.gif" alt="$r>1+2\min(\|f\|_I,\|g\|_I)$" class="latex-inline" style="vertical-align: -5px" width="183" height="18">.<img src="latex/latex2png-MultiPoly_101517243_-4.gif" alt="$\overline{h},H$" class="latex-inline" style="vertical-align: -4px" width="32" height="19">的引入同前,则
+<img src="latex/latex2png-MultiPoly_177799376_.gif" alt="$$\mathrm{pp}(H)=\gcd(f,g)\Leftrightarrow\mathrm{pp}(H)|f\wedge\mathrm{pp}(H)|g.$$" class="latex-display" width="580" height="18">
+
+
+</div>
+
+
+<h3><a name="sec14" id="sec14"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>EZ-GCD</h3>
+
+<p class="first">EZ-GCD算法即Extended Zassenhaus算法(<span class="cite"><a class="cite" href="MultiPoly.html#ref-8" name="cite-8">[8]</a></span>),它利用Hensel提升来计算多元多项式的GCD.此算法的具体实现可以参考<span class="cite"><a class="cite" href="MultiPoly.html#ref-6" name="cite-6">[6]</a></span>7.6节.</p>
+
+
+
+
+<h2><a name="sec15" id="sec15"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>多元多项式因子分解的Kronecker算法</h2>
+
+<p class="first">对于给定的多项式<img src="latex/latex2png-MultiPoly_220028900_-5.gif" alt="$f\in\mathbb{Z}[x_1,x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="145" height="18">,我们取主变元为<img src="latex/latex2png-MultiPoly_165448684_-2.gif" alt="$x_1$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">,并记之为<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">.设
+<img src="latex/latex2png-MultiPoly_228687483_.gif" alt="$$d=\max_{1\le i\le n}\deg_{x_i}f,$$" class="latex-display" width="580" height="27">
+如果我们取多项式
+<img src="latex/latex2png-MultiPoly_107273687_.gif" alt="$$\tilde{f}(x)=f(x,x^{d+1},x^{(d+1)^2},\ldots,x^{(d+1)^{n-1}}),$$" class="latex-display" width="580" height="23">
+易知如果有不可约因子分解<img src="latex/latex2png-MultiPoly_195247501_-4.gif" alt="$f=f_1f_2\cdots f_r$" class="latex-inline" style="vertical-align: -4px" width="101" height="16">,这里我们假设<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">关于<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">是无平方因子本原多项式,那么有
+<img src="latex/latex2png-MultiPoly_173503478_.gif" alt="$$\tilde{f}=\tilde{f_1}\cdots\tilde{f_r}.$$" class="latex-display" width="580" height="20">
+然而当我们对<img src="latex/latex2png-MultiPoly_165181842_-4.gif" alt="$\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">进行因子分解时,得到的不一定是上式,因为<img src="latex/latex2png-MultiPoly_74249275_-4.gif" alt="$\tilde{f_i}$" class="latex-inline" style="vertical-align: -4px" width="12" height="19">不一定均是不可约的.设<img src="latex/latex2png-MultiPoly_165181842_-4.gif" alt="$\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">的不可约因子分解为
+<img src="latex/latex2png-MultiPoly_6497444_.gif" alt="$$\tilde{f}=g_1g_2\cdots g_t,$$" class="latex-display" width="580" height="20">
+则由因子组合算法可以还原在<img src="latex/latex2png-MultiPoly_121903957_-5.gif" alt="$\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">中的分解.</p>
+
+<p>由此可见,Kronecker算法的思想本身是简单的,下面给出具体的算法.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法8<a name="al:kroneckerfactorization"></a></span><span class="theorem-name">(Kronecker因子分解算法)</span>
+输入:关于<img src="latex/latex2png-MultiPoly_102987430_-2.gif" alt="$x=x_1$" class="latex-inline" style="vertical-align: -2px" width="47" height="10">本原且无平方因子的多项式<img src="latex/latex2png-MultiPoly_112966763_-5.gif" alt="$f\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,
+
+<p>输出:其各不可约因子<img src="latex/latex2png-MultiPoly_231029672_-5.gif" alt="$\{f_1,\ldots,f_r\}$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">.</p>
+
+<ol>
+<li>令<img src="latex/latex2png-MultiPoly_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">为各变元次数的上界,求得多项式
+<img src="latex/latex2png-MultiPoly_262251858_.gif" alt="$$\tilde{f}(x)=f(x,x^{d+1},x^{(d+1)^2},\ldots,x^{(d+1)^{n-1}})$$" class="latex-display" width="580" height="23">
+的因子分解
+<img src="latex/latex2png-MultiPoly_4400292_.gif" alt="$$\tilde{f}=g_1g_2\cdots g_t.$$" class="latex-display" width="580" height="20"></li>
+
+<li>令<img src="latex/latex2png-MultiPoly_228759135_-5.gif" alt="$T=\{1,2,\ldots,t\}$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">,<img src="latex/latex2png-MultiPoly_251884564_0.gif" alt="$s=1$" class="latex-inline" style="vertical-align: 0px" width="36" height="11">,<img src="latex/latex2png-MultiPoly_121081111_-5.gif" alt="$result=\{\}$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">,<img src="latex/latex2png-MultiPoly_68187156_-4.gif" alt="$h=f$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">,</li>
+
+<li>若<img src="latex/latex2png-MultiPoly_130909332_-4.gif" alt="$2s\le\# T$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,则循环做下面4-6步,否则转第7步,</li>
+
+<li>枚举<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的所有<img src="latex/latex2png-MultiPoly_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">元子集<img src="latex/latex2png-MultiPoly_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">,并做下面第5步,</li>
+
+<li>由多项式<img src="latex/latex2png-MultiPoly_39092115_-7.gif" alt="$\prod_{i\in S}g_i\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -7px" width="102" height="20">我们可以还原得到多项式<img src="latex/latex2png-MultiPoly_112966747_-5.gif" alt="$g\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">(见注<a class="ref-th" href="MultiPoly.html#remark:getback">6</a>),若<img src="latex/latex2png-MultiPoly_75658260_-5.gif" alt="$g|h$" class="latex-inline" style="vertical-align: -5px" width="23" height="18">则令<img src="latex/latex2png-MultiPoly_264748277_-5.gif" alt="$result=result\cup\{g\}$" class="latex-inline" style="vertical-align: -5px" width="153" height="18">,<img src="latex/latex2png-MultiPoly_214862186_-5.gif" alt="$h=h/g$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">,<img src="latex/latex2png-MultiPoly_28858641_-5.gif" alt="$T=T\setminus S$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">,并转第3步,</li>
+
+<li><img src="latex/latex2png-MultiPoly_35424607_-2.gif" alt="$s=s+1$" class="latex-inline" style="vertical-align: -2px" width="64" height="13">,转第3步,</li>
+
+<li>输出<img src="latex/latex2png-MultiPoly_255460371_-5.gif" alt="$result\cup\{h\}$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注6<a name="remark:getback"></a></span><span class="theorem-name"></span>
+由某一多项式<img src="latex/latex2png-MultiPoly_226719407_-5.gif" alt="$\tilde{f}(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="20">还原得到多项式<img src="latex/latex2png-MultiPoly_109906711_-5.gif" alt="$f(x_1,\ldots,x_n)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">的方法是:对<img src="latex/latex2png-MultiPoly_165181842_-4.gif" alt="$\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">中的任何一个单项式<img src="latex/latex2png-MultiPoly_102528057_0.gif" alt="$ax^b$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">,由连续对<img src="latex/latex2png-MultiPoly_18648044_-2.gif" alt="$d+1$" class="latex-inline" style="vertical-align: -2px" width="36" height="14">的除法可以得到<img src="latex/latex2png-MultiPoly_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">元序对<img src="latex/latex2png-MultiPoly_70448406_-5.gif" alt="$(b_1,\ldots,b_n)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">,其中<img src="latex/latex2png-MultiPoly_120748536_-3.gif" alt="$0\le b_i\le d$" class="latex-inline" style="vertical-align: -3px" width="74" height="15">使得
+<img src="latex/latex2png-MultiPoly_197061141_.gif" alt="$$b=b_1+b_2(d+1)+b_3(d+1)^2+\cdots+b_n(d+1)^{n-1},$$" class="latex-display" width="580" height="20">
+将此单项用<img src="latex/latex2png-MultiPoly_124695810_-4.gif" alt="$ax_1^{b_1}x_2^{b_2}\cdots x_n^{b_n}$" class="latex-inline" style="vertical-align: -4px" width="100" height="19">代替即可还原多项式.
+
+
+</div>
+
+
+<h2><a name="sec16" id="sec16"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>利用Hensel提升的因子分解算法</h2>
+
+<h3><a name="sec17" id="sec17"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>概述</h3>
+
+<p class="first">正如我们前面所说的以及多元GCD求解的方法,利用赋值同态的方法,我们也可以将多元因子分解问题转化为一元问题.我们很容易会产生如下一般性的想法,这里假设我们考虑<img src="latex/latex2png-MultiPoly_245877278_-5.gif" alt="$f\in \mathbb{Z}[x_1,x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="145" height="18">的分解,并将变元<img src="latex/latex2png-MultiPoly_165448684_-2.gif" alt="$x_1$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">视为主变元<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">.</p>
+
+<p class="image"><img src="latex/latex2png-MultiPoly_261838713_.gif" alt="
+\begin{itemize}
+\item 将$f$化为关于主变元$x$本原以及无平方因子的多项式.这一点是很容易做到的,由多元GCD算法可以求出$f$关于$x$各系数多项式的最大公因子,而由$\gcd(f,\partial f/\partial x)$可以将其化为无平方因子多项式的分解问题.
+\item 利用赋值同态$I=\idea{x_2-a_2,\ldots,x_n-a_n}$将$f$化为$\tilde{f}=f\bmod I$,即$\tilde{f}(x)=f(x,a_2,\ldots,a_n)$,使得$\tilde{f}$无平方因子并且$\deg_x\tilde{f}=\deg_xf$.
+\item 处理一元分解问题,得到不可约分解$\tilde{f}=g_1g_2\cdots g_r$,这里可以将$\mathrm{cont}\tilde{f}$任意分配到不可约因子$g_i$上.
+\item 利用类似于Hensel提升的方法,将模$I$下的分解提升到足够高的模$I^k$下的分解,得到多元因子,最后采取诸如因子组合的方法将其还原到整系数多项式中的因子.
+\end{itemize}
+" class="latex-display" width="580" height="289"></p>
+
+<p>关于赋值点和主变元的选取,这里做一些补充.赋值点应优先选择<img src="latex/latex2png-MultiPoly_202042151_-4.gif" alt="$\pm 1,0$" class="latex-inline" style="vertical-align: -4px" width="36" height="15">,以保证<img src="latex/latex2png-MultiPoly_165181842_-4.gif" alt="$\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">无平方因子且关于<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">次数不变.选择<img src="latex/latex2png-MultiPoly_202042151_-4.gif" alt="$\pm 1,0$" class="latex-inline" style="vertical-align: -4px" width="36" height="15">的好处是使得系数较小,由后面的算法我们看出对于非零赋值点,我们将对变量做一平移,以使提升算法的模运算也便于进行.</p>
+
+<p>其次要考虑使得<img src="latex/latex2png-MultiPoly_165181842_-4.gif" alt="$\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">的不可约因子数尽可能少,<img src="latex/latex2png-MultiPoly_165181842_-4.gif" alt="$\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">关于<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的首项系数尽可能小,如果是<img src="latex/latex2png-MultiPoly_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">更好,那么所有的不可约因子的首项系数都将为<img src="latex/latex2png-MultiPoly_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">.</p>
+
+
+<h3><a name="sec18" id="sec18"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Extended Zassenhaus 算法</h3>
+
+<p class="first">Zassenhaus算法基本上就是我们曾经提及的Hensel提升算法,具体也可参考<span class="cite"><a class="cite" href="MultiPoly.html#ref-2" name="cite-2">[2]</a></span>以及<span class="cite"><a class="cite" href="MultiPoly.html#ref-9" name="cite-9">[9]</a></span>第7节.</p>
+
+<p>现在我们要介绍的扩展Zassenhaus算法,是指如下类似的问题.设<img src="latex/latex2png-MultiPoly_171671320_-5.gif" alt="$\tilde{f}\in Z[x]$" class="latex-inline" style="vertical-align: -5px" width="59" height="20">有分解<img src="latex/latex2png-MultiPoly_25851567_-4.gif" alt="$\tilde{f}=gh$" class="latex-inline" style="vertical-align: -4px" width="49" height="19">,其中<img src="latex/latex2png-MultiPoly_221405236_-5.gif" alt="$\gcd(g,h)=1$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">,亦即
+<img src="latex/latex2png-MultiPoly_32430186_.gif" alt="$$f\equiv gh\pmod{I},$$" class="latex-display" width="580" height="18">
+现在需找到<img src="latex/latex2png-MultiPoly_87389204_-4.gif" alt="$g_k$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">,<img src="latex/latex2png-MultiPoly_104166420_-2.gif" alt="$h_k$" class="latex-inline" style="vertical-align: -2px" width="17" height="14">使得
+<img src="latex/latex2png-MultiPoly_42237060_.gif" alt="$$f\equiv g_kh_k\pmod{I^k},\quad f_k\equiv f\pmod{I},\quad g_k\equiv g\pmod{I}.$$" class="latex-display" width="580" height="20">
+对于<img src="latex/latex2png-MultiPoly_43342738_-4.gif" alt="$i=2,3,\ldots,n$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,记<img src="latex/latex2png-MultiPoly_107518536_-4.gif" alt="$y_i=x_i-a_i$" class="latex-inline" style="vertical-align: -4px" width="85" height="12">,则此时<img src="latex/latex2png-MultiPoly_71911752_-5.gif" alt="$I=\idea{y_2,\ldots,y_n}$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">,并记<img src="latex/latex2png-MultiPoly_220222387_-5.gif" alt="$f^*(x_1,y_2,\ldots,y_n)=f(x_1,y_2+a_2,\ldots,y_n+a_n)$" class="latex-inline" style="vertical-align: -5px" width="336" height="18">.基于这些符号上的说明,我们可以提出一种归纳的算法如下:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法9<a name="al:ez"></a></span><span class="theorem-name">(EZ算法)</span>
+输入:多项式<img src="latex/latex2png-MultiPoly_67925012_-4.gif" alt="$f^*$" class="latex-inline" style="vertical-align: -4px" width="15" height="16">(即<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">),<img src="latex/latex2png-MultiPoly_6945113_-4.gif" alt="$g_{k-1}$" class="latex-inline" style="vertical-align: -4px" width="31" height="12">,<img src="latex/latex2png-MultiPoly_6945369_-2.gif" alt="$h_{k-1}$" class="latex-inline" style="vertical-align: -2px" width="33" height="14">,并且满足前述相应条件,
+
+<p>输出:提升后的<img src="latex/latex2png-MultiPoly_87389204_-4.gif" alt="$g_k$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">,<img src="latex/latex2png-MultiPoly_104166420_-2.gif" alt="$h_k$" class="latex-inline" style="vertical-align: -2px" width="17" height="14">.</p>
+
+<ol>
+<li>计算<img src="latex/latex2png-MultiPoly_6947929_-2.gif" alt="$r_{k-1}$" class="latex-inline" style="vertical-align: -2px" width="31" height="10">,<img src="latex/latex2png-MultiPoly_6944601_-2.gif" alt="$e_{k-1}$" class="latex-inline" style="vertical-align: -2px" width="31" height="10">使得
+<img src="latex/latex2png-MultiPoly_45843080_.gif" alt="$$r_{k-1}=g_{k-1}h_{k-1}-f^*,\quad e_{k-1}\equiv r_{k-1}\pmod{I^k},$$" class="latex-display" width="580" height="20"></li>
+
+<li>利用扩展Euclid算法计算唯一的<img src="latex/latex2png-MultiPoly_50055161_-5.gif" alt="$\alpha_i(x)$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">,<img src="latex/latex2png-MultiPoly_120165381_-5.gif" alt="$\beta_i(x)$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">使得
+<img src="latex/latex2png-MultiPoly_7231276_.gif" alt="$$\alpha_i(x)g(x)+\beta_i(x)h(x)=x^i,$$" class="latex-display" width="580" height="20">
+并且<img src="latex/latex2png-MultiPoly_180939283_-4.gif" alt="$\deg\alpha_i<\deg h$" class="latex-inline" style="vertical-align: -4px" width="103" height="16">.(命<img src="latex/latex2png-MultiPoly_108737584_-3.gif" alt="$\alpha_i=\alpha_0x^i\bmod h$" class="latex-inline" style="vertical-align: -3px" width="121" height="17">,即可.此时若<img src="latex/latex2png-MultiPoly_229041614_-4.gif" alt="$i<\deg g+\deg h$" class="latex-inline" style="vertical-align: -4px" width="121" height="16">则有<img src="latex/latex2png-MultiPoly_80422128_-4.gif" alt="$\deg\beta_i<\deg g$" class="latex-inline" style="vertical-align: -4px" width="101" height="16">.并且此步可略去,因为可以在整个算法开始提升的第一步计算足够多的<img src="latex/latex2png-MultiPoly_10653282_-2.gif" alt="$\alpha_i$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">,<img src="latex/latex2png-MultiPoly_13233165_-4.gif" alt="$\beta_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="16">,保存起来并供后面各步提升时使用.)</li>
+
+<li>将<img src="latex/latex2png-MultiPoly_6944601_-2.gif" alt="$e_{k-1}$" class="latex-inline" style="vertical-align: -2px" width="31" height="10">中的<img src="latex/latex2png-MultiPoly_165448684_-2.gif" alt="$x^i$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">用<img src="latex/latex2png-MultiPoly_50055161_-5.gif" alt="$\alpha_i(x)$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">代替得到多项式<img src="latex/latex2png-MultiPoly_246917256_-5.gif" alt="$A(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">,同理将<img src="latex/latex2png-MultiPoly_6944601_-2.gif" alt="$e_{k-1}$" class="latex-inline" style="vertical-align: -2px" width="31" height="10">中的<img src="latex/latex2png-MultiPoly_165448684_-2.gif" alt="$x^i$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">用<img src="latex/latex2png-MultiPoly_120165381_-5.gif" alt="$\beta_i(x)$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">代替得到多项式<img src="latex/latex2png-MultiPoly_247965832_-5.gif" alt="$B(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">.</li>
+
+<li>令<img src="latex/latex2png-MultiPoly_115587359_-5.gif" alt="$g_k=g_{k-1}-B(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">,<img src="latex/latex2png-MultiPoly_115587343_-5.gif" alt="$h_k=h_{k-1}-A(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="152" height="18">并输出<img src="latex/latex2png-MultiPoly_87389204_-4.gif" alt="$g_k$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">,<img src="latex/latex2png-MultiPoly_104166420_-2.gif" alt="$h_k$" class="latex-inline" style="vertical-align: -2px" width="17" height="14">.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法有效性)</span>
+首先由<img src="latex/latex2png-MultiPoly_246917256_-5.gif" alt="$A(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">和<img src="latex/latex2png-MultiPoly_247965832_-5.gif" alt="$B(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">的定义可知有
+<img src="latex/latex2png-MultiPoly_229870633_.gif" alt="$$A(e_{k-1})g(x)+B(e_{k-1})h(x)=e_{k-1}$$" class="latex-display" width="580" height="18">
+成立.由<img src="latex/latex2png-MultiPoly_88158913_-2.gif" alt="$e_{k-1}\bmod I^{k-1}=r_{k-1}\bmod I^{k-1}=0$" class="latex-inline" style="vertical-align: -2px" width="267" height="16">知<img src="latex/latex2png-MultiPoly_6944601_-2.gif" alt="$e_{k-1}$" class="latex-inline" style="vertical-align: -2px" width="31" height="10">是<img src="latex/latex2png-MultiPoly_45273490_-4.gif" alt="$y_2,y_3,\ldots,y_n$" class="latex-inline" style="vertical-align: -4px" width="91" height="12">的<img src="latex/latex2png-MultiPoly_100889620_0.gif" alt="$k-1$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">次齐次多项式.因而<img src="latex/latex2png-MultiPoly_246917256_-5.gif" alt="$A(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">和<img src="latex/latex2png-MultiPoly_247965832_-5.gif" alt="$B(e_{k-1})$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">也是它们的<img src="latex/latex2png-MultiPoly_100889620_0.gif" alt="$k-1$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">次齐次式.由
+<img src="latex/latex2png-MultiPoly_84102368_.gif" alt="$$g_{k-1}=g-B(e_1)-B(e_2)-\cdots-B(e_{k-2})$$" class="latex-display" width="580" height="18">
+可知
+<img src="latex/latex2png-MultiPoly_179954451_.gif" alt="$$A(e_{k-1})g_{k-1}(x)\equiv A(e_{k-1})g(x)\pmod{I^k},$$" class="latex-display" width="580" height="20">
+同理有
+<img src="latex/latex2png-MultiPoly_197784340_.gif" alt="$$B(e_{k-1})h_{k-1}(x)\equiv B(e_{k-1})h(x)\pmod{I^k},$$" class="latex-display" width="580" height="20">
+因而
+<img src="latex/latex2png-MultiPoly_71457150_.gif" alt="$$r_{k-1}\equiv e_{k-1}\equiv A(e_{k-1})g(x)+B(e_{k-1})h(x)\pmod{I^k}.$$" class="latex-display" width="580" height="20">
+并且我们有<img src="latex/latex2png-MultiPoly_138450250_-5.gif" alt="$A(e_{k-1})B(e_{k-1})\equiv 0\pmod{I^k}$" class="latex-inline" style="vertical-align: -5px" width="221" height="19">.
+
+<p>命<img src="latex/latex2png-MultiPoly_90182475_-4.gif" alt="$r_k=g_kh_k-f^*$" class="latex-inline" style="vertical-align: -4px" width="108" height="16">,则
+<img src="latex/latex2png-MultiPoly_43534659_.gif" alt="$$r_k\equiv r_{k-1}-A(e_{k-1})g_{k-1}-B(e_{k-1})h_{k-1}+A(e_{k-1})B(e_{k-1})\equiv 0\pmod{I^k}.$$" class="latex-display" width="580" height="20">
+亦即<img src="latex/latex2png-MultiPoly_165241534_-5.gif" alt="$f^*\equiv g_kh_k\pmod{I^k}$" class="latex-inline" style="vertical-align: -5px" width="145" height="19">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>在向<img src="latex/latex2png-MultiPoly_254112788_0.gif" alt="$I^k$" class="latex-inline" style="vertical-align: 0px" width="16" height="14">提升的过程中,倘若有某一步<img src="latex/latex2png-MultiPoly_134056286_-2.gif" alt="$r_l=0$" class="latex-inline" style="vertical-align: -2px" width="43" height="13">,则之后无须提升.</p>
+
+<p>本算法是在整系数多项式下实现的.如果在<img src="latex/latex2png-MultiPoly_197232815_-5.gif" alt="$\mathbb{Z}/m\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">中,其中<img src="latex/latex2png-MultiPoly_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">为一素数幂<img src="latex/latex2png-MultiPoly_237401108_-4.gif" alt="$p^l$" class="latex-inline" style="vertical-align: -4px" width="13" height="18">,此算法也是可行的.我们有下面几个命题来保证.</p>
+
+<div class="lemma">
+<span class="theorem-header">引理4<a name="le:dyhensel1"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-MultiPoly_252938142_-6.gif" alt="$a\in\mathbb{Z}_{p^l}$" class="latex-inline" style="vertical-align: -6px" width="50" height="18">可逆当且仅当<img src="latex/latex2png-MultiPoly_25035292_-5.gif" alt="$p\not|a$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+充分性:若<img src="latex/latex2png-MultiPoly_25035292_-5.gif" alt="$p\not|a$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">,则<img src="latex/latex2png-MultiPoly_68208748_-5.gif" alt="$\gcd(a,p^l)=1$" class="latex-inline" style="vertical-align: -5px" width="97" height="19">,由Bezout等式可知<img src="latex/latex2png-MultiPoly_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">在<img src="latex/latex2png-MultiPoly_12220474_-6.gif" alt="$\mathbb{Z}_{p^l}$" class="latex-inline" style="vertical-align: -6px" width="21" height="18">中可逆.
+
+<p>必要性:设<img src="latex/latex2png-MultiPoly_57085329_-5.gif" alt="$kp(0\le k<p^{l-1})$" class="latex-inline" style="vertical-align: -5px" width="121" height="19">在<img src="latex/latex2png-MultiPoly_12220474_-6.gif" alt="$\mathbb{Z}_{p^l}$" class="latex-inline" style="vertical-align: -6px" width="21" height="18">中可逆,则<img src="latex/latex2png-MultiPoly_43778313_-5.gif" alt="$p|\gcd(kp,p^l)|1$" class="latex-inline" style="vertical-align: -5px" width="104" height="19">,矛盾.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>下面给出的定理揭示了<img src="latex/latex2png-MultiPoly_82935794_-6.gif" alt="$\mathbb{Z}_{p^l}[x_1]$" class="latex-inline" style="vertical-align: -6px" width="48" height="19">类似于Euclid整环的性质.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理12<a name="th:dyhensel2"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_116884245_-6.gif" alt="$g,h\in\mathbb{Z}_{p^l}[x_1]$" class="latex-inline" style="vertical-align: -6px" width="94" height="19">满足<img src="latex/latex2png-MultiPoly_96306677_-5.gif" alt="$p\not|\plc{g,x_1}$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">,<img src="latex/latex2png-MultiPoly_96306693_-5.gif" alt="$p\not|\plc{h,x_1}$" class="latex-inline" style="vertical-align: -5px" width="83" height="18">,且<img src="latex/latex2png-MultiPoly_122397011_-5.gif" alt="$\gcd(\Phi_p(g),\Phi_p(h))=1$" class="latex-inline" style="vertical-align: -5px" width="158" height="18">,则<img src="latex/latex2png-MultiPoly_232107760_-6.gif" alt="$\forall f\in\mathbb{Z}_{p^l}[x_1]$" class="latex-inline" style="vertical-align: -6px" width="88" height="19">都存在唯一的多项式<img src="latex/latex2png-MultiPoly_217873643_-6.gif" alt="$s,t\in\mathbb{Z}_{p^l}[x_1]$" class="latex-inline" style="vertical-align: -6px" width="89" height="19">使得<img src="latex/latex2png-MultiPoly_212369322_-5.gif" alt="$sg+th\equiv f\pmod{p^l}$" class="latex-inline" style="vertical-align: -5px" width="153" height="19">,且<img src="latex/latex2png-MultiPoly_82014408_-6.gif" alt="$\deg_{x_1}s<\deg_{x_1}h$" class="latex-inline" style="vertical-align: -6px" width="124" height="18">.若<img src="latex/latex2png-MultiPoly_240294988_-6.gif" alt="$\deg_{x_1}f<\deg_{x_1}g+\deg_{x_1}h$" class="latex-inline" style="vertical-align: -6px" width="198" height="18">,还有<img src="latex/latex2png-MultiPoly_82079943_-6.gif" alt="$\deg_{x_1}t<\deg_{x_1}g$" class="latex-inline" style="vertical-align: -6px" width="122" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+存在性:首先由<img src="latex/latex2png-MultiPoly_77575670_-5.gif" alt="$\mathbb{Z}_p[x_1]$" class="latex-inline" style="vertical-align: -5px" width="43" height="18">是Euclid整环我们知道<img src="latex/latex2png-MultiPoly_189758937_-5.gif" alt="$\exists s^{(1)},t^{(1)}\in\mathbb{Z}_p[x_1]$" class="latex-inline" style="vertical-align: -5px" width="129" height="20">使得
+<img src="latex/latex2png-MultiPoly_160563240_.gif" alt="$$s^{(1)}g+t^{(1)}h\equiv 1\pmod{p}.$$" class="latex-display" width="580" height="21">
+
+<p>设<img src="latex/latex2png-MultiPoly_198317949_-4.gif" alt="$s^{(k)},t^{(k)}$" class="latex-inline" style="vertical-align: -4px" width="55" height="19">已求得并使<img src="latex/latex2png-MultiPoly_15667924_-5.gif" alt="$s^{(k)}g+t^{(k)}h\equiv 1\pmod{p^k}$" class="latex-inline" style="vertical-align: -5px" width="191" height="20">,则定义迭代算法如下:</p>
+
+<p>设<img src="latex/latex2png-MultiPoly_118110159_-5.gif" alt="$s_k,t_k\in\mathbb{Z}_p[x_1]$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">是
+<img src="latex/latex2png-MultiPoly_225257495_.gif" alt="$$s_kg+t_kh\equiv\frac{1-s^{(k)}g-t^{(k)}h}{p^k}\pmod{p}$$" class="latex-display" width="580" height="42">
+的解,再令
+<img src="latex/latex2png-MultiPoly_83853941_.gif" alt="$$s^{(k+1)}=s^{(k)}+s_kp^k,\quad t^{(k+1)}=t^{(k)}+t_kp^k.$$" class="latex-display" width="580" height="20"></p>
+
+<p>显然
+<img src="latex/latex2png-MultiPoly_12000629_.gif" alt="$$s^{(k+1)}g+t^{(k+1)}h=s^{(k)}g+t^{(k)}h+p^k(s_kg+t_kh)\equiv 1\pmod{p^{k+1}}.$$" class="latex-display" width="580" height="21"></p>
+
+<p>因此<img src="latex/latex2png-MultiPoly_52805133_-5.gif" alt="$fs^{(l)}g+ft^{(l)}h\equiv f\pmod{p^l}$" class="latex-inline" style="vertical-align: -5px" width="204" height="20">.由题设条件和引理<a class="ref-th" href="MultiPoly.html#le:dyhensel1">4</a>知<img src="latex/latex2png-MultiPoly_53443398_-5.gif" alt="$\plc{h,x_1}$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">是<img src="latex/latex2png-MultiPoly_12220474_-6.gif" alt="$\mathbb{Z}_{p^l}$" class="latex-inline" style="vertical-align: -6px" width="21" height="18">中可逆元,我们可以作除法:
+<img src="latex/latex2png-MultiPoly_107564462_.gif" alt="$$fs^{(l)}=uh+s\pmod{p^l},$$" class="latex-display" width="580" height="21">
+其中<img src="latex/latex2png-MultiPoly_82014408_-6.gif" alt="$\deg_{x_1}s<\deg_{x_1}h$" class="latex-inline" style="vertical-align: -6px" width="124" height="18">.再定义<img src="latex/latex2png-MultiPoly_214641904_-4.gif" alt="$t=ft^{(l)}+ug$" class="latex-inline" style="vertical-align: -4px" width="98" height="19">,即知<img src="latex/latex2png-MultiPoly_235828244_-4.gif" alt="$s,t$" class="latex-inline" style="vertical-align: -4px" width="19" height="15">满足定理.</p>
+
+<p>唯一性:由<img src="latex/latex2png-MultiPoly_231872381_-4.gif" alt="$s^{(l)},t^{(l)}$" class="latex-inline" style="vertical-align: -4px" width="49" height="19">的存在知道在<img src="latex/latex2png-MultiPoly_12220474_-6.gif" alt="$\mathbb{Z}_{p^l}$" class="latex-inline" style="vertical-align: -6px" width="21" height="18">中<img src="latex/latex2png-MultiPoly_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">和<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">也互素,设满足定理的还有<img src="latex/latex2png-MultiPoly_15300255_-4.gif" alt="$s',t'$" class="latex-inline" style="vertical-align: -4px" width="29" height="17">,则易得<img src="latex/latex2png-MultiPoly_123216419_-5.gif" alt="$(s-s')g=(t'-t)h$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">,由<img src="latex/latex2png-MultiPoly_85606468_-6.gif" alt="$\deg_{x_1}(s-s')<\deg_{x_1}$" class="latex-inline" style="vertical-align: -6px" width="154" height="19">且<img src="latex/latex2png-MultiPoly_37500192_-5.gif" alt="$h|(s-s')$" class="latex-inline" style="vertical-align: -5px" width="66" height="18">知<img src="latex/latex2png-MultiPoly_115333626_-1.gif" alt="$s-s'=t-t'=0$" class="latex-inline" style="vertical-align: -1px" width="129" height="14">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>我们可以将多元Hensel提升问题写为如下定理.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理13<a name="th:dyhensel3"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_112966763_-5.gif" alt="$f\in\mathbb{Z}[x_1,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,理想<img src="latex/latex2png-MultiPoly_204534919_-5.gif" alt="$I=\idea{x_2-a_2,\ldots,x_n-a_n}$" class="latex-inline" style="vertical-align: -5px" width="189" height="18">,且素数<img src="latex/latex2png-MultiPoly_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">满足
+<img src="latex/latex2png-MultiPoly_256168790_.gif" alt="$$p\not|\plc{f(x_1,a_2,\ldots,a_n),x_1}=\plc{\Phi_I(f),x_1}.$$" class="latex-display" width="580" height="18">
+现有多项式<img src="latex/latex2png-MultiPoly_131202941_-4.gif" alt="$g^{(1)},h^{(1)}$" class="latex-inline" style="vertical-align: -4px" width="60" height="19">满足
+<img src="latex/latex2png-MultiPoly_64260349_.gif" alt="$$f\equiv g^{(1)}h^{(1)}\pmod{I,p^l},$$" class="latex-display" width="580" height="21">
+且<img src="latex/latex2png-MultiPoly_232101711_-5.gif" alt="$\Phi_p(g^{(1)})$" class="latex-inline" style="vertical-align: -5px" width="56" height="20">和<img src="latex/latex2png-MultiPoly_232097615_-5.gif" alt="$\Phi_p(h^{(1)})$" class="latex-inline" style="vertical-align: -5px" width="58" height="20">在<img src="latex/latex2png-MultiPoly_77575670_-5.gif" alt="$\mathbb{Z}_p[x_1]$" class="latex-inline" style="vertical-align: -5px" width="43" height="18">中互素.
+
+<p>则<img src="latex/latex2png-MultiPoly_102018022_-5.gif" alt="$\forall k\in\mathbb{Z}(k\ge 1)$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">,<img src="latex/latex2png-MultiPoly_152127484_-6.gif" alt="$\exists g^{(k)},h^{(k)}\in\mathbb{Z}_{p^l}[x_1,\ldots,x_n]/I^k$" class="latex-inline" style="vertical-align: -6px" width="220" height="21">,使得
+<img src="latex/latex2png-MultiPoly_264575912_.gif" alt="$$f\equiv g^{(k)}h^{(k)}\pmod{I^k,p^l},$$" class="latex-display" width="580" height="21">
+且
+<img src="latex/latex2png-MultiPoly_15530310_.gif" alt="$$g^{(k)}\equiv g^{(1)}\pmod{I,p^l},\quad h^{(k)}\equiv h^{(1)}\pmod{I,p^l}.$$" class="latex-display" width="580" height="21"></p>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+命题当<img src="latex/latex2png-MultiPoly_117666836_0.gif" alt="$k=1$" class="latex-inline" style="vertical-align: 0px" width="38" height="12">时显然成立,现在我们归纳假设命题对于<img src="latex/latex2png-MultiPoly_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是成立的,此时设<img src="latex/latex2png-MultiPoly_120955416_-4.gif" alt="$e^{(k)}=f-g^{(k)}h^{(k)}\in I^k$" class="latex-inline" style="vertical-align: -4px" width="170" height="19">,可以将其在<img src="latex/latex2png-MultiPoly_254112788_0.gif" alt="$I^k$" class="latex-inline" style="vertical-align: 0px" width="16" height="14">的基下进行表示,设表示为
+<img src="latex/latex2png-MultiPoly_230881440_.gif" alt="$$e^{(k)}=\sum_{2\le i_1\le n}\cdots\sum_{i_{k-1}\le i_k\le n}C_{i_1\cdots i_k}\prod_{j=1}^k(x_{i_j}-a_{i_j}),$$" class="latex-display" width="580" height="52">
+其中<img src="latex/latex2png-MultiPoly_183929689_-6.gif" alt="$C_{i_1\cdots i_k}\in\mathbb{Z}_{p^l}[x_1]$" class="latex-inline" style="vertical-align: -6px" width="115" height="19">.于是由定理<a class="ref-th" href="MultiPoly.html#th:dyhensel2">12</a>我们知道<img src="latex/latex2png-MultiPoly_196961634_-2.gif" alt="$\forall i=i_1\cdots i_k$" class="latex-inline" style="vertical-align: -2px" width="88" height="14">,都可以找到满足上面定理的唯一的<img src="latex/latex2png-MultiPoly_148171706_-6.gif" alt="$s_i,t_i\in\mathbb{Z}_{p^l}[x_1]$" class="latex-inline" style="vertical-align: -6px" width="100" height="19">满足
+<img src="latex/latex2png-MultiPoly_191575813_.gif" alt="$$s_ig^{(1)}+t_ih^{(1)}\equiv C_i\pmod{p^l}.$$" class="latex-display" width="580" height="21">
+
+<p>令
+<img src="latex/latex2png-MultiPoly_38004492_.gif" alt="$$g^{(k+1)}=g^{(k)}+\sum_{2\le i_1\le n}\cdots\sum_{i_{k-1}\le i_k\le n}t_i\prod_{j=1}^k(x_{i_j}-a_{i_j}),$$" class="latex-display" width="580" height="52">
+<img src="latex/latex2png-MultiPoly_54715916_.gif" alt="$$h^{(k+1)}=h^{(k)}+\sum_{2\le i_1\le n}\cdots\sum_{i_{k-1}\le i_k\le n}s_i\prod_{j=1}^k(x_{i_j}-a_{i_j}),$$" class="latex-display" width="580" height="52">
+由算法<a class="ref-th" href="MultiPoly.html#al:ez">9</a>的证明易知<img src="latex/latex2png-MultiPoly_249335874_-4.gif" alt="$g^{(k+1)},h^{(k+1)}$" class="latex-inline" style="vertical-align: -4px" width="94" height="19">满足条件.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p><span class="cite"><a class="cite" href="MultiPoly.html#ref-7" name="cite-7">[7]</a></span>中给出了如下一个多元Hensel提升求因子分解的简单的例子.</p>
+
+<div class="problem">
+<span class="proof-header">例3<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-MultiPoly_38522583_-4.gif" alt="$f=x^2-3xz^2+2x-yx+3yz^2-2y+zx-3z^3+2z$" class="latex-inline" style="vertical-align: -4px" width="388" height="18">.取<img src="latex/latex2png-MultiPoly_201946132_-4.gif" alt="$p=7$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">,<img src="latex/latex2png-MultiPoly_134444052_0.gif" alt="$l=1$" class="latex-inline" style="vertical-align: 0px" width="34" height="12">,<img src="latex/latex2png-MultiPoly_193170141_-5.gif" alt="$I=\idea{y,z}$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,有
+<img src="latex/latex2png-MultiPoly_4889710_.gif" alt="$$f\equiv x(x+2)\pmod{I,p^l},$$" class="latex-display" width="580" height="20">
+设<img src="latex/latex2png-MultiPoly_195537349_-4.gif" alt="$g^{(1)}=x$" class="latex-inline" style="vertical-align: -4px" width="57" height="19">,<img src="latex/latex2png-MultiPoly_152709117_-2.gif" alt="$h^{(1)}=x+2$" class="latex-inline" style="vertical-align: -2px" width="87" height="17">,因为在<img src="latex/latex2png-MultiPoly_82935794_-6.gif" alt="$\mathbb{Z}_{p^l}[x_1]$" class="latex-inline" style="vertical-align: -6px" width="48" height="19">中有<img src="latex/latex2png-MultiPoly_59801218_-5.gif" alt="$3g^{(1)}-3h^{(1)}\equiv 1\pmod{p^l}$" class="latex-inline" style="vertical-align: -5px" width="191" height="20">,即<img src="latex/latex2png-MultiPoly_3040371_-4.gif" alt="$s=3,t=-3$" class="latex-inline" style="vertical-align: -4px" width="94" height="15">.
+
+<p>计算知<img src="latex/latex2png-MultiPoly_251037254_-5.gif" alt="$e^{(1)}=f-g^{(1)}h^{(1)}=(-x-2)y+(x+2)z\pmod{I^2,p^l}$" class="latex-inline" style="vertical-align: -5px" width="399" height="20">,即<img src="latex/latex2png-MultiPoly_118949657_-5.gif" alt="$C_{10}^{(1)}=-x-2$" class="latex-inline" style="vertical-align: -5px" width="103" height="23">,<img src="latex/latex2png-MultiPoly_239254622_-5.gif" alt="$C_{01}^{(1)}=x+2$" class="latex-inline" style="vertical-align: -5px" width="90" height="23">,易得
+<img src="latex/latex2png-MultiPoly_65911640_.gif" alt="$$C_{10}^{(1)}\equiv C_{10}^{(1)}sg^{(1)}+C_{10}^{(1)}th^{(1)}\equiv 0g^{(1)}+(-1)h^{(1)}\pmod{p^l}$$" class="latex-display" width="580" height="23">
+即<img src="latex/latex2png-MultiPoly_224252634_-5.gif" alt="$s_{10}^{(1)}=0$" class="latex-inline" style="vertical-align: -5px" width="55" height="23">,<img src="latex/latex2png-MultiPoly_172400234_-5.gif" alt="$t_{10}^{(1)}=-1$" class="latex-inline" style="vertical-align: -5px" width="66" height="23">,同理可得<img src="latex/latex2png-MultiPoly_208523994_-5.gif" alt="$s_{01}^{(1)}=0$" class="latex-inline" style="vertical-align: -5px" width="55" height="23">,<img src="latex/latex2png-MultiPoly_208589546_-5.gif" alt="$t_{01}^{(1)}=1$" class="latex-inline" style="vertical-align: -5px" width="53" height="23">,经计算可得<img src="latex/latex2png-MultiPoly_105291846_-4.gif" alt="$g^{(2)}=x-y+z$" class="latex-inline" style="vertical-align: -4px" width="115" height="19">,<img src="latex/latex2png-MultiPoly_152709373_-2.gif" alt="$h^{(2)}=x+2$" class="latex-inline" style="vertical-align: -2px" width="87" height="17">.</p>
+
+<p>经过再一次提升,可得<img src="latex/latex2png-MultiPoly_105226310_-4.gif" alt="$g^{(3)}=x-y+z$" class="latex-inline" style="vertical-align: -4px" width="115" height="19">,<img src="latex/latex2png-MultiPoly_114230717_-2.gif" alt="$h^{(3)}=x+2-3z^2$" class="latex-inline" style="vertical-align: -2px" width="131" height="17">,此时已有<img src="latex/latex2png-MultiPoly_244438117_-4.gif" alt="$f=g^{(3)}h^{(3)}$" class="latex-inline" style="vertical-align: -4px" width="83" height="19">.
+<span class="example-end">◇</span></p>
+
+</div>
+
+
+<h3><a name="sec19" id="sec19"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>因子还原</h3>
+
+<p class="first">不妨设我们已得到因子分解
+<img src="latex/latex2png-MultiPoly_58958511_.gif" alt="$$f\equiv g_1g_2\cdots g_t\pmod{m,I^k},$$" class="latex-display" width="580" height="20">
+其中模去一个整数<img src="latex/latex2png-MultiPoly_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">,是指在计算提升之前可以选择模掉一足够大的<img src="latex/latex2png-MultiPoly_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">进行运算,以减小系数膨胀.当然也可以直接在整数环中计算,此种情况我们统一用<img src="latex/latex2png-MultiPoly_151155732_-1.gif" alt="$m=0$" class="latex-inline" style="vertical-align: -1px" width="45" height="12">表示.</p>
+
+<p>因子还原的过程也是一个因子组合算法,这一算法已经多次出现,因此这里直接给出还原的算法.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法10<a name=""></a></span><span class="theorem-name">(EZ算法结果的因子还原)</span>
+输入:已知分解<img src="latex/latex2png-MultiPoly_234420661_-5.gif" alt="$f\equiv g_1\cdots g_t\pmod{m,I^k}$" class="latex-inline" style="vertical-align: -5px" width="180" height="19">,
+
+<p>输出:<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不可约因子集合<img src="latex/latex2png-MultiPoly_174321279_-5.gif" alt="$\{f_1,f_2,\ldots,f_r\}$" class="latex-inline" style="vertical-align: -5px" width="105" height="18">.</p>
+
+<ol>
+<li>令<img src="latex/latex2png-MultiPoly_228759135_-5.gif" alt="$T=\{1,2,\ldots,t\}$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">,<img src="latex/latex2png-MultiPoly_251884564_0.gif" alt="$s=1$" class="latex-inline" style="vertical-align: 0px" width="36" height="11">,<img src="latex/latex2png-MultiPoly_121081111_-5.gif" alt="$result=\{\}$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">,<img src="latex/latex2png-MultiPoly_68187156_-4.gif" alt="$h=f$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">,<img src="latex/latex2png-MultiPoly_160071494_-5.gif" alt="$h^*=\plc{h}h$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">,</li>
+
+<li>若<img src="latex/latex2png-MultiPoly_246277402_-4.gif" alt="$2s\le\#T$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,则循环做下面3-5步,否则转第6步,</li>
+
+<li>枚举<img src="latex/latex2png-MultiPoly_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的所有<img src="latex/latex2png-MultiPoly_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">元子集<img src="latex/latex2png-MultiPoly_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">,并做下面第4步,</li>
+
+<li><img src="latex/latex2png-MultiPoly_215981589_-7.gif" alt="$g=\prod_{i\in S}g_i\bmod (m,I^k)$" class="latex-inline" style="vertical-align: -7px" width="177" height="21">,<img src="latex/latex2png-MultiPoly_123251485_-5.gif" alt="$g^*=\plc{h}\plc{g}^{-1}g\bmod (m,I^k)$" class="latex-inline" style="vertical-align: -5px" width="227" height="19">,若<img src="latex/latex2png-MultiPoly_101644577_-5.gif" alt="$g^*|h^*$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">则令<img src="latex/latex2png-MultiPoly_241642177_-5.gif" alt="$result=result\cup\{\mathrm{pp}(g^*)\}$" class="latex-inline" style="vertical-align: -5px" width="191" height="18">,<img src="latex/latex2png-MultiPoly_11029142_-5.gif" alt="$h=h/\mathrm{pp}(g^*)$" class="latex-inline" style="vertical-align: -5px" width="96" height="18">,<img src="latex/latex2png-MultiPoly_160071494_-5.gif" alt="$h^*=\plc{h}h$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">,<img src="latex/latex2png-MultiPoly_28858641_-5.gif" alt="$T=T\setminus S$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">,并转第2步,</li>
+
+<li><img src="latex/latex2png-MultiPoly_35424607_-2.gif" alt="$s=s+1$" class="latex-inline" style="vertical-align: -2px" width="64" height="13">,转第2步,</li>
+
+<li>输出<img src="latex/latex2png-MultiPoly_255460371_-5.gif" alt="$result\cup\{h\}$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">.</li>
+</ol>
+
+
+</div>
+
+
+<h3><a name="sec20" id="sec20"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>预先确定因子的首项系数</h3>
+
+<p class="first">前几节组合起来可以给出一个完整的因子分解算法,然而其仍有一些效率上的不足.其中,因子还原时实际上涉及到Taylor展开,这正是我们前面尽量选择较小的赋值点的原因,以减轻此处计算负担.另外,首项系数的不确定使得EZ算法提升时的中间多项式将会比较复杂,最后因子还原时因而也有对其的处理.</p>
+
+<p>我们先给出一个因子分解的例子.</p>
+
+<div class="problem">
+<span class="proof-header">例4<a name=""></a></span><span class="theorem-name"></span>
+考虑多项式<img src="latex/latex2png-MultiPoly_149458343_-5.gif" alt="$f=(y+2)^2x^2-1$" class="latex-inline" style="vertical-align: -5px" width="133" height="19">的因子分解.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+这里取<img src="latex/latex2png-MultiPoly_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">为主变元,<img src="latex/latex2png-MultiPoly_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">取赋值点<img src="latex/latex2png-MultiPoly_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">,则有分解<img src="latex/latex2png-MultiPoly_863601_-5.gif" alt="$f\equiv (2x+1)(2x-1)\pmod{y}$" class="latex-inline" style="vertical-align: -5px" width="215" height="18">.设<img src="latex/latex2png-MultiPoly_219964350_-4.gif" alt="$g=2x+1$" class="latex-inline" style="vertical-align: -4px" width="76" height="15">,<img src="latex/latex2png-MultiPoly_217867182_0.gif" alt="$h=2x-1$" class="latex-inline" style="vertical-align: 0px" width="77" height="12">,提升算法给出
+<img src="latex/latex2png-MultiPoly_81145860_.gif" alt="$$g_2=\frac{1}{2}(2+y+4x(1+y)),\quad h_2=\frac{1}{2}(-2+4x+y),$$" class="latex-display" width="580" height="34">
+<img src="latex/latex2png-MultiPoly_190948764_.gif" alt="$$g_3=\frac{1}{2}(2+y)(1+x(2+y)),\quad h_3=\frac{1}{4}(-4+8x+2y-y^2).$$" class="latex-display" width="580" height="34">
+这时再经过一次首项系数的处理并取本原部分方可得到真正的因子<img src="latex/latex2png-MultiPoly_175077063_-5.gif" alt="$(1+x(2+y))$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">和<img src="latex/latex2png-MultiPoly_247428809_-5.gif" alt="$(-1+x(2+y))$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">.
+
+
+</div>
+
+<p>对于上例而言,若我们能预先确定各因子的首项系数,在提升之前就将<img src="latex/latex2png-MultiPoly_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,<img src="latex/latex2png-MultiPoly_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">中的首项系数代替为实际首项系数,即<img src="latex/latex2png-MultiPoly_185805078_-5.gif" alt="$g=(2+y)x+1$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">,<img src="latex/latex2png-MultiPoly_188950806_-5.gif" alt="$h=(2+y)x-1$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">,则提升算法大大简化(对于此特例恰好无需任何提升).</p>
+
+<p>设多项式<img src="latex/latex2png-MultiPoly_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">关于主变元的首项系数为<img src="latex/latex2png-MultiPoly_102886381_-5.gif" alt="$J=\plc{f,x}\in\mathbb{Z}[x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="194" height="18">,设其不可约因子分解为
+<img src="latex/latex2png-MultiPoly_79287931_.gif" alt="$$J=\Omega\prod_{1\le i\le k}J_i^{e_i},$$" class="latex-display" width="580" height="41">
+其中<img src="latex/latex2png-MultiPoly_105198113_-5.gif" alt="$\Omega=\mathrm{cont}_{\mathbb{Z}}(J)$" class="latex-inline" style="vertical-align: -5px" width="96" height="18">,<img src="latex/latex2png-MultiPoly_84131413_-5.gif" alt="$J_i(1\le i\le k)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">为其各不可约因子.
+此时对于<img src="latex/latex2png-MultiPoly_200084478_-4.gif" alt="$\tilde{f}=f\bmod I$" class="latex-inline" style="vertical-align: -4px" width="91" height="19">有分解
+<img src="latex/latex2png-MultiPoly_175790172_.gif" alt="$$\tilde{f}=\delta g_1g_2\cdots g_r,$$" class="latex-display" width="580" height="20">
+其中<img src="latex/latex2png-MultiPoly_87624138_-4.gif" alt="$\delta=\mathrm{cont}\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="72" height="19">.我们的目的即是要确定各<img src="latex/latex2png-MultiPoly_87258132_-4.gif" alt="$g_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">的首项系数,并将<img src="latex/latex2png-MultiPoly_117727726_0.gif" alt="$\delta$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">合理地分配到各个<img src="latex/latex2png-MultiPoly_87258132_-4.gif" alt="$g_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">上.我们在选择赋值点时,需由满足如下几个条件:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理14<a name=""></a></span><span class="theorem-name"></span>
+选取赋值点<img src="latex/latex2png-MultiPoly_154325010_-4.gif" alt="$a_2,a_3,\ldots,a_n$" class="latex-inline" style="vertical-align: -4px" width="94" height="12">,<img src="latex/latex2png-MultiPoly_174022129_-5.gif" alt="$\tilde{f}=f(x,a_2,\ldots,a_n)$" class="latex-inline" style="vertical-align: -5px" width="140" height="20">使得:
+
+<ol>
+<li><img src="latex/latex2png-MultiPoly_204925036_-4.gif" alt="$\deg\tilde{f}=\deg f$" class="latex-inline" style="vertical-align: -4px" width="97" height="19">,即<img src="latex/latex2png-MultiPoly_4788380_-5.gif" alt="$J(a_2,\ldots,a_n)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="124" height="18">,</li>
+
+<li><img src="latex/latex2png-MultiPoly_165181842_-4.gif" alt="$\tilde{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">无平方因子,即<img src="latex/latex2png-MultiPoly_160730003_-5.gif" alt="$\mathrm{res}_x(f,\partial f/\partial x)(a_2,\ldots,a_n)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="219" height="18">,</li>
+
+<li>对任意<img src="latex/latex2png-MultiPoly_265063404_-2.gif" alt="$J_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="14">,<img src="latex/latex2png-MultiPoly_194340731_-5.gif" alt="$\tilde{J_i}=J_i(a_2,\ldots,a_n)$" class="latex-inline" style="vertical-align: -5px" width="133" height="20">至少一有个素因子<img src="latex/latex2png-MultiPoly_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">,其不能整除<img src="latex/latex2png-MultiPoly_52580292_-5.gif" alt="$J_j(\forall j<i)$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">和<img src="latex/latex2png-MultiPoly_248799707_0.gif" alt="$\Omega$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">,<img src="latex/latex2png-MultiPoly_117727726_0.gif" alt="$\delta$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">.</li>
+</ol>
+
+<p>这样的赋值点有无穷多组.</p>
+
+
+</div>
+
+<p>显然满足前两个条件的有无穷多组,若还要满足第三个条件,可参见<span class="cite"><a class="cite" href="MultiPoly.html#ref-10" name="cite-10">[10]</a></span>P1218的说明.</p>
+
+
+<h3><a name="sec21" id="sec21"></a>
+<a href="MultiPoly.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>EEZ算法</h3>
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="MultiPoly.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Richard Zippel, </span><span class="ref-title">Probabilistic algorithms for sparse polynomials, </span><span class="ref-booktitle">Lec. Notes Comp. Sci., </span><span class="ref-volume">72 </span><span class="ref-publisher">Springer-Verlag, </span><span class="ref-year">1979. </span><span class="ref-pages">216-226. </span></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-2" name="ref-2">[2]</a></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-3" name="ref-3">[3]</a><span class="ref-author">张树功，雷娜，刘停战, </span><span class="ref-title-chs">计算机代数基础---代数与符号计算的基本原理. </span><span class="ref-publisher">科学出版社. </span><span class="ref-year">2005. </span></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-4" name="ref-4">[4]</a></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-5" name="ref-5">[5]</a></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-6" name="ref-6">[6]</a><span class="ref-author">K.O. Geddes and S.R. Czapor and G. Labahn, </span><span class="ref-title">Algorithms for Computer Algebra, </span><span class="ref-publisher">Kluwer Academic Publishers, </span><span class="ref-year">1992. </span></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-7" name="ref-7">[7]</a><span class="ref-author">王东明，夏壁灿, </span><span class="ref-title-chs">计算机代数. </span><span class="ref-publisher">清华大学出版社. </span><span class="ref-address">北京. </span><span class="ref-year">2004. </span></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-8" name="ref-8">[8]</a></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-9" name="ref-9">[9]</a></p>
+<p class="ref"><a class="ref" href="MultiPoly.html#cite-10" name="ref-10">[10]</a></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年02月20日 18:15:26
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

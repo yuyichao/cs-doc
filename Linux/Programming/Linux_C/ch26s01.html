@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1. 链表</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch26.html" title="第 26 章 链表、二叉树和哈希表" /><link rel="prev" href="ch26.html" title="第 26 章 链表、二叉树和哈希表" /><link rel="next" href="ch26s02.html" title="2. 二叉树" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">1. 链表</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch26.html">上一页</a> </td><th width="60%" align="center">第 26 章 链表、二叉树和哈希表</th><td width="20%" align="right"> <a accesskey="n" href="ch26s02.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2844772"></a>1. 链表</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2844144"></a>1.1. 单链表</h3></div></div></div><p><a class="xref" href="ch23s09.html#pointer.linkedlist">图 23.6 “链表”</a>所示的链表即单链表（Single Linked List）<a id="id2844161" class="indexterm"></a>，本节我们学习如何创建和操作这种链表。每个链表有一个头指针，通过头指针可以找到第一个节点，每个节点都可以通过指针域找到它的后继，最后一个节点的指针域为<code class="literal">NULL</code>，表示没有后继。数组在内存中是连续存放的，而链表在内存中的布局是不规则的，我们知道访问某个数组元素<code class="literal">b[n]</code>时可以通过<code class="literal">基地址+n×每个元素的字节数</code>得到它地址，或者说数组支持随机访问，而链表是不支持随机访问的，只能通过前一个元素的指针域得知后一个元素的地址，因此只能从头指针开始顺序访问各节点。以下代码实现了单链表的基本操作。</p><div class="example"><a id="id2844807"></a><p class="title"><b>例 26.1. 单链表</b></p><div class="example-contents"><pre class="programlisting">/* linkedlist.h */
+#ifndef LINKEDLIST_H
+#define LINKEDLIST_H
+
+typedef struct node *link;
+struct node {
+	unsigned char item;
+	link next;
+};
+
+link make_node(unsigned char item);
+void free_node(link p);
+link search(unsigned char key);
+void insert(link p);
+void delete(link p);
+void traverse(void (*visit)(link));
+void destroy(void);
+void push(link p);
+link pop(void);
+
+#endif</pre><pre class="programlisting">/* linkedlist.c */
+#include &lt;stdlib.h&gt;
+#include "linkedlist.h"
+
+static link head = NULL;
+
+link make_node(unsigned char item)
+{
+	link p = malloc(sizeof *p);
+	p-&gt;item = item;
+	p-&gt;next = NULL;
+	return p;
+}
+
+void free_node(link p)
+{
+	free(p);
+}
+
+link search(unsigned char key)
+{
+	link p;
+	for (p = head; p; p = p-&gt;next)
+		if (p-&gt;item == key)
+			return p;
+	return NULL;
+}
+
+void insert(link p)
+{
+	p-&gt;next = head;
+	head = p;
+}
+
+void delete(link p)
+{
+	link pre;
+	if (p == head) {
+		head = p-&gt;next;
+		return;
+	}
+	for (pre = head; pre; pre = pre-&gt;next)
+		if (pre-&gt;next == p) {
+			pre-&gt;next = p-&gt;next;
+			return;
+		}
+}
+
+void traverse(void (*visit)(link))
+{
+	link p;
+	for (p = head; p; p = p-&gt;next)
+		visit(p);
+}
+
+void destroy(void)
+{
+	link q, p = head;
+	head = NULL;
+	while (p) {
+		q = p;
+		p = p-&gt;next;
+		free_node(q);
+	}
+}
+
+void push(link p)
+{
+	insert(p);
+}
+
+link pop(void)
+{
+	if (head == NULL)
+		return NULL;
+	else {
+		link p = head;
+		head = head-&gt;next;
+		return p;
+	}
+}</pre><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+#include "linkedlist.h"
+
+void print_item(link p)
+{
+	printf("%d\n", p-&gt;item); 
+}
+
+int main(void)
+{
+	link p = make_node(10);
+	insert(p);
+	p = make_node(5);
+	insert(p);
+	p = make_node(90);
+	insert(p);
+	p = search(5);
+	delete(p);
+	free_node(p);
+	traverse(print_item);
+	destroy();
+
+	p = make_node(100);
+	push(p);
+	p = make_node(200);
+	push(p);
+	p = make_node(250);
+	push(p);
+	while (p = pop()) {
+		print_item(p);
+		free_node(p);
+	}
+
+	return 0;
+}</pre></div></div><br class="example-break" /><p>在初始化时把头指针<code class="literal">head</code>初始化为<code class="literal">NULL</code>，表示空链表。然后<code class="literal">main</code>函数调用<code class="literal">make_node</code>创建几个节点，分别调用<code class="literal">insert</code>插入到链表中。</p><pre class="programlisting">void insert(link p)
+{
+	p-&gt;next = head;
+	head = p;
+}</pre><div class="figure"><a id="id2844893"></a><p class="title"><b>图 26.1. 链表的插入操作</b></p><div class="figure-contents"><div><img src="images/linkedlist.insert.png" alt="链表的插入操作" /></div></div></div><br class="figure-break" /><p>正如上图所示，<code class="literal">insert</code>函数虽然简单，其中也隐含了一种特殊情况（Special Case）<a id="id2844915" class="indexterm"></a>的处理，当<code class="literal">head</code>为<code class="literal">NULL</code>时，执行<code class="literal">insert</code>操作插入第一个节点之后，<code class="literal">head</code>指向第一个节点，而第一个节点的<code class="literal">next</code>指针域成为<code class="literal">NULL</code>，这很合理，因为它也是最后一个节点。所以空链表虽然是一种特殊情况，却不需要特殊的代码来处理，和一般情况用同样的代码处理即可，这样写出来的代码更简洁，但是在读代码时要想到可能存在的特殊情况。当然，<code class="literal">insert</code>函数传进来的参数<code class="literal">p</code>也可能有特殊情况，传进来的<code class="literal">p</code>可能是<code class="literal">NULL</code>，甚至是野指针，本章的函数代码都假定调用者的传进来的参数是合法的，不对参数做特别检查。事实上，对指针参数做检查是不现实的，如果传进来的是<code class="literal">NULL</code>还可以检查一下，如果传进来的是野指针，根本无法检查它指向的内存单元是不是合法的，C标准库的函数通常也不做这种检查，例如<code class="literal">strcpy(p, NULL)</code>就会引起段错误。</p><p>接下来<code class="literal">main</code>函数调用<code class="literal">search</code>在链表中查找某个节点，如果找到就返回指向该节点的指针，找不到就返回<code class="literal">NULL</code>。</p><pre class="programlisting">link search(unsigned char key)
+{
+	link p;
+	for (p = head; p; p = p-&gt;next)
+		if (p-&gt;item == key)
+			return p;
+	return NULL;
+}</pre><p><code class="literal">search</code>函数其实也隐含了对于空链表这种特殊情况的处理，如果是空链表则循环体一次都不执行，直接返回<code class="literal">NULL</code>。</p><p>然后<code class="literal">main</code>函数调用<code class="literal">delete</code>从链表中摘除用<code class="literal">search</code>找到的节点，最后调用<code class="literal">free_node</code>释放它的存储空间。</p><pre class="programlisting">void delete(link p)
+{
+	link pre;
+	if (p == head) {
+		head = p-&gt;next;
+		return;
+	}
+	for (pre = head; pre; pre = pre-&gt;next)
+		if (pre-&gt;next == p) {
+			pre-&gt;next = p-&gt;next;
+			return;
+		}
+}</pre><div class="figure"><a id="id2845087"></a><p class="title"><b>图 26.2. 链表的删除操作</b></p><div class="figure-contents"><div><img src="images/linkedlist.delete.png" alt="链表的删除操作" /></div></div></div><br class="figure-break" /><p>从上图可以看出，要摘除一个节点需要首先找到它的前趋然后才能做摘除操作，而在单链表中通过某个节点只能找到它的后继而不能找到它的前趋，所以删除操作要麻烦一些，需要从第一个节点开始依次查找要摘除的节点的前趋。<code class="literal">delete</code>操作也要处理一种特殊情况，如果要摘除的节点是链表的第一个节点，它是没有前趋的，这种情况要用特殊的代码处理，而不能和一般情况用同样的代码处理。这样很不爽，能不能把这种特殊情况转化为一般情况呢？可以把<code class="literal">delete</code>函数改成这样：</p><pre class="programlisting">void delete(link p)
+{
+	link *pnext;
+	for (pnext = &amp;head; *pnext; pnext = &amp;(*pnext)-&gt;next)
+		if (*pnext == p) {
+			*pnext = p-&gt;next;
+			return;
+		}
+}</pre><div class="figure"><a id="id2845143"></a><p class="title"><b>图 26.3. 消除特殊情况的链表删除操作</b></p><div class="figure-contents"><div><img src="images/linkedlist.pdelete.png" alt="消除特殊情况的链表删除操作" /></div></div></div><br class="figure-break" /><p>定义一个指向指针的指针<code class="literal">pnext</code>，在<code class="literal">for</code>循环中<code class="literal">pnext</code>遍历的是指向链表中各节点的指针域，这样就把<code class="literal">head</code>指针和各节点的<code class="literal">next</code>指针统一起来了，可以在一个循环中处理。</p><p>然后<code class="literal">main</code>函数调用<code class="literal">traverse</code>函数遍历整个链表，调用<code class="literal">destroy</code>函数销毁整个链表。请读者自己阅读这两个函数的代码。</p><p>如果限定每次只在链表的头部插入和删除元素，就形成一个LIFO的访问序列，所以在链表头部插入和删除元素的操作实现了堆栈的<code class="literal">push</code>和<code class="literal">pop</code>操作，<code class="literal">main</code>函数的最后几步把链表当成堆栈来操作，从打印的结果可以看到出栈的顺序和入栈是相反的。想一想，用链表实现的堆栈和<a class="xref" href="ch12s02.html#stackqueue.stack">第 2 节 “堆栈”</a>中用数组实现的堆栈相比有什么优点和缺点？</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2845251"></a>习题</h4></div></div></div><p>1、修改<code class="literal">insert</code>函数实现插入排序的功能，链表中的数据按从小到大排列，每次插入数据都要在链表中找到合适的位置再插入。在<a class="xref" href="ch11s06.html#sortsearch.binary">第 6 节 “折半查找”</a>中我们看到，如果数组中的元素是有序排列的，可以用折半查找算法更快地找到某个元素，想一想如果链表中的节点是有序排列的，是否适用折半查找算法？为什么？</p><p>2、基于单链表实现队列的<code class="literal">enqueue</code>和<code class="literal">dequeue</code>操作。在链表的末尾再维护一个指针<code class="literal">tail</code>，在<code class="literal">tail</code>处<code class="literal">enqueue</code>，在<code class="literal">head</code>处<code class="literal">dequeue</code>。想一想能不能反过来，在<code class="literal">head</code>处<code class="literal">enqueue</code>而在<code class="literal">tail</code>处<code class="literal">dequeue</code>？</p><p>3、实现函数<code class="literal">void reverse(void);</code>将单链表反转。如下图所示。</p><div class="figure"><a id="id2845362"></a><p class="title"><b>图 26.4. 单链表的反转</b></p><div class="figure-contents"><div><img src="images/linkedlist.reverse.png" alt="单链表的反转" /></div></div></div><br class="figure-break" /></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2845376"></a>1.2. 双向链表</h3></div></div></div><p>链表的<code class="literal">delete</code>操作需要首先找到要摘除的节点的前趋，而在单链表中找某个节点的前趋需要从表头开始依次查找，对于n个节点的链表，删除操作的时间复杂度为O(n)。可以想像得到，如果每个节点再维护一个指向前趋的指针，删除操作就像插入操作一样容易了，时间复杂度为O(1)，这称为双向链表（Doubly Linked List）。要实现双向链表只需在上一节代码的基础上改动两个地方。</p><p>在<code class="literal">linkedlist.h</code>中修改链表节点的结构体定义：</p><pre class="programlisting">struct node {
+	unsigned char item;
+	link prev, next;
+};</pre><p>在<code class="literal">linkedlist.c</code>中修改<code class="literal">insert</code>和<code class="literal">delete</code>函数：</p><pre class="programlisting">void insert(link p)
+{
+	p-&gt;next = head;
+	if (head)
+		head-&gt;prev = p;
+	head = p;
+	p-&gt;prev = NULL;
+}
+
+void delete(link p)
+{
+	if (p-&gt;prev)
+		p-&gt;prev-&gt;next = p-&gt;next;
+	else
+		head = p-&gt;next;
+	if (p-&gt;next)
+		p-&gt;next-&gt;prev = p-&gt;prev;
+}</pre><div class="figure"><a id="id2845444"></a><p class="title"><b>图 26.5. 双向链表</b></p><div class="figure-contents"><div><img src="images/linkedlist.doubly.png" alt="双向链表" /></div></div></div><br class="figure-break" /><p>由于引入了<code class="literal">prev</code>指针，<code class="literal">insert</code>和<code class="literal">delete</code>函数中都有一些特殊情况需要用特殊的代码处理，不能和一般情况用同样的代码处理，这非常不爽，如果在表头和表尾各添加一个Sentinel节点（这两个节点只用于界定表头和表尾，不保存数据），就可以把这些特殊情况都转化为一般情况了。</p><div class="example"><a id="id2845498"></a><p class="title"><b>例 26.2. 带Sentinel的双向链表</b></p><div class="example-contents"><pre class="programlisting">/* doublylinkedlist.h */
+#ifndef DOUBLYLINKEDLIST_H
+#define DOUBLYLINKEDLIST_H
+
+typedef struct node *link;
+struct node {
+	unsigned char item;
+	link prev, next;
+};
+
+link make_node(unsigned char item);
+void free_node(link p);
+link search(unsigned char key);
+void insert(link p);
+void delete(link p);
+void traverse(void (*visit)(link));
+void destroy(void);
+void enqueue(link p);
+link dequeue(void);
+
+#endif</pre><pre class="programlisting">/* doublylinkedlist.c */
+#include &lt;stdlib.h&gt;
+#include "doublylinkedlist.h"
+
+struct node tailsentinel;
+struct node headsentinel = {0, NULL, &amp;tailsentinel};
+struct node tailsentinel = {0, &amp;headsentinel, NULL};
+
+static link head = &amp;headsentinel;
+static link tail = &amp;tailsentinel;
+
+link make_node(unsigned char item)
+{
+	link p = malloc(sizeof *p);
+	p-&gt;item = item;
+	p-&gt;prev = p-&gt;next = NULL;
+	return p;
+}
+
+void free_node(link p)
+{
+	free(p);
+}
+
+link search(unsigned char key)
+{
+	link p;
+	for (p = head-&gt;next; p != tail; p = p-&gt;next)
+		if (p-&gt;item == key)
+			return p;
+	return NULL;
+}
+
+void insert(link p)
+{
+	p-&gt;next = head-&gt;next;
+	head-&gt;next-&gt;prev = p;
+	head-&gt;next = p;
+	p-&gt;prev = head;
+}
+
+void delete(link p)
+{
+	p-&gt;prev-&gt;next = p-&gt;next;
+	p-&gt;next-&gt;prev = p-&gt;prev;
+}
+
+void traverse(void (*visit)(link))
+{
+	link p;
+	for (p = head-&gt;next; p != tail; p = p-&gt;next)
+		visit(p);
+}
+
+void destroy(void)
+{
+	link q, p = head-&gt;next;
+	head-&gt;next = tail;
+	tail-&gt;prev = head;
+	while (p != tail) {
+		q = p;
+		p = p-&gt;next;
+		free_node(q);
+	}
+}
+
+void enqueue(link p)
+{
+	insert(p);
+}
+
+link dequeue(void)
+{
+	if (tail-&gt;prev == head)
+		return NULL;
+	else {
+		link p = tail-&gt;prev;
+		delete(p);
+		return p;
+	}
+}</pre><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+#include "doublylinkedlist.h"
+
+void print_item(link p)
+{
+	printf("%d\n", p-&gt;item); 
+}
+
+int main(void)
+{
+	link p = make_node(10);
+	insert(p);
+	p = make_node(5);
+	insert(p);
+	p = make_node(90);
+	insert(p);
+	p = search(5);
+	delete(p);
+	free_node(p);
+	traverse(print_item);
+	destroy();
+
+	p = make_node(100);
+	enqueue(p);
+	p = make_node(200);
+	enqueue(p);
+	p = make_node(250);
+	enqueue(p);
+	while (p = dequeue()) {
+		print_item(p);
+		free_node(p);
+	}
+
+	return 0;
+}</pre></div></div><br class="example-break" /><div class="figure"><a id="id2845549"></a><p class="title"><b>图 26.6. 带Sentinel的双向链表</b></p><div class="figure-contents"><div><img src="images/linkedlist.sentinel.png" alt="带Sentinel的双向链表" /></div></div></div><br class="figure-break" /><p>这个例子也实现了队列的<code class="literal">enqueue</code>和<code class="literal">dequeue</code>操作，现在每个节点有了<code class="literal">prev</code>指针，可以反过来在<code class="literal">head</code>处<code class="literal">enqueue</code>而在<code class="literal">tail</code>处<code class="literal">dequeue</code>了。</p><p>现在结合<a class="xref" href="ch12s05.html#stackqueue.circular">第 5 节 “环形队列”</a>想一想，其实用链表实现环形队列是最自然的，以前基于数组实现环形队列，我们还需要“<span class="quote">假想</span>”它是首尾相接的，而如果基于链表实现环形队列，我们本来就可以用指针串成首尾相接的。把上面的程序改成环形链表（Circular Linked List）<a id="id2845629" class="indexterm"></a>也非常简单，只需要把<code class="literal">doublylinkedlist.c</code>中的</p><pre class="programlisting">struct node tailsentinel;
+struct node headsentinel = {0, NULL, &amp;tailsentinel};
+struct node tailsentinel = {0, &amp;headsentinel, NULL};
+
+static link head = &amp;headsentinel;
+static link tail = &amp;tailsentinel;</pre><p>改成：</p><pre class="programlisting">struct node sentinel = {0, &amp;sentinel, &amp;sentinel};
+static link head = &amp;sentinel;</pre><p>再把<code class="literal">doublylinkedlist.c</code>中所有的<code class="literal">tail</code>替换成<code class="literal">head</code>即可，相当于把<code class="literal">head</code>和<code class="literal">tail</code>合二为一了。</p><div class="figure"><a id="id2845693"></a><p class="title"><b>图 26.7. 环形链表</b></p><div class="figure-contents"><div><img src="images/linkedlist.circular.png" alt="环形链表" /></div></div></div><br class="figure-break" /></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2845707"></a>1.3. 静态链表</h3></div></div></div><p>回想一下我们在<a class="xref" href="ch12s04.html#stackqueue.bfs">例 12.4 “用广度优先搜索解迷宫问题”</a>中使用的数据结构，我把图重新画在下面。</p><div class="figure"><a id="id2845725"></a><p class="title"><b>图 26.8. 广度优先搜索的队列数据结构</b></p><div class="figure-contents"><div><img src="images/stackqueue.bfsqueue.png" alt="广度优先搜索的队列数据结构" /></div></div></div><br class="figure-break" /><p>这是一个静态分配的数组，每个数组元素都有<code class="literal">row</code>、<code class="literal">col</code>和<code class="literal">predecessor</code>三个成员，<code class="literal">predecessor</code>成员保存一个数组下标，指向数组中的另一个元素，这其实也是链表的一种形式，称为静态链表，例如上图中的第6、4、2、1、0个元素串成一条链表。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2845773"></a>1.4. 本节综合练习</h3></div></div></div><p>1、Josephus是公元1世纪的著名历史学家，相传在一次战役中他和另外几个人被围困在山洞里，他们宁死不屈，决定站成一圈，每次数到三个人就杀一个，直到全部死光为止。Josephus和他的一个朋友不想死，于是串通好了站在适当的位置上，最后只剩下他们俩的时候这个游戏就停止了。如果一开始的人数为<code class="literal">N</code>，每次数到<code class="literal">M</code>个人就杀一个，那么要想不死应该站在什么位置呢？这个问题比较复杂，<a class="xref" href="bi01.html#bibli.concrete" title="Concrete Mathematics">[<abbr class="abbrev">具体数学</abbr>]</a>的1.3节研究了Josephus问题的解，有兴趣的读者可以参考。现在我们做个比较简单的练习，用链表模拟Josephus他们玩的这个游戏，<code class="literal">N</code>和<code class="literal">M</code>作为命令行参数传入，每个人的编号依次是1~N，打印每次被杀者的编号，打印最后一个幸存者的编号。</p><p>2、在<a class="xref" href="ch25s02.html#stdlib.ioproblem">第 2.11 节 “本节综合练习”</a>的习题1中规定了一种日志文件的格式，每行是一条记录，由行号、日期、时间三个字段组成，由于记录是按时间先后顺序写入的，可以看作所有记录是按日期排序的，对于日期相同的记录再按时间排序。现在要求从这样的一个日志文件中读出所有记录组成一个链表，在链表中首先按时间排序，对于时间相同的记录再按日期排序，最后写回文件中。比如原文件的内容是：</p><pre class="programlisting">1 2009-7-30 15:16:42
+2 2009-7-30 15:16:43
+3 2009-7-31 15:16:41
+4 2009-7-31 15:16:42
+5 2009-7-31 15:16:43
+6 2009-7-31 15:16:44</pre><p>重新排序输出的文件内容是：</p><pre class="programlisting">1 2009-7-31 15:16:41
+2 2009-7-30 15:16:42
+3 2009-7-31 15:16:42
+4 2009-7-30 15:16:43
+5 2009-7-31 15:16:43
+6 2009-7-31 15:16:44</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch26.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch26.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch26s02.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">第 26 章 链表、二叉树和哈希表 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 2. 二叉树</td></tr></table></div></body></html>

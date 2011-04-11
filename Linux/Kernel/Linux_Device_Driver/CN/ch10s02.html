@@ -1,0 +1,469 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>10.2.&#160;安装一个中断处理-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch10.html" title="第&#160;10&#160;章&#160;中断处理">
+<link rel="prev" href="ch10.html" title="第&#160;10&#160;章&#160;中断处理">
+<link rel="next" href="ch10s03.html" title="10.3.&#160;前和后半部">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">10.2.&#160;安装一个中断处理</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch10.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;10&#160;章&#160;中断处理</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch10s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="InstallinganInterruptHandler.sect"></a>10.2.&#160;安装一个中断处理</h2></div></div></div>
+<p>如果你想实际地"看到"产生的中断, 向硬件设备写不足够; 一个软件处理必须在系统中配置. 如果 Linux 内核还没有被告知来期待你的中断, 它简单地确认并忽略它.</p>
+<p>中断线是一个宝贵且常常有限的资源, 特别当它们只有 15 或者 16 个时. 内核保持了中断线的一个注册, 类似于 I/O 端口的注册. 一个模块被希望来请求一个中断通道(或者 IRQ, 对于中断请求), 在使用它之前, 并且当结束时释放它. 在很多情况下, 也希望模块能够与其他驱动共享中断线, 如同我们将看到的. 下面的函数, 声明在 &lt;linux/interrupt.h&gt;, 实现中断注册接口:</p>
+<pre class="programlisting">
+int request_irq(unsigned int irq,
+                irqreturn_t (*handler)(int, void *, struct pt_regs *),
+                unsigned long flags,
+
+                const char *dev_name,
+                void *dev_id);
+
+void free_irq(unsigned int irq, void *dev_id);
+</pre>
+<p>从 request_irq 返回给请求函数的返回值或者是 0 指示成功, 或者是一个负的错误码, 如同平常. 函数返回 -EBUSY 来指示另一个驱动已经使用请求的中断线是不寻常的. 函数的参数如下:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>unsigned int irq </span></span></dt>
+<dd><p>请求的中断号</p></dd>
+<dt><span class="term"><span>irqreturn_t (*handler)</span></span></dt>
+<dd><p>安装的处理函数指针. 我们在本章后面讨论给这个函数的参数以及它的返回值.</p></dd>
+<dt><span class="term"><span>unsigned long flags </span></span></dt>
+<dd><p>如你会希望的, 一个与中断管理相关的选项的位掩码(后面描述).</p></dd>
+<dt><span class="term"><span>const char *dev_name </span></span></dt>
+<dd><p>这个传递给 request_irq 的字串用在 /proc/interrupts 来显示中断的拥有者(下一节看到)</p></dd>
+<dt><span class="term"><span>void *dev_id </span></span></dt>
+<dd><p>用作共享中断线的指针. 它是一个独特的标识, 用在当释放中断线时以及可能还被驱动用来指向它自己的私有数据区(来标识哪个设备在中断). 如果中断没有被共享, dev_id 可以设置为 NULL, 但是使用这个项指向设备结构不管如何是个好主意. 我们将在"实现一个处理"一节中看到 dev_id 的一个实际应用.</p></dd>
+</dl></div>
+<p>flags 中可以设置的位如下:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>SA_INTERRUPT </span></span></dt>
+<dd><p>当置位了, 这表示一个"快速"中断处理. 快速处理在当前处理器上禁止中断来执行(这个主题在"快速和慢速处理"一节涉及).</p></dd>
+<dt><span class="term"><span>SA_SHIRQ </span></span></dt>
+<dd><p>这个位表示中断可以在设备间共享. 共享的概念在"中断共享"一节中略述.</p></dd>
+<dt><span class="term"><span>SA_SAMPLE_RANDOM </span></span></dt>
+<dd><p>这个位表示产生的中断能够有贡献给 /dev/random 和 /dev/urandom 使用的加密池. 这些设备在读取时返回真正的随机数并且设计来帮助应用程序软件为加密选择安全钥. 这样的随机数从一个由各种随机事件贡献的加密池中提取的. 如果你的设备以真正随机的时间产生中断, 你应当设置这个标志. 如果, 另一方面, 你的中断是可预测的( 例如, 一个帧抓取器的场消隐), 这个标志不值得设置 -- 它无论如何不会对系统加密有贡献. 可能被攻击者影响的设备不应当设置这个标志; 例如, 网络驱动易遭受从外部计时的可预测报文并且不应当对加密池有贡献. 更多信息看 drivers/char/random.c 的注释. </p></dd>
+</dl></div>
+<p>中断处理可以在驱动初始化时安装或者在设备第一次打开时. 尽管从模块的初始化函数中安装中断处理可能听来是个好主意, 它常常不是, 特别当你的设备不共享中断. 因为中断线数目是有限的, 你不想浪费它们. 你可以轻易使你的系统中设备数多于中断数.如果一个模块在初始化时请求一个 IRQ, 它阻止了任何其他的驱动使用这个中断, 甚至这个持有它的设备从不被使用. 在设备打开时请求中断, 另一方面, 允许某些共享资源. </p>
+<p>例如, 可能与一个 modem 在同一个中断上运行一个帧抓取器, 只要你不同时使用这 2 个设备. 对用户来说是很普通的在系统启动时为一个特殊设备加载模块, 甚至这个设备很少用到. 一个数据获取技巧可能使用同一个中断作为第 2 个串口. 虽然不是太难避免在数据获取时联入你的互联网服务提供商(ISP), 被迫卸载一个模块为了使用 modem 确实令人不快.</p>
+<p>调用 request_irq 的正确位置是当设备第一次打开时, 在硬件被指示来产生中断前. 调用 free_irq 的位置是设备最后一次被关闭时, 在硬件被告知不要再中断处理器之后. 这个技术的缺点是你需要保持一个每设备的打开计数, 以便于你知道什么时候中断可以被禁止.</p>
+<p>尽管这个讨论, short 还在加载时请求它的中断线. 这样做是为了你可以运行测试程序而不必运行一个额外的进程来保持设备打开. short, 因此, 从它的初始化函数( short_init )请求中断, 不是在 short_open 中做, 象一个真实设备驱动.</p>
+<p>下面代码请求的中断是 short_irq. 变量的真正赋值(即, 决定使用哪个 IRQ )在后面显示, 因为它和现在的讨论无关. short_base 是使用的并口 I/O 基地址; 接口的寄存器 2 被写入来使能中断报告.</p>
+<pre class="programlisting">
+if (short_irq &gt;= 0)
+{
+        result = request_irq(short_irq, short_interrupt,
+                             SA_INTERRUPT, "short", NULL);
+        if (result) {
+                printk(KERN_INFO "short: can't get assigned irq %i\n",
+                       short_irq);
+
+                short_irq = -1;
+        } else { /* actually enable it -- assume this *is* a parallel port */
+                outb(0x10,short_base+2);
+        }
+}
+</pre>
+<p>代码显示, 安装的处理是一个快速处理(SA_INTERRUPT), 不支持中断共享(SA_SHIRQ  没有), 并且不对系统加密有贡献(SA_SAMPLE_RANDOM 也没有). outb 调用接着为并口使能中断报告.</p>
+<p>由于某些合理原因, i386 和 x86_64 体系定义了一个函数来询问一个中断线的能力:</p>
+<pre class="programlisting">
+int can_request_irq(unsigned int irq, unsigned long flags); 
+</pre>
+<p>这个函数当试图分配一个给定中断成功时返回一个非零值. 但是, 注意, 在 can_request_irq 和 request_irq 的调用之间事情可能一直改变.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheprocInterface.sect"></a>10.2.1.&#160;/proc 接口</h3></div></div></div>
+<p>无论何时一个硬件中断到达处理器, 一个内部的计数器递增, 提供了一个方法来检查设备是否如希望地工作. 报告的中断显示在 /proc/interrupts. 下面的快照取自一个双处理器 Pentium 系统:</p>
+<pre class="screen">
+root@montalcino:/bike/corbet/write/ldd3/src/short# m /proc/interrupts
+        CPU0     CPU1 
+ 0:  4848108       34   IO-APIC-edge  timer 
+ 2:        0        0         XT-PIC  cascade 
+ 8:        3        1   IO-APIC-edge  rtc 
+ 10:    4335        1  IO-APIC-level  aic7xxx 
+ 11:    8903        0  IO-APIC-level  uhci_hcd 
+ 12:      49        1   IO-APIC-edge  i8042  
+NMI:       0        0  
+LOC: 4848187  4848186  
+ERR:       0  
+MIS:       0  
+</pre>
+<p>第一列是 IRQ 号. 你能够从没有的 IRQ 中看到这个文件只显示对应已安装处理的中断. 例如, 第一个串口(使用中断号 4)没有显示, 指示 modem 没在使用. 事实上, 即便如果 modem 已更早使用了, 但是在这个快照时间没有使用, 它不会显示在这个文件中; 串口表现很好并且在设备关闭时释放它们的中断处理.</p>
+<p>/proc/interrupts 的显示展示了有多少中断硬件递交给系统中的每个 CPU. 如同你可从输出看到的, Linux 内核常常在第一个 CPU 上处理中断, 作为一个使 cache 局部性最大化的方法.<sup>[<a name="id461412" href="ch10s02.html#ftn.id461412">37</a>]</sup> 最后 2 列给出关于处理中断的可编程中断控制器的信息(驱动编写者不必关心), 以及已注册的中断处理的设备的名子(如同在给 request_irq 的参数 dev_name 中指定的).</p>
+<p>/proc 树包含另一个中断有关的文件, /proc/stat; 有时你会发现一个文件更加有用并且有时你会喜欢另一个. /proc/stat 记录了几个关于系统活动的低级统计量, 包括(但是不限于)自系统启动以来收到的中断数. stat 的每一行以一个文本字串开始, 是该行的关键词; intr 标志是我们在找的. 下列(截短了)快照是在前一个后马上取得的:</p>
+<pre class="screen">
+intr 5167833 5154006 2 0 2 4907 0 2 68 4 0 4406 9291 50 0 0 
+</pre>
+<p>第一个数是所有中断的总数, 而其他每一个代表一个单个 IRQ 线, 从中断 0 开始. 所有的计数跨系统中所有处理器而汇总的. 这个快照显示, 中断号 4 已使用 4907 次, 尽管当前没有安装处理. 如果你在测试的驱动请求并释放中断在每个打开和关闭循环, 你可能发现 /proc/stat 比 /proc/interrupts 更加有用.</p>
+<p>2 个文件的另一个不同是, 中断不是体系依赖的(也许, 除了末尾几行), 而 stat 是; 字段数依赖内核之下的硬件. 可用的中断数目少到在 SPARC 上的 15 个, 多到 IA-64 上的 256个, 并且其他几个系统都不同. 有趣的是要注意, 定义在 x86 中的中断数当前是 224, 不是你可能期望的 16; 如同在 include/asm-i386/irq.h 中解释的, 这依赖 Linux 使用体系的限制, 而不是一个特定实现的限制( 例如老式 PC 中断控制器的 16 个中断源).</p>
+<p>下面是一个 /proc/interrupts 的快照, 取自一台 IA-64 系统. 如你所见, 除了不同硬件的通用中断源的路由, 输出非常类似于前面展示的 32-位 系统的输出.</p>
+<pre class="screen">
+         CPU0     CPU1 
+ 27:     1705    34141  IO-SAPIC-level  qla1280 
+ 40:        0        0  SAPIC  					perfmon 
+ 43:      913     6960  IO-SAPIC-level  eth0 
+ 47:    26722      146  IO-SAPIC-level  usb-uhci 
+ 64:        3        6  IO-SAPIC-edge   ide0 
+ 80:        4        2  IO-SAPIC-edge   keyboard 
+ 89:        0        0  IO-SAPIC-edge   PS/2 Mouse  
+239:  5606341  5606052          SAPIC   timer  
+
+254:  67575  52815  SAPIC  IPI  
+NMI:  0  0  
+ERR:  0  
+</pre>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AutodetectingtheIRQNumber.sect"></a>10.2.2.&#160;自动检测 IRQ 号</h3></div></div></div>
+<p>驱动在初始化时最有挑战性的问题中的一个是如何决定设备要使用哪个 IRQ 线. 驱动需要信息来正确安装处理. 尽管程序员可用请求用户在加载时指定中断号, 这是个坏做法, 因为大部分时间用户不知道这个号, 要么因为他不配置跳线要么因为设备是无跳线的. 大部分用户希望他们的硬件"仅仅工作"并且不感兴趣如中断号的问题. 因此自动检测中断号是一个驱动可用性的基本需求.</p>
+<p>有时自动探测依赖知道一些设备有很少改变的缺省动作的特性. 在这个情况下, 驱动可能假设缺省值适用. 这确切地就是 short 如何缺省对并口动作的. 实现是直接的, 如 short 自身显示的:</p>
+<pre class="programlisting">
+if (short_irq &lt; 0) /* not yet specified: force the default on */
+ switch(short_base) {
+ case 0x378: short_irq = 7; break;
+ case 0x278: short_irq = 2; break;
+ case 0x3bc: short_irq = 5; break;
+ } 
+</pre>
+<p>代码根据选择的 I/O 基地址赋值中断号, 而允许用户在加载时覆盖缺省值, 使用如:</p>
+<pre class="screen">
+insmod ./short.ko irq=x 
+short_base defaults to 0x378, so short_irq defaults to 7. 
+</pre>
+<p>有些设备设计得更高级并且简单地"宣布"它们要使用的中断. 在这个情况下, 驱动获取中断号通过从设备的一个 I/O 端口或者 PCI 配置空间读一个状态字节. 当目标设备是一个有能力告知驱动它要使用哪个中断的设备时, 自动探测中断号只是意味着探测设备, 探测中断没有其他工作要做. 幸运的是大部分现代硬件这样工作; 例如, PCI 标准解决了这个问题通过要求外设来声明它们要使用哪个中断线. PCI 标准在 12 章讨论.</p>
+<p>不幸的是, 不是每个设备是对程序员友好的, 并且自动探测可能需要一些探测. 这个技术非常简单: 驱动告知设备产生中断并且观察发生了什么. 如果所有事情进展地好, 只有一个中断线被激活.</p>
+<p>尽管探测在理论上简单的, 实际的实现可能不清晰. 我们看 2 种方法来进行这个任务: 调用内核定义的帮助函数和实现我们自己的版本.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Kernelassistedprobing.sect"></a>10.2.2.1.&#160;内核协助的探测</h4></div></div></div>
+<p>Linux 内核提供了一个低级设施来探测中断号. 它只为非共享中断, 但是大部分能够在共享中断状态工作的硬件提供了更好的方法来尽量发现配置的中断号.这个设施包括 2 个函数, 在&lt;linux/interrupt.h&gt; 中声明( 也描述了探测机制 ).</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>unsigned long probe_irq_on(void);</span></span></dt>
+<dd><p>这个函数返回一个未安排的中断的位掩码. 驱动必须保留返回的位掩码, 并且在后面传递给 probe_irq_off. 在这个调用之后, 驱动应当安排它的设备产生至少一次中断.</p></dd>
+<dt><span class="term"><span>int probe_irq_off(unsigned long);</span></span></dt>
+<dd><p>在设备已请求一个中断后, 驱动调用这个函数, 作为参数传递之前由 probe_irq_on 返回的位掩码. probe_irq_off 返回在"probe_on"之后发出的中断号. 如果没有中断发生, 返回 0 (因此, IRQ 0 不能探测, 但是没有用户设备能够在任何支持的体系上使用它). 如果多于一个中断发生( 模糊的探测 ), probe_irq_off 返回一个负值.</p></dd>
+</dl></div>
+<p>程序员应当小心使能设备上的中断, 在调用 probe_irq_on 之后以及在调用 probe_irq_off 后禁止它们. 另外, 你必须记住服务你的设备中挂起的中断, 在 probe_irq_off 之后.</p>
+<p>short 模块演示了如何使用这样的探测. 如果你加载模块使用 probe=1, 下列代码被执行来探测你的中断线, 如果并口连接器的管脚 9 和 10 连接在一起:</p>
+<pre class="programlisting">
+int count = 0;
+do
+{
+        unsigned long mask;
+        mask = probe_irq_on();
+        outb_p(0x10,short_base+2); /* enable reporting */
+        outb_p(0x00,short_base); /* clear the bit */
+        outb_p(0xFF,short_base); /* set the bit: interrupt! */
+        outb_p(0x00,short_base+2); /* disable reporting */
+        udelay(5); /* give it some time */
+        short_irq = probe_irq_off(mask);
+
+        if (short_irq == 0) { /* none of them? */
+                printk(KERN_INFO "short: no irq reported by probe\n");
+                short_irq = -1;
+        }
+
+        /*
+         * if more than one line has been activated, the result is
+         * negative. We should service the interrupt (no need for lpt port)
+         * and loop over again. Loop at most five times, then give up
+         */
+} while (short_irq &lt; 0 &amp;&amp; count++ &lt; 5);
+if (short_irq &lt; 0)
+        printk("short: probe failed %i times, giving up\n", count);
+</pre>
+<p>注意 udelay 的使用, 在调用 probe_irq_off 之前. 依赖你的处理器的速度, 你可能不得不等待一小段时间来给中断时间来真正被递交.</p>
+<p>探测可能是一个长时间的任务. 虽然对于 short 这不是真的, 例如, 探测一个帧抓取器, 需要一个至少 20 ms 的延时( 对处理器是一个时代 ), 并且其他的设备可能要更长. 因此, 最好只探测中断线一次, 在模块初始化时, 独立于你是否在设备打开时安装处理(如同你应当做的), 或者在初始化函数当中(这个不推荐).</p>
+<p>有趣的是注意在一些平台上(PoweerPC, M68K, 大部分 MIPS 实现, 以及 2 个 SPARC 版本)探测是不必要的, 并且, 因此, 之前的函数只是空的占位者, 有时称为"无用的 ISA 废话". 在其他平台上, 探测只为 ISA 设备实现. 无论如何, 大部分体系定义了函数( 即便它们是空的 )来简化移植现存的设备驱动.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Doityourselfprobing.sect"></a>10.2.2.2.&#160;Do-it-yourself 探测</h4></div></div></div>
+<p>探测也可以在驱动自身实现没有太大麻烦. 它是一个少有的驱动必须实现它自己的探测, 但是看它是如何工作的能够给出对这个过程的内部认识. 为此目的, short 模块进行 do-it-yourself 的 IRQ 线探测, 如果它使用 probe=2 加载.</p>
+<p>这个机制与前面描述的相同: 使能所有未使用的中断, 接着等待并观察发生什么. 我们能够, 然而, 利用我们对设备的知识. 常常地一个设备能够配置为使用一个 IRQ 号从 3 个或者 4 个一套; 只探测这些 IRQ 使我们能够探测正确的一个, 不必测试所有的可能中断.</p>
+<p>short 实现假定 3, 5, 7, 和 9 是唯一可能的 IRQ 值. 这些数实际上是一些并口设备允许你选择的数.</p>
+<p>下面的代码通过测试所有"可能的"中断并且查看发生的事情来探测中断. trials 数组列出要尝试的中断, 以 0 作为结尾标志; tried 数组用来跟踪哪个处理实际上被这个驱动注册.</p>
+<pre class="programlisting">
+int trials[] =
+        {
+                3, 5, 7, 9, 0
+        };
+int tried[]  = {0, 0, 0, 0, 0};
+int i, count = 0;
+
+/*
+ * install the probing handler for all possible lines. Remember
+ * the result (0 for success, or -EBUSY) in order to only free
+ * what has been acquired */
+for (i = 0; trials[i]; i++)
+        tried[i] = request_irq(trials[i], short_probing,
+                               SA_INTERRUPT, "short probe", NULL);
+
+do
+{
+        short_irq = 0; /* none got, yet */
+        outb_p(0x10,short_base+2); /* enable */
+        outb_p(0x00,short_base);
+        outb_p(0xFF,short_base); /* toggle the bit */
+        outb_p(0x00,short_base+2); /* disable */
+        udelay(5); /* give it some time */
+
+        /* the value has been set by the handler */
+        if (short_irq == 0) { /* none of them? */
+
+                printk(KERN_INFO "short: no irq reported by probe\n");
+        }
+        /*
+        * If more than one line has been activated, the result is
+        * negative. We should service the interrupt (but the lpt port
+        * doesn't need it) and loop over again. Do it at most 5 times
+        */
+} while (short_irq &lt;=0 &amp;&amp; count++ &lt; 5);
+
+/* end of loop, uninstall the handler */
+for (i = 0; trials[i]; i++)
+        if (tried[i] == 0)
+                free_irq(trials[i], NULL);
+
+if (short_irq &lt; 0)
+        printk("short: probe failed %i times, giving up\n", count);
+</pre>
+<p>你可能事先不知道"可能的" IRQ 值是什么. 在这个情况, 你需要探测所有空闲的中断, 不是限制你自己在几个 trials[]. 为探测所有的中断, 你不得不从 IRQ 0 到 IRQ NR_IRQS-1 探测, 这里 NR_IRQS 在 &lt;asm/irq.h&gt; 中定义并且是独立于平台的.</p>
+<p>现在我们只缺少探测处理自己了. 处理者的角色是更新 short_irq, 根据实际收到哪个中断. short_irq 中的 0 值意味着"什么没有", 而一个负值意味着"模糊的". 这些值选择来和 probe_irq_off 相一致并且允许同样的代码来调用任一种 short.c 中的探测.</p>
+<pre class="programlisting">
+irqreturn_t short_probing(int irq, void *dev_id, struct pt_regs *regs)
+{
+
+    if (short_irq == 0) short_irq = irq;  /* found */
+ if (short_irq != irq) short_irq = -irq; /* ambiguous */
+ return IRQ_HANDLED;
+}
+</pre>
+<p>处理的参数在后面描述. 知道 irq 是在处理的中断应当是足够的来理解刚刚展示的函数.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="FastandSlowHandlers.sect"></a>10.2.3.&#160;快速和慢速处理</h3></div></div></div>
+<p>老版本的 Linux 内核尽了很大努力来区分"快速"和"慢速"中断. 快速中断是那些能够很快处理的, 而处理慢速中断要特别地长一些. 慢速中断可能十分苛求处理器, 并且它值得在处理的时候重新使能中断. 否则, 需要快速注意的任务可能被延时太长.</p>
+<p>在现代内核中, 快速和慢速中断的大部分不同已经消失. 剩下的仅仅是一个: 快速中断(那些使用 SA_INTERRUPT 被请求的)执行时禁止所有在当前处理器上的其他中断. 注意其他的处理器仍然能够处理中断, 尽管你从不会看到 2 个处理器同时处理同一个 IRQ.</p>
+<p>这样, 你的驱动应当使用哪个类型的中断? 在现代系统上, SA_INTERRUPT 只是打算用在几个, 特殊的情况例如时钟中断. 除非你有一个充足的理由来运行你的中断处理在禁止其他中断情况下, 你不应当使用 SA_INTERRUPT.</p>
+<p>这个描述应当满足大部分读者, 尽管有人喜好硬件并且对她的计算机有经验可能有兴趣深入一些. 如果你不关心内部的细节, 你可跳到下一节.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Theinteranlsofinterrupthandlingonthex86.sect"></a>10.2.3.1.&#160;x86上中断处理的内幕</h4></div></div></div>
+<p>这个描述是从 arch/i386/kernel/irq.c, arch/i386/kernel/ apic.c, arch/i386/kernel/entry.S, arch/i386/kernel/i8259.c, 和 include/asm-i386/hw_irq.h 它们出现于 2.6 内核而推知的; 尽管一般的概念保持一致, 硬件细节在其他平台上不同.</p>
+<p>中断处理的最低级是在 entry.S, 一个汇编语言文件处理很多机器级别的工作. 通过一点汇编器的技巧和一些宏定义, 一点代码被安排到每个可能的中断. 在每个情况下, 这个代码将中断号压栈并且跳转到一个通用段, 称为 do_IRQ, 在 irq.c 中定义.</p>
+<p>do_IRQ 做的第一件事是确认中断以便中断控制器能够继续其他事情. 它接着获取给定 IRQ 号的一个自旋锁, 因此阻止任何其他 CPU 处理这个 IRQ. 它清除几个状态位(包括称为 IRQ_WAITING 的一个, 我们很快会看到它)并且接着查看这个特殊 IRQ 的处理者. 如果没有处理者, 什么不作; 自旋锁释放, 任何挂起的软件中断被处理, 最后 do_IRQ 返回.</p>
+<p>常常, 但是, 如果一个设备在中断, 至少也有一个处理者注册给它的 IRQ. 函数 handle_IRQ_event 被调用来实际调用处理者. 如果处理者是慢速的( SA_INTERRUPT 没有设置 ), 中断在硬件中被重新使能, 并且调用处理者. 接着仅仅是清理, 运行软件中断, 以及回到正常的工作. "常规工作"很可能已经由于中断而改变了(处理者可能唤醒一个进程, 例如), 因此从中断中返回的最后的事情是一个处理器的可能的重新调度.</p>
+<p>探测 IRQ 通过设置 IRQ_WAITING 状态位给每个当前缺乏处理者的 IRQ 来完成. 当中断发生, do_IRQ 清除这个位并且接着返回, 因为没有注册处理者. probe_irq_off, 当被一个函数调用, 需要只搜索不再有 IRQ_WAITING 设置的 IRQ.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ImplementingaHandler.sect"></a>10.2.4.&#160;实现一个处理</h3></div></div></div>
+<p>至今, 我们已学习了注册一个中断处理, 但是没有编写一个. 实际上, 对于一个处理者, 没什么不寻常的 -- 它是普通的 C 代码.</p>
+<p>唯一的特别之处是一个处理者在中断时运行, 因此, 它能做的事情遭受一些限制. 这些限制与我们在内核定时器上看到的相同. 一个处理者不能传递数据到或者从用户空间, 因为它不在进程上下文执行. 处理者也不能做任何可能睡眠的事情, 例如调用 wait_event, 使用除 GFP_ATOMIC 之外任何东西来分配内存, 或者加锁一个旗标. 最后, 处理者不能调用调度.</p>
+<p>一个中断处理的角色是给它的设备关于中断接收的回应并且读或写数据, 根据被服务的中断的含义. 第一步常常包括清除接口板上的一位; 大部分硬件设备不产生别的中断直到它们的"中断挂起"位被清除. 根据你的硬件如何工作的, 这一步可能需要在最后做而不是开始; 这里没有通吃的规则. 一些设备不需要这步, 因为它们没有一个"中断挂起"位; 这样的设备是一少数, 尽管并口是其中之一. 由于这个理由, short 不必清除这样一个位.</p>
+<p>一个中断处理的典型任务是唤醒睡眠在设备上的进程, 如果中断指示它们在等待的事件, 例如新数据的到达.</p>
+<p>为坚持帧抓取者的例子, 一个进程可能请求一个图像序列通过连续读设备; 读调用阻塞在读取每个帧之前, 而中断处理唤醒进程一旦每个新帧到达. 这个假定抓取器中断处理器来指示每个新帧的成功到达.</p>
+<p>程序员应当小心编写一个函数在最小量的时间内执行, 不管是一个快速或慢速处理者. 如果需要进行长时间计算, 最好的方法是使用一个 tasklet 或者 workqueue 来调度计算在一个更安全的时间(我们将在"上和下半部"一节中见到工作如何被延迟.).</p>
+<p>我们在 short 中的例子代码响应中断通过调用 do_gettimeofday 和 打印当前时间到一个页大小的环形缓存. 它接着唤醒任何读进程, 因为现在有数据可用来读取.</p>
+<pre class="programlisting">
+irqreturn_t short_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+         {
+                 struct timeval tv;
+                 int written;
+                 do_gettimeofday(&amp;tv);
+                 /* Write a 16 byte record. Assume PAGE_SIZE is a multiple of 16 */
+                 written = sprintf((char *)short_head,"%08u.%06u\n",
+                                   (int)(tv.tv_sec % 100000000), (int)(tv.tv_usec));
+                 BUG_ON(written != 16);
+                 short_incr_bp(&amp;short_head, written);
+                 wake_up_interruptible(&amp;short_queue); /* awake any reading process */
+                 return IRQ_HANDLED;
+         }
+</pre>
+<p>这个代码, 尽管简单, 代表了一个中断处理的典型工作. 依次地, 它称为 short_incr_bp, 定义如下:</p>
+<pre class="programlisting">
+static inline void short_incr_bp(volatile unsigned long *index, int delta)
+{
+        unsigned long new = *index + delta;
+        barrier();  /* Don't optimize these two together */
+        *index = (new &gt;= (short_buffer + PAGE_SIZE)) ? short_buffer : new;
+}
+</pre>
+<p>这个函数已经仔细编写来回卷指向环形缓存的指针, 没有暴露一个不正确的值. 这里的 barrier 调用来阻止编译器在这个函数的其他 2 行之间优化. 如果没有 barrier, 编译器可能决定优化掉 new 变量并且直接赋值给 *index. 这个优化可能暴露一个 index 的不正确值一段时间, 在它回卷的地方. 通过小心阻止对其他线程可见的不一致的值, 我们能够安全操作环形缓存指针而不用锁.</p>
+<p>用来读取中断时填充的缓存的设备文件是 /dev/shortint. 这个设备特殊文件, 同 /dev/shortprint 一起, 不在第 9 章介绍, 因为它的使用对中断处理是特殊的. /dev/shortint 内部特别地为中断产生和报告剪裁过. 写到设备会每隔一个字节产生一个中断; 读取设备给出了每个中断被报告的时间.</p>
+<p>如果你连接并口连接器的管脚 9 和 10, 你可产生中断通过拉高并口数据字节的高位. 这可通过写二进制数据到 /dev/short0 或者通过写任何东西到 /dev/shortint 来完成.</p>
+<p><sup>[<a name="id462191" href="ch10s02.html#ftn.id462191">38</a>]</sup>下列代码为 /dev/shortint 实现读和写:</p>
+<pre class="programlisting">
+ssize_t short_i_read (struct file *filp, char __user *buf, size_t count,
+                      loff_t *f_pos)
+{
+        int count0;
+        DEFINE_WAIT(wait);
+
+        while (short_head == short_tail)
+        {
+                prepare_to_wait(&amp;short_queue, &amp;wait, TASK_INTERRUPTIBLE);
+                if (short_head == short_tail)
+
+                        schedule();
+                finish_wait(&amp;short_queue, &amp;wait);
+                if (signal_pending (current)) /* a signal arrived */
+                        return -ERESTARTSYS; /* tell the fs layer to handle it */
+        } /* count0 is the number of readable data bytes */ count0 = short_head - short_tail;
+        if (count0 &lt; 0) /* wrapped */
+                count0 = short_buffer + PAGE_SIZE - short_tail;
+        if (count0 &lt; count)
+                count = count0;
+
+        if (copy_to_user(buf, (char *)short_tail, count))
+                return -EFAULT;
+        short_incr_bp (&amp;short_tail, count);
+        return count;
+
+}
+ssize_t short_i_write (struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+        int written = 0, odd = *f_pos &amp; 1;
+        unsigned long port = short_base; /* output to the parallel data latch */
+        void *address = (void *) short_base;
+
+        if (use_mem)
+        {
+                while (written &lt; count)
+                        iowrite8(0xff * ((++written + odd) &amp; 1), address);
+        } else
+        {
+
+                while (written &lt; count)
+                        outb(0xff * ((++written + odd) &amp; 1), port);
+        }
+
+        *f_pos += count;
+        return written;
+}
+</pre>
+<p>其他设备特殊文件, /dev/shortprint, 使用并口来驱动一个打印机; 你可用使用它, 如果你想避免连接一个 D-25 连接器管脚 9 和 10. shortprint 的写实现使用一个环形缓存来存储要打印的数据, 而写实现是刚刚展示的那个(因此你能够读取你的打印机吃进每个字符用的时间).</p>
+<p>为了支持打印机操作, 中断处理从刚刚展示的那个已经稍微修改, 增加了发送下一个数据字节到打印机的能力, 如果没有更多数据传送.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="HandlerArgumentsandReturnValue.sect"></a>10.2.5.&#160;处理者的参数和返回值</h3></div></div></div>
+<p>尽管 short 忽略了它们, 一个传递给一个中断处理的参数: irq, dev_id, 和 regs. 我们看一下每个的角色.</p>
+<p>中断号( int irq )作为你可能在你的 log 消息中打印的信息是有用的, 如果有. 第二个参数, void *dev_id, 是一类客户数据; 一个 void* 参数传递给 request_irq, 并且同样的指针接着作为一个参数传回给处理者, 当中断发生时. 你常常传递一个指向你的在 dev_id 中的设备数据结构的指针, 因此一个管理相同设备的几个实例的驱动不需要任何额外的代码, 在中断处理中找出哪个设备要负责当前的中断事件.</p>
+<p>这个参数在中断处理中的典型使用如下:</p>
+<pre class="programlisting">
+static irqreturn_t sample_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+{
+        struct sample_dev *dev = dev_id;
+
+        /* now `dev' points to the right hardware item */
+        /* .... */
+}
+</pre>
+<p>和这个处理者关联的典型的打开代码看来如此:</p>
+<pre class="programlisting">
+static void sample_open(struct inode *inode, struct file *filp)
+{
+        struct sample_dev *dev = hwinfo + MINOR(inode-&gt;i_rdev);
+        request_irq(dev-&gt;irq, sample_interrupt,
+
+                    0 /* flags */, "sample", dev /* dev_id */);
+        /*....*/
+        return 0;
+
+}
+</pre>
+<p>最后一个参数, struct pt_regs *regs, 很少用到. 它持有一个处理器的上下文在进入中断状态前的快照. 寄存器可用来监视和调试; 对于常规地设备驱动任务, 正常地不需要它们.</p>
+<p>中断处理应当返回一个值指示是否真正有一个中断要处理. 如果处理者发现它的设备确实需要注意, 它应当返回 IRQ_HANDLED; 否则返回值应当是 IRQ_NONE. 你也可产生返回值, 使用这个宏:</p>
+<pre class="programlisting">
+IRQ_RETVAL(handled)
+</pre>
+<p>这里, handled 是非零, 如果你能够处理中断. 内核用返回值来检测和抑制假中断. 如果你的设备没有给你方法来告知是否它确实中断, 你应当返回 IRQ_HANDLED.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="EnablingandDisablingInterrupts.sect"></a>10.2.6.&#160;使能和禁止中断</h3></div></div></div>
+<p>有时设备驱动必须阻塞中断的递交一段时间(希望地短)(我们在第 5 章的 "自旋锁"一节看到过这样的一个情况). 常常, 中断必须被阻塞当持有一个自旋锁来避免死锁系统时. 有几个方法来禁止不涉及自旋锁的中断. 但是在我们讨论它们之前, 注意禁止中断应当是一个相对少见的行为, 即便在设备驱动中, 并且这个技术应当从不在驱动中用做互斥机制.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Disablingasingleinterrupt.sect"></a>10.2.6.1.&#160;禁止单个中断</h4></div></div></div>
+<p>有时(但是很少!)一个驱动需要禁止一个特定中断线的中断递交. 内核提供了 3 个函数为此目的, 所有都声明在 &lt;asm/irq.h&gt;. 这些函数是内核 API 的一部分, 因此我们描述它们, 但是它们的使用在大部分驱动中不鼓励. 在其他的中, 你不能禁止共享的中断线, 并且, 在现代的系统中, 共享的中断是规范. 已说过的, 它们在这里:</p>
+<pre class="programlisting">
+void disable_irq(int irq);
+void disable_irq_nosync(int irq);
+void enable_irq(int irq);
+</pre>
+<p>调用任一函数可能更新在可编程控制器(PIC)中的特定 irq 的掩码, 因此禁止或使能跨所有处理器的特定 IRQ. 对这些函数的调用能够嵌套 -- 如果 disable_irq 被连续调用 2 次, 需要 2 个 enable_irq 调用在 IRQ 被真正重新使能前. 可能调用这些函数从一个中断处理中, 但是在处理它时使能你自己的 IRQ 常常不是一个好做法.</p>
+<p>disable_irq 不仅禁止给定的中断, 还等待一个当前执行的中断处理结束, 如果有. 要知道如果调用 disable_irq 的线程持有中断处理需要的任何资源(例如自旋锁), 系统可能死锁. disable_irq_nosync 与 disable_irq 不同, 它立刻返回. 因此, 使用disable_irq_nosync 快一点, 但是可能使你的设备有竞争情况.</p>
+<p>但是为什么禁止中断? 坚持说并口, 我们看一下 plip 网络接口. 一个 plip 设备使用裸并口来传送数据. 因为只有 5 位可以从并口连接器读出, 它们被解释为 4 个数据位和一个时钟/握手信号. 当一个报文的第一个 4 位被 initiator (发送报文的接口) 传送, 时钟线被拉高, 使接收接口来中断处理器. plip 处理者接着被调用来处理新到达的数据.</p>
+<p>在设备已经被提醒了后, 数据传送继续, 使用握手线来传送数据到接收接口(这可能不是最好的实现, 但是有必要与使用并口的其他报文驱动兼容). 如果接收接口不得不为每个接收的字节处理 2 次中断, 性能可能不可忍受. 因此, 驱动在接收报文的时候禁止中断; 相反, 一个查询并延时的循环用来引入数据.</p>
+<p>类似地, 因为从接收器到发送器的握手线用来确认数据接收, 发送接口禁止它的 IRQ 线在报文发送时.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Disablingallinterrupts.sect"></a>10.2.6.2.&#160;禁止所有中断</h4></div></div></div>
+<p>如果你需要禁止所有中断如何? 在 2.6 内核, 可能关闭在当前处理器上所有中断处理, 使用任一个下面 2 个函数(定义在 &lt;asm/system.h&gt;):</p>
+<pre class="programlisting">
+void local_irq_save(unsigned long flags);
+void local_irq_disable(void);
+</pre>
+<p>一个对 local_irq_save 的调用在当前处理器上禁止中断递交, 在保存当前中断状态到 flags 之后. 注意, flags 是直接传递, 不是通过指针. local_irq_disable 关闭本地中断递交而不保存状态; 你应当使用这个版本只在你知道中断没有在别处被禁止.</p>
+<p>完成打开中断, 使用:</p>
+<pre class="programlisting">
+void local_irq_restore(unsigned long flags); 
+void local_irq_enable(void);
+</pre>
+<p>第一个版本恢复由 local_irq_save 存储于 flags 的状态, 而 local_irq_enable 无条件打开中断. 不象 disable_irq, local_irq_disable 不跟踪多次调用. 如果调用链中有多于一个函数可能需要禁止中断, 应该使用 local_irq_save.</p>
+<p>在 2.6 内核, 没有方法全局性地跨整个系统禁止所有的中断. 内核开发者决定, 关闭所有中断的开销太高, 并且在任何情况下没有必要有这个能力. 如果你在使用一个旧版本驱动, 它调用诸如 cli 和 sti, 你需要在它在 2.6 下工作前更新它为使用正确的加锁</p>
+</div>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id461412" href="ch10s02.html#id461412">37</a>] </sup>尽管, 一些大系统明确使用中断平衡机制来在系统间分散中断负载.</p></div>
+<div class="footnote"><p><sup>[<a name="ftn.id462191" href="ch10s02.html#id462191">38</a>] </sup>这个 shortint 设备完成它的任务, 通过交替地写入 0x00 和 0xff 到并口.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch10.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch10.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch10s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;10&#160;章&#160;中断处理&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;10.3.&#160;前和后半部</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

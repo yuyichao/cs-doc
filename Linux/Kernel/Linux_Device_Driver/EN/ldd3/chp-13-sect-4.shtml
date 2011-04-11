@@ -1,0 +1,949 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>13.4. Writing a USB Driver</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-13-sect-3.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-13-sect-5.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><tr><td valign="top"><a name="chp-13-sect-4"></a>
+<h3 class="docSection1Title">13.4. Writing a USB Driver</h3>
+
+<p class="docText">The approach to writing a USB <a name="chp-13-ITERM-6504"></a> <a name="chp-13-ITERM-6505"></a>
+<a name="chp-13-ITERM-6506"></a>device driver is similar to a
+<tt>pci_driver</tt>: the driver registers its driver object
+with the USB subsystem and later uses vendor and device identifiers
+to tell if its hardware has been installed.</p>
+
+<a name="chp-13-sect-4.1"></a>
+<h4 class="docSection2Title">13.4.1. What Devices Does the Driver Support?</H4>
+
+<p class="docText">The <tt>struct usb_device_id</tt> structure provides a list
+of different types of USB devices that this driver supports. This
+list is used by the USB core to decide which driver to give a device
+to, and by the hotplug scripts to decide which driver to
+automatically load when a specific device is plugged into the system.</p>
+
+<p class="docText">The <tt>struct usb_device_id</tt><a name="chp-13-ITERM-6507"></a> structure is
+defined with the following fields:</P>
+
+<a name="chp-13-ITERM-6508"></a><a name="chp-13-ITERM-6509"></a><a name="chp-13-ITERM-6510"></a><a name="chp-13-ITERM-6511"></a><a name="chp-13-ITERM-6512"></a><a name="chp-13-ITERM-6513"></a><a name="chp-13-ITERM-6514"></a><a name="chp-13-ITERM-6515"></a><a name="chp-13-ITERM-6516"></a><a name="chp-13-ITERM-6517"></a><a name="chp-13-ITERM-6518"></a><a name="chp-13-ITERM-6519"></a><a name="chp-13-ITERM-6520"></a><a name="chp-13-ITERM-6521"></a><a name="chp-13-ITERM-6522"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u16 match_flags</span></span> <a name="chp-13-ITERM-6508"></a> </span></dt></p>
+<dd>
+<p class="docList">Determines which of the following fields in the structure the device
+should be matched against. This is a bit field defined by the
+different <tt>USB_DEVICE_ID_MATCH_*</tt> values specified
+in the <i>include/linux/mod_devicetable.h</I> file.
+This field is usually never set directly but is initialized by the
+<tt>USB_DEVICE</tt> type macros described later.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u16 idVendor</span></span> <a name="chp-13-ITERM-6509"></a> </span></dt></P>
+<dd>
+<p class="docList">The USB vendor ID for the device. This number is assigned by the USB
+forum to its members and cannot be made up by anyone else.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u16 idProduct</span></span> <a name="chp-13-ITERM-6510"></a> </span></dt></p>
+<dd>
+<p class="docList">The USB product ID for the device. All vendors that have a vendor ID
+assigned to them can manage their product IDs however they choose to.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u16 bcdDevice_lo</span></span> <a name="chp-13-ITERM-6511"></a> </span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u16 bcdDevice_hi</span></span> <a name="chp-13-ITERM-6512"></a> </span></dt></p>
+<dd>
+<p class="docList">Define the low and high ends of the range of the vendor-assigned
+product version number. The <tt>bcdDevice_hi</tt> value is
+inclusive; its value is the number of the highest-numbered device.
+Both of these values are expressed in
+<a name="chp-13-ITERM-6513"></a> <a name="chp-13-ITERM-6514"></a> <a name="chp-13-ITERM-6515"></a>binary-coded decimal (BCD) form. These
+variables, combined with the <tt>idVendor</tt> and
+<tt>idProduct</tt>, are used to define a specific version
+of a device.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u8 bDeviceClass</span></span> <a name="chp-13-ITERM-6516"></a> </span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u8 bDeviceSubClass</span></span> <a name="chp-13-ITERM-6517"></a> </span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u8 bDeviceProtocol</span></span> <a name="chp-13-ITERM-6518"></a> </span></dt></P>
+<dd>
+<p class="docList">Define the class, subclass, and protocol of the device, respectively.
+These numbers are assigned by the USB forum and are defined in the
+USB specification. These values specify the behavior for the whole
+device, including all interfaces on this device.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u8 bInterfaceClass</span></span> <a name="chp-13-ITERM-6519"></a> </span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u8 bInterfaceSubClass</span></span> <a name="chp-13-ITERM-6520"></a> </span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">_ _u8 bInterfaceProtocol</span></span> <a name="chp-13-ITERM-6521"></a> </span></dt></p>
+<dd>
+<p class="docList">Much like the device-specific values above, these define the class,
+subclass, and protocol of the individual interface, respectively.
+These numbers are assigned by the USB forum and are defined in the
+USB specification.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">kernel_ulong_t driver_info</span></span><a name="chp-13-ITERM-6522"></a>  </span></dt></p>
+<dd>
+<p class="docList">This value is not used to match against, but it holds information
+that the driver can use to differentiate the different devices from
+each other in the <tt>probe</tt> callback function to the
+USB driver.</p>
+</dd>
+</dl>
+
+<p class="docText">As with PCI devices, there are a number of macros that are used to
+initialize this structure:</P>
+
+<a name="chp-13-ITERM-6523"></a><a name="chp-13-ITERM-6524"></a><a name="chp-13-ITERM-6525"></a><a name="chp-13-ITERM-6526"></a><a name="chp-13-ITERM-6527"></a><a name="chp-13-ITERM-6528"></a><a name="chp-13-ITERM-6529"></a><a name="chp-13-ITERM-6530"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">USB_DEVICE(vendor, product)</span></span><a name="chp-13-ITERM-6523"></a>
+<a name="chp-13-ITERM-6524"></a>  </span></dt></P>
+<dd>
+<p class="docList">Creates a <tt>struct usb_device_id</tt> that can be used to
+match only the specified vendor and product ID values. This is very
+commonly used for USB devices that need a specific driver.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">USB_DEVICE_VER(vendor, product, lo, hi)</span></span><a name="chp-13-ITERM-6525"></a>
+<a name="chp-13-ITERM-6526"></a>  </span></dt></P>
+<dd>
+<p class="docList">Creates a <tt>struct usb_device_id</tt> that can be used to
+match only the specified vendor and product ID values within a
+version range.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">USB_DEVICE_INFO(class, subclass, protocol)</span></span><a name="chp-13-ITERM-6527"></a>
+<a name="chp-13-ITERM-6528"></a>  </span></dt></P>
+<dd>
+<p class="docList">Creates a <tt>struct usb_device_id</tt> that can be used to
+match a specific class of USB devices.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">USB_INTERFACE_INFO(class, subclass, protocol)</span></span><a name="chp-13-ITERM-6529"></a>
+<a name="chp-13-ITERM-6530"></a>  </span></dt></p>
+<dd>
+<p class="docList">Creates a <tt>struct usb_device_id</tt> that can be used to
+match a specific class of USB interfaces.</P>
+</dd>
+</dl>
+
+<p class="docText">So, for a simple USB device driver that controls only a single USB
+device from a single vendor, the <tt>struct
+usb_device_id</tt> table would be defined as:</P>
+
+<pre>/* table of devices that work with this driver */
+static struct usb_device_id skel_table [  ] = {
+    { USB_DEVICE(USB_SKEL_VENDOR_ID, USB_SKEL_PRODUCT_ID) },
+    { }                 /* Terminating entry */
+};
+MODULE_DEVICE_TABLE (usb, skel_table);</pre><BR>
+
+
+<p class="docText">As with a PCI driver, the <tt>MODULE_DEVICE_TABLE</tt>
+macro is necessary to allow user-space tools to figure out what
+devices this driver can control. But for USB drivers, the string
+<tt>usb</tt> must be the first value in the macro.</p>
+
+
+<a name="chp-13-sect-4.2"></a>
+<H4 class="docSection2Title">13.4.2. Registering a USB Driver</H4>
+
+<p class="docText">The main structure that all USB
+drivers<a name="chp-13-ITERM-6531"></a> must create is a
+<tt>struct</tt> <tt>usb_driver</tt>. This
+structure must be filled out by the USB driver and consists of a
+number of function callbacks and variables that describe the USB
+driver to the USB core code:</p>
+
+<a name="chp-13-ITERM-6532"></a><a name="chp-13-ITERM-6533"></a><a name="chp-13-ITERM-6534"></a><a name="chp-13-ITERM-6535"></a><a name="chp-13-ITERM-6536"></a><a name="chp-13-ITERM-6537"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct module *owner</span></span><a name="chp-13-ITERM-6532"></a>
+<a name="chp-13-ITERM-6533"></a>  </span></dt></p>
+<dd>
+<p class="docList">Pointer to the module owner of this driver. The USB core uses it to
+properly reference count this USB driver so that it is not unloaded
+at inopportune moments. The variable should be set to the
+<tt>THIS_MODULE</tt> macro.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">const char *name</span></span><a name="chp-13-ITERM-6534"></a>
+<a name="chp-13-ITERM-6535"></a>  </span></dt></P>
+<dd>
+<p class="docList">Pointer to the name of the driver. It must be unique among all USB
+drivers in the kernel and is normally set to the same name as the
+module name of the driver. It shows up in sysfs under
+<span class="docEmphasis">/sys/bus/usb/drivers/</span> when the driver is in the
+kernel.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">const struct usb_device_id *id_table</span></span><a name="chp-13-ITERM-6536"></a>
+<a name="chp-13-ITERM-6537"></a>  </span></dt></p>
+<dd>
+<p class="docList">Pointer to the <tt>struct usb_device_id</tt> table that
+contains a list of all of the different kinds of USB devices this
+driver can accept. If this variable is not set, the
+<tt>probe</tt> function callback in the USB driver is never
+called. If you want your driver always to be called for every USB
+device in the system, create a entry that sets only the
+<tt>driver_info</tt> field:</P>
+</dd>
+</dl>
+
+<pre>static struct usb_device_id usb_ids[  ] = {
+    {.driver_info = 42},
+    {  }
+};</pre><br>
+
+
+<a name="chp-13-ITERM-6538"></a><a name="chp-13-ITERM-6539"></a><a name="chp-13-ITERM-6540"></a><a name="chp-13-ITERM-6541"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*probe) (struct usb_interface *intf, const struct usb_device_id *id)</span></span><a name="chp-13-ITERM-6538"></a>
+<a name="chp-13-ITERM-6539"></a>  </span></dt></p>
+<dd>
+<p class="docList">Pointer to the probe function in the USB driver. This function
+(described in <a class="docLink" href="chp-13-sect-4.shtml#chp-13-sect-4.3">Section 13.4.3</a>) is called by the USB core
+when it thinks it has a <tt>struct</tt>
+<tt>usb_interface</tt> that this driver can handle. A
+pointer to the <tt>struct usb_device_id</tt> that the USB
+core used to make this decision is also passed to this function. If
+the USB driver claims the <tt>struct</tt>
+<tt>usb_interface</tt> that is passed to it, it should
+initialize the device properly and return <tt>0</tt>. If
+the driver does not want to claim the device, or an error occurs, it
+should return a negative error value.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void (*disconnect) (struct usb_interface *intf)</span></span><a name="chp-13-ITERM-6540"></a>
+<a name="chp-13-ITERM-6541"></a>  </span></dt></p>
+<dd>
+<p class="docList">Pointer to the disconnect function in the USB driver. This function
+(described in <a class="docLink" href="chp-13-sect-4.shtml#chp-13-sect-4.3">Section 13.4.3</a>) is called by the USB core
+when the <tt>struct usb_interface</tt> has been removed
+from the system or when the driver is being unloaded from the USB
+core.</p>
+</dd>
+</dl>
+
+<p class="docText">So, to create a value <tt>struct
+usb_driver</tt><a name="chp-13-ITERM-6542"></a>
+<a name="chp-13-ITERM-6543"></a>
+structure, only five fields need to be initialized:</p>
+
+<pre>static struct usb_driver skel_driver = {
+    .owner = THIS_MODULE,
+    .name = "skeleton",
+    .id_table = skel_table,
+    .probe = skel_probe,
+    .disconnect = skel_disconnect,
+};</pre><br>
+
+
+<p class="docText">The <tt>struct</tt> <tt>usb_driver</tt> does
+contain a few more callbacks, which are generally not used very
+often, and are not required in order for a USB driver to work
+properly:</p>
+
+<dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*ioctl) (struct usb_interface *intf, unsigned int code, void *buf)</span></span>  </span></dt></p>
+<dd>
+<p class="docList">Pointer to an <span class="docEmphasis">ioctl</span> function in the USB driver.
+If it is present, it is called when a user-space program makes a
+<span class="docEmphasis">ioctl</span> call on the <span class="docEmphasis">usbfs</span>
+filesystem device entry associated with a USB device attached to this
+USB driver. In pratice, only the USB hub driver uses this ioctl, as
+there is no other real need for any other USB driver to use it.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*suspend) (struct usb_interface *intf, u32 state)</span></span>  </span></dt></p>
+<dd>
+<p class="docList">Pointer to a suspend function in the USB driver. It is called when
+the device is to be suspended by the USB core.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*resume) (struct usb_interface *intf)</span></span>  </span></dt></P>
+<dd>
+<p class="docList">Pointer to a resume function in the USB driver. It is called when the
+device is being resumed by the USB core.</P>
+</dd>
+</dl>
+
+<p class="docText">To register the
+<tt>struct</tt><a name="chp-13-ITERM-6544"></a>
+<a name="chp-13-ITERM-6545"></a> <tt>usb_driver</tt> with
+the USB core, a call to <span class="docEmphasis">usb_register_driver</span> is
+made with a pointer to the <tt>struct</tt>
+<tt>usb_driver</tt>. This is traditionally done in the
+module initialization code for the USB driver:</P>
+
+<pre>static int _ _init usb_skel_init(void)
+{
+    int result;
+
+    /* register this driver with the USB subsystem */
+    result = usb_register(&amp;skel_driver);
+    if (result)
+        err("usb_register failed. Error number %d", result);
+
+    return result;
+}</pre><br>
+
+
+<p class="docText">When the USB driver is to
+be<a name="chp-13-ITERM-6546"></a> unloaded, the <tt>struct
+usb_driver</tt> needs to be unregistered from the kernel. This
+is done with a call to <span class="docEmphasis">usb_deregister_driver</span>.
+When this call happens, any USB interfaces that were currently bound
+to this driver are disconnected, and the
+<span class="docEmphasis">disconnect</span><a name="chp-13-ITERM-6547"></a>
+<a name="chp-13-ITERM-6548"></a> function is called for them.</p>
+
+<pre>static void _ _exit usb_skel_exit(void)
+{
+    /* deregister this driver with the USB subsystem */
+    usb_deregister(&amp;skel_driver);
+}</pre><br>
+
+
+
+<a name="chp-13-sect-4.3"></a>
+<h4 class="docSection2Title">13.4.3. probe and disconnect in Detail</H4>
+
+<p class="docText">In the <tt>struct usb_driver</tt> structure described in
+the previous section, the driver specified two functions that the USB
+core calls at appropriate times. The <span class="docEmphasis">probe</span>
+function is called when a device is installed that the USB core
+thinks this driver should handle; the <span class="docEmphasis">probe</span>
+function should perform checks on the information passed to it about
+the device and decide whether the driver is really appropriate for
+that device. The <span class="docEmphasis">disconnect</span> function is called
+when the driver should no longer control the device for some reason
+and can do clean-up.</P>
+
+<p class="docText">Both the <span class="docEmphasis">probe</span> and
+<span class="docEmphasis">disconnect</span> <a name="chp-13-ITERM-6549"></a>
+<a name="chp-13-ITERM-6550"></a>function callbacks are called in the
+context of the USB hub kernel thread, so it is legal to sleep within
+them. However, it is recommended that the majority of work be done
+when the device is opened by a user if possible, in order to keep the
+USB probing time to a minimum. This is because the USB core handles
+the addition and removal of USB devices within a single thread, so
+any slow device driver can cause the USB device detection time to
+slow down and become noticeable by the user.</P>
+
+<p class="docText">In the <span class="docEmphasis">probe</span> function callback, the USB driver
+should initialize any local structures that it might use to manage
+the USB device. It should also save any information that it needs
+about the device to the local structure, as it is usually easier to
+do so at this time. As an example, USB drivers usually want to detect
+what the endpoint address and buffer sizes are for the device, as
+they are needed in order to communicate with the device. Here is some
+example code that detects both IN and OUT endpoints of BULK type and
+saves some information about them in a local device structure:</p>
+
+<pre>/* set up the endpoint information */
+/* use only the first bulk-in and bulk-out endpoints */
+iface_desc = interface-&gt;cur_altsetting;
+for (i = 0; i &lt; iface_desc-&gt;desc.bNumEndpoints; ++i) {
+    endpoint = &amp;iface_desc-&gt;endpoint[i].desc;
+
+    if (!dev-&gt;bulk_in_endpointAddr &amp;&amp;
+        (endpoint-&gt;bEndpointAddress &amp; USB_DIR_IN) &amp;&amp;
+        ((endpoint-&gt;bmAttributes &amp; USB_ENDPOINT_XFERTYPE_MASK)
+                =  = USB_ENDPOINT_XFER_BULK)) {
+        /* we found a bulk in endpoint */
+        buffer_size = endpoint-&gt;wMaxPacketSize;
+        dev-&gt;bulk_in_size = buffer_size;
+        dev-&gt;bulk_in_endpointAddr = endpoint-&gt;bEndpointAddress;
+        dev-&gt;bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
+        if (!dev-&gt;bulk_in_buffer) {
+            err("Could not allocate bulk_in_buffer");
+            goto error;
+        }
+    }
+
+    if (!dev-&gt;bulk_out_endpointAddr &amp;&amp;
+        !(endpoint-&gt;bEndpointAddress &amp; USB_DIR_IN) &amp;&amp;
+        ((endpoint-&gt;bmAttributes &amp; USB_ENDPOINT_XFERTYPE_MASK)
+                =  = USB_ENDPOINT_XFER_BULK)) {
+        /* we found a bulk out endpoint */
+        dev-&gt;bulk_out_endpointAddr = endpoint-&gt;bEndpointAddress;
+    }
+}
+if (!(dev-&gt;bulk_in_endpointAddr &amp;&amp; dev-&gt;bulk_out_endpointAddr)) {
+    err("Could not find both bulk-in and bulk-out endpoints");
+    goto error;
+}</pre><BR>
+
+
+<p class="docText">This block of code first loops over every endpoint that is present in
+this interface and assigns a local pointer to the endpoint structure
+to make it easier to access later:</P>
+
+<pre>for (i = 0; i &lt; iface_desc-&gt;desc.bNumEndpoints; ++i) {
+    endpoint = &amp;iface_desc-&gt;endpoint[i].desc;</pre><br>
+
+
+<p class="docText">Then, after we have an endpoint, and we have not found a bulk IN type
+endpoint already, we look to see if this endpoint's
+direction is IN. That can be tested by seeing whether the bitmask
+<tt>USB_DIR_IN</tt> is contained in the
+<tt>bEndpointAddress</tt> endpoint variable. If this is
+true, we determine whether the endpoint type is bulk or not, by first
+masking off the <tt>bmAttributes</tt> variable with the
+<tt>USB_ENDPOINT_XFERTYPE_MASK</tt> bitmask, and then
+checking if it matches the value
+<tt>USB_ENDPOINT_XFER_BULK</tt>:</p>
+
+<pre>if (!dev-&gt;bulk_in_endpointAddr &amp;&amp;
+    (endpoint-&gt;bEndpointAddress &amp; USB_DIR_IN) &amp;&amp;
+    ((endpoint-&gt;bmAttributes &amp; USB_ENDPOINT_XFERTYPE_MASK)
+            =  = USB_ENDPOINT_XFER_BULK)) {</pre><br>
+
+
+<p class="docText">If all of these tests are true, the driver knows it found the proper
+type of endpoint and can save the information about the endpoint that
+it will later need to communicate over it in a local structure:</p>
+
+<pre>/* we found a bulk in endpoint */
+buffer_size = endpoint-&gt;wMaxPacketSize;
+dev-&gt;bulk_in_size = buffer_size;
+dev-&gt;bulk_in_endpointAddr = endpoint-&gt;bEndpointAddress;
+dev-&gt;bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
+if (!dev-&gt;bulk_in_buffer) {
+    err("Could not allocate bulk_in_buffer");
+    goto error;
+}</pre><BR>
+
+
+<p class="docText">Because the USB driver needs to retrieve the local data structure
+that is associated with this <tt>struct</tt>
+<tt>usb_interface</tt> later in the lifecycle of the
+device, the function
+<a name="chp-13-ITERM-6551"></a>
+<a name="chp-13-ITERM-6552"></a><span class="docEmphasis">usb_set_intfdata</span>
+can be called:</p>
+
+<pre>/* save our data pointer in this interface device */
+usb_set_intfdata(interface, dev);</pre><br>
+
+
+<p class="docText">This function accepts a pointer to any data type and saves it in the
+<tt>struct</tt><a name="chp-13-ITERM-6553"></a>
+<a name="chp-13-ITERM-6554"></a>
+<tt>usb_interface</tt> structure for later access. To
+retrieve the data, the function <span class="docEmphasis">usb_get_intfdata</span>
+should be called:</P>
+
+<pre>struct usb_skel *dev;
+struct usb_interface *interface;
+int subminor;
+int retval = 0;
+
+subminor = iminor(inode);
+
+interface = usb_find_interface(&amp;skel_driver, subminor);
+if (!interface) {
+    err ("%s - error, can't find device for minor %d",
+         _ _FUNCTION_ _, subminor);
+    retval = -ENODEV;
+    goto exit;
+}
+
+dev = usb_get_intfdata(interface);
+if (!dev) {
+    retval = -ENODEV;
+    goto exit;
+}</pre><br>
+
+
+<p class="docText"><span class="docEmphasis">usb_get_intfdata</span> is usually called in the
+<span class="docEmphasis">open</span> function of the USB driver and again in the
+<span class="docEmphasis">disconnect</span> function. Thanks to these two
+functions, USB drivers do not need to keep a static array of pointers
+that store the individual device structures for all current devices
+in the system. The indirect reference to device information allows an
+unlimited number of devices to be supported by any USB driver.</p>
+
+<p class="docText">If the USB driver is not associated with another type of subsystem
+that handles the user interaction with the device (such as input,
+tty, video, etc.), the driver can use the USB major number in order
+to use the traditional char driver interface with user space. To do
+this, the USB driver must call the
+<span class="docEmphasis">usb_register_dev</span> function in the
+<span class="docEmphasis">probe</span> function when it wants to register a
+device with the USB core. Make sure that the device and driver are in
+a proper state to handle a user wanting to access the device as soon
+as this function is called.</P>
+
+<pre>/* we can register the device now, as it is ready */
+retval = usb_register_dev(interface, &amp;skel_class);
+if (retval) {
+    /* something prevented us from registering this driver */
+    err("Not able to get a minor for this device.");
+    usb_set_intfdata(interface, NULL);
+    goto error;
+}</pre><br>
+
+
+<p class="docText">The <a name="chp-13-ITERM-6555"></a>
+<a name="chp-13-ITERM-6556"></a><span class="docEmphasis">usb_register_dev</span>
+function requires a pointer to a <tt>struct</tt>
+<tt>usb_interface</tt> and a pointer to a
+<tt>struct</tt> <tt>usb_class_driver</tt>. This
+<tt>struct usb_class_driver</tt> is used to define a number
+of different parameters that the USB driver wants the USB core to
+know when registering for a minor number. This structure consists of
+the following variables:</P>
+
+<a name="chp-13-ITERM-6557"></a><a name="chp-13-ITERM-6558"></a><a name="chp-13-ITERM-6559"></a><a name="chp-13-ITERM-6560"></a><a name="chp-13-ITERM-6561"></a><a name="chp-13-ITERM-6562"></a><a name="chp-13-ITERM-6563"></a><a name="chp-13-ITERM-6564"></a><a name="chp-13-ITERM-6565"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">char *name</span></span><a name="chp-13-ITERM-6557"></a>
+<a name="chp-13-ITERM-6558"></a>  </span></dt></p>
+<dd>
+<p class="docList">The name that sysfs uses to describe the device. A leading pathname,
+if present, is used only in devfs and is not covered in this book. If
+the number of the device needs to be in the name, the characters
+<tt>%d</tt> should be in the name string. For example, to
+create the devfs name <tt>usb/foo1</tt> and the sysfs class
+name <tt>foo1</tt>, the name string should be set to
+<tt>usb/foo%d</tt>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct file_operations *fops;</span></span><a name="chp-13-ITERM-6559"></a>
+<a name="chp-13-ITERM-6560"></a>  </span></dt></p>
+<dd>
+<p class="docList">Pointer to the <tt>struct file_operations</tt> that this
+driver has defined to use to register as the character device. See
+<a class="docLink" href="chp-3.shtml#chp-3">Chapter 3</a> for more information
+about this structure.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">mode_t mode;</span></span><a name="chp-13-ITERM-6561"></a>
+<a name="chp-13-ITERM-6562"></a>  </span></dt></p>
+<dd>
+<p class="docList">The mode for the devfs file to be created for this driver; unused
+otherwise. A typical setting for this variable would be the value
+<tt>S_IRUSR</tt> combined with the value
+<tt>S_IWUSR</tt>, which would provide only read and write
+access by the owner of the device file.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int minor_base;</span></span><a name="chp-13-ITERM-6563"></a>
+<a name="chp-13-ITERM-6564"></a>  </span></dt></p>
+<dd>
+<p class="docList">This is the start of the assigned minor range for this driver. All
+devices associated with this driver are created with unique,
+increasing minor numbers beginning with this value. Only 16 devices
+are allowed to be associated with this driver at any one time unless
+the
+<tt>CONFIG_USB_DYNAMIC_MINORS</tt><a name="chp-13-ITERM-6565"></a> configuration option has
+been enabled for the kernel. If so, this variable is ignored, and all
+minor numbers for the device are allocated on a first-come,
+first-served manner. It is recommended that systems that have enabled
+this option use a program such as <span class="docEmphasis">udev</span> to manage
+the device nodes in the system, as a static <span class="docEmphasis">/dev</span>
+tree will not work properly.</P>
+</dd>
+</dl>
+
+<p class="docText">When the USB device is disconnected, all resources associated with
+the device should be cleaned up, if possible. At this time, if
+<span class="docEmphasis">usb_register_dev</span> has been called to allocate a
+minor number for this USB device during the
+<span class="docEmphasis">probe</span> function, the function
+<span class="docEmphasis">usb_deregister_dev</span> must be called to give the
+minor number back to the USB core.</P>
+
+<p class="docText">In the <span class="docEmphasis">disconnect</span><a name="chp-13-ITERM-6566"></a>
+<a name="chp-13-ITERM-6567"></a> function, it is also important to
+retrieve from the interface any data that was previously set with a
+call to <span class="docEmphasis">usb_set_intfdata</span>. Then set the data
+pointer in the <tt>struct</tt>
+<tt>usb_interface</tt> structure to <tt>NULL</tt>
+to prevent any further mistakes in accessing the data improperly:</p>
+
+<pre>static void skel_disconnect(struct usb_interface *interface)
+{
+    struct usb_skel *dev;
+    int minor = interface-&gt;minor;
+
+    /* prevent skel_open(  ) from racing skel_disconnect(  ) */
+    lock_kernel(  );
+
+    dev = usb_get_intfdata(interface);
+    usb_set_intfdata(interface, NULL);
+
+    /* give back our minor */
+    usb_deregister_dev(interface, &amp;skel_class);
+
+    unlock_kernel(  );
+
+    /* decrement our usage count */
+    kref_put(&amp;dev-&gt;kref, skel_delete);
+
+    info("USB Skeleton #%d now disconnected", minor);
+}</pre><br>
+
+
+<p class="docText">Note the call to <span class="docEmphasis">lock_kernel</span> in the previous
+code snippet. This takes the big kernel lock, so that the
+<span class="docEmphasis">disconnect</span> callback does not encounter a race
+condition with the open call when trying to get a pointer to the
+correct interface data structure. Because the
+<i>open</I> is called with the big kernel lock taken,
+if the <span class="docEmphasis">disconnect</span> also takes that same lock,
+only one portion of the driver can access and then set the interface
+data pointer.</p>
+
+<p class="docText">Just before the <span class="docEmphasis">disconnect</span> function is called
+for a USB device, all urbs that are currently in transmission for the
+device are canceled by the USB core, so the driver does not have to
+explicitly call <span class="docEmphasis">usb_kill_urb</span> for these urbs. If
+a driver tries to submit a urb to a USB device after it has been
+disconnected with a call to <span class="docEmphasis">usb_submit_urb</span>, the
+submission will fail with an error value of
+<tt>-EPIPE</tt>.</P>
+
+
+<a name="chp-13-sect-4.4"></a>
+<H4 class="docSection2Title">13.4.4. Submitting and Controlling a Urb</H4>
+
+<p class="docText">When the driver has data to send <a name="chp-13-ITERM-6568"></a>
+<a name="chp-13-ITERM-6569"></a>
+<a name="chp-13-ITERM-6570"></a>to the USB device (as typically happens
+in a driver's <tt>write</tt> function), a
+urb must be<a name="chp-13-ITERM-6571"></a> allocated for
+transmitting the data to the device:</p>
+
+<pre>urb = usb_alloc_urb(0, GFP_KERNEL);
+if (!urb) {
+    retval = -ENOMEM;
+    goto error;
+}</pre><br>
+
+
+<p class="docText">After the urb is allocated successfully, a DMA buffer should also be
+created to send the data to the device in the most efficient manner,
+and the data that is passed to the driver should be copied into that
+buffer:</p>
+
+<pre>buf = usb_buffer_alloc(dev-&gt;udev, count, GFP_KERNEL, &amp;urb-&gt;transfer_dma);
+if (!buf) {
+    retval = -ENOMEM;
+    goto error;
+}
+if (copy_from_user(buf, user_buffer, count)) {
+    retval = -EFAULT;
+    goto error;
+}</pre><br>
+
+
+<p class="docText">Once the data is properly copied from the user space into the local
+buffer, the urb must be initialized correctly before it can be
+submitted to the USB core:</P>
+
+<pre>/* initialize the urb properly */
+usb_fill_bulk_urb(urb, dev-&gt;udev,
+          usb_sndbulkpipe(dev-&gt;udev, dev-&gt;bulk_out_endpointAddr),
+          buf, count, skel_write_bulk_callback, dev);
+urb-&gt;transfer_flags |= URB_NO_TRANSFER_DMA_MAP;</pre><BR>
+
+
+<p class="docText">Now that the urb is properly allocated, the data is properly copied,
+and the urb is properly initialized, it can be submitted to the USB
+core to be transmitted to the device:</P>
+
+<pre>/* send the data out the bulk port */
+retval = usb_submit_urb(urb, GFP_KERNEL);
+if (retval) {
+    err("%s - failed submitting write urb, error %d", _ _FUNCTION_ _, retval);
+    goto error;
+}</pre><br>
+
+
+<p class="docText">After the urb is successfully transmitted to the USB device (or
+something happens in transmission), the urb callback is called by the
+USB core. In our example, we initialized the urb to point to the
+function <span class="docEmphasis">skel_write_bulk_callback</span>, and that is
+the function that is called:</P>
+
+<pre>static void skel_write_bulk_callback(struct urb *urb, struct pt_regs *regs)
+{
+    /* sync/async unlink faults aren't errors */
+    if (urb-&gt;status &amp;&amp; 
+        !(urb-&gt;status =  = -ENOENT || 
+          urb-&gt;status =  = -ECONNRESET ||
+          urb-&gt;status =  = -ESHUTDOWN)) {
+        dbg("%s - nonzero write bulk status received: %d",
+            _ _FUNCTION_ _, urb-&gt;status);
+    }
+
+    /* free up our allocated buffer */
+    usb_buffer_free(urb-&gt;dev, urb-&gt;transfer_buffer_length, 
+            urb-&gt;transfer_buffer, urb-&gt;transfer_dma);
+}</pre><BR>
+
+
+<p class="docText">The first thing the callback function does is check the status of the
+urb to determine if this urb completed successfully or not. The error
+values, <tt>-ENOENT</tt>, <tt>-ECONNRESET</tt>,
+and <tt>-ESHUTDOWN</tt> are not real transmission errors,
+just reports about conditions accompanying a successful transmission.
+(See the list of possible errors for urbs detailed in the section
+<a class="docLink" href="chp-13-sect-3.shtml#chp-13-sect-3.1">Section 13.3.1</a>.) Then the callback frees up the allocated
+buffer that was assigned to this urb to transmit.</p>
+
+<p class="docText">It's common for another urb to be submitted to the
+device while the urb callback function is running. This is useful
+when streaming data to a device. Remember that the urb callback is
+running in interrupt context, so it should do any memory allocation,
+hold any semaphores, or do anything else that could cause the process
+to sleep. When submitting a urb from within a callback, use the
+<tt>GFP_ATOMIC</tt> flag to tell the USB core to not sleep
+if it needs to allocate new memory<a name="chp-13-ITERM-6572"></a> <a name="chp-13-ITERM-6573"></a> <a name="chp-13-ITERM-6574"></a> chunks during the submission process.</p>
+
+
+
+<ul></ul></TD></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-13-sect-3.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-13-sect-5.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

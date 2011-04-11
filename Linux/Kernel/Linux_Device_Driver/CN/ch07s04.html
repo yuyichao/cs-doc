@@ -1,0 +1,166 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>7.4.&#160;内核定时器-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch07.html" title="第&#160;7&#160;章&#160;时间, 延时, 和延后工作">
+<link rel="prev" href="ch07s03.html" title="7.3.&#160;延后执行">
+<link rel="next" href="ch07s05.html" title="7.5.&#160;Tasklets 机制">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">7.4.&#160;内核定时器</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch07s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;7&#160;章&#160;时间, 延时, 和延后工作</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch07s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="KernelTimers.sect"></a>7.4.&#160;内核定时器</h2></div></div></div>
+<p>无论何时你需要调度一个动作以后发生, 而不阻塞当前进程直到到时, 内核定时器是给你的工具. 这些定时器用来调度一个函数在将来一个特定的时间执行, 基于时钟嘀哒, 并且可用作各类任务; 例如, 当硬件无法发出中断时, 查询一个设备通过在定期的间隔内检查它的状态. 其他的内核定时器的典型应用是关闭软驱马达或者结束另一个长期终止的操作. 在这种情况下, 延后来自 close 的返回将强加一个不必要(并且吓人的)开销在应用程序上. 最后, 内核自身使用定时器在几个情况下, 包括实现 schedule_timeout.</p>
+<p>一个内核定时器是一个数据结构, 它指导内核执行一个用户定义的函数使用一个用户定义的参数在一个用户定义的时间. 这个实现位于 &lt;linux/timer.h&gt; 和 kernel/timer.c 并且在"内核定时器"一节中详细介绍.</p>
+<p>被调度运行的函数几乎确定不会在注册它们的进程在运行时运行. 它们是, 相反, 异步运行. 直到现在, 我们在我们的例子驱动中已经做的任何事情已经在执行系统调用的进程上下文中运行. 当一个定时器运行时, 但是, 这个调度进程可能睡眠, 可能在不同的一个处理器上运行, 或者很可能已经一起退出.</p>
+<p>这个异步执行类似当发生一个硬件中断时所发生的( 这在第 10 章详细讨论 ). 实际上, 内核定时器被作为一个"软件中断"的结果而实现. 当在这种原子上下文运行时, 你的代码易受到多个限制. 定时器函数必须是原子的以所有的我们在第 1 章"自旋锁和原子上下文"一节中曾讨论过的方式, 但是有几个附加的问题由于缺少一个进程上下文而引起的. 我们将介绍这些限制; 在后续章节的几个地方将再次看到它们. 循环被调用因为原子上下文的规则必须认真遵守, 否则系统会发现自己陷入大麻烦中.</p>
+<p>为能够被执行, 多个动作需要进程上下文. 当你在进程上下文之外(即, 在中断上下文), 你必须遵守下列规则:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>没有允许存取用户空间. 因为没有进程上下文, 没有和任何特定进程相关联的到用户空间的途径.</p></li>
+<li><p>这个 current 指针在原子态没有意义, 并且不能使用因为相关的代码没有和已被中断的进程的联系.</p></li>
+<li><p>不能进行睡眠或者调度. 原子代码不能调用 schedule 或者某种 wait_event, 也不能调用任何其他可能睡眠的函数. 例如, 调用 kmalloc(..., GFP_KERNEL) 是违犯规则的. 旗标也必须不能使用因为它们可能睡眠.</p></li>
+</ul></div>
+<p>内核代码能够告知是否它在中断上下文中运行, 通过调用函数 in_interrupt(), 它不要参数并且如果处理器当前在中断上下文运行就返回非零, 要么硬件中断要么软件中断.</p>
+<p>一个和 in_interrupt() 相关的函数是 in_atomic(). 它的返回值是非零无论何时调度被禁止; 这包含硬件和软件中断上下文以及任何持有自旋锁的时候. 在后一种情况, current 可能是有效的, 但是存取用户空间被禁止, 因为它能导致调度发生. 无论何时你使用 in_interrupt(), 你应当真正考虑是否 in_atomic 是你实际想要的. 2 个函数都在 &lt;asm/hardirq.h&gt; 中声明.</p>
+<p>内核定时器的另一个重要特性是一个任务可以注册它本身在后面时间重新运行. 这是可能的, 因为每个 timer_list 结构在运行前从激活的定时器链表中去连接, 并且因此能够马上在其他地方被重新连接. 尽管反复重新调度相同的任务可能表现为一个无意义的操作, 有时它是有用的. 例如, 它可用作实现对设备的查询.</p>
+<p>也值得了解在一个 SMP 系统, 定时器函数被注册时相同的 CPU 来执行, 为在任何可能的时候获得更好的缓存局部特性. 因此, 一个重新注册它自己的定时器一直运行在同一个 CPU.</p>
+<p>不应当被忘记的定时器的一个重要特性是, 它们是一个潜在的竞争条件的源, 即便在一个单处理器系统. 这是它们与其他代码异步运行的一个直接结果. 因此, 任何被定时器函数存取的数据结构应当保护避免并发存取, 要么通过原子类型( 在第 1 章的"原子变量"一节) 要么使用自旋锁( 在第 9 章讨论 ).</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheTimerAPI.sect"></a>7.4.1.&#160;定时器 API</h3></div></div></div>
+<p>内核提供给驱动许多函数来声明, 注册, 以及去除内核定时器. 下列的引用展示了基本的代码块:</p>
+<pre class="programlisting">
+#include &lt;linux/timer.h&gt;
+struct timer_list
+{
+        /* ... */
+        unsigned long expires;
+        void (*function)(unsigned long);
+        unsigned long data;
+};
+void init_timer(struct timer_list *timer);
+struct timer_list TIMER_INITIALIZER(_function, _expires, _data);
+
+void add_timer(struct timer_list * timer);
+int del_timer(struct timer_list * timer);
+</pre>
+<p>这个数据结构包含比曾展示过的更多的字段, 但是这 3 个是打算从定时器代码自身以外被存取的. 这个 expires 字段表示定时器期望运行的 jiffies 值; 在那个时间, 这个 function 函数被调用使用 data 作为一个参数. 如果你需要在参数中传递多项, 你可以捆绑它们作为一个单个数据结构并且传递一个转换为 unsiged long 的指针, 在所有支持的体系上的一个安全做法并且在内存管理中相当普遍( 如同 15 章中讨论的 ). expires 值不是一个 jiffies_64 项因为定时器不被期望在将来很久到时, 并且 64-位操作在 32-位平台上慢.</p>
+<p>这个结构必须在使用前初始化. 这个步骤保证所有的成员被正确建立, 包括那些对调用者不透明的. 初始化可以通过调用 init_timer 或者 安排 TIMER_INITIALIZER 给一个静态结构, 根据你的需要. 在初始化后, 你可以改变 3 个公共成员在调用 add_timer 前. 为在到时前禁止一个已注册的定时器, 调用 del_timer.</p>
+<p>jit 模块包括一个例子文件, /proc/jitimer ( 为 "just in timer"), 它返回一个头文件行以及 6 个数据行. 这些数据行表示当前代码运行的环境; 第一个由读文件操作产生并且其他的由定时器. 下列的输出在编译内核时被记录:</p>
+<pre class="screen">
+phon% cat /proc/jitimer
+ time delta  inirq  pid  cpu command 
+ 33565837  0  0  1269  0  cat 
+ 33565847  10  1  1271  0  sh 
+ 33565857  10  1  1273  0  cpp0 
+ 33565867  10  1  1273  0  cpp0 
+ 33565877  10  1  1274  0  cc1 
+ 33565887  10  1  1274  0  cc1  
+</pre>
+<p>在这个输出, time 字段是代码运行时的 jiffies 值, delta 是自前一行的 jiffies 改变值, inirq 是由 in_interrupt 返回的布尔值, pid 和 command 指的是当前进程, 以及 cpu 是在使用的 CPU 的数目( 在单处理器系统上一直为 0).</p>
+<p>如果你读 /proc/jitimer 当系统无负载时, 你会发现定时器的上下文是进程 0, 空闲任务, 它被称为"对换进程"只要由于历史原因.</p>
+<p>用来产生 /proc/jitimer 数据的定时器是缺省每 10 jiffies 运行一次, 但是你可以在加载模块时改变这个值通过设置 tdelay ( timer delay ) 参数.</p>
+<p>下面的代码引用展示了 jit 关于 jitimer 定时器的部分. 当一个进程试图读取我们的文件, 我们建立这个定时器如下:</p>
+<pre class="programlisting">
+unsigned long j = jiffies;
+/* fill the data for our timer function */
+data-&gt;prevjiffies = j;
+
+data-&gt;buf = buf2;
+data-&gt;loops = JIT_ASYNC_LOOPS;
+
+/* register the timer */
+data-&gt;timer.data = (unsigned long)data;
+data-&gt;timer.function = jit_timer_fn;
+data-&gt;timer.expires = j + tdelay; /* parameter */
+add_timer(&amp;data-&gt;timer);
+
+/* wait for the buffer to fill */
+wait_event_interruptible(data-&gt;wait, !data-&gt;loops);
+
+The actual timer function looks like this:
+void jit_timer_fn(unsigned long arg)
+{
+        struct jit_data *data = (struct jit_data *)arg;
+        unsigned long j = jiffies;
+        data-&gt;buf += sprintf(data-&gt;buf, "%9li %3li %i %6i %i %s\n",
+                             j, j - data-&gt;prevjiffies, in_interrupt() ? 1 : 0,
+                             current-&gt;pid, smp_processor_id(), current-&gt;comm);
+        if (--data-&gt;loops) {
+                data-&gt;timer.expires += tdelay;
+                data-&gt;prevjiffies = j;
+                add_timer(&amp;data-&gt;timer);
+
+        } else {
+                wake_up_interruptible(&amp;data-&gt;wait);
+        }
+}
+</pre>
+<p>定时器 API 包括几个比上面介绍的那些更多的功能. 下面的集合是完整的核提供的函数列表:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>int mod_timer(struct timer_list *timer, unsigned long expires);</span></span></dt>
+<dd><p>更新一个定时器的超时时间, 使用一个超时定时器的一个普通的任务(再一次, 关马达软驱定时器是一个典型例子). mod_timer 也可被调用于非激活定时器, 那里你正常地使用 add_timer.</p></dd>
+<dt><span class="term"><span>int del_timer_sync(struct timer_list *timer);</span></span></dt>
+<dd><p>如同 del_timer 一样工作, 但是还保证当它返回时, 定时器函数不在任何 CPU 上运行. del_timer_sync 用来避免竞争情况在 SMP 系统上, 并且在 UP 内核中和 del_timer 相同. 这个函数应当在大部分情况下比 del_timer 更首先使用. 这个函数可能睡眠如果它被从非原子上下文调用, 但是在其他情况下会忙等待. 要十分小心调用 del_timer_sync 当持有锁时; 如果这个定时器函数试图获得同一个锁, 系统会死锁. 如果定时器函数重新注册自己, 调用者必须首先确保这个重新注册不会发生; 这常常同设置一个" 关闭 "标志来实现, 这个标志被定时器函数检查.</p></dd>
+<dt><span class="term"><span>int timer_pending(const struct timer_list * timer);</span></span></dt>
+<dd><p>返回真或假来指示是否定时器当前被调度来运行, 通过调用结构的其中一个不透明的成员.</p></dd>
+</dl></div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheImplementaionofKernelTimers.sect"></a>7.4.2.&#160;内核定时器的实现</h3></div></div></div>
+<p>为了使用它们, 尽管你不会需要知道内核定时器如何实现, 这个实现是有趣的, 并且值得看一下它们的内部.</p>
+<p>定时器的实现被设计来符合下列要求和假设:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>定时器管理必须尽可能简化.</p></li>
+<li><p>设计应当随着激活的定时器数目上升而很好地适应.</p></li>
+<li><p>大部分定时器在几秒或最多几分钟内到时, 而带有长延时的定时器是相当少见.</p></li>
+<li><p>一个定时器应当在注册它的同一个 CPU 上运行.</p></li>
+</ul></div>
+<p>由内核开发者想出的解决方法是基于一个每-CPU 数据结构. 这个 timer_list 结构包括一个指针指向这个的数据结构在它的 base 成员. 如果 base 是 NULL, 这个定时器没有被调用运行; 否则, 这个指针告知哪个数据结构(并且, 因此, 哪个 CPU )运行它. 每-CPU 数据项在第 8 章的"每-CPU变量"一节中描述. </p>
+<p>无论何时内核代码注册一个定时器( 通过 add_timer 或者 mod_timer), 操作最终由 internal_add_timer 进行( 在kernel/timer.c), 它依次添加新定时器到一个双向定时器链表在一个关联到当前 CPU 的"层叠表" 中.</p>
+<p>这个层叠表象这样工作: 如果定时器在下一个 0 到 255 jiffies 内到时, 它被添加到专供短时定时器 256 列表中的一个上, 使用 expires 成员的最低有效位. 如果它在将来更久时间到时( 但是在 16,384 jiffies 之前 ), 它被添加到基于 expires 成员的 9 - 14 位的 64 个列表中一个. 对于更长的定时器, 同样的技巧用在 15 - 20 位, 21 - 26 位, 和 27 - 31 位. 带有一个指向将来还长时间的 expires 成员的定时器( 一些只可能发生在 64-位 平台上的事情 ) 被使用一个延时值 0xffffffff 进行哈希处理, 并且带有在过去到时的定时器被调度来在下一个时钟嘀哒运行. (一个已经到时的定时器模拟有时在高负载情况下被注册, 特别的是如果你运行一个可抢占内核).</p>
+<p>当触发 __run_timers, 它为当前定时器嘀哒执行所有挂起的定时器. 如果 jiffies 当前是 256 的倍数, 这个函数还重新哈希处理一个下一级别的定时器列表到 256 短期列表, 可能地层叠一个或多个别的级别, 根据jiffies 的位表示.</p>
+<p>这个方法, 虽然第一眼看去相当复杂, 在几个和大量定时器的时候都工作得很好. 用来管理每个激活定时器的时间独立于已经注册的定时器数目并且限制在几个对于它的 expires 成员的二进制表示的逻辑操作上. 关联到这个实现的唯一的开销是给 512 链表头的内存( 256 短期链表和 4 组 64 更长时间的列表) -- 即 4 KB 的容量.</p>
+<p>函数 __run_timers, 如同 /proc/jitimer 所示, 在原子上下文运行. 除了我们已经描述过的限制, 这个带来一个有趣的特性: 定时器刚好在合适的时间到时, 甚至你没有运行一个可抢占内核, 并且 CPU 在内核空间忙. 你可以见到发生了什么当你在后台读 /proc/jitbusy 时以及在前台 /proc/jitimer. 尽管系统看来牢固地被锁住被这个忙等待系统调用, 内核定时器照样工作地不错.</p>
+<p></p>但是, 记住, 一个内核定时器还远未完善, 因为它受累于 jitter 和 其他由硬件中断引起怪物, 还有其他定时器和其他异步任务. 虽然一个关联到简单数字 I/O 的定时器对于一个如同运行一个步进马达或者其他业余电子设备等简单任务是足够的, 它常常是不合适在工业环境中的生产系统. 对于这样的任务, 你将最可能需要依赖一个实时内核扩展.</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch07s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch07.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch07s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">7.3.&#160;延后执行&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;7.5.&#160;Tasklets 机制</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

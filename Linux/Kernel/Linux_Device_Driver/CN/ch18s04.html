@@ -1,0 +1,168 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>18.4.&#160;ioctls 函数-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+<link rel="prev" href="ch18s03.html" title="18.3.&#160;TTY 线路设置">
+<link rel="next" href="ch18s05.html" title="18.5.&#160;TTY 设备的 proc 和 sysfs 处理">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">18.4.&#160;ioctls 函数</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch18s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;18&#160;章&#160;TTY 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch18s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ioctl.sect"></a>18.4.&#160;ioctls 函数</h2></div></div></div>
+<p>在 struct tty_driver 中的 ioctl 函数被 tty 核心调用当 ioctl(2) 被在设备节点上调用. 如果这个 tty 驱动不知道如何处理传递给它的 ioctl 值, 它应当返回 -ENOIOCTLCMD 来试图让 tty 核心实现一个通用的调用版本.</p>
+<p>2.6 内核定义了大约 70 个不同的 tty ioctls, 可被用来发送给一个 tty 驱动. 大部分的 tty 驱动不处理它们全部, 但是只有一个小的更普通的子集. 这是一个更通用的 tty ioctls 列表, 它们的含义, 以及如何实现它们:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>TIOCSERGETLSR </span></span></dt>
+<dd><p>获得这个 tty 设备的线路状态寄存器( LSR )的值.</p></dd>
+<dt><span class="term"><span>TIOCGSERIAL </span></span></dt>
+<dd>
+<p>获得串口线信息. 调用者可以潜在地从 tty 设备获得许多串口线路信息, 在这个调用中一次全部. 一些程序( 例如 setserial 和 dip) 调用这个函数来确保波特率被正确设置, 以及来获得通常的关于驱动控制的设备类型信息. 调用者传递一个指向一个大的 serial_struct 结构的指针, 这个结构应当由 tty 驱动填充正确的值. 这是一个如何实现这个的例子:</p>
+<pre class="programlisting">
+static int tiny_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg)
+{
+        struct tiny_serial *tiny = tty-&gt;driver_data;
+        if (cmd == TIOCGSERIAL)
+        {
+                struct serial_struct tmp;
+                if (!arg)
+                        return -EFAULT;
+                memset(&amp;tmp, 0, sizeof(tmp));
+                tmp.type  = tiny-&gt;serial.type;
+                tmp.line  = tiny-&gt;serial.line;
+                tmp.port  = tiny-&gt;serial.port;
+                tmp.irq  = tiny-&gt;serial.irq;
+                tmp.flags  = ASYNC_SKIP_TEST | ASYNC_AUTO_IRQ;
+
+                tmp.xmit_fifo_size = tiny-&gt;serial.xmit_fifo_size;
+                tmp.baud_base = tiny-&gt;serial.baud_base;
+                tmp.close_delay = 5*HZ;
+                tmp.closing_wait = 30*HZ;
+                tmp.custom_divisor = tiny-&gt;serial.custom_divisor;
+                tmp.hub6 = tiny-&gt;serial.hub6;
+                tmp.io_type = tiny-&gt;serial.io_type;
+                if (copy_to_user((void __user *)arg, &amp;tmp, sizeof(tmp)))
+
+                        return -EFAULT;
+                return 0;
+        }
+        return -ENOIOCTLCMD;
+}
+</pre>
+</dd>
+<dt><span class="term"><span>TIOCSSERIAL</span></span></dt>
+<dd><p>设置串口线路信息. 这是 IOCGSERIAL 的反面, 并且允许用户一次全部设置 tty 设备的串口线状态. 一个指向 struct serial_struct 的指针被传递给这个调用, 填满这个 tty 设备应当被设置的数据. 如果这个 tty 驱动没有实现这个调用, 大部分程序仍然正确工作.</p></dd>
+<dt><span class="term"><span>TIOCMIWAIT </span></span></dt>
+<dd>
+<p>等待 MSR 改变. 用户在非寻常的情况下请求这个 ioctl, 它想在内核中睡眠直到这个 tty 设备的 MSR 寄存器发生某些事情. arg 参数包含用户在等待的事件类型. 这通常用来等待直到一个状态线变化, 指示有更多的数据发送给设备.</p>
+<p>当实现这个 ioctl 时要小心, 并且不要使用 interruptible_sleep_on 调用, 因为它是不安全的(有很多不好的竞争条件涉及它). 相反, 一个 wait_queue 应当用来避免这个问题. 这是一个如何实现这个 ioctl 的例子:</p>
+<pre class="programlisting">
+static int tiny_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg)
+{
+        struct tiny_serial *tiny = tty-&gt;driver_data;
+        if (cmd == TIOCMIWAIT)
+        {
+
+                DECLARE_WAITQUEUE(wait, current);
+                struct async_icount cnow;
+                struct async_icount cprev;
+                cprev = tiny-&gt;icount;
+                while (1) {
+
+                        add_wait_queue(&amp;tiny-&gt;wait, &amp;wait);
+                        set_current_state(TASK_INTERRUPTIBLE);
+                        schedule();
+                        remove_wait_queue(&amp;tiny-&gt;wait, &amp;wait); /* see if a signal woke us up */
+                        if (signal_pending(current))
+                                return -ERESTARTSYS;
+                        cnow = tiny-&gt;icount;
+                        if (cnow.rng == cprev.rng &amp;&amp; cnow.dsr == cprev.dsr &amp;&amp;
+                                        cnow.dcd == cprev.dcd &amp;&amp; cnow.cts == cprev.cts)
+                                return -EIO; /* no change =&gt; error */
+                        if (((arg &amp; TIOCM_RNG) &amp;&amp; (cnow.rng != cprev.rng)) || ((arg &amp; TIOCM_DSR) &amp;&amp; (cnow.dsr != cprev.dsr)) || ((arg &amp; TIOCM_CD) &amp;&amp; (cnow.dcd != cprev.dcd)) || ((arg &amp; TIOCM_CTS) &amp;&amp; (cnow.cts != cprev.cts)) ) {
+                                return 0;
+                        }
+                        cprev = cnow;
+
+                }
+        }
+        return -ENOIOCTLCMD;
+
+}
+</pre>
+<p>在 tty 驱动的代码中能知道 MSR 寄存器改变的某些地方, 下面的代码行必须调用以便这个代码能正常工作:</p>
+<pre class="programlisting">
+wake_up_interruptible(&amp;tp-&gt;wait);
+</pre>
+</dd>
+<dt><span class="term"><span>TIOCGICOUNT</span></span></dt>
+<dd><p>获得中断计数. 当用户要知道已经产生多少串口线中断时调用. 如果驱动有一个中断处理, 它应当定义一个内部计数器结构来跟踪这些统计和递增适当的计数器, 每次这个函数被内核运行时.</p></dd>
+</dl></div>
+<p>这个 ioctl 调用传递内核一个指向结构 serial_icounter_struct 的指针, 它应当被 tty 驱动填充. 这个调用常常和之前的 IOCMIWAIT ioctl 调用结合使用. 如果 tty 驱动跟踪所有的这些中断在驱动操作时, 实现这个调用的代码会非常简单:</p>
+<pre class="programlisting">
+static int tiny_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg)
+{
+        struct tiny_serial *tiny = tty-&gt;driver_data;
+        if (cmd == TIOCGICOUNT)
+        {
+                struct async_icount cnow = tiny-&gt;icount;
+                struct serial_icounter_struct icount;
+                icount.cts = cnow.cts;
+                icount.dsr = cnow.dsr;
+                icount.rng = cnow.rng;
+                icount.dcd = cnow.dcd;
+                icount.rx = cnow.rx;
+                icount.tx = cnow.tx;
+                icount.frame = cnow.frame;
+                icount.overrun = cnow.overrun;
+                icount.parity = cnow.parity;
+                icount.brk = cnow.brk;
+                icount.buf_overrun = cnow.buf_overrun;
+                if (copy_to_user((void __user *)arg, &amp;icount, sizeof(icount)))
+
+                        return -EFAULT;
+                return 0;
+        }
+        return -ENOIOCTLCMD;
+}
+</pre>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch18s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch18.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch18s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">18.3.&#160;TTY 线路设置&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;18.5.&#160;TTY 设备的 proc 和 sysfs 处理</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

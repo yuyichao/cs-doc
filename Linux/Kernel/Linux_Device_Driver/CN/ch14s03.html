@@ -1,0 +1,88 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>14.3.&#160;热插拔事件产生-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch14.html" title="第&#160;14&#160;章&#160;Linux 设备模型">
+<link rel="prev" href="ch14s02.html" title="14.2.&#160;低级 sysfs 操作">
+<link rel="next" href="ch14s04.html" title="14.4.&#160;总线, 设备, 和驱动">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">14.3.&#160;热插拔事件产生</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch14s02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;14&#160;章&#160;Linux 设备模型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch14s04.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="HotplugEventGeneration.sect"></a>14.3.&#160;热插拔事件产生</h2></div></div></div>
+<p>一个热插拔事件是一个从内核到用户空间的通知, 在系统配置中有事情已经改变. 无论何时一个 kobject 被创建或销毁就产生它们. 这样事件被产生, 例如, 当一个数字摄像头使用一个 USB 线缆插入, 当一个用户切换控制台模式, 或者当一个磁盘被重新分区. 热插拔事件转变为一个对 /sbin/hotplug 的调用, 它响应每个事件, 通过加载驱动, 创建设备节点, 安装分区, 或者采取任何其他的合适的动作.</p>
+<p>我们所见的最后一个主要的 kobject 函数是这些事件的产生. 实际的事件在当一个 kobject 传递到 kobject_add 或 kobject_del 时发生. 在这个事件被传递到用户空间之前, 和这个 kobject 关联的代码( 或者, 更特别的, 它所属的 kset )有机会来添加信息给用户空间或者来完全关闭事件的产生.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="HotplugOperations.sect"></a>14.3.1.&#160;热插拔操作</h3></div></div></div>
+<p>热插拔事件的实际控制是通过一套存储于 kset_hotplug_ops 结构的方法完成.</p>
+<pre class="programlisting">
+struct kset_hotplug_ops {
+ int (*filter)(struct kset *kset, struct kobject *kobj);
+ char *(*name)(struct kset *kset, struct kobject *kobj);
+ int (*hotplug)(struct kset *kset, struct kobject *kobj,
+ char **envp, int num_envp, char *buffer,
+ int buffer_size);
+};
+</pre>
+<p>一个指向这个结构的指针在 kset 结构的 hotplug_ops 成员中. 如果一个给定的 kobject 不包含在一个 kset 中, 内核搜索整个层次( 通过 parent 指针) 直到它发现一个 kobject 确实有一个 kset; 接着使用这个 kset 的热插拔操作.</p>
+<p>filter 热插拔操作被调用无论何时内核在考虑为给定 kobject 产生一个事件. 如果 filter 返回 0, 事件没有创建. 这个方法, 因此, 给 kset 代码一个机会来决定哪个事件应当被传递给用户空间以及哪个不.</p>
+<p>作为一个例子关于这个方法怎样被使用, 考虑块设备子系统. 至少有 3 类 kobject 用在那里, 表示磁盘, 分区, 和请求队列. 用户空间可能想对磁盘或分区的增加作出反应, 但是它正常地不关心请求队列. 因此 filter 方法允许事件产生只给代表磁盘和分区的 kobjects. 它看来如此:</p>
+<pre class="programlisting">
+static int block_hotplug_filter(struct kset *kset, struct kobject *kobj)
+{
+
+ struct kobj_type *ktype = get_ktype(kobj);
+    return ((ktype == &amp;ktype_block) || (ktype == &amp;ktype_part));
+}
+</pre>
+<p>这里, 一个快速的在 kobject 类型上的测试是足以决定是否这个事件应当产生或者不.</p>
+<p>当用户空间热插拔程序被调用, 它被传递给相关子系统的 name 作为它唯一的一个参数. name 热插拔方法负责提供这个名子. 它应当返回一个简单的适合传递给用户空间的字串.</p>
+<p>热插拔脚本的可能想知道的其他所有东东都在环境中传递. 最终的热插拔方法( hotplug )给了一个机会来在调用这个脚本之前添加有用的环境变量. 再次, 这个方法的原型是:</p>
+<pre class="programlisting">
+int (*hotplug)(struct kset *kset, struct kobject *kobj,
+ char **envp, int num_envp, char *buffer,
+ int buffer_size); 
+</pre>
+<p>如常, kset 和 kobject 描述事件产生给的对象. envp 数组是一个地方来存储额外的环境变量定义(以通常的 NAME=值 的格式); 它有 num_envp 个入口变量. 这些变量自身应当被编码入缓冲, 缓冲是 buffer_size 字节长. 如果你添加任何变量到 envp, 确信添加一个 NULL 入口在你最后的添加项后面, 这样内核知道结尾在哪里. 返回值正常应当是 0; 任何非零返回都终止热插拔事件的产生.</p>
+<p>热插拔事件的产生(象在设备模型中大部分工作)常常是由在总线驱动级的逻辑处理.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch14s02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch14.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch14s04.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">14.2.&#160;低级 sysfs 操作&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;14.4.&#160;总线, 设备, 和驱动</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

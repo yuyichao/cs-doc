@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4. 其它预处理特性</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch21.html" title="第 21 章 预处理" /><link rel="prev" href="ch21s03.html" title="3. 条件预处理指示" /><link rel="next" href="ch22.html" title="第 22 章 Makefile基础" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">4. 其它预处理特性</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch21s03.html">上一页</a> </td><th width="60%" align="center">第 21 章 预处理</th><td width="20%" align="right"> <a accesskey="n" href="ch22.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2799358"></a>4. 其它预处理特性</h2></div></div></div><p><code class="literal">#pragma</code>预处理指示供编译器实现一些非标准的特性，C标准没有规定<code class="literal">#pragma</code>后面应该写什么以及起什么作用，由编译器自己规定。有的编译器用<code class="literal">#pragma</code>定义一些特殊功能寄存器名，有的编译器用<code class="literal">#pragma</code>定位链接地址，本书不做深入讨论。如果编译器在代码中碰到不认识的<code class="literal">#pragma</code>指示则忽略它，例如<code class="literal">gcc</code>的<code class="literal">#pragma</code>指示都是<code class="literal">#pragma GCC ...</code>这种形式，用别的编译器编译则忽略这些指示。</p><p>C标准规定了几个特殊的宏，在不同的地方使用可以自动展开成不同的值，常用的有<code class="literal">__FILE__</code>和<code class="literal">__LINE__</code>，<code class="literal">__FILE__</code>展开为当前源文件的文件名，是一个字符串，<code class="literal">__LINE__</code>展开为当前代码行的行号，是一个整数。这两个宏在源代码中不同的位置使用会自动取不同的值，显然不是用<code class="literal">#define</code>能定义得出来的，它们是编译器内建的特殊的宏。在打印调试信息时打印这两个宏可以给开发者非常有用的提示，例如在<a class="xref" href="ch11s06.html#sortsearch.binary">第 6 节 “折半查找”</a>我们看到<code class="literal">assert</code>函数打印的错误信息就有<code class="literal">__FILE__</code>和<code class="literal">__LINE__</code>的值。现在我们自己实现这个<code class="literal">assert</code>函数，以理解它的原理。这个实现出自<a class="xref" href="bi01.html#bibli.standardclib" title="The Standard C Library">[<abbr class="abbrev">Standard C Library</abbr>]</a>：</p><div class="example"><a id="id2799502"></a><p class="title"><b>例 21.3. assert.h的一种实现</b></p><div class="example-contents"><pre class="programlisting">/* assert.h standard header */
+#undef assert	/* remove existing definition */
+
+#ifdef NDEBUG
+	#define assert(test)	((void)0)
+#else		/* NDEBUG not defined */
+	void _Assert(char *);
+	/* macros */
+	#define _STR(x) _VAL(x)
+	#define _VAL(x) #x
+	#define assert(test)	((test) ? (void)0 \
+		: _Assert(__FILE__ ":" _STR(__LINE__) " " #test))
+#endif</pre></div></div><br class="example-break" /><p>通过这个例子可以全面复习本章所讲的知识。C标准规定<code class="literal">assert</code>应该实现为宏定义而不是一个真正的函数，并且<code class="literal">assert(test)</code>这个表达式的值应该是<code class="literal">void</code>类型的。首先用<code class="literal">#undef assert</code>确保取消前面对<code class="literal">assert</code>的定义，然后分两种情况：如果定义了<code class="literal">NDEBUG</code>，那么<code class="literal">assert(test)</code>直接定义成一个<code class="literal">void</code>类型的值，什么也不做；如果没有定义<code class="literal">NDEBUG</code>，则要判断测试条件<code class="literal">test</code>是否成立，如果条件成立就什么也不做，如果不成立则调用<code class="literal">_Assert</code>函数。假设在<code class="literal">main.c</code>文件的第<code class="literal">33</code>行调用<code class="literal">assert(is_sorted())</code>，那么<code class="literal">__FILE__</code>是字符串<code class="literal">"main.c"</code>，<code class="literal">__LINE__</code>是整数<code class="literal">33</code>，<code class="literal">#test</code>是字符串<code class="literal">"is_sorted()"</code>。注意<code class="literal">_STR(__LINE__)</code>的展开过程：首先展开成<code class="literal">_VAL(33)</code>，然后进一步展开成字符串<code class="literal">"33"</code>。这样，最后<code class="literal">_Assert</code>调用的形式是<code class="literal">_Assert("main.c" ":" "33" " " "is_sorted()")</code>，传给<code class="literal">_Assert</code>函数的字符串是<code class="literal">"main.c:33 is_sorted()"</code>。<code class="literal">_Assert</code>函数是我们自己定义的，在另一个源文件中：</p><pre class="programlisting">/* xassert.c _Assert function */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+void _Assert(char *mesg)
+{		/* print assertion message and abort */
+	fputs(mesg, stderr);
+	fputs(" -- assertion failed\n", stderr);
+	abort();
+}</pre><p>注意，在头文件<code class="literal">assert.h</code>中自己定义的内部使用的标识符都以<code class="literal">_</code>线开头，例如<code class="literal">_STR</code>，<code class="literal">_VAL</code>，<code class="literal">_Assert</code>，因为我们在模拟C标准库的实现，在<a class="xref" href="expr.variable.html" title="3. 变量">第 3 节 “变量”</a>讲过，以<code class="literal">_</code>线开头的标识符通常由编译器和C语言库使用，在<code class="literal">/usr/include</code>下的头文件中你可以看到大量<code class="literal">_</code>线开头的标识符。另外一个问题，为什么我们不直接在<code class="literal">assert</code>的宏定义中调用<code class="literal">fputs</code>和<code class="literal">abort</code>呢？因为调用这两个函数需要包含<code class="literal">stdio.h</code>和<code class="literal">stdlib.h</code>，C标准库的头文件应该是相互独立的，一个程序只要包含<code class="literal">assert.h</code>就应该能使用<code class="literal">assert</code>，而不应该再依赖于别的头文件。<code class="literal">_Assert</code>中的<code class="literal">fputs</code>向标准错误输出打印错误信息，<code class="literal">abort</code>异常终止当前进程，这些函数以后再详细讨论。</p><p>现在测试一下我们的<code class="literal">assert</code>实现，把<code class="literal">assert.h</code>和<code class="literal">xassert.c</code>和测试代码<code class="literal">main.c</code>放在同一个目录下。</p><pre class="programlisting">/* main.c */
+#include "assert.h"
+
+int main(void)
+{
+	assert(2&gt;3);
+	return 0;
+}</pre><p>注意<code class="literal">#include "assert.h"</code>要用<code class="literal">"</code>引号而不要用<code class="literal">&lt;&gt;</code>括号，以保证包含的是我们自己写的<code class="literal">assert.h</code>而非C标准库的头文件。然后编译运行：</p><pre class="screen">$ gcc main.c xassert.c
+$ ./a.out
+main.c:6 2&gt;3 -- assertion failed
+Aborted</pre><p>在打印调试信息时除了文件名和行号之外还可以打印出当前函数名，C99引入一个特殊的标识符<code class="literal">__func__</code>支持这一功能。这个标识符应该是一个变量名而不是宏定义，不属于预处理的范畴，但它的作用和<code class="literal">__FILE__</code>、<code class="literal">__LINE__</code>类似，所以放在一起讲。例如：</p><div class="example"><a id="id2799927"></a><p class="title"><b>例 21.4. 特殊标识符__func__</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void myfunc(void)
+{
+	printf("%s\n", __func__);
+}
+
+int main(void)
+{
+	myfunc();
+	printf("%s\n", __func__);
+	return 0;
+}</pre></div></div><br class="example-break" /><pre class="screen">$ gcc main.c
+$ ./a.out 
+myfunc
+main</pre></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch21s03.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch21.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch22.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">3. 条件预处理指示 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 第 22 章 Makefile基础</td></tr></table></div></body></html>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 自定义函数</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch03.html" title="第 3 章 简单函数" /><link rel="prev" href="ch03s01.html" title="1. 数学函数" /><link rel="next" href="ch03s03.html" title="3. 形参和实参" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 自定义函数</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch03s01.html">上一页</a> </td><th width="60%" align="center">第 3 章 简单函数</th><td width="20%" align="right"> <a accesskey="n" href="ch03s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2712975"></a>2. 自定义函数</h2></div></div></div><p>我们不仅可以调用C标准库提供的函数，也可以定义自己的函数，事实上我们已经这么做了：我们定义了<code class="literal">main</code>函数。例如：</p><pre class="programlisting">int main(void)
+{
+	int hour = 11;
+	int minute = 59;
+	printf("%d and %d hours\n", hour, minute / 60);
+	return 0;
+}</pre><p><code class="literal">main</code>函数的特殊之处在于执行程序时它自动被操作系统调用，操作系统就认准了<code class="literal">main</code>这个名字，除了名字特殊之外，<code class="literal">main</code>函数和别的函数没有区别。我们对照着<code class="literal">main</code>函数的定义来看语法规则：</p><div class="literallayout"><p>函数定义 → 返回值类型 函数名(参数列表) 函数体<br />
+函数体 → { 语句列表 }<br />
+语句列表 → 语句列表项 语句列表项 ...<br />
+语句列表项 → 语句<br />
+语句列表项 → 变量声明、类型声明或非定义的函数声明<br />
+非定义的函数声明 → 返回值类型 函数名(参数列表);</p></div><p>我们稍后再详细解释“<span class="quote">函数定义</span>”和“<span class="quote">非定义的函数声明</span>”的区别。从<a class="xref" href="ch07.html#struct">第 7 章 <i>结构体</i></a>开始我们才会看到类型声明，所以现在暂不讨论。</p><p>给函数命名也要遵循上一章讲过的标识符命名规则。由于我们定义的<code class="literal">main</code>函数不带任何参数，参数列表应写成<code class="literal">void</code>。函数体可以由若干条语句和声明组成，C89要求所有声明写在所有语句之前（本书的示例代码都遵循这一规定），而C99的新特性允许语句和声明按任意顺序排列，只要每个标识符都遵循先声明后使用的原则就行。<code class="literal">main</code>函数的返回值是<code class="literal">int</code>型的，<code class="literal">return 0;</code>这个语句表示返回值是0，<code class="literal">main</code>函数的返回值是返回给操作系统看的，因为<code class="literal">main</code>函数是被操作系统调用的，通常程序执行成功就返回0，在执行过程中出错就返回一个非零值。比如我们将<code class="literal">main</code>函数中的<code class="literal">return</code>语句改为<code class="literal">return 4;</code>再执行它，执行结束后可以在Shell中看到它的退出状态（Exit Status）<a id="id2713122" class="indexterm"></a>：</p><pre class="screen">$ ./a.out 
+11 and 0 hours
+$ echo $?
+4</pre><p><code class="literal">$?</code>是Shell中的一个特殊变量，表示上一条命令的退出状态。关于<code class="literal">main</code>函数需要注意两点：</p><div class="orderedlist"><ol type="1"><li><p><a class="xref" href="bi01.html#bibli.kr" title="The C Programming Language">[<abbr class="abbrev">K&amp;R</abbr>]</a>书上的<code class="literal">main</code>函数定义写成<code class="literal">main(){...}</code>的形式，不写返回值类型也不写参数列表，这是Old Style C的风格。Old Style C规定不写返回值类型就表示返回<code class="literal">int</code>型，不写参数列表就表示参数类型和个数没有明确指出。这种宽松的规定使编译器无法检查程序中可能存在的Bug，增加了调试难度，不幸的是现在的C标准为了兼容旧的代码仍然保留了这种语法，但读者绝不应该继续使用这种语法。</p></li><li><p>其实操作系统在调用<code class="literal">main</code>函数时是传参数的，<code class="literal">main</code>函数最标准的形式应该是<code class="literal">int main(int argc, char *argv[])</code>，在<a class="xref" href="ch23s06.html#pointer.parray">第 6 节 “指向指针的指针与指针数组”</a>详细介绍。C标准也允许<code class="literal">int main(void)</code>这种写法，如果不使用系统传进来的两个参数也可以写成这种形式。但除了这两种形式之外，定义<code class="literal">main</code>函数的其它写法都是错误的或不可移植的。</p></li></ol></div><p>关于返回值和<code class="literal">return</code>语句我们将在<a class="xref" href="ch05s01.html#func2.return">第 1 节 “return语句”</a>详细讨论，我们先从不带参数也没有返回值的函数开始学习定义和使用函数：</p><div class="example"><a id="id2713244"></a><p class="title"><b>例 3.2. 最简单的自定义函数</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void newline(void)
+{
+	printf("\n");
+}
+
+int main(void)
+{
+	printf("First Line.\n");
+	newline();
+	printf("Second Line.\n");
+	return 0;
+}</pre></div></div><br class="example-break" /><p>执行结果是：</p><pre class="screen">First Line.
+
+Second Line.</pre><p>我们定义了一个<code class="literal">newline</code>函数给<code class="literal">main</code>函数调用，它的作用是打印一个换行，所以执行结果中间多了一个空行。<code class="literal">newline</code>函数不仅不带参数，也没有返回值，返回值类型为<code class="literal">void</code>表示没有返回值<sup>[<a id="id2713286" href="#ftn.id2713286" class="footnote">4</a>]</sup>，这说明我们调用这个函数完全是为了利用它的Side Effect。如果我们想要多次插入空行就可以多次调用<code class="literal">newline</code>函数：</p><pre class="programlisting">int main(void)
+{
+	printf("First Line.\n");
+	newline();
+	newline();
+	newline();
+	printf("Second Line.\n");
+	return 0;
+}</pre><p>如果我们总需要三个三个地插入空行，我们可以再定义一个<code class="literal">threeline</code>函数每次插入三个空行：</p><div class="example"><a id="id2713366"></a><p class="title"><b>例 3.3. 较简单的自定义函数</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void newline(void)
+{
+	printf("\n");
+}
+
+void threeline(void)
+{
+	newline();
+	newline();
+	newline();
+}
+
+int main(void)
+{
+	printf("Three lines:\n");
+	threeline();
+	printf("Another three lines.\n");
+	threeline();
+	return 0;
+}</pre></div></div><br class="example-break" /><p>通过这个简单的例子可以体会到：</p><div class="orderedlist"><ol type="1"><li><p>同一个函数可以被多次调用。</p></li><li><p>可以用一个函数调用另一个函数，后者再去调第三个函数。</p></li><li><p>通过自定义函数可以给一组复杂的操作起一个简单的名字，例如<code class="literal">threeline</code>。对于<code class="literal">main</code>函数来说，只需要通过<code class="literal">threeline</code>这个简单的名字来调用就行了，不必知道打印三个空行具体怎么做，所有的复杂操作都被隐藏在<code class="literal">threeline</code>这个名字后面。</p></li><li><p>使用自定义函数可以使代码更简洁，<code class="literal">main</code>函数在任何地方想打印三个空行只需调用一个简单的<code class="literal">threeline()</code>，而不必每次都写三个<code class="literal">printf("\n")</code>。</p></li></ol></div><p>读代码和读文章不一样，按从上到下从左到右的顺序读代码未必是最好的。比如上面的例子，按源文件的顺序应该是先看<code class="literal">newline</code>再看<code class="literal">threeline</code>再看<code class="literal">main</code>。如果你换一个角度，按代码的执行顺序来读也许会更好：首先执行的是<code class="literal">main</code>函数中的语句，在一条<code class="literal">printf</code>之后调用了<code class="literal">threeline</code>，这时再去看<code class="literal">threeline</code>的定义，其中又调用了<code class="literal">newline</code>，这时再去看<code class="literal">newline</code>的定义，<code class="literal">newline</code>里面有一条<code class="literal">printf</code>，执行完成后返回<code class="literal">threeline</code>，这里还剩下两次<code class="literal">newline</code>调用，效果也都一样，执行完之后返回<code class="literal">main</code>，接下来又是一条<code class="literal">printf</code>和一条<code class="literal">threeline</code>。如下图所示：</p><div class="figure"><a id="id2713546"></a><p class="title"><b>图 3.1. 函数调用的执行顺序</b></p><div class="figure-contents"><div><img src="images/func.funccall.png" alt="函数调用的执行顺序" /></div></div></div><br class="figure-break" /><p>读代码的过程就是模仿计算机执行程序的过程，我们不仅要记住当前读到了哪一行代码，还要记住现在读的代码是被哪个函数调用的，这段代码返回后应该从上一个函数的什么地方接着往下读。</p><p>现在澄清一下函数声明、函数定义、函数原型（Prototype）<a id="id2713570" class="indexterm"></a>这几个概念。比如<code class="literal">void threeline(void)</code>这一行，声明了一个函数的名字、参数类型和个数、返回值类型，这称为函数原型。在代码中可以单独写一个函数原型，后面加<code class="literal">;</code>号结束，而不写函数体，例如：</p><pre class="programlisting">void threeline(void);</pre><p>这种写法只能叫函数声明而不能叫函数定义，只有带函数体的声明才叫定义。上一章讲过，只有分配存储空间的变量声明才叫变量定义，其实函数也是一样，编译器只有见到函数定义才会生成指令，而指令在程序运行时当然也要占存储空间。那么没有函数体的函数声明有什么用呢？它为编译器提供了有用的信息，编译器在翻译代码的过程中，只有见到函数原型（不管带不带函数体）之后才知道这个函数的名字、参数类型和返回值，这样碰到函数调用时才知道怎么生成相应的指令，所以函数原型必须出现在函数调用之前，这也是遵循“<span class="quote">先声明后使用</span>”的原则。</p><p>在上面的例子中，<code class="literal">main</code>调用<code class="literal">threeline</code>，<code class="literal">threeline</code>再调用<code class="literal">newline</code>，要保证每个函数的原型出现在调用之前，就只能按先<code class="literal">newline</code>再<code class="literal">threeline</code>再<code class="literal">main</code>的顺序定义了。如果使用不带函数体的声明，则可以改变函数的定义顺序：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+void newline(void);
+void threeline(void);
+
+int main(void)
+{
+	...
+}
+
+void newline(void)
+{
+	...
+}
+
+void threeline(void)
+{
+	...
+}</pre><p>这样仍然遵循了先声明后使用的原则。</p><p>由于有Old Style C语法的存在，并非所有函数声明都包含完整的函数原型，例如<code class="literal">void threeline();</code>这个声明并没有明确指出参数类型和个数，所以不算函数原型，这个声明提供给编译器的信息只有函数名和返回值类型。如果在这样的声明之后调用函数，编译器不知道参数的类型和个数，就不会做语法检查，所以很容易引入Bug。读者需要了解这个知识点以便维护别人用Old Style C风格写的代码，但绝不应该按这种风格写新的代码。</p><p>如果在调用函数之前没有声明会怎么样呢？有的读者也许碰到过这种情况，我可以解释一下，但绝不推荐这种写法。比如按上面的顺序定义这三个函数，但是把开头的两行声明去掉：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	printf("Three lines:\n");
+	threeline();
+	printf("Another three lines.\n");
+	threeline();
+	return 0;
+}
+
+void newline(void)
+{
+	printf("\n");
+}
+
+void threeline(void)
+{
+	newline();
+	newline();
+	newline();
+}</pre><p>编译时会报警告：</p><pre class="screen">$ gcc main.c
+main.c:17: warning: conflicting types for ‘threeline’
+main.c:6: warning: previous implicit declaration of ‘threeline’ was here</pre><p>但仍然能编译通过，运行结果也对。这里涉及到的规则称为函数的隐式声明（Implicit Declaration）<a id="id2713730" class="indexterm"></a>，在<code class="literal">main</code>函数中调用<code class="literal">threeline</code>时并没有声明它，编译器认为此处隐式声明了<code class="literal">int threeline(void);</code>，隐式声明的函数返回值类型都是<code class="literal">int</code>，由于我们调用这个函数时没有传任何参数，所以编译器认为这个隐式声明的参数类型是<code class="literal">void</code>，这样函数的参数和返回值类型都确定下来了，编译器根据这些信息为函数调用生成相应的指令。然后编译器接着往下看，看到<code class="literal">threeline</code>函数的原型是<code class="literal">void threeline(void)</code>，和先前的隐式声明的返回值类型不符，所以报警告。好在我们也没用到这个函数的返回值，所以执行结果仍然正确。</p><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2713286" href="#id2713286" class="para">4</a>] </sup>敏锐的读者可能会发现一个矛盾：如果函数<code class="literal">newline</code>没有返回值，那么表达式<code class="literal">newline()</code>不就没有值了吗？然而上一章讲过任何表达式都有值和类型两个基本属性。其实这正是设计<code class="literal">void</code>这么一个关键字的原因：首先从语法上规定没有返回值的函数调用表达式有一个<code class="literal">void</code>类型的值，这样任何表达式都有值，不必考虑特殊情况，编译器的语法解析比较容易实现；然后从语义上规定<code class="literal">void</code>类型的表达式不能参与运算，因此<code class="literal">newline() + 1</code>这样的表达式不能通过语义检查，从而兼顾了语法上的一致和语义上的不矛盾。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch03s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch03.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch03s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 数学函数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 形参和实参</td></tr></table></div></body></html>

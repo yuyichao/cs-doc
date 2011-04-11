@@ -1,0 +1,232 @@
+<html>
+<head>
+<title>LaTeX Chinese Solutions</title>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="tex.css" media="screen">
+</head>
+<body>
+
+<H1>LaTeX中文解决方案集锦</H1>
+
+<p>LaTeX 处理汉字的时候主要是用 CJK 宏包。这里收集了一些中文处理的常见问题和解决办法。
+<OL>
+<LI>首段缩进
+<p style="text-indent:0">每一章，每一节的开头不缩进是很多人抱怨 “CJK 不符合中国人习惯”的头号原因。但是其实你可以改变这一切。CJK 提供的只是编码，而不是样式。
+
+<p>CJK 是德国人设计的，他不懂中国人的习惯，但是他设计的编码方式完全可以为我们提供任何可能处理中文的“理论基础”，我们只需要制定自己的“有中国特色的样式”。中国人的样式必需由中国人自己来制定。这就使我想起了另外两个德国人，还有一位中国老人…… :)
+
+<p>通常英语文章在一节开始时的第一段是不缩进的。而在第二段就会缩进 \parindent 的距离。不赖烦的人请现在就在你的文档开头加入：
+<pre>
+\usepackage{indentfirst}
+</pre>
+<p>然后跳到<a href="tex_chinese.html#next2">下一个点子</a>。
+
+<p>如果你设置:
+<pre>
+\setlength{\parindent}{2em}
+</pre>
+
+<p>你就可以得到像这样的缩进两个字的效果。但是第一段仍然没有缩进。为了让第一段缩进。你可以使用 indentfirst 宏包，它会使整篇文章的首段都有缩进。它其实只有两句话：
+<pre>
+\let\@afterindentfalse\@afterindenttrue
+\@afterindenttrue
+</pre>
+
+<p>如果你只想让你的某一节首行有缩进，可以这么做：
+<pre>
+\makeatletter
+\let\@afterindentrestore\@afterindentfalse
+\let\@afterindentfalse\@afterindenttrue
+\@afterindenttrue
+\makeatother
+</pre>
+
+<p>这样之后的章节第一段都会缩进当前的 \parindent 那么多距离。
+
+<p>由于刚才我们用 \@afterindentrestore 存储了 \@afterindentfalse= 的定义。现在我们使用：
+<pre>
+\makeatletter
+\let\@afterindentfalse\@afterindentrestore
+\@afterindentrestore
+\makeatother
+</pre>
+
+<p>这下第一段又没有缩进了。你可以把这堆命令都用 \newcommand 设成新的命令，用起来就方便了。
+
+<LI>怎样用 hyperref 生成含有中文 bookmark 的 PDF 文件?<a name=next2></a>
+<p style="text-indent:0">使用 hyperref 的时候加入 CJKbookmarks 选项就行了:
+<pre>
+\usepackage[CJKbookmarks]{hyperref}
+</pre>
+
+<p>如果你使用 dvipdfm，需要再加一个 dvipdfm 的选项：
+<pre>
+\usepackage[dvipdfm,CJKbookmarks]{hyperref}
+</pre>
+
+<p>如果你想用 Unicode 的 bookmark，就加上 unicode 选项：
+<pre>
+\usepackage[unicode,CJKbookmarks]{hyperref}
+</pre>
+
+<p>好了，不耐烦的人请跳到<a href="tex_chinese.html#next">下一个点子</a> :) 不过如果你有兴趣看一下我昨天晚上怎么 hack 了 hyperref，就看看我的分析：
+
+<p>我以前不知道hyperref已经有 CJKbookmarks 选项，所以昨天我想了一晚上，自己想出个方法，就是：
+<p>在 \usepackage{hyperref} 之后加上这样一句：
+<pre>
+\pdfstringdefDisableCommands{
+\let\CJK@XX\relax
+\let\CJK@XXX\relax
+\let\CJK@XXXp\relax
+\let\CJK@XXXX\relax
+\let\CJK@XXXXp\relax
+}
+</pre>
+<p>完成！直接运行 pdflatex 两次就可以得到有中文bookmark的PDF。嘿嘿！
+
+<p>由于 hyperref 与 CJK 宏包的不融合，以前如果要生成中文bookmark的PDF文件，需要进行以下工作：
+
+<OL style="list-style-type: decimal">
+	
+<LI>在文档里 \usepackage{hyperref} 之后加入以下内容：
+<pre>
+\PackageWarningNoLine{hyperref}{%
+	CJK characters are disabled in bookmarks}
+\pdfstringdefDisableCommands{%
+      \let\CJK@ignorespaces\empty%
+      \def\CJK@char#1{\@gobbletwo}%
+      \let\CJK@charx\@gobblefour%
+      \let\CJK@punctchar\@gobblefour%
+      \def\CJK@punktcharx#1{\@gobblefour}%
+}
+</pre>
+
+<LI>第一次运行 pdflatex 后运行 energy 的 aux2out 或者 toc2out 程序。
+<LI>再次运行 pdflatex
+</OL>
+
+<p>这样做不但麻烦，而且有个不明显的坏处。由于 aux2out 和 toc2out 从 aux 和 toc 文件里提取目录，它不能完全发挥 TeX 语言的作用，当你的章节里出现控制命令就会出错。比如，如果你有这样一个小节：
+
+<pre>
+\section{example of the \textsf{hhline} package}
+</pre>
+
+<p>toc2out 会把 \textsf{hhline} 里的内容全部去掉，这样你得到的就是这样一个 bookmark: "example of the package"。"hhline" 就消失了！
+
+<p>其实hyperref设计时就考虑到了这种情况，它设计了一个命令：
+<pre>
+\pdfstringdefDisableCommands
+</pre>
+
+<p>它的定义就是当生成 bookmark 时，我们需要对原来的文档进行的变化，比如，上面这个例子：
+<pre>
+\section{example of the \textsf{hhline} package}
+</pre>
+
+<p>如果我们
+<pre>
+\def\pdfstringdefDisableCommands{\let\textsf\relax}
+</pre>
+<p>就可以保留 hhline 在 bookmark 中。
+
+<p>这样我就有了一个中文 bookmark 的最简单的解决方案，完全可以不用外部程序。
+方法就是：在 \usepackage{hyperref} 之后加上这样一句：
+
+<pre>
+\pdfstringdefDisableCommands{
+\let\CJK@XX\relax
+\let\CJK@XXX\relax
+\let\CJK@XXXp\relax
+\let\CJK@XXXX\relax
+\let\CJK@XXXXp\relax
+}
+</pre>
+
+<p>这样，当生成 bookmark 时，GBK 的汉字被原封不动保留下来放到 .out 文件里。从而可以生成正确的中文 bookmark. 你还可以把
+
+<pre>
+\let\CJK@XX\relax
+\let\CJK@XXX\relax
+\let\CJK@XXXp\relax
+\let\CJK@XXXX\relax
+\let\CJK@XXXXp\relax
+</pre>
+
+<p>都写到 hyperref.sty 的 \def\pdfstringdef#1#2{....} 里，这样直接用 hyperref 就可以生成中文 pdf bookmark 了！
+
+<p>这种办法比起 hyperref 现在的方法有一个好处。因为汉字首先是通过 \CJK@XX, \CJK@XXX, ...  转化为 CJK 内部代码的。hyperref 现在的方法相当于在输出 .out 文件的时候把 CJK 内部码又转回 GBK 码或者 Unicode。我的办法是直接把 \CJK@XX, \CJK@XXX, ... 设为 \relax 让它们对汉字不起作用。这样汉字编码直接进入了 .out 文件，更加直接快速。
+
+<p>不过如果想要得到 Unicode 的汉字 bookmark, 需要实现更加直接的办法把 GBK 转到 Unic，我还不知道怎么转，编码的东西太烦人 :P 如果你的汉字不是 GBK, Unicode, 而是 HZ, BIG5, GB18030, 还是什么其它语言，... 你知道了这些，在将来的编码扩展中会更加容易解决问题，如果你遇到这种情况就可以在\pdfstringdefDisableCommands里加入你的东西。
+
+<LI>怎样让汉字可以显示粗体？<a name=next></a>
+<p>你是否发现，在 \section 标号的小节中，英语是粗体表示的，而汉字却没有变化？很多时候你想让汉字也成为粗体。
+
+<p>如果你用 \textbf{你好}, 你会发现根本没有变化。就像你在 Word 里使用“粗体”，打印出来也没有粗体效果一样。因为 Word 其实只是显示在屏幕上的时候让你看到很“粗”，但是其实你没有“粗宋体”这个字体，它打印时是不会打印出粗体的。Word 还有很多比如“下划线”之类的字体变化，但是实际上那些都是不符合排版的美学的。
+
+
+<p>CJK 宏包为没有粗体的人提供了一个“穷人”的办法：在 CJK 的字体定义文件中设置 \CJKbold. 看看你的 c19song.fd 里是否有以下内容：
+<pre>
+\DeclareFontFamily{C19}{song}{}
+\DeclareFontShape{C19}{song}{m}{n}{<-> CJK * gbksong}{}
+\DeclareFontShape{C19}{song}{bx}{n}{<-> CJKb * gbksong}{\CJKbold}
+\DeclareFontShape{C19}{song}{m}{it}{<-> CJK * gbksongsl}{}
+\DeclareFontShape{C19}{song}{bx}{it}{<-> CJKb * gbksongsl}{}
+\DeclareFontShape{C19}{song}{m}{sl}{<-> CJK * gbksongsl}{\CJKbold}
+\DeclareFontShape{C19}{song}{bx}{sl}{<-> CJKb * gbksongsl}{}
+\endinput
+</pre>
+
+<p>如果有的话，你用 \textbf{粗体} 就会得到一种“穷人的粗体”，它是把宋体汉字平移了三次重合在一起实现的，看看你的 CJK.sty 有如下定义：
+<pre>
+\DeclareRobustCommand{\CJKsymbols}[2]{
+  \char #1\char #2\relax
+  \ifCJK@bold@
+    \hbox to \CJKboldshift{\hss\char #1\char #2}
+    \hbox to \CJKboldshift{\hss\char #1\char #2}
+  \fi}
+</pre>
+
+<p>这样的到的粗体显然是非常难看的，在PDF文件里显示明显有“彩虹”效果！根本不能用。所以 gbkfonts 生成的 fd 文件全部去掉了这个选项。
+
+<p>字体不是一个你想怎么变就可以怎么变的东西，它如果设计的时候就不是粗体，那你是不可能把它变成粗体的。如果你用LaTeX缺省的英文字体，一般的时候是 cmr10, 用粗体的时候其实用的是 cmbx10。 cmr10 和 cmbx10 是同一家族(Computer Modern)的两种不同的字体。cmbx 并不是 cmr 做了什么几何变换得到的，甚至 cmr10 也跟本不是 cmr5 扩大了两倍变出来的！
+
+<p>字体都是专门的设计，每一个尺寸的每一笔每一划都经过了字体设计者的精雕细琢。它们有的也可以变化大小，比如很多TrueType和Type1字体都可以随意变化尺寸，但是它们对每一个尺寸范围都设置了不同的参数，这并不是一个等比例的“缩放”过程。如果你把一个LaTeX文档里的 5pt TrueType 字体抓图抓下来，然后用一个图像处理程序(比如 ImageMagick)把图片扩大到原来的两倍，跟你在文档里直接用这个字体的 10pt 的效果肯定不一样，字体的长宽比例，甚至很多弧线的角度都有很大差别。
+
+<p>“原设计”只有放在“原尺寸”才是最好看的，更不用说“粗体”和“普通体”之间这么巨大的变化了。如果你简单的把普通字体经过什么几何变换得到一个“粗体”，那么它在美学上是过不了关的，你的字符会“不融合”，使得文档“黑白不均”，文档的整体效果会受到很大影响。
+
+<p>所以，你不应该把你正在用的这个“宋体”变“粗”，而必须去找专门的“粗宋体”来用。但是如果你没有，那就用黑体代替好了。
+
+<p>做法是这样：当要求使用粗体(bx)的时候，用黑体代换。你可以把你的 c19song.fd, c19kai.fd, ... 都改成如下的样子：
+
+<pre>
+\DeclareFontFamily{C19}{song}{}
+\DeclareFontShape{C19}{song}{m}{n}{<-> CJK * gbksong}{}
+\DeclareFontShape{C19}{song}{bx}{n}{<-> CJKb * gbkhei}{}
+\DeclareFontShape{C19}{song}{m}{it}{<-> CJK * gbksongsl}{}
+\DeclareFontShape{C19}{song}{bx}{it}{<-> CJKb * gbkheisl}{}
+\DeclareFontShape{C19}{song}{m}{sl}{<-> CJK * gbksongsl}{}
+\DeclareFontShape{C19}{song}{bx}{sl}{<-> CJKb * gbkheisl}{}
+\endinput
+</pre>
+
+<p>这样黑体就会作为“粗体”出现在章节标题，粗体环境中了。
+
+<p>如果你运气好，你有一个真正的漂亮的“粗宋体”，比如它的名字叫做 gbkBsong。你就可以仿造上面在 c19song.fd 加入：
+<pre>
+\DeclareFontShape{C19}{song}{bx}{n}{<-> CJKb * gbkBsong}{}
+</pre>
+
+<p>如果你还有一个“粗楷体”叫做 gbkBkai。你就依葫芦画瓢，修改 c19kai.fd:
+<pre>
+\DeclareFontShape{C19}{kai}{bx}{n}{<-> CJKb * gbkBkai}{}
+</pre>
+
+
+
+<LI>待续……
+
+</OL>
+
+</body>
+</html>
+

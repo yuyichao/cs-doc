@@ -1,0 +1,652 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>5.3. Semaphores and Mutexes</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-5-sect-2.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-5-sect-4.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><TD valign="top"><a name="chp-5-sect-3"></a>
+<h3 class="docSection1Title">5.3. Semaphores and Mutexes</h3>
+
+<p class="docText">So let us look at how we
+can<a name="chp-5-ITERM-4970"></a>
+<a name="chp-5-ITERM-4971"></a>
+<a name="chp-5-ITERM-4972"></a>
+<a name="chp-5-ITERM-4973"></a>
+<a name="chp-5-ITERM-4974"></a>
+<a name="chp-5-ITERM-4975"></a>
+<a name="chp-5-ITERM-4976"></a>
+<a name="chp-5-ITERM-4977"></a> add locking to
+<span class="docEmphasis">scull</span>. Our goal is to make our operations on the
+<span class="docEmphasis">scull</span> data structure
+<i>atomic</i>, meaning that the entire operation
+happens at once as far as other threads of execution are concerned.
+For our memory leak example, we need to ensure that if one thread
+finds that a particular chunk of memory must be allocated, it has the
+opportunity to perform that allocation before any other thread can
+make that test. To this end, we must set up <I>critical
+sections</I>: code that can be executed by only one thread at
+any given time.</P>
+
+<p class="docText">Not all <a name="chp-5-ITERM-4978"></a>
+<a name="chp-5-ITERM-4979"></a>critical sections are the same, so
+the kernel provides different primitives for different needs. In this
+case, every access to the <span class="docEmphasis">scull</span> data structure
+happens in process context as a result of a direct user request; no
+accesses will be made from interrupt handlers or other asynchronous
+contexts. There are no particular latency (response time)
+requirements; application programmers understand that I/O requests
+are not usually satisfied immediately. Furthermore, the
+<span class="docEmphasis">scull</span> is not holding any other critical system
+resource while it is accessing its own data structures. What all this
+means is that if the <span class="docEmphasis">scull</span> driver goes to sleep
+while waiting for its turn to access the data structure, nobody is
+going to mind.</p>
+
+<p class="docText">"Go to sleep" is a well-defined
+term in this context. When a Linux process reaches a point where it
+cannot make any further processes, it goes to sleep (or
+"blocks"), yielding the processor
+to somebody else until some future time when it can get work done
+again. Processes often sleep when waiting for I/O to complete. As we
+get deeper into the kernel, we will encounter a number of situations
+where we cannot sleep. The <span class="docEmphasis">write</span> method in
+<span class="docEmphasis">scull</span> is not one of those situations, however.
+So we can use a locking mechanism that might cause the process to
+sleep while waiting for access to the critical section.</P>
+
+<p class="docText">Just as importantly, we will be performing an operation (memory
+allocation with <span class="docEmphasis">kmalloc</span>) that could
+sleep—so
+<a name="chp-5-ITERM-4980"></a>sleeps
+are a possibility in any case. If our critical sections are to work
+properly, we must use a locking primitive that works when a thread
+that owns the lock sleeps. Not all locking mechanisms can be used
+where sleeping is a possibility (we'll see some that
+don't later in this chapter). For our present needs,
+however, the mechanism that fits best is a
+<I>semaphore</i>.</p>
+
+<p class="docText">Semaphores are a well-understood concept in computer science. At its
+core, a semaphore is a single integer value combined with a pair of
+<a name="chp-5-ITERM-4981"></a>functions
+that are typically called <span class="docEmphasis">P</span> and
+<span class="docEmphasis">V</span>. A process wishing to enter a critical section
+will call <span class="docEmphasis">P</span> on the relevant semaphore; if the
+semaphore's value is greater than zero, that value
+is decremented by one and the process continues. If, instead, the
+semaphore's value is <tt>0</tt> (or less),
+the process must wait until somebody else releases the semaphore.
+<a name="chp-5-ITERM-4982"></a>
+<a name="chp-5-ITERM-4983"></a>Unlocking
+a semaphore is accomplished by calling <span class="docEmphasis">V</span>; this
+function increments the value of the semaphore and, if necessary,
+wakes up processes that are waiting.</p>
+
+<p class="docText">When semaphores are used for <i>mutual
+exclusion</I>—keeping multiple processes from running
+within a critical section simultaneously—their value will be
+initially set to <tt>1</tt>. Such a semaphore can be held
+only by a single process or thread at any given time. A semaphore
+used in this mode is sometimes called a <i>mutex</i>,
+which is, of course, an abbreviation for "mutual
+exclusion." Almost all semaphores found in the Linux
+kernel are used for mutual exclusion.</P>
+
+<a name="chp-5-sect-3.1"></a>
+<h4 class="docSection2Title">5.3.1. The Linux Semaphore Implementation</h4>
+
+<p class="docText">The Linux kernel <a name="chp-5-ITERM-4984"></a>
+<a name="chp-5-ITERM-4985"></a>
+<a name="chp-5-ITERM-4986"></a> <a name="chp-5-ITERM-4987"></a>provides
+an implementation of semaphores that conforms to the above semantics,
+although the terminology is a little different. To use semaphores,
+kernel code must include
+<I>&lt;asm/semaphore.h&gt;</i>. The relevant type is
+<tt>struct</tt> <tt>semaphore</tt>; actual
+semaphores can be declared and initialized in a few ways. One is to
+create a semaphore directly, then set it up with
+<span class="docEmphasis">sema_init</span>:</P>
+
+<pre>void sema_init(struct semaphore *sem, int val);</pre><br>
+
+
+<p class="docText">where <tt>val</tt> is the initial value to assign to a
+semaphore.</p>
+
+<p class="docText">Usually, however, semaphores are used in a mutex mode. To make this
+common case a little easier, the kernel has provided a set of helper
+functions and macros. Thus, a mutex can be declared and initialized
+with one of the following:</p>
+
+<pre>DECLARE_MUTEX(name);
+DECLARE_MUTEX_LOCKED(name);</pre><br>
+
+
+<p class="docText">Here, the result is a semaphore variable (called
+<tt>name</tt>) that is initialized to <tt>1</tt>
+(with <tt>DECLARE_MUTEX</tt>)
+<a name="chp-5-ITERM-4988"></a>
+<a name="chp-5-ITERM-4989"></a>or
+<tt>0</tt> (with <tt>DECLARE_MUTEX_LOCKED</tt>).
+In the latter case, the mutex starts out in a locked state; it will
+have to be explicitly unlocked before any thread will be allowed
+access.</p>
+
+<p class="docText">If the mutex must be initialized at runtime (which is the case if it
+is allocated dynamically, for example), use one of the following:</p>
+
+<pre>void init_MUTEX(struct semaphore *sem);
+void init_MUTEX_LOCKED(struct semaphore *sem);</pre><br>
+
+
+<p class="docText">In the Linux world, the <span class="docEmphasis">P</span> function is called
+<span class="docEmphasis">down</span>—or some variation of that name. Here,
+"down" refers to the fact that the
+function decrements the value of the semaphore and, perhaps after
+putting the caller to sleep for a while to wait for the semaphore to
+become available, grants access to the protected resources. There are
+three versions of <span class="docEmphasis">down</span>:</p>
+
+<pre>void down(struct semaphore *sem);
+int down_interruptible(struct semaphore *sem);
+int down_trylock(struct semaphore *sem);</pre><br>
+
+
+<p class="docText"><span class="docEmphasis">down</span> decrements <a name="chp-5-ITERM-4990"></a>
+<a name="chp-5-ITERM-4991"></a>the
+value of the semaphore and waits as long as need be.
+<span class="docEmphasis">down_interruptible</span> does the same, but the
+operation is interruptible. The interruptible version is almost
+always the one you will want; it allows a user-space process that is
+waiting on a semaphore to be interrupted by the user. You do not, as
+a general rule, want to use noninterruptible operations unless there
+truly is no alternative. Non-interruptible operations are a good way
+to create unkillable processes (the dreaded "D
+state" seen in <span class="docEmphasis">ps</span>), and annoy
+your users. Using <span class="docEmphasis">down_interruptible</span> requires
+some extra care, however, if the operation is interrupted, the
+function returns a nonzero value, and the caller does
+<span class="docEmphasis">not</span> hold the semaphore. Proper use of
+<span class="docEmphasis">down_interruptible</span> requires always checking the
+return value and responding accordingly.</p>
+
+<p class="docText">The final version (<span class="docEmphasis">down_trylock</span>) never sleeps;
+if the semaphore is not available at the time of the call,
+<span class="docEmphasis">down_trylock</span> returns immediately with a nonzero
+return value.</p>
+
+<p class="docText">Once a thread has successfully called one of the versions of
+<span class="docEmphasis">down</span>, it is said to be
+"holding" the semaphore (or to have
+"taken out" or
+"acquired" the semaphore). That
+thread is now entitled to access the critical section protected by
+the semaphore. When the operations requiring mutual exclusion are
+complete, the semaphore must be returned. The Linux equivalent to
+<span class="docEmphasis">V</span> is <span class="docEmphasis">up</span>:</p>
+
+<pre>void up(struct semaphore *sem);</pre><br>
+
+
+<p class="docText">Once <span class="docEmphasis">up</span> has been called,<a name="chp-5-ITERM-4992"></a>
+<a name="chp-5-ITERM-4993"></a>
+the caller no longer holds the semaphore.</P>
+
+<p class="docText">As you would expect, any thread that takes out a semaphore is
+required to release it with one (and only one) call to
+<span class="docEmphasis">up</span>. Special care is often required in error
+paths; if an error is encountered while a semaphore is held, that
+<a name="chp-5-ITERM-4994"></a>semaphore
+must be released before returning the error status to the caller.
+Failure to free a semaphore is an easy error to make; the result
+(processes hanging in seemingly unrelated places) can be hard to
+reproduce and track down.</p>
+
+
+<a name="chp-5-sect-3.2"></a>
+<H4 class="docSection2Title">5.3.2. Using Semaphores in scull</H4>
+
+<p class="docText">The semaphore mechanism gives <span class="docEmphasis">scull</span>
+<a name="chp-5-ITERM-4995"></a>a
+tool that can be used to avoid race conditions while accessing the
+<tt>scull_dev</tt> data structure. But it is up to us to
+use that tool correctly. The keys to proper use of locking primitives
+are to specify exactly which resources are to be protected and to
+make sure that every access to those resources uses the proper
+locking. In our example driver, everything of interest is contained
+within the <tt>scull_dev</tt> structure, so that is the
+logical scope for our locking regime.</p>
+
+<p class="docText">Let's look again at that structure:</p>
+
+<pre>struct scull_dev {
+    struct scull_qset *data;  /* Pointer to first quantum set */
+    int quantum;              /* the current quantum size */
+    int qset;                 /* the current array size */
+    unsigned long size;       /* amount of data stored here */
+    unsigned int access_key;  /* used by sculluid and scullpriv */
+    struct semaphore sem;     /* mutual exclusion semaphore     */
+    struct cdev cdev;     /* Char device structure      */
+};</pre><br>
+
+
+<p class="docText">Toward the bottom of the structure is a member called
+<tt>sem</tt> which is, of course, our semaphore. We have
+chosen to use a separate semaphore for each virtual
+<span class="docEmphasis">scull</span> device. It would have been equally correct
+to use a single, global semaphore. The various
+<span class="docEmphasis">scull</span> devices share no resources in common,
+however, and there is no reason to make one process wait while
+another process is working with a different
+<span class="docEmphasis">scull</span> device. Using a separate semaphore for
+each device allows operations on different devices to proceed in
+parallel and, therefore, improves performance.</P>
+
+<p class="docText">Semaphores must be initialized before use. <span class="docEmphasis">scull</span>
+performs this initialization at load time in this loop:</p>
+
+<pre>    for (i = 0; i &lt; scull_nr_devs; i++) {
+        scull_devices[i].quantum = scull_quantum;
+        scull_devices[i].qset = scull_qset;
+        init_MUTEX(&amp;scull_devices[i].sem);
+        scull_setup_cdev(&amp;scull_devices[i], i);
+    }</pre><BR>
+
+
+<p class="docText">Note that the semaphore must be initialized
+<span class="docEmphasis">before</span> the <span class="docEmphasis">scull</span> device is
+made available to the rest of the system. Therefore,
+<span class="docEmphasis">init_MUTEX</span> is called before
+<span class="docEmphasis">scull_setup_cdev</span>. Performing these operations in
+the opposite order would create a race condition where the semaphore
+could be accessed before it is ready.</P>
+
+<p class="docText">Next, we must go through the code and make sure that no accesses to
+the <tt>scull_dev</tt> data structure are made without
+holding the semaphore. Thus, for example,
+<span class="docEmphasis">scull_write</span> begins with this code:</P>
+
+<pre>    if (down_interruptible(&amp;dev-&gt;sem))
+        return -ERESTARTSYS;</pre><br>
+
+
+<p class="docText">Note the check on the return value of
+<span class="docEmphasis">down_interruptible</span>; if it returns nonzero, the
+operation was interrupted. The usual thing to do in this situation is
+to return <tt>-ERESTARTSYS</tt>. Upon seeing this return
+code, the higher layers of the kernel will either restart the call
+from the beginning or return the error to the user. If you return
+<tt>-ERESTARTSYS</tt>, you must first undo any user-visible
+changes that might have been made, so that the right thing happens
+when the system call is retried. If you cannot undo things in this
+manner, you should return <tt>-EINTR</tt> instead.</p>
+
+<p class="docText"><span class="docEmphasis">scull_write</span> must release the semaphore whether
+or not it was able to carry out its other tasks successfully. If all
+goes well, execution falls into the final few lines of the function:</p>
+
+<pre>out:
+  up(&amp;dev-&gt;sem);
+  return retval;</pre><br>
+
+
+<p class="docText">This code frees the semaphore and returns whatever status is called
+for. There are several places in <span class="docEmphasis">scull_write</span>
+where things can go wrong; these include memory allocation failures
+or a fault while trying to copy data from user space. In those cases,
+the code performs a <tt>goto out</tt>, ensuring that the
+proper cleanup is done.</P>
+
+
+<a name="chp-5-sect-3.3"></a>
+<H4 class="docSection2Title">5.3.3. Reader/Writer Semaphores</H4>
+
+<p class="docText">Semaphores perform mutual<a name="chp-5-ITERM-4996"></a>
+<a name="chp-5-ITERM-4997"></a>
+exclusion for all callers, regardless of what each thread may want to
+do. Many tasks break down into two distinct types of work, however:
+tasks that only need to read the protected data structures and those
+that must make changes. It is often possible to allow multiple
+concurrent readers, as long as nobody is trying to make any changes.
+Doing so can optimize performance significantly; read-only tasks can
+get their work done in parallel without having to wait for other
+readers to exit the critical section.</p>
+
+<p class="docText">The Linux kernel provides a special type of semaphore called a
+<I>rwsem</I> (or "reader/writer
+semaphore") for this situation. The use of
+<a name="chp-5-ITERM-4998"></a>
+<a name="chp-5-ITERM-4999"></a>rwsems in drivers is relatively
+rare, but they are occasionally useful.</p>
+
+<p class="docText">Code using rwsems must include
+<i>&lt;linux/rwsem.h&gt;</i>. The relevant data type
+for reader/writer semaphores is <tt>struct</tt>
+<tt>rw_semaphore</tt>; an rwsem must be explicitly
+initialized at runtime with:</p>
+
+<pre>void init_rwsem(struct rw_semaphore *sem);</pre><BR>
+
+
+<p class="docText">A newly initialized rwsem is available for the next task (reader or
+writer) that comes along. The interface for code needing read-only
+access is:</p>
+
+<pre>void down_read(struct rw_semaphore *sem);
+int down_read_trylock(struct rw_semaphore *sem);
+void up_read(struct rw_semaphore *sem);</pre><br>
+
+
+<p class="docText">A call to <span class="docEmphasis">down_read</span> provides read-only access to
+the protected resources, possibly concurrently with other readers.
+Note that <span class="docEmphasis">down_read</span> may put the calling process
+into an uninterruptible sleep. <span class="docEmphasis">down_read_trylock</span>
+will not wait if read access is unavailable; it returns nonzero if
+access was granted, <tt>0</tt> otherwise. Note that the
+convention for <span class="docEmphasis">down_read_trylock</span> differs from
+that of most kernel functions, where success is indicated by a return
+value of <tt>0</tt>. A
+r<a name="chp-5-ITERM-5000"></a>wsem obtained with
+<span class="docEmphasis">down_read</span> must eventually be freed with
+<span class="docEmphasis">up_read</span>.</P>
+
+<p class="docText">The interface for writers is similar:</p>
+
+<pre>void down_write(struct rw_semaphore *sem);
+int down_write_trylock(struct rw_semaphore *sem);
+void up_write(struct rw_semaphore *sem);
+void downgrade_write(struct rw_semaphore *sem);</pre><br>
+
+
+<p class="docText"><span class="docEmphasis">down_write</span>,
+<span class="docEmphasis">down_write_trylock</span>, and
+<span class="docEmphasis">up_write</span> all behave just like their reader
+counterparts, except, of course, that they provide write access. If
+you have a situation where a writer lock is needed for a quick
+change, followed by a longer period of read-only access, you can use
+<span class="docEmphasis">downgrade_write</span> to allow other readers in once
+you have finished making changes.</P>
+
+<p class="docText">An rwsem allows either one writer or an unlimited number of readers
+to hold the semaphore. Writers get priority; as soon as a writer
+tries to enter the critical section, no readers will be allowed in
+until all writers have completed their work. This implementation can
+lead to reader <i>starvation</I>—where readers
+are denied access for a long time—if you have a large number of
+writers contending for the semaphore. For this reason, rwsems are
+best used when write access is<a name="chp-5-ITERM-5001"></a> <a name="chp-5-ITERM-5002"></a> <a name="chp-5-ITERM-5003"></a> <a name="chp-5-ITERM-5004"></a> required only rarely, and writer
+access is held for short periods of time.</p>
+
+
+
+<ul></ul></td></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-5-sect-2.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-5-sect-4.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

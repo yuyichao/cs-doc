@@ -1,0 +1,1065 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 16. Writing a Custom Storage Engine</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="storage-engines.html" title="Chapter 15. Storage Engines and Table Types"><link rel="next" href="ndbcluster.html" title="Chapter 17. MySQL Cluster">
+<style>
+<!--
+span.quote
+	{}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine"></a>
+	第16章：编写自定义存储引擎</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="custom-engine.html#custom-engine-introduction">
+			16.1. 前言</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-overview">
+			16.2. 概述</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-create-files">
+			16.3. 创建存储引擎源文件</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-handlerton">
+			16.4. 创建handlerton<code class="literal"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-instancing">
+			16.5. 对处理程序进行实例化处理</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-extensions">
+			16.6. 定义表扩展</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-create-table">
+			16.7. 创建表</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-open-table">
+			16.8. 打开表</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-table-scanning">
+			16.9. 实施基本的表扫描功能</a></span></dt><dd><dl><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-store">
+				16.9.1. 实施store_lock()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-external">
+				16.9.2. 实施external_lock()函数</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-init">
+				16.9.3. 实施rnd_init()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-info">
+				16.9.4. 实施info()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-extra">
+				16.9.5. 实施extra()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-table-scanning-next">
+				16.9.6. 实施rnd_next()函数<code class="function"></code></a></span></dt></dl></dd><dt><span class="section"><a href="custom-engine.html#custom-engine-close-table">
+			16.10. 关闭表</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-insert">
+			16.11. 为存储引擎添加对INSERT的支持<code class="literal"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-update">
+			16.12. 为存储引擎添加对UPDATE的支持<code class="literal"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-delete">
+			16.13. 为存储引擎添加对DELETE的支持<code class="literal"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference">
+			16.14. API引用</a></span></dt><dd><dl><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-bas_ext">16.14.1. bas_ext</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-close">16.14.2. close</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-create">16.14.3. create</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-delete_row">16.14.4. delete_row</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-delete_table">16.14.5. delete_table</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-external_lock">16.14.6. external_lock</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-extra">16.14.7. extra</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-info">16.14.8. info</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-open">16.14.9. open</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-rnd_init">16.14.10. rnd_init</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-rnd_next">16.14.11. rnd_next</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-store_lock">16.14.12. store_lock</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-update_row">16.14.13. update_row</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-write_row">16.14.14. write_row</a></span></dt></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-introduction"></a>
+	16.1.&nbsp;前言</h2></div></div></div>
+	<p>对于<span>MySQL 5.1</span>，<span>MySQL AB</span>公司引入了插件式存储引擎体系结构，这样，就能创建新的存储引擎，并将它们添加到正在运行的<span>MySQL</span>服务器上，而不必重新编译服务器本身。</p>
+	<p>该体系结构简化了新存储引擎的开发和部署。</p>
+	<p>本章的意图是作为指南，用于帮助你为新的插件式存储引擎体系结构开发存储引擎。</p>
+	<span>关于<span>MySQL</span>插件式存储引擎体系结构的更多信息，请参见</span><a href="pluggable-storage.html">第14章：</a><a href="pluggable-storage.html" title="Chapter 14. Pluggable Storage Engine Architecture"><i>插件式存储引擎体系结构</i></a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-overview"></a>
+		16.2.&nbsp;概述</h2></div></div></div><div class="figure"><a name="id2953282"></a>
+			<span>MySQL</span>服务器采用了模块化风格。<p class="title"><b>图16.1：MySQL体系结构</b></p><div class="mediaobject"><img src="images/custom-engine-overview.png" alt="MySQL architecture"></div></div></div><div class="section"><div class="titlepage"><div><div>
+	存储引擎负责管理数据存储，以及<span>MySQL</span>的索引管理。通过定义的<span>API</span>，<span>MySQL</span>服务器能够与存储引擎进行通信。<p>
+	每个存储引擎均是<span>1</span>个继承类，每个类实例作为处理程序而被引用。</p>
+	<p>针对需要与特殊表一起工作的每个线程，处理程序是在<span>1</span>个处理程序的基础上实例化的。例如，如果<span>3</span>个连接全都在相同的表上工作，需要创建<span>3</span>个处理程序实例。</p>
+	<p>一旦创建了处理程序实例，<span>MySQL</span>服务器将向处理程序发送命令，以便执行数据存储和检索任务，如打开表、操纵行和管理索引等。</p>
+	<p>能够以累进方式创建定制存储引擎：开发人员能够以只读存储引擎启动，随后添加对<span>INSERT</span>、<span>UPDATE</span>和<span><span>DELETE</span>操作的支持，甚至能够增加对索引功能、事务和其他高级操作的支持。</span></p>
+	<h2 class="title"><a name="custom-engine-create-files"></a>
+		16.3.&nbsp;创建存储引擎源文件</h2></div></div></div>
+	<p>实施新存储引擎的最简单方法是，通过拷贝和更改<span><span>EXAMPLE</span>存储引擎开始。在</span><span>MySQL 
+	5.1</span>源码树的<span><span>sql/examples/</span>目录下可找到</span>文件<span>ha_example.cc</span>和<span>ha_example.h</span>。关于如何获得<span>5.1</span>源码树的说明，请参见<a href="installing.html#installing-source-tree" title="2.8.3. Installing from the Development Source Tree">2.8.3节，“从开发源码树安装”</a>。</p>
+	<p>复制文件时，将名称从<span>ha_example.cc</span>和<span><span>ha_example.h</span>更改为与存储引擎相适应的名称，如<span>ha_foo.cc</span></span>和<span>ha_foo.h</span>。</p>
+	<p>拷贝并重命名了这些文件后，必须更换所有的<span><span>EXAMPLE</span>示例，以及具有存储引擎名称的示例。如果你熟悉<span>sed</span>，也能自动完成这些步骤：</span></p>
+	<pre><span>sed s/EXAMPLE/FOO/g ha_example.h | sed s/example/foo/g ha_foo.h</span></pre>
+	<pre><span>sed s/EXAMPLE/FOO/g ha_example.cc | sed s/example/foo/g ha_foo.cc</span></pre>
+	</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-handlerton"></a>
+		16.4.&nbsp;创建handlerton<code class="literal"></code></h2></div></div></div>
+		<p><span>handlerton</span>（“单个处理程序”的简称<span class="quote">）</span>定义了存储引擎，并包含指向函数的函数指针，它以整体方式作用在引擎上，而函数工作在单独的处理程序实例中。在这类函数的一些示例中，包含用于处理注释和回滚的事务函数。</p>
+		<p>下面给出了一个来自<span><span>EXAMPLE</span>存储引擎的示例：</span></p>
+		<pre><span>handlerton example_hton= {</span></pre>
+		<pre><span>&nbsp; &quot;EXAMPLE&quot;,</span></pre>
+		<pre><span>&nbsp; SHOW_OPTION_YES,</span></pre>
+		<pre><span>&nbsp; &quot;Example storage engine&quot;, </span></pre>
+		<pre><span>&nbsp;&nbsp;DB_TYPE_EXAMPLE_DB,</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Initialize */</span></pre>
+		<pre><span>&nbsp; 0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* slot */</span></pre>
+		<pre><span>&nbsp; 0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* savepoint size. */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* close_connection */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* savepoint */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* rollback to savepoint */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* release savepoint */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* commit */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* rollback */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* prepare */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* recover */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* commit_by_xid */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* rollback_by_xid */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* create_cursor_read_view */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* set_cursor_read_view */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* close_cursor_read_view */</span></pre>
+		<pre><span>&nbsp; example_create_handler,&nbsp;&nbsp;&nbsp; /* Create a new handler */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Drop a database */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Panic call */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Release temporary latches */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Update Statistics */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Start Consistent Snapshot */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Flush logs */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Show status */</span></pre>
+		<pre><span>&nbsp; NULL,&nbsp;&nbsp;&nbsp; /* Replication Report Sent Binlog */</span></pre>
+		<pre><span>&nbsp; HTON_CAN_RECREATE</span></pre>
+		<pre><span>};</span></pre>
+		<p>下面给出了来自<span><span>handler.h</span>的<span>handlerton</span>定义：</span></p>
+		<pre><span>typedef struct</span></pre>
+		<pre><span>&nbsp; {</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; const char *name;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; SHOW_COMP_OPTION state;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; const char *comment;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; enum db_type db_type;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; bool (*init)();</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint slot;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint savepoint_offset;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*close_connection)(THD *thd);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*savepoint_set)(THD *thd, void *sv);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*savepoint_rollback)(THD *thd, void *sv);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*savepoint_release)(THD *thd, void *sv);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*commit)(THD *thd, bool all);</span></pre>
+		<pre><span>&nbsp;&nbsp; &nbsp;int&nbsp; (*rollback)(THD *thd, bool all);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*prepare)(THD *thd, bool all);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*recover)(XID *xid_list, uint len);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*commit_by_xid)(XID *xid);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int&nbsp; (*rollback_by_xid)(XID *xid);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; void *(*create_cursor_read_view)();</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; void (*set_cursor_read_view)(void *);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; void (*close_cursor_read_view)(void *);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; handler *(*create)(TABLE *table);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; void (*drop_database)(char* path);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int (*panic)(enum ha_panic_function flag);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int (*release_temporary_latches)(THD *thd);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int (*update_statistics)();</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int (*start_consistent_snapshot)(THD *thd);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; bool (*flush_logs)();</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; bool (*show_status)(THD *thd, stat_print_fn *print, enum ha_stat_type stat);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; int (*repl_report_sent_binlog)(THD *thd, char *log_file_name, my_off_t end_offset);</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint32 flags;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></pre>
+		<pre><span>&nbsp;&nbsp;} handlerton;&nbsp; </span></pre>
+		<p>共有<span>30</span>个<span>handlerton</span>元素，但只有少量元素是强制性的（明确地讲是前<span>4</span>个元素和第<span>21</span>个元素）。</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>存储引擎的名称。这是创建表时将使用的名称（<span>CREATE 
+		TABLE ... ENGINE = <i>FOO</i>;</span>）。</p>
+		<p>
+		<span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>确定使用<span><span>SHOW 
+		STORAGE ENGINES</span>命令时是否列出存储引擎。</span></p>
+		<p>
+		<span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>存储引擎注释，对使用<span><span>SHOW 
+		STORAGE ENGINES</span>命令时显示的存储引擎的描述。</span></p>
+		<p>
+		<span>4.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>在<span>MySQL</span>服务器内唯一识别存储引擎的整数。内置存储引擎使用的常数定义在<span><span>handler.h</span>文件中。作为创建常数的可选方法，可使用大于<span>25</span>的整数。</span></p>
+		<p><span>
+		5.<span>&nbsp;&nbsp;&nbsp; </span>
+		</span>指向存储引擎初始化程序的指针。仅当启动服务器时才调用该函数，以便在实例化处理程序之前，存储引擎类能执行必要的内务操作。</p>
+		<p><span>6.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>插槽。保存每连接的信息时，每个存储引擎在<span>thd</span>中有自己的内存区域（实际上为指针）。它是作为<span><span>thd-&gt;ha_data[<i>foo</i>_hton.slot]</span>访问的。</span>插槽编号在调用<span><i><span>foo</span></i><span>_init()</span>后</span>由<span>MySQL</span>初始化。</p>
+		<p><span>7.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>保存点偏移。为了保存每个<span>savepoint</span>数据，为存储引擎提供了请求的大小（典型情况下为<span>0</span>）。</p>
+		<p>必须以静态方式初始化<span>savepoint</span>偏移，使其具有所有的内存大小，以便保存每个<span>savepoint</span>的信息。在<span><i><span>foo</span></i><span>_init</span>之后，它被更改为</span><span>savepoint</span>存储区域的偏移，存储引擎不需要使用它。</p>
+		<p><span>8.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>由事务性存储引擎使用，清理其存储段内分配的内存，和／或回滚任何未完成的事务。</p>
+		<p><span>9.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>由事务性存储引擎选择性使用，创建<span>savepoint</span>（保存点），并将其保存到提供的内存中。</p>
+		<p><span>10.</span>指向处理程序<span><span>rollback_to_savepoint()</span>函数的函数指针。它用于在事务期间返回</span><span>savepoint</span>。仅对支持保存点的存储引擎才会填充它。</p>
+		<p><span>11.</span>指向处理程序<span><span>release_savepoint()</span>函数的函数指针。它用于在事务期间</span>释放保存点的资源。仅对支持保存点的存储引擎才会填充它。 
+		</p>
+		<p><span>12.</span>指向处理程序<span><span>commit()</span>函数的函数指针。</span>它用于提交事务。仅对支持事务的存储引擎才会填充它。 
+		</p>
+		<p><span>13.</span>指向处理程序<span><span>rollback()</span>函数的函数指针。</span>它用于回滚交易。仅对支持事务的存储引擎才会填充它。 
+		</p>
+		<p><span>
+		14.XA</span>事务性存储引擎所需。为提交操作准备事务。将<span>XID</span>与事务关联起来。</p>
+		<p><span>
+		15.XA</span>事务性存储引擎所需。恢复由<span>XID</span>标识的事务。 </p>
+		<p><span>
+		16.XA</span>事务性存储引擎所需。提交由<span>XID</span>标识的事务。</p>
+		<p><span>
+		17.XA</span>事务性存储引擎所需。回滚由<span>XID</span>标识的事务。</p>
+		<p><span>18.</span>与服务器端光标一起使用，尚未实施。</p>
+		<p><span>19.</span>与服务器端光标一起使用，尚未实施。 
+		</p>
+		<p><span>20.</span>与服务器端光标一起使用，尚未实施。</p>
+		<p><span>21.</span><em><span>MANDATORY</span></em>：构造并返回处理程序实例。</p>
+		<p><span>22.</span>撤销方案时，如果存储引擎需要执行特殊步骤时使用（如在使用表空间的存储引擎中使用）。</p>
+		<p><span>23.</span>清理在服务器关闭和崩溃时调用的函数。</p>
+		<p><span>
+		24.InnoDB</span>特殊函数。</p>
+		<p><span>25.</span>在启动<span><span>SHOW 
+		STATUS</span>时调用</span><span>InnoDB</span>特殊函数<span>。</span></p>
+		<p><span>26.</span>调用<span>InnoDB</span>特殊函数以开始连续读取。</p>
+		<p><span>27.</span>调用它，指明应将日志刷新为可靠的存储。</p>
+		<p><span>28.</span>在存储引擎上提供可被人员读取的状态信息。</p>
+		<p><span>
+		29.InnoDB</span>特殊函数用于复制。</p>
+		<p>
+		<span>30.</span><span>Handlerton</span>标志，通常与<span><span>ALTER 
+		TABLE</span>相关。可能的值定义于<span>sql/handler.h</span>文件中，并在此列出；</span></p>
+		<pre><span>31.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>#define HTON_NO_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0</span></pre>
+		<pre><span>32.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>#define HTON_CLOSE_CURSORS_AT_COMMIT (1 &lt;&lt; 0)</span></pre>
+		<pre><span>33.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>#define HTON_ALTER_NOT_SUPPORTED &nbsp;&nbsp;&nbsp;&nbsp;(1 &lt;&lt; 1)</span></pre>
+		<pre><span>34.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>#define HTON_CAN_RECREATE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1 &lt;&lt; 2)</span></pre>
+		<pre><span>35.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>#define HTON_FLUSH_AFTER_RENAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1 &lt;&lt; 3)</span></pre>
+		<pre><span>36.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>#define HTON_NOT_USER_SELECTABLE&nbsp;&nbsp;&nbsp;&nbsp; (1 &lt;&lt; 4)</span></pre>
+		<p>
+		<span>HTON_ALTER_NOT_SUPPORTED</span>由<span><span>FEDERATED</span>存储引擎使用，用以指明存储引擎不接受<span>AFTER 
+		TABLE</span>语句。</span></p>
+		<p><span>
+		<span>HTON_FLUSH_AFTER_RENAME</span>指明，重命名表后</span> ，必须调用<span>FLUSH 
+		LOGS</span>。</p>
+		<p>
+		<span>HTON_NOT_USER_SELECTABLE</span>指明存储引擎不能由用户选择，而是用作系统存储引擎，如用于二进制日志的伪存储引擎。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-instancing"></a>
+		16.5.&nbsp;对处理程序进行实例化处理</h2></div></div></div>
+		<p>调用存储引擎的第<span>1</span>个方法是调用新的处理程序实例。</p>
+		<p>在存储引擎源文件中定义<span><span>handlerton</span>之前，必须定义用于函数实例化的函数题头。</span>下面给出了<span>1</span>个来自<span>CSV</span>引擎的示例：</p>
+		<pre><span>static handler* tina_create_handler(TABLE *table);</span></pre>
+		<p>正如你所见到的那样，函数接受指向处理程序准备管理的表的指针，并返回处理程序对象。</p>
+		<p>定义了函数题头后，用第<span>21</span>个<span><span>handlerton</span>元素中的函数指针命名函数，</span>指明函数负责生成新的处理程序实例。</p>
+		<p>下面给出了<span><span>MyISAM</span>存储引擎的实例化函数示例：</span></p>
+		<pre><span>static handler *myisam_create_handler(TABLE *table)</span></pre>
+		<pre><span>&nbsp; {</span></pre>
+		<pre><span>&nbsp; &nbsp;&nbsp;return new ha_myisam(table);</span></pre>
+		<pre><span>&nbsp; }</span></pre>
+		<p>该调用随后与存储引擎的构造程序一起工作。下面给出了来自<span><span>FEDERATED</span>存储引擎的<span>1</span>个示例：</span></p>
+		<pre><span>ha_federated::ha_federated(TABLE *table_arg)</span></pre>
+		<pre><span>&nbsp; :handler(&amp;federated_hton, table_arg),</span></pre>
+		<pre><span>&nbsp; mysql(0), stored_result(0), scan_flag(0),</span></pre>
+		<pre><span>&nbsp; ref_length(sizeof(MYSQL_ROW_OFFSET)), current_position(0)</span></pre>
+		<pre><span>&nbsp; {}</span></pre>
+		<p>下面给出了来自<span><span>EXAMPLE</span>存储引擎的另一个示例：</span></p>
+		<pre><span>ha_example::ha_example(TABLE *table_arg)</span></pre>
+		<pre><span>&nbsp; :handler(&amp;example_hton, table_arg)</span></pre>
+		<pre><span>&nbsp; {}&nbsp; </span></pre>
+		<p><span><span>FEDERATED</span>示例中的附加元素是</span>处理程序的额外初始化要素。所要求的最低实施是<span>EXAMPLE</span>示例中显示的<span><span>handler()</span>初始化。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-extensions"></a>
+		16.6.&nbsp;定义表扩展</h2></div></div></div>
+		<p>就给定的表、数据和索引，要求存储引擎为<span>MySQL</span>服务器提供存储引擎所使用的扩展列表。</p>
+		<p>扩展应采用以<span>Null</span>终结的字符串数组形式。下面给出了<span>CSV</span>引擎使用的数组：</p>
+		<pre><span>static const char *ha_tina_exts[] = {</span></pre>
+		<pre><span>&nbsp; &quot;.CSV&quot;,</span></pre>
+		<pre><span>&nbsp; NullS</span></pre>
+		<pre><span>};</span></pre>
+		<p>调用<span><a title="16.14.1.&nbsp;bas_ext"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-bas_ext"><span>bas_ext()</span></a></span>函数时返回该数组。</p>
+		<pre><span>const char **ha_tina::bas_ext() const</span></pre>
+		<pre><span>{</span></pre>
+		<pre><span>&nbsp; return ha_tina_exts;</span></pre>
+		<pre><span>}</span></pre>
+		<p>通过提供扩展信息，你还能忽略<span><span>DROP 
+		TABLE</span>功能的实施，这是因为，通过关闭表并用你指定的扩展删除所有文件，<span>MySQL</span>服务器能实现该功能。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-create-table"></a>
+		16.7.&nbsp;创建表</h2></div></div></div>
+		<p>一旦实例化了处理程序，所需的第<span>1</span>个操作很可能是创建表。</p>
+		<p>你的存储引擎必须实现<span><a title="16.14.3.&nbsp;create"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-create"><span>create()</span></a></span>虚拟函数：</p>
+		<pre><span>virtual int create(const char *name, TABLE *form, HA_CREATE_INFO *info)=0;</span></pre>
+		<p>该函数应创建所有必须的文件，然后关闭表。<span>MySQL</span>服务器将调用随后需打开的表。</p>
+		<p><span><span>*name</span>参数是表的名称。<span>*form</span>参数<span>是st_table</span>结构，该结构定义了表并与</span><span>MySQL</span>服务器已创建的<span><i><span>tablename</span></i><span>.frm</span>文件的内容匹配。在大多数情况下，</span>存储引擎不需要更改<span><i><span>tablename</span></i><span>.frm</span></span>文件，也没有支持该操作的预置功能。</p>
+		<p><span><span>*info</span>参数是包含<span>CREATE 
+		TABLE</span>语句用于创建表所需信息的结构。该结构定义于<span>handler.h</span>文件中，并为了便于参考列于下面：</span></p>
+		<pre><span>typedef struct st_ha_create_information</span></pre>
+		<pre><span>&nbsp; {</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; CHARSET_INFO *table_charset, *default_table_charset;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; LEX_STRING connect_string;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; const char *comment,*password;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; const char *data_file_name, *index_file_name;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; const char *alias;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; ulonglong max_rows,min_rows;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; ulonglong auto_increment_value;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; ulong table_options;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; ulong avg_row_length;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; ulong raid_chunksize;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; ulong used_fields;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; SQL_LIST merge_list;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; enum db_type db_type;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; enum row_type row_type;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint null_bits;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* NULL bits at start of record */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint options;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* OR of HA_CREATE_ options */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint raid_type,raid_chunks;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint merge_insert_method;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; uint extra_size;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* length of extra data segment */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; bool table_existed;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* 1 in create if table existed */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; bool frm_only;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* 1 if no ha_create_table() */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; bool varchar;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* 1 if table has a VARCHAR */</span></pre>
+		<pre><span>&nbsp; } HA_CREATE_INFO;</span></pre>
+		<p>基本的存储引擎能忽略<span>*form</span>和<span><span>*info</span>的内容，这是因为，真正所需的是创建存储引擎所使用的数据文件，以及对数据文件的可能初始化操作（假定存储文件是基于文件的）。</span></p>
+		<p>下面给出了来自<span><span>CSV</span>存储引擎的实施示例：</span></p>
+		<pre><span>int ha_tina::create(const char *name, TABLE *table_arg,</span></pre>
+		<pre><span>&nbsp; HA_CREATE_INFO *create_info)</span></pre>
+		<pre><span>&nbsp; {</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; char name_buff[FN_REFLEN];</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; File create_file;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; DBUG_ENTER(&quot;ha_tina::create&quot;);</span></pre>
+		<pre><span>&nbsp; </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;if ((create_file= my_create(fn_format(name_buff, name, &quot;&quot;, &quot;.CSV&quot;,</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MY_REPLACE_EXT|MY_UNPACK_FILENAME),0,</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; O_RDWR | O_TRUNC,MYF(MY_WME))) &lt; 0)</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; DBUG_RETURN(-1);</span></pre>
+		<pre><span>&nbsp; </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;my_close(create_file,MYF(0));</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;DBUG_RETURN(0);</span></pre>
+		<pre><span>&nbsp; }</span></pre>
+		<p>在前面的例子中，<span><span>CSV</span>引擎未引用<span>*table_arg</span></span>或<span>*create_info</span>参数，而是简单地创建了所需的数据文件，关闭它们，并返回。</p>
+		<p><span><span>my_create</span>和<span>my_close</span>函数是定义于<span>src/include/my_sys.h</span>文件中的</span>助手函数。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-open-table"></a>
+		16.8.&nbsp;打开表</h2></div></div></div>
+		<p>在表上执行任何读或写操作之前，<span>MySQL</span>服务器将调用<span><a title="16.14.9.&nbsp;open"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-open">open()</a></span>方法打开表数据和索引文件（如果存在的话）。</p>
+		<pre><span>int open(const char *name, int mode, int test_if_locked);</span></pre>
+		<p>第<span>1</span>个参数是要打开的表的名称。第<span>2</span>个参数确定了要打开的文件或准备执行的操作。它们的值定义于<span><span>handler.h</span>中，并为了方便起见列在下面</span>：</p>
+		<pre><span>#define HA_OPEN_KEYFILE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 1</span></pre>
+		<pre><span>#define HA_OPEN_RNDFILE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 2</span></pre>
+		<pre><span>#define HA_GET_INDEX&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 4</span></pre>
+		<pre><span>#define HA_GET_INFO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8 &nbsp;&nbsp;&nbsp; /* do a ha_info() after open */</span></pre>
+		<pre><span>#define HA_READ_ONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 16&nbsp; &nbsp; /* File opened as readonly */</span></pre>
+		<pre><span>#define HA_TRY_READ_ONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 32&nbsp;&nbsp;&nbsp; /* Try readonly if can&#39;t open with read and write */</span></pre>
+		<pre><span>#define HA_WAIT_IF_LOCKED&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 64&nbsp;&nbsp;&nbsp; &nbsp; /* Wait if locked on open */</span></pre>
+		<pre><span>#define HA_ABORT_IF_LOCKED&nbsp;&nbsp;&nbsp;&nbsp; 128&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; /* skip if locked on open.*/</span></pre>
+		<pre><span>#define HA_BLOCK_LOCK&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 256 &nbsp; /* unlock when reading some records */</span></pre>
+		<pre><span>#define HA_OPEN_TEMPORARY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 512</span></pre>
+		<p>最后一个选项规定了是否要在打开表之前检查表上的锁定。</p>
+		<p>在典型情况下，存储引擎需要实施某种形式的共享访问控制，以防止在多线程环境下的文件损坏。关于如何实施文件锁定的示例，请参见<span><span>sql/examples/ha_tina.cc</span>的<span>get_share()</span></span>和<span>free_share()</span>方法。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-table-scanning"></a>
+		16.9.&nbsp;实施基本的表扫描功能</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-store">
+			16.9.1. 实施store_lock()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-external">
+			16.9.2. 实施external_lock()函数</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-init">
+			16.9.3. 实施rnd_init()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-info">
+			16.9.4. 实施info()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-scanning-extra">
+			16.9.5. 实施extra()函数<code class="function"></code></a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-table-scanning-next">
+			16.9.6. 实施rnd_next()函数<code class="function"></code></a></span></dt></dl></div>
+		<p>最基本的存储引擎能实现只读表扫描功能。这类引擎可用于支持<span>SQL</span>日志查询、以及在<span>MySQL</span>之外填充的其他数据文件。</p>
+		<p>本节介绍的方法实施提供了创建更高级存储引擎的基础。</p>
+		<p>下面给出了在<span>CSV</span>引擎的<span>9</span>行表扫描过程中进行的方法调用：</p>
+		<pre class="programlisting">ha_tina::store_lock
+ha_tina::external_lock
+ha_tina::info
+ha_tina::rnd_init
+ha_tina::extra - ENUM HA_EXTRA_CACHE   Cache record in HA_rrnd()
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::rnd_next
+ha_tina::extra - ENUM HA_EXTRA_NO_CACHE   End cacheing of records (def)
+ha_tina::external_lock
+ha_tina::extra - ENUM HA_EXTRA_RESET   Reset database to after open
+</pre><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-scanning-store"></a>
+			16.9.1.&nbsp;实施store_lock()函数<code class="function"></code></h3></div></div></div>
+			<p>在执行任何读取或写操作之前，调用<span><a title="16.14.12.&nbsp;store_lock"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-store_lock"><span>store_lock()</span></a></span>函数。</p>
+			<p>将锁定添加到表锁定处理程序之前（请参见<span>thr_lock.c</span>），<span>mysqld</span>将用请求的锁调用存储锁定。目前，存储锁定能将写锁定更改为读锁定（或其他锁定），忽略锁定（如果不打算使用<span>MySQL</span>锁定的话），或为很多表添加锁定（就像使用<span>MERGE</span>处理程序时作的那样）。</p>
+			<p>例如，<span>Berkeley DB</span>能将所有的<span>WRITE</span>锁定更改为<span>TL_WRITE_ALLOW_WRITE</span>（表示我们正在执行<span>WRITES</span>，但我们仍允许其他人员进行操作）。</p>
+			<p>释放锁定时，也将调用<span>store_lock()</span>，在这种情况下，通常不需做任何事。</p>
+			<p>在某些特殊情况下，<span>MySQL</span>可能会发送对<span>TL_IGNORE</span>的请求。这意味着我们正在请求与上次相同的锁定，这也应被忽略（当我们打开了表的某一部分时，如果其他人执行了表刷新操作，就会出现该情况，此时，<span>mysqld</span>将关闭并再次打开表，然后获取与上次相同的锁定）。我们打算在将来删除该特性。</p>
+			<p>可能的锁定类型定义于<span><span>includes/thr_lock.h</span>中，并列在下面：</span></p>
+			<pre><span>enum thr_lock_type</span></pre>
+			<pre><span>{</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_IGNORE=-1,</span></pre>
+			<pre><span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TL_UNLOCK,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* UNLOCK ANY LOCK */</span></pre>
+			<pre><span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TL_READ,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Read lock */</span></pre>
+			<pre><span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TL_READ_WITH_SHARED_LOCKS,&nbsp; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TL_READ_HIGH_PRIORITY,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* High prior. than TL_WRITE. Allow concurrent insert */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_READ_NO_INSERT, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* READ, Don&#39;t allow concurrent insert */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_WRITE_ALLOW_WRITE, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp; Write lock, but allow other threads to read / write. */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_WRITE_ALLOW_READ,&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Write lock, but allow other threads to read / write. */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_WRITE_CONCURRENT_INSERT, /* WRITE lock used by concurrent insert. */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_WRITE_DELAYED,&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Write used by INSERT DELAYED.&nbsp; Allows READ locks */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_WRITE_LOW_PRIORITY,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; /* WRITE lock that has lower priority than TL_READ */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_WRITE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Normal WRITE lock */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TL_WRITE_ONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Abort new lock request with an error */</span></pre>
+			<pre><span>};&nbsp; </span></pre>
+			<p>
+			实际的锁定处理因锁定实施的不同而不同，你可以选择某些请求的锁定类型或不选择任何锁定类型，并根据情况恰当地代入你自己的方法。下面给出了<span>1</span>个<span><span>CSV</span>存储引擎实施示例：</span></p>
+			<pre><span>THR_LOCK_DATA **ha_tina::store_lock(THD *thd,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; THR_LOCK_DATA **to,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum thr_lock_type lock_type)</span></pre>
+			<pre><span> {</span></pre>
+			<pre><span>&nbsp;&nbsp; if (lock_type != TL_IGNORE &amp;&amp; lock.type == TL_UNLOCK)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; lock.type=lock_type;</span></pre>
+			<pre><span>&nbsp;&nbsp; *to++= &amp;lock;</span></pre>
+			<pre><span>&nbsp;&nbsp; return to;</span></pre>
+			<pre><span> }&nbsp; </span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-scanning-external"></a>
+			16.9.2.&nbsp;实施external_lock()函数</h3></div></div></div>
+			<p><span>
+			<a title="16.14.6.&nbsp;external_lock"  href="../../../third/custom-engine.html#custom-engine-api-reference-external_lock">
+			<span>external_lock()</span></a></span>函数是在事务开始时调用的，或发出<span><span>LOCK 
+			TABLES</span>语句时调用的，用于事务性存储引擎。</span></p>
+			<p>在<span>sql/ha_innodb.cc</span>和<span><span>sql/ha_berkeley.cc</span>文件中，可找到</span>使用<span><span>external_lock()</span>的示例，但大多数存储引擎简单地返回<span>0</span>，</span>就像<span><span>EXAMPLE</span>存储引擎那样：</span></p>
+			<pre><span>int ha_example::external_lock(THD *thd, int lock_type)</span></pre>
+			<pre><span> {</span></pre>
+			<pre><span>&nbsp;&nbsp; DBUG_ENTER(&quot;ha_example::external_lock&quot;);</span></pre>
+			<pre><span>&nbsp;&nbsp; DBUG_RETURN(0);</span></pre>
+			<pre><span> }</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-scanning-init"></a>
+			16.9.3.&nbsp;实施rnd_init()函数<code class="function"></code></h3></div></div></div>
+			<p>在任何表扫描之前调用的函数是<span><a title="16.14.10.&nbsp;rnd_init"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-rnd_init"><span style=" ; font-family:宋体">rnd_init()</span></a></span>函数。函数<span><span>rnd_init()</span>用于为表扫描作准备，将计数器和指针复位为表的开始状态。</span></p>
+			<p>下述示例来自<span><span>CSV</span>存储引擎：</span></p>
+			<pre class="programlisting">  int ha_tina::rnd_init(bool scan)
+    {
+      DBUG_ENTER("ha_tina::rnd_init");
+ 
+      current_position= next_position= 0;
+      records= 0;
+      chain_ptr= chain;
+ 
+      DBUG_RETURN(0);
+    }  
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-scanning-info"></a>
+			16.9.4.&nbsp;实施info()函数<code class="function"></code></h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			执行表扫描操作之前，将调用<span><a title="16.14.8.&nbsp;info"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-info"><span>info()</span></a></span>函数，以便为优化程序提供额外信息。<p>
+			优化程序所需的信息不是通过返回值给定的，你需填充存储引擎类的特定属性，当<span><span>info()</span>调用返回后，优化程序将读取存储引擎类。</span></p>
+			<p>除了供优化程序使用外，在调用<span><span>info()</span>函数期间，很多值集合还将用于<span>SHOW 
+			TABLE STATUS</span>语句。</span></p>
+			<p>在<span><span>sql/handler.h</span>中列出了完整的公共属性，下面给出了一些常见的属性：</span></p>
+			<pre><span>ulonglong data_file_length;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Length off data file */</span></pre>
+			<pre><span>ulonglong max_data_file_length;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Length off data file */</span></pre>
+			<pre><span>ulonglong index_file_length;</span></pre>
+			<pre><span>ulonglong max_index_file_length;</span></pre>
+			<pre><span>ulonglong delete_length;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Free bytes */</span></pre>
+			<pre><span>ulonglong auto_increment_value;</span></pre>
+			<pre><span>ha_rows records;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Records in table */</span></pre>
+			<pre><span>ha_rows deleted;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Deleted records */</span></pre>
+			<pre><span>ulong raid_chunksize;</span></pre>
+			<pre><span>ulong mean_rec_length;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* physical reclength */</span></pre>
+			<pre><span>time_t create_time;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* When table was created */</span></pre>
+			<pre><span>time_t check_time;</span></pre>
+			<pre><span>time_t update_time;&nbsp; </span></pre>
+			<p>对于表扫描，最重要的属性是“<span><span>records”</span>，它指明了表中的记录数。当存储引擎指明表中有<span>0</span>或<span>1</span>行时，或有<span>2</span>行以上时，在这两种情况下，优化程序的执行方式不同。因此，</span>当你在执行表扫描之前不清楚表中有多少行时，应返回大于等于<span>2</span>的值，这很重要（例如，数据是在外部填充的）。</p>
+			<h3 class="title"><a name="custom-engine-scanning-extra"></a>
+			16.9.5.&nbsp;实施extra()函数<code class="function"></code></h3></div></div></div>
+			<p>执行某些操作之前，应调用<span><a title="16.14.7.&nbsp;extra"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-extra"><span style=" ; font-family:宋体">extra()</span></a></span>函数，以便为存储引擎就如何执行特定操作予以提示。</p>
+			<p>额外调用中的提示实施不是强制性的，大多数存储引擎均返回<span>0</span>：</p>
+			<pre class="programlisting">int ha_tina::extra(enum ha_extra_function operation)
+ {
+   DBUG_ENTER("ha_tina::extra");
+   DBUG_RETURN(0);
+ }
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-table-scanning-next"></a>
+			16.9.6.&nbsp;实施rnd_next()函数<code class="function"></code></h3></div></div></div>
+			<p>完成表的初始化操作后，<span>MySQL</span>服务器将调用处理程序的<span><a title="16.14.11.&nbsp;rnd_next"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-rnd_next"><span>rnd_next()</span></a></span>函数，每两个扫描行调用<span>1</span>次，直至满足了服务器的搜索条件或到达文件结尾为止，在后一种情况下，处理程序将返回<span>HA_ERR_END_OF_FILE</span>。</p>
+			<p><span>rnd_next()</span>函数有一个名为<span><span>*buf</span>的单字节数组参数。对于<span>*buf</span>参数，必须按内部<span>MySQL</span>格式用表行的内容填充它。</span></p>
+			<p>服务器采用了三种数据格式：固定长度行，可变长度行，以及具有<span>BLOB</span>指针的可变长度行。对于每种格式，各列将按照它们由<span>CREATE 
+			TABLE</span>语句定义的顺序显示（表定义保存在<span>.frm</span>文件中，优化程序和处理程序均能从相同的源，即<span>TABLE</span>结构，访问表的元数据）。</p>
+			<p>每种格式以每列<span>1</span>比特的<span>&quot;NULL bitmap&quot;</span>开始。对于含<span>6</span>个列的表，其<span>bitmap</span>为<span>1</span>字节，对于含<span>9</span>～<span>16</span>列的表，其<span>bitmap</span>为<span>2</span>字节，依此类推。要想指明特定的值是<span>NULL</span>，应将该列<span>NULL</span>位设置为<span>1</span>。</p>
+			<p>当<span>NULL bitmap</span>逐个进入列后，每列将具有<span>MySQL</span>手册的“<span>MySQL</span>数据类型”一节中指定的大小。在服务器中，列的数据类型定义在<span>sql/field.cc</span>文件中。对于固定长度行格式，列将简单地逐个放置。对于可变长度行，<span>VARCHAR</span>列将被编码为<span>1</span>字节长，后跟字符串。对于具有<span>BLOB</span>列的可变长度行，每个<span>blob</span>由两部分表示：首先是表示<span>BLOB</span>实际大小的整数，然后是指向内存中<span>BLOB</span>的指针。</p>
+			<p>在任何表处理程序中从<span><span>rnd_next()</span>开始，可找到</span>行转换（或“包装”）的示例。例如，在<span>ha_tina.cc</span>中，<span>find_current_row()</span>内的代码给出了使用<span>TABLE</span>结构（由表指向的）和字符串对象（命名缓冲）包装字符数据（来自<span>CSV</span>文件）的方法。将行写回磁盘需要反向转换，从内部格式解包。</p>
+			<p>下述示例来自<span>CSV</span>存储引擎： </p>
+			<pre><span>int ha_tina::rnd_next(byte *buf)</span></pre>
+			<pre><span> {</span></pre>
+			<pre><span>&nbsp; &nbsp;DBUG_ENTER(&quot;ha_tina::rnd_next&quot;);</span></pre>
+			<pre><span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;statistic_increment(table-&gt;in_use-&gt;status_var.ha_read_rnd_next_count, &amp;LOCK_status);</span></pre>
+			<pre><span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;current_position= next_position;</span></pre>
+			<pre><span>&nbsp;&nbsp; if (!share-&gt;mapped_file)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(HA_ERR_END_OF_FILE);</span></pre>
+			<pre><span>&nbsp;&nbsp; if (HA_ERR_END_OF_FILE == find_current_row(buf) )</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(HA_ERR_END_OF_FILE);</span></pre>
+			<pre><span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;records++;</span></pre>
+			<pre><span>&nbsp;&nbsp; DBUG_RETURN(0);</span></pre>
+			<pre><span> }&nbsp; </span></pre>
+			<p>对于从内部行格式到<span>CSV</span>行格式的转换，它是在<span><span>find_current_row()</span>函数中执行的。</span></p>
+			<pre><span>int ha_tina::find_current_row(byte *buf)</span></pre>
+			<pre><span> {</span></pre>
+			<pre><span>&nbsp;&nbsp; byte *mapped_ptr= (byte *)share-&gt;mapped_file + current_position;</span></pre>
+			<pre><span>&nbsp;&nbsp; byte *end_ptr;</span></pre>
+			<pre><span>&nbsp;&nbsp; DBUG_ENTER(&quot;ha_tina::find_current_row&quot;);</span></pre>
+			<pre><span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;/* EOF should be counted as new line */</span></pre>
+			<pre><span>&nbsp;&nbsp; if ((end_ptr=&nbsp; find_eoln(share-&gt;mapped_file, current_position,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; share-&gt;file_stat.st_size)) == 0)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(HA_ERR_END_OF_FILE);</span></pre>
+			<pre><span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;for (Field **field=table-&gt;field ; *field ; field++)</span></pre>
+			<pre><span>&nbsp;&nbsp; {</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; buffer.length(0);</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; mapped_ptr++; // Increment past the first quote</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; for(;mapped_ptr != end_ptr; mapped_ptr++)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; {</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Need to convert line feeds!</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (*mapped_ptr == &#39;&quot;&#39; &amp;&amp;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (((mapped_ptr[1] == &#39;,&#39;) &amp;&amp; (mapped_ptr[2] == &#39;&quot;&#39;)) ||</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (mapped_ptr == end_ptr -1 )))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mapped_ptr += 2; // Move past the , and the &quot;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;}</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (*mapped_ptr == &#39;\\&#39; &amp;&amp; mapped_ptr != (end_ptr - 1))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mapped_ptr++;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (*mapped_ptr == &#39;r&#39;)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; buffer.append(&#39;\r&#39;);</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else if (*mapped_ptr == &#39;n&#39; )</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; buffer.append(&#39;\n&#39;);</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else if ((*mapped_ptr == &#39;\\&#39;) || (*mapped_ptr == &#39;&quot;&#39;))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; buffer.append(*mapped_ptr);</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else&nbsp; /* This could only happed with an externally created file */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; buffer.append(&#39;\\&#39;);</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; buffer.append(*mapped_ptr);</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</span></pre>
+			<pre><span>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;}</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; buffer.append(*mapped_ptr);</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; }</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; (*field)-&gt;store(buffer.ptr(), buffer.length(), system_charset_info);</span></pre>
+			<pre><span>&nbsp;&nbsp; }</span></pre>
+			<pre><span>&nbsp;&nbsp; next_position= (end_ptr - share-&gt;mapped_file)+1;</span></pre>
+			<pre><span>&nbsp;&nbsp; /* Maybe use \N for null? */</span></pre>
+			<pre><span>&nbsp;&nbsp; memset(buf, 0, table-&gt;s-&gt;null_bytes); /* We do not implement nulls! */</span></pre>
+			<pre><span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;DBUG_RETURN(0);</span></pre>
+			<pre><span> }&nbsp; </span></pre>
+			<div>
+				<div>
+					<h2 class="title">
+					<a name="custom-engine-close-table"></a>16.10.&nbsp;关闭表</h2>
+				</div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		当<span>MySQL</span>服务器完成表操作时，它将调用<span><a title="16.14.2.&nbsp;close"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-close">close()</a></span>方法关闭文件指针并释放任何其他资源。<p>
+		对于使用共享访问方法的存储引擎（如<span><span>CSV</span>引擎和其他示例引擎中显示的方法），必须将它们自己从共享结构中删除：</span></p>
+		<pre><span>int ha_tina::close(void)</span></pre>
+		<pre><span> {</span></pre>
+		<pre><span>&nbsp;&nbsp; DBUG_ENTER(&quot;ha_tina::close&quot;);</span></pre>
+		<pre><span>&nbsp;&nbsp; DBUG_RETURN(free_share(share));</span></pre>
+		<pre><span> }&nbsp; </span></pre>
+		<p>对于使用其自己共享管理系统的存储引擎，应使用任何所需的方法，在它们的处理程序中，从已打开表的共享区删除处理程序实例。</p>
+		<h2 class="title"><a name="custom-engine-insert"></a>
+		16.11.&nbsp;为存储引擎添加对INSERT的支持<code class="literal"></code></h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		一旦在你的存储引擎中有了读支持，下一个需要实施的特性是对<span><span>INSERT</span>语句的支持。有了<span>INSERT</span>支持，存储引擎就能处理</span><span>WORM</span>（写一次，读多次）应用程序，如用于以后分析的日志和归档应用等。<p>
+		所有的<span><span>INSERT</span>操作均是通过</span><span><a title="16.14.14.&nbsp;write_row"  href="../../../../../../澶╂渤/2006.1/1/third/custom-engine.html#custom-engine-api-reference-write_row"><span>write_row()</span></a></span>函数予以处理的：</p>
+		<pre><span>int ha_foo::write_row(byte *buf)&nbsp; </span></pre>
+		<p><span><span>*buf</span>参数包含将要插入的行，采用内部<span>MySQL</span>格式</span>。基本的存储引擎将简单地前进到数据文件末尾，并直接在末尾处添加缓冲的内容，这样就能使行读取变得简单，这是因为，你可以读取行并将其直接传递到<span><span>rnd_next()</span>函数的</span>缓冲参数中。</p>
+		<p>写入行的进程与读取行的进程相反：从<span>MySQL</span>内部行格式获取数据，并将其写入数据文件。下述示例来自<span>CSV</span>存储引擎： 
+		</p>
+		<pre><span>int ha_tina::write_row(byte * buf)</span></pre>
+		<pre><span> {</span></pre>
+		<pre><span>&nbsp;&nbsp; int size;</span></pre>
+		<pre><span>&nbsp;&nbsp; DBUG_ENTER(&quot;ha_tina::write_row&quot;);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;statistic_increment(table-&gt;in_use-&gt;status_var.ha_write_count, &amp;LOCK_status);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;if (table-&gt;timestamp_field_type &amp; TIMESTAMP_AUTO_SET_ON_INSERT)</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; table-&gt;timestamp_field-&gt;set_time();</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;size= encode_quote(buf);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;if (my_write(share-&gt;data_file, buffer.ptr(), size, MYF(MY_WME | MY_NABP)))</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(-1);</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>&nbsp;&nbsp; if (get_mmap(share, 0) &gt; 0)</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(-1);</span></pre>
+		<pre><span>&nbsp;&nbsp; DBUG_RETURN(0);</span></pre>
+		<pre><span> }</span></pre>
+		<p>前述示例中的两条注释包括，更新关于写入操作的表统计，以及在写入行之前设置时间戳。</p>
+		<h2 class="title"><a name="custom-engine-update"></a>
+		16.12.&nbsp;为存储引擎添加对UPDATE的支持<code class="literal"></code></h2></div></div></div>
+		<p>通过执行表扫描操作，在找到与<span><span>UPDATE</span>语句的<span>WHERE</span>子句匹配的行后，</span><span>MySQL</span>服务器将执行<span><span>UPDATE</span>语句，</span>然后调用<a href="custom-engine.html#custom-engine-api-reference-update_row" title="16.14.13. update_row">update_row()函数</a>：</p>
+		<pre><span>int ha_foo::update_row(const byte *old_data, byte *new_data)</span></pre>
+		<p><span><span>*old_data</span>参数包含更新前位于行中的数据，</span>而<span>*new_data</span>参数包含行的新内容（采用<span>MySQL</span>内部行格式）。</p>
+		<p>更新的执行取决于行格式和存储实施方式。某些存储引擎将替换恰当位置的数据，而其他实施方案则会删除已有的行，并在数据文件末尾添加新行。</p>
+		<p>非事务性存储引擎通常会忽略<span><span>*old_data</span>参数的内容，仅处理<span>*new_data</span>缓冲。</span>事务性存储引擎可能需要比较缓冲，以确定在上次回滚中出现了什么变化。</p>
+		<p>如果正在更新的表中包含时间戳列，对时间戳的更新将由<span><span>update_row()</span>调用管理。</span>下述示例来自<span>CSV</span>引擎：</p>
+		<pre><span>int ha_tina::update_row(const byte * old_data, byte * new_data)</span></pre>
+		<pre><span> {</span></pre>
+		<pre><span>&nbsp;&nbsp; int size;</span></pre>
+		<pre><span>&nbsp;&nbsp; DBUG_ENTER(&quot;ha_tina::update_row&quot;);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;statistic_increment(table-&gt;in_use-&gt;status_var.ha_read_rnd_next_count,</span></pre>
+		<pre><span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&amp;LOCK_status);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;if (table-&gt;timestamp_field_type &amp; TIMESTAMP_AUTO_SET_ON_UPDATE)</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; table-&gt;timestamp_field-&gt;set_time();</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;size= encode_quote(new_data);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;if (chain_append())</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(-1);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;if (my_write(share-&gt;data_file, buffer.ptr(), size, MYF(MY_WME | MY_NABP)))</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(-1);</span></pre>
+		<pre><span>&nbsp;&nbsp; DBUG_RETURN(0);</span></pre>
+		<pre><span> }</span></pre>
+		<p>请注意上例中的时间戳设置。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-delete"></a>
+		16.13.&nbsp;为存储引擎添加对DELETE的支持<code class="literal"></code></h2></div></div></div>
+		<p><span>MySQL</span>服务器采用了与<span><span>INSERT</span>语句相同的方法来执行<span>DELETE</span>语句：服务器使用<span>rnd_next()</span>函数跳到要删除的行，</span>然后调用<a href="custom-engine.html#custom-engine-api-reference-delete_row" title="16.14.4. delete_row">delete_row()</a>函数删除行。</p>
+		<pre><span>int ha_foo::delete_row(const byte *buf)</span></pre>
+		<p><span>*buf</span>参数包含要删除行的内容。对于大多数存储引擎，该参数可被忽略，但事务性存储引擎可能需要保存删除的数据，以供回滚操作使用。</p>
+		<p>下述示例来自<span>CSV</span>存储引擎： </p>
+		<pre><span>int ha_tina::delete_row(const byte * buf)</span></pre>
+		<pre><span> {</span></pre>
+		<pre><span>&nbsp;&nbsp; DBUG_ENTER(&quot;ha_tina::delete_row&quot;);</span></pre>
+		<pre><span>&nbsp;&nbsp; statistic_increment(table-&gt;in_use-&gt;status_var.ha_delete_count,</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;LOCK_status);</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;if (chain_append())</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; DBUG_RETURN(-1);</span></pre>
+		<pre><span>&nbsp; </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;--records;</span></pre>
+		<pre><span> </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;DBUG_RETURN(0);</span></pre>
+		<pre><span> }</span></pre>
+		<p>前述示例的步骤是更新<span>delete_count</span>统计，并记录计数。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="custom-engine-api-reference"></a>
+		16.14.&nbsp;API引用</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-bas_ext">16.14.1. bas_ext</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-close">16.14.2. close</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-create">16.14.3. create</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-delete_row">16.14.4. delete_row</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-delete_table">16.14.5. delete_table</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-external_lock">16.14.6. external_lock</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-extra">16.14.7. extra</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-info">16.14.8. info</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-open">16.14.9. open</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-rnd_init">16.14.10. rnd_init</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-rnd_next">16.14.11. rnd_next</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-store_lock">16.14.12. store_lock</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-update_row">16.14.13. update_row</a></span></dt><dt><span class="section"><a href="custom-engine.html#custom-engine-api-reference-write_row">16.14.14. write_row</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-bas_ext"></a>16.14.1. bas_ext</h3></div></div></div><h4><a name="id2955344"></a>
+		目的</h4>
+		<p>定义存储引擎所使用的文件扩展。</p>
+		<h4><a name="id2955352"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual const char ** <b class="fsfunc">bas_ext</b>
+
+          (</td><td>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td> </td><td>;</td></tr></table></div><h4><a name="id2955372"></a>
+		描述</h4>
+		<p>这是<span><span>bas_ext</span>方法。调用它，可为<span>MySQL</span>服务器提供存储引擎所使用的文件扩展列表。该列表将返回以<span>Null</span>终结的字符串数组。</span></p>
+		<p>通过提供扩展列表，在很多情况下，存储引擎能省略<a href="custom-engine.html#custom-engine-api-reference-delete_table" title="16.14.5. delete_table">delete_table()</a>函数，这是<span>因为MySQL</span>服务器将关闭所有对表的引用，并使用指定的扩展删除所有文件。</p>
+		<h4><a name="id2955401"></a>参数</h4>
+		<p>该函数无参数。 </p>
+		<h4><a name="id2955409"></a>返回值</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            <span>
+			返回值是存储引擎扩展的以<span>Null</span>终结的字符串数组。下面给出了<span>CSV</span>引擎的示例：</span>
+          </p><pre class="programlisting">static const char *ha_tina_exts[] =
+ {
+   ".CSV",
+   NullS
+ };
+</pre></li></ul></div><h4><a name="id2955433"></a>用法</h4><pre class="programlisting">static const char *ha_tina_exts[] =
+ {
+   ".CSV",
+   NullS
+ };
+        
+const char **ha_tina::bas_ext() const
+ {
+   return ha_tina_exts;
+ }  
+</pre><h4><a name="id2955442"></a>默认实施</h4><pre class="programlisting">static const char *ha_example_exts[] = {
+   NullS
+ };
+ 
+const char **ha_example::bas_ext() const
+ {
+   return ha_example_exts;
+ }
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-close"></a>16.14.2. close</h3></div></div></div><h4><a name="id2955460"></a>
+			目的</h4>
+			<p>关闭打开的表。 </p>
+			<h4><a name="id2955468"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">close</b>
+
+          (</td><td><var class="pdparam">void</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>
+
+             </td><td><var class="pdparam">void</var>
+
+          ;</td></tr></table></div><h4><a name="id2955492"></a>描述</h4>
+			<p>这是<span><span>close</span>方法。</span></p>
+			<p>关闭表。这是释放任何已分配资源的恰当时机。</p>
+			<p>从<span>sql_base.cc</span>、<span>sql_select.cc</span>和<span>table.cc</span>调用它。在<span>sql_select.cc</span>中，它仅用于关闭临时表，或在将临时表转换为<span>myisam</span>表的过程中关闭表。关于<span>sql_base.cc</span>，请查看<span>close_data_tables()</span>。</p>
+			<h4><a name="id2955516"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            void
+          </p></li></ul></div><h4><a name="id2955532"></a>返回值</h4>
+			<p>无返回值。</p>
+			<h4><a name="id2955540"></a>用法</h4>
+			<p>取自<span>CSV</span>引擎的示例： </p>
+			<pre class="programlisting">int ha_example::close(void)
+{
+  DBUG_ENTER("ha_example::close");
+  DBUG_RETURN(free_share(share));
+}
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-create"></a>16.14.3. create</h3></div></div></div><h4><a name="id2955565"></a>
+			目的</h4>
+			<p>创建新表。</p>
+			<h4><a name="id2955573"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">create</b>
+
+          (</td><td><var class="pdparam">name</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">form</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">info</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>const char * </td><td><var class="pdparam">name</var>
+
+          ;</td></tr><tr><td>TABLE * </td><td><var class="pdparam">form</var>
+
+          ;</td></tr><tr><td>HA_CREATE_INFO * </td><td><var class="pdparam">info</var>
+
+          ;</td></tr></table></div><h4><a name="id2955611"></a>描述</h4>
+			<p>这是<span>create</span>方法。 
+			</p>
+			<p><span>调用<span>create()</span>以创建表。</span>变量名称为表的名称。调用<span><span>create()</span>时，不需要打开表。此外，</span>由于已创建了<span><span>.frm</span>文件，不推荐调整<span>create_info</span>。</span></p>
+			<p>由<span><span>ha_create_table()</span>从<span>handle.cc</span>中调用。</span></p>
+			<h4><a name="id2955655"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            name
+          </p></li><li><p>
+            form
+          </p></li><li><p>
+            info
+          </p></li></ul></div><h4><a name="id2955691"></a>返回值</h4>
+			<p>无返回值。 </p>
+			<h4><a name="id2955699"></a>用法</h4>
+			<p><span><span>CSV</span>搜索引擎示例：</span></p>
+			<pre class="programlisting">int ha_tina::create(const char *name, TABLE *table_arg,
+                    HA_CREATE_INFO *create_info)
+{
+  char name_buff[FN_REFLEN];
+  File create_file;
+  DBUG_ENTER("ha_tina::create");
+
+  if ((create_file= my_create(fn_format(name_buff, name, "", ".CSV",
+                                        MY_REPLACE_EXT|MY_UNPACK_FILENAME),0,
+                              O_RDWR | O_TRUNC,MYF(MY_WME))) &lt; 0)
+    DBUG_RETURN(-1);
+
+  my_close(create_file,MYF(0));
+
+  DBUG_RETURN(0);
+}          
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-delete_row"></a>16.14.4. delete_row</h3></div></div></div><h4><a name="id2955736"></a>
+			目的</h4>
+			<p>删除行。 </p>
+			<h4><a name="id2955743"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">delete_row</b>
+
+          (</td><td><var class="pdparam">buf</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>const byte * </td><td><var class="pdparam">buf</var>
+
+          ;</td></tr></table></div><h4><a name="id2955767"></a>描述</h4>
+			<p>这是<span>delete_row</span>方法。</p>
+			<p><span><i><span>Buf</span></i></span>包含删除行的副本。调用了当前行后，服务器将立刻调用它（通过前一个<span><span>rnd_next()</span>或索引调用</span>）。如果存在指向上一行的指针，或能够访问
+			主键，删除操作将更为容易。请记住，服务器不保证连续删除。可以使用<span><span>ORDER 
+			BY</span>子句。</span></p>
+			<p>在<span><span>sql_acl.cc</span>和<span>sql_udf.cc</span>中调用，以管理内部的表信息。</span>在<span>sql_delete.cc</span>、<span>sql_insert.cc</span>和<span><span>sql_select.cc</span>中调用。</span>在<span><span>sql_select</span>中，</span>它用于删除副本，而在插入操作中，它用于<span><span>REPLACE</span>调用。</span></p>
+			<h4><a name="id2955836"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            buf
+          </p></li></ul></div><h4><a name="id2955852"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2955859"></a>用法</h4><pre class="programlisting">          
+        </pre><h4><a name="id2955866"></a>默认实施</h4><pre class="programlisting">{ return  HA_ERR_WRONG_COMMAND; }
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-delete_table"></a>16.14.5. delete_table</h3></div></div></div><h4><a name="id2955884"></a>
+			目的</h4>
+			<p>用来自<a href="custom-engine.html#custom-engine-api-reference-bas_ext" title="16.14.1. bas_ext">bas_ext()</a>的扩展删除所有文件。</p>
+			<h4><a name="id2955899"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">delete_table</b>
+
+          (</td><td><var class="pdparam">name</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>const char * </td><td><var class="pdparam">name</var>
+
+          ;</td></tr></table></div><h4><a name="id2955923"></a>描述</h4>
+			<p>这是<span>delete_table</span>方法。</p>
+			<p>用于删除表。调用<span>delete_table()</span>时，所有已打开的对该表的引用均将被关闭（并释放全局共享的引用）。变量名称为表名。此时，需要删除任何已创建的文件。</p>
+			<p>如果未实施它，将从<span><span>handler.cc</span>调用</span>默认的<span><span>delete_table()</span>，并用<span>bas_ext()</span>返回的文件扩展</span>删除所有文件。假定处理程序返回的扩展比文件实际使用的多。</p>
+			<p>由<span>delete_table</span>和<span><span>ha_create_table()</span>从<span>handler.cc</span>调用。如果为存储引擎指定了<span>table_flag</span></span><span>
+			<span>HA_DROP_BEFORE_CREATE</span></span><span>，仅在创建过程中使用。</span></p>
+			<h4><a name="id2955990"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            name: 表的基本名称</p></li></ul></div><h4><a name="id2956007"></a>
+			返回值</h4><div class="itemizedlist">
+				<p>
+				<span>
+				<span>
+				·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>如果成功地从<span>base_ext</span>删除了至少<span>1</span>个文件而且未出现除<span>ENOENT</span>之外的错误，返回<span>0</span>。</span></p>
+				<p>
+				<span>
+				·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span><span>#</span><span>: 
+				Error </span></div><h4><a name="id2956043"></a>用法</h4></div><div class="section"><div class="titlepage"><div><div>
+			大多数存储引擎均会忽略该函数的实施。<h3 class="title"><a name="custom-engine-api-reference-external_lock"></a>16.14.6. external_lock</h3></div></div></div><h4><a name="id2956060"></a>
+			目的</h4>
+			<p>为事务处理表锁定。</p>
+			<h4><a name="id2956068"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">external_lock</b>
+
+          (</td><td><var class="pdparam">thd</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">lock_type</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>THD * </td><td><var class="pdparam">thd</var>
+
+          ;</td></tr><tr><td>int </td><td><var class="pdparam">lock_type</var>
+
+          ;</td></tr></table></div><h4><a name="id2956098"></a>描述</h4>
+			<p>这是<span>external_lock</span>方法。</p>
+			<p>在<span><span>lock.cc</span>中<span>“</span>用于</span><span class="quote"><span>mysql</span>的锁定函数</span><span><span>”</span>一节，给出了关于该议题的额外注释，值的一读。</span></p>
+			<p>在表上创建锁定。如果实施了能处理事务的存储引擎，请查看<span>ha_berkely.cc</span>，以了解如何执行该操作的方法。否则，应考虑在此调用<span>flock()</span>。</p>
+			<p>由<span>lock_external()</span>和<span><span>unlock_external()</span>从<span>lock.cc</span>中调用。也能由<span>copy_data_between_tables()</span>从<span>sql_table.cc</span>中调用。</span></p>
+			<h4><a name="id2956161"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            thd
+          </p></li><li><p>
+            lock_type
+          </p></li></ul></div><h4><a name="id2956187"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2956195"></a>默认实施</h4><pre class="programlisting">{ return 0; }
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-extra"></a>16.14.7. extra</h3></div></div></div><h4><a name="id2956212"></a>
+			目的</h4>
+			<p>将提示从服务器传递给存储引擎。</p>
+			<h4><a name="id2956219"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">extra</b>
+
+          (</td><td><var class="pdparam">operation</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>enum
+            ha_extra_function </td><td><var class="pdparam">operation</var>
+
+          ;</td></tr></table></div><h4><a name="id2956244"></a>描述</h4>
+			<p>这是<span><span>extra</span>方法。</span></p>
+			<p><span>无论何时，当服务器希望将提示发送到存储引擎时，将调用<span>extra()</span>。<span>MyISAM</span></span>引擎实现了大多数提示。<span><span>ha_innodb.cc</span>给出了最详尽的提示列表。</span></p>
+			<h4><a name="id2956272"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            operation
+          </p></li></ul></div><h4><a name="id2956289"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2956296"></a>用法</h4><pre class="programlisting">          
+        </pre><h4><a name="id2956303"></a>默认实施</h4>
+			<p>默认情况下，存储引擎倾向于不实施任何提示。</p>
+			<pre class="programlisting">{ return 0; }
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-info"></a>16.14.8. info</h3></div></div></div><h4><a name="id2956325"></a>
+			目的</h4>
+			<p>提示存储引擎通报统计信息。</p>
+			<h4><a name="id2956332"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual void <b class="fsfunc">info</b>
+
+          (</td><td><var class="pdparam">uint</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>
+
+             </td><td><var class="pdparam">uint</var>
+
+          ;</td></tr></table></div><h4><a name="id2956356"></a>描述</h4>
+			<p>这是<span>info</span>方法。</p>
+			<p><span>::info()</span>用于将信息返回给优化程序。目前，该表处理程序未实施实际需要的大多数字段。<span>SHOW</span>也能利用该数据。注意，或许你打算在你的代码中包含下述内容“<span>if 
+			(records &gt; 2) records = 2<span>”。原因在于，服务器仅优化具有一条记录的情形。如果在表扫描过程中，你不清楚记录的数目，最好将记录数设为</span>2</span>，以便能够返回尽可能多的所需记录。除了记录外，你或许还希望设置其他变量，包括：删除的记录，<span>data_file_length</span>，<span>index_file_length</span>，<span>delete_length</span>，<span>check_time</span>。更多信息，请参见<span>handler.h</span>中的公共变量。</p>
+			<p>在下述文件中调用：<span>filesort.cc ha_heap.cc item_sum.cc 
+			opt_sum.cc sql_delete.cc sql_delete.cc sql_derived.cc sql_select.cc 
+			sql_select.cc sql_select.cc sql_select.cc sql_select.cc sql_show.cc 
+			sql_show.cc sql_show.cc sql_show.cc sql_table.cc sql_union.cc 
+			sql_update.cc </span></p>
+			<h4><a name="id2956416"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            uint
+          </p></li></ul></div><h4><a name="id2956432"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2956440"></a>用法</h4>
+			<p>该示例取自<span>CSV</span>存储引擎： </p>
+			<pre class="programlisting">void ha_tina::info(uint flag)
+{
+  DBUG_ENTER("ha_tina::info");
+  /* This is a lie, but you don't want the optimizer to see zero or 1 */
+  if (records &lt; 2)
+    records= 2;
+  DBUG_VOID_RETURN;
+}          
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-open"></a>16.14.9. open</h3></div></div></div><h4><a name="id2956469"></a>
+			目的</h4>
+			<p>打开表。 </p>
+			<h4><a name="id2956476"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">open</b>
+
+          (</td><td><var class="pdparam">name</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">mode</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">test_if_locked</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>const char * </td><td><var class="pdparam">name</var>
+
+          ;</td></tr><tr><td>int </td><td><var class="pdparam">mode</var>
+
+          ;</td></tr><tr><td>uint </td><td><var class="pdparam">test_if_locked</var>
+
+          ;</td></tr></table></div><h4><a name="id2956514"></a>描述</h4>
+			<p>这是<span>open</span>方法。</p>
+			<p>
+			用于打开表。名称是文件的名称。在需要打开表时打开它。例如，当请求在表上执行选择操作时（对于每一请求，表未打开并被关闭，对其进行高速缓冲处理）。</p>
+			<p>由<span>handler::ha_open()</span>从<span>handler.cc</span>中调用。通过调用<span>ha_open()</span>，然后调用处理程序相关的<span>open()</span>，服务器打开所有表。</p>
+			<p>
+			对于处理程序对象，将作为初始化的一部分并在将其用于正常查询之前打开它（并非总在元数据变化之前）。如果打开了对象，在删除之前还将关闭它。</p>
+			<p>这是<span>open</span>方法。调用<span><span>open</span>以打开数据库表。</span></p>
+			<p>第<span>1</span>个参数是要打开的表的名称。第<span>2</span>个参数决定了要打开的文件或将要执行的操作。这类值定义于<span><span>handler.h</span>中，为了方便起见在此列出：</span></p>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_OPEN_KEYFILE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 1</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_OPEN_RNDFILE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 2</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_GET_INDEX&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 4</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_GET_INFO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8 &nbsp;&nbsp;&nbsp; /* do a ha_info() after open */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_READ_ONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 16&nbsp; &nbsp; /* File opened as readonly */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_TRY_READ_ONLY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 32&nbsp;&nbsp;&nbsp; /* Try readonly if can&#39;t open with read and write */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_WAIT_IF_LOCKED&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 64&nbsp;&nbsp;&nbsp; &nbsp; /* Wait if locked on open */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_ABORT_IF_LOCKED&nbsp;&nbsp;&nbsp; 128&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; /* skip if locked on open.*/</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_BLOCK_LOCK&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 256 &nbsp; /* unlock when reading some records */</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define HA_OPEN_TEMPORARY&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 512</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></pre>
+			<p>最后的选项规定了在打开表之前是否应检查表上的锁定。</p>
+			<p>典型情况下，存储引擎需要实现某种形式的共享访问控制，以防止多线程环境下的文件损坏。关于如何实现文件锁定的示例，请参见<span><span>sql/examples/ha_tina.cc</span>的<span>get_share()</span></span>和<span><span>free_share()</span>方法。</span></p>
+			<h4><a name="id2956622"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            name
+          </p></li><li><p>
+            mode
+          </p></li><li><p>
+            test_if_locked
+          </p></li></ul></div><h4><a name="id2956659"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2956666"></a>用法</h4>
+			<p>该示例取自<span>CSV</span>存储引擎：</p>
+			<pre class="programlisting">        int ha_tina::open(const char *name, int mode, uint test_if_locked)
+        {
+        DBUG_ENTER("ha_tina::open");
+        
+        if (!(share= get_share(name, table)))
+        DBUG_RETURN(1);
+        thr_lock_data_init(&amp;share-&gt;lock,&amp;lock,NULL);
+        ref_length=sizeof(off_t);
+        
+        DBUG_RETURN(0);
+        }          
+      </pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-rnd_init"></a>16.14.10. rnd_init</h3></div></div></div><h4><a name="id2956698"></a>
+			目的</h4>
+			<p>为表扫描功能初始化处理程序。</p>
+			<h4><a name="id2956706"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">rnd_init</b>
+
+          (</td><td><var class="pdparam">scan</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>bool </td><td><var class="pdparam">scan</var>
+
+          ;</td></tr></table></div><h4><a name="id2956730"></a>描述</h4>
+			<p>这是<span>rnd_init</span>方法。 
+			</p>
+			<p>当系统希望存储引擎执行表扫描时，将调用<span>rnd_init()</span>。</p>
+			<p>与<span>index_init()</span>不同，<span>rnd_init()</span>可以调用两次，两次调用之间不使用<span>rnd_end()</span>（仅当<span>scan=1</span>时才有意义）。随后，第<span>2</span>次调用应准备好新的表扫描。例如，如果<span>rnd_init</span>分配了光标，第<span>2</span>次调用应将光标定位于表的开始部分，不需要撤销分配并再次分配。</p>
+			<p>从下述文件调用：<span>filesort.cc, records.cc, sql_handler.cc, 
+			sql_select.cc, sql_table.cc, </span>和<span>sql_update.cc</span>。</p>
+			<h4><a name="id2956761"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            scan
+          </p></li></ul></div><h4><a name="id2956777"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2956785"></a>用法</h4>
+			<p>该示例取自<span>CSV</span>存储引擎：</p>
+			<pre class="programlisting">int ha_tina::rnd_init(bool scan)
+{
+  DBUG_ENTER("ha_tina::rnd_init");
+
+  current_position= next_position= 0;
+  records= 0;
+  chain_ptr= chain;
+  DBUG_RETURN(0);
+}          
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-rnd_next"></a>16.14.11. rnd_next</h3></div></div></div><h4><a name="id2956812"></a>
+			目的</h4>
+			<p>从表中读取下一行，并将其返回服务器。</p>
+			<h4><a name="id2956820"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">rnd_next</b>
+
+          (</td><td><var class="pdparam">buf</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>byte * </td><td><var class="pdparam">buf</var>
+
+          ;</td></tr></table></div><h4><a name="id2956843"></a>描述</h4>
+			<p>这是<span>rnd_next</span>方法。</p>
+			<p>对于表扫描的每一行调用它。耗尽记录时，应返回<span>HA_ERR_END_OF_FILE</span>。用行信息填充<span>buff</span>。表的字段结构是以服务器能理解的方式将数据保存到<span>buf</span>中的键。</p>
+			<p>从下述文件调用：<span>filesort.cc, records.cc, sql_handler.cc, 
+			sql_select.cc, sql_table.cc, </span>和<span>sql_update.cc</span>。</p>
+			<h4><a name="id2956869"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            buf
+          </p></li></ul></div><h4><a name="id2956885"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2956893"></a>用法</h4>
+			<p>下述示例取自<span>ARCHIVE</span>存储引擎： </p>
+			<pre class="programlisting">int ha_archive::rnd_next(byte *buf)
+{
+  int rc;
+  DBUG_ENTER("ha_archive::rnd_next");
+
+  if (share-&gt;crashed)
+      DBUG_RETURN(HA_ERR_CRASHED_ON_USAGE);
+ 
+  if (!scan_rows)
+    DBUG_RETURN(HA_ERR_END_OF_FILE);
+  scan_rows--;
+
+  statistic_increment(table-&gt;in_use-&gt;status_var.ha_read_rnd_next_count,
+		      &amp;LOCK_status);
+    current_position= gztell(archive);
+  rc= get_row(archive, buf);
+ 
+  if (rc != HA_ERR_END_OF_FILE)
+    records++;
+
+  DBUG_RETURN(rc);
+}          
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-store_lock"></a>16.14.12. store_lock</h3></div></div></div><h4><a name="id2956929"></a>
+			目的</h4>
+			<p>创建和释放表锁定。 </p>
+			<h4><a name="id2956936"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual THR_LOCK_DATA **
+            <b class="fsfunc">store_lock</b>
+
+          (</td><td><var class="pdparam">thd</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">to</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">lock_type</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>THD * </td><td><var class="pdparam">thd</var>
+
+          ;</td></tr><tr><td>THR_LOCK_DATA ** </td><td><var class="pdparam">to</var>
+
+          ;</td></tr><tr><td>enum
+          thr_lock_type </td><td><var class="pdparam">lock_type</var>
+
+          ;</td></tr></table></div><h4><a name="id2956974"></a>描述</h4>
+			<p>这是<span>store_lock</span>方法。</p>
+			<p>下面介绍了关于<span>handler::store_lock()</span>的概念：</p>
+			<p>该语句决定了在表上需要何种锁定。对于<span>updates/deletes/inserts</span>，我们得到<span>WRITE</span>锁定；对于<span>SELECT...</span>，我们得到读锁定。</p>
+			<p>将锁定添加到表锁定处理程序之前（请参见<span>thr_lock.c</span>），<span>mysqld</span>将用请求的锁定调用存储锁定。目前，存储锁定能将写锁定更改为读锁定（或某些其他锁定），忽略锁定（如果不打算使用<span>MySQL</span>表锁定），或为很多表添加锁定（就像使用<span>MERGE</span>处理程序时那样）。 
+			</p>
+			<p>例如，<span>Berkeley DB</span>能够将所有的<span>WRITE</span>锁定更改为<span>TL_WRITE_ALLOW_WRITE</span>（表明正在执行<span>WRITES</span>操作，但我们仍允许其他人执行操作）。</p>
+			<p>释放锁定时，也将调用<span>store_lock()</span>。在这种情况下，通常不需要作任何事。</p>
+			<p>在某些特殊情况下，<span>MySQL</span>可能会发送对<span>TL_IGNORE</span>的请求。这意味着我们正在请求与上次相同的锁定，这也应被忽略（当我们打开了表的某一部分时，如果其他人执行了表刷新操作，就会出现该情况，此时，<span>mysqld</span>将关闭并再次打开表，然后获取与上次相同的锁定）。我们打算在将来删除该特性。</p>
+			<p>由<span>get_lock_data()</span>从<span>lock.cc</span>中调用。</p>
+			<h4><a name="id2957034"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            thd
+          </p></li><li><p>
+            to
+          </p></li><li><p>
+            lock_type
+          </p></li></ul></div><h4><a name="id2957069"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2957077"></a>用法</h4>
+			<p>下述示例取自<span><span>ARCHIVE</span>存储引擎：</span></p>
+			<pre class="programlisting">/* 
+  Below is an example of how to setup row level locking.
+*/
+THR_LOCK_DATA **ha_archive::store_lock(THD *thd,
+                                       THR_LOCK_DATA **to,
+                                       enum thr_lock_type lock_type)
+{
+  if (lock_type == TL_WRITE_DELAYED)
+    delayed_insert= TRUE;
+  else
+    delayed_insert= FALSE;
+
+  if (lock_type != TL_IGNORE &amp;&amp; lock.type == TL_UNLOCK) 
+  {
+    /* 
+      Here is where we get into the guts of a row level lock.
+      If TL_UNLOCK is set 
+      If we are not doing a LOCK TABLE or DISCARD/IMPORT
+      TABLESPACE, then allow multiple writers 
+    */
+
+    if ((lock_type &gt;= TL_WRITE_CONCURRENT_INSERT &amp;&amp;
+         lock_type &lt;= TL_WRITE) &amp;&amp; !thd-&gt;in_lock_tables
+        &amp;&amp; !thd-&gt;tablespace_op)
+      lock_type = TL_WRITE_ALLOW_WRITE;
+
+    /* 
+      In queries of type INSERT INTO t1 SELECT ... FROM t2 ...
+      MySQL would use the lock TL_READ_NO_INSERT on t2, and that
+      would conflict with TL_WRITE_ALLOW_WRITE, blocking all inserts
+      to t2. Convert the lock to a normal read lock to allow
+      concurrent inserts to t2. 
+    */
+
+    if (lock_type == TL_READ_NO_INSERT &amp;&amp; !thd-&gt;in_lock_tables) 
+      lock_type = TL_READ;
+
+    lock.type=lock_type;
+  }
+
+  *to++= &amp;lock;
+ 
+  return to;
+}          
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-update_row"></a>16.14.13. update_row</h3></div></div></div><h4><a name="id2957140"></a>
+			目的</h4>
+			<p>更新已有行的内容。 </p>
+			<h4><a name="id2957147"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">update_row</b>
+
+          (</td><td><var class="pdparam">old_data</var>, </td><td> </td></tr><tr><td> </td><td><var class="pdparam">new_data</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>const byte * </td><td><var class="pdparam">old_data</var>
+
+          ;</td></tr><tr><td>byte * </td><td><var class="pdparam">new_data</var>
+
+          ;</td></tr></table></div><h4><a name="id2957178"></a>描述</h4>
+			<p>这是<span>update_row</span>方法。</p>
+			<p><span>old_data</span>将保存前一行的记录，而<span>new_data</span>将保存最新的数据。</p>
+			<p>如果使用了<span>ORDER BY</span>子句，服务器能够根据排序执行更新操作。不保证连续排序。</p>
+			<p>目前，<span>new_data</span>不会拥有已更新的<span>auto_increament</span>记录，或已更新的时间戳字段。你可以通过下述方式（例如）完成该操作：<span>if 
+			(table-&gt;timestamp_field_type &amp; TIMESTAMP_AUTO_SET_ON_UPDATE) table-&gt;timestamp_field-&gt;set_time(); 
+			if (table-&gt;next_number_field &amp;&amp; record == table-&gt;record[0]) 
+			update_auto_increment(); </span></p>
+			<p>从<span>sql_select.cc, sql_acl.cc, sql_update.cc</span>和<span>sql_insert.cc</span>调用。</p>
+			<h4><a name="id2957222"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+            old_data
+          </p></li><li><p>
+            new_data
+          </p></li></ul></div><h4><a name="id2957248"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2957256"></a>用法</h4><pre class="programlisting">          
+        </pre><h4><a name="id2957263"></a>默认实施</h4><pre class="programlisting">           { return  HA_ERR_WRONG_COMMAND; }
+        </pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="custom-engine-api-reference-write_row"></a>16.14.14. write_row</h3></div></div></div><h4><a name="id2957280"></a>
+			目的</h4>
+			<p>为表添加新行。</p>
+			<h4><a name="id2957288"></a>概要</h4><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td>virtual int <b class="fsfunc">write_row</b>
+
+          (</td><td><var class="pdparam">buf</var>);</td><td> </td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>byte * </td><td><var class="pdparam">buf</var>
+
+          ;</td></tr></table></div><h4><a name="id2957311"></a>描述</h4>
+			<p>这是<span>write_row</span>方法。</p>
+			<p><span>write_row()</span>用于插入行。目前，如果出现大量加载，不会给出任何<a href="custom-engine.html#custom-engine-api-reference-extra" title="16.14.7. extra">extra()</a>提示。<span>buf</span>是数据的字节数组，大小为<span>table-&gt;s-&gt;reclength</span>。</p>
+			<p>可以使用字段信息从本地字节数组类型提取数据。例如：</p>
+			<p><span>for (Field **field=table-&gt;field ; *field ; 
+			field++) { ... } </span></p>
+			<p><span>BLOB</span>必须特殊处理：</p>
+			<pre><span>&nbsp;&nbsp;&nbsp; </span></pre>
+			<pre><span>for (ptr= table-&gt;s-&gt;blob_field, end= ptr + table-&gt;s-&gt;blob_fields ; ptr != end ; ptr++) </span></pre>
+			<pre><span>&nbsp;&nbsp;{ </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *data_ptr; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uint32 size= ((Field_blob*)table-&gt;field[*ptr])-&gt;get_length();</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((Field_blob*)table-&gt;field[*ptr])-&gt;get_ptr(&amp;data_ptr); </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;... </span></pre>
+			<pre><span>&nbsp;&nbsp;}</span></pre>
+			<p>关于以字符串形式提取所有数据的示例，请参见<span>ha_tina.cc</span>。在<span>ha_berkeley.cc</span>中，对于<span>ha_berkeley</span>自己的本地存储类型，给出了一个通过“包装功能”完整保存它的例子。</p>
+			<p>请参见<span><span>update_row()</span>关于</span><span>auto_increments</span>和时间戳的注释。该情形也适用于<span>write_row()</span>。</p>
+			<p>从<span>item_sum.cc</span>、<span>item_sum.cc</span>、<span>sql_acl.cc</span>、<span>sql_insert.cc</span>、<span>sql_insert.cc</span>、<span>sql_select.cc</span>、<span>sql_table.cc</span>、<span>sql_udf.cc</span>、以及<span>sql_update.cc</span>调用。</p>
+			<h4><a name="id2957388"></a>参数</h4><div class="itemizedlist"><ul type="disc"><li><p>
+			<span>数据的<span>buf</span>字节数组</span>
+          </p></li></ul></div><h4><a name="id2957405"></a>返回值</h4><p>
+        无返回值。
+      </p><h4><a name="id2957412"></a>用法</h4><pre class="programlisting">          
+        </pre><h4><a name="id2957419"></a>默认实施</h4><pre class="programlisting">           { return  HA_ERR_WRONG_COMMAND; }
+        </pre></div></div></div><div><hr>
+	<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。 
+	原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div>
+</body></html>

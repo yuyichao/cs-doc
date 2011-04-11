@@ -1,0 +1,698 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>6.3. poll and select</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-6-sect-2.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-6-sect-4.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><TD valign="top"><a name="chp-6-sect-3"></a>
+<h3 class="docSection1Title">6.3. poll and select</h3>
+
+<p class="docText">Applications that use nonblocking I/O <a name="chp-6-ITERM-5282"></a>
+<a name="chp-6-ITERM-5283"></a> <a name="chp-6-ITERM-5284"></a>
+<a name="chp-6-ITERM-5285"></a> <a name="chp-6-ITERM-5286"></a>
+<a name="chp-6-ITERM-5287"></a>often
+use the <span class="docEmphasis">poll</span>, <span class="docEmphasis">select</span>, and
+<span class="docEmphasis">epoll</span> system calls as well.
+<span class="docEmphasis">poll</span>, <span class="docEmphasis">select</span>, and
+<span class="docEmphasis">epoll</span> have essentially the same functionality:
+each allow a process to determine whether it can read from or write
+to one or more open files without blocking. These calls can also
+block a process until any of a given set of file descriptors becomes
+available for reading or writing. Therefore, they are often used in
+applications that must use multiple input or output streams without
+getting stuck on any one of them. The same functionality is offered
+by multiple functions, because two were implemented in Unix almost at
+the same time by two different groups: <span class="docEmphasis">select</span>
+was introduced in BSD Unix, whereas <span class="docEmphasis">poll</span> was the
+System V solution. The <span class="docEmphasis">epoll</span> call<sup class="docFootnote"><a class="docLink" href="chp-6-sect-3.shtml#chp-6-FNOTE-4">[4]</a></sup> was added in 2.5.45 as a way of making the polling
+function scale to thousands of file descriptors.</p><blockquote><p class="docFootnote"><sup><a name="chp-6-FNOTE-4">[4]</a></sup> Actually, <span class="docEmphasis">epoll</span> is a set of three calls
+that together can be used to achieve the polling functionality. For
+our purposes, though, we can think of it as a single call.</P></blockquote>
+
+<p class="docText">Support for any of these calls requires support from the device
+driver. This support (for all three calls) is provided through the
+driver's <span class="docEmphasis">poll</span> method. This
+method has the following prototype:</p>
+
+<pre>unsigned int (*poll) (struct file *filp, poll_table *wait);</pre><BR>
+
+
+<p class="docText">The driver method is called whenever the user-space program performs
+a <span class="docEmphasis">poll</span>, <span class="docEmphasis">select</span>, or
+<span class="docEmphasis">epoll</span> system call involving a file descriptor
+associated with the driver. The device method is in charge of these
+two steps:</P>
+
+<div style="font-weight:bold"><ol class="docList" type="1"><LI><div style="font-weight:normal"><p class="docList"><a name="chp-6-ITERM-5288"></a>
+<a name="chp-6-ITERM-5289"></a>Call
+<span class="docEmphasis">poll_wait</span> on one or more wait queues that could
+indicate a change in the poll status. If no file descriptors are
+currently available for I/O, the kernel causes the process to wait on
+the wait queues for all file descriptors passed to the system call.</p></div></li><li><div style="font-weight:normal"><p class="docList">Return a bit mask describing the operations (if any) that could be
+immediately performed without blocking.</p></div></LI></ol></div>
+<p class="docText">Both of these operations are usually straightforward and tend to look
+very similar from one driver to the next. They rely, however, on
+information that only the driver can provide and, therefore, must be
+implemented individually by each driver.</P>
+
+<p class="docText"><a name="chp-6-ITERM-5290"></a>
+<a name="chp-6-ITERM-5291"></a><a name="chp-6-ITERM-5292"></a>The <tt>poll_table</tt>
+structure, the second argument to the <span class="docEmphasis">poll</span>
+method, is used within the kernel to implement the
+<span class="docEmphasis">poll</span>, <span class="docEmphasis">select</span>, and
+<span class="docEmphasis">epoll</span> calls; it is declared in
+<I>&lt;linux/poll.h&gt;</i>, which must be included by
+the driver source. Driver writers do not need to know anything about
+its internals and must use it as an opaque object; it is passed to
+the driver method so that the driver can load it with every wait
+queue that could wake up the process and change the status of the
+<span class="docEmphasis">poll</span> operation. The driver adds a wait queue to
+the <tt>poll_table</tt> structure by calling the function
+<span class="docEmphasis">poll_wait</span>:</P>
+
+<pre> void poll_wait (struct file *, wait_queue_head_t *, poll_table *);</pre><BR>
+
+
+<p class="docText">The second task performed by the <span class="docEmphasis">poll</span> method is
+returning the bit mask describing which operations could be completed
+immediately; this is also straightforward. For example, if the device
+has data available, a <span class="docEmphasis">read</span> would complete
+without sleeping; the <span class="docEmphasis">poll</span> method should
+indicate this state of affairs. Several flags (defined via
+<i>&lt;linux/poll.h&gt;</i>) are used to indicate the
+possible operations:</p>
+
+<a name="chp-6-ITERM-5293"></a><a name="chp-6-ITERM-5294"></a><a name="chp-6-ITERM-5295"></a><a name="chp-6-ITERM-5296"></a><a name="chp-6-ITERM-5297"></a><a name="chp-6-ITERM-5298"></a><a name="chp-6-ITERM-5299"></a><a name="chp-6-ITERM-5300"></a><a name="chp-6-ITERM-5301"></a><a name="chp-6-ITERM-5302"></a><a name="chp-6-ITERM-5303"></a><a name="chp-6-ITERM-5304"></a><a name="chp-6-ITERM-5305"></a><a name="chp-6-ITERM-5306"></a><a name="chp-6-ITERM-5307"></a><a name="chp-6-ITERM-5308"></a><a name="chp-6-ITERM-5309"></a><a name="chp-6-ITERM-5310"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLIN</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5293"></a>
+<a name="chp-6-ITERM-5294"></a>This
+bit must be set if the device can be read without blocking.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLRDNORM</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5295"></a>
+<a name="chp-6-ITERM-5296"></a>This
+bit must be set if "normal" data is
+available for reading. A readable device returns
+<tt>(POLLIN</tt> <tt>|</tt>
+<tt>POLLRDNORM)</tt>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLRDBAND</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5297"></a>
+<a name="chp-6-ITERM-5298"></a>This
+bit indicates that out-of-band data is available for reading from the
+device. It is currently used only in one place in the Linux kernel
+(the DECnet code) and is not generally applicable to device drivers.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLPRI</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5299"></a>
+<a name="chp-6-ITERM-5300"></a>High-priority
+data (out-of-band) can be read without blocking. This bit causes
+<span class="docEmphasis">select</span> to report that an exception condition
+occurred on the file, because <span class="docEmphasis">select</span> reports
+out-of-band data as an exception condition.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLHUP</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5301"></a>
+<a name="chp-6-ITERM-5302"></a>When
+a process reading this device sees end-of-file, the driver must set
+<tt>POLLHUP</tt> (hang-up). A process calling
+<span class="docEmphasis">select</span> is told that the device is readable, as
+dictated by the <span class="docEmphasis">select</span> functionality.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLERR</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5303"></a>
+<a name="chp-6-ITERM-5304"></a>An
+error condition has occurred on the device. When
+<span class="docEmphasis">poll</span> is invoked, the device is reported as both
+readable and writable, since both <span class="docEmphasis">read</span> and
+<span class="docEmphasis">write</span> return an error code without blocking.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLOUT</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5305"></a>
+<a name="chp-6-ITERM-5306"></a>This
+bit is set in the return value if the device can be written to
+without blocking.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLWRNORM</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5307"></a>
+<a name="chp-6-ITERM-5308"></a>This
+bit has the same meaning as <tt>POLLOUT</tt>, and sometimes
+it actually is the same number. A writable device returns
+<tt>(POLLOUT | POLLWRNORM)</tt>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">POLLWRBAND</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-6-ITERM-5309"></a>
+<a name="chp-6-ITERM-5310"></a>Like
+<tt>POLLRDBAND</tt>, this bit means that data with nonzero
+priority can be written to the device. Only the datagram
+implementation of <span class="docEmphasis">poll</span> uses this bit, since a
+datagram can transmit out-of-band data.</p>
+</dd>
+</dl>
+
+<p class="docText">It's worth repeating that
+<tt>POLLRDBAND</tt> and <tt>POLLWRBAND</tt> are
+meaningful only with file descriptors associated with sockets: device
+drivers won't normally use these flags.</p>
+
+<p class="docText">The description of <span class="docEmphasis">poll</span> takes up a lot of space
+for something that is relatively simple to use in practice. Consider
+the <span class="docEmphasis">scullpipe</span> implementation of the
+<span class="docEmphasis">poll</span> method:</p>
+
+<pre>static unsigned int scull_p_poll(struct file *filp, poll_table *wait)
+{
+    struct scull_pipe *dev = filp-&gt;private_data;
+    unsigned int mask = 0;
+
+    /*
+     * The buffer is circular; it is considered full
+     * if "wp" is right behind "rp" and empty if the
+     * two are equal.
+     */
+    down(&amp;dev-&gt;sem);
+    poll_wait(filp, &amp;dev-&gt;inq,  wait);
+    poll_wait(filp, &amp;dev-&gt;outq, wait);
+    if (dev-&gt;rp != dev-&gt;wp)
+        mask |= POLLIN | POLLRDNORM;    /* readable */
+    if (spacefree(dev))
+        mask |= POLLOUT | POLLWRNORM;   /* writable */
+    up(&amp;dev-&gt;sem);
+    return mask;
+}</pre><br>
+
+
+<p class="docText">This code simply adds the two <span class="docEmphasis">scullpipe</span> wait
+queues to the <tt>poll_table</tt>, then sets the
+appropriate mask bits depending on whether data can be read or
+written.</P>
+
+<p class="docText"><a name="chp-6-ITERM-5311"></a>The <span class="docEmphasis">poll</span> code as
+shown is missing end-of-file support, because
+<span class="docEmphasis">scullpipe</span> does not support an end-of-file
+condition. For most real devices, the <span class="docEmphasis">poll</span>
+method should return <tt>POLLHUP</tt> if no more data is
+(or will become) available. If the caller used the
+<span class="docEmphasis">select</span> system call, the file is reported as
+readable. Regardless of whether <span class="docEmphasis">poll</span> or
+<span class="docEmphasis">select</span> is used, the application knows that it
+can call <span class="docEmphasis">read</span> without waiting forever, and the
+<span class="docEmphasis">read</span> method returns, <tt>0</tt> to
+signal end-of-file.</P>
+
+<p class="docText"><a name="chp-6-ITERM-5312"></a>With real FIFOs, for example, the reader
+sees an end-of-file when all the writers close the file, whereas in
+<span class="docEmphasis">scullpipe</span> the reader never sees end-of-file. The
+behavior is different because a FIFO is intended to be a
+communication channel between two processes, while
+<span class="docEmphasis">scullpipe</span> is a trash can where everyone can put
+data as long as there's at least one reader.
+Moreover, it makes no sense to reimplement what is already available
+in the kernel, so we chose to implement a different behavior in our
+example.</P>
+
+<p class="docText">Implementing end-of-file in the same way as FIFOs do would mean
+checking <tt>dev-&gt;nwriters</tt>, both in
+<span class="docEmphasis">read</span> and in <span class="docEmphasis">poll</span>, and
+reporting end-of-file (as just described) if no process has the
+device opened for writing. Unfortunately, though, with this
+implementation, if a reader opened the <span class="docEmphasis">scullpipe</span>
+device before the writer, it would see end-of-file without having a
+chance to wait for data. The best way to fix this problem would be to
+implement blocking within <span class="docEmphasis">open</span> like real FIFOs
+do; this task is left as an exercise for the reader.</p>
+
+<a name="chp-6-sect-3.1"></a>
+<H4 class="docSection2Title">6.3.1. Interaction with read and write</H4>
+
+<p class="docText">The purpose of the <span class="docEmphasis">poll</span> and
+<span class="docEmphasis">select</span> calls is to determine in advance if an
+I/O operation will block. In that respect, they complement
+<span class="docEmphasis">read</span> and <span class="docEmphasis">write</span>. More
+important, <span class="docEmphasis">poll</span> and <span class="docEmphasis">select</span>
+are useful, because they let the application wait simultaneously for
+several data streams, although we are not exploiting this feature in
+the <span class="docEmphasis">scull</span> examples.</p>
+
+<p class="docText">A correct implementation of the three calls is essential to make
+applications work correctly: although the following rules have more
+or less already been stated, we summarize them here.</p>
+
+<a name="chp-6-sect-3.1.1"></a>
+<h5 class="docSection3Title">6.3.1.1 Reading data from the device</h5>
+
+<UL><li><p class="docList"><a name="chp-6-ITERM-5313"></a>
+<a name="chp-6-ITERM-5314"></a><a name="chp-6-ITERM-5315"></a>If there is data in the input
+buffer, the <span class="docEmphasis">read</span> call should return immediately,
+with no noticeable delay, even if less data is available than the
+application requested, and the driver is sure the remaining data will
+arrive soon. You can always return less data than
+you're asked for if this is convenient for any
+reason (we did it in <span class="docEmphasis">scull</span>), provided you return
+at least one byte. In this case, <span class="docEmphasis">poll</span> should
+return <tt>POLLIN|POLLRDNORM</tt>.</p></LI><li><p class="docList"><a name="chp-6-ITERM-5316"></a>
+<a name="chp-6-ITERM-5317"></a>If there is no data in the input
+buffer, by default <span class="docEmphasis">read</span> must block until at
+least one byte is there. If <tt>O_NONBLOCK</tt> is set, on
+the other hand, <span class="docEmphasis">read</span> returns immediately with a
+return value of <tt>-EAGAIN</tt> (although some old
+versions of System V return <tt>0</tt> in this case). In
+these cases, <span class="docEmphasis">poll</span> must report that the device is
+unreadable until at least one byte arrives. As soon as there is some
+data in the buffer, we fall back to the previous case.</p></LI><li><p class="docList">If we are at end-of-file, <span class="docEmphasis">read</span> should return
+immediately with a return value of <tt>0</tt>, independent
+of <tt>O_NONBLOCK</tt>. <span class="docEmphasis">poll</span> should
+report <tt>POLLHUP</tt> in this case.</P></li></ul>
+
+
+<a name="chp-6-sect-3.1.2"></a>
+<h5 class="docSection3Title">6.3.1.2 Writing to the device</h5>
+
+<ul><li><p class="docList"><a name="chp-6-ITERM-5318"></a>
+<a name="chp-6-ITERM-5319"></a><a name="chp-6-ITERM-5320"></a><a name="chp-6-ITERM-5321"></a>If there is space in the output buffer,
+<span class="docEmphasis">write</span> should return without delay. It can accept
+less data than the call requested, but it must accept at least one
+byte. In this case, <span class="docEmphasis">poll</span> reports that the device
+is writable by returning <tt>POLLOUT|POLLWRNORM</tt>.</p></li><li><p class="docList">If the output buffer is full, by default <span class="docEmphasis">write</span>
+blocks until some space is freed. If <tt>O_NONBLOCK</tt> is
+set, <span class="docEmphasis">write</span> returns immediately with a return
+value of <tt>-EAGAIN</tt> (older System V Unices returned
+<tt>0</tt>). In these cases, <span class="docEmphasis">poll</span>
+should report that the file is not writable. If, on the other hand,
+the device is not able to accept any more data,
+<span class="docEmphasis">write</span> returns <tt>-ENOSPC</tt>
+("No space left on device"),
+independently of the setting of <tt>O_NONBLOCK</tt>.</p></li><li><p class="docList">Never make a <span class="docEmphasis">write</span> call wait for data
+transmission before returning, even if <tt>O_NONBLOCK</tt>
+is clear. This is because many applications use
+<span class="docEmphasis">select</span> to find out whether a
+<span class="docEmphasis">write</span> will block. If the device is reported as
+writable, the call must not block. If the program using the device
+wants to ensure that the data it enqueues in the output buffer is
+actually transmitted, the driver must provide an
+<span class="docEmphasis">fsync</span> method. For instance, a removable device
+should have an <span class="docEmphasis">fsync</span> entry point.</p></LI></ul>
+<p class="docText">Although this is a good set of general rules, one should also
+recognize that each device is unique and that sometimes the rules
+must be bent slightly. For example, record-oriented devices (such as
+tape drives) cannot execute partial writes.</P>
+
+
+
+<a name="chp-6-sect-3.1.3"></a>
+<H5 class="docSection3Title">6.3.1.3 Flushing pending output</h5>
+
+<p class="docText"><a name="chp-6-ITERM-5322"></a>
+<a name="chp-6-ITERM-5323"></a>
+<a name="chp-6-ITERM-5324"></a>
+<a name="chp-6-ITERM-5325"></a> <a name="chp-6-ITERM-5326"></a><a name="chp-6-ITERM-5327"></a><a name="chp-6-ITERM-5328"></a><a name="chp-6-ITERM-5329"></a><a name="chp-6-ITERM-5330"></a>We've seen how
+the <span class="docEmphasis">write</span> method by itself
+doesn't account for all data output needs. The
+<span class="docEmphasis">fsync</span> function, invoked by the system call of
+the same name, fills the gap. This method's
+prototype is</p>
+
+<pre> int (*fsync) (struct file *file, struct dentry *dentry, int datasync);</pre><br>
+
+
+<p class="docText"><a name="chp-6-ITERM-5331"></a>If
+some application ever needs to be assured that data has been sent to
+the device, the <span class="docEmphasis">fsync</span> method must be implemented
+regardless of whether <tt>O_NONBLOCK</tt> is set. A call to
+<span class="docEmphasis">fsync</span> should return only when the device has
+been completely flushed (i.e., the output buffer is empty), even if
+that takes some time. The <tt>datasync</tt> argument is
+used to distinguish between the <span class="docEmphasis">fsync</span> and
+<span class="docEmphasis">fdatasync</span> system calls; as such, it is only of
+interest to filesystem code and can be ignored by drivers.</P>
+
+<p class="docText"><a name="chp-6-ITERM-5332"></a>
+<a name="chp-6-ITERM-5333"></a>The
+<span class="docEmphasis">fsync</span> method has no unusual features. The call
+isn't time critical, so every device driver can
+implement it to the author's taste. Most of the
+time, char drivers just have a <tt>NULL</tt> pointer in
+their <tt>fops</tt>. Block devices, on the other hand,
+always implement the method with the general-purpose
+<span class="docEmphasis">block_fsync</span>, which, in turn, flushes all the
+blocks of the device, waiting for I/O to complete.</p>
+
+
+
+<a name="chp-6-sect-3.2"></a>
+<H4 class="docSection2Title">6.3.2. The Underlying Data Structure</H4>
+
+<p class="docText"><a name="chp-6-ITERM-5334"></a><a name="chp-6-ITERM-5335"></a><a name="chp-6-ITERM-5336"></a>The actual implementation of the
+<span class="docEmphasis">poll</span> and <span class="docEmphasis">select</span> system
+calls is reasonably simple, for those who are interested in how it
+works; <span class="docEmphasis">epoll</span> is a bit more complex but is built
+on the same mechanism. Whenever a user application calls
+<span class="docEmphasis">poll</span>, <span class="docEmphasis">select</span>, or
+<span class="docEmphasis">epoll_ctl</span>,<sup class="docFootnote"><a class="docLink" href="chp-6-sect-3.shtml#chp-6-FNOTE-5">[5]</a></sup> the kernel
+invokes the <span class="docEmphasis">poll</span> method of all files referenced
+by the system call, passing the same <tt>poll_table</tt> to
+each of them. The <tt>poll_table</tt> structure is just a
+wrapper around a function that builds the actual data structure. That
+structure, for <span class="docEmphasis">poll</span> and
+<span class="docEmphasis">select</span>, is a linked list of memory pages
+containing <tt>poll_table_entry</tt> structures. Each
+<tt>poll_table_entry</tt> holds the
+<tt>struct</tt> <tt>file</tt> and
+<tt>wait_queue_head_t</tt> pointers passed to
+<span class="docEmphasis">poll_wait</span>, along with an associated wait queue
+entry. The call to <span class="docEmphasis">poll_wait</span> sometimes also adds
+the process to the given wait queue. The whole structure must be
+maintained by the kernel so that the process can be removed from all
+of those queues before <span class="docEmphasis">poll</span> or
+<span class="docEmphasis">select</span> returns.</P><blockquote><p class="docFootnote"><sup><a name="chp-6-FNOTE-5">[5]</a></sup> This is the function
+that sets up the internal data structure for future calls to
+<span class="docEmphasis">epoll_wait</span>.</p></blockquote>
+
+<p class="docText">If none of the drivers being polled indicates that I/O can occur
+without blocking, the <span class="docEmphasis">poll</span> call simply sleeps
+until one of the (perhaps many) wait queues it is on wakes it up.</p>
+
+<p class="docText">What's interesting in the implementation of
+<span class="docEmphasis">poll</span> is that the driver's
+<span class="docEmphasis">poll</span> method may be called with a
+<tt>NULL</tt> pointer as a <tt>poll_table</tt>
+argument. This situation can come about for a couple of reasons. If
+the application calling <span class="docEmphasis">poll</span> has provided a
+timeout value of <tt>0</tt> (indicating that no wait should
+be done), there is no reason to accumulate wait queues, and the
+system simply does not do it. The <tt>poll_table</tt>
+pointer is also set to <tt>NULL</tt> immediately after any
+driver being <span class="docEmphasis">poll</span>ed indicates that I/O is
+possible. Since the kernel knows at that point that no wait will
+occur, it does not build up a list of wait queues.</p>
+
+<p class="docText">When the <span class="docEmphasis">poll</span> call completes, the
+<tt>poll_table</tt> structure is deallocated, and all wait
+queue entries previously added to the poll table (if any) are removed
+from the table and their wait queues.</p>
+
+<p class="docText">We tried to show the data structures involved in polling in <a class="docLink" href="chp-6-sect-3.shtml#chp-6-FIG-1">Figure 6-1</a>; the figure is a
+simplified representation of the real data structures, because it
+ignores the multipage nature of a poll table and disregards the file
+pointer that is part of each <tt>poll_table_entry</tt>. The
+reader interested in the actual implementation is urged to look in
+<I>&lt;linux/poll.h&gt;</I> and
+<I>fs/select.c</i>.</P>
+
+<a name="chp-6-FIG-1"></a><P><center>
+<h5 class="docFigureTitle">Figure 6-1. The data structures behind poll</h5>
+<img border="0" alt="" width="474" height="389" SRC="images/0596005903/figs/ldr3_0601.gif"></center></p><br>
+
+<p class="docText">At this point, it is possible to understand the motivation behind the
+new <span class="docEmphasis">epoll</span> system call. In a typical case, a call
+to <span class="docEmphasis">poll</span> or <span class="docEmphasis">select</span> involves
+only a handful of file descriptors, so the cost of setting up the
+data structure is small. There are applications out there, however,
+that work with thousands of file descriptors. At that point, setting
+up and tearing down this data structure between every I/O operation
+becomes prohibitively expensive. The <span class="docEmphasis">epoll</span>
+system call family allows this sort of application to set up the
+internal kernel data <a name="chp-6-ITERM-5337"></a> <a name="chp-6-ITERM-5338"></a> <a name="chp-6-ITERM-5339"></a> <a name="chp-6-ITERM-5340"></a> <a name="chp-6-ITERM-5341"></a> <a name="chp-6-ITERM-5342"></a>structure exactly once and to use it
+many times.</P>
+
+
+
+<ul></ul></TD></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-6-sect-2.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-6-sect-4.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

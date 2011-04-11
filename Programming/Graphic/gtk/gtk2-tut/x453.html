@@ -1,0 +1,357 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>用表组装</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="组装构件"
+HREF="c418.html"><LINK
+REL="PREVIOUS"
+TITLE="组装示范程序"
+HREF="x450.html"><LINK
+REL="NEXT"
+TITLE="表组装示例"
+HREF="x505.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x450.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>组装构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x505.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-PACKINGUSINGTABLES">用表组装</H1
+><P
+>让我们看看另一种组装的方法 - 表(Tables)。 在某些情况下这是极其有用的。</P
+><P
+>使用表的时候，我们建立格来放入构件。构件可以占满我们所指定的所有空间.</P
+><P
+>第一个要看的，当然是gtk_table_new()这个函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_table_new( guint    rows,
+                          guint    columns,
+                          gboolean homogeneous );</PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个参数是表中要安排的行的数量，而第二个，显然，就是列的数量。</P
+><P
+>homogeneous 参数跟表格框(table's boxes)的大小处理有关。如果 homogeneous 是 TRUE，所有表格框的大小都将调整为表中最大构件的大小。如果 homogeneous 为 FALSE，每个表格框将会按照同行中最高的构件，与同列中最宽的构件来决定自身的大小。</P
+><P
+>行与列为从0到n编号，而n是我们在调用 gtk_table_new 时所指定的值。所以，如果你指定rows = 2及columns = 2, 布局图会看起来像这样：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+> 0          1          2
+0+----------+----------+
+ |          |          |
+1+----------+----------+
+ |          |          |
+2+----------+----------+</PRE
+></TD
+></TR
+></TABLE
+><P
+>注意坐标系统开始于左上角。要向框中放置一个构件，使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_table_attach( GtkTable         *table,
+                       GtkWidget        *child,
+                       guint            left_attach,
+                       guint            right_attach,
+                       guint            top_attach,
+                       guint            bottom_attach,
+                       GtkAttachOptions xoptions,
+                       GtkAttachOptions yoptions,
+                       guint            xpadding,
+                       guint            ypadding );</PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个参数（"table"）是你已经创建的表，第二个参数（"child"）是你想放进表里的构件。</P
+><P
+>left_attach和right_attach参数指定构件放置的位置，并使用多少框来放。如果你想在2x2的表中的右下表项(table entry)处放入一个按钮，并且想让它<I
+CLASS="EMPHASIS"
+>只</I
+>充满这个项，则left_attach应该为 = 1, right_attach = 2, top_attach = 1, bottom_attach = 2。</P
+><P
+>现在，如果你想让一个构件占据我们这个2x2表的整个顶行，你就用left_attach = 0, right_attach = 2, top_attach = 0, bottom_attach = 1。</P
+><P
+>xoptions及yoptions是用来指定组装时的选项，可以通过使用“位或”运算以允许多重选项。</P
+><P
+>这些选项是：</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_FILL</TT
+></DT
+><DD
+><P
+>如果表框大于构件，同时<TT
+CLASS="LITERAL"
+>GTK_FILL</TT
+>被指定，该构件会扩展开以使用所有可用的空间。</P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_SHRINK</TT
+></DT
+><DD
+><P
+>如果表构件分配到的空间比需求的小（通常是用户在改变窗口大小的时候），那么构件将会推到窗口的底部以外的区域，无法看见。如果<TT
+CLASS="LITERAL"
+>GTK_SHRINK</TT
+>被指定了，构件将和表一起缩小。</P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_EXPAND</TT
+></DT
+><DD
+><P
+>这会导致表扩展以用完窗口中所有的保留空间。</P
+></DD
+></DL
+></DIV
+><P
+>Padding和在盒(boxes)中的一样，在构件的周围产生一个指定象素的空白区域。</P
+><P
+>gtk_table_attach()有<I
+CLASS="EMPHASIS"
+>很多</I
+>选项，所以，这里有一个简写：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_table_attach_defaults( GtkTable  *table,
+                                GtkWidget *widget,
+                                guint      left_attach,
+                                guint      right_attach,
+                                guint      top_attach,
+                                guint      bottom_attach );</PRE
+></TD
+></TR
+></TABLE
+><P
+>X及Y选项默认为<TT
+CLASS="LITERAL"
+>GTK_FILL | GTK_EXPAND</TT
+>，X和Y的padding则设为0。其余的参数与前面的函数一样。</P
+><P
+>我们还有 gtk_table_set_row_spacing() 和 gtk_table_set_col_spacing()。这些在指定的行或列之间插入空白。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_table_set_row_spacing( GtkTable *table,
+                                guint     row,
+                                guint     spacing );</PRE
+></TD
+></TR
+></TABLE
+><P
+>和</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_table_set_col_spacing ( GtkTable *table,
+                                 guint     column,
+                                 guint     spacing );</PRE
+></TD
+></TR
+></TABLE
+><P
+>注意，对列来说，空白插到列的右边，对行来说，空白插入行的下边。</P
+><P
+>也可以为所有的行或/和列设置相同的间隔：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_table_set_row_spacings( GtkTable *table,
+                                 guint    spacing );</PRE
+></TD
+></TR
+></TABLE
+><P
+>和，</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_table_set_col_spacings( GtkTable *table,
+                                 guint     spacing );</PRE
+></TD
+></TR
+></TABLE
+><P
+>注意，用这些调用，最后一行和最后一列并不会有任何空白存在。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x450.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x505.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>组装示范程序</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c418.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>表组装示例</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

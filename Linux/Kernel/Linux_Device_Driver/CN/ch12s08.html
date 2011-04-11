@@ -1,0 +1,102 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>12.8.&#160;快速参考-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch12.html" title="第&#160;12&#160;章&#160;PCI 驱动">
+<link rel="prev" href="ch12s07.html" title="12.7.&#160;外部总线">
+<link rel="next" href="ch13.html" title="第&#160;13&#160;章&#160;USB 驱动">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">12.8.&#160;快速参考</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch12s07.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;12&#160;章&#160;PCI 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch13.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="PCIDriversqr.sect1"></a>12.8.&#160;快速参考</h2></div></div></div>
+<p>本节总结在本章中介绍的符号:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>#include &lt;linux/pci.h&gt;</span></span></dt>
+<dd><p>包含 PCI 寄存器的符号名和几个供应商和设备 ID 值的头文件.</p></dd>
+<dt><span class="term"><span>struct pci_dev;</span></span></dt>
+<dd><p>表示内核中一个 PCI 设备的结构.</p></dd>
+<dt><span class="term"><span>struct pci_driver;</span></span></dt>
+<dd><p>代表一个 PCI 驱动的结构. 所有的 PCI 驱动必须定义这个.</p></dd>
+<dt><span class="term"><span>struct pci_device_id;</span></span></dt>
+<dd><p>描述这个驱动支持的 PCI 设备类型的结构.</p></dd>
+<dt><span class="term"><span>int pci_register_driver(struct pci_driver *drv);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int pci_module_init(struct pci_driver *drv);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void pci_unregister_driver(struct pci_driver *drv);</span></span></dt>
+<dd><p>从内核注册或注销一个 PCI 驱动的函数.</p></dd>
+<dt><span class="term"><span>struct pci_dev *pci_find_device(unsigned int vendor, unsigned int device, struct pci_dev *from);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct pci_dev *pci_find_device_reverse(unsigned int vendor, unsigned int device, const struct pci_dev *from);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct pci_dev *pci_find_subsys (unsigned int vendor, unsigned int device, unsigned int ss_vendor, unsigned int ss_device, const struct pci_dev *from);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct pci_dev *pci_find_class(unsigned int class, struct pci_dev *from);</span></span></dt>
+<dd><p>在设备列表中搜寻带有一个特定签名的设备, 或者属于一个特定类的. 返回值是 NULL 如果没找到. from 用来继续一个搜索; 在你第一次调用任一个函数时它必须是 NULL, 并且它必须指向刚刚找到的设备如果你寻找更多的设备. 这些函数不推荐使用, 用 pci_get_ 变体来代替.</p></dd>
+<dt><span class="term"><span>struct pci_dev *pci_get_device(unsigned int vendor, unsigned int device, struct pci_dev *from);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct pci_dev *pci_get_subsys(unsigned int vendor, unsigned int device, unsigned int ss_vendor, unsigned int ss_device, struct pci_dev *from);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct pci_dev *pci_get_slot(struct pci_bus *bus, unsigned int devfn);</span></span></dt>
+<dd><p>在设备列表中搜索一个特定签名的设备, 或者属于一个特定类. 返回值是 NULL 如果没找到. from 用来继续一个搜索; 在你第一次调用任一个函数时它必须是 NULL, 并且它必须指向刚刚找到的设备如果你寻找更多的设备. 返回的结构使它的引用计数递增, 并且在调用者完成它, 函数 pci_dev_put 必须被调用.</p></dd>
+<dt><span class="term"><span>int pci_read_config_byte(struct pci_dev *dev, int where, u8 *val);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int pci_read_config_word(struct pci_dev *dev, int where, u16 *val);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int pci_read_config_dword(struct pci_dev *dev, int where, u32 *val);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int pci_write_config_byte (struct pci_dev *dev, int where, u8 *val);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int pci_write_config_word (struct pci_dev *dev, int where, u16 *val);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int pci_write_config_dword (struct pci_dev *dev, int where, u32 *val);</span></span></dt>
+<dd><p>读或写 PCI 配置寄存器的函数. 尽管 Linux 内核负责字节序, 程序员必须小心字节序当从单个字节组合多字节值时. PCI 总线是小端.</p></dd>
+<dt><span class="term"><span>int pci_enable_device(struct pci_dev *dev);</span></span></dt>
+<dd><p>使能一个 PCI 设备.</p></dd>
+<dt><span class="term"><span>unsigned long pci_resource_start(struct pci_dev *dev, int bar);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned long pci_resource_end(struct pci_dev *dev, int bar);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned long pci_resource_flags(struct pci_dev *dev, int bar);</span></span></dt>
+<dd><p>处理 PCI 设备资源的函数.</p></dd>
+</dl></div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch12s07.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch12.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch13.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">12.7.&#160;外部总线&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;第&#160;13&#160;章&#160;USB 驱动</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

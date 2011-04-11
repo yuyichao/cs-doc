@@ -1,0 +1,317 @@
+<!DOCTYPE html public "-//W3C//DTD HTML 4.01 Transitional//EN"     "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>Bash Readline Tips</title>
+<META http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="main.css" media="screen">
+</HEAD>
+
+<body>
+<h1>Bash readline 使用技巧</h1>
+
+<p>很多人会用 Bash，但是很少有人知道 readline 是怎么回事。readline 是
+一个强大的库，只要使用了它的程序，都可以用同一个配置文件配置，而且用同
+样的方法操作命令行，让你可以方便的编辑命令行。
+
+<p>使用 readline 的程序现在主要有 Bash, GDB，ftp 等。readline 付予这些
+程序强大的 Emacs 似的命令行编辑方式，你可以随意绑定你的键盘。
+
+<h2>术语解释</h2>
+
+<p>在下文中，我们经常提到 "C-x r" 这类键操作。"C-x r" 其实就是按Ctrl-x，
+然后按 r。同理 "C-M-@" 就是按 ctrl-alt-@(M表示meta, 在 PC 上就是 Alt 
+键)，但是其实 @ 是shift-2 (看看你的键盘)。所以 "C-M-@" 实际上要你按 
+ctrl-alt-shift-2。
+
+<p>但是在配置文件里的键序列中，我们把 "C-x r" 表示为 "\C-xr", 把
+"C-M-@" 表示为 "\C-\M-@"，你自己看看就知道怎么回事了。同理 "Esc a" 别表示
+成 "\ea"。
+
+<p>这就是 Emacs 里的按键的通常标记方法。EMACS = Esc Meta Alt Ctrl
+Shift :)
+
+<h2>技巧篇</h2>
+<p>在自己配置命令行之前，我们先来看看利用缺省的键绑定能够进行的一些巧妙的用法：
+
+<h3>第一招：使用以前的命令行参数</h3>
+<p>你是否经常出现这种情况？你想把 ~/text-browser/ 目录下的3个.tar.gz文
+件搬到/usr3/software/，于是你输入：
+
+<pre>
+$mv ~/text-browser/*.tar.gz /usr3/software/
+</pre>
+
+<p>我想你一定已经知道，打入 ~/text 之后按 TAB 就可以补全text-browser这
+个长文件名吧？这是Bash 的基本功能。我废话？好了，就当你知道吧。不过今
+天我要讲的东西比这个复杂一些。
+
+<p>Go on! 刚刚输入到这里，你突然想起，应该在 /usr3/software/ 下先建立一个目录
+叫browsers，这样放进去的文件比较好管理。
+
+<p>于是你 Ctrl-u，删掉了这行命令。唉呀，这么长的命令一下就没了。是不是
+有点可惜？这还不算麻烦。然后你
+
+<pre>
+mkdir /usr3/software/browser
+mv ~/text-browser/*.tar.gz /usr3/software/browser
+</pre>
+
+嗯。TAB 是帮了你不少忙。可是你实际上有更好的办法来完成这项工作。好吧，
+看看 readline 怎样神奇的完成你的任务：
+
+<p>我们回到这种情况：
+
+<pre>
+$mv ~/text-browser/*.tar.gz /usr3/software/
+</pre>
+
+你刚才是按了 Ctrl-u 删除了所有输入的东西。可惜啊！你要是按 M-#(也就是
+按住 PC 机的 Alt 键，再按 #，实际上就是 Alt-Shift-3)，那么 Bash 
+就会在这样最开头插入一个 "#"，然后输入这行。这样命令就被作为一行注释载
+入了历史。
+
+<p>这有什么好处？这样你的这行命令里的内容就可以被再次利用。看着：你接
+着输入：
+
+<pre>
+mkdir ...
+</pre>
+
+等等，你是不是想输入 /usr3/software/？你不用再敲一遍了！直接按 M-.(Alt 
+加句号)，看看， /usr3/software/ 是不是出现在命令行上了？M-. 就是调用了
+yank-last-arg 函数，把上一条命令的最后一个参数放在命令行上。好了，回车
+吧！
+
+<p>你接着输入：
+
+<pre>
+mv ...
+</pre>
+
+等等，这下是该输入 ~/text-browser/*.tar.gz 了。烦不烦啊？换一种方式吧。
+请按："M-1 M-."(把上一条命令的第一个参数放在命令行上)。这样命令行成为
+了：
+
+<pre>
+mv /usr3/software/browser
+</pre>
+
+怎么成这样了？看看你的“上一条命令”是什么吧？是……你自己看。所以这个
+参数不是你想要的。那么继续再按一次 "M-."。看到了吧？你的命令行已经成为：
+
+<pre>
+mv ~/text-browser/*.tar.gz
+</pre>
+
+好。打一个空格。再按一下 "M-."。命令行变成了：
+
+<pre>
+mv ~/text-browser/*.tar.gz /usr3/software/browser
+</pre>
+
+这就是你想要的！
+
+<p>是不是看起来你还是花了不少工夫？但是想一想，如果你是要执行这样一个
+命令呢？
+
+<pre>
+mv /data/ftp/pub/TUG/texmf/tex/latex/CJK/GB/GB.cap \
+ /usr/local/texlive/texmf-local/tex/latex/CJK/GB/
+</pre>
+嗯。记住这个有用命令：M-. ， 它的前面可以用 M-0, ... 作为数字参数。
+<h3>第二招：补全命令名，文件名和变量名</h3>
+
+<p>你知道 TAB 可以补全命令行上很多东西。可是你遇到这种情况的时候怎么办？
+<pre>
+man a-very-very-long-command-name
+</pre>
+你输入了 man a-ver... 之后，按 TAB，什么反应也没有。因为 TAB 执行的是
+“按情况补全”(complete)，它看到 man，知道这应该是一个命令，那么它认为：
+“后面应该是一个文件名参数。” 但是你想要的是命令的名字怎么办？答案：
+按 "M-!".
+
+<p>再来看：你需要设置 XMODIFIERS="@im=fcitx"。你输入了
+
+<pre>
+export XM...
+</pre>
+
+按 TAB? 没有反应。为什么呢？因为 TAB 的补全想要一个文件名，而当前目录
+没有开头是 "XM..." 的文件。那么你怎么补全？答案："M-$"。
+
+<p>其实 readline 的补全方式被 Bash 扩充了很多。看看有多少吧！
+<pre>
+"TAB": complete
+"\M-!": complete-command
+"\M-/": complete-filename
+"\M-@": complete-hostname
+"\M-~": complete-username
+"\M-$": complete-variable
+</pre>
+自己试试吧！
+
+<h3>第三招：扩展命令行</h3>
+
+<p>你的一个目录里有很多类似的文件，名字叫 T12.txt, T12.log, T23.txt,
+T23.log, T13.txt, T13.log…… 有后缀 txt 的，也有后缀 log 的。...  你
+想把其中的某些 T*.txt 都移动到另外一个目录，而T*.log都不动。但是T*.txt 
+也不是全部都要移动。所以你想把T*.txt 都放在命令行上，然后选择其中一些。
+你输入：
+
+<pre>
+mv T...
+</pre>
+
+接着按 "M-*"(insert-completions)。结果 T 开头的文件都被放到命令行上了。
+嗯。这在某些时候是有用的，可是现在它把 T*.log 的文件也放上去了。不行。
+我们于是继续输入：
+
+<pre>
+mv T*.txt </pre> 好了，现在我们可以使用 "C-x*"(先按ctrl-x，然后按*)。
+结果所有名字T*.txt 的文件都被放到了命令行上面。"C-x*" 执行的函数叫做 
+glob-expand-word.
+
+<h2>配置篇</h2>
+
+<p>你是不是觉得那些命令很难记住？不顺手？别怕！它们都是可以改变的，就
+像Emacs的键绑定那样，可以被任意的改变！
+
+<p>所有使用readline的程序，都使用一个配置文件来决定它的行为和键绑定。
+这个文件一般是 INPUTRC 环境变量确定的。如果这个环境变量没有值，那么缺
+省使用 ~/.inputrc。
+
+<p>~/.inputrc 文件很简单，只有4种语句：
+<ol>
+<li>注释
+<li>变量设置语句(set variable value)
+<li>键绑定("keyseq":function)
+<li>条件语句($if ... $endif)
+</ol>
+
+我们先不说其它的，先来看看键绑定吧！
+
+<h3>键绑定</h3>
+
+<ol>
+<li>绑定语句。
+<p>你现在就可以动手设置你喜欢的控制方式。比如，我发现有些时候我需要在
+命令行上做上 mark(Emacs 术语)，然后把mark 和光标之间的 region(Emacs术
+语) 删掉，这个操作在 Emacs 里叫做kill-region. 但是我们发现这个函数在 
+Bash 里缺省是没有绑定的。如果我希望得到跟 Emacs 一样的绑定 C-w 的话，
+就把这行插入到 ~/.inputrc:
+
+<pre>
+"\C-w":kill-region
+</pre>
+
+<li>使绑定生效。
+为了使这个键绑定生效，你需要执行 re-read-init-file 函数。这个函数缺省
+绑定在了 "C-x C-r"。你修改 ~/.inputrc 之后在 Bash 里输入 "C-x C-r" 就
+可以使新的配置生效了。
+
+<li>列出可用的函数。
+<p>不过你怎么知道那些函数可以被绑定呢？readline 的 info 页列出了很多
+函数，可是你不会每次都去info里查询吧，很麻烦啊。其实你可以使用bash的
+bind 命令来得到所有的键绑定:
+
+<pre>
+$bind -p
+</pre>
+
+可以显示所有现有的已经绑定和没有绑定的函数。没有被绑定的函数被显示为
+"(not bound)"，并被加上了注释。就像这样：
+<pre>
+"\C-g": abort
+"\C-x\C-g": abort
+"\M-\C-g": abort
+"\C-j": accept-line
+"\C-m": accept-line
+# alias-expand-line (not bound)
+# arrow-key-prefix (not bound)
+# backward-byte (not bound)
+"\C-b": backward-char
+"\M-OD": backward-char
+"\C-h": backward-delete-char
+"\C-?": backward-delete-char
+</pre>
+
+你可以把这个命令的输出作为一个模板，嵌入到 ~/.inputrc 文件。把你喜欢的
+函数绑定到方便的按键。
+
+<p>其实 readline 有三个函数可以让你方便的查询函数，变量和宏的绑定情况，
+它们是：
+<pre>
+dump-functions
+dump-variables
+dump-macros
+</pre>
+可是它们缺省都没有被绑定到任何按键。你可以为它们分别设置类似 "C-xf",
+"C-xv", "C-xm" 这样容易记忆的绑定。
+
+<li>如果忘了绑定……
+<p>这样你就可以设置你需要的绑定啦！但是你还是有可能在需要的时候突然记
+不起哪些键绑定可以补全。这时候你输入：
+<pre>
+$bind -p | grep compl
+</pre>
+得到结果：
+<pre>
+"\C-i": complete
+"\M-\e": complete
+"TAB": complete
+"\M-!": complete-command
+"\M-/": complete-filename
+"\M-@": complete-hostname
+"\M-{": complete-into-braces
+"\M-~": complete-username
+"\M-$": complete-variable
+"\M-\C-i": dynamic-complete-history
+"\M-g": glob-complete-word
+"\M-*": insert-completions
+.......
+</pre>
+这样你记不住一个键的时候就可以方便的查询，这样几次之后，你就会把自己需
+要的按键都记住了。
+</ol>
+
+<h3>配置变量</h3>
+<ol>
+<li>体验：
+<p>Bash 的 readline 有一些变量可以控制它的行为。比如:
+
+<p>bell-style 可以控制出错时是 audible(发出响声)，visible(闪动屏幕)，
+还是none(什么都不做)；editing-mode 可以控制你是用 Emacs 的输入方式还是
+用 vi 的；
+
+<p>completion-query-times 的值控制在补全的个数超过多少N时，bash 提示：
+“Display all N possibilities? (y or n)”；
+
+<p>如果我设置 expand-tilde 为 on，当输入“ls ~/doc”，按 TAB 时，命令行
+会自动变成 "ls /home/wy/doc".
+
+<p>如果把 visible-stats 设置为 on，那么列出补全的时候，目录，可执行文
+件，符号连接，会被分别使用 /, *, @ 来标记，就像 ls -F 的到的结果。
+
+<li>设置：
+
+<p>设置的方法极其简单，就在 ~/.inputrc 文件里写入类似语句：
+
+<pre>
+set visible-stats on
+</pre>
+然后 "C-x C-r" 使设置生效。
+
+<li>怎样知道有哪些设置？
+
+<p>可以设置的参数是很多的。使用命令
+<pre>
+$bind -v
+</pre>
+就可以得到所有这些可以设置的变量和它们的值了。
+
+</ol>
+
+<hr>
+<a href="emacs_elisp.html" target="_parent">返回</a>
+</body>
+</html>

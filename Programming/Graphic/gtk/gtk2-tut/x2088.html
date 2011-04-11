@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>GTK rc 文件的格式</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="GTK 的 rc 文件"
+HREF="c2068.html"><LINK
+REL="PREVIOUS"
+TITLE="GTK 的 rc 文件"
+HREF="c2068.html"><LINK
+REL="NEXT"
+TITLE="rc 文件示例"
+HREF="x2129.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c2068.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>GTK 的 rc 文件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2129.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-GTKSRCFILEFORMAT">GTK rc 文件的格式</H1
+><P
+>以下示例说明了 rc 文件的格式。它取自 GTK 发行包中名为 testgtkrc 的文件中，但我增加了一些注解和内容。你也许希望在自己的应用程序中包含这些注解以有助于用户在使用过程中进行小调整。</P
+><P
+>有几个指令用于改变一个构件的属性。</P
+><P
+></P
+><UL
+><LI
+><P
+>fg - 设置构件的背景色。</P
+></LI
+><LI
+><P
+>bg - 设置构件的前景色。</P
+></LI
+><LI
+><P
+>bg_pixmap - 设置构件的背景为一幅像素图。</P
+></LI
+><LI
+><P
+>font - 设置构件使用的字体。</P
+></LI
+></UL
+><P
+>另外，一个构件可以有几种状态，你可以为每种状态设置不同的颜色，图像和字体。这些状态是：</P
+><P
+></P
+><UL
+><LI
+><P
+>NORMAL - 构件的一般状态，如鼠标不位于构件上方，键未按下时构件所处的状态。</P
+></LI
+><LI
+><P
+>PRELIGHT - 当鼠标移到构件上方，在此状态下定义的颜色生效。</P
+></LI
+><LI
+><P
+>ACTIVE - 当处于构件上的鼠标键被按下或点击时，该构件被激活，相应的属性值将生效。</P
+></LI
+><LI
+><P
+>INSENSITIVE - 当构件被设置为不敏感(insensitive)时，它不能被激活，相应属性值起作用。</P
+></LI
+><LI
+><P
+>SELECTED - 选中一个对象时，取相应的属性值。</P
+></LI
+></UL
+><P
+>当用"fg"和"bg"关键字设置构件的颜色时，其格式是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>fg[&#60;STATE&#62;] = { Red, Green, Blue }</PRE
+></TD
+></TR
+></TABLE
+><P
+>这里STATE是前述状态(PRELIGHT,ACTIVE,...)之一,Red,Green,Blue是范围0-1.0间的数值,{1.0,1.0,1.0}表示白色。这些数值必须是浮点型的，否则将被存为0，因此写为"1"的数值是无效的，应写为"1.0".0值写为"0"却不错，因为即使系统认不出也没关系。所有系统不认识的数值都会被设为0。</P
+><P
+>bg_pixmap除了用一个文件名取代颜色名外和以上格式很相似。</P
+><P
+>pixmap_path是一个由‘:’分隔开的路径表。当搜索你定义的图像文件时选择这些路径。</P
+><P
+>字体命令简单的就是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>font = "&#60;font name&#62;"</PRE
+></TD
+></TR
+></TABLE
+><P
+>唯一困难的是描述字体的字符串部分。用 xfontsel 或类似工具会有帮助。</P
+><P
+>"widget_class" 设置一类构件的风格。这些类在构件概述中的类组织里列出。</P
+><P
+>"widget" 指令把一个特别命名的构件集设置为一个要求的风格，覆盖所有已有的风格。这些构件使用 _widget_set_name() 函数调用在应用程序中注册。这样你可以设置任一组构件的属性，而不是设置整个构件类的属性。我请求你为这些特定名称的构件写好文档，用户可能要定制它们。</P
+><P
+>当使用关键字<TT
+CLASS="LITERAL"
+>parent</TT
+>作为属性值时，这个构件将继承它的父构件的属性。</P
+><P
+>定义一个风格时，可能会将以前定义风格的属性值分配给新定义的风格。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>style "main_button" = "button"
+{
+  font = "-adobe-helvetica-medium-r-normal--*-100-*-*-*-*-*-*"
+  bg[PRELIGHT] = { 0.75, 0, 0 }
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个示例用"button构件的风格创建了一个新的 "main_button" 构件的风格，只改变 "button" 构件风格中的 font 属性和 prelight 背景色属性。</P
+><P
+>当然，许多属性不能应用在所有构件上，按常识这是不难分辨的。而任何能在一个构件上起作用的东西，都应能作为它的属性。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c2068.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2129.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>GTK 的 rc 文件</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2068.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>rc 文件示例</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

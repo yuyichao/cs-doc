@@ -1,0 +1,230 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>开关按钮 Toggle Buttons</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="按钮构件"
+HREF="c554.html"><LINK
+REL="PREVIOUS"
+TITLE="按钮构件"
+HREF="c554.html"><LINK
+REL="NEXT"
+TITLE="复选按钮 Check Buttons"
+HREF="x600.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c554.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>按钮构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x600.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-TOGGLEBUTTONS">开关按钮 Toggle Buttons</H1
+><P
+>开关按钮由一般按钮派生而来，并且非常相似，只是开关按钮有两个状态，通过点击可以切换。它们可以是被按下的(depressed)，当你再点击一下，他们会弹起来。再点击一下，它们又会再弹下去。</P
+><P
+>开关按钮是复选按钮和单选按钮的基础，所以单选按钮和复选按钮继承了许多开关按钮的函数调用。我会在讲到它们时指出这些来。</P
+><P
+>创建一个新的开关按钮：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_toggle_button_new( void );
+
+GtkWidget *gtk_toggle_button_new_with_label( const gchar *label );
+
+GtkWidget *gtk_toggle_button_new_with_mnemonic( const gchar *label );</PRE
+></TD
+></TR
+></TABLE
+><P
+>你可以猜到，创建开关按钮应该和一般按钮构件相同。第一个函数是创建一个空白的开关按钮，后面两个函数创建带标签的开关按钮。其中 _mnemonic() 函数处理标签中的以 '_' 为前缀的助记语法符。</P
+><P
+>我们是通过读取开关构件 (包括单选和复选按钮) 结构的 <TT
+CLASS="LITERAL"
+>active</TT
+> 域，来检测开关按钮的状态。之前要用 <TT
+CLASS="LITERAL"
+>GTK_TOGGLE_BUTTON</TT
+> 宏把构件指针转换为开关构件指针。我们关心的各种开关按钮 (开关按钮，复选按钮，和单选按钮构件) 的信号是 "toggled" 信号。为了检测这些按钮的状态，设置一个处理函数以捕获 "toggled" 信号，并且通过读取结构测定它的状态。该回调函数如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void toggle_button_callback (GtkWidget *widget, gpointer data)
+{
+    if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) 
+    {
+        /* 如果运行到这里，开关按钮是按下的 */
+    
+    } else {
+    
+        /* 如果运行到这里，开关按钮是弹起的 */
+    }
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>设置开关按钮和它的孩子 (即单选和复选按钮) 的状态，用如下函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_toggle_button_set_active( GtkToggleButton *toggle_button,
+                                   gboolean        is_active );</PRE
+></TD
+></TR
+></TABLE
+><P
+>上面的调用可以用来设置开关按钮，以及它的孩子单选和复选按钮的状态。将你所创建的按钮作为第一个参数传入，以及一个 TRUE 或 FALSE 值作为第二个状态参数来指定它应该是下 (按下) 还是上 (弹起)。默认是上，即 FALSE。</P
+><P
+>注意，当你使用 gtk_toggle_button_set_active() 函数，并且状态也实际改变了时，它会导致按钮发出 "clicked" 和 "toggled" 信号。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gboolean gtk_toggle_button_get_active	(GtkToggleButton *toggle_button);</PRE
+></TD
+></TR
+></TABLE
+><P
+>返回值是开关按钮的当前状态。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c554.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x600.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>按钮构件</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c554.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>复选按钮 Check Buttons</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,95 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>6.5.&#160;移位一个设备-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch06.html" title="第&#160;6&#160;章&#160;高级字符驱动操作">
+<link rel="prev" href="ch06s04.html" title="6.4.&#160;异步通知">
+<link rel="next" href="ch06s06.html" title="6.6.&#160;在一个设备文件上的存取控制">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">6.5.&#160;移位一个设备</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch06s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;6&#160;章&#160;高级字符驱动操作</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch06s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="SeekingaDevice.sect1"></a>6.5.&#160;移位一个设备</h2></div></div></div>
+<p>本章最后一个需要我们涉及的东西是 llseek 方法, 它有用(对于某些设备)并且容易实现.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ThellseekImplementation.sect2"></a>6.5.1.&#160;llseek 实现</h3></div></div></div>
+<p>llseek 方法实现了 lseek 和 llseek 系统调用. 我们已经说了如果 llseek 方法从设备的操作中缺失, 内核中的缺省的实现进行移位通过修改 filp-&gt;f_pos, 这是文件中的当前读写位置. 请注意对于 lseek 系统调用要正确工作, 读和写方法必须配合, 通过使用和更新它们收到的作为的参数的 offset 项.</p>
+<p>你可能需要提供你自己的方法, 如果移位操作对应一个在设备上的物理操作. 一个简单的例子可在 scull 驱动中找到:</p>
+<pre class="programlisting">
+loff_t scull_llseek(struct file *filp, loff_t off, int whence)
+{
+        struct scull_dev *dev = filp-&gt;private_data;
+        loff_t newpos;
+
+        switch(whence)
+        {
+        case 0: /* SEEK_SET */
+                newpos = off;
+                break;
+
+        case 1: /* SEEK_CUR */
+                newpos = filp-&gt;f_pos + off;
+                break;
+
+        case 2: /* SEEK_END */
+                newpos = dev-&gt;size + off;
+                break;
+
+        default: /* can't happen */
+                return -EINVAL;
+        }
+        if (newpos &lt; 0)
+                return -EINVAL;
+        filp-&gt;f_pos = newpos;
+        return newpos;
+}
+</pre>
+<p>唯一设备特定的操作是从设备中获取文件长度. 在 scull 中 read 和 write 方法如需要地一样协作, 如同在第 3 章所示.</p>
+<p>尽管刚刚展示的这个实现对 scull 有意义, 它处理一个被很好定义了的数据区, 大部分设备提供了一个数据流而不是一个数据区(想想串口或者键盘), 并且移位这些设备没有意义. 如果这就是你的设备的情况, 你不能只制止声明 llseek 操作, 因为缺省的方法允许移位. 相反, 你应当通知内核你的设备不支持 llseek , 通过调用 nonseekable_open 在你的 open 方法中.</p>
+<pre class="programlisting">
+int nonseekable_open(struct inode *inode; struct file *filp); 
+</pre>
+<p>这个调用标识了给定的 filp 为不可移位的; 内核从不允许一个 lseek 调用在这样一个文件上成功. 通过用这样的方式标识这个文件, 你可确定不会有通过 pread 和 pwrite 系统调用的方式来试图移位这个文件.</p>
+<p>完整起见, 你也应该在你的 file_operations 结构中设置 llseek 方法到一个特殊的帮忙函数 no_llseek, 它定义在 &lt;linux/fs.h&gt;. </p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch06s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch06.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch06s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">6.4.&#160;异步通知&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;6.6.&#160;在一个设备文件上的存取控制</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

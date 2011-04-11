@@ -1,0 +1,133 @@
+<!doctype html public "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!--
+
+Generated from intro.tex by tex2page, v 20050501
+(running on MzScheme 205, unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html
+
+-->
+<head>
+<title>
+tex2page 使用指南
+</title>
+<link rel="stylesheet" type="text/css" href="intro-Z-S.css" title=default>
+<link rel="stylesheet" type="text/css" href="tex2page.css" title=default>
+<meta name=robots content="noindex,follow">
+<meta http-equiv="Content-Type" content="text/html;charset=gb2312"></head>
+<body>
+<div id=content>
+<div align=right class=navigation><i>[<span><a href="intro.html">首页</a>, <a href="intro-Z-H-13.html">上一页</a></span><span>, <a href="intro-Z-H-15.html">下一页</a></span><span>; &nbsp;&nbsp;</span><span><a href="intro-Z-H-1.html#node_toc_start">目录 </a></span><span><span>; &nbsp;&nbsp;</span><a href="intro-Z-H-21.html#node_index_start"> 索引 </a></span>]</i></div>
+<p></p>
+<a name="node_chap_13"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="intro-Z-H-1.html#node_toc_node_chap_13">第十三章</a></div><br>
+<a href="intro-Z-H-1.html#node_toc_node_chap_13">用 Scheme 作为 T<small>E</small>X的扩展语言</a></h1>
+<p></p>
+<p>
+<a name="node_idx_136"></a>
+<a name="node_idx_138"></a>
+<a name="node_idx_140"></a></p>
+<p>
+用 <code class=verbatim>\eval</code> 就可以在T<small>E</small>X文件里插入一段 Scheme.
+当运行第二次tex2page 的时候，代码的运行结果就会被插入T<small>E</small>X文件。你可以用这些代码来改变 tex2page 的行为。</p>
+<p>
+比如下面的代码将会打印 <img src="intro-Z-G-16.png" border="0" alt="\sqrt2"> 的值：1.4142135623730951</p>
+<p>
+<code class=verbatim>\eval{ (display (sqrt 2)) }</code></p>
+<p>
+你可以想象一下，你能用 Scheme 在T<small>E</small>X里做什么吗？你几乎无所
+不能！</p>
+<p>
+看看第 <a href="intro-Z-H-17.html#node_chap_16">16</a> 章，里面有一些我自己定义的函数，可以随
+意操纵文档的排版方式。我看了一会儿 tex2page 的代码就想出了几
+乎所有我用的着的中文解决方案。</p>
+<p>
+<a name="node_idx_142"></a></p>
+<p>
+现在我把一个 coroutine 的测试代码放在这里，看看是什么结 果：</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>require</span> (<span class=variable>lib</span> <span class=selfeval>&quot;defmacro.ss&quot;</span>))
+(<span class=keyword>define-macro</span> <span class=variable>coroutine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>x</span> . <span class=variable>body</span>)
+    <span class=keyword>`</span>(<span class=keyword>letrec</span> ((<span class=variable>+local-control-state</span>
+               (<span class=keyword>lambda</span> (<span class=keyword>,</span><span class=variable>x</span>) <span class=keyword>,@</span><span class=variable>body</span>))
+              (<span class=variable>resume</span>
+               (<span class=keyword>lambda</span> (<span class=variable>c</span> <span class=variable>v</span>)
+                 (<span class=variable>call/cc</span>
+                  (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+                    (<span class=keyword>set!</span> <span class=variable>+local-control-state</span> <span class=variable>k</span>)
+                    (<span class=variable>c</span> <span class=variable>v</span>))))))
+       (<span class=keyword>lambda</span> (<span class=variable>v</span>)
+         (<span class=variable>+local-control-state</span> <span class=variable>v</span>)))))
+
+(<span class=keyword>define</span> <span class=variable>make-matcher-coroutine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree-cor-1</span> <span class=variable>tree-cor-2</span>)
+    (<span class=variable>coroutine</span> <span class=variable>dont-need-an-init-arg</span>
+      (<span class=keyword>let</span> <span class=variable>loop</span> ()
+        (<span class=keyword>let</span> ((<span class=variable>leaf1</span> (<span class=variable>resume</span> <span class=variable>tree-cor-1</span> <span class=keyword>'</span><span class=variable>get-a-leaf</span>))
+              (<span class=variable>leaf2</span> (<span class=variable>resume</span> <span class=variable>tree-cor-2</span> <span class=keyword>'</span><span class=variable>get-a-leaf</span>)))
+          (<span class=keyword>if</span> (<span class=variable>eqv?</span> <span class=variable>leaf1</span> <span class=variable>leaf2</span>)
+              (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>leaf1</span>) <span class=selfeval>#t</span> (<span class=variable>loop</span>))
+              <span class=selfeval>#f</span>))))))
+
+(<span class=keyword>define</span> <span class=variable>make-leaf-gen-coroutine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree</span> <span class=variable>matcher-cor</span>)
+    (<span class=variable>coroutine</span> <span class=variable>dont-need-an-init-arg</span>
+      (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>tree</span> <span class=variable>tree</span>))
+        (<span class=keyword>cond</span> ((<span class=variable>null?</span> <span class=variable>tree</span>) <span class=keyword>'</span><span class=variable>skip</span>)
+              ((<span class=variable>pair?</span> <span class=variable>tree</span>)
+               (<span class=variable>loop</span> (<span class=variable>car</span> <span class=variable>tree</span>))
+               (<span class=variable>loop</span> (<span class=variable>cdr</span> <span class=variable>tree</span>)))
+              (<span class=keyword>else</span>
+               (<span class=variable>resume</span> <span class=variable>matcher-cor</span> <span class=variable>tree</span>))))
+      (<span class=variable>resume</span> <span class=variable>matcher-cor</span> <span class=keyword>'</span>()))))
+
+(<span class=keyword>define</span> <span class=variable>tree-match?</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree1</span> <span class=variable>tree2</span>)
+    (<span class=keyword>letrec</span> ((<span class=variable>tree-cor-1</span>
+              (<span class=variable>make-leaf-gen-coroutine</span>
+               <span class=variable>tree1</span>
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>matcher-cor</span> <span class=variable>v</span>))))
+             (<span class=variable>tree-cor-2</span>
+              (<span class=variable>make-leaf-gen-coroutine</span>
+               <span class=variable>tree2</span>
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>matcher-cor</span> <span class=variable>v</span>))))
+             (<span class=variable>matcher-cor</span>
+              (<span class=variable>make-matcher-coroutine</span>
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>tree-cor-1</span> <span class=variable>v</span>))
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>tree-cor-2</span> <span class=variable>v</span>)))))
+      (<span class=variable>matcher-cor</span> <span class=keyword>'</span><span class=variable>start-ball-rolling</span>))))
+
+(<span class=keyword>define</span> <span class=variable>tree1</span> <span class=keyword>'</span>(((<span class=variable>a</span> <span class=variable>b</span>) (<span class=variable>y</span> <span class=variable>z</span>)) (<span class=selfeval>3</span> <span class=selfeval>4</span>)))
+(<span class=keyword>define</span> <span class=variable>tree2</span> <span class=keyword>'</span>(((<span class=variable>a</span> <span class=variable>b</span>) (<span class=variable>t</span> <span class=variable>z</span>)) (<span class=selfeval>3</span> <span class=selfeval>4</span>)))
+(<span class=keyword>define</span> <span class=variable>tree3</span> <span class=keyword>'</span>(((<span class=variable>a</span> (<span class=variable>b</span> <span class=variable>y</span>) <span class=variable>z</span>)) (<span class=selfeval>3</span> <span class=selfeval>4</span>)))
+
+(<span class=keyword>define</span> (<span class=variable>display-line</span> <span class=variable>str</span> . <span class=variable>rest</span>)
+  (<span class=variable>for-each</span> <span class=variable>display</span>
+            (<span class=variable>cons</span> <span class=variable>str</span> <span class=variable>rest</span>))
+  (<span class=variable>newline</span>))
+
+(<span class=keyword>if</span> (<span class=variable>tree-match?</span> <span class=variable>tree1</span> <span class=variable>tree2</span>)
+    (<span class=variable>display-line</span> <span class=selfeval>&quot;tree1 and tree2 match. &quot;</span>)
+    (<span class=variable>display-line</span> <span class=selfeval>&quot;tree1 and tree2 don't match. &quot;</span>))
+
+(<span class=keyword>if</span> (<span class=variable>tree-match?</span> <span class=variable>tree1</span> <span class=variable>tree3</span>)
+    (<span class=variable>display-line</span> <span class=selfeval>&quot;tree1 and tree3 match. &quot;</span>)
+    (<span class=variable>display-line</span> <span class=selfeval>&quot;tree1 and tree3 don't match. &quot;</span>))
+</pre><p></p>
+<p>结果是：tree1 and tree2 don</q>t match. 
+tree1 and tree3 match. 
+</p>
+<p>
+最后的结果就是 tex2page 交给 Scheme 解释器处理以后送回的结果。
+这对与撰写 Scheme 文献非常有好处。</p>
+<p>
+</p>
+<div align=right class=navigation><i>[<span><a href="intro.html">首页</a>, <a href="intro-Z-H-13.html">上一页</a></span><span>, <a href="intro-Z-H-15.html">下一页</a></span><span>; &nbsp;&nbsp;</span><span><a href="intro-Z-H-1.html#node_toc_start">目录 </a></span><span><span>; &nbsp;&nbsp;</span><a href="intro-Z-H-21.html#node_index_start"> 索引 </a></span>]</i></div>
+<p></p>
+</div>
+</body>
+</html>

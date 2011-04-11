@@ -1,0 +1,150 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.5.&#160;报文传送-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s04.html" title="17.4.&#160;打开与关闭">
+<link rel="next" href="ch17s06.html" title="17.6.&#160;报文接收">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.5.&#160;报文传送</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="PacketTransmission"></a>17.5.&#160;报文传送</h2></div></div></div>
+<p>网络接口进行的最重要任务是数据发送和接收. 我们从发送开始, 因为它稍微易懂一些.</p>
+<p>传送指的是通过一个网络连接发送一个报文的行为. 无论何时内核需要传送一个数据报文, 它调用驱动的 hard_start_stransmit 方法将数据放在外出队列上. 每个内核处理的报文都包含在一个 socket 缓存结构( 结构 sk_buff )里, 定义见&lt;linux/skbuff.h&gt;. 这个结构从 Unix 抽象中得名, 用来代表一个网络连接, socket. 如果接口与 socket 没有关系, 每个网络报文属于一个网络高层中的 socket, 并且任何 socket 输入/输出缓存是结构 struct sk_buff 的列表. 同样的 sk_buff 结构用来存放网络数据历经所有 Linux 网络子系统, 但是对于接口来说, 一个 socket 缓存只是一个报文.</p>
+<p>sk_buff 的指针通常称为 skb, 我们在例子代码和文本里遵循这个做法.</p>
+<p>socket 缓存是一个复杂的结构, 内核提供了一些函数来操作它. 在"Socket 缓存"一节中描述这些函数; 现在, 对我们来说一个基本的关于 sk_buff 的事实就足够来编写一个能工作的驱动.</p>
+<p>传给 hard_start_xmit 的 socket 缓存包含物理报文, 它应当出现在媒介上, 以传输层的头部结束. 接口不需要修改要传送的数据. skb-&gt;data 指向要传送的报文, skb-&gt;len 是以字节计的长度. 如果你的驱动能够处理发散/汇聚 I/O, 情形会稍稍复杂些; 我们在"发散/汇聚 I/O"一节中说它.</p>
+<p>snull 报文传送代码如下; 网络传送机制隔离在另外一个函数里, 因为每个接口驱动必须根据特定的在驱动的硬件来实现它:</p>
+<pre class="programlisting">
+int snull_tx(struct sk_buff *skb, struct net_device *dev)
+{
+    int len;
+    char *data, shortpkt[ETH_ZLEN];
+    struct snull_priv *priv = netdev_priv(dev);
+    data = skb-&gt;data;
+    len = skb-&gt;len;
+    if (len &lt; ETH_ZLEN) {
+        memset(shortpkt, 0, ETH_ZLEN);
+        memcpy(shortpkt, skb-&gt;data, skb-&gt;len);
+        len = ETH_ZLEN;
+        data = shortpkt;
+    }
+    dev-&gt;trans_start = jiffies; /* save the timestamp */
+    /* Remember the skb, so we can free it at interrupt time */
+    priv-&gt;skb = skb;
+
+    /* actual deliver of data is device-specific, and not shown here */ snull_hw_tx(data, len, dev);
+    return 0; /* Our simple device can not fail */
+}
+</pre>
+<p>传送函数, 因此, 只对报文进行一些合理性检查并通过硬件相关的函数传送数据. 注意, 但是, 要小心对待传送的报文比下面的媒介(对于 snull, 是我们虚拟的"以太网")支持的最小长度要短的情况. 许多 Linux 网络驱动( 其他操作系统的也是 )已被发现在这种情况下泄漏数据. 不是产生那种安全漏洞, 我们拷贝短报文到一个单独的数组, 这样我们可以清楚地零填充到足够的媒介要求的长度. (我们可以安全地在堆栈中放数据, 因为最小长度 -- 60 字节 -- 是太小了).</p>
+<p>hard_start_xmit 的返回值应当为 0 在成功时; 此时, 你的驱动已经负责起报文, 应当尽全力保证发送成功, 并且必须在最后释放 skb. 非 0 返回值指出报文这次不能发送; 内核将稍后重试. 这种情况下, 你的驱动应当停止队列直到已经解决导致失败的情况.</p>
+<p>"硬件相关"的传送函数( snull_hw_tx )这里忽略了, 因为它完全是来实现了 snull 设备的戏法, 包括假造源和目的地址, 对于真正的网络驱动作者没有任何吸引力. 当然, 它呈现在例子源码里, 给那些想进入并看看它如何工作的人.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ControllingTransmissionConcurrency"></a>17.5.1.&#160;控制发送并发</h3></div></div></div>
+<p>hard_start_xmit 函数由一个 net_device 结构中的自旋锁(xmit_lock)来保护避免并发调用. 但是, 函数一返回, 它有可能被再次调用. 当软件完成指导硬件报文发送的事情, 但是硬件传送可能还没有完成. 对 snull 这不是问题, 它使用 CPU 完成它所有的工作, 因此报文发送在传送函数返回前就完成了.</p>
+<p>真实的硬件接口, 另一方面, 异步发送报文并且具备有限的内存来存放外出的报文. 当内存耗尽(对某些硬件, 会发生在一个单个要发送的外出报文上), 驱动需要告知网络系统不要再启动发送直到硬件准备好接收新的数据.</p>
+<p>这个通知通过调用 netif_stop_queue 来实现, 这个前面介绍过的函数来停止队列. 一旦你的驱动已停止了它的队列, 它必须安排在以后某个时间重启队列, 当它又能够接受报文来发送了. 为此, 它应当调用:</p>
+<pre class="programlisting">
+void netif_wake_queue(struct net_device *dev); 
+</pre>
+<p>这个函数如同 netif_start_queue, 除了它还刺探网络系统来使它又启动发送报文.</p>
+<p>大部分现代的网络硬件维护一个内部的有多个发送报文的队列; 以这种方式, 它可以从网络上获得最好的性能. 这些设备的网络驱动必须支持在如何给定时间有多个未完成的发送, 但是设备内存能够填满不管硬件是否支持多个未完成发送. 任何时候当设备内存填充到没有空间给最大可能的报文时, 驱动应当停止队列直到有空间可用.</p>
+<p>如果你必须禁止如何地方的报文传送, 除了你的 hard_start_xmit 函数( 也许, 响应一个重新配置请求 ), 你想使用的函数是:</p>
+<pre class="programlisting">
+void netif_tx_disable(struct net_device *dev); 
+</pre>
+<p>这个函数非常象 netif_stop_queue, 但是它还保证, 当它返回时, 你的 hard_start_xmit 方法没有在另一个 CPU 上运行. 队列能够用 netif_wake_queue 重启, 如常.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TransmissionTimeouts"></a>17.5.2.&#160;传送超时</h3></div></div></div>
+<p>与真实硬件打交道的大部分驱动不得不预备处理硬件偶尔不能响应. 接口可能忘记它们在做什么, 或者系统可能丢失中断. 设计在个人机上运行的设备, 这种类型的问题是平常的.</p>
+<p>许多驱动通过设置定时器来处理这个问题; 如果在定时器到期时操作还没结束, 有什么不对了. 网络系统, 本质上是一个复杂的由大量定时器控制的状态机的组合体. 因此, 网络代码是一个合适的位置来检测发送超时, 作为它正常操作的一部分.</p>
+<p>因此, 网络驱动不需要担心自己去检测这样的问题. 相反, 它们只需要设置一个超时值, 在 net_device 结构的 watchdog_timeo 成员. 这个超时值, 以 jiffy 计, 应当足够长以容纳正常的发送延迟(例如网络媒介拥塞引起的冲突).</p>
+<p>如果当前系统时间超过设备的 trans_start 时间至少 time-out 值, 网络层最终调用驱动的 tx_timeout 方法. 这个方法的工作是是进行清除问题需要的工作并且保证任何已经开始的发送正确地完成. 特别地, 驱动没有丢失追踪任何网络代码委托给它的 socket 缓存.</p>
+<p>snull 有能力模仿发送器上锁, 由 2 个加载时参数控制的:</p>
+<pre class="programlisting">
+static int lockup = 0;
+module_param(lockup, int, 0);
+
+static int timeout = SNULL_TIMEOUT;
+module_param(timeout, int, 0);
+</pre>
+<p>如果驱动使用参数 lockup=n 加载, 则模拟一个上锁, 一旦每 n 个报文传送了, 并且 watchdog_timeo 成员设为给定的时间值. 当模拟上锁时, snull 也调用 netif_stop_queue 来阻止其他的发送企图发生.</p>
+<p>snull 发送超时处理看来如此:</p>
+<pre class="programlisting">
+void snull_tx_timeout (struct net_device *dev)
+{
+    struct snull_priv *priv = netdev_priv(dev);
+    PDEBUG("Transmit timeout at %ld, latency %ld\n", jiffies, jiffies - dev-&gt;trans_start);
+    /* Simulate a transmission interrupt to get things moving */
+    priv-&gt;status = SNULL_TX_INTR;
+    snull_interrupt(0, dev, NULL);
+    priv-&gt;stats.tx_errors++;
+    netif_wake_queue(dev);
+    return;
+}
+</pre>
+<p>当发生传送超时, 驱动必须在接口统计量中标记这个错误, 并安排设备被复位到一个干净的能发送新报文的状态. 当一个超时发生在 snull, 驱动调用 snull_interrupt 来填充"丢失"的中断并用 netif_wake_queue 重启队列.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ScatterGathreIO"></a>17.5.3.&#160;发散/汇聚 I/O</h3></div></div></div>
+<p>网络中创建一个发送报文的过程包括组合多个片. 报文数据必须从用户空间拷贝, 由网络协议栈各层使用的头部必须同时加上. 这个组合可能要求相当数量的数据拷贝. 但是, 如果注定要发送报文的网络接口能够进行发散/汇聚 I/O, 报文就不需要组装成一个单个块, 大量的拷贝可以避免. 发散/汇聚 I/O 也从用户空间启动"零拷贝"网络发送.</p>
+<p>内核不传递发散的报文给你的 hard_start_xmit 方法除非 NETIF_F_SG 位已经设置到你的设备结构的特性成员中. 如果你已设置了这个标志, 你需要查看一个特殊的 skb 中的"shard info"成员来确定是否报文由一个单个片段或者多个组成, 并且如果需要就找出发散的片段. 一个特殊的宏定义来存取这个信息; 它是 skb_shinfo. 发送潜在的分片报文的第一步常常是看来如此的东东:</p>
+<pre class="programlisting">
+if (skb_shinfo(skb)-&gt;nr_frags == 0) {
+    /* Just use skb-&gt;data and skb-&gt;len as usual */
+}
+</pre>
+<p>nr_frags 成员告知多少片要用来建立这个报文. 如果它是 0, 报文存于一个单个片中, 可以如常使用 data 成员来存取. 但是, 如果它是非 0, 你的驱动必须历经并安排发送每一个单独的片. skb 结构的 data 成员方便地指向第一个片(在不分片情况下, 指向整个报文). 片的长度必须通过从 skb-&gt;len ( 仍然含有整个报文的长度 ) 中减去 skb-&gt;data_len 计算得来. 剩下的片会在称为 frags 的数组中找到, frags 在共享的信息结构中; frags 中每个入口是一个 skb_frag_struct 结构:</p>
+<pre class="programlisting">
+struct skb_frag_struct { struct page *page;
+    __u16 page_offset;
+    __u16 size;
+};
+</pre>
+<p>如你所见, 我们又一次遇到 page 结构, 不是内核虚拟地址. 你的驱动应当遍历这些分片, 为 DMA 传送映射每一个, 并且不要忘记第一个分片, 它由 skb 直接指着. 你的硬件, 当然, 必须组装这些分片并作为一个单个报文发送它们. 注意, 如果你已经设置了NETIF_F_HIGHDMA 特性标志, 一些或者全部分片可能位于高端内存.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.4.&#160;打开与关闭&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.6.&#160;报文接收</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

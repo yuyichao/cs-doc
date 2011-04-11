@@ -1,0 +1,159 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.16.&#160;快速参考-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s15.html" title="17.15.&#160;几个其他细节">
+<link rel="next" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.16.&#160;快速参考</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s15.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch18.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="NetworksDriversQuickReference"></a>17.16.&#160;快速参考</h2></div></div></div>
+<p>本节提供了本章中介绍的概念的参考. 也解释了每个驱动需要包含的头文件的角色. 在 net_device 和 sk_buff 结构中成员的列表, 但是, 这里没有重复.</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>#include &lt;linux/netdevice.h&gt;</span></span></dt>
+<dd><p>定义 struct net_device 和 struct net_device_stats 的头文件, 包含了几个其他网络驱动需要的头文件.</p></dd>
+<dt><span class="term"><span>struct net_device *alloc_netdev(int sizeof_priv, char *name, void (*setup)(struct net_device *);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct net_device *alloc_etherdev(int sizeof_priv);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void free_netdev(struct net_device *dev);</span></span></dt>
+<dd><p>分配和释放 net_device 结构的函数</p></dd>
+<dt><span class="term"><span>int register_netdev(struct net_device *dev);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void unregister_netdev(struct net_device *dev);</span></span></dt>
+<dd><p>注册和注销一个网络设备.</p></dd>
+<dt><span class="term"><span>void *netdev_priv(struct net_device *dev);</span></span></dt>
+<dd><p>获取网络设备结构的驱动私有区域的指针的函数.</p></dd>
+<dt><span class="term"><span>struct net_device_stats;</span></span></dt>
+<dd><p>持有设备统计的结构.</p></dd>
+<dt><span class="term"><span>netif_start_queue(struct net_device *dev);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>netif_stop_queue(struct net_device *dev);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>netif_wake_queue(struct net_device *dev);</span></span></dt>
+<dd><p>控制传送给驱动来发送的报文的函数. 没有报文被传送, 直到 netif_start_queue 被调用. netif_stop_queue 挂起发送, netif_wake_queue 重启队列并刺探网络层重启发送报文.</p></dd>
+<dt><span class="term"><span>skb_shinfo(struct sk_buff *skb);</span></span></dt>
+<dd><p>宏定义, 提供对报文缓存的"shared info"部分的存取.</p></dd>
+<dt><span class="term"><span>void netif_rx(struct sk_buff *skb);</span></span></dt>
+<dd><p>调用来通知内核一个报文已经收到并且封装到一个 socket 缓存中的函数.</p></dd>
+<dt><span class="term"><span>void netif_rx_schedule(dev);</span></span></dt>
+<dd><p>来告诉内核报文可用并且应当启动查询接口; 它只是被 NAPI 兼容的驱动使用.</p></dd>
+<dt><span class="term"><span>int netif_receive_skb(struct sk_buff *skb);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void netif_rx_complete(struct net_device *dev);</span></span></dt>
+<dd><p>应当只被 NAPI 兼容的驱动使用. netif_receive_skb 是对于 netif_rx 的 NAPI 对等函数; 它递交一个报文给内核. 当一个 NAPI 兼容的驱动已耗尽接收报文的供应, 它应当重开中断, 并且调用 netif_rx_complete 来停止查询.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/if.h&gt;</span></span></dt>
+<dd><p>由 netdevice.h 包含, 这个文件声明接口标志( IFF_ 宏定义 )和 struct ifmap, 它在网络驱动的 ioctl 实现中有重要地位.</p></dd>
+<dt><span class="term"><span>void netif_carrier_off(struct net_device *dev);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void netif_carrier_on(struct net_device *dev);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int netif_carrier_ok(struct net_device *dev);</span></span></dt>
+<dd><p>前 2 个函数可用来告知内核是否接口上有载波信号. netif_carrier_ok 测试载波状态, 如同在设备结构中反映的.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/if_ether.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>ETH_ALEN</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>ETH_P_IP</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct ethhdr;</span></span></dt>
+<dd><p>由 netdevice.h 包含, if_ether.h 定义所有的 ETH_ 宏定义, 用来代表字节长度( 例如地址长度 )以及网络协议(例如 IP). 它也定义 ethhdr 结构.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/skbuff.h&gt;</span></span></dt>
+<dd><p>struct sk_buff 和相关结构的定义, 以及几个操作缓存的内联函数. 这个头文件由 netdevice.h 包含.</p></dd>
+<dt><span class="term"><span>struct sk_buff *alloc_skb(unsigned int len, int priority);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct sk_buff *dev_alloc_skb(unsigned int len);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void kfree_skb(struct sk_buff *skb);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void dev_kfree_skb(struct sk_buff *skb);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void dev_kfree_skb_irq(struct sk_buff *skb);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void dev_kfree_skb_any(struct sk_buff *skb);</span></span></dt>
+<dd><p>处理 socket 缓存的分配和释放的函数. 通常驱动应当使用 dev_ 变体, 其意图就是此目的.</p></dd>
+<dt><span class="term"><span>unsigned char *skb_put(struct sk_buff *skb, int len);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned char *__skb_put(struct sk_buff *skb, int len);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned char *skb_push(struct sk_buff *skb, int len);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned char *__skb_push(struct sk_buff *skb, int len);</span></span></dt>
+<dd><p>添加数据到一个 skb 的函数; skb_put 在 skb 的尾部放置数据, 而 skb_push 放在开始. 正常版本进行检查以确保有足够的空间; 双下划线版本不进行检查.</p></dd>
+<dt><span class="term"><span>int skb_headroom(struct sk_buff *skb);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int skb_tailroom(struct sk_buff *skb);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void skb_reserve(struct sk_buff *skb, int len);</span></span></dt>
+<dd><p>进行 skb 中的空间管理的函数. skb_headroom 和 skb_tailroom 说明在开始和结尾分别有多少空间可用. skb_reserve 可用来保留空间, 在一个必须为空的 skb 开始.</p></dd>
+<dt><span class="term"><span>unsigned char *skb_pull(struct sk_buff *skb, int len);</span></span></dt>
+<dd><p>skb_pull "去除" 数据从一个 skb, 通过调整内部指针.</p></dd>
+<dt><span class="term"><span>int skb_is_nonlinear(struct sk_buff *skb);</span></span></dt>
+<dd><p>如果这个 skb 是为发散/汇聚 I/O 分隔为几个片, 函数返回一个真值.</p></dd>
+<dt><span class="term"><span>int skb_headlen(struct sk_buff *skb);</span></span></dt>
+<dd><p>返回 skb 的第一个片的长度, 由 skb-&gt;data 指向.</p></dd>
+<dt><span class="term"><span>void *kmap_skb_frag(skb_frag_t *frag);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void kunmap_skb_frag(void *vaddr);</span></span></dt>
+<dd><p>提供对非线性 skb 中的片直接存取的函数.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/etherdevice.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void ether_setup(struct net_device *dev);</span></span></dt>
+<dd><p>为以太网驱动设置大部分方法为通用实现的函数. 它还设置 dev-&gt;flags 和安排下一个可用的 ethx 给 dev-&gt;name, 如果名子的第一个字符是一个空格或者 NULL 字符.</p></dd>
+<dt><span class="term"><span>unsigned short eth_type_trans(struct sk_buff *skb, struct net_device *dev);</span></span></dt>
+<dd><p>当一个以太网接口收到一个报文, 这个函数被调用来设置 skb-&gt;pkt_type. 返回值是一个协议号, 通常存储于 skb-&gt;protocol.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/sockios.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>SIOCDEVPRIVATE </span></span></dt>
+<dd><p>前 16 个 ioctl 命令, 每个驱动可为它们自己的私有用途而实现. 所有的网络 ioctl 命令都在 sockios.h 中定义.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/mii.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct mii_if_info;</span></span></dt>
+<dd><p>声明和一个结构, 支持实现 MII 标准的设备的驱动.</p></dd>
+<dt><span class="term"><span>#include &lt;linux/ethtool.h&gt;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>struct ethtool_ops;</span></span></dt>
+<dd><p>声明和结构, 使得设备与 ethtool 工具一起工作.</p></dd>
+</dl></div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s15.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch18.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.15.&#160;几个其他细节&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;第&#160;18&#160;章&#160;TTY 驱动</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

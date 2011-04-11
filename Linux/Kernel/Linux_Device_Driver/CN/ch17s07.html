@@ -1,0 +1,125 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.7.&#160;中断处理-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s06.html" title="17.6.&#160;报文接收">
+<link rel="next" href="ch17s08.html" title="17.8.&#160;接收中断缓解">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.7.&#160;中断处理</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s06.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s08.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="TheInterruptHandler"></a>17.7.&#160;中断处理</h2></div></div></div>
+<p>大部分硬件接口通过一个中断处理来控制. 硬件中断处理器来发出 2 种可能的信号: 一个新报文到了或者一个外出报文的发送完成了. 网络接口也能够产生中断来指示错误, 例如状态改变, 等等.</p>
+<p>通常的中断过程能够告知新报文到达中断和发送完成通知的区别, 通过检查物理设备中的状态寄存器. snull 接口类似地工作, 但是它的状态字在软件中实现, 位于 dev-&gt;priv. 网络接口的中断处理看来如此:</p>
+<pre class="programlisting">
+static void snull_regular_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+{
+    int statusword;
+    struct snull_priv *priv;
+    struct snull_packet *pkt = NULL;
+    /*
+
+    *
+    As usual, check the "device" pointer to be sure it is
+
+    *
+    really interrupting.
+
+    *
+    Then assign "struct device *dev"
+
+
+    */
+    struct net_device *dev = (struct net_device *)dev_id;
+    /* ... and check with hw if it's really ours */
+
+    /* paranoid */
+    if (!dev)
+        return;
+
+    /* Lock the device */
+    priv = netdev_priv(dev);
+    spin_lock(&amp;priv-&gt;lock);
+
+    /* retrieve statusword: real netdevices use I/O instructions */
+    statusword = priv-&gt;status;
+    priv-&gt;status = 0;
+    if (statusword &amp; SNULL_RX_INTR) {
+
+        /* send it to snull_rx for handling */
+        pkt = priv-&gt;rx_queue;
+        if (pkt) {
+
+            priv-&gt;rx_queue = pkt-&gt;next;
+            snull_rx(dev, pkt);
+
+        }
+    }
+    if (statusword &amp; SNULL_TX_INTR) {
+
+        /* a transmission is over: free the skb */
+        priv-&gt;stats.tx_packets++;
+        priv-&gt;stats.tx_bytes += priv-&gt;tx_packetlen;
+        dev_kfree_skb(priv-&gt;skb);
+
+    }
+
+    /* Unlock the device and we are done */
+    spin_unlock(&amp;priv-&gt;lock);
+    if (pkt) snull_release_buffer(pkt); /* Do this outside the lock! */
+    return;
+
+}
+</pre>
+<p>中断处理的第一个任务是取一个指向正确 net_device 结构的指针. 这个指针通常来自作为参数收到的 dev_id 指针.</p>
+<p>中断处理的有趣部分处理"发送结束"的情况. 在这个情况下, 统计量被更新, 调用 dev_kfree_skb 来返回 socket 缓存给系统. 实际上, 有这个函数的 3 个变体可以调用:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>dev_kfree_skb(struct sk_buff *skb);</span></span></dt>
+<dd><p>这个版本应当在你知道你的代码不会在中断上下文中运行时调用. 因为 snull 没有实际的硬件中断, 我们使用这个版本.</p></dd>
+<dt><span class="term"><span>dev_kfree_skb_irq(struct sk_buff *skb);</span></span></dt>
+<dd><p>如果你知道会在中断处理中释放缓存, 使用这个版本, 它对这个情况做了优化.</p></dd>
+<dt><span class="term"><span>dev_kfree_skb_any(struct sk_buff *skb);</span></span></dt>
+<dd><p>如果相关代码可能在中断或非中断上下文运行时, 使用这个版本.</p></dd>
+</dl></div>
+<p>最后, 如果你的驱动已暂时停止了发送队列, 这常常是用 netif_wake_queue 重启它的地方.</p>
+<p>报文的接收, 相比于发送, 不需要特别的中断处理. 调用 snull_rx (我们已经见过)就是全部所需.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s06.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s08.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.6.&#160;报文接收&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.8.&#160;接收中断缓解</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,185 @@
+%! Hanoi Tower in PostScript
+%
+/NODISKS 10 def %the number of disks
+
+/tmpstr 20 string def
+/LM	72 def
+/TOP 700 def
+/inch {72 mul} def
+/poleheight  1 inch def
+/diskheight poleheight NODISKS div 8 min def
+/basewidth 1.5 inch def
+/diskunitwidth basewidth NODISKS div 20 min def
+
+/fontsize 10 def
+/diskfontsize diskheight .8 mul  def
+/Times-Roman findfont fontsize scalefont setfont
+/counter 0 def
+
+/newline
+{
+	currentpoint exch pop
+	fontsize sub
+	LM exch moveto
+} def
+
+/drawConfig
+{
+	gsave
+		translate	
+		0 drawPole
+		100 0 translate 1 drawPole
+		100 0 translate 2 drawPole
+	grestore
+} def
+
+/drawDisk 	%X Y diskNO. drawDisk
+{
+	/disknr exch def
+	disknr diskunitwidth mul /dw exch def
+	gsave 
+		translate
+		newpath
+		dw 2 div neg 0 moveto
+		dw 0 rlineto
+		0 diskheight rlineto
+		dw neg 0 rlineto
+		closepath
+		0.8 disknr ndisks div 0.8 mul sub setgray fill
+		1 setgray
+		0 0 moveto
+		/Helvetica findfont diskfontsize scalefont setfont
+		disknr tmpstr cvs show
+	grestore
+} def
+
+/drawPole	%No. drawPole 
+{
+	poles exch get /thepole exch def	%get the number of the pole
+	newpath
+	0 0 moveto
+	0 poleheight rlineto
+	stroke
+
+	/nr thepole 0 get def		%nr of disks on this pole
+	/ypos 0 def
+	1 1 nr {thepole exch get /nd exch def
+		0 ypos nd drawDisk
+		/ypos ypos diskheight add def
+	} for
+} def
+
+
+/showArray
+{
+	/thearray exch def
+	1 1 thearray 0 get 1 sub{thearray exch get tmpstr cvs show (,) show} for
+	thearray thearray 0 get get tmpstr cvs show
+} def
+
+/Move	%src dest Move
+{
+
+	%move a disk
+	/dest exch def
+	/src exch def
+
+	/frompole poles src get def
+	/topole poles dest get def
+	/fromlast frompole 0 get def
+	/tolast topole 0 get def
+	frompole 0 fromlast 1 sub put
+	topole 0 tolast 1 add put
+
+	/disk frompole fromlast get def		%get disk from pole from
+	topole tolast 1 add disk put		%put it in pole to
+
+	%make page breaks
+	/counter counter 1 add def
+	counter 6 mod 
+	0 eq {showpage LM TOP moveto 120 0 translate} if
+
+
+	newline
+	(Step ) show counter tmpstr cvs show (: ) show
+	src 1 add tmpstr cvs show
+	(----------->) show
+	dest 1 add tmpstr cvs show
+
+	%show current configuration
+	newline
+	0 poleheight neg rmoveto currentpoint drawConfig
+	newline
+
+} def
+
+
+/doHanoi	%p1 p2 p3 n doHanoi
+{
+	%get params
+	4 -1 roll dup /p1 exch def
+	4 -1 roll dup /p2 exch def
+	4 -1 roll dup /p3 exch def
+	4 -1 roll dup /n exch def
+
+	n 1 gt		%n>1?
+	{
+		p1 p3 p2 n 1 sub doHanoi
+		4 -1 roll dup /p1 exch def
+		4 -1 roll dup /p2 exch def
+		4 -1 roll dup /p3 exch def
+		4 -1 roll dup /n exch def
+		p1 p3 Move
+		p2 p1 p3 n 1 sub doHanoi
+	}
+	{p1 p3 Move} ifelse
+	4 {pop} repeat
+} def
+
+/Hanoi
+{
+	/ndisks exch def
+	moveto
+	gsave
+		/Times-Bold findfont 15 scalefont setfont
+		(Hanoi Towers Game with ) show 
+		ndisks tmpstr cvs show ( Disks) show newline
+
+		/Times-Roman findfont 13 scalefont setfont
+		ndisks 64 ge {2 inch 0 rmoveto (--the story never ends) show } if
+		newline	
+		60 0 rmoveto (Start.  Work hard!) show 
+	grestore
+	newline
+
+	/poles [
+		ndisks 1 add array
+		ndisks 1 add array
+		ndisks 1 add array
+	] def
+
+	%initial disks on poles
+	poles 0 get 0 ndisks put
+	poles 1 get 0 0 put
+	poles 2 get 0 0 put
+	
+	/i 1 def
+	/pole1 poles  0 get def
+	ndisks -1 1 {pole1 i 3 -1 roll put /i i 1 add def} for 
+
+	%show current configuration
+	newline
+	newline
+	0 poleheight neg rmoveto currentpoint drawConfig
+
+	0 1 2 ndisks doHanoi
+
+	newline 80 0 rmoveto (The End of The World) show 
+} def
+
+120 0 translate
+LM TOP NODISKS Hanoi
+
+showpage
+
+showpage

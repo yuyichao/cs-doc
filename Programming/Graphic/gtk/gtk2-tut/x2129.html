@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>rc 文件示例</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="GTK 的 rc 文件"
+HREF="c2068.html"><LINK
+REL="PREVIOUS"
+TITLE="GTK rc 文件的格式"
+HREF="x2088.html"><LINK
+REL="NEXT"
+TITLE="编写你自己的构件"
+HREF="c2132.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2088.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>GTK 的 rc 文件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c2132.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-EXAMPLERCFILE">rc 文件示例</H1
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+># pixmap_path "&#60;dir 1&#62;:&#60;dir 2&#62;:&#60;dir 3&#62;:..."
+#
+pixmap_path "/usr/include/X11R6/pixmaps:/home/imain/pixmaps"
+#
+# style &#60;name&#62; [= &#60;name&#62;]
+# {
+#   &#60;option&#62;
+# }
+#
+# widget &#60;widget_set&#62; style &#60;style_name&#62;
+# widget_class &#60;widget_class_set&#62; style &#60;style_name&#62;
+
+# 这里列出所有状态。注意有些状态不能用在一定的构件上。
+#
+# NORMAL -构件的一般状态，如鼠标不位于构件上方，键未按下时构件所处的状态。 
+#
+# PRELIGHT - 当鼠标移到构件上方，在此状态下定义的颜色生效。
+# 
+#
+# ACTIVE -当处于构件上的鼠标键被按下或点击时，该构件被激活，相应的属性值将生效。
+# 
+#
+# INSENSITIVE -当构件被设置为不敏感 (insensitive) 时，它不能被激活，相应属性值起作用。
+# 
+#
+# SELECTED -选中一个对象时，取相应的属性值。
+#
+# 给定了这些状态，我们就能使用以下指令设置在这些状态下构件的属性。
+#
+# fg - 设置构件的前景色。
+# fg - 设置构件的背景色。
+# bg_pixmap - 设置构件的背景为一幅象素图。
+# font - 设置给定构件所用的字体。
+#
+
+# 本例设置一种名为"button"的风格。这个名称实际不重要，因为在本文件的后面这个风格都分
+# 配给了实际的构件。 
+
+style "window"
+{
+  #此处设置窗口背景为指定的像素图。
+  #bg_pixmap[&#60;STATE&#62;] = "&#60;pixmap filename&#62;"
+  bg_pixmap[NORMAL] = "warning.xpm"
+}
+
+style "scale"
+{
+  #设置"NORMAL"状态下前景色(字体颜色)为红色。
+  
+  fg[NORMAL] = { 1.0, 0, 0 }
+  
+  #设置此构件的背景像素图为其父构件的背景像素图。
+  bg_pixmap[NORMAL] = "&#60;parent&#62;"
+}
+
+style "button"
+{
+  # 显示一个按钮的所有可能状态，唯一未用的状态是SELECTED。
+  
+  fg[PRELIGHT] = { 0, 1.0, 1.0 }
+  bg[PRELIGHT] = { 0, 0, 1.0 }
+  bg[ACTIVE] = { 1.0, 0, 0 }
+  fg[ACTIVE] = { 0, 1.0, 0 }
+  bg[NORMAL] = { 1.0, 1.0, 0 }
+  fg[NORMAL] = { .99, 0, .99 }
+  bg[INSENSITIVE] = { 1.0, 1.0, 1.0 }
+  fg[INSENSITIVE] = { 1.0, 0, 1.0 }
+}
+
+# 在本例中，我们继承"button"风格的属性，然后重设PRELIGHT状态下的字体和背景色以创建一个新的"main_button"风格。
+
+style "main_button" = "button"
+{
+  font = "-adobe-helvetica-medium-r-normal--*-100-*-*-*-*-*-*"
+  bg[PRELIGHT] = { 0.75, 0, 0 }
+}
+
+style "toggle_button" = "button"
+{
+  fg[NORMAL] = { 1.0, 0, 0 }
+  fg[ACTIVE] = { 1.0, 0, 0 }
+  
+  # 这里设置toggle_button的背景像素图为其父构件的像素图(在应用程序中已定义)。
+  bg_pixmap[NORMAL] = "&#60;parent&#62;"
+}
+
+style "text"
+{
+  bg_pixmap[NORMAL] = "marble.xpm"
+  fg[NORMAL] = { 1.0, 1.0, 1.0 }
+}
+
+style "ruler"
+{
+  font = "-adobe-helvetica-medium-r-normal--*-80-*-*-*-*-*-*"
+}
+
+# pixmap_path "~/.pixmaps"
+
+# 下面设置使用以上所定义风格的构件类型。
+# 构件类型是在类的组织中列出的，但是恰有可能在本文档中列出供用户参考。
+
+widget_class "GtkWindow" style "window"
+widget_class "GtkDialog" style "window"
+widget_class "GtkFileSelection" style "window"
+widget_class "*Gtk*Scale" style "scale"
+widget_class "*GtkCheckButton*" style "toggle_button"
+widget_class "*GtkRadioButton*" style "toggle_button"
+widget_class "*GtkButton*" style "button"
+widget_class "*Ruler" style "ruler"
+widget_class "*GtkText" style "text"
+
+# 设置作为“main windows”的子构件的所有按钮构件为main_button风格。
+# 这些(专门命名的构件）都必须附有文档说明让用户更好地使用它们。
+widget "main window.*GtkButton*" style "main_button"</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2088.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c2132.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>GTK rc 文件的格式</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2068.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>编写你自己的构件</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

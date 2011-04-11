@@ -1,0 +1,253 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Appendix G. MySQL Regular Expressions</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="environment-variables.html" title="Appendix F. Environment Variables"><link rel="next" href="limits.html" title="Appendix H. Limits in MySQL">
+<style>
+<!--
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+ div.MsoNormal
+	{mso-style-parent:"";
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	
+	; margin-left:0cm; margin-right:0cm; margin-top:0cm}
+-->
+</style>
+</head><body><div class="appendix"><div class="titlepage"><div><div><h2 class="title"><a name="regexp"></a>
+	附录G：MySQL正则表达式</h2></div></div></div><a class="indexterm" name="id3103088"></a><a class="indexterm" name="id3103094"></a><a class="indexterm" name="id3103105"></a>
+	<p>正则表达式是为复杂搜索指定模式的强大方式。</p>
+	<p><span>MySQL</span>采用<span>Henry Spencer</span>的正则表达式实施，其目标是符合<span>POSIX 
+	1003.2</span>。请参见<a href="credits.html" title="Appendix C. Credits">附录C：感谢</a>。<span>MySQL</span>采用了扩展的版本，以支持在<span>SQL</span>语句中与<span><span>REGEXP</span>操作符一起使用的模式匹配操作</span>。请参见<a href="tutorial.html#pattern-matching" title="3.3.4.7. Pattern Matching">3.3.4.7节，“模式匹配”</a>。</p>
+	<p>在本附录中，归纳了在<span>MySQL</span>中可用于<span><span>REGEXP</span>操作的特殊字符和结构，并给出了一些示例。</span>本附录未包含可在<span>Henry 
+	Spencer</span>的<span><span>regex(7)</span>手册页面中发现的所有细节。该手册页面包含在</span><span>MySQL</span>源码分发版中，位于<span><span>regex</span>目录下的<span>regex.7</span>文件中。</span></p>
+	<p>正则表达式描述了一组字符串。最简单的正则表达式是不含任何特殊字符的正则表达式。例如，正则表达式<span><span>hello</span>匹配<span>hello</span>。</span></p>
+	<p>非平凡的正则表达式采用了特殊的特定结构，从而使得它们能够与<span>1</span>个以上的字符串匹配。例如，正则表达式<span><span>hello|word</span>匹配字符串<span>hello</span>或字符串<span>word</span></span>。</p>
+	<p>作为一个更为复杂的示例，正则表达式<span><span>B[an]*s</span>匹配下述字符串中的任何一个：<span>Bananas</span>，<span>Baaaaas</span>，<span>Bs</span>，</span>以及以<span>B</span>开始、以<span>s</span>结束、并在其中包含任意数目<span>a</span>或<span>n</span>字符的任何其他字符串。</p>
+	<p>对于<span><span>REGEXP</span>操作符，</span>正则表达式可以使用任何下述特殊字符和结构：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>^</span><span>
+	</span></p>
+	<p>匹配字符串的开始部分。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;fo\nfo&#39; REGEXP &#39;^fo$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;fofo&#39; REGEXP &#39;^fo&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>$</span><span>
+	</span></p>
+	<p>匹配字符串的结束部分。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;fo\no&#39; REGEXP &#39;^fo\no$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;fo\no&#39; REGEXP &#39;^fo$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>.</span><span>
+	</span></p>
+	<p>匹配任何字符（包括回车和新行）。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;fofo&#39; REGEXP &#39;^f.*$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;fo\r\nfo&#39; REGEXP &#39;^f.*$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>a*</span><span>
+	</span></p>
+	<p>匹配<span>0</span>或多个<span>a</span>字符的任何序列。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Ban&#39; REGEXP &#39;^Ba*n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Baaan&#39; REGEXP &#39;^Ba*n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Bn&#39; REGEXP &#39;^Ba*n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>a+</span><span>
+	</span></p>
+	<p>匹配<span>1</span>个或多个<span>a</span>字符的任何序列。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Ban&#39; REGEXP &#39;^Ba+n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Bn&#39; REGEXP &#39;^Ba+n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>a?</span><span>
+	</span></p>
+	<p>匹配<span>0</span>个或<span>1</span>个<span>a</span>字符。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Bn&#39; REGEXP &#39;^Ba?n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Ban&#39; REGEXP &#39;^Ba?n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;Baan&#39; REGEXP &#39;^Ba?n&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>de|abc</span><span>
+	</span></p>
+	<p>匹配序列<span>de</span>或<span>abc</span>。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;pi&#39; REGEXP &#39;pi|apa&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;axe&#39; REGEXP &#39;pi|apa&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;apa&#39; REGEXP &#39;pi|apa&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;apa&#39; REGEXP &#39;^(pi|apa)$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;pi&#39; REGEXP &#39;^(pi|apa)$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;pix&#39; REGEXP &#39;^(pi|apa)$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>(abc)*</span><span>
+	</span></p>
+	<p>匹配序列<span>abc</span>的<span>0</span>个或多个实例。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;pi&#39; REGEXP &#39;^(pi)*$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;pip&#39; REGEXP &#39;^(pi)*$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;pipi&#39; REGEXP &#39;^(pi)*$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>{1}</span><span>,
+	<span>{2,3}</span> </span></p>
+	<p>
+	<span>{n}</span>或<span><span>{m,n}</span>符号提供了编写正则表达式的更通用方式，能够匹配模式的很多前述原子（或<span>“</span>部分<span>”</span>）。<span>m</span></span>和<span><span>n</span>均为整数。</span></p>
+	<p>
+	<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>a*</span><span>
+	</span></p>
+	<p>可被写入为<span>a{0,}</span>。</p>
+	<p>
+	<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>a+</span><span>
+	</span></p>
+	<p>可被写入为<span>a{1,}</span>。</p>
+	<p>
+	<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>a?</span><span>
+	</span></p>
+	<p>可被写入为<span>a{0,1}</span>。</p>
+	<p>更准确地讲，<span><span>a{n}</span>与<span>a</span>的<span>n</span>个实例准确匹配。<span>a{n,}</span>匹配<span>a</span>的<span>n</span>个或更多实例。<span>a{m,n}</span>匹配<span>a</span>的<span>m</span>～<span>n</span>个实例，包含<span>m</span>和<span>n</span>。</span></p>
+	<p>
+	<span>m</span>和<span><span>n</span>必须位于<span>0</span>～<span>RE_DUP_MAX</span>（默认为</span><span>255</span>）的范围内，包含<span>0</span>和<span><span>RE_DUP_MAX</span>。如果同时给定了<span>m</span>和<span>n</span>，<span>m</span>必须小于或等于<span>n</span>。</span></p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;abcde&#39; REGEXP &#39;a[bcd]{2}e&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;abcde&#39; REGEXP &#39;a[bcd]{3}e&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;abcde&#39; REGEXP &#39;a[bcd]{1,10}e&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>[a-dX]</span><span>,
+	<span>[^a-dX]</span> </span></p>
+	<p>
+	匹配任何是（或不是，如果使用^的话）a、b、c、d或X的字符。两个其他字符之间的“-”字符构成一个范围，与从第1个字符开始到第2个字符之间的所有字符匹配。例如，[0-9]匹配任何十进制数字 
+	。要想包含文字字符“]”，它必须紧跟在开括号“[”之后。要想包含文字字符“-”，它必须首先或最后写入。对于[]对内未定义任何特殊含义的任何字符，仅与其本身匹配。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;aXbc&#39; REGEXP &#39;[a-dXYZ]&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;aXbc&#39; REGEXP &#39;^[a-dXYZ]$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;aXbc&#39; REGEXP &#39;^[a-dXYZ]+$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;aXbc&#39; REGEXP &#39;^[^a-dXYZ]+$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;gheis&#39; REGEXP &#39;^[^a-dXYZ]+$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;gheisa&#39; REGEXP &#39;^[^a-dXYZ]+$&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>[.characters.]</span><span>
+	</span></p>
+	<p>在括号表达式中（使用<span>[</span>和<span><span>]</span>），</span>匹配用于校对元素的字符序列。字符为单个字符或诸如新行等字符名。在文件<span><span>regexp/cname.h</span>中，可找到字符名称的完整列表。</span></p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;~&#39; REGEXP &#39;[[.~.]]&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;~&#39; REGEXP &#39;[[.tilde.]]&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;-&gt; 1</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>[=character_class=]</span><span>
+	</span></p>
+	<p>在括号表达式中（使用[和]），[=character_class=]表示等同类。它与具有相同校对值的所有字符匹配，包括它本身，例如，如果o和(+)均是等同类的成员，那么[[=o=]]、[[=(+)=]]和[o(+)]是同义词。等同类不得用作范围的端点。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>[:character_class:]</span><span>
+	</span></p>
+	<p>在括号表达式中（使用[和]），[:character_class:]表示与术语类的所有字符匹配的字符类。标准的类名称是：</p>
+	<table border="1" cellpadding="0" id="table1">
+		<tr>
+			<td>
+			<p>
+			<span>alnum</span></td>
+			<td>
+			<p>文字数字字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>alpha</span></td>
+			<td>
+			<p>文字字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>blank</span></td>
+			<td>
+			<p>空白字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>cntrl</span></td>
+			<td>
+			<p>控制字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>digit</span></td>
+			<td>
+			<p>数字字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>graph</span></td>
+			<td>
+			<p>图形字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>lower</span></td>
+			<td>
+			<p>小写文字字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>print</span></td>
+			<td>
+			<p>图形或空格字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>punct</span></td>
+			<td>
+			<p>标点字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>space</span></td>
+			<td>
+			<p>空格、制表符、新行、和回车</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>upper</span></td>
+			<td>
+			<p>大写文字字符</td>
+		</tr>
+		<tr>
+			<td>
+			<p>
+			<span>xdigit</span></td>
+			<td>
+			<p>十六进制数字字符</td>
+		</tr>
+	</table>
+	<p>它们代表在<span><span>ctype(3)</span>手册页面中定义的字符类。</span>特定地区可能会提供其他类名。字符<span>类不得用作范围的端点。</span></p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;justalnums&#39; REGEXP &#39;[[:alnum:]]+&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;!!&#39; REGEXP &#39;[[:alnum:]]+&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>[[:&lt;:]]</span><span>,
+	<span>[[:&gt;:]]</span> </span></p>
+	<p>
+	这些标记表示word边界。它们分别与word的开始和结束匹配。word是一系列字字符，其前面和后面均没有字字符。字字符是alnum类中的字母数字字符或下划线(_)。</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;a word a&#39; REGEXP &#39;[[:&lt;:]]word[[:&gt;:]]&#39;;</b></span>&nbsp;&nbsp; -&gt; 1</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;a xword a&#39; REGEXP &#39;[[:&lt;:]]word[[:&gt;:]]&#39;;</b></span>&nbsp; -&gt; 0</span></pre>
+	<p>要想在正则表达式中使用特殊字符的文字实例，应在其前面加上<span>2</span>个反斜杠“<span>\</span>”字符。<span>MySQL</span>解析程序负责解释其中一个，正则表达式库负责解释另一个。例如，要想与包含特殊字符“<span>+</span>”的字符串“<span>1+2</span>”匹配，在下面的正则表达式中，只有最后一个是正确的：</p>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;1+2&#39; REGEXP &#39;1+2&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;1+2&#39; REGEXP &#39;1\+2&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+	<pre><span>mysql&gt; <span><b>SELECT &#39;1+2&#39; REGEXP &#39;1\\+2&#39;;</b></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span></pre>
+	<div align="center">
+		<span><hr size="2" width="100%" align="center"></span>
+	</div>
+	<span>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</span></div>
+</body></html>

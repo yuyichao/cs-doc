@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>信号的发射和传播</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="高级事件和信号处理"
+HREF="c1751.html"><LINK
+REL="PREVIOUS"
+TITLE="高级事件和信号处理"
+HREF="c1751.html"><LINK
+REL="NEXT"
+TITLE="操作选中区"
+HREF="c1788.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c1751.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>高级事件和信号处理</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c1788.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-SIGNALEMISSIONANDPROPAGATION">信号的发射和传播</H1
+><P
+>信号发射是 GTK 为指定的对象和信号运行所有处理函数的过程。</P
+><P
+>首先，注意从信号发射返回的值是<I
+CLASS="EMPHASIS"
+>最后一个</I
+>处理函数执行后返回的值。因为所有事件信号都是 <TT
+CLASS="LITERAL"
+>GTK_RUN_LAST</TT
+> 类型，GTK 提供的处理函数将成为默认处理函数，除非你用 gtk_signal_connect_after() 设置连接。</P
+><P
+>一个事件 (如"button_press_event") 的处理过程是：</P
+><P
+></P
+><UL
+><LI
+><P
+>从事件发生的构件开始。</P
+></LI
+><LI
+><P
+>发出通常的 "event" 信号。如果信号处理函数返回 TRUE 值，停止所有的处理。</P
+></LI
+><LI
+><P
+>否则，发出一个指定的，"button_press_event" 信号。如果它返回 TRUE，停止所有的处理。</P
+></LI
+><LI
+><P
+>否则，转到父构件，重复前两步。</P
+></LI
+><LI
+><P
+>继续直到某些信号处理函数返回 TRUE，或者直到达到了最顶层的构件。</P
+></LI
+></UL
+><P
+>上述问题的一些重点是：</P
+><P
+></P
+><UL
+><LI
+><P
+>如果信号有一个默认的处理函数，那么你的处理函数返回的值不起作用，除非你用 gtk_signal_connect_after() 设置连接。(译者注：这是因为默认处理函数最后运行，而信号发射的返回值取最后一个处理函数的返回值。)</P
+></LI
+><LI
+><P
+>为了阻止默认的信号处理函数运行，你需要用 gtk_signal_connect() 设置连接，并使用 gtk_signal_emit_stop_by_name() - 返回值只影响信号是否传播，不影响当前信号的发射。(译者注：也就是说，gtk_signal_emit_stop_by_name() 才影响信号的发射。停止发射，就使连接到这个信号的其它函数不继续被调用。)</P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c1751.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c1788.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>高级事件和信号处理</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1751.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>操作选中区</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

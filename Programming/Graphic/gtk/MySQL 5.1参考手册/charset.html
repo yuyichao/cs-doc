@@ -1,0 +1,2108 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 10. Character Set Support</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="language-structure.html" title="Chapter 9. Language Structure"><link rel="next" href="column-types.html" title="Chapter 11. Column Types">
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="charset"></a>
+	第10章：字符集支持</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="charset.html#charset-general">
+			10.1. 常规字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-mysql">
+			10.2. MySQL中的字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-defaults">
+			10.3. 确定默认字符集和校对</a></span></dt><dd><dl><dt><span class="section"><a href="charset.html#charset-server">
+				10.3.1. 服务器字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-database">
+				10.3.2. 数据库字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-table">
+				10.3.3. 表字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-column">
+				10.3.4. 列字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-examples">
+				10.3.5. 字符集和校对分配示例</a></span></dt><dt><span class="section"><a href="charset.html#charset-connection">
+				10.3.6. 连接字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-literal">
+				10.3.7. 字符串文字字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-collate">
+				10.3.8. 在SQL语句中使用COLLATE</a></span></dt><dt><span class="section"><a href="charset.html#charset-collate-precedence">10.3.9. 
+				COLLATE子句优先</a></span></dt><dt><span class="section"><a href="charset.html#charset-binary-op">10.3.10. 
+				BINARY操作符</a></span></dt><dt><span class="section"><a href="charset.html#charset-collate-tricky">
+				10.3.11. 校对确定较为复杂的一些特殊情况</a></span></dt><dt><span class="section"><a href="charset.html#charset-collation-charset">
+				10.3.12. 校对必须适合字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-collation-effect">
+				10.3.13. 校对效果的示例</a></span></dt></dl></dd><dt><span class="section"><a href="charset.html#charset-operations">
+			10.4. 字符集支持影响到的操作</a></span></dt><dd><dl><dt><span class="section"><a href="charset.html#charset-result">
+				10.4.1. 结果字符串</a></span></dt><dt><span class="section"><a href="charset.html#charset-convert">10.4.2. CONVERT()</a></span></dt><dt><span class="section"><a href="charset.html#charset-cast">10.4.3. CAST()</a></span></dt><dt><span class="section"><a href="charset.html#charset-show">10.4.4. 
+				SHOW语句</a></span></dt></dl></dd><dt><span class="section"><a href="charset.html#charset-unicode">
+			10.5. Unicode支持</a></span></dt><dt><span class="section"><a href="charset.html#charset-metadata">
+			10.6. 用于元数据的UTF8</a></span></dt><dt><span class="section"><a href="charset.html#charset-compatibility">
+			10.7. 与其它DBMS的兼容性</a></span></dt><dt><span class="section"><a href="charset.html#charset-config-file">
+			10.8. 新字符集配置文件格式</a></span></dt><dt><span class="section"><a href="charset.html#charset-national">
+			10.9. 国家特有字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-charsets">
+			10.10. MySQL支持的字符集和校对</a></span></dt><dd><dl><dt><span class="section"><a href="charset.html#charset-unicode-sets">
+				10.10.1. Unicode字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-we-sets">
+				10.10.2. 西欧字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-ce-sets">
+				10.10.3. 中欧字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-se-me-sets">
+				10.10.4. 南欧与中东字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-baltic-sets">
+				10.10.5. 波罗的海字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-cyrillic-sets">
+				10.10.6. 西里尔字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-asian-sets">
+				10.10.7. 亚洲字符集</a></span></dt></dl></dd></dl></div><a class="indexterm" name="id2836957"></a><a class="indexterm" name="id2836964"></a><a class="indexterm" name="id2836971"></a><a class="indexterm" name="id2836978"></a><a class="indexterm" name="id2836984"></a>
+	<p>本章讨论以下主题：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>什么是字符集和校对规则？</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>多级默认系统</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>字符集语法</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>相关函数和运算</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>Unicode</span>支持</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>每个字符集和校对规则的含义</p>
+	<p><span>MySQL5.1</span>中的字符集支持包括在<span >MyISAM</span>、<span>MEMORY</span>和<span>InnoDB</span>存储引擎中。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-general"></a>
+		10.1.&nbsp;常规字符集和校对</h2></div></div></div>
+		<p><i>字符集</i>是一套符号和编码。<i>校对规则</i>是在字符集内用于比较字符的一套规则。让我们使用一个假想字符集的例子来区别清楚。</p>
+		<p>假设我们有一个字母表使用了四个字母：‘<span>A</span>’、‘<span>B</span>’、‘<span>a</span>’、‘<span>b</span>’。我们为每个字母赋予一个数值：‘<span>A</span>’<span>=0</span>，‘<span>B</span>’<span>= 
+		1</span>，‘<span>a</span>’<span>= 
+		2</span>，‘<span>b</span>’<span>= 
+		3</span>。字母‘<span>A</span>’是一个符号，数字<span>0</span>是‘<span>A</span>’的编码，这四个字母和它们的编码组合在一起是一个<strong><span>字符集</span></strong>。</p>
+		<p>假设我们希望比较两个字符串的值：‘<span>A</span>’和‘<span>B</span>’。比较的最简单的方法是查找编码：‘<span>A</span>’为<span>0</span>，‘<span>B</span>’为<span>1</span>。因为<span>0
+		</span>小于<span>1</span>，我们可以说‘<span>A</span>’小于‘<span>B</span>’。我们做的仅仅是在我们的字符集上应用了一个
+		校对规则。校对规则是一套规则（在这种情况下仅仅是一套规则）：“对<span class="quote">编码进行比较。</span>”我们称这种全部可能的规则中的最简单的
+		校对规则为一个<em><span>binary</span><span>（二元）</span></em>校对规则。</p>
+		<p>但是，如果我们希望小写字母和大写字母是等价的，应该怎样？那么，我们将至少有两个规则：（<span>1</span>）把小写字母‘<span>a</span>’和‘<span>b</span>’视为与‘<span>A</span>’和‘<span>B</span>’等价；（<span>2</span>）然后比较编码。我们称这是一个大小写不敏感的
+		校对规则。比二元校对规则复杂一些。</p>
+		<p>在实际生活中，大多数字符集有许多字符：不仅仅是‘<span>A</span>’和‘<span>B</span>’，而是整个字母表，有时候有许多种字母表，或者一个东方的使用上千个字符的书写系统，还有许多特殊符号和标点符号。并且在实际生活中，大多数
+		校对规则有许多个规则：不仅仅是大小写不敏感，还包括重音符不敏感（“<span class="quote">重音符</span>” 
+		是附属于一个字母的符号，象德语的‘<span>Ö</span>’符号）和多字节映射（例如，作为规则‘<span>Ö</span>’<span>=</span>‘<span>OE</span>’就是两个德语
+		校对规则的一种）。</p>
+		<p><span>MySQL5.1</span>能够做这些事情：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>使用多种字符集来存储字符串</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>使用多种校对规则来比较字符串</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在同一台服务器、同一个数据库或甚至在同一个表中使用不同字符集或校对规则来混合字符串</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>允许定义任何级别的字符集和校对规则</p>
+		<p>在这些方面，<span>MySQL5.1</span>不仅比<span>MySQL4.1</span>以前的版本灵活得多，而且比其它大多数数据库管理系统超前许多。但是，为了有效地使用这些功能，你需要了解哪些字符集和
+		校对规则是可用的，怎样改变默认值，以及它们怎样影响字符操作符和字符串函数的行为。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-mysql"></a>
+		10.2.&nbsp;MySQL中的字符集和校对</h2></div></div></div>
+		<p><span>MySQL</span>服务器能够支持多种字符集。可以使用<span>SHOW 
+		CHARACTER SET</span>语句列出可用的字符集：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW CHARACTER SET;</span></b></span></pre>
+		<pre><span>+----------+-----------------------------+---------------------+--------+</span></pre>
+		<pre><span>| Charset&nbsp; | Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Default collation&nbsp;&nbsp; | Maxlen |</span></pre>
+		<pre><span>+----------+-----------------------------+---------------------+--------+</span></pre>
+		<pre><span>| big5&nbsp;&nbsp;&nbsp;&nbsp; | Big5 Traditional Chinese&nbsp;&nbsp;&nbsp; | big5_chinese_ci&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+		<pre><span>| dec8&nbsp;&nbsp;&nbsp;&nbsp; | DEC West European&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | dec8_swedish_ci&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| cp850&nbsp;&nbsp;&nbsp; | DOS West European&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | cp850_general_ci&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| hp8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | HP West European&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | hp8_english_ci&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| koi8r&nbsp;&nbsp;&nbsp; | KOI8-R Relcom Russian&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | koi8r_general_ci&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| latin1&nbsp;&nbsp; | cp1252&nbsp;&nbsp;&nbsp;&nbsp; West European&nbsp;&nbsp;&nbsp; | latin1_swedish_ci&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| latin2&nbsp;&nbsp; | ISO 8859-2 Central European | latin2_general_ci&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| swe7&nbsp;&nbsp;&nbsp;&nbsp; | 7bit Swedish&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | swe7_swedish_ci&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| ascii&nbsp; &nbsp;&nbsp;| US ASCII&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ascii_general_ci&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| ujis&nbsp;&nbsp;&nbsp;&nbsp; | EUC-JP Japanese&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ujis_japanese_ci&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+		<pre><span>| sjis&nbsp;&nbsp;&nbsp;&nbsp; | Shift-JIS Japanese&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | sjis_japanese_ci&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+		<pre><span>| hebrew&nbsp;&nbsp; | ISO 8859-8 Hebrew&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | hebrew_general_ci&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| tis620&nbsp;&nbsp; | TIS620 Thai&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | tis620_thai_ci&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| euckr&nbsp;&nbsp;&nbsp; | EUC-KR Korean&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | euckr_korean_ci&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+		<pre><span>| koi8u&nbsp;&nbsp;&nbsp; | KOI8-U Ukrainian&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | koi8u_general_ci&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| gb2312&nbsp;&nbsp; | GB2312 Simplified Chinese&nbsp;&nbsp; | gb2312_chinese_ci&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+		<pre><span>| greek&nbsp;&nbsp;&nbsp; | ISO 8859-7 Greek&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | greek_general_ci&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| cp1250&nbsp;&nbsp; | Windows Central European&nbsp;&nbsp;&nbsp; | cp1250_general_ci&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| gbk&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | GBK Simplified Chinese&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;| gbk_chinese_ci&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+		<pre><span>| latin5&nbsp;&nbsp; | ISO 8859-9 Turkish&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | latin5_turkish_ci&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>...</span></pre>
+		<p>（完整列表参见<a href="charset.html#charset-charsets" title="10.10. Character Sets and Collations That MySQL Supports">10.10节，“MySQL支持的字符集和校对”</a>。）</p>
+		<p>任何一个给定的字符集至少有一个校对规则。它可能有几个校对规则。</p>
+		<p>要想列出一个字符集的校对规则，使用<span>SHOW 
+		COLLATION</span>语句。例如，要想查看<span>latin1</span>（“<span class="quote">西欧<span>ISO-8859-1<span>”</span></span>）字符集的
+		校对规则，使用下面的语句查找那些名字以</span><span>latin1</span>开头的
+		校对规则：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW COLLATION LIKE &#39;latin1%&#39;;</span></b></span></pre>
+		<pre><span>+---------------------+---------+----+---------+----------+---------+</span></pre>
+		<pre><span>| Collation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Charset | Id | Default | Compiled | Sortlen |</span></pre>
+		<pre><span>+---------------------+---------+----+---------+----------+---------+</span></pre>
+		<pre><span>| latin1_german1_ci&nbsp;&nbsp; | latin1&nbsp; |&nbsp; 5 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>| latin1_swedish_ci&nbsp;&nbsp; | latin1&nbsp; |&nbsp; 8 | Yes&nbsp;&nbsp;&nbsp;&nbsp; | Yes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| latin1_danish_ci&nbsp;&nbsp;&nbsp; | latin1&nbsp; | 15 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>| latin1_german2_ci&nbsp;&nbsp; | latin1&nbsp; | 31 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Yes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+		<pre><span>| latin1_bin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | latin1&nbsp; | 47 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Yes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>| latin1_general_ci&nbsp;&nbsp; | latin1&nbsp; | 48 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>| latin1_general_cs&nbsp;&nbsp; | latin1&nbsp; | 49 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>| latin1_spanish_ci&nbsp;&nbsp; | latin1&nbsp; | 94 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>+---------------------+---------+----+---------+----------+---------+</span></pre>
+		<p>
+		<span>latin1</span>校对规则有下面的含义：</p>
+		<table border="1" cellpadding="0" id="table1">
+			<tr>
+				<td>
+				<p><strong><span>校对规则</span></strong></td>
+				<td>
+				<p><strong><span>含义</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_german1_ci</span></td>
+				<td>
+				<p>德国<span>DIN-1</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_swedish_ci</span></td>
+				<td>
+				<p>瑞典<span>/</span>芬兰</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_danish_ci</span></td>
+				<td>
+				<p>丹麦<span>/</span>挪威</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_german2_ci</span></td>
+				<td>
+				<p>德国<span> DIN-2</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_bin</span></td>
+				<td>
+				<p>符合<span>latin1</span>编码的二进制</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_general_ci</span></td>
+				<td>
+				<p>多种语言<span>(</span>西欧<span>)</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_general_cs</span></td>
+				<td>
+				<p>多种语言<span>(</span>西欧<span>ISO),</span>大小写敏感</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>latin1_spanish_ci</span></td>
+				<td>
+				<p>现代西班牙</td>
+			</tr>
+		</table>
+		<p>校对规则一般有这些特征：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>两个不同的字符集不能有相同的校对规则。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>每个字符集有一个<em><span>默认校对规则</span></em>。例如，<span>latin1</span>默认校对规则是<span>latin1_swedish_ci</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>存在校对规则命名约定：它们以其相关的字符集名开始，通常包括一个语言名，并且以<span>_ci</span>（大小写不敏感）、<span>_cs</span>（大小写敏感）或<span>_bin</span>（二元）结束。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-defaults"></a>
+		10.3.&nbsp;确定默认字符集和校对</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="charset.html#charset-server">
+			10.3.1. 服务器字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-database">
+			10.3.2. 数据库字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-table">
+			10.3.3. 表字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-column">
+			10.3.4. 列字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-examples">
+			10.3.5. 字符集和校对分配示例</a></span></dt><dt><span class="section"><a href="charset.html#charset-connection">
+			10.3.6. 连接字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-literal">
+			10.3.7. 字符串文字字符集和校对</a></span></dt><dt><span class="section"><a href="charset.html#charset-collate">
+			10.3.8. 在SQL语句中使用COLLATE</a></span></dt><dt><span class="section"><a href="charset.html#charset-collate-precedence">10.3.9. 
+			COLLATE子句优先</a></span></dt><dt><span class="section"><a href="charset.html#charset-binary-op">10.3.10. 
+			BINARY操作符</a></span></dt><dt><span class="section"><a href="charset.html#charset-collate-tricky">
+			10.3.11. 校对确定较为复杂的一些特殊情况</a></span></dt><dt><span class="section"><a href="charset.html#charset-collation-charset">
+			10.3.12. 校对必须适合字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-collation-effect">
+			10.3.13. 校对效果的示例</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+			字符集和校对规则有<span>4</span>个级别的默认设置：服务器级、数据库级、表级和连接级。以下描述可能显得复杂，但是在实际应用中可以发现使用多种级别会使结果自然而明显。<h3 class="title"><a name="charset-server"></a>
+			10.3.1.&nbsp;服务器字符集和校对</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span>MySQL</span>服务器有一个服务器字符集和一个服务器校对规则，它们均不能设置为空。<p>
+			<span>MySQL</span>按照如下方法确定服务器字符集和服务器校对规则：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当服务器启动时根据有效的选项设置</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>根据运行时的设定值</p>
+			<p><span>在服务器级别，确定方法很简单。当启动<strong><span>mysqld</span></strong>时，根据使用的初始选项设置来确定服务器字符集和
+			校对规则。可以使用</span><span  >--default-character-set</span><span>设置字符集，并且可以在字符集后面为
+			校对规则添加</span><span  >--default-collation</span><span>。如果没有指定一个字符集，那就与</span><span  >--default-character-set=latin1</span><span>相同。</span><span>如果你仅指定了一个字符集（例如，</span><span  >latin1</span><span>），但是没有指定一个
+			校对规则，那就与</span><span  >--default-charset=latin1</span><span >
+			</span>
+			<span  >
+			--default-collation=latin1_swedish_ci</span><span>相同</span><span>，</span><span>因为</span><span  >latin1_swedish_ci</span><span>是</span><span  >latin1</span><span>的</span><span>默认校对规则。因此，以下三个命令有相同的效果：</span></p>
+			<p><span >
+			shell&gt; <b>mysqld</b></span></p>
+			<p><span >
+			shell&gt; <b>mysqld --default-character-set=latin1</b></span></p>
+			<p><span >
+			shell&gt; <b>mysqld --default-character-set=latin1 \</b></span></p>
+			<p><span >
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>--default-collation=latin1_swedish_ci</b></span></p>
+			<p><span>
+			更改设定值的一个方法是通过重新编译。如果希望在从源程序构建时更改默认服务器字符集和校对规则，使用：</span><span  >--with-charset</span><span>和</span><span  >--with-collation</span><span>作为<strong><span>configure</span></strong>的参量。例如：</span></p>
+			<pre><span>shell&gt; </span><span><b><span>./configure --with-charset=latin1</span></b></span></pre>
+			<p>或者：</p>
+			<p><span>shell&gt; <b>./configure --with-charset=latin1 
+			\</b></span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+			--with-collation=latin1_german1_ci</b></span></p>
+			<p><strong><span>mysqld</span></strong>和<strong><span>configure</span></strong>都验证字符集<span>/</span>校对规则组合是否有效。如果无效，每个程序都显示一个错误信息，然后终止。</p>
+			<p>当前的服务器字符集和校对规则可以用作<span>character_set_server</span>和<span>collation_server</span>系统变量的值。在运行时能够改变这些变量的值。</p>
+			<h3 class="title"><a name="charset-database"></a>
+			10.3.2.&nbsp;数据库字符集和校对</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			每一个数据库有一个数据库字符集和一个数据库校对规则，它不能够为空。<span>CREATE 
+			DATABASE</span>和<span>ALTER 
+			DATABASE</span>语句有一个可选的子句来指定数据库字符集和校对规则：<pre><span>CREATE DATABASE </span><span><i><span>db_name</span></i></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; [[DEFAULT] CHARACTER SET </span><span><i><span>charset_name</span></i></span><span>]</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; [[DEFAULT] COLLATE </span><span><i><span>collation_name</span></i></span><span>]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>ALTER DATABASE </span><span><i><span>db_name</span></i></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; [[DEFAULT] CHARACTER SET </span><span><i><span>charset_name</span></i></span><span>]</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; [[DEFAULT] COLLATE </span><span><i><span>collation_name</span></i></span><span>]</span></pre>
+			<p>例如：</p>
+			<pre><span>CREATE DATABASE </span><span><i><span>db_name</span></i></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;</span></pre>
+			<p><span>MySQL</span>这样选择数据库字符集和数据库校对规则：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>和<span>COLLATE 
+			Y</span>，那么采用字符集<span><i><span>X</span></i></span>和校对规则<span><i><span>Y</span></i></span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>而没有指定<span>COLLATE 
+			Y</span>，那么采用<span>CHARACTER 
+			SET X</span>和<span>CHARACTER 
+			SET X</span>的默认校对规则。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>否则，采用服务器字符集和服务器校对规则。</p>
+			<p><span>MySQL</span>的<span>CREATE 
+			DATABASE ... DEFAULT CHARACTER SET ...</span>语法与标准<span>SQL</span>的<span>CREATE 
+			SCHEMA ... CHARACTER SET ...</span>语法类似。因此，可以在同一个<span>MySQL</span>服务器上创建使用不同字符集和
+			校对规则的数据库。</p>
+			<p>如果在<span>CREATE 
+			TABLE</span>语句中没有指定表字符集和校对规则，则使用数据库字符集和校对规则作为默认值。它们没有其它目的。</p>
+			<p>默认数据库的字符集和校对规则可以用作<span>character_set_database</span>和 
+			<span>collation_database</span>系统变量。无论何时默认数据库更改了，服务器都设置这两个变量的值。如果没有
+			默认数据库，这两个变量与相应的服务器级别的变量（<span>character_set_server</span>和<span>collation_server</span>）具有相同的值。</p>
+			<h3 class="title"><a name="charset-table"></a>
+			10.3.3.&nbsp;表字符集和校对</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			每一个表有一个表字符集和一个校对规则，它不能为空。为指定表字符集和校对规则，<span>CREATE 
+			TABLE</span><span> </span>和<span>ALTER 
+			TABLE</span>语句有一个可选的子句：<pre><span>CREATE TABLE </span><span><i><span>tbl_name</span></i></span><span> (</span><span><i><span>column_list</span></i></span><span>)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; [DEFAULT CHARACTER SET </span><span><i><span>charset_name</span></i></span><span> [COLLATE </span><span><i><span>collation_name</span></i></span><span>]]</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>ALTER TABLE </span><span><i><span>tbl_name</span></i></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; [DEFAULT CHARACTER SET </span><span><i><span>charset_name</span></i></span><span>] [COLLATE </span><span><i><span>collation_name</span></i></span><span>]</span></pre>
+			<p>例如：</p>
+			<pre><span>CREATE TABLE t1 ( ... )</span></pre>
+			<p style="text-indent: 24.0pt"><span>DEFAULT CHARACTER SET 
+			latin1 COLLATE latin1_danish_ci;</span></p>
+			<p style="text-indent: 24.0pt"><span>MySQL</span>按照下面的方式选择表字符集和
+			校对规则：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>和<span>COLLATE 
+			Y</span>，那么采用<span>CHARACTER 
+			SET X</span>和<span>COLLATE Y</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>而没有指定<span>COLLATE 
+			Y</span>，那么采用<span>CHARACTER 
+			SET X</span>和<span>CHARACTER 
+			SET X</span>的默认校对规则。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>否则，采用服务器字符集和服务器校对规则。</p>
+			<p>如果在列定义中没有指定列字符集和校对规则，则默认使用表字符集和校对规则。表字符集和校对规则是<span>MySQL</span>的扩展<span>;</span>在标准<span>SQL</span>中没有。</p>
+			<h3 class="title"><a name="charset-column"></a>
+			10.3.4.&nbsp;列字符集和校对</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			每一个“<span class="quote">字符</span>”列（即，<span>CHAR</span>、<span>VARCHAR</span>或<span>TEXT</span>类型的列）有一个列字符集和一个列
+			校对规则，它不能为空。列定义语法有一个可选子句来指定列字符集和校对规则：<pre><span><i><span>col_name</span></i></span><span> {CHAR | VARCHAR | TEXT} (</span><span><i><span>col_length</span></i></span><span>)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; [CHARACTER SET </span><span><i><span>charset_name</span></i></span><span> [COLLATE </span><span><i><span>collation_name</span></i></span><span>]]</span></pre>
+			<p>例如：</p>
+			<p><span>CREATE TABLE Table1</span></p>
+			<p><span>(</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp; column1 VARCHAR(5) 
+			CHARACTER SET latin1 COLLATE latin1_german1_ci</span></p>
+			<p><span>);</span></p>
+			<p><span>MySQL</span>按照下面的方式选择列字符集和校对规则：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>和<span>COLLATE 
+			Y</span>，那么采用<span>CHARACTER 
+			SET X</span>和<span>COLLATE Y</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>而没有指定<span>COLLATE 
+			Y</span>，那么采用<span>CHARACTER 
+			SET X</span>和<span>CHARACTER 
+			SET X</span>的默认校对规则。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>否则，采用表字符集和服务器校对规则。</p>
+			<p>
+			<span>CHARACTER SET</span>和<span>COLLATE</span>子句是标准的<span>SQL</span>。</p>
+			<h3 class="title"><a name="charset-examples"></a>
+			10.3.5.&nbsp;字符集和校对分配示例</h3></div></div></div>
+			<p>以下例子显示了<span>MySQL</span>怎样确定默认字符集和校对规则。</p>
+			<p><strong><span>示例<span>1</span>：表和列定义</span></strong></p>
+			<pre><span>CREATE TABLE t1</span></pre>
+			<pre><span>(</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; c1 CHAR(10) CHARACTER SET latin1 COLLATE latin1_german1_ci</span></pre>
+			<pre><span>) DEFAULT CHARACTER SET latin2 COLLATE latin2_bin;</span></pre>
+			<p>在这里我们有一个列使用<span>latin1</span>字符集和<span>latin1_german1_ci</span>校对规则。是显式的定义，因此简单明了。需要注意的是，在一个<span>latin2</span>表中存储一个<span>latin1</span>列不会存在问题。</p>
+			<p><strong><span>示例<span>2</span>：表和列定义</span></strong></p>
+			<pre><span>CREATE TABLE t1</span></pre>
+			<pre><span>(</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; c1 CHAR(10) CHARACTER SET latin1</span></pre>
+			<pre><span>) DEFAULT CHARACTER SET latin1 COLLATE latin1_danish_ci;</span></pre>
+			<p>这次我们有一个列使用<span>latin1</span>字符集和一个默认校对规则。尽管它显得自然，默认校对规则却不是表级。相反，因为<span>latin1</span>的默认校对规则总是<span>latin1_swedish_ci</span>，列<span>c1</span>有一个校对规则<span>latin1_swedish_ci</span>（而不是<span>latin1_danish_ci</span>）。</p>
+			<p><strong><span>示例<span>3</span>：表和列定义</span></strong></p>
+			<pre><span>CREATE TABLE t1</span></pre>
+			<pre><span>(</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; c1 CHAR(10)</span></pre>
+			<pre><span>) DEFAULT CHARACTER SET latin1 COLLATE latin1_danish_ci;</span></pre>
+			<p>我们有一个列使用一个默认字符集和一个默认校对规则。在这种情况下，<span>MySQL</span>查找表级别来确定列字符集和
+			校对规则。因此，列<span>c1</span>的字符集是<span>latin1</span>，它的
+			校对规则是<span>latin1_danish_ci</span>。</p>
+			<p><strong><span>示例<span>4</span>：数据库、表和列定义</span></strong></p>
+			<pre><span>CREATE DATABASE d1</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; DEFAULT CHARACTER SET latin2 COLLATE latin2_czech_ci;</span></pre>
+			<pre><span>USE d1;</span></pre>
+			<pre><span>CREATE TABLE t1</span></pre>
+			<pre><span>(</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; c1 CHAR(10)</span></pre>
+			<pre><span>);</span></pre>
+			<p>我们创建了一个没有指定字符集和校对规则的列。我们也没有指定表级字符集和校对规则。在这种情况下，<span>MySQL</span>查找数据库级的相关设置。（数据库的设置变为表的设置，其后变为列的设置。）因此，列<span>c1</span>的字符集为是<span><span>latin2</span><span>，</span></span>它的
+			校对规则是<span>latin2_czech_ci</span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-connection"></a>
+			10.3.6.&nbsp;连接字符集和校对</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			一些字符集和校对规则系统变量与客户端和服务器的交互有关。在前面的章节中已经提到过部分内容：<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>服务器字符集和校对规则可以用作<span>character_set_server</span>和<span>collation_server</span>变量的值。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>默认数据库的字符集和校对规则可以用作<span>character_set_database</span>和<span>collation_database</span>变量的值。</p>
+			<p>在客户端和服务器的连接处理中也涉及了字符集和校对规则变量。每一个客户端有一个连接相关的字符集和校对规则变量。</p>
+			<p>考虑什么是一个“<span class="quote">连接</span>”：它是连接服务器时所作的事情。客户端发送<span>SQL</span>语句，例如查询，通过连接发送到服务器。服务器通过连接发送响应给客户端，例如结果集。对于客户端连接，这样会导致一些关于连接的字符集和
+			校对规则的问题，这些问题均能够通过系统变量来解决：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当查询离开客户端后，在查询中使用哪种字符集？</p>
+			<p>服务器使用<span>character_set_client</span>变量作为客户端发送的查询中使用的字符集。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>服务器接收到查询后应该转换为哪种字符集？</p>
+			<p>转换时，服务器使用<span>character_set_connection</span>和<span>collation_connection</span>系统变量。它将客户端发送的查询从<span>character_set_client</span>系统变量转换到<span>character_set_connection</span>（除非字符串文字具有象<span>_latin1</span>或<span>_utf8</span>的引介词）。<span>collation_connection</span>对比较文字字符串是重要的。对于列值的字符串比较，它不重要，因为列具有更高的
+			校对规则优先级。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>服务器发送结果集或返回错误信息到客户端之前应该转换为哪种字符集？</p>
+			<p>
+			<span>character_set_results</span>变量指示服务器返回查询结果到客户端使用的字符集。包括结果数据，例如列值和结果元数据（如列名）。</p>
+			<p>你能够调整这些变量的设置，或可以依赖默认值（这样，你可以跳过本章）。</p>
+			<p>有两个语句影响连接字符集：</p>
+			<pre><span>SET NAMES &#39;</span><span><i><span>charset_name</span></i></span><span>&#39;</span></pre>
+			<pre><span>SET CHARACTER SET </span><span><i><span>charset_name</span></i></span></pre>
+			<p>
+			<span>SET NAMES</span>显示客户端发送的<span>SQL</span>语句中使用什么字符集。因此，<span>SET 
+			NAMES &#39;cp1251&#39;</span>语句告诉服务器“<span class="quote">将来从这个客户端传来的信息采用字符集</span><span><span>cp1251<span>”</span></span>。它还为服务器发送回客户端的结果指定了字符集。（例如，如果你使用一个<span>SELECT</span></span>语句<span>，</span>它表示列值使用了什么字符集。）</p>
+			<p>
+			<span>SET NAMES &#39;<i>x</i>&#39;</span>语句与这三个语句等价：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SET character_set_client = <i>x</i>;</span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SET character_set_results = <i>x</i>;</span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SET character_set_connection = <i>x</i>;</span></b></span></pre>
+			<p>将<span>x</span>设置为<span>character_set_connection</span>也就设置了<span>collation_connection</span>是<span>x</span>的默认校对规则。</p>
+			<p>
+			<span>SET CHARACTER SET</span>语句是类似的，但是为
+			默认数据库设置连接字符集和校对规则。<span>SET 
+			CHARACTER SET x</span>语句与这三个语句等价：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SET character_set_client = <i>x</i>;</span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SET character_set_results = <i>x</i>;</span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SET collation_connection = @@collation_database;</span></b></span></pre>
+			<p>当一个客户端连接时，它向服务器发送希望使用的字符集名称。服务器为那个字符集设置<span>character_set_client</span>、<span>character_set_results</span>和 
+			<span>character_set_connection</span>变量。（实际上，服务器为使用该字符集执行一个<span>SET 
+			NAMES</span>操作。）</p>
+			<p>对于<strong><span>mysql</span></strong>客户端，如果你希望使用与默认字符集不同的字符集，不需要每次启动时执行<span>SET 
+			NAMES</span>语句。可以在<strong><span>mysql</span></strong>语句行中或者选项文件中添加一个<span>--default-character-set</span>选项设置。例如，你每次运行<strong><span>mysql</span></strong>时，以下的选项文件设置把三个字符集变量修改为<span>koi8r</span>：</p>
+			<p><span>[mysql]</span></p>
+			<p><span>default-character-set=koi8r</span></p>
+			<p>例如：假设<span>column1</span>定义为<span>CHAR(5) 
+			CHARACTER SET latin2</span>。如果没有设定<span>SET 
+			NAMES</span>或<span>SET 
+			CHARACTER SET</span>，那么对于<span>SELECT 
+			column1 FROM t</span>，当连接后，服务器使用客户端指定的字符集返回列<span>column1</span>的所有值。另一方面，如果你设定<span>SET 
+			NAMES &#39;latin1&#39;</span>或<span>SET 
+			CHARACTER SET latin1</span>，那么发送结果之前，服务器转换<span>latin2</span>值到<span>latin1</span>。转换可能会丢失那些不属于两种字符集的字符。</p>
+			<p>如果不希望服务器执行任何转换，设置<span>character_set_results</span>为<span>NULL</span>：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SET character_set_results = NULL;</span></b></span></pre>
+			<h3 class="title"><a name="charset-literal"></a>
+			10.3.7.&nbsp;字符串文字字符集和校对</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			每一字符串字符文字有一个字符集和一个校对规则，它不能为空。<p>一个字符串文字可能有一个可选的字符集引介词和<span>COLLATE</span>子句：</p>
+			<pre><span>[_</span><span><i><span>charset_name</span></i></span><span>]&#39;</span><span><i><span>string</span></i></span><span>&#39; [COLLATE </span><span><i><span>collation_name</span></i></span><span>]</span></pre>
+			<p>例如：</p>
+			<pre><span>SELECT &#39;</span><span><i><span>string</span></i></span><span>&#39;;</span></pre>
+			<pre><span>SELECT _latin1&#39;</span><span><i><span>string</span></i></span><span>&#39;;</span></pre>
+			<pre><span>SELECT _latin1&#39;</span><span><i><span>string</span></i></span><span>&#39; COLLATE latin1_danish_ci;</span></pre>
+			<p>对于简单的语句<span>SELECT 
+			&#39;<i>string</i>&#39;</span>，字符串使用由<span>character_set_connection</span>和<span>collation_connection</span>系统变量定义的字符集和
+			校对规则。</p>
+			<p>
+			<span>_<i>charset_name</i></span>表达式正式称做一个<em><span>引介词</span></em>。它告诉解析程序，“后面将要出现的<span class="quote">字符串使用字符集<span>X</span>。</span>”因为以前人们对此感到困惑，我们强调引介词不导致任何转换<span>;
+			</span>它仅是一个符号，不改变字符串的值。引介词在标准十六进制字母和数字十六进制符号（<span>x&#39;<i>literal</i>&#39;</span>和 
+			<span>0x<i>nnnn</i></span>）中是合法的，以及<span>？</span>（当在一个编程语言接口中使用预处理的语句时进行参数替换）。</p>
+			<p>例如：</p>
+			<pre><span>SELECT _latin1 x&#39;AABBCC&#39;;</span></pre>
+			<pre><span>SELECT _latin1 0xAABBCC;</span></pre>
+			<pre><span>SELECT _latin1 ?;</span></pre>
+			<p><span>MySQL</span>这样确定一个文字字符集和校对规则：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>和<span>COLLATE 
+			Y</span>，那么使用<span>CHARACTER SET X</span>和<span>COLLATE 
+			Y</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果指定了<span>CHARACTER 
+			SET X</span>而没有指定<span>COLLATE 
+			Y</span>，那么使用<span>CHARACTER SET X</span>和<span>CHARACTER 
+			SET X</span>的默认校对规则。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>否则，使用通过<span>character_set_connection</span><span>
+			</span>和 
+			<span>collation_connection</span>系统变量给出的字符集和
+			校对规则。</p>
+			<p>例如：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用<span>latin1</span>字符集和<span>latin1_german1_ci</span>校对规则的字符串：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT _latin1&#39;M</span>ü<span>ller&#39; COLLATE latin1_german1_ci;</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用<span>latin1</span>字符集和其默认校对规则的字符串（即，<span>latin1_swedish_ci</span>）：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT _latin1&#39;M</span>ü<span>ller&#39;;</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用连接默认字符集和校对规则的字符串：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT &#39;M</span>ü<span>ller&#39;;</span></pre>
+			<p>字符集引介词和<span>COLLATE</span>子句是根据标准<span>SQL</span>规范实现的。</p>
+			<h3 class="title"><a name="charset-collate"></a>
+			10.3.8.&nbsp;在SQL语句中使用COLLATE</h3></div></div></div>
+			<div class="itemizedlist">
+				<ul type="disc">
+					<li>使用<span>COLLATE</span>子句，能够为一个比较覆盖任何默认校对规则。<span>COLLATE</span>可以用于多种<span>SQL</span>语句中。下面是一些例子：<p>
+					<span>
+					·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></span>使用<span>ORDER 
+					BY</span>：</p>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT k</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>FROM t1</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>ORDER BY k COLLATE latin1_german2_ci;</span></pre>
+					<p>
+					<span>
+					·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></span>使用<span>AS</span>：</p>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT k COLLATE latin1_german2_ci AS k1</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>FROM t1</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>ORDER BY k1;</span></pre>
+					<p>
+					<span>
+					·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></span>使用<span>GROUP 
+					BY</span>：</p>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT k</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>FROM t1</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>GROUP BY k COLLATE latin1_german2_ci;</span></pre>
+					<p>
+					<span>
+					·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></span>使用聚合函数：</p>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT MAX(k COLLATE latin1_german2_ci)</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>FROM t1;</span></pre>
+					<p>
+					<span>
+					·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></span>使用<span>DISTINCT</span>：</p>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT DISTINCT k COLLATE latin1_german2_ci</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>FROM t1;</span></pre>
+					<p>
+					<span>
+					·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></span>使用<span>WHERE</span>：</p>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SELECT *</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FROM t1</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHERE _latin1 &#39;M</span>ü<span>ller&#39; COLLATE latin1_german2_ci = k;</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SELECT *</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FROM t1</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHERE k LIKE _latin1 &#39;M</span>ü<span>ller&#39; COLLATE latin1_german2_ci;</span></pre>
+					<p>
+					<span>
+					·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></span>使用<span>HAVING</span>：</p>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>SELECT k</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>FROM t1</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>GROUP BY k</span></pre>
+					<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>HAVING k = _latin1 &#39;M</span>ü<span>ller&#39; COLLATE latin1_german2_ci;</span></pre>
+					</li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-collate-precedence"></a>10.3.9. COLLATE子句优先</h3></div></div></div>
+			<p>
+			<span>COLLATE</span>子句有较高的优先级（高于<span>||</span>），因此下面两个表达式是等价的：</p>
+			<pre><span>x || y COLLATE z</span></pre>
+			<pre><span>x || (y COLLATE z)</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-binary-op"></a>10.3.10. BINARY操作符</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<span>BINARY</span>操作符是<span>COLLATE</span>子句的一个速记符。<span>BINARY</span><span> 
+		&#39;<i>x</i>&#39;</span>等价与<span>&#39;<i>x</i>&#39; 
+		COLLATE <i>y</i></span>，这里<span><i><span>y</span></i></span>是字符集<span>&#39;</span><span><i><span>x</span></i></span><span>&#39;</span>二元
+		校对规则的名字。每一个字符集有一个二元校对规则。例如，<span>latin1</span>字符集的二元
+		校对规则是<span>latin1_bin</span>，因此，如果列<span>a</span>是字符集<span>latin1</span>，以下两个语句有相同效果：<pre><span>SELECT * FROM t1 ORDER BY BINARY a;</span></pre>
+		<pre><span>SELECT * FROM t1 ORDER BY a COLLATE latin1_bin;</span></pre>
+		<h3 class="title"><a name="charset-collate-tricky"></a>
+			10.3.11.&nbsp;校对确定较为复杂的一些特殊情况</h3></div></div></div>
+		<p>在绝大多数查询中，<span>MySQL</span>使用哪种校对规则进行比较是很显然的。例如，在下列情况中，校对规则明显的是“<span class="quote">列</span><span>x</span><span class="quote">的列校对规则</span>”：</p>
+		<pre><span>SELECT x FROM T ORDER BY x;</span></pre>
+		<pre><span>SELECT x FROM T WHERE x = x;</span></pre>
+		<pre><span>SELECT DISTINCT x FROM T;</span></pre>
+		<p>但是，当涉及多个操作数时，可能不明确。例如：</p>
+		<pre><span>SELECT x FROM T WHERE x = &#39;Y&#39;;</span></pre>
+		<p>这个查询应该使用列<span>x</span>的
+		校对规则，还是字符串文字<span>&#39;Y&#39;</span>的
+		校对规则？</p>
+		<p>标准化<span>SQL</span>使用“<span class="quote">可压缩性</span>”规则解决这种问题。基本上，这个意思是：既然<span>x</span>和<span>&#39;Y&#39;</span>都有
+		校对规则，哪个校对规则优先？这可能比较难解决，但是以下规则适合大多数情况：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>一个外在的<span>COLLATE</span>子句可压缩性是<span>0</span>（根本不能压缩。）</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>使用不同校对规则的两个字符串连接的可压缩性是<span>1</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>列校对规则的可压缩性是<span>2</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>“<span class="quote">系统常数</span>”（如<span>USER()</span>或<span>VERSION()</span>函数返回的字符串）可压缩性是<span>3</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>文字规则的可压缩性是<span>4</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>NULL</span>或从<span>NULL</span>派生的表达式的可压缩性是<span> 
+		5</span>。</p>
+		<p>上述可压缩性值是<span>MySQL5.1</span>当前所用的。</p>
+		<p>这样上述规则可以模糊解决：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>使用最低的可压缩性值的校对规则。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果两侧有相同的可压缩性，那么如果校对规则不同则发生错误。</p>
+		<p>例如：</p>
+		<table border="1" cellpadding="0" id="table2">
+			<tr>
+				<td>
+				<p>
+				<span>column1 = &#39;A&#39;</span></td>
+				<td>
+				<p>使用<span>column1</span>的校对规则</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>column1 = &#39;A&#39; 
+				COLLATE x</span></td>
+				<td>
+				<p>使用<span>&#39;A&#39;</span>的校对规则</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>column1 COLLATE x = 
+				&#39;A&#39; COLLATE y</span></td>
+				<td>
+				<p>错误</td>
+			</tr>
+		</table>
+		<p>使用<span><span>COERCIBILITY</span><span style="font-size:
+10.0pt">（）</span></span>函数确定一个字符串表达式的可压缩性：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT COERCIBILITY(&#39;A&#39; COLLATE latin1_swedish_ci);</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 0</span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT COERCIBILITY(VERSION());</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 3</span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT COERCIBILITY(&#39;A&#39;);</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 4</span></pre>
+		<p>见<a href="functions.html#information-functions" title="12.9.3. Information Functions">12.9.3节，“信息函数”</a>。</p>
+		<p>没有系统常数或可忽略的压缩性。函数如<span>USER()</span>的可压缩性是<span>2</span>而不是<span>3</span>，文字的可压缩性是<span>3</span>而不是<span>4</span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-collation-charset"></a>
+			10.3.12.&nbsp;校对必须适合字符集</h3></div></div></div>
+			<p>请注意每个字符集有一个或多个校对规则，并且每个校对规则只能属于一个字符集。因此，以下语句会产生一个错误信息，因为校对规则<span>latin2_bin</span>对于字符集<span>latin1</span>非法：</p>
+			<p><span>mysql&gt; <b>SELECT _latin1 &#39;x&#39; 
+			COLLATE latin2_bin;</b></span></p>
+			<p><span>ERROR 1251: COLLATION 
+			&#39;latin2_bin&#39; is not valid</span></p>
+			<p><span>for CHARACTER SET &#39;latin1&#39;</span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-collation-effect"></a>
+			10.3.13.&nbsp;校对效果的示例</h3></div></div></div>
+			<p>假设表<span>T</span>中的列<span>X</span>有这些<span>latin1</span>列值：</p>
+			<p><span>Muffler</span></p>
+			<p><span>M</span>ü<span>ller</span></p>
+			<p><span>MX Systems</span></p>
+			<p><span>MySQL</span></p>
+			<p>假设使用下面的语句获取列值：</p>
+			<p><span>SELECT X FROM T ORDER BY X 
+			COLLATE <i>collation_name</i>;</span></p>
+			<p>使用不同校对规则的列值结果排序见下表：</p>
+			<table border="1" cellpadding="0" id="table3">
+				<tr>
+					<td>
+					<p>
+					<span>latin1_swedish_ci</span></td>
+					<td>
+					<p>
+					<span>latin1_german1_ci</span></td>
+					<td>
+					<p>
+					<span>latin1_german2_ci</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Muffler</span></td>
+					<td>
+					<p><span>Muffler</span></td>
+					<td>
+					<p><span>M</span>ü<span>ller</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>MX</span>系统</td>
+					<td>
+					<p><span>M</span>ü<span>ller</span></td>
+					<td>
+					<p><span>Muffler</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>M</span>ü<span>ller</span></td>
+					<td>
+					<p><span>MX</span>系统</td>
+					<td>
+					<p><span>MX</span>系统</td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>MySQL</span></td>
+					<td>
+					<p><span>MySQL</span></td>
+					<td>
+					<p><span>MySQL</span></td>
+				</tr>
+			</table>
+			<p>本表显示了我们在<span>ORDER BY</span>字句中使用不同所校对规则的效果的示例。在本例中导致不同排序的字符是上面带有两个圆点的<span>U</span>（<span>ü</span>），它在德语中发音为<span>&quot;U-umlaut&quot;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>第一列显示的是使用瑞典<span>/</span>芬兰校对规则的<span>SELECT</span>语句的结果，它被称作<span>U-umlaut</span>使用<span>Y</span>排序。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>第二列显示的是使用德语<span>DIN-1</span>校对规则的<span>SELECT</span>语句的结果，它被称作<span>U-umlaut</span>使用<span>U</span>排序。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>第三列显示的是使用德语<span>DIN-2</span>校对规则的<span>SELECT</span>语句的结果，它被称作<span>U-umlaut</span>使用<span>UE</span>排序。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-operations"></a>
+		10.4.&nbsp;字符集支持影响到的操作</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="charset.html#charset-result">
+			10.4.1. 结果字符串</a></span></dt><dt><span class="section"><a href="charset.html#charset-convert">10.4.2. CONVERT()</a></span></dt><dt><span class="section"><a href="charset.html#charset-cast">10.4.3. CAST()</a></span></dt><dt><span class="section"><a href="charset.html#charset-show">10.4.4. 
+			SHOW语句</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+			本节讨论在<span>MySQL5.1</span>中考虑到字符集信息的操作。<h3 class="title"><a name="charset-result"></a>
+			10.4.1.&nbsp;结果字符串</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span>MySQL</span>中有许多操作符和函数可以返回字符串。本节回答这个问题：返回的字符串使用什么字符集和
+			校对规则？<p>
+			对于简单的函数，即接收字符串输入然后返回一个字符串结果作为输出的函数，输出的字符集和校对规则与原始输入的相同。例如，<span><span>UPPER</span><span>（<i><span>X</span></i>）</span></span>返回一个字符串，其字符和
+			校对规则与<span><i><span>X</span></i></span>相同。类似的函数还有<span>INSTR()</span>、<span>LCASE()</span>、<span>LOWER()</span>、<span>LTRIM()</span>、<span>MID()</span>、<span>REPEAT()</span>、<span>REPLACE()</span>、<span>REVERSE()</span>、<span>RIGHT()</span>、<span>RPAD()</span>、<span>RTRIM()</span>、<span>SOUNDEX()</span>、<span>SUBSTRING()</span>、<span>TRIM()</span>、<span>UCASE()</span>和<span>UPPER()</span>。（还需要注意：<span>REPLACE()</span>函数不同于其它函数，它总是忽略输入字符串的
+			校对规则，并且进行大小写不敏感的比较。）</p>
+			<p><span>对于合并多个字符串输入并且返回单个字符串输出的运算，应用标准<span>SQL</span>“聚合<span class="quote">规则</span>”：</span></p>
+			<p>
+			<span  >
+			·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>如果存在显式的校对规则</span><i><span >X</span></i><span>，那么使用</span><span><i><span  >X</span></i></span><span>。</span></p>
+			<p>
+			<span  >
+			·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>如果存在显式的校对规则</span><i><span >X</span><span>和<span>Y</span></span></i><span>，那么产生一个错误。</span></p>
+			<p>
+			<span  >
+			·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>否则，如果全部校对规则是</span><span><i><span  >X</span></i></span><span>，那么使用</span><span><i><span  >X</span></i></span><span>。</span></p>
+			<p>
+			<span  >
+			·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>其它情况，结果没有校对规则。</span></p>
+			<p>例如，使用<span>CASE ... WHEN a THEN b WHEN b THEN c COLLATE
+			<i>X</i> END</span>。结果校对规则是<span>X</span>。对于<span>CASE</span>、<span>UNION</span>、<span>||</span>、<span>CONCAT()</span>、<span>ELT()</span>、<span>GREATEST()</span>、<span>IF()</span>和<span>LEAST()</span>情况相同。</p>
+			<p>对于转换为字符数据的运算，从运算得到的结果字符串的字符集和校对规则由<span>character_set_connection</span>和<span>collation_connection</span>系统变量定义。这适用于<span>CAST()</span>、<span>CHAR()</span>、<span>CONV()</span>、<span>FORMAT()</span>、<span>HEX()</span>和<span>SPACE()</span>函数。</p>
+			<h3 class="title"><a name="charset-convert"></a>10.4.2. CONVERT()</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span>
+			<span>CONVERT</span><span>（）</span></span>提供一个在不同字符集之间转换数据的方法。语法是：<pre><span>CONVERT(</span><span><i><span>expr</span></i></span><span> USING </span><span><i><span>transcoding_name</span></i></span><span>)</span></pre>
+			<p>在<span> MySQL</span>中，转换代码名与相应的字符集名相同。</p>
+			<p>例子：</p>
+			<pre><span>SELECT CONVERT(_latin1&#39;M</span><span>ü</span><span>ller&#39; USING utf8);</span></pre>
+			<pre><span>INSERT INTO utf8table (utf8column)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; SELECT CONVERT(latin1field USING utf8) FROM latin1table;</span></pre>
+			<p><span>CONVERT(... USING ...)</span>根据标准<span>SQL</span>规范实施。</p>
+			<p>在传统<span>SQL</span>模式中，如果你转换一个“<span>0</span>”日期字符串到日期类型，<span><span>CONVERT</span><span>（）</span></span>函数返回<span>NULL</span>。在<span>MySQL5.1</span>中还产生一条警告。</p>
+			<h3 class="title"><a name="charset-cast"></a>10.4.3. CAST()</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			你也可以使用<span>CAST()</span>函数将一个字符串转换到一个不同的字符集。语法是：<p>
+			<span>CAST(<i>character_string</i> AS <i>
+			character_data_type</i> CHARACTER SET <i>charset_name</i>)</span></p>
+			<p>例如：</p>
+			<p><span>SELECT CAST(_latin1&#39;test&#39; AS 
+			CHAR CHARACTER SET utf8);</span></p>
+			<p>如果使用<span>CAST()</span>时没有指定<span>CHARACTER 
+			SET</span>，结果字符集和校对规则通过<span>character_set_connection
+			</span>和 <span>collation_connection</span>系统变量定义。如果用<span>CAST()</span>并带有<span>CHARACTER 
+			SET X</span>选项，那么结果字符集和校对规则是<span>X</span>和其
+			默认的校对规则。</p>
+			<p>你可能不能在<span>CAST()</span>中使用<span>COLLATE</span>子句，但是你可以在外部使用它。也就是说，不是<span>CAST(... 
+			COLLATE ...)</span>，而是<span>CAST(...) COLLATE ...</span>。</p>
+			<p>例如：</p>
+			<p><span>SELECT CAST(_latin1&#39;test&#39; AS 
+			CHAR CHARACTER SET utf8) COLLATE utf8_bin;</span></p>
+			<p>在传统<span>SQL</span>模式中，如果你转换一个“<span>0</span>”日期字符串到日期类型，<span>CAST()</span>函数返回<span>NULL</span>。在<span>MySQL5.1</span>中还产生一条警告。</p>
+			<h3 class="title"><a name="charset-show"></a>10.4.4. SHOW语句</h3></div></div></div>
+			<p>一些<span>SHOW</span>语句提供额外的字符集信息。这些语句包括<span>SHOW 
+			CHARACTER SET</span>、<span>SHOW COLLATION</span>、<span>SHOW 
+			CREATE DATABASE</span>、<span>SHOW CREATE TABLE</span>和<span>SHOW 
+			COLUMNS</span>。</p>
+			<p><span>SHOW CHARACTER SET</span>命令显示全部可用的字符集。它带有一个可选的<span>LIKE</span>子句来指示匹配哪些字符集名。例如：</p>
+			<p><span>mysql&gt; <b>SHOW CHARACTER SET 
+			LIKE &#39;latin%&#39;;</b></span></p>
+			<p><span>
+			+---------+-----------------------------+-------------------+--------+</span></p>
+			<p><span>| Charset | 
+			Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Default collation | Maxlen |</span></p>
+			<p><span>
+			+---------+-----------------------------+-------------------+--------+</span></p>
+			<p><span>| latin1&nbsp; | cp1252 West 
+			European&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | latin1_swedish_ci |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></p>
+			<p><span>| latin2&nbsp; | ISO 8859-2 Central 
+			European | latin2_general_ci |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></p>
+			<p><span>| latin5&nbsp; | ISO 8859-9 
+			Turkish&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | latin5_turkish_ci |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></p>
+			<p><span>| latin7&nbsp; | ISO 8859-13 
+			Baltic&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | latin7_general_ci |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></p>
+			<p><span>
+			+---------+-----------------------------+-------------------+--------+</span></p>
+			<p>见<a href="sql-syntax.html#show-character-set" title="13.5.4.1. SHOW CHARACTER SET Syntax">13.5.4.1节，“SHOW 
+		CHARACTER SET语法”</a>。</p>
+			<p><span>SHOW COLLATION</span>语句的输出包括全部可用的字符集。它带有一个可选的<span>LIKE</span>子句来指示匹配哪些
+			校对规则名。例如：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SHOW COLLATION LIKE &#39;latin1%&#39;;</span></b></span></pre>
+			<pre><span>+-------------------+---------+----+---------+----------+---------+</span></pre>
+			<pre><span>| Collation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Charset | Id | Default | Compiled | Sortlen |</span></pre>
+			<pre><span>+-------------------+---------+----+---------+----------+---------+</span></pre>
+			<pre><span>| latin1_german1_ci | latin1&nbsp; |&nbsp; 5 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+			<pre><span>| latin1_swedish_ci | latin1&nbsp; |&nbsp; 8 | Yes&nbsp;&nbsp;&nbsp;&nbsp; | Yes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+			<pre><span>| latin1_danish_ci&nbsp; | latin1&nbsp; | 15 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+			<pre><span>| latin1_german2_ci | latin1&nbsp; | 31 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Yes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>| latin1_bin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | latin1&nbsp; | 47 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Yes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+			<pre><span>| latin1_general_ci | latin1&nbsp; | 48 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+			<pre><span>| latin1_general_cs | latin1&nbsp; | 49 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+			<pre><span>| latin1_spanish_ci | latin1&nbsp; | 94 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+			<pre><span>+-------------------+---------+----+---------+----------+---------+</span></pre>
+			<p>见<a href="sql-syntax.html#show-collation" title="13.5.4.2. SHOW COLLATION Syntax">13.5.4.2节，“SHOW COLLATION语法”</a>。</p>
+			<p><span>SHOW CREATE DATABASE</span>语句显示创建给定数据库的<span>CREATE 
+			DATABASE</span>语句。结果包括全部数据库选项。支持<span>DEFAULT CHARACTER 
+			SET</span>和<span>COLLATE</span>。全部数据库选项存储在命名为<span>db.Opt</span>的文本文件中，该文件能够在数据库目录中找到。</p>
+			<pre><span>mysql&gt; </span><span><b><span>SHOW CREATE DATABASE test;</span></b></span></pre>
+			<pre><span>+----------+-----------------------------------------------------------------+</span></pre>
+			<pre><span>| Database | Create Database&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+----------+-----------------------------------------------------------------+</span></pre>
+			<pre><span>| test&nbsp;&nbsp;&nbsp;&nbsp; | CREATE DATABASE `test` /*!40100 DEFAULT CHARACTER SET latin1 */ |</span></pre>
+			<pre><span>+----------+-----------------------------------------------------------------+</span></pre>
+			<p>见<a href="sql-syntax.html#show-create-database" title="13.5.4.4. SHOW CREATE DATABASE Syntax">13.5.4.4节，“SHOW 
+		CREATE DATABASE语法”</a></p>
+			<p><span>SHOW CREATE TABLE</span>与<span>SHOW 
+			CREATE DATABASE</span>相似，但是显示创建给定数据库的<span >CREATE 
+			TABLE</span>语句。列定义显示任何字符集规格，并且表选项包括字符集信息。</p>
+			<p>见<a href="sql-syntax.html#show-create-table" title="13.5.4.5. SHOW CREATE TABLE Syntax">13.5.4.5节，“SHOW 
+		CREATE TABLE语法”</a></p>
+			<p>当以<span>SHOW FULL COLUMNS</span>调用时，<span>SHOW 
+			COLUMNS</span>语句显示表中列的校对规则。具有<span>CHAR</span>、<span>VARCHAR</span>或<span>TEXT</span>数据类型的列有非<span>NULL</span>的
+			校对规则。数值列和其它非字符类型的列有<span>NULL</span>校对规则。例如：</p>
+			<p><span>mysql&gt; <b>SHOW FULL COLUMNS 
+			FROM person\G</b></span></p>
+			<p><span>*************************** 1. 
+			row ***************************</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp; Field: id</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type: smallint(5) 
+			unsigned</span></p>
+			<p><span>&nbsp;Collation: NULL</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Null: NO</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Key: PRI</span></p>
+			<p><span>&nbsp;&nbsp; Default: NULL</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp; Extra: auto_increment</span></p>
+			<p><span>Privileges: 
+			select,insert,update,references</span></p>
+			<p><span>&nbsp;&nbsp; Comment:</span></p>
+			<p><span>*************************** 2. 
+			row ***************************</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp; Field: name</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type: char(60)</span></p>
+			<p><span>&nbsp;Collation: latin1_swedish_ci</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Null: NO</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Key:</span></p>
+			<p><span>&nbsp;&nbsp; Default:</span></p>
+			<p><span>&nbsp;&nbsp;&nbsp;&nbsp; Extra:</span></p>
+			<p><span>Privileges: 
+			select,insert,update,references</span></p>
+			<p><span>&nbsp;&nbsp; Comment:</span></p>
+			<p>字符集不是显示的部分。（字符集名隐含在校对规则名中。）</p>
+			<p>见<a href="sql-syntax.html#show-columns" title="13.5.4.3. SHOW COLUMNS Syntax">13.5.4.3节，“SHOW 
+		COLUMNS语法”</a>。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-unicode"></a>
+		10.5.&nbsp;Unicode支持</h2></div></div></div>
+		<p><span>MySQL 5.1</span>支持两种字符集以保存<span>Unicode</span>数据：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>ucs2</span>，<span>UCS-2 
+		Unicode</span>字符集。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>utf8</span>，<span>Unicode</span>字符集的<span>UTF8</span>编码。</p>
+		<p>在<span>UCS-2</span>（二进制<span>Unicode</span>表示法）中，每一个字符用一个双字节的<span>Unicode</span>编码来表示的，第一个字节表示重要的意义。例如：<span>&quot;LATIN 
+		CAPITAL LETTER A&quot;</span>的<span>Unicode</span>编码是<span>0x0041</span>，它按顺序存储为两个字节：<span>0x00 
+		0x41</span>。<span>&quot;CYRILLIC SMALL LETTER YERU&quot;</span>（<span>Unicode 
+		0x044B</span>）顺序存储为两个字节：<span>0x04 0x4B</span>。对于<span>Unicode</span>字符和它们的编码，请参见<span><a target="_top"  href="http://www.unicode.org/">Unicode
+		<span>主页</span></a></span>。</p>
+		<p>当前，<span>UCS-2</span>还不能够用作为客户端字符集，这意味着<span>SET 
+		NAMES &#39;ucs2&#39;</span>不起作用。</p>
+		<p><span>UTF8</span>字符集（转换<span>Unicode</span>表示）是存储<span>Unicode</span>数据的一种可选方法。它根据<span> 
+		RFC 3629</span>执行。<span>UTF8</span>字符集的思想是不同<span>Unicode</span>字符采用变长字节序列编码：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>基本拉丁字母、数字和标点符号使用一个字节。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		大多数的欧洲和中东手写字母适合两个字节序列：扩展的拉丁字母（包括发音符号、长音符号、重音符号、低音符号和其它音符）、西里尔字母、希腊语、亚美尼亚语、希伯来语、阿拉伯语、叙利亚语和其它语言。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>韩语、中文和日本象形文字使用三个字节序列。</p>
+		<p><span>RFC 3629</span>说明了采用一到四个字节的编码序列。当前，<span>MySQLUTF8</span>不支持四个字节。（<span>UTF8</span>编码的旧标准是由<span>RFC 
+		2279</span>给出，它描述了从一到六个字节的<span>UTF8</span>编码序列。<span>RFC 
+		3629</span>补充了作废的<span>RFC 2279</span>；因此，不再使用<span>5</span>个字节和<span>6</span>个字节的编码序列。）</p>
+		<p><strong><span>提示</span></strong>：使用<span>UTF8</span>时为了节省空间，使用<span >VARCHAR</span>而不要用<span >CHAR</span>。否则，<span>MySQL</span>必须为一个<span >CHAR(10) 
+		CHARACTER SET utf8</span>列预备<span>30</span>个字节，因为这是可能的最大长度。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-metadata"></a>
+		10.6.&nbsp;用于元数据的UTF8</h2></div></div></div>
+		<p><em><span>元数据</span></em>是“<span class="quote">关于数据的数据</span>”。描述数据库的任何数据—作为数据库内容的对立面—是元数据。因此，列名、数据库名、用户名、版本名以及从<span>SHOW</span>语句得到的结果中的大部分字符串是元数据。还包括<span >INFORMATION_SCHEMA</span>数据库中的表中的内容，因为定义的那些表存储关于数据库对象的信息。</p>
+		<p>元数据表述必须满足这些需求：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>全部元数据必须在同一字符集内。否则，对<span><span>INFORM</span><span>一个<span>TION_SCHEMA</span></span></span>数据库中的表执行的<span>SHOW</span>命令和<span>SELECT</span>查询不能正常工作，因为这些运算结果中的同一列的不同行将会使用不同的字符集。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>元数据必须包括所有语言的所有字符。否则，用户将不能够使用它们自己的语言来命名列和表。</p>
+		<p>为了满足这两个需求，<span>MySQL</span>使用<span>Unicode</span>字符集存储元数据，即<span>UTF8</span>。如果你从不使用重音字符，这不会导致任何破坏。但如果你使用重音字符，应该注意的是元数据是用<span>UTF8</span>存储。</p>
+		<p>这意味着，<span><span>USER()</span>、<span>CURRENT_USER()</span>、<span>DATABASE()</span></span>和<span >VERSION()</span>函数的返回值被
+		默认设置为<span>UTF8</span>字符集，这与同义函数如<span >SESSION_USER()</span><span>
+		</span>和<span >SYSTEM_USER()</span>的结果相同。</p>
+		<p>服务器将<span><span>character_set_system</span>系统</span>变量设置为元数据字符集的名：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW VARIABLES LIKE &#39;character_set_system&#39;;</span></b></span></pre>
+		<pre><span>+----------------------+-------+</span></pre>
+		<pre><span>| Variable_name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Value |</span></pre>
+		<pre><span>+----------------------+-------+</span></pre>
+		<pre><span>| character_set_system | utf8&nbsp; |</span></pre>
+		<pre><span>+----------------------+-------+</span></pre>
+		<p>存储元数据使用<span>Unicode</span>并不意味着列头和<span >DESCRIBE</span>函数的结果默认在<span >character_set_system</span>字符集中。当你使用<span >SELECT 
+		column1 FROM t</span>语句时，名字为<span >column1</span>的列从服务器返回客户端并使用由<span >SET 
+		NAMES</span>语句确定的字符集。更明确地说，使用的字符集是由<span >character_set_results</span>系统变量的值确定的。如果这个系统变量设置为<span>NULL</span>，不执行字符转换，服务器使用最初的字符集（字符集由<span >character_set_system</span>系统变量设置）返回元数据。</p>
+		<p>如果你希望服务器不使用<span>UTF8</span>字符集返回元数据结果，那么使用<span >SET 
+		NAMES</span>语句强制服务器执行字符集转换（见<a href="charset.html#charset-connection" title="10.3.6. Connection Character Sets and Collations">10.3.6节，“连接字符集和校对”</a>），或者在客户端执行转换。在客户端执行转换效率较高，但这种选项并不能使用于全部客户端。</p>
+		<p>如果你正在一个语句中使用（例如）<span >USER()</span>函数进行比较或赋值，不要担心。<span>MySQL</span>为你执行一些原子转换。</p>
+		<pre><span>SELECT * FROM Table1 WHERE USER() = latin1_column;</span></pre>
+		<p>这是可以的，因为在比较之前<span >latin1_column</span>列的内容会自动转换到<span>UTF8</span>。</p>
+		<pre><span>INSERT INTO Table1 (latin1_column) SELECT USER();</span></pre>
+		<p>这是可以的，因为赋值之前<span >USER()</span>函数返回的内容自动转换为<span >latin1</span>。至今，自动转换没有全部实施，但是以后的版本中应该工作正常。</p>
+		<p>尽管自动转换不属于<span>SQL</span>标准，<span>SQL</span>标准化文档中说每一个字符集是（根据支持的字符）<span>Unicode</span>的“<span class="quote">子集</span>”。因此，一个知名的原则是，“适用超集的字符集能够应用于其子集”，我们相信<span>Unicode</span>的
+		校对规则能够应用于非<span>Unicode</span>字符串的比较。</p>
+		<p><strong><span>注释</span></strong>：在<span>MySQL5.1</span>中，<span>errmsg.txt</span>文件全部使用<span>UTF8</span>。客户端字符集的转换是自动进行的，如同元数据。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-compatibility"></a>
+		10.7.&nbsp;与其它DBMS的兼容性</h2></div></div></div>
+		<p>对于<span>MaxDB</span>兼容性，下面两个语句是相同的：</p>
+		<pre class="programlisting">CREATE TABLE t1 (f1 CHAR(<em class="replaceable">n</em>) UNICODE);
+CREATE TABLE t1 (f1 CHAR(<em class="replaceable">n</em>) CHARACTER SET ucs2);
+</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="charset-config-file"></a>
+		10.8.&nbsp;新字符集配置文件格式</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		字符集配置存储在<span>XML</span>文件中，一个字符集对应一个文件。<h2 class="title"><a name="charset-national"></a>
+		10.9.&nbsp;国家特有字符集</h2></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<span>ANSI SQL</span>定义了<span >NCHAR</span>或者<span >NATIONAL 
+		CHAR</span>作为一个方法来指示<span >CHAR</span>类型的列应该使用某些预定义的字符集。<span>MySQL5.1</span>使用<span>utf8</span>作为预定义的字符集。例如，这些列类型声明是等价的：<pre><span>CHAR(10) CHARACTER SET utf8</span></pre>
+		<pre><span>NATIONAL CHARACTER(10)</span></pre>
+		<pre><span>NCHAR(10)</span></pre>
+		<p>下面同样：</p>
+		<pre><span>VARCHAR(10) CHARACTER SET utf8</span></pre>
+		<pre><span>NATIONAL VARCHAR(10)</span></pre>
+		<pre><span>NCHAR VARCHAR(10)</span></pre>
+		<pre><span>NATIONAL CHARACTER VARYING(10)</span></pre>
+		<pre><span>NATIONAL CHAR VARYING(10)</span></pre>
+		<p>你能够使用<span >N&#39;<i>literal</i>&#39;</span>来创建一个使用国家特有字符集的字符串。这两个语句是等价的：</p>
+		<pre><span>SELECT N&#39;some text&#39;;</span></pre>
+		<pre><span>SELECT _utf8&#39;some text&#39;;</span></pre>
+		<p>关于<span>MySQL</span>从<span>4.1</span>以前的版本到<span>5.1</span>版本字符集升级的信息，请参见<em><span>MySQL4.1</span><span>参考手册</span></em>。</p>
+		<h2 class="title"><a name="charset-charsets"></a>
+		10.10.&nbsp;MySQL支持的字符集和校对</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="charset.html#charset-unicode-sets">
+			10.10.1. Unicode字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-we-sets">
+			10.10.2. 西欧字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-ce-sets">
+			10.10.3. 中欧字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-se-me-sets">
+			10.10.4. 南欧与中东字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-baltic-sets">
+			10.10.5. 波罗的海字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-cyrillic-sets">
+			10.10.6. 西里尔字符集</a></span></dt><dt><span class="section"><a href="charset.html#charset-asian-sets">
+			10.10.7. 亚洲字符集</a></span></dt></dl></div>
+		<p><span>MySQL</span>支持<span>30</span>多种字符集的<span>70</span>多种
+		校对规则。字符集和它们的默认校对规则可以通过<span >SHOW 
+		CHARACTER SET</span>语句显示：</p>
+		<pre class="programlisting">mysql&gt; <strong class="userinput">SHOW CHARACTER SET;</strong>
++----------+-----------------------------+---------------------+
+| Charset  | Description                 | Default collation   |
++----------+-----------------------------+---------------------+
+| big5     | Big5 Traditional Chinese    | big5_chinese_ci     |
+| dec8     | DEC West European           | dec8_swedish_ci     |
+| cp850    | DOS West European           | cp850_general_ci    |
+| hp8      | HP West European            | hp8_english_ci      |
+| koi8r    | KOI8-R Relcom Russian       | koi8r_general_ci    |
+| latin1   | cp1252 West European        | latin1_swedish_ci   |
+| latin2   | ISO 8859-2 Central European | latin2_general_ci   |
+| swe7     | 7bit Swedish                | swe7_swedish_ci     |
+| ascii    | US ASCII                    | ascii_general_ci    |
+| ujis     | EUC-JP Japanese             | ujis_japanese_ci    |
+| sjis     | Shift-JIS Japanese          | sjis_japanese_ci    |
+| hebrew   | ISO 8859-8 Hebrew           | hebrew_general_ci   |
+| tis620   | TIS620 Thai                 | tis620_thai_ci      |
+| euckr    | EUC-KR Korean               | euckr_korean_ci     |
+| koi8u    | KOI8-U Ukrainian            | koi8u_general_ci    |
+| gb2312   | GB2312 Simplified Chinese   | gb2312_chinese_ci   |
+| greek    | ISO 8859-7 Greek            | greek_general_ci    |
+| cp1250   | Windows Central European    | cp1250_general_ci   |
+| gbk      | GBK Simplified Chinese      | gbk_chinese_ci      |
+| latin5   | ISO 8859-9 Turkish          | latin5_turkish_ci   |
+| armscii8 | ARMSCII-8 Armenian          | armscii8_general_ci |
+| utf8     | UTF-8 Unicode               | utf8_general_ci     |
+| ucs2     | UCS-2 Unicode               | ucs2_general_ci     |
+| cp866    | DOS Russian                 | cp866_general_ci    |
+| keybcs2  | DOS Kamenicky Czech-Slovak  | keybcs2_general_ci  |
+| macce    | Mac Central European        | macce_general_ci    |
+| macroman | Mac West European           | macroman_general_ci |
+| cp852    | DOS Central European        | cp852_general_ci    |
+| latin7   | ISO 8859-13 Baltic          | latin7_general_ci   |
+| cp1251   | Windows Cyrillic            | cp1251_general_ci   |
+| cp1256   | Windows Arabic              | cp1256_general_ci   |
+| cp1257   | Windows Baltic              | cp1257_general_ci   |
+| binary   | Binary pseudo charset       | binary              |
+| geostd8  | GEOSTD8 Georgian            | geostd8_general_ci  |
+| cp932    | SJIS for Windows Japanese   | cp932_japanese_ci   |
+| eucjpms  | UJIS for Windows Japanese   | eucjpms_japanese_ci |
++----------+-----------------------------+---------------------+
+</pre><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-unicode-sets"></a>
+			10.10.1.&nbsp;Unicode字符集</h3></div></div></div>
+			<p><span>MySQL</span>有两种<span>Unicode</span>字符集。你能够使用这些字符集保存大约<span>650</span>种语言的文本。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span >ucs2</span><span> 
+			(UCS-2 Unicode)</span>校对规则<span>: </span></p>
+			<div class="itemizedlist">
+				<ul type="disc">
+					<li><pre class="programlisting">mysql&gt; <strong class="userinput">SHOW COLLATION LIKE 'ucs2%';</strong>
++--------------------+---------+-----+---------+----------+---------+
+| Collation          | Charset | Id  | Default | Compiled | Sortlen |
++--------------------+---------+-----+---------+----------+---------+
+| ucs2_general_ci    | ucs2    |  35 | Yes     | Yes      |       1 |
+| ucs2_bin           | ucs2    |  90 |         | Yes      |       1 |
+| ucs2_unicode_ci    | ucs2    | 128 |         | Yes      |       8 |
+| ucs2_icelandic_ci  | ucs2    | 129 |         | Yes      |       8 |
+| ucs2_latvian_ci    | ucs2    | 130 |         | Yes      |       8 |
+| ucs2_romanian_ci   | ucs2    | 131 |         | Yes      |       8 |
+| ucs2_slovenian_ci  | ucs2    | 132 |         | Yes      |       8 |
+| ucs2_polish_ci     | ucs2    | 133 |         | Yes      |       8 |
+| ucs2_estonian_ci   | ucs2    | 134 |         | Yes      |       8 |
+| ucs2_spanish_ci    | ucs2    | 135 |         | Yes      |       8 |
+| ucs2_swedish_ci    | ucs2    | 136 |         | Yes      |       8 |
+| ucs2_turkish_ci    | ucs2    | 137 |         | Yes      |       8 |
+| ucs2_czech_ci      | ucs2    | 138 |         | Yes      |       8 |
+| ucs2_danish_ci     | ucs2    | 139 |         | Yes      |       8 |
+| ucs2_lithuanian_ci | ucs2    | 140 |         | Yes      |       8 |
+| ucs2_slovak_ci     | ucs2    | 141 |         | Yes      |       8 |
+| ucs2_spanish2_ci   | ucs2    | 142 |         | Yes      |       8 |
+| ucs2_roman_ci      | ucs2    | 143 |         | Yes      |       8 |
+| ucs2_persian_ci    | ucs2    | 144 |         | Yes      |       8 |
+| ucs2_esperanto_ci  | ucs2    | 145 |         | Yes      |       8 |
++--------------------+---------+-----+---------+----------+---------+
+</pre></li><li><p>
+			<span  >utf8</span><span > 
+			(UTF-8 Unicode)</span><span>校对规则<span>:</span></span></p><pre class="programlisting">mysql&gt; <strong class="userinput">SHOW COLLATION LIKE 'utf8%';</strong>
++--------------------+---------+-----+---------+----------+---------+
+| Collation          | Charset | Id  | Default | Compiled | Sortlen |
++--------------------+---------+-----+---------+----------+---------+
+| utf8_general_ci    | utf8    |  33 | Yes     | Yes      |       1 |
+| utf8_bin           | utf8    |  83 |         | Yes      |       1 |
+| utf8_unicode_ci    | utf8    | 192 |         | Yes      |       8 |
+| utf8_icelandic_ci  | utf8    | 193 |         | Yes      |       8 |
+| utf8_latvian_ci    | utf8    | 194 |         | Yes      |       8 |
+| utf8_romanian_ci   | utf8    | 195 |         | Yes      |       8 |
+| utf8_slovenian_ci  | utf8    | 196 |         | Yes      |       8 |
+| utf8_polish_ci     | utf8    | 197 |         | Yes      |       8 |
+| utf8_estonian_ci   | utf8    | 198 |         | Yes      |       8 |
+| utf8_spanish_ci    | utf8    | 199 |         | Yes      |       8 |
+| utf8_swedish_ci    | utf8    | 200 |         | Yes      |       8 |
+| utf8_turkish_ci    | utf8    | 201 |         | Yes      |       8 |
+| utf8_czech_ci      | utf8    | 202 |         | Yes      |       8 |
+| utf8_danish_ci     | utf8    | 203 |         | Yes      |       8 |
+| utf8_lithuanian_ci | utf8    | 204 |         | Yes      |       8 |
+| utf8_slovak_ci     | utf8    | 205 |         | Yes      |       8 |
+| utf8_spanish2_ci   | utf8    | 206 |         | Yes      |       8 |
+| utf8_roman_ci      | utf8    | 207 |         | Yes      |       8 |
+| utf8_persian_ci    | utf8    | 208 |         | Yes      |       8 |
+| utf8_esperanto_ci  | utf8    | 209 |         | Yes      |       8 |
++--------------------+---------+-----+---------+----------+---------+
+</pre></li></ul></div><a class="indexterm" name="id2841510"></a>
+			<p>
+			<span>utf8_unicode_ci</span>校对规则是根据<span>Unicode</span>校对规则算法（<span>UCA</span>）执行的，
+			校对规则描述见 
+			<span>
+			<a target="_top"  href="http://www.unicode.org/reports/tr10/">
+			http://www.unicode.org/reports/tr10/</a></span>。此校对规则使用<span>UCA 
+			4.0.0</span>版本砝码键：<span><a target="_top"  href="http://www.unicode.org/Public/UCA/4.0.0/allkeys-4.0.0.txt">http://www.unicode.org/Public/UC<span>一个</span>/4.0.0/<span>一个</span>llkeys-4.0.0.txt</a></span>。（以下讨论使用<span>utf8_unicode_ci</span>，但同样适合<span>ucs2_unicode_ci</span>。）</p>
+			<p>当前，<span>utf8_unicode_ci</span>校对规则仅部分支持<span>Unicode</span>校对规则算法。一些字符还是不能支持。并且，不能完全支持组合的记号。这主要影响越南和俄罗斯的一些少数民族语言，如：<span>Udmurt
+			</span>、<span>Tatar</span>、<span>Bashkir</span>和<span>Mari</span>。</p>
+			<p>
+			<span>utf8_unicode_ci</span>的最主要的特色是支持扩展，即当把一个字母看作与其它字母组合相等时。例如，在德语和一些其它语言中‘<span>ß</span>’等于‘<span>ss</span>’。</p>
+			<p><span >utf8_general_ci</span>是一个遗留的
+			校对规则，不支持扩展。它仅能够在字符之间进行逐个比较。这意味着<span >utf8_general_ci</span>校对规则进行的比较速度很快，但是与使用<span >utf8_unicode_</span><span>ci</span>的
+			校对规则相比，比较正确性较差）。</p>
+			<p>例如，使用<span >utf8_general_ci</span>和<span >utf8_unicode_ci</span>两种
+			校对规则下面的比较相等：</p>
+			<pre><span>Ä</span><span> = A</span></pre>
+			<pre><span>Ö</span><span> = O</span></pre>
+			<pre><span>Ü</span><span> = U</span></pre>
+			<p>两种校对规则之间的区别是，对于<span >utf8_general_ci</span>下面的等式成立：</p>
+			<pre><span>ß</span><span> = s</span></pre>
+			<p>但是，对于<span >utf8_unicode_ci</span>下面等式成立：</p>
+			<pre><span>ß</span><span> = ss</span></pre>
+			<p>对于一种语言仅当使用<span >utf8_unicode_ci</span>排序做的不好时，才执行与具体语言相关的<span>utf8</span>字符集
+			校对规则。例如，对于德语和法语，<span>utf8_unicode_ci</span>工作的很好，因此不再需要为这两种语言创建特殊的<span>utf8</span>校对规则。</p>
+			<p><span >utf8_general_ci</span>也适用与德语和法语，除了‘<span>ß</span>’等于‘<span>s</span>’，而不是‘<span>ss</span>’之外。如果你的应用能够接受这些，那么应该使用<span><span>utf8_general_ci</span>，</span>因为它速度快。否则，使用<span>utf8_unicode_ci</span>，因为它比较准确。</p>
+			<p>
+			<span>utf8_swedish_ci</span>，与其它<span>语言相关的<span>utf8</span>的校</span>对规则相似，来源于<span><span>utf8_unicode_ci</span><span>，</span></span>使用额外的语言规则。例如，在瑞典语中，以下的关系式成立，它在德语和法语中不成立：</p>
+			<pre><span>Ü</span><span> = Y &lt; </span><span>Ö</span></pre>
+			<p>
+			<span>utf8_spanish_ci</span>和<span>utf8_spanish2_ci</span>校对规则分别适用于现代和古典西班牙语。在两种
+			校对规则中，<span>ñ</span>’（<span>n-</span>发音符）是‘<span>n</span>’和‘<span>o</span>’之间的间隔字母。另外，对于古典西班牙语，‘<span>ch</span>’是‘<span>c</span>’和<span>d</span>之间的间隔字母，并且‘<span>ll</span>’是‘<span>l</span>’和‘<span>m</span>’之间的间隔字母。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-we-sets"></a>
+			10.10.2.&nbsp;西欧字符集</h3></div></div></div>
+			<p>
+			西欧字符集覆盖大多数西欧语言，如法语、西班牙语、加泰罗尼亚语、巴斯克人语、葡萄牙语、意大利语、阿而巴尼亚语、荷兰语、德语、丹麦语、瑞典语、挪威语、芬兰语、法罗人语、冰岛语、爱尔兰语、苏格兰语和英语。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>ascii</span>（<span>US 
+			ASCII</span>）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>ascii_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>ascii_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp850</span>（<span>DOS</span>西欧）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp850_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp850_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>dec8</span>（<span>DEC
+			</span>西欧）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>dec8_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>dec8_swedish_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>hp8</span>（<span>HP
+			</span>西欧）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>hp8_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>hp8_english_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>latin1</span>（<span>cp1252
+			</span>西欧）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_danish_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_general_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_general_cs</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_german1_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_german2_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_spanish_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_swedish_ci</span>（
+			默认）</p>
+			<p>
+			<span>latin1</span>是
+			默认字符集。<span>latin1_swedish_ci</span>是
+			默认的校对规则，它用于大多数<span>MySQL</span>客户。虽然经常说它以瑞典<span>/</span>芬兰
+			校对规则为基础，但瑞典和芬兰人不同意这种说法。</p>
+			<p>
+			<span>latin1_german1_ci</span>和<span>latin1_german2_ci</span>校对规则基于<span>DIN-1</span>和<span>DIN-2</span>标准，这里<span>DIN</span>代表<em><span>Deutsches 
+			Institut f</span><span>ü<span>r 
+			Normung</span></span></em>（德语等价于<span>ANSI</span>）。<span>DIN-1</span>被叫做“<span class="quote">字典校对规则</span>”，<span>DIN-2</span>被叫做“<span class="quote">电话簿校对规则</span>”。</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_german1_ci</span>（字典）规则：</p>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Ä</span><span> = a</span></pre>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Ö</span><span> = O</span></pre>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Ü</span><span> = U</span></pre>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>ß</span><span> = s</span></pre>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin1_german2_ci</span>（<span class="quote">电话簿</span>）规则：</p>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Ä</span><span> = aE</span></pre>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Ö</span><span> = OE</span></pre>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Ü</span><span> = UE</span></pre>
+			<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>ß</span><span> = ss</span></pre>
+			<p>在 
+			<span>latin1_spanish_ci</span>校对规则中，‘<span>ñ</span>’（<span>n-tilde</span>）是‘<span>n</span>’和‘<span>o</span>’之间的间隔字母。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>macroma</span>（<span>Mac</span>西欧）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>macroman_bin</span><span>
+			</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>macroman_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>swe7</span>（<span>7</span>位瑞典语）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>swe7_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>swe7_swedish_ci</span>（
+			默认）</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="charset-ce-sets"></a>
+			10.10.3.&nbsp;中欧字符集</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			我们还提供一些用于捷克共和国、斯洛伐克、匈牙利、罗马尼亚、斯罗纹尼亚、克罗地亚和波兰的字符集支持。<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp1250</span>（<span>Windows</span>中欧）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1250_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1250_croatian_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1250_czech_cs</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1250_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp852</span>（<span>DOS
+			</span>中欧）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp852_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp852_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>keybcs2</span>（<span>DOS 
+			Kamenicky Czech-Slovak</span>）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>keybcs2_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>keybcs2_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>latin2</span>（<span>ISO 
+			8859-2 </span>中欧）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin2_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin2_croatian_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin2_czech_cs</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin2_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin2_hungarian_ci</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>macce</span>（<span>Mac
+			</span>中欧）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>macce_bin</span><span>
+			</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>macce_general_ci</span>（
+			默认）</p>
+			<h3 class="title"><a name="charset-se-me-sets"></a>
+			10.10.4.&nbsp;南欧与中东字符集</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<span>MySQL</span>支持的南欧和中东字符集包括亚美尼亚语、阿拉伯语、乔治亚语、希腊语、希伯莱语和土耳其语：<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>armscii8</span>（<span>ARMSCII-8
+			</span>亚美尼亚语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>armscii8_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>armscii8_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp1256</span>（阿拉伯语<span>Windows</span>）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1256_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1256_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>geostd8</span>（<span>GEOSTD8</span>乔治亚语）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>geostd8_bin</span><span>
+			</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>geostd8_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>greek</span>（<span>ISO 
+			8859-7</span>希腊语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>greek_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>greek_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>hebrew</span>（<span>ISO 
+			8859-8</span>希伯莱语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>hebrew_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>hebrew_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>latin5</span>（<span>ISO 
+			8859-9 </span>土耳其语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin5_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin5_turkish_ci</span>（
+			默认）</p>
+			<h3 class="title"><a name="charset-baltic-sets"></a>
+			10.10.5.&nbsp;波罗的海字符集</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			波罗的海字符集覆盖爱沙尼亚语、拉脱维亚语和立陶宛语言。当前支持的两种波罗的海字符集：<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp1257</span>（<span>Windows</span>波罗的海）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1257_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1257_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1257_lithuanian_ci</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>latin7</span>（<span>ISO 
+			8859-13</span>波罗的海）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin7_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin7_estonian_cs</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin7_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>latin7_general_cs</span></p>
+			<h3 class="title"><a name="charset-cyrillic-sets"></a>
+			10.10.6.&nbsp;西里尔字符集</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			使用西里尔字符集和校对规则的有<span>Belarusian</span>、保加利亚、俄语和乌克兰语言。<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp1251</span>（<span>Windows
+			</span>西里尔）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1251_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1251_bulgarian_ci</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1251_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1251_general_cs</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp1251_ukrainian_ci</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp866</span>（<span>DOS
+			</span>俄语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp866_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp866_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>koi8r</span>（<span>KOI8-R 
+			Relcom </span>俄语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>koi8r_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>koi8r_general_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>koi8u</span>（<span>KOI8-U
+			</span>乌克兰语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>koi8u_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>koi8u_general_ci</span>（
+			默认）</p>
+			<h3 class="title"><a name="charset-asian-sets"></a>
+			10.10.7.&nbsp;亚洲字符集</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="charset.html#charset-cp932">
+				10.10.7.1. cp932字符集</a></span></dt></dl></div>
+			<p>我们支持的亚洲字符集包括中文、日语、韩语和泰国语。这些可能比较复杂。例如，中文字符集必须考虑到上千种不同的字符。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>big5</span>（<span>Big5</span>传统中文）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>big5_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>big5_chinese_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>cp932</span>（<span>SJIS 
+			Windows</span>日语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp932_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>cp932_japanese_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>eucjpms</span>（<span>UJIS 
+			Windows</span>日语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>eucjpms_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>eucjpms_japanese_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>euckr</span>（<span>EUC-KR
+			</span>韩语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>euckr_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>euckr_korean_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>gb2312</span>（<span>GB2312
+			</span>简体中文）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>gb2312_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>gb2312_chinese_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>gbk</span>（<span>GBK</span>简体中文）
+			校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>gbk_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>gbk_chinese_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span >sjis</span>（<span>Shift-JIS
+			</span>日语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>sjis_bin</span><span>
+			</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>sjis_japanese_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>tis620</span>（<span>TIS620
+			</span>泰国语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>tis620_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>tis620_thai_ci</span>（
+			默认）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span >ujis</span>（<span>EUC-JP
+			</span>日语）校对规则：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>ujis_bin</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>ujis_japanese_ci</span>（
+			默认）</p>
+			<div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="charset-cp932"></a>
+				10.10.7.1.&nbsp;cp932字符集</h4></div></div></div>
+				<p><strong><span>为什么需要</span></strong><span><b><span>cp932</span></b></span><strong><span>？</span></strong></p>
+				<p>在<span>MySQL</span>中，<span >sjis</span>字符集对应于由<span>IANA</span>定义的<span >Shift_JIS</span>字符集，它支持<span>JIS 
+				X0201</span>和<span>JIS X0208</span>字符。（见 
+				<span>
+				<a target="_top"  href="http://www.iana.org/assignments/character-sets">
+				<span>
+				http://www.iana.org/assignments/character-sets</span></a></span>。）</p>
+				<p>但是，“<span class="quote"><span>SHIFT JIS</span></span>”作为描述性术语的含义变得非常含糊不清，并且它常常包括由不同供应商定义的<span >Shift_JIS</span>扩展部分。</p>
+				<p>例如，使用在日本<span>Windows</span>环境中使用的“<span class="quote"><span>SHIFT 
+				JIS</span></span>”是<span>Microsoft</span>对<span >Shift_JIS</span>的<span>Microsoft</span>扩展，它的准确名字是<span>Microsoft 
+				Windows Codepage</span><span >: 
+				932</span>或<span><span>cp932</span>。</span>除由<span >Shift_JIS</span>支持的字符之外，<span>cp932</span>支持扩展字符，如<span>NEC</span>选择的<span>IBM</span>扩展字符和<span>IBM</span>扩展字符。</p>
+				<p>许多日本用户在使用这些扩展字符过程中碰到过一些问题。这些问题是由于以下情况引起的：</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span><span>MySQL</span>自动转换字符集。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>字符集通过<span>Unicode</span>转换（<span>ucs2</span>）。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span><span >sjis</span>字符集不支持这些扩展字符转换。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>从号称“<span class="quote"><span>SHIFT JIS</span></span>”到<span>Unicode</span>的转换，存在一些转换规则，并且一些字符转换到<span>Unicode</span>依赖不同的转换规则。<span>MySQL</span>仅支持这些转换规则中的一种（在后面描述）。</p>
+				<p><span>MySQL</span><span>cp932</span>字符集可以解决这些转换问题。</p>
+				<p>因为<span>MySQL</span>支持字符集转换，将<span>IANA
+				</span><span >Shift_JIS</span><span>
+				</span>和 <span >cp932</span>分离为两种不同字符集是重要的，因为它们提供不同的转换规则。</p>
+				<p><span><b>
+				<span>cp932</span></b></span><strong><span>与</span></strong><span><b><span>sjis</span></b></span><strong><span>有什么不同？</span></strong></p>
+				<p>
+				<span>cp932</span>字符集与<span >sjis</span>存在以下不同点：</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>
+				<span>cp932</span>支持<span>NEC</span>特殊字符、<span>NEC</span>选择的<span>IBM</span>扩展字符和<span>IBM</span>选择的字符。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>一些<span>cp932</span>字符有两个不同的编码点，这两种编码点转换为相同<span>Unicode</span>编码点。因此，当从<span>Unicode</span>转换回到<span>cp932</span>时，必须选择一个编码点。对于这种“相互<span class="quote">转换</span>”<span class="quote">，</span>使用由<span>Microsoft</span>推荐的转换规则。（见 
+				<span>
+				<a target="_top"  href="http://support.microsoft.com/kb/170559/EN-US/">
+				http<span>：</span>//support.microsoft.com/kb/170559/EN-US/</a></span>。）</p>
+				<p>转换规则如下：</p>
+				<p>
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>如果字符在<span>JIS X 0208 </span>和<span>NEC</span>特殊字符中同时存在，使用<span>JIS 
+				X 0208 </span>的编码点。</p>
+				<p>
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>如果字符在<span>NEC</span>特殊字符和<span>IBM</span>选择的字符中同时存在，使用<span>NEC</span>特殊字符的编码点。</p>
+				<p>
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>如果字符在<span>IBM</span>选择的字符和<span>NEC</span>选择的<span>IBM</span>扩展字符中同时存在，使用<span>IBM</span>扩展字符的编码点。</p>
+				<p>关于<span>cp932</span>字符的<span>Unicode
+				</span>值的列表显示信息见<span><a target="_top"  href="http://www.microsoft.com/globaldev/reference/dbcs/932.htm">http://www.microsoft.com/globaldev/reference/dbcs/932.htm</a></span>。对于<span>cp932</span>表中的带有下面有四位数字出现的字符的实体，数字代表相应的<span>Unicode</span>（<span>ucs2</span>）编码。对于表中有两个带下划线的数字出现的实体，择有一个以那两个数字开头的<span>cp932</span>字符值的范围。点击一个这种表的实体，将带你到一个页，该页显示每个以那些数字开头的<span>cp932</span>字符的<span>Unicode</span>值。</p>
+				<p><span>
+				以下连接很重要。它</span>们与下列字符集的编码相对应：</p>
+				<p>
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span><span>NEC</span>特殊字符：</p>
+				<p style="margin-left: 54.0pt"><span>
+				<a target="_top"  href="http://www.microsoft.com/globaldev/reference/dbcs/932/932_87.htm">
+				http://www.microsoft.com/globaldev/reference/dbcs/932/932_87.htm</a></span></p>
+				<p>
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span><span>NEC</span>选择的<span>IBM</span>扩展字符：</p>
+				<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><a target="_top"  href="http://www.microsoft.com/globaldev/reference/dbcs/932/932_ED.htm">http://www.microsoft.com/globaldev/reference/dbcs/932/932_ED.htm</a></span></pre>
+				<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><a target="_top"  href="http://www.microsoft.com/globaldev/reference/dbcs/932/932_EE.htm">http://www.microsoft.com/globaldev/reference/dbcs/932/932_EE.htm</a></span></pre>
+				<p>
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span><span>IBM</span>选择的字符：</p>
+				<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><a target="_top"  href="http://www.microsoft.com/globaldev/reference/dbcs/932/932_FA.htm">http://www.microsoft.com/globaldev/reference/dbcs/932/932_FA.htm</a></span></pre>
+				<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><a target="_top"  href="http://www.microsoft.com/globaldev/reference/dbcs/932/932_FB.htm">http://www.microsoft.com/globaldev/reference/dbcs/932/932_FB.htm</a></span></pre>
+				<pre><span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><a target="_top"  href="http://www.microsoft.com/globaldev/reference/dbcs/932/932_FC.htm">http://www.microsoft.com/globaldev/reference/dbcs/932/932_FC.htm</a></span></pre>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>
+				<span>cp932</span>与<span>eucjpms</span>结合支持用户自定义字符的转换，并且解决<span >sjis</span><span>/</span><span >ujis</span>转换问题。详细信息，请参见<span><a target="_top"  href="http://www.opengroup.or.jp/jvc/cde/sjis-euc-e.html">http://www.opengroup.or.jp/jvc/cde/sjis-euc-e.html</a></span>。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>对于一些字符，与<span>ucs2</span>之间的转换与<span>sjis</span>和<span>cp932</span>之间的转换是不同的。下表举例说明了这些不同。</p>
+				<p>转换到<span>ucs2</span>：</p>
+				<table border="1" cellpadding="0" id="table4">
+					<tr>
+						<td>
+						<p><span><b>
+						<span>sjis</span></b></span><strong><span>/</span></strong><span><b><span>cp932</span></b></span><strong><span>值</span></strong></td>
+						<td>
+						<p><span><b>
+						<span>sjis</span></b></span><strong><span>→
+						</span></strong><span><b>
+						<span>ucs2</span></b></span><strong><span>转换</span></strong></td>
+						<td>
+						<p><span><b>
+						<span>cp932</span></b></span><strong><span>
+						</span><span>→ </span></strong>
+						<span><b>
+						<span>ucs2</span></b></span><strong><span>转换</span></strong></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>5C</span></td>
+						<td>
+						<p><span>005C</span></td>
+						<td>
+						<p><span>005C</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>7E</span></td>
+						<td>
+						<p><span>007E</span></td>
+						<td>
+						<p><span>007E</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>815C</span></td>
+						<td>
+						<p><span>2015</span></td>
+						<td>
+						<p><span>2015</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>815F</span></td>
+						<td>
+						<p><span>005C</span></td>
+						<td>
+						<p><span>FF3C</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>8160</span></td>
+						<td>
+						<p><span>301C</span></td>
+						<td>
+						<p><span>FF5E</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>8161</span></td>
+						<td>
+						<p><span>2016</span></td>
+						<td>
+						<p><span>2225</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>817C</span></td>
+						<td>
+						<p><span>2212</span></td>
+						<td>
+						<p><span>FF0D</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>8191</span></td>
+						<td>
+						<p><span>00a2</span></td>
+						<td>
+						<p><span>FFE0</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>8192</span></td>
+						<td>
+						<p><span>00a3</span></td>
+						<td>
+						<p><span>FFE1</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>81Ca</span></td>
+						<td>
+						<p><span>00aC</span></td>
+						<td>
+						<p><span>FFE2</span></td>
+					</tr>
+				</table>
+				<p>从<span>ucs2</span>转换：</p>
+				<table border="1" cellpadding="0" id="table5">
+					<tr>
+						<td>
+						<p><span><b>
+						<span>ucs2</span></b></span><strong><span>值</span></strong></td>
+						<td>
+						<p><span><b>
+						<span>ucs2</span></b></span><strong><span>
+						</span><span>→</span><span>
+						</span></strong><span><b>
+						<span>sjis</span></b></span><strong><span>转换</span></strong></td>
+						<td>
+						<p><span><b>
+						<span>ucs2</span></b></span><strong><span>
+						</span><span>→</span><span>
+						</span></strong><span><b>
+						<span>cp932</span></b></span><strong><span>转换</span></strong></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>005C</span></td>
+						<td>
+						<p><span>815F</span></td>
+						<td>
+						<p><span>5C</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>007E</span></td>
+						<td>
+						<p><span>7E</span></td>
+						<td>
+						<p><span>7E</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>00a2</span></td>
+						<td>
+						<p><span>8191</span></td>
+						<td>
+						<p><span>3F</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>00a3</span></td>
+						<td>
+						<p><span>8192</span></td>
+						<td>
+						<p><span>3F</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>00aC</span></td>
+						<td>
+						<p><span>81Ca</span></td>
+						<td>
+						<p><span>3F</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>2015</span></td>
+						<td>
+						<p><span>815C</span></td>
+						<td>
+						<p><span>815C</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>2016</span></td>
+						<td>
+						<p><span>8161</span></td>
+						<td>
+						<p><span>3F</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>2212</span></td>
+						<td>
+						<p><span>817C</span></td>
+						<td>
+						<p><span>3F</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>2225</span></td>
+						<td>
+						<p><span>3F</span></td>
+						<td>
+						<p><span>8161</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>301C</span></td>
+						<td>
+						<p><span>8160</span></td>
+						<td>
+						<p><span>3F</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>FF0D</span></td>
+						<td>
+						<p><span>3F</span></td>
+						<td>
+						<p><span>817C</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>FF3C</span></td>
+						<td>
+						<p><span>3F</span></td>
+						<td>
+						<p><span>815F</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>FF5E</span></td>
+						<td>
+						<p><span>3F</span></td>
+						<td>
+						<p><span>8160</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>FFE0</span></td>
+						<td>
+						<p><span>3F</span></td>
+						<td>
+						<p><span>8191</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>FFE1</span></td>
+						<td>
+						<p><span>3F</span></td>
+						<td>
+						<p><span>8192</span></td>
+					</tr>
+					<tr>
+						<td>
+						<p><span>FFE2</span></td>
+						<td>
+						<p><span>3F</span></td>
+						<td>
+						<p><span>81Ca</span></td>
+					</tr>
+				</table>
+			</div></div></div></div><div><hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，<span class="GramE">请访问</span><a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。 
+		原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</p></div>
+</body></html>

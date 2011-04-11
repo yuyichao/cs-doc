@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>一元多项式求值和插值 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>一元多项式求值和插值
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="PolyEval.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="PolyEval.html#sec1">求值算法</a>
+  </dt>
+  <dt>
+    <a href="PolyEval.html#sec2">插值算法</a>
+  </dt>
+</dl>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="PolyEval.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>求值算法</h2>
+
+<p class="first">提起求值算法,我们都会想起最著名的Horner规则,即对于<img src="latex/latex2png-PolyEval_70631566_-9.gif" alt="$f(x)=\sum_{0\le i<n}f_ix^i$" class="latex-inline" style="vertical-align: -9px" width="143" height="23">,利用下式来求其值:
+<img src="latex/latex2png-PolyEval_78901370_.gif" alt="$$f(x)=(\cdots(f_{n-1}x+f_{n-2})x+\cdots+f_1)x+f_0.$$" class="latex-display" width="580" height="18">
+在该算法中,需要计算总共<img src="latex/latex2png-PolyEval_151286841_0.gif" alt="$2n-2$" class="latex-inline" style="vertical-align: 0px" width="47" height="11">次乘法和加法.如果要同时计算<img src="latex/latex2png-PolyEval_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个不同点处多项式的值,则需要<img src="latex/latex2png-PolyEval_21732654_-5.gif" alt="$O(n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">的计算.</p>
+
+<p>下面给出一种快速求值算法,其计算复杂度为<img src="latex/latex2png-PolyEval_96140518_-5.gif" alt="$M(n)\log n$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">,其中<img src="latex/latex2png-PolyEval_57969606_-5.gif" alt="$M(n)$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">为<img src="latex/latex2png-PolyEval_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式乘法计算的复杂度(见<span class="cite"><a class="cite" href="PolyEval.html#ref-1" name="cite-1">[1]</a></span>).为了说明算法,我们取<img src="latex/latex2png-PolyEval_136672924_0.gif" alt="$n=2^k$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">是2的一整数次幂,需要求值的点为<img src="latex/latex2png-PolyEval_229110419_-4.gif" alt="$u_0,u_1,\ldots,u_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="112" height="12">,并且令<img src="latex/latex2png-PolyEval_159633128_-5.gif" alt="$m_j=x-u_j(j=0,\ldots,n-1)$" class="latex-inline" style="vertical-align: -5px" width="215" height="18">.下面构造一棵完全二叉树,以<img src="latex/latex2png-PolyEval_7997273_-5.gif" alt="$M_{i,j}$" class="latex-inline" style="vertical-align: -5px" width="31" height="17">表示从叶(<img src="latex/latex2png-PolyEval_84046868_-1.gif" alt="$i=0$" class="latex-inline" style="vertical-align: -1px" width="36" height="13">)往上数第<img src="latex/latex2png-PolyEval_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">层,从该层左往右数第<img src="latex/latex2png-PolyEval_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">个结点,并且
+<img src="latex/latex2png-PolyEval_85012540_.gif" alt="$$M_{i,j}=\prod_{j\cdot 2^i\le l<(j+1)\cdot 2^i}m_l,$$" class="latex-display" width="580" height="41">
+下图表示其结构:</p>
+
+<table class="image" width="100%">
+  <tr><td align="center"><img src="images/interpolationtree.png" alt="$M_{i,j}$二叉树示意图"></td></tr>
+  <tr><td align="center" class="image-caption">$M_{i,j}$二叉树示意图</td></tr>
+</table>
+
+<p>其中每个叶结点都是一次式<img src="latex/latex2png-PolyEval_242918541_-5.gif" alt="$M_{0,j}=m_j$" class="latex-inline" style="vertical-align: -5px" width="77" height="17">.下面的算法给出了上面树的构造算法:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(<img src="latex/latex2png-PolyEval_7997273_-5.gif" alt="$M_{i,j}$" class="latex-inline" style="vertical-align: -5px" width="31" height="17">二叉树构造算法)</span>
+
+<ol>
+<li>对<img src="latex/latex2png-PolyEval_103797905_-4.gif" alt="$0\le j<n$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">,令<img src="latex/latex2png-PolyEval_242918541_-5.gif" alt="$M_{0,j}=m_j$" class="latex-inline" style="vertical-align: -5px" width="77" height="17">,</li>
+
+<li>对<img src="latex/latex2png-PolyEval_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">从<img src="latex/latex2png-PolyEval_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">循环到<img src="latex/latex2png-PolyEval_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,做下面第3步,</li>
+
+<li>对<img src="latex/latex2png-PolyEval_42234898_-4.gif" alt="$j$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">从<img src="latex/latex2png-PolyEval_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">循环到<img src="latex/latex2png-PolyEval_23718985_0.gif" alt="$2^{k-i}$" class="latex-inline" style="vertical-align: 0px" width="31" height="14">,<img src="latex/latex2png-PolyEval_182921707_-5.gif" alt="$M_{i,j}=M_{i-1,2j}M_{i-1,2j+1}$" class="latex-inline" style="vertical-align: -5px" width="180" height="17">.</li>
+</ol>
+
+
+</div>
+
+<p>利用上面的构造的二叉树,我们可以实现快速求值算法.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name=""></a></span><span class="theorem-name">(快速求值算法)</span>
+
+<p>输入:多项式<img src="latex/latex2png-PolyEval_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">和<img src="latex/latex2png-PolyEval_158037288_-5.gif" alt="$n(\deg f<n)$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">个点<img src="latex/latex2png-PolyEval_94878049_-4.gif" alt="$u_0,\ldots,u_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="88" height="12">,</p>
+
+<p>输出:<img src="latex/latex2png-PolyEval_221170050_-5.gif" alt="$f(u_0),\ldots,f(u_{n-1})$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-PolyEval_167998484_0.gif" alt="$n=1$" class="latex-inline" style="vertical-align: 0px" width="39" height="11">则输出<img src="latex/latex2png-PolyEval_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,</li>
+
+<li><img src="latex/latex2png-PolyEval_267123588_-5.gif" alt="$r_0=f\bmod M_{k-1,0}$" class="latex-inline" style="vertical-align: -5px" width="138" height="17">,<img src="latex/latex2png-PolyEval_267650172_-5.gif" alt="$r_1=f\bmod M_{k-1,1}$" class="latex-inline" style="vertical-align: -5px" width="138" height="17">,</li>
+
+<li>递归调用本算法求<img src="latex/latex2png-PolyEval_27468635_-6.gif" alt="$r_0(u_0),\ldots,r_0(u_{n/2-1})$" class="latex-inline" style="vertical-align: -6px" width="157" height="19">,</li>
+
+<li>递归调用本算法求<img src="latex/latex2png-PolyEval_35941595_-6.gif" alt="$r_1(u_{n/2}),\ldots,r_1(u_{n-1})$" class="latex-inline" style="vertical-align: -6px" width="159" height="19">,</li>
+
+<li>输出上面两步求出的<img src="latex/latex2png-PolyEval_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个值.</li>
+</ol>
+
+
+</div>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="PolyEval.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>插值算法</h2>
+
+<p class="first">首先我们想到了著名的拉格朗日插值(Lagrange interpolation)算法,设已知<img src="latex/latex2png-PolyEval_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个点<img src="latex/latex2png-PolyEval_94878049_-4.gif" alt="$u_0,\ldots,u_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="88" height="12">和多项式在这些点上的值<img src="latex/latex2png-PolyEval_95926881_-4.gif" alt="$v_0,\ldots,v_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="84" height="12">,如果我们引入下面一些记号:<img src="latex/latex2png-PolyEval_96447029_-5.gif" alt="$m_j=x-u_j$" class="latex-inline" style="vertical-align: -5px" width="90" height="13">,<img src="latex/latex2png-PolyEval_209874669_-9.gif" alt="$m=\prod_{0\le j<n}m_j$" class="latex-inline" style="vertical-align: -9px" width="119" height="22">,<img src="latex/latex2png-PolyEval_168544443_-17.gif" alt="$s_i=\prod_{j\neq i,0\le j<n}\displaystyle\frac{1}{u_i-u_j}$" class="latex-inline" style="vertical-align: -17px" width="174" height="39">,则Lagrange插值的结果可以表示为:
+<img src="latex/latex2png-PolyEval_124495313_.gif" alt="$$f=\sum_{0\le i<n}\frac{v_is_im}{m_i}.$$" class="latex-display" width="580" height="43">
+这是一个复杂度<img src="latex/latex2png-PolyEval_21732654_-5.gif" alt="$O(n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">的算法.</p>
+
+<p>下面提出的快速插值算法,其复杂度也为<img src="latex/latex2png-PolyEval_96140518_-5.gif" alt="$M(n)\log n$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">.我们考虑问题的核心是要求上面的插值,首先我们要求出<img src="latex/latex2png-PolyEval_248286188_-2.gif" alt="$s_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="10">,因为
+<img src="latex/latex2png-PolyEval_87144781_.gif" alt="$$m'(u_i)=\left.\sum_{0\le j<n}\frac{m}{m_j}\right|_{x=u_i}=\left.\frac{m}{m_i}\right|_{x=u_i}=\frac{1}{s_i},$$" class="latex-display" width="580" height="63">
+故<img src="latex/latex2png-PolyEval_73771849_-16.gif" alt="$s_i=\displaystyle\frac{1}{m'(u_i)}$" class="latex-inline" style="vertical-align: -16px" width="84" height="38">.现在令<img src="latex/latex2png-PolyEval_155633237_-2.gif" alt="$c_i=v_is_i$" class="latex-inline" style="vertical-align: -2px" width="61" height="10">,并设<img src="latex/latex2png-PolyEval_136672924_0.gif" alt="$n=2^k$" class="latex-inline" style="vertical-align: 0px" width="47" height="14">是2的整数次幂.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法3<a name=""></a></span><span class="theorem-name">(快速插值算法)</span>
+
+<p>输入:<img src="latex/latex2png-PolyEval_94878049_-4.gif" alt="$u_0,\ldots,u_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="88" height="12">,<img src="latex/latex2png-PolyEval_75999073_-4.gif" alt="$c_0,\ldots,c_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="83" height="12">,</p>
+
+<p>输出:<img src="latex/latex2png-PolyEval_22270620_-24.gif" alt="$\displaystyle\sum_{0\le i<n}\frac{c_im}{m_i}$" class="latex-inline" style="vertical-align: -24px" width="73" height="43">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-PolyEval_167998484_0.gif" alt="$n=1$" class="latex-inline" style="vertical-align: 0px" width="39" height="11">则输出<img src="latex/latex2png-PolyEval_19035156_-3.gif" alt="$c_0$" class="latex-inline" style="vertical-align: -3px" width="13" height="11">,</li>
+
+<li>递归调用本算法,输入前<img src="latex/latex2png-PolyEval_153383956_-5.gif" alt="$n/2$" class="latex-inline" style="vertical-align: -5px" width="26" height="18">个点,求出<img src="latex/latex2png-PolyEval_266177516_-3.gif" alt="$r_0$" class="latex-inline" style="vertical-align: -3px" width="13" height="11">,</li>
+
+<li>递归调用本算法,输入后<img src="latex/latex2png-PolyEval_153383956_-5.gif" alt="$n/2$" class="latex-inline" style="vertical-align: -5px" width="26" height="18">个点,求出<img src="latex/latex2png-PolyEval_266111980_-2.gif" alt="$r_1$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">,</li>
+
+<li>输出<img src="latex/latex2png-PolyEval_157892200_-5.gif" alt="$M_{k-1,1}r_0+M_{k-1,0}r_1$" class="latex-inline" style="vertical-align: -5px" width="152" height="17">.</li>
+</ol>
+
+
+</div>
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="PolyEval.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

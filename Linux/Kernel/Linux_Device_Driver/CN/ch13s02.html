@@ -1,0 +1,106 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>13.2.&#160;USB 和 sysfs-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch13.html" title="第&#160;13&#160;章&#160;USB 驱动">
+<link rel="prev" href="ch13.html" title="第&#160;13&#160;章&#160;USB 驱动">
+<link rel="next" href="ch13s03.html" title="13.3.&#160;USB 的 Urbs">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">13.2.&#160;USB 和 sysfs</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch13.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;13&#160;章&#160;USB 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch13s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="USBandSysfs.sect1"></a>13.2.&#160;USB 和 sysfs</h2></div></div></div>
+<p>由于单个 USB 物理设备的复杂性, 设备在 sysfs 中的表示也非常复杂. 物理 USB 设备(通过 struct usb_device 表示)和单个 USB 接口(由 struct usb_interface 表示)都作为单个设备出现在 sysfs . (这是因为这 2 个结构都包含一个 struct device结构). 例如, 对于一个简单的只包含一个 USB 接口的 USB  鼠标, 下面的内容给这个设备的 sysfs 目录树:</p>
+<pre class="screen">
+/sys/devices/pci0000:00/0000:00:09.0/usb2/2-1
+|-- 2-1:1.0
+|  |-- bAlternateSetting  
+|  |-- bInterfaceClass  
+|  |-- bInterfaceNumber  
+|  |-- bInterfaceProtocol  
+|  |-- bInterfaceSubClass  
+|  |-- bNumEndpoints  
+|  |-- detach_state  
+|  |-- iInterface  
+|  `-- power  
+|  `-- state  
+|-- bConfigurationValue
+|-- bDeviceClass
+|-- bDeviceProtocol
+|-- bDeviceSubClass
+|-- bMaxPower
+|-- bNumConfigurations
+|-- bNumInterfaces
+|-- bcdDevice
+|-- bmAttributes
+|-- detach_state
+|-- devnum
+|-- idProduct
+|-- idVendor
+|-- maxchild
+|-- power
+| `-- state
+|-- speed
+`-- version
+</pre>
+<p>结构 usb_device 在树中被表示在:</p>
+<pre class="screen">
+/sys/devices/pci0000:00/0000:00:09.0/usb2/2-1 
+</pre>
+<p>而鼠标的 USB 接口 - USB 鼠标设备驱动被绑定到的接口 - 位于目录:</p>
+<pre class="screen">
+/sys/devices/pci0000:00/0000:00:09.0/usb2/2-1/2-1:1.0 
+</pre>
+<p>为帮助理解这个长设备路径的含义, 我们描述内核如何标识 USB 设备.</p>
+<p>第一个 USB  设备是一个根集线器. 这是 USB 控制器, 常常包含在一个 PCI 设备中. 控制器的命名是由于它控制整个连接到它上面的 USB 总线. 控制器是一个 PCI 总线和 USB 总线之间的桥, 同时是总线上的第一个设备.</p>
+<p>所有的根集线器被 USB 核心安排了一个唯一的号. 在我们的例子里, 根集线器称为 usb2, 因为它是注册到 USB 核心的第 2 个根集线器. 可包含在单个系统中在任何时间的根集线器的数目没有限制.</p>
+<p>每个在 USB 总线上的设备采用根集线器的号作为它的名子的第一个数字. 紧跟着的是 - 字符和设备插入的端口号. 由于我们例子中的设备插在第一个端口, 一个 1 被添加到名子. 因此给主 USB 鼠标设备的名子是2-1. 因为这个 USB 设备包含一个接口, 那使得树中的另一个设备被添加到 sysfs 路径. 到此点, USB 接口的命名方法是设备名:在我们的例子, 是 2-1 接着一个分号和 USB 配置名, 接着一个句点和接口名. 因此对这个例子, 设备名是 2-1:1.0 因为它是第一个配置并且有接口号 0.</p>
+<p>总结, USB sysfs 设备命名方法是:</p>
+<pre class="screen">
+root_hub-hub_port:config.interface 
+</pre>
+<p>随着设备在 USB 树中进一步向下, 并且越来越多的 USB 集线器, 集线器端口号被添加到字符串中紧随着链中之前的集线器端口号. 对一个 2 层的树, 设备名看来象:</p>
+<pre class="screen">
+root_hub-hub_port-hub_port:config.interface 
+</pre>
+<p>如同可在之前的 USB 设备和接口目录列表中见到的, 所有的 USB 特定信息可直接从 sysfs 获得(例如, idVendor, idProduct, 和 bMaxPower 信息). 一个文件, bConfigrationValue, 可被写入来改变激活的正被使用的 USB 配置. 这对有多个配置的设备是有用的, 当内核不能决定选择什么配置来正确操作设备. 许多 USB 猫需要有正确的配置值被写到这个文件来使正确的 USB 驱动绑定到设备.</p>
+<p>sysfs 没暴露一个 USB 设备的所有的不同部分,因为它停止在接口水平. 任何这个设备可能包含的预备配置都没有展示, 连同关联到接口的端点的细节. 这个信息可在 usbfs 文件系统中找到, 它加载在系统的 /proc/bus/usb/ 目录. 文件 /proc/bus/usb/devices 展示了所有的在 sysfs 中暴露的信息, 连同所有的出现在系统中的 USB 设备的预备配置和端点信息. usbfs 也允许用户空间程序直接对话 USB 设备, 这已使能了许多内核驱动被移出到用户空间, 这里容易维护和调试. USB 扫描器驱动是这个的一个好例子, 由于它不再在内核中出现, 它的功能现在包含在用户空间的 SANE 库程序中.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch13.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch13.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch13s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;13&#160;章&#160;USB 驱动&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;13.3.&#160;USB 的 Urbs</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

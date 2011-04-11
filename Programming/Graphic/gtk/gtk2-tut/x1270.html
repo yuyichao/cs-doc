@@ -1,0 +1,272 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>文件选择 File Selections</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="颜色选择 Color Selection"
+HREF="x1247.html"><LINK
+REL="NEXT"
+TITLE="容器构件 Container Widgets"
+HREF="c1289.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1247.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c1289.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-FILESELECTIONS">文件选择 File Selections</H1
+><P
+>文件选择(file selection)构件是一种快速、简单的显示文件对话框的方法。它带有“Ok”、“Cancel”、“Help”按钮，可以极大地减少编程时间。</P
+><P
+>可以用下面的方法创建文件选择构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_file_selection_new( const gchar *title );</PRE
+></TD
+></TR
+></TABLE
+><P
+>要设置文件名，例如，要在打开时指向指定目录，或者给定一个缺省文件名，可以使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_file_selection_set_filename( GtkFileSelection *filesel,
+                                      const gchar      *filename );</PRE
+></TD
+></TR
+></TABLE
+><P
+>要获取用户输入或点击选中的文本，可以使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gchar *gtk_file_selection_get_filename( GtkFileSelection *filesel );</PRE
+></TD
+></TR
+></TABLE
+><P
+>还有几个指向文件选择构件内部的构件的指针，它们是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  dir_list
+  file_list
+  selection_entry
+  selection_text
+  main_vbox
+  ok_button
+  cancel_button
+  help_button</PRE
+></TD
+></TR
+></TABLE
+><P
+>在为文件选择构件的信号设置回调函数时，极有可能用到ok_button、cancel_button和help_button指针。</P
+><P
+>下面的示例是来自<TT
+CLASS="FILENAME"
+>testgtk.c</TT
+>中的一段代码。修改了一下使它可以独立运行。你可以看到，创建一个文件选择构件并不费多少功夫。在这个示例中，Help按钮出现在屏幕上，但是它什么也不做，因为没有为它的信号设置回调函数。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/filesel.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+
+/* 获得文件名，并将它打印到控制台(console)上 */
+void file_ok_sel( GtkWidget        *w,
+                  GtkFileSelection *fs )
+{
+    g_print ("%s\n", gtk_file_selection_get_filename (GTK_FILE_SELECTION (fs)));
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+    GtkWidget *filew;
+    
+    gtk_init (&#38;argc, &#38;argv);
+    
+    /* 创建一个新的文件选择构件 */
+    filew = gtk_file_selection_new ("File selection");
+    
+    g_signal_connect (G_OBJECT (filew), "destroy",
+	              G_CALLBACK (gtk_main_quit), NULL);
+    /* 为ok_button按钮设置回调函数，连接到file_ok_sel function函数 */
+    g_signal_connect (G_OBJECT (GTK_FILE_SELECTION (filew)-&#62;ok_button),
+		      "clicked", 
+                      G_CALLBACK (file_ok_sel), filew);
+    
+    /* 为cancel_button设置回调函数，销毁构件 */
+    g_signal_connect_swapped (G_OBJECT (GTK_FILE_SELECTION (filew)-&#62;cancel_button),
+	                      "clicked", 
+                              G_CALLBACK (gtk_widget_destroy), filew);
+    
+    /* 设置文件名，比如这个一个文件保存对话框，我们给了一个缺省文件名 */
+    gtk_file_selection_set_filename (GTK_FILE_SELECTION(filew), 
+				     "penguin.png");
+    
+    gtk_widget_show (filew);
+    gtk_main ();
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1247.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c1289.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>颜色选择 Color Selection</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>容器构件 Container Widgets</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

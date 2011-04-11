@@ -1,0 +1,380 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>13.4.&#160;编写一个 USB 驱动-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch13.html" title="第&#160;13&#160;章&#160;USB 驱动">
+<link rel="prev" href="ch13s03.html" title="13.3.&#160;USB 的 Urbs">
+<link rel="next" href="ch13s05.html" title="13.5.&#160;无 urb 的 USB 传送">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">13.4.&#160;编写一个 USB 驱动</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch13s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;13&#160;章&#160;USB 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch13s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="WritingaUSBDriver.sect1"></a>13.4.&#160;编写一个 USB 驱动</h2></div></div></div>
+<p>编写一个 USB 设备驱动的方法类似于一个 pci 驱动: 驱动注册它的驱动对象到 USB 子系统并且之后使用供应商和设备标识来告知是否它的硬件已经安装.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="WhatDevicesDoestheDriverSupport.sect2"></a>13.4.1.&#160;驱动支持什么设备</h3></div></div></div>
+<p>struct usb_device_id 结构提供了这个驱动支持的一个不同类型 USB 设备的列表. 这个列表被USB 核心用来决定给设备哪个驱动, 并且通过热插拔脚本来决定哪个驱动自动加载, 当特定设备被插入系统时.</p>
+<p>struct usb_device_id 结构定义有下面的成员:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>__u16 match_flags </span></span></dt>
+<dd><p>决定设备应当匹配结构中下列的哪个成员. 这是一个位成员, 由在 include/linux/mod_devicetable.h 文件中指定的不同的 USB_DEVICE_ID_MATCH_* 值所定义. 这个成员常常从不直接设置, 但是由 USB_DEVICE 类型宏来初始化.</p></dd>
+<dt><span class="term"><span>__u16 idVendor </span></span></dt>
+<dd><p>这个设备的 USB 供应商 ID. 这个数由 USB 论坛分配给它的成员并且不能由任何别的构成.</p></dd>
+<dt><span class="term"><span>__u16 idProduct </span></span></dt>
+<dd><p>这个设备的 USB 产品 ID. 所有的有分配给他们的供应商 ID 的供应商可以随意管理它们的产品 ID.</p></dd>
+<dt><span class="term"><span>__u16 bcdDevice_lo</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>__u16 bcdDevice_hi </span></span></dt>
+<dd><p>定义供应商分配的产品版本号的高低范围. bcdDevice_hi 值包括其中; 它的值是最高编号的设备号. 这 2 个值以BCD 方式编码. 这些变量, 连同 idVendor 和 idProduct, 用来定义一个特定的设备版本.</p></dd>
+<dt><span class="term"><span>__u8 bDeviceClass</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>__u8 bDeviceSubClass</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>__u8 bDeviceProtocol </span></span></dt>
+<dd><p>定义类, 子类, 和设备协议, 分别地. 这些值被 USB 论坛分配并且定义在 USB 规范中. 这些值指定这个设备的行为, 包括设备上所有的接口.</p></dd>
+<dt><span class="term"><span>__u8 bInterfaceClass</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>__u8 bInterfaceSubClass</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>__u8 bInterfaceProtocol </span></span></dt>
+<dd><p>非常象上面的设备特定值, 这些定义了类, 子类, 和单个接口协议, 分别地. 这些值由 USB 论坛指定并且定义在 USB 规范中.</p></dd>
+<dt><span class="term"><span>kernel_ulong_t driver_info </span></span></dt>
+<dd><p>这个值不用来匹配, 但是它持有信息, 驱动可用来在 USB 驱动的探测回调函数区分不同的设备.</p></dd>
+</dl></div>
+<p>至于 PCI 设备, 有几个宏可用来初始化这个结构:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>USB_DEVICE(vendor, product)</span></span></dt>
+<dd><p>创建一个 struct usb_device_id, 可用来只匹配特定供应商和产品 ID 值. 这是非常普遍用的, 对于需要特定驱动的 USB 设备.</p></dd>
+<dt><span class="term"><span>USB_DEVICE_VER(vendor, product, lo, hi)</span></span></dt>
+<dd><p>创建一个 struct usb_device_id, 用来在一个版本范围中只匹配特定供应商和产品 ID 值.</p></dd>
+<dt><span class="term"><span>USB_DEVICE_INFO(class, subclass, protocol)</span></span></dt>
+<dd><p>创建一个 struct usb_device_id, 可用来只匹配一个特定类的 USB 设备.</p></dd>
+<dt><span class="term"><span>USB_INTERFACE_INFO(class, subclass, protocol)</span></span></dt>
+<dd><p>创建一个 struct usb_device_id, 可用来只匹配一个特定类的 USB 接口.</p></dd>
+</dl></div>
+<p>对于一个简单的 USB 设备驱动, 只控制来自一个供应商的一个单一 USB 设备, struct usb_device_id 表可定义如:</p>
+<pre class="programlisting">
+/* table of devices that work with this driver */ 
+static struct usb_device_id skel_table [] = {
+ { USB_DEVICE(USB_SKEL_VENDOR_ID, USB_SKEL_PRODUCT_ID) },
+ { } /* Terminating entry */
+};
+MODULE_DEVICE_TABLE (usb, skel_table);
+</pre>
+<p>至于 PCI 驱动, MODULE_DEVICE_TABLE 宏有必要允许用户空间工具来发现这个驱动可控制什么设备. 但是对于 USB 驱动, 字符串 usb 必须是在这个宏中的第一个值.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="RegisteringaUSBDriver.sect2"></a>13.4.2.&#160;注册一个 USB 驱动</h3></div></div></div>
+<p>所有 USB 驱动必须创建的主要结构是 struct usb_driver. 这个结构必须被 USB 驱动填充并且包含多个函数回调和变量, 来向 USB 核心代码描述 USB 驱动:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct module *owner </span></span></dt>
+<dd><p>指向这个驱动的模块拥有者的指针. USB 核心使用它正确地引用计数这个 USB 驱动, 以便它不被在不合适的时刻卸载. 这个变量应当设置到 THIS_MODULE 宏.</p></dd>
+<dt><span class="term"><span>const char *name </span></span></dt>
+<dd><p>指向驱动名子的指针. 它必须在内核 USB 驱动中是唯一的并且通常被设置为和驱动的模块名相同. 它出现在 sysfs 中在 /sys/bus/usb/drivers/ 之下, 当驱动在内核中时.</p></dd>
+<dt><span class="term"><span>const struct usb_device_id *id_table </span></span></dt>
+<dd>
+<p>指向 struct usb_device_id 表的指针, 包含这个驱动可接受的所有不同类型 USB 设备的列表. 如果这个变量没被设置, USB 驱动中的探测回调函数不会被调用. 如果你需要你的驱动给系统中每个 USB 设备一直被调用, 创建一个只设置这个 driver_info 成员的入口项:</p>
+<pre class="programlisting">
+static struct usb_device_id usb_ids[] = {
+ {.driver_info = 42},
+    {} 
+};
+</pre>
+</dd>
+<dt><span class="term"><span>int (*probe) (struct usb_interface *intf, const struct usb_device_id *id)</span></span></dt>
+<dd><p>指向 USB 驱动中探测函数的指针. 这个函数(在"探测和去连接的细节"一节中描述)被 USB 核心调用当它认为它有一个这个驱动可处理的 struct usb_interface. 一个指向 USB 核心用来做决定的 struct usb_device_id 的指针也被传递到这个函数. 如果这个 USB 驱动主张传递给它的 struct usb_interface, 它应当正确地初始化设备并且返回 0. 如果驱动不想主张这个设备, 或者发生一个错误, 它应当返回一个负错误值.</p></dd>
+<dt><span class="term"><span>void (*disconnect) (struct usb_interface *intf)</span></span></dt>
+<dd><p>指向 USB 驱动的去连接函数的指针. 这个函数(在"探测和去连接的细节"一节中描述)被 USB 核心调用, 当 struct usb_interface 已被从系统中清除或者当驱动被从 USB 核心卸载.</p></dd>
+</dl></div>
+<p>为创建一个值 struct usb_driver 结构, 只有 5 个成员需要被初始化:</p>
+<pre class="programlisting">
+static struct usb_driver skel_driver = {
+ .owner = THIS_MODULE,
+ .name = "skeleton",
+ .id_table = skel_table,
+ .probe = skel_probe,
+ .disconnect = skel_disconnect, 
+}; 
+</pre>
+<p>struct usb_driver 确实包含更多几个回调, 它们通常不经常用到, 并且不被要求使 USB 驱动正确工作:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>int (*ioctl) (struct usb_interface *intf, unsigned int code, void *buf) </span></span></dt>
+<dd><p>指向 USB 驱动的 ioctl 函数的指针. 如果它出现, 在用户空间程序对一个关联到 USB 设备的 usbfs 文件系统设备入口, 做一个 ioctl 调用时被调用. 实际上, 只有 USB 集线器驱动使用这个 ioctl, 因为没有其他的真实需要对于任何其他 USB 驱动要使用.</p></dd>
+<dt><span class="term"><span>int (*suspend) (struct usb_interface *intf, u32 state)</span></span></dt>
+<dd><p>指向 USB 驱动中的悬挂函数的指针. 当设备要被 USB 核心悬挂时被调用.</p></dd>
+<dt><span class="term"><span>int (*resume) (struct usb_interface *intf)</span></span></dt>
+<dd><p>指向 USB 驱动中的恢复函数的指针. 当设备正被 USB 核心恢复时被调用.</p></dd>
+</dl></div>
+<p>为注册 struct usb_driver 到 USB 核心, 一个调用 usb_register_driver 带一个指向 struct usb_driver 的指针. 传统上在 USB 驱动的模块初始化代码做这个:</p>
+<pre class="programlisting">
+static int __init usb_skel_init(void)
+{
+        int result;
+        /* register this driver with the USB subsystem */
+        result = usb_register(&amp;skel_driver);
+        if (result)
+                err("usb_register failed. Error number %d", result);
+        return result;
+}
+</pre>
+<p>当 USB 驱动被卸载, struct usb_driver 需要从内核注销. 使用对 usb_deregister_driver 的调用做这个. 当这个调用发生, 任何当前绑定到这个驱动的 USB 接口被去连接, 并且去连接函数为它们而被调用.</p>
+<pre class="programlisting">
+static void __exit usb_skel_exit(void)
+{
+        /* deregister this driver with the USB subsystem */
+        usb_deregister(&amp;skel_driver);
+}
+</pre>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="probeanddisconnectinDetail.sect3"></a>13.4.2.1.&#160;探测和去连接的细节</h4></div></div></div>
+<p>在之前章节描述的 struct usb_driver 结构中, 驱动指定 2 个 USB 核心在合适的时候调用的函数. 探测函数被调用, 当设备被安装时, USB 核心认为这个驱动应当处理; 探测函数应当进行检查传递给它的关于设备的信息, 并且决定是否驱动真正合适那个设备. 去连接函数被调用当驱动应当不再控制设备, 由于某些理由, 并且可做清理.</p>
+<p>探测和去连接函数回调都在 USB 集线器内核线程上下文中被调用, 因此它们中睡眠是合法的. 但是, 建议如果有可能大部分工作应当在设备被用户打开时完成. 为了保持 USB 探测时间为最小. 这是因为 USB 核心处理 USB 设备的添加和去除在一个线程中, 因此任何慢设备驱动可导致 USB 设备探测时间慢下来并且用户可注意到.</p>
+<p>在探测函数回调中, USB 驱动应当初始化任何它可能使用来管理 USB 设备的本地结构. 它还应当保存任何它需要的关于设备的信息到本地结构, 因为在此时做这些通常更容易. 作为一个例子, USB 驱动常常想为设备探测端点地址和缓冲大小是什么, 因为和设备通讯需要它们. 这里是一些例子代码, 它探测 BULK 类型的 IN 和 OUT 端点, 并且保存一些关于它们的信息在一个本地设备结构中:</p>
+<pre class="programlisting">
+/* set up the endpoint information */
+/* use only the first bulk-in and bulk-out endpoints */
+iface_desc = interface-&gt;cur_altsetting;
+for (i = 0; i &lt; iface_desc-&gt;desc.bNumEndpoints; ++i)
+{
+
+        endpoint = &amp;iface_desc-&gt;endpoint[i].desc;
+        if (!dev-&gt;bulk_in_endpointAddr &amp;&amp;
+                        (endpoint-&gt;bEndpointAddress &amp; USB_DIR_IN) &amp;&amp;
+                        ((endpoint-&gt;bmAttributes &amp; USB_ENDPOINT_XFERTYPE_MASK)
+
+                         == USB_ENDPOINT_XFER_BULK)) { /* we found a bulk in endpoint */ buffer_size = endpoint-&gt;wMaxPacketSize;
+                dev-&gt;bulk_in_size = buffer_size;
+                dev-&gt;bulk_in_endpointAddr = endpoint-&gt;bEndpointAddress;
+                dev-&gt;bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
+                if (!dev-&gt;bulk_in_buffer) {
+                        err("Could not allocate bulk_in_buffer");
+                        goto error;
+                }
+        }
+
+        if (!dev-&gt;bulk_out_endpointAddr &amp;&amp;
+                        !(endpoint-&gt;bEndpointAddress &amp; USB_DIR_IN) &amp;&amp;
+                        ((endpoint-&gt;bmAttributes &amp; USB_ENDPOINT_XFERTYPE_MASK)
+                         == USB_ENDPOINT_XFER_BULK)) { /* we found a bulk out endpoint */ dev-&gt;bulk_out_endpointAddr = endpoint-&gt;bEndpointAddress;
+        }
+}
+if (!(dev-&gt;bulk_in_endpointAddr &amp;&amp; dev-&gt;bulk_out_endpointAddr))
+{
+
+        err("Could not find both bulk-in and bulk-out endpoints");
+        goto error;
+}
+</pre>
+<p>这块代码首先循环在这个接口中出现的每个端点, 并且分配一个本地指针到端点结构来使它之后容易存取:</p>
+<pre class="programlisting">
+for (i = 0; i &lt; iface_desc-&gt;desc.bNumEndpoints; ++i) {
+ endpoint = &amp;iface_desc-&gt;endpoint[i].desc;
+</pre>
+<p>那么, 在我们有了一个端点后, 我们还没有发现一个块 IN 类型端点, 我们看是否这个端点的方向是 IN. 那个可被测试通过看是否位掩码 USB_DIR_IN 被包含在 bEndpointAddress 端点变量中. 如果这是真, 我们决定是否端点类型是块, 通过使用 USB_ENDPOINT_XFERTYPE_MASK 位掩码首先掩去 bmAttributes 变量, 并且接着检查是否它匹配值 USB_ENDPOINT_XFER_BULK:</p>
+<pre class="programlisting">
+if (!dev-&gt;bulk_in_endpointAddr &amp;&amp;
+                (endpoint-&gt;bEndpointAddress &amp; USB_DIR_IN) &amp;&amp;
+                ((endpoint-&gt;bmAttributes &amp; USB_ENDPOINT_XFERTYPE_MASK)
+
+                 == USB_ENDPOINT_XFER_BULK))
+{
+</pre>
+<p>如果所有的这些检查都是真, 驱动知道它发现了正确的端点类型, 并且可保存关于端点的信息到本地结构中, 它后来将需要这些信息和它通讯.</p>
+<pre class="programlisting">
+/* we found a bulk in endpoint */
+buffer_size = endpoint-&gt;wMaxPacketSize;
+dev-&gt;bulk_in_size = buffer_size;
+dev-&gt;bulk_in_endpointAddr = endpoint-&gt;bEndpointAddress;
+dev-&gt;bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
+if (!dev-&gt;bulk_in_buffer)
+{
+        err("Could not allocate bulk_in_buffer");
+        goto error;
+}
+</pre>
+<p>因为 USB 驱动需要获取在设备的生命周期后期和这个 struct usb_interface 关联的本地数据结构, 函数 usb_set_intfdata 可被调用:</p>
+<pre class="programlisting">
+/* save our data pointer in this interface device */
+usb_set_intfdata(interface, dev);
+</pre>
+<p>这个函数接受一个指向任何数据类型的指针, 并且保存它到 struct usb_interface 结构为后面的存取. 为获取这个数据, 函数 usb_get_intfdata 应当被调用:</p>
+<pre class="programlisting">
+struct usb_skel *dev;
+struct usb_interface *interface;
+int subminor;
+int retval = 0;
+
+subminor = iminor(inode);
+interface = usb_find_interface(&amp;skel_driver, subminor);
+if (!interface)
+{
+        err ("%s - error, can't find device for minor %d",
+             __FUNCTION__, subminor);
+        retval = -ENODEV;
+        goto exit;
+}
+
+dev = usb_get_intfdata(interface);
+if (!dev)
+{
+        retval = -ENODEV;
+        goto exit;
+}
+</pre>
+<p>usb_get_intfdata 常常被调用, 在 USB 驱动的 open 函数和在去连接函数. 感谢这 2 个函数, USB 驱动不需要保持一个静态指针数组来保存单个设备结构为系统中所有当前的设备. 对设备信息的非直接引用允许一个无限数目的设备被任何 USB 驱动支持.</p>
+<p>如果 USB 驱动没有和另一种处理用户和设备交互的子系统(例如 input, tty, video, 等待)关联, 驱动可使用 USB 主编号为了使用传统的和用户空间之间的字符驱动接口. 为此, USB 驱动必须在探测函数中调用 usb_register_dev 函数, 当它想注册一个设备到 USB 核心. 确认设备和驱动处于正确的状态, 来处理一个想在调用这个函数时尽快存取这个设备的用户.</p>
+<pre class="programlisting">
+/* we can register the device now, as it is ready */
+retval = usb_register_dev(interface, &amp;skel_class);
+if (retval)
+{
+        /* something prevented us from registering this driver */
+        err("Not able to get a minor for this device.");
+        usb_set_intfdata(interface, NULL);
+        goto error;
+}
+</pre>
+<p>usb_register_dev 函数要求一个指向 struct usb_interface 的指针和指向 struct usb_class_driver 的指针. struct -usb_class_driver 用来定义许多不同的参数, 当注册一个次编号USB 驱动要 USB 核心知道这些参数. 这个结构包括下列变量:.</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>char *name </span></span></dt>
+<dd><p>sysfs 用来描述设备的名子. 一个前导路径名, 如果存在, 只用在 devfs 并且本书不涉及. 如果设备号需要在这个名子中, 字符 %d 应当在名子串中. 例如, 位创建 devfs 名子 usb/foo1 和 sysfs 类名 foo1, 名子串应当设置为 usb/foo%d.</p></dd>
+<dt><span class="term"><span>struct file_operations *fops; </span></span></dt>
+<dd><p>指向 struct file_operations 的结构的指针, 这个驱动已定义来注册为字符设备. 这个结构的更多信息见第 3 章.</p></dd>
+<dt><span class="term"><span>mode_t mode; </span></span></dt>
+<dd><p>给这个驱动的要被创建的 devfs 文件的模式; 否则不使用. 这个变量的典型设置是值 S_IRUSR 和 值 S_IWUSR 的结合, 它将只提供这个设备文件的拥有者读和写存取.</p></dd>
+<dt><span class="term"><span>int minor_base; </span></span></dt>
+<dd><p>这是给这个驱动安排的次编号的开始. 所有和这个驱动相关的设备被创建为从这个值开始的唯一的, 递增的次编号. 只有 16 个设备被允许在任何时刻和这个驱动关联, 除非 CONFIG_USB_DYNAMIC_MINORS 配置选项被打开. 如果这样, 忽略这个变量, 并且这个设备的所有的次编号被以先来先服务的方式分配. 建议打开了这个选项的系统使用一个程序例如 udev 来关联系统中的设备节点, 因为一个静态的 /dev 树不会正确工作.</p></dd>
+</dl></div>
+<p>当 USB 设备断开, 所有的关联到这个设备的资源应当被清除, 如果可能. 在此时, 如果 usb_register_dev 已被在探测函数中调用来分配一个 USB 设备的次编号, 函数 usb_deregister_dev 必须被调用来将次编号给回 USB 核心.</p>
+<p>在断开函数中, 也重要的是从接口获取之前调用 usb_set_intfdata 所设置的数据. 接着设置数据指针在 struct us_interface 结构为 NULL 来阻止在不正确存取数据中的任何进一步的错误.</p>
+<pre class="programlisting">
+static void skel_disconnect(struct usb_interface *interface)
+{
+        struct usb_skel *dev;
+        int minor = interface-&gt;minor;
+        /* prevent skel_open() from racing skel_disconnect( ) */
+        lock_kernel();
+
+        dev = usb_get_intfdata(interface);
+        usb_set_intfdata(interface, NULL);
+        /* give back our minor */
+        usb_deregister_dev(interface, &amp;skel_class);
+
+        unlock_kernel(); /* decrement our usage count */
+
+        kref_put(&amp;dev-&gt;kref, skel_delete);
+        info("USB Skeleton #%d now disconnected", minor);
+}
+</pre>
+<p>注意在之前代码片段中的调用 lock_kernel. 它获取了 bigkernel 锁, 以至于 disconnect 回调不会遇到一个竞争情况, 在使用 open 调用试图获取一个指向正确接口数据结构的指针. 因为 open 在 bigkernel 锁获取情况下被调用, 如果 disconnect 也获取同一个锁, 只有驱动的一部分可存取并且接着设置接口数据指针.</p>
+<p>就在 disconnect 函数为一个 USB 设备被调用, 所有的当前在被传送的 urb 可被 USB 核心取消, 因此驱动不必明确为这些 urb 调用 usb_kill_urb. 如果一个驱动试图提交一个 urb 给 USB 设备, 在调用 usb_submit_urb 被断开之后, 这个任务会失败, 错误值为-EPIPE.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="SubmittingandControllingaUrb.sect2"></a>13.4.3.&#160;提交和控制一个 urb</h3></div></div></div>
+<p>当驱动有数据发送到 USB 设备(如同在驱动的 write 函数中发生的), 一个 urb 必须被分配来传送数据到设备.</p>
+<pre class="programlisting">
+urb = usb_alloc_urb(0, GFP_KERNEL);
+if (!urb)
+{
+        retval = -ENOMEM;
+        goto error;
+}
+</pre>
+<p>在 urb 被成功分配后, 一个 DMA 缓冲也应当被创建来发送数据到设备以最有效的方式, 并且被传递到驱动的数据应当被拷贝到缓冲:</p>
+<pre class="programlisting">
+buf = usb_buffer_alloc(dev-&gt;udev, count, GFP_KERNEL, &amp;urb-&gt;transfer_dma);
+if (!buf)
+{
+        retval = -ENOMEM;
+        goto error;
+}
+if (copy_from_user(buf, user_buffer, count))
+{
+        retval = -EFAULT;
+        goto error;
+}
+</pre>
+<p>应当数据被正确地从用户空间拷贝到本地缓冲, urb 在它可被提交给 USB 核心之前必须被正确初始化:</p>
+<pre class="programlisting">
+/* initialize the urb properly */
+usb_fill_bulk_urb(urb, dev-&gt;udev,
+                  usb_sndbulkpipe(dev-&gt;udev, dev-&gt;bulk_out_endpointAddr),
+                  buf, count, skel_write_bulk_callback, dev);
+urb-&gt;transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
+</pre>
+<p>现在 urb 被正确分配, 数据被正确拷贝, 并且 urb 被正确初始化, 它可被提交给 USB 核心来传递给设备.</p>
+<pre class="programlisting">
+/* send the data out the bulk port */
+retval = usb_submit_urb(urb, GFP_KERNEL);
+if (retval)
+{
+        err("%s - failed submitting write urb, error %d", __FUNCTION__, retval);
+        goto error;
+}
+</pre>
+<p>在urb被成功传递到 USB 设备(或者在传输中发生了什么), urb 回调被 USB 核心调用. 在我们的例子中, 我们初始化 urb 来指向函数 skel_write_bulk_callback, 并且那就是被调用的函数:</p>
+<pre class="programlisting">
+static void skel_write_bulk_callback(struct urb *urb, struct pt_regs *regs)
+{
+        /* sync/async unlink faults aren't errors */
+        if (urb-&gt;status &amp;&amp;
+
+                        !(urb-&gt;status == -ENOENT ||
+                          urb-&gt;status == -ECONNRESET ||
+                          urb-&gt;status == -ESHUTDOWN)){
+                dbg("%s - nonzero write bulk status received: %d",
+                    __FUNCTION__, urb-&gt;status);
+        }
+
+        /* free up our allocated buffer */
+        usb_buffer_free(urb-&gt;dev, urb-&gt;transfer_buffer_length,
+                        urb-&gt;transfer_buffer, urb-&gt;transfer_dma);
+}
+</pre>
+<p>回调函数做的第一件事是检查 urb 的状态来决定是否这个 urb 成功完成或没有. 错误值, -ENOENT, -ECONNRESET, 和 -ESHUTDOWN 不是真正的传送错误, 只是报告伴随成功传送的情况. (见 urb 的可能错误的列表, 在"结构 struct urb"一节中详细列出). 接着这个回调释放安排给这个 urb 传送的已分配的缓冲.</p>
+<p>在 urb 的回调函数在运行时另一个 urb 被提交给设备是普遍的. 当流数据到设备时是有用的. 记住 urb 回调是在中断上下文运行, 因此它不应当做任何内存分配, 持有任何旗标, 或者任何可导致进程睡眠的事情. 当从回调中提交 urb, 使用 GFP_ATOMIC 标志来告知 USB 核心不要睡眠, 如果它需要分配新内存块在提交过程中.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch13s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch13.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch13s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">13.3.&#160;USB 的 Urbs&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;13.5.&#160;无 urb 的 USB 传送</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,1926 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 3. Tutorial</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="installing.html" title="Chapter 2. Installing MySQL"><link rel="next" href="using-mysql-programs.html" title="Chapter 4. Using MySQL Programs">
+<style>
+<!--
+span.GramE
+	{}
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+ li.MsoNormal
+	{mso-style-parent:"";
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	
+	; margin-left:0cm; margin-right:0cm; margin-top:0cm}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="tutorial"></a>
+	第3章：教程</h2></div></div></div><div class="toc"><p><b>目录</b></p><dl><dt><span class="section"><a href="tutorial.html#connecting-disconnecting">
+		3.1. 连接与断开服务器</a></span></dt><dt><span class="section"><a href="tutorial.html#entering-queries">
+		3.2. 输入查询</a></span></dt><dt><span class="section"><a href="tutorial.html#database-use">
+		3.3. 创建并使用数据库</a></span></dt><dd><dl><dt><span class="section"><a href="tutorial.html#creating-database">
+			3.3.1. 创建并选择数据库</a></span></dt><dt><span class="section"><a href="tutorial.html#creating-tables">
+			3.3.2. 创建表</a></span></dt><dt><span class="section"><a href="tutorial.html#loading-tables">
+			3.3.3. 将数据装入表中</a></span></dt><dt><span class="section"><a href="tutorial.html#retrieving-data">
+			3.3.4. 从表检索信息</a></span></dt></dl></dd><dt><span class="section"><a href="tutorial.html#getting-information">
+		3.4. 获得数据库和表的信息</a></span></dt><dt><span class="section"><a href="tutorial.html#batch-mode">
+		3.5. 在批处理模式<span><strong class="command">下使用my</strong></span>sql</a></span></dt><dt><span class="section"><a href="tutorial.html#examples">
+		3.6. 常用查询的例子</a></span></dt><dd><dl><dt><span class="section"><a href="tutorial.html#example-maximum-column">
+			3.6.1. 列的最大值</a></span></dt><dt><span class="section"><a href="tutorial.html#example-maximum-row">
+			3.6.2. 拥有某个列的最大值的行</a></span></dt><dt><span class="section"><a href="tutorial.html#example-maximum-column-group">
+			3.6.3. 列的最大值：按组</a></span></dt><dt><span class="section"><a href="tutorial.html#example-maximum-column-group-row">
+			3.6.4. 拥有某个字段的组间最大值的行</a></span></dt><dt><span class="section"><a href="tutorial.html#example-user-variables">
+			3.6.5. 使用用户变量</a></span></dt><dt><span class="section"><a href="tutorial.html#example-foreign-keys">
+			3.6.6. 使用外键</a></span></dt><dt><span class="section"><a href="tutorial.html#searching-on-two-keys">
+			3.6.7. 根据两个键搜索</a></span></dt><dt><span class="section"><a href="tutorial.html#calculating-days">
+			3.6.8. 根据天计算访问量</a></span></dt><dt><span class="section"><a href="tutorial.html#example-auto-increment">
+			3.6.9. 使用AUTO_INCREMENT</a></span></dt></dl></dd><dt><span class="section"><a href="tutorial.html#twin">
+		3.7. 孪生项目的查询</a></span></dt><dd><dl><dt><span class="section"><a href="tutorial.html#twin-pool">
+			3.7.1. 查找所有未分发的孪生项</a></span></dt><dt><span class="section"><a href="tutorial.html#twin-event">
+			3.7.2. 显示孪生对状态的表</a></span></dt></dl></dd><dt><span class="section"><a href="tutorial.html#apache">
+		3.8. 与Apache一起使用MySQL</a></span></dt></dl></div><a class="indexterm" name="id2732856"></a><a class="indexterm" name="id2732863"></a><a class="indexterm" name="id2732873"></a><a class="indexterm" name="id2732883"></a>
+	<p>本章通过演示如何使用<b><span>mysql</span></b>客户程序创造和使用一个简单的数据库，提供一个<span>MySQL</span>的入门教程。<b><span>mysql</span></b>（有时称为“终端监视器”或只是“监视”）是一个交互式程序，允许你连接一个<span>MySQL</span>服务器，运行查询并察看结果。<b><span>mysql</span></b>可以用于批模式：你预先把查询放在一个文件中，然后告诉<b><span>mysql</span></b>执行文件的内容。本章将介绍使用<b><span>mysql</span></b>的两个方法。</p>
+	<p>要想查看由<b><span>mysql</span></b>提供的选择项目表，可以用<span>--help</span>选项来调用：</p>
+	<pre><span>shell&gt; </span><span><b><span>mysql --help</span></b></span></pre>
+	<p>本章假定<b><span>mysql</span></b>已经被安装在你的机器上，并且有一个<span>MySQL</span>服务器可以连接。否则，请联络<span>MySQ<b>L</b></span>管理员。（如果<i>你</i>是管理员，则需要查阅本手册的其它章节，例如<a href="database-administration.html">第5章：</a><a href="database-administration.html" title="Chapter 5. Database Administration"><i>数据库管理</i></a>。）</p>
+	<p>本章描述建立和使用一个数据库的全过程。如果你仅仅对访问一个已经存在的数据库感兴趣，可以跳过描述怎样创建数据库及它所包含的表的章节。</p>
+	<p>由于本章是一个教程，省略了许多细节。关于这里所涉及的主题的详细信息，请查阅本手册的相关章节。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="connecting-disconnecting"></a>
+		3.1.&nbsp;连接与断开服务器</h2></div></div></div><a class="indexterm" name="id2732995"></a><a class="indexterm" name="id2733005"></a><a class="indexterm" name="id2733016"></a><a class="indexterm" name="id2733026"></a></div><div class="section"><div class="titlepage"><div><div>
+		为了连接服务器，当调用<b><span>mysql</span></b>时，通常需要提供一个<span>MySQL</span>用户名并且很可能需要一个
+		密码。如果服务器运行在登录服务器之外的其它机器上，还需要指定主机名。联系管理员以找出进行连接所使用的参数<span> 
+		(</span>即，连接的主机、用户名和使用的密码<span>)</span>。知道正确的参数后，可以按照以下方式进行连接：<pre><span>shell&gt; </span><span><b><span>mysql -h <i>host</i> -u <i>user</i> -p</span></b></span></pre>
+		<pre><span>Enter password: </span><span><b><span>********</span></b></span></pre>
+		<p><span>host</span>和<span>user</span>分别代表<span>MySQL</span>服务器运行的主机名和<span>MySQL</span>账户用户名。设置时替换为正确的值。<span>********
+		</span>代表你的密码；当<b><span>mysql</span></b>显示<span>Enter 
+		password:</span>提示时输入它。</p>
+		<p>如果有效，你应该看见<span>mysql&gt;</span>提示符后的一些介绍信息：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql -h <i>host</i> -u <i>user</i> -p</span></b></span></pre>
+		<pre><span>Enter password: </span><span><b><span>********</span></b></span></pre>
+		<pre><span>Welcome to the MySQL monitor.&nbsp; Commands end with ; or \g.</span></pre>
+		<pre><span>Your MySQL connection id is 25338 to server version: 5.1.2-alpha-standard</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>Type &#39;help;&#39; or &#39;\h&#39; for help. Type &#39;\c&#39; to clear the buffer.</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt;</span></pre>
+		<p><span>mysql&gt; </span>提示符告诉你<span>mysql</span>准备为你输入命令。</p>
+		<p>一些<strong><span style="font-family:
+宋体;">MySQL</span></strong>安装允许用户以匿名（未命名）用户连接到本地主机上运行的服务器。如果你的机器是这种情况，你应该能不带任何选项地调用<span><b><span>mysql</span></b></span>与该服务器连接：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql</span></b></span></pre>
+		<p>成功地连接后，可以在<span>mysql&gt;</span>提示下输入<span>QUIT</span><span>
+		</span><span>(</span>或<span>\q</span><span>)</span>随时退出：</p>
+		<pre><span>mysql&gt; </span><span><b><span>QUIT</span></b></span></pre>
+		<pre><span>Bye</span></pre>
+		<p>在<span>Unix</span>中，也可以按<span>control-D</span>键断开服务器。</p>
+		<p>在下列章节的大多数例子都假设你连接到了服务器。由<span>mysql&gt;</span>提示指明。</p>
+		<h2 class="title"><a name="entering-queries"></a>
+		3.2.&nbsp;输入查询</h2></div></div></div><a class="indexterm" name="id2733209"></a><a class="indexterm" name="id2733219"></a><a class="indexterm" name="id2733229"></a>
+		<p>
+		确保你连接上了服务器，如在先前的章节讨论的。连接上服务器并布代表选择了任何数据库，但这样就可以了。知道关于如何查询的基本知识，比马上跳至创建表、给他们装载数据并且从他们检索数据更重要。本节描述输入命令的基本原则，使用几个查询，你能尝试了解<b><span>mysql</span></b>是如何工作的。</p>
+		<p>这是一个简单的命令，要求服务器告诉它的版本号和当前日期。在<span>mysql&gt;</span>提示输入如下命令并按回车键：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT VERSION(), CURRENT_DATE;</span></b></span></pre>
+		<pre><span>+-----------------+--------------+</span></pre>
+		<pre><span>| VERSION()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CURRENT_DATE |</span></pre>
+		<pre><span>+-----------------+--------------+</span></pre>
+		<pre><span>| 5.1.2-alpha-log | 2005-10-11&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-----------------+--------------+</span></pre>
+		<pre><span>1 row in set (0.01 sec)</span></pre>
+		<pre><span>mysql&gt;</span></pre>
+		<p>这询问说明<b><span>mysql</span></b>的几个方面<span>:</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>一个命令通常由<span>SQL</span>语句组成，随后跟着一个分号。（有一些例外不需要分号。早先提到的<span>QUIT</span>是一个例子。后面我们将看到其它的例子。）</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>当发出一个命令时，<b><span>mysql</span></b>将它发送给服务器并显示执行结果，然后显示另一个<span>mysql&gt;</span>显示它准备好接受其它命令。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><b><span>mysql</span></b>用表格<span>(</span>行和列<span>)</span>方式显示查询输出。第一行包含列的标签，随后的行是查询结果。通常，列标签是你取自数据库表的列的名字。如果你正在检索一个表达式而非表列的值<span>(</span>如刚才的例子<span>)</span>，<b><span>mysql</span></b>用表达式本身标记列。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><b><span>mysql</span></b>显示返回了多少行，以及查询花了多长时间，它给你提供服务器性能的一个大致概念。因为他们表示时钟时间<span>(</span>不是<span> 
+		CPU </span>或机器时间<span>)</span>，并且因为他们受到诸如服务器负载和网络延时的影响，因此这些值是不精确的。（为了简洁，在本章其它例子中不再显示“集合中的行”。）</p>
+		<p>能够以大小写输入关键词。下列查询是等价的：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT VERSION(), CURRENT_DATE;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>select version(), current_date;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SeLeCt vErSiOn(), current_DATE;</span></b></span></pre>
+		<p>这是另外一个查询，它说明你能将<span><b><span>mysql</span></b></span>用作一个简单的计算器：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT SIN(PI()/4), (4+1)*5;</span></b></span></pre>
+		<pre><span>+------------------+---------+</span></pre>
+		<pre><span>| SIN(PI()/4)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | (4+1)*5 |</span></pre>
+		<pre><span>+------------------+---------+</span></pre>
+		<pre><span>| 0.70710678118655 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 25 |</span></pre>
+		<pre><span>+------------------+---------+</span></pre>
+		<pre><span>1 row in set (0.02 sec)</span></pre>
+		<p>至此显示的命令是相当短的单行语句。你可以在一行上输入多条语句，只需要以一个分号间隔开各语句：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT VERSION(); SELECT NOW();</span></b></span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>| VERSION()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>| 5.1.2-alpha-log |</span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>+---------------------+</span></pre>
+		<pre><span>| NOW()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+---------------------+</span></pre>
+		<pre><span>| 2005-10-11 15:15:00 |</span></pre>
+		<pre><span>+---------------------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<p>不必全在一个行内给出一个命令，较长命令可以输入到多个行中。<b><span>mysql</span></b>通过寻找终止分号而不是输入行的结束来决定语句在哪儿结束。（换句话说，<b><span>mysql</span></b>接受自由格式的输入：它收集输入行但直到看见分号才执行。）</p>
+		<p>这里是一个简单的多行语句的例子：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>USER()</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>CURRENT_DATE;</span></b></span></pre>
+		<pre><span>+---------------+--------------+</span></pre>
+		<pre><span>| USER()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CURRENT_DATE |</span></pre>
+		<pre><span>+---------------+--------------+</span></pre>
+		<pre><span>| jon@localhost | 2005-10-11&nbsp;&nbsp; |</span></pre>
+		<pre><span>+---------------+--------------+</span></pre>
+		<p>在这个例子中，在输入多行查询的第一行后，要注意提示符如何从<span>mysql&gt;</span>变为<span>-&gt;</span>，这正是<b><span>mysql</span></b>如何指出它没见到完整的语句并且正在等待剩余的部分。提示符是你的朋友，因为它提供有价值的反馈，如果使用该反馈，将总是知道<b><span>mysql</span></b>正在等待什么。</p>
+		<p>如果你决定不想执行正在输入过程中的一个命令，输入<span>\c</span>取消它：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>USER()</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>\c</span></b></span></pre>
+		<pre><span>mysql&gt;</span></pre>
+		<p>这里也要注意提示符，在你输入<span>\c</span>以后，它切换回到<span>mysql&gt;</span>，提供反馈以表明<b><span>mysql</span></b>准备接受一个新命令。</p>
+		<p>下表显示出可以看见的各个提示符并简述它们所表示的<b><span>mysql</span></b>的状态：</p>
+		<table border="1" cellpadding="0" id="table1">
+			<tr>
+				<td>
+				<p><strong><span>提示符</span></strong></td>
+				<td width="490">
+				<p><strong><span>含义</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>mysql&gt;</span></td>
+				<td width="490">
+				<p>准备好接受新命令。</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>-&gt;</span></td>
+				<td width="490">
+				<p>等待多行命令的下一行。</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>&#39;&gt;</span></td>
+				<td width="490">
+				<p>等待下一行，等待以单引号<span>(</span>“<span>&#39;</span>”<span>)</span>开始的字符串的结束。</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>&quot;&gt;</span></td>
+				<td width="490">
+				<p>等待下一行，等待以双引号<span>(</span>“<span>&quot;</span>”<span>)</span>开始的字符串的结束。</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>`&gt;</span></td>
+				<td width="490">
+				<p>等待下一行，等待以反斜点<span>(</span>‘<span>`</span>’<span>)</span>开始的识别符的结束。</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>/*&gt;</span></td>
+				<td width="490">
+				<p>等待下一行，等待以<span>/*</span>开始的注释的结束。</td>
+			</tr>
+		</table>
+		<p>当你打算在一个单行上发出一个命令时，通常会“偶然”出现多行语句，但是没有终止分号。在这种情况中，<b><span>mysql</span></b>等待进一步输入：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT USER()</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;</span></pre>
+		<p>如果出现这种情况<span>(</span>你认为输完了语句，但是只有一个<span>-&gt;</span>提示符响应<span>)</span>，很可能<b><span>mysql</span></b>正在等待分号。如果你没有注意到提示符的提示，在意识到你需要做什么之前，你可能会呆坐一会儿。输入一个分号完成语句，<b><span>mysql</span></b>将执行：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT USER()</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>;</span></b></span></pre>
+		<pre><span>+---------------+</span></pre>
+		<pre><span>| USER()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+---------------+</span></pre>
+		<pre><span>| jon@localhost |</span></pre>
+		<pre><span>+---------------+</span></pre>
+		<p>在字符串收集期间将出现 
+		<span>&#39;&gt; </span>和<span> 
+		&quot;&gt; </span>提示符（提示<span>MySQL</span>正等待字符串的结束）。在<span>MySQL</span>中，可以写由‘<span>&#39;</span>’或‘<span>&quot;</span>’字符括起来的字符串<span> 
+		(</span>例如，<span>&#39;hello&#39;</span>或<span>&quot;goodbye&quot;</span><span>)</span>，并且<b><span>mysql</span></b>允许输入跨越多行的字符串。当看到一个 
+		 
+		<span>
+		&#39;&gt; </span>或 
+		<span>&quot;&gt; </span>提示符时，这意味着已经输入了包含以‘<span>&#39;</span>’或‘<span>&quot;</span>’括号字符开始的字符串的一行，但是还没有输入终止字符串的匹配引号。这显示你粗心地省掉了一个引号字符。例如：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM my_table WHERE name = &#39;Smith AND age &lt; 30;</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; &#39;&gt;</span></pre>
+		<p>如果你输入<span>SELECT</span>语句，然后按<strong><span>Enter</span><span>（</span></strong><b>回车）</b>键并等待结果，什么都没有出现。不要惊讶，“为什么该查询这么长呢？”，注意<span>&quot;&gt;</span>提示符提供的线索。它告诉你<span><b><span>mysql</span></b></span>期望见到一个未终止字符串的余下部分。（你看见语句中的错误吗？字符串<span>&quot;Smith</span>丢掉了第二个引号。）</p>
+		<p>走到这一步，你该做什么？最简单的是取消命令。然而，在这种情况下，你不能只是输入<span>\c</span>，因为<b><span>mysql</span></b>作为它正在收集的字符串的一部分来解释它！相反，应输入关闭的引号字符<span>(</span>这样<b><span>mysql</span></b>知道你完成了字符串<span>)</span>，然后输入<span>\c</span>：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM my_table WHERE name = &#39;Smith AND age &lt; 30;</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; &#39;&gt; </span><span><b><span>&#39;\c</span></b></span></pre>
+		<pre><span>mysql&gt;</span></pre>
+		<p>提示符回到<span>mysql&gt;</span>，显示<b><span>mysql</span></b>准备好接受一个新命令了。</p>
+		<p>
+		<span>`&gt;</span><span>
+		</span>提示符类似于 
+		<span>&#39;&gt;</span><span>
+		</span>和<span>&quot;&gt;</span><span>
+		</span>提示符，但表示你已经开始但没有结束以<span>`&gt;
+		</span>开始的识别符。</p>
+		<p>知道<span>&#39;&gt;</span>和<span>&quot;&gt;</span>提示符的含义很重要，因为如果你错误地输入一个未终止的字符串，任何后面输入的行将要被<span><b><span>mysql</span></b></span>忽略<span>--</span>包括包含<span>QUIT</span>的行！这可能令人相当困惑，特别是如果取消当前命令前还不知道你需要提供终止引号。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="database-use"></a>
+		3.3.&nbsp;创建并使用数据库</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="tutorial.html#creating-database">
+			3.3.1. 创建并选择数据库</a></span></dt><dt><span class="section"><a href="tutorial.html#creating-tables">
+			3.3.2. 创建表</a></span></dt><dt><span class="section"><a href="tutorial.html#loading-tables">
+			3.3.3. 将数据装入表中</a></span></dt><dt><span class="section"><a href="tutorial.html#retrieving-data">
+			3.3.4. 从表检索信息</a></span></dt></dl></div><a class="indexterm" name="id2733936"></a><a class="indexterm" name="id2733946"></a><a class="indexterm" name="id2733956"></a>
+		<p>知道怎样输入命令，便可以访问数据库了。</p>
+		<p>假定在你的家<span>(</span>你的“动物园”<span>)</span>中有很多宠物，并且你想跟踪关于它们各种类型的信息。你可以通过创建表来保存你的数据并根据所需要的信息装载他们，然后你可以从表中检索数据来回答关于动物不同种类的问题。本节显示如何做到所有这些事情：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>创建数据库</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>创建数据库表</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>装载数据到数据库表</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>以各种方法从表中检索数据</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>使用多个表</p>
+		<p>动物园数据库很简单<span>(</span>特意的<span>)</span>，但是不难把它想象成可能用到类似数据库的真实世界情况。例如，农夫可以使用这样的一个数据库来追踪家畜，或者兽医可以用它跟踪病畜记录。从<span>MySQL</span>网址上可以获得后面章节中将用到的含有部分查询和样例数据的动物园分发。有<strong><span>tar</span><span>压缩格式</span></strong><span> 
+		(<a target="_top"  href="http://downloads.mysql.com/docs/menagerie-db.tar.gz">http://downloads.mysql.com/docs/menagerie-db.tar.gz</a>)</span>和<span>Zip</span>压缩格式<span> 
+		(<a target="_top"  href="http://downloads.mysql.com/docs/menagerie-db.zip">http://downloads.mysql.com/docs/menagerie-db.zip</a>)</span>。</p>
+		<p>使用<span>SHOW</span>语句找出服务器上当前存在什么数据库：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW DATABASES;</span></b></span></pre>
+		<pre><span>+----------+</span></pre>
+		<pre><span>| Database |</span></pre>
+		<pre><span>+----------+</span></pre>
+		<pre><span>| mysql&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| test&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| tmp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+----------+</span></pre>
+		<p>可能你的机器上的数据库列表是不同的，但是很可能有<span>mysql</span>和<span>test</span>数据库。<span>mysql</span>是必需的，因为它描述用户访问权限，<span>test</span>数据库经常作为用户试身手的工作区。</p>
+		<p>请注意如果没有<span>SHOW 
+		DATABASES</span>权限，则不能看见所有数据库。参见<a href="sql-syntax.html#grant" title="13.5.1.3. GRANT and REVOKE Syntax">13.5.1.3节，“GRANT和REVOKE语法”</a>。</p>
+		<p>如果<span>test</span>数据库存在，尝试访问它：</p>
+		<pre><span>mysql&gt; </span><span><b><span>USE test</span></b></span></pre>
+		<pre><span>Database changed</span></pre>
+		<p>注意，<span>USE</span>，类似<span>QUIT</span>，不需要一个分号。（如果你喜欢，你可以用一个分号终止这样的语句；这无碍）<span>USE</span>语句在使用上也有另外一个特殊的地方：它必须在一个单行上给出。</p>
+		<p>你可列在后面的例子中使用<span>test</span>数据库<span>(</span>如果你能访问它<span>)</span>，但是你在该数据库创建的任何东西可以被访问它的其它人删除，因此，你应该询问<span>MySQL</span>管理员许可你使用自己的一个数据库。假定你想要调用你的<span>menagerie</span>，管理员需要执行这样一条命令：</p>
+		<pre><span>mysql&gt; </span><span><b><span>GRANT ALL ON menagerie.* TO &#39;your_mysql_name&#39;@&#39;your_client_host&#39;;</span></b></span></pre>
+		<p>这里<span>your_mysql_name</span>是分配给你的<strong><span>MySQL</span></strong>用户名，<span>your_client_host</span>是所连接的服务器所在的主机。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="creating-database"></a>
+			3.3.1.&nbsp;创建并选择数据库</h3></div></div></div><a class="indexterm" name="id2734185"></a><a class="indexterm" name="id2734195"></a></div><div class="section"><div class="titlepage"><div><div>
+			如果管理员在设置权限时为你创建了数据库，你可以开始使用它。否则，你需要自己创建数据库：<pre><span>mysql&gt; </span><span><b><span>CREATE DATABASE menagerie;</span></b></span></pre>
+			<p>在<span>Unix</span>下，数据库名称是区分大小写的<span>(</span>不像<span>SQL</span>关键字<span>)</span>，因此你必须总是以<span>menagerie</span>访问数据库，而不能用<span>Menagerie</span>、<span>MENAGERIE</span>或其它一些变量。对表名也是这样的。（在<span>Windows</span>下，该限制不适用，尽管你必须在一个给定的查询中使用同样的大小写来引用数据库和表。但是，由于多种原因，作为最好的惯例，一定要使用与数据库创建时的同样的大小写。）</p>
+			<p>创建数据库并不表示选定并使用它，你必须明确地操作。为了使<span>menagerie</span>成为当前的数据库，使用这个命令：</p>
+			<pre><span>mysql&gt; </span><span><b><span>USE menagerie</span></b></span></pre>
+			<pre><span>Database changed</span></pre>
+			<p>数据库只需要创建一次，但是必须在每次启动<b><span>mysql</span></b>会话时在使用前先选择它。你可以根据上面的例子执行一个<span>USE</span>语句来实现。还可以在调用<b><span>mysql</span></b>时，通过命令行选择数据库，只需要在提供连接参数之后指定数据库名称。例如：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql -h <i>host</i> -u <i>user</i> -p menagerie</span></b></span></pre>
+			<pre><span>Enter password: </span><span><b><span>********</span></b></span></pre>
+			<p>注意，刚才显示的命令行中的<span>menagerie</span><b>不</b>是你的
+			密码。如果你想要在命令行上在<span>-p</span>选项后提供
+			密码，则不能插入空格<span>(</span>例如，如<span>-pmypassword</span>，不是<span>-p 
+			mypassword</span><span>)</span>。但是，不建议在命令行输入密码，因为这样会暴露
+			密码，能被在机器上登录的其它用户窥探到。</p>
+			<h3 class="title"><a name="creating-tables"></a>
+			3.3.2.&nbsp;创建表</h3></div></div></div><a class="indexterm" name="id2734341"></a><a class="indexterm" name="id2734351"></a>
+			<p>创建数据库是很容易的部分，但是在这时它是空的，正如<span>SHOW TABLES</span>将告诉你的：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SHOW TABLES;</span></b></span></pre>
+			<pre><span>Empty set (0.00 sec)</span></pre>
+			<p>较难的部分是决定你的数据库结构应该是什么：你需要什么数据库表，各数据库表中有什么样的列。</p>
+			<p><span>你将需要一个包含你每个宠物的记录的表。它可称为<span>pet</span>表，并且它应该包含，最少，每个动物的名字。因为名字本身不是很有趣，表应该包含另外的信息。例如，如果在你豢养宠物的家庭有超过一个人，你可能想要列出每个动物的主人。你可能也想要记录例如种类和性别的一些基本的描述信息。</span></p>
+			<p>年龄呢？那可能有趣，但是存储到一个数据库中不是一件好事情。年龄随着时间流逝而变化，这意味着你将要不断地更新你的记录。相反<span>,
+			</span>存储一个固定值例如生日比较好，那么，无论何时你需要年龄，可以以当前日期和出生日期之间的差来计算它。<strong><span>MySQL</span></strong>提供了日期运算函数，因此这并不困难。存储出生日期而非年龄还有其它优点：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			你可以使用数据库完成这样的任务，例如生成即将到来的宠物生日的提示。（如果你认为这类查询有点蠢，注意，这与从商务数据库来识别出不久要发给生日祝贺的客户是同一个问题，因为计算机帮助私人联络。）</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			你可以相对于日期而不止是当前日期来计算年龄。例如，如果你在数据库存储死亡日期，你能很容易地计算出一只宠物死时有多大。</p>
+			<p>你可能想到<span>pet</span>表中其它有用的其它类型信息，但是到目前为止这些已经足够了：名字、主人、种类，性别、出生和死亡日期。</p>
+			<p>使用一个<span>CREATE TABLE</span>语句指定你的数据库表的布局：</p>
+			<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE pet (name VARCHAR(20), owner VARCHAR(20),</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>species VARCHAR(20), sex CHAR(1), birth DATE, death DATE);</span></b></span></pre>
+			<p><span>VARCHAR</span>适合于<span>name</span>、<span>owner</span>和<span>species</span>列，因为列值是变长的。这些列的长度不必都相同，而且不必是<span>20</span>。你可以挑选从<span>1</span>到<span>65535</span>的任何长度，从中选择一个最合理的值。（如果选择得不合适，后来证明你需要一个更长的字段，<strong><span>MySQL</span></strong>提供一个<span>ALTER 
+			TABLE</span>语句。）</p>
+			<p>可以用多种类型的值来表示动物记录中的性别，例如，<span>&quot;m&quot;</span>和<span>&quot;f&quot;</span>，或<span>&quot;male&quot;</span>和<span>&quot;female&quot;</span>。使用单字符<span>&quot;m&quot;</span>和<span>&quot;f&quot;</span>是最简单的方法。</p>
+			<p>很显然，<span>birth</span>和<span>death</span>列应选用<span>DATE</span>数据类。</p>
+			<p>创建了数据库表后，<span>SHOW 
+			TABLES</span>应该产生一些输出：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SHOW TABLES;</span></b></span></pre>
+			<pre><span>+---------------------+</span></pre>
+			<pre><span>| Tables in menagerie |</span></pre>
+			<pre><span>+---------------------+</span></pre>
+			<pre><span>| pet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+---------------------+</span></pre>
+			<p>为了验证你的表是按你期望的方式创建，使用一个<span>DESCRIBE</span>语句：</p>
+			<pre><span>mysql&gt; </span><span><b><span>DESCRIBE pet;</span></b></span></pre>
+			<pre><span>+---------+-------------+------+-----+---------+-------+</span></pre>
+			<pre><span>| Field&nbsp;&nbsp; | Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Null | Key | Default | Extra |</span></pre>
+			<pre><span>+---------+-------------+------+-----+---------+-------+</span></pre>
+			<pre><span>| name&nbsp;&nbsp;&nbsp; | varchar(20) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| owner&nbsp;&nbsp; | varchar(20) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| species | varchar(20) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| sex&nbsp;&nbsp;&nbsp;&nbsp; | char(1)&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| birth&nbsp;&nbsp; | date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp; &nbsp;&nbsp;&nbsp;| NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| death&nbsp;&nbsp; | date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+---------+-------------+------+-----+---------+-------+</span></pre>
+			<p>你可以随时使用<span>DESCRIBE</span>，例如，如果你忘记表中的列的名称或类型时。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="loading-tables"></a>
+			3.3.3.&nbsp;将数据装入表中</h3></div></div></div><a class="indexterm" name="id2734617"></a><a class="indexterm" name="id2734627"></a><a class="indexterm" name="id2734637"></a>
+			<p>创建表后，需要填入内容。通过<span>LOAD 
+			DATA</span>和<span>INSERT</span>语句可以完成该任务。</p>
+			<p>假定你的宠物纪录描述如下。（假定在<strong><span>MySQL</span></strong>中期望的日期格式是<span>YYYY-MM-DD</span>；这可能与你习惯的不同。）</p>
+			<table border="1" cellpadding="0" id="table2">
+				<tr>
+					<td>
+					<p><strong>
+					<span>name</span></strong></td>
+					<td>
+					<p><strong>
+					<span>owner</span></strong></td>
+					<td>
+					<p><strong>
+					<span>species</span></strong></td>
+					<td>
+					<p><strong>
+					<span>sex</span></strong></td>
+					<td>
+					<p><strong>
+					<span>birth</span></strong></td>
+					<td>
+					<p><strong>
+					<span>death</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Fluffy</span></td>
+					<td>
+					<p><span>Harold</span></td>
+					<td>
+					<p><span>cat</span></td>
+					<td>
+					<p><span>f</span></td>
+					<td>
+					<p><span>1993-02-04</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Claws</span></td>
+					<td>
+					<p><span>Gwen</span></td>
+					<td>
+					<p><span>cat</span></td>
+					<td>
+					<p><span>m</span></td>
+					<td>
+					<p><span>1994-03-17</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Buffy</span></td>
+					<td>
+					<p><span>Harold</span></td>
+					<td>
+					<p><span>dog</span></td>
+					<td>
+					<p><span>f</span></td>
+					<td>
+					<p><span>1989-05-13</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Fang</span></td>
+					<td>
+					<p><span>Benny</span></td>
+					<td>
+					<p><span>dog</span></td>
+					<td>
+					<p><span>m</span></td>
+					<td>
+					<p><span>1990-08-27</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Bowser</span></td>
+					<td>
+					<p><span>Diane</span></td>
+					<td>
+					<p><span>dog</span></td>
+					<td>
+					<p><span>m</span></td>
+					<td>
+					<p><span>1979-08-31</span></td>
+					<td>
+					<p><span>1995-07-29</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Chirpy</span></td>
+					<td>
+					<p><span>Gwen</span></td>
+					<td>
+					<p><span>bird</span></td>
+					<td>
+					<p><span>f</span></td>
+					<td>
+					<p><span>1998-09-11</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Whistler</span></td>
+					<td>
+					<p><span>Gwen</span></td>
+					<td>
+					<p><span>bird</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+					<td>
+					<p><span>1997-12-09</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span>Slim</span></td>
+					<td>
+					<p><span>Benny</span></td>
+					<td>
+					<p><span>snake</span></td>
+					<td>
+					<p><span>m</span></td>
+					<td>
+					<p><span>1996-04-29</span></td>
+					<td>
+					<p><span>&nbsp;</span></td>
+				</tr>
+			</table>
+			<p>因为你是从一个空表开始的，填充它的一个简易方法是创建一个文本文件，每个动物各一行，然后用一个语句将文件的内容装载到表中。</p>
+			<p>你可以创建一个文本文件<tt><span>“</span><span>pet.txt</span><span>”</span></tt>，每行包含一个记录，用定位符<span>(tab)</span>把值分开，并且以<span>CREATE 
+			TABLE</span>语句中列出的列次序给出。对于丢失的值<span>(</span>例如未知的性别，或仍然活着的动物的死亡日期<span>)</span>，你可以使用<span>NULL</span>值。为了在你的文本文件中表示这些内容，使用<span>\N</span>（反斜线，字母<span>N</span><span>）</span>。例如，<span>Whistler</span>鸟的记录应为<span>(</span>这里值之间的空白是一个定位符<span>)</span>：</p>
+			<table border="1" cellpadding="0" id="table3">
+				<tr>
+					<td>
+					<p><strong>
+					<span>name</span></strong></td>
+					<td>
+					<p><strong>
+					<span>owner</span></strong></td>
+					<td>
+					<p><strong>
+					<span>species</span></strong></td>
+					<td>
+					<p><strong>
+					<span>sex</span></strong></td>
+					<td>
+					<p><strong>
+					<span>birth</span></strong></td>
+					<td>
+					<p><strong>
+					<span>death</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>Whistler</span></td>
+					<td>
+					<p>
+					<span>Gwen</span></td>
+					<td>
+					<p>
+					<span>bird</span></td>
+					<td>
+					<p>
+					<span>\N</span></td>
+					<td>
+					<p>
+					<span>1997-12-09</span></td>
+					<td>
+					<p>
+					<span>\N</span></td>
+				</tr>
+			</table>
+			<p><span>要想将文本文件</span><tt><span>“</span><span>pet.txt</span><span>”</span></tt><span>装载到</span><span >pet</span><span>表中，使用这个命令：</span></p>
+			<pre><span>mysql&gt; </span><span><b><span>LOAD DATA LOCAL INFILE &#39;/path/pet.txt&#39; INTO TABLE pet;</span></b></span></pre>
+			<p>请注意如果用<span>Windows</span>中的编辑器（使用<span>\r\n</span>做为行的结束符<span>）</span>创建文件，应使用：</p>
+			<pre><span>mysql&gt; </span><span><b><span>LOAD DATA LOCAL INFILE &#39;/path/pet.txt&#39; INTO TABLE pet</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>LINES TERMINATED BY &#39;\r\n&#39;;</span></b></span></pre>
+			<p>（在运行<span>OS X</span>的<span>Apple</span>机上，应使用行结束符<span><span>&#39;\r&#39;</span>。）</span></p>
+			<p>如果你愿意，你能明确地在<span>LOAD 
+			DATA</span>语句中指出列值的分隔符和行尾标记，但是默认标记是定位符和换行符。这对读入文件<tt><span>“</span><span>pet.txt</span><span>”</span></tt>的语句已经足够。</p>
+			<p>如果该语句失败，可能是你安装的<span>MySQL</span>不与使用默认值的本地文件兼容。关于如何更改请参见<a href="database-administration.html#load-data-local" title="5.6.4. Security Issues with LOAD DATA LOCAL">5.6.4节，“LOAD DATA LOCAL安全问题<code class="literal"></code>”</a>。</p>
+			<p>如果想要一次增加一个新记录，可以使用<span>INSERT</span>语句。最简单的形式是，提供每一列的值，其顺序与<span>CREATE 
+			TABLE</span>语句中列的顺序相同。假定<span>Diane</span>把一只新仓鼠命名为<span>Puffball</span>，你可以使用下面的<span>INSERT</span>语句添加一条新记录：</p>
+			<pre><span>mysql&gt; </span><span><b><span>INSERT INTO pet</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>VALUES (&#39;Puffball&#39;,&#39;Diane&#39;,&#39;hamster&#39;,&#39;f&#39;,&#39;1999-03-30&#39;,NULL);</span></b></span></pre>
+			<p>注意，这里字符串和日期值均为引号扩起来的字符串。另外，可以直接用<span>INSERT</span>语句插入<span>NULL</span>代表不存在的值。不能使用<span>LOAD 
+			DATA</span>中所示的的<span>\N</span>。</p>
+			<p>从这个例子，你应该能看到涉及很多的键入用多个<span>INSERT</span>语句而非单个<span>LOAD 
+			DATA</span>语句装载你的初始记录。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="retrieving-data"></a>
+			3.3.4.&nbsp;从表检索信息</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="tutorial.html#selecting-all">
+				3.3.4.1. 选择所有数据</a></span></dt><dt><span class="section"><a href="tutorial.html#selecting-rows">
+				3.3.4.2. 选择特殊行</a></span></dt><dt><span class="section"><a href="tutorial.html#selecting-columns">
+				3.3.4.3. 选择特殊列</a></span></dt><dt><span class="section"><a href="tutorial.html#sorting-rows">
+				3.3.4.4. 分类行</a></span></dt><dt><span class="section"><a href="tutorial.html#date-calculations">
+				3.3.4.5. 日期计算</a></span></dt><dt><span class="section"><a href="tutorial.html#working-with-null">
+				3.3.4.6. NULL值操作<code class="literal"></code></a></span></dt><dt><span class="section"><a href="tutorial.html#pattern-matching">
+				3.3.4.7. 模式匹配</a></span></dt><dt><span class="section"><a href="tutorial.html#counting-rows">
+				3.3.4.8. 计数行</a></span></dt><dt><span class="section"><a href="tutorial.html#multiple-tables">3.3.4.9. 
+				使用1个以上的表<br>
+&nbsp;</a></span></dt></dl></div><a class="indexterm" name="id2735238"></a><a class="indexterm" name="id2735248"></a><a class="indexterm" name="id2735258"></a><a class="indexterm" name="id2735268"></a><div class="section"><div class="titlepage"><div><div>
+				<span>SELECT</span>语句用来从数据表中检索信息。语句的一般格式是：<pre><span>SELECT </span><span><i><span>what_to_select</span></i></span></pre>
+				<pre><span>FROM </span><span><i><span>which_table</span></i></span></pre>
+				<pre><span>WHERE </span><span><i><span>conditions_to_satisfy</span></i></span><span>;</span></pre>
+				<p><span>what_to_select</span>指出你想要看到的内容，可以是列的一个表，或<span>*</span>表示“所有的列”。<span>which_table</span>指出你想要从其检索数据的表。<span>WHERE</span>子句是可选项，如果选择该项，<span>conditions_to_satisfy</span>指定行必须满足的检索条件。</p>
+				<h4 class="title"><a name="selecting-all"></a>3.3.4.1.&nbsp;选择所有数据</h4></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+				<span>SELECT</span>最简单的形式是从一个表中检索所有记录：<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet;</span></b></span></pre>
+				<pre><span>+----------+--------+---------+------+------------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+--------+---------+------+------------+------------+</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | Harold | cat&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1993-02-04 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | Gwen&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1994-03-17 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;|</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | Benny&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1990-08-27 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | Diane&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1979-08-31 | 1995-07-29 |</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | Gwen&nbsp;&nbsp; | bird&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1998-09-11 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Whistler | Gwen&nbsp;&nbsp; | bird&nbsp;&nbsp;&nbsp; | NULL | 1997-12-09 | NULL &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | Benny&nbsp; | snake&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1996-04-29 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Puffball | Diane&nbsp; | hamster | f&nbsp;&nbsp;&nbsp; | 1999-03-30 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+--------+---------+------+------------+------------+</span></pre>
+				<p>如果你想要浏览整个表，可以使用这种形式的<span><span>SELECT</span>，</span>例如，刚刚装载了初始数据集以后。也有可能你想到<span>Bowser</span>的生日看起来不很对。查阅你原来的家谱，你发现正确的出生年是<span>1989</span>，而不是<span>1979</span>。</p>
+				<p>至少有两种修正方法：</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>编辑文件<tt><span>“</span><span>pet.txt</span><span>”</span></tt>改正错误，然后使用<span>DELETE</span>和<span>LOAD 
+				DATA</span>清空并重新装载表<span>:</span></p>
+				<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>DELETE FROM pet;</span></b></span></pre>
+				<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>LOAD DATA LOCAL INFILE &#39;pet.txt&#39; INTO TABLE pet;</span></b></span></pre>
+				<p>然而<span>, </span>
+				如果这样操做，必须重新输入<span>Puffball</span>记录。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>用一个<span>UPDATE</span>语句仅修正错误记录：</p>
+				<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>UPDATE pet SET birth = &#39;1989-08-31&#39; WHERE name = &#39;Bowser&#39;;</span></b></span></pre>
+				<p>
+				<span>UPDATE</span>只更改有问题的记录，不需要重新装载数据库表。</p>
+				<h4 class="title"><a name="selecting-rows"></a>
+				3.3.4.2.&nbsp;选择特殊行</h4></div></div></div><a class="indexterm" name="id2735486"></a><a class="indexterm" name="id2735496"></a></div><div class="section"><div class="titlepage"><div><div>
+				如上所示，检索整个表是容易的。只需要从<span>SELECT</span>语句中删掉<span>WHERE</span>子句。但是一般你不想看到整个表，特别地当表变得很大时。相反，你通常对回答一个具体的问题更感兴趣，在这种情况下在你想要的信息上进行一些限制。让我们看一些他们回答的有关你宠物的问题的选择查询。<p>
+				可以从表中只选择特定的行。例如，如果你想要验证你对<span>Bowser</span>的生日所做的更改，按下述方法选择<span>Bowser</span>的记录：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name = &#39;Bowser&#39;;</span></b></span></pre>
+				<pre><span>+--------+-------+---------+------+------------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp; | owner | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+--------+-------+---------+------+------------+------------+</span></pre>
+				<pre><span>| Bowser | Diane | dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1989-08-31 | 1995-07-29 |</span></pre>
+				<pre><span>+--------+-------+---------+------+------------+------------+</span></pre>
+				<p>输出证实正确的年份记录为<span>1989</span>，而不是<span>1979</span>。</p>
+				<p>字符串比较时通常对大小些不敏感，因此你可以将名字指定为<span>&quot;bowser&quot;</span>、<span>&quot;BOWSER&quot;</span>等，查询结果相同。</p>
+				<p>你可以在任何列上指定条件，不只仅仅是<span>name</span>。例如，如果你想要知道哪个动物在<span>1998</span>以后出生的，测试<span>birth</span>列：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE birth &gt; &#39;1998-1-1&#39;;</span></b></span></pre>
+				<pre><span>+----------+-------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | owner | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Chirpy&nbsp; &nbsp;| Gwen&nbsp; | bird&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1998-09-11 | NULL&nbsp; |</span></pre>
+				<pre><span>| Puffball | Diane | hamster | f&nbsp;&nbsp;&nbsp; | 1999-03-30 | NULL&nbsp; |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+-------+</span></pre>
+				<p>可以组合条件，例如，找出雌性的狗：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE species = &#39;dog&#39; AND sex = &#39;f&#39;;</span></b></span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Buffy | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp; |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<p>上面的查询使用<span>AND</span>逻辑操作符，也有一个<span>OR</span>操作符：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE species = &#39;snake&#39; OR species = &#39;bird&#39;;</span></b></span></pre>
+				<pre><span>+----------+-------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | owner | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | Gwen&nbsp; | bird&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1998-09-11 | NULL&nbsp; |</span></pre>
+				<pre><span>| Whistler | Gwen&nbsp; | bird&nbsp;&nbsp;&nbsp; | NULL | 1997-12-09 | NULL&nbsp; |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | Benny | snake&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1996-04-29 | NULL&nbsp; |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+-------+</span></pre>
+				<p><span>AND</span>和<span>OR</span>可以混用，但<span>AND</span>比<span>OR</span>具有更高的优先级。如果你使用两个操作符，使用圆括号指明如何对条件进行分组是一个好主意：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE (species = &#39;cat&#39; AND sex = &#39;m&#39;)</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>OR (species = &#39;dog&#39; AND sex = &#39;f&#39;);</span></b></span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Claws | Gwen&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1994-03-17 | NULL&nbsp; |</span></pre>
+				<pre><span>| Buffy | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp; |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<h4 class="title"><a name="selecting-columns"></a>
+				3.3.4.3.&nbsp;选择特殊列</h4></div></div></div><a class="indexterm" name="id2735687"></a><a class="indexterm" name="id2735697"></a></div><div class="section"><div class="titlepage"><div><div>
+				如果你不想看到表中的所有行，就命名你感兴趣的列，用逗号分开。例如，如果你想要知道你的动物什么时候出生的，选择<span>name</span>和<span>birth</span>列：<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth FROM pet;</span></b></span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | 1993-02-04 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | 1994-03-17 |</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | 1989-05-13 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | 1989-08-31 |</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | 1998-09-11 |</span></pre>
+				<pre><span>| Whistler | 1997-12-09 |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | 1996-04-29 |</span></pre>
+				<pre><span>| Puffball | 1999-03-30 |</span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<p>找出谁拥有宠物，使用这个查询：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT owner FROM pet;</span></b></span></pre>
+				<pre><span>+--------+</span></pre>
+				<pre><span>| owner&nbsp; |</span></pre>
+				<pre><span>+--------+</span></pre>
+				<pre><span>| Harold |</span></pre>
+				<pre><span>| Gwen&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Harold |</span></pre>
+				<pre><span>| Benny&nbsp; |</span></pre>
+				<pre><span>| Diane&nbsp; |</span></pre>
+				<pre><span>| Gwen&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Gwen&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Benny&nbsp; |</span></pre>
+				<pre><span>| Diane&nbsp; |</span></pre>
+				<pre><span>+--------+</span></pre>
+				<p>请注意该查询只是简单地检索每个记录的<span>owner</span>列，并且他们中的一些出现多次。为了使输出减到最少，增加关键字<span>DISTINCT</span>检索出每个唯一的输出记录：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT DISTINCT owner FROM pet;</span></b></span></pre>
+				<pre><span>+--------+</span></pre>
+				<pre><span>| owner&nbsp; |</span></pre>
+				<pre><span>+--------+</span></pre>
+				<pre><span>| Benny&nbsp; |</span></pre>
+				<pre><span>| Diane&nbsp; |</span></pre>
+				<pre><span>| Gwen&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Harold |</span></pre>
+				<pre><span>+--------+</span></pre>
+				<p>可以使用一个<span>WHERE</span>子句结合行选择与列选择。例如，要想查询狗和猫的出生日期，使用这个查询：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, species, birth FROM pet</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE species = &#39;dog&#39; OR species = &#39;cat&#39;;</span></b></span></pre>
+				<pre><span>+--------+---------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp; | species | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+--------+---------+------------+</span></pre>
+				<pre><span>| Fluffy | cat&nbsp;&nbsp;&nbsp;&nbsp; | 1993-02-04 |</span></pre>
+				<pre><span>| Claws&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | 1994-03-17 |</span></pre>
+				<pre><span>| Buffy&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | 1989-05-13 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 |</span></pre>
+				<pre><span>| Bowser | dog&nbsp;&nbsp;&nbsp;&nbsp; | 1989-08-31 |</span></pre>
+				<pre><span>+--------+---------+------------+</span></pre>
+				<h4 class="title"><a name="sorting-rows"></a>
+				3.3.4.4.&nbsp;分类行</h4></div></div></div><a class="indexterm" name="id2735822"></a><a class="indexterm" name="id2735830"></a><a class="indexterm" name="id2735841"></a><a class="indexterm" name="id2735851"></a><a class="indexterm" name="id2735861"></a></div><div class="section"><div class="titlepage"><div><div>
+				你可能已经注意到前面的例子中结果行没有以特定的顺序显示。然而，当行按某种方式排序时，检查查询输出通常更容易。为了排序结果，使用<span>ORDER 
+				BY</span>子句。<p>这里是动物生日，按日期排序：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth FROM pet ORDER BY birth;</span></b></span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | 1989-05-13 |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | 1989-08-31 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 |</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | 1993-02-04 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | 1994-03-17 |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | 1996-04-29 |</span></pre>
+				<pre><span>| Whistler | 1997-12-09 |</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | 1998-09-11 |</span></pre>
+				<pre><span>| Puffball | 1999-03-30 |</span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<p>
+				在字符类型列上，与所有其他比较操作类似，分类功能正常情况下是以区分大小写的方式执行的。这意味着，对于等同但大小写不同的列，并未定义其顺序。对于某一列，可以使用<span>BINARY</span>强制执行区分大小写的分类功能，如：<span>ORDER 
+				BY BINARY <i>col_name</i></span><span>. </span>
+				</p>
+				<p>默认排序是升序，最小的值在第一。要想以降序排序，在你正在排序的列名上增加<span>DESC</span>（降序 
+				）关键字：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth FROM pet ORDER BY birth DESC;</span></b></span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<pre><span>| Puffball | 1999-03-30 |</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | 1998-09-11 |</span></pre>
+				<pre><span>| Whistler | 1997-12-09 |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | 1996-04-29 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | 1994-03-17 |</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | 1993-02-04 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | 1989-08-31 |</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | 1989-05-13 |</span></pre>
+				<pre><span>+----------+------------+</span></pre>
+				<p>
+				可以对多个列进行排序，并且可以按不同的方向对不同的列进行排序。例如，按升序对动物的种类进行排序，然后按降序根据生日对各动物种类进行排序（最年轻的动物在最前面），使用下列查询：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, species, birth FROM pet</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>ORDER BY species, birth DESC;</span></b></span></pre>
+				<pre><span>+----------+---------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | species | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+---------+------------+</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | bird&nbsp;&nbsp;&nbsp; | 1998-09-11 |</span></pre>
+				<pre><span>| Whistler | bird&nbsp;&nbsp;&nbsp; | 1997-12-09 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | 1994-03-17 |</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | 1993-02-04 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | 1989-08-31 |</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | 1989-05-13 |</span></pre>
+				<pre><span>| Puffball | hamster | 1999-03-30 |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | snake&nbsp;&nbsp; | 1996-04-29 |</span></pre>
+				<pre><span>+----------+---------+------------+</span></pre>
+				<p>注意<span>DESC</span>关键字仅适用于在它前面的列名<span>(</span><span>birth</span><span>)</span>；不影响<span>species</span>列的排序顺序。</p>
+				<h4 class="title"><a name="date-calculations"></a>
+				3.3.4.5.&nbsp;日期计算</h4></div></div></div><a class="indexterm" name="id2736007"></a><a class="indexterm" name="id2736014"></a><a class="indexterm" name="id2736024"></a><a class="indexterm" name="id2736034"></a>
+				<p><strong><span>MySQL</span></strong>提供了几个函数，可以用来计算日期，例如，计算年龄或提取日期部分。</p>
+				<p>
+				要想确定每个宠物有多大，可以计算当前日期的年和出生日期之间的差。如果当前日期的日历年比出生日期早，则减去一年。以下查询显示了每个宠物的出生日期、当前日期和年龄数值的年数字。</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth, CURDATE(),</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>(YEAR(CURDATE())-YEAR(birth))</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>- (RIGHT(CURDATE(),5)&lt;RIGHT(birth,5))</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>AS age</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>FROM pet;</span></b></span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CURDATE()&nbsp; | age&nbsp; |</span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | 1993-02-04 | 2003-08-19 |&nbsp;&nbsp; 10 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | 1994-03-17 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 9 |</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | 1989-05-13 | 2003-08-19 |&nbsp;&nbsp; 14 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 | 2003-08-19 |&nbsp;&nbsp; 12 |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | 1989-08-31 | 2003-08-19 |&nbsp;&nbsp; 13 |</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | 1998-09-11 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>| Whistler | 1997-12-09 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 5 |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | 1996-04-29 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 7 |</span></pre>
+				<pre><span>| Puffball | 1999-03-30 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<p>此处，<span>YEAR()</span>提取日期的年部分，<span>RIGHT()</span>提取日期的<span>MM-DD</span><span> 
+				(</span>日历年<span>)</span>部分的最右面<span>5</span>个字符。比较<span>MM-DD</span>值的表达式部分的值一般为<span>1</span>或<span>0</span>，如果<span>CURDATE()</span>的年比<span>birth</span>的年早，则年份应减去<span>1</span>。整个表达式有些难懂，使用<em><span>alias</span></em><span> 
+				(</span><span>age</span><span>)</span>来使输出的列标记更有意义。</p>
+				<p>尽管查询可行，如果以某个顺序排列行，则能更容易地浏览结果。添加<span>ORDER 
+				BY name</span>子句按照名字对输出进行排序则能够实现。</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth, CURDATE(),</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>(YEAR(CURDATE())-YEAR(birth))</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>- (RIGHT(CURDATE(),5)&lt;RIGHT(birth,5))</span></b></span></pre>
+				<pre><span> &nbsp;&nbsp;&nbsp;-&gt; </span><span><b><span>AS age</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>FROM pet ORDER BY name;</span></b></span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CURDATE()&nbsp; | age&nbsp; |</span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | 1989-08-31 | 2003-08-19 |&nbsp;&nbsp; 13 |</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | 1989-05-13 | 2003-08-19 |&nbsp;&nbsp; 14 |</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | 1998-09-11 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | 1994-03-17 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 9 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 | 2003-08-19 |&nbsp;&nbsp; 12 |</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | 1993-02-04 | 2003-08-19 |&nbsp;&nbsp; 10 |</span></pre>
+				<pre><span>| Puffball | 1999-03-30 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>| Slim&nbsp; &nbsp;&nbsp;&nbsp;| 1996-04-29 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 7 |</span></pre>
+				<pre><span>| Whistler | 1997-12-09 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 5 |</span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<p>为了按<span>age</span>而非<span>name</span>排序输出，只要再使用一个<span>ORDER 
+				BY</span>子句：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth, CURDATE(),</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>(YEAR(CURDATE())-YEAR(birth))</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>- (RIGHT(CURDATE(),5)&lt;RIGHT(birth,5))</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>AS age</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>FROM pet ORDER BY age;</span></b></span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CURDATE()&nbsp; | age&nbsp; |</span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | 1998-09-11 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>| Puffball | 1999-03-30 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>| Whistler | 1997-12-09 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 5 |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | 1996-04-29 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 7 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | 1994-03-17 | 2003-08-19 |&nbsp;&nbsp;&nbsp; 9 |</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | 1993-02-04 | 2003-08-19 |&nbsp;&nbsp; 10 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 | 2003-08-19 |&nbsp;&nbsp; 12 |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | 1989-08-31 | 2003-08-19 |&nbsp;&nbsp; 13 |</span></pre>
+				<pre><span>| Buffy&nbsp;&nbsp;&nbsp; | 1989-05-13 | 2003-08-19 |&nbsp;&nbsp; 14 |</span></pre>
+				<pre><span>+----------+------------+------------+------+</span></pre>
+				<p>可以使用一个类似的查询来确定已经死亡动物的死亡年龄。你通过检查<span>death</span>值是否是<span>NULL</span>来确定是哪些动物，然后，对于那些非<span>NULL</span>值的动物，需要计算出<span>death</span>和<span>birth</span>值之间的差：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth, death,</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>(YEAR(death)-YEAR(birth)) - (RIGHT(death,5)&lt;RIGHT(birth,5))</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>AS age</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>FROM pet WHERE death IS NOT NULL ORDER BY age;</span></b></span></pre>
+				<pre><span>+--------+------------+------------+------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | age&nbsp; |</span></pre>
+				<pre><span>+--------+------------+------------+------+</span></pre>
+				<pre><span>| Bowser | 1989-08-31 | 1995-07-29 |&nbsp;&nbsp;&nbsp; 5 |</span></pre>
+				<pre><span>+--------+------------+------------+------+</span></pre>
+				<p>查询使用<span>death IS 
+				NOT NULL</span>而非<span>death 
+				!= NULL</span>，因为<span>NULL</span>是特殊的值，不能使用普通比较符来比较，以后会给出解释。参见<a href="tutorial.html#working-with-null" title="3.3.4.6. Working with NULL Values">3.3.4.6节，“NULL值操作<code class="literal"></code>”</a>。</p>
+				<p>如果你想要知道哪个动物下个月过生日，怎么办？对于这类计算，年和天是无关的，你只需要提取<span>birth</span>列的月份部分。<strong><span>MySQL</span></strong>提供几个日期部分的提取函数，例如<span>YEAR( 
+				)</span>、<span>MONTH( 
+				)</span>和<span>DAYOFMONTH( 
+				)</span>。在这里<span>MONTH()</span>是适合的函数。为了看它怎样工作，运行一个简单的查询，显示<span>birth</span>和<span>MONTH(birth)</span>的值：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth, MONTH(birth) FROM pet;</span></b></span></pre>
+				<pre><span>+----------+------------+--------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | MONTH(birth) |</span></pre>
+				<pre><span>+----------+------------+--------------+</span></pre>
+				<pre><span>| Fluffy&nbsp;&nbsp; | 1993-02-04 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | 1994-03-17 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+				<pre><span>| Buffy &nbsp;&nbsp;&nbsp;| 1989-05-13 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5 |</span></pre>
+				<pre><span>| Fang&nbsp;&nbsp;&nbsp;&nbsp; | 1990-08-27 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8 |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | 1989-08-31 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8 |</span></pre>
+				<pre><span>| Chirpy&nbsp;&nbsp; | 1998-09-11 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9 |</span></pre>
+				<pre><span>| Whistler | 1997-12-09 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12 |</span></pre>
+				<pre><span>| Slim&nbsp;&nbsp;&nbsp;&nbsp; | 1996-04-29 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>| Puffball | 1999-03-30 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+				<pre><span>+----------+------------+--------------+</span></pre>
+				<p>找出下个月生日的动物也是容易的。假定当前月是<span>4</span>月，那么月值是<span><span>4</span>，</span>你可以找在<span>5</span>月出生的动物<span> 
+				(5</span>月<span>)</span>，方法是：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth FROM pet WHERE MONTH(birth) = 5;</span></b></span></pre>
+				<pre><span>+-------+------------+</span></pre>
+				<pre><span>| name&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+-------+------------+</span></pre>
+				<pre><span>| Buffy | 1989-05-13 |</span></pre>
+				<pre><span>+-------+------------+</span></pre>
+				<p>如果当前月份是<span>12</span>月，就有点复杂了。你不能只把<span>1</span>加到月份数<span>(</span><span>12</span><span>)</span>上并寻找在<span>13</span>月出生的动物，因为没有这样的月份。相反，你应寻找在<span>1</span>月出生的动物<span>(1</span>月<span>)
+				</span>。</p>
+				<p>你甚至可以编写查询，不管当前月份是什么它都能工作。采用这种方法不必在查询中使用一个特定的月份，<span>DATE_ADD( 
+				)</span>允许在一个给定的日期上加上时间间隔。如果在<span>NOW( 
+				)</span>值上加上一个月，然后用<span>MONTH()</span>提取月份，结果产生生日所在月份：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth FROM pet</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE MONTH(birth) = MONTH(DATE_ADD(CURDATE(),INTERVAL 1 MONTH));</span></b></span></pre>
+				<p>完成该任务的另一个方法是加<span>1</span>以得出当前月份的下一个月<span>(</span>在使用取模函数<span>(</span><span>MOD</span><span>)</span>后，如果月份当前值是<span>12</span>，则“回滚”到值<span>0</span><span>)</span>：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT name, birth FROM pet</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE MONTH(birth) = MOD(MONTH(CURDATE()), 12) + 1;</span></b></span></pre>
+				<p>注意，<span>MONTH</span>返回在<span>1</span>和<span>12</span>之间的一个数字，且<span>MOD(something,12)</span>返回在<span>0</span>和<span>11</span>之间的一个数字，因此必须在<span>MOD( 
+				)</span>以后加<span>1</span>，否则我们将从<span>11</span>月<span>( 
+				11 )</span>跳到<span>1</span>月<span>(1)</span>。</div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="working-with-null"></a>
+				3.3.4.6.&nbsp;NULL值操作<code class="literal"></code></h4></div></div></div><a class="indexterm" name="id2693076"></a><a class="indexterm" name="id2693084"></a>
+				<p><span>NULL</span>值可能令人感到奇怪直到你习惯它。概念上，<span>NULL</span>意味着“没有值”或“未知值”，且它被看作与众不同的值。为了测试<span>NULL</span>，你不能使用算术比较
+				操作符例如<span>=</span>、<span>&lt;</span>或<span>!=</span>。为了说明它，试试下列查询：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT 1 = NULL, 1 &lt;&gt; NULL, 1 &lt; NULL, 1 &gt; NULL;</span></b></span></pre>
+				<pre><span>+----------+-----------+----------+----------+</span></pre>
+				<pre><span>| 1 = NULL | 1 &lt;&gt; NULL | 1 &lt; NULL | 1 &gt; NULL |</span></pre>
+				<pre><span>+----------+-----------+----------+----------+</span></pre>
+				<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp; NULL |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NULL |&nbsp;&nbsp;&nbsp;&nbsp; NULL |&nbsp;&nbsp;&nbsp;&nbsp; NULL |</span></pre>
+				<pre><span>+----------+-----------+----------+----------+</span></pre>
+				<p>很显然你不能通过这些比较得到有意义的结果。相反使用<span>IS 
+				NULL</span>和<span>IS 
+				NOT NULL</span>操作符：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT 1 IS NULL, 1 IS NOT NULL;</span></b></span></pre>
+				<pre><span>+-----------+---------------+</span></pre>
+				<pre><span>| 1 IS NULL | 1 IS NOT NULL |</span></pre>
+				<pre><span>+-----------+---------------+</span></pre>
+				<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>+-----------+---------------+</span></pre>
+				<p>请注意在<strong><span>MySQ</span><span>L</span></strong>中，<span>0</span>或 
+				<span>NULL</span>意味着假而其它值意味着真。布尔运算的默认真值是<span><span>1</span><span>。</span></span></p>
+				<p>对<span>NULL</span>的特殊处理即是在前面的章节中，为了决定哪个动物不再是活着的，使用<span>death 
+				IS NOT NULL</span>而不使用<span>death 
+				!= NULL</span>的原因。</p>
+				<p>在<span>GROUP 
+				BY</span>中，两个<span>NULL</span>值视为相同。</p>
+				<p>执行<span>ORDER 
+				BY</span>时，如果运行 <span>
+				<span>ORDER BY ... ASC</span><span>，</span></span>则<span>NULL</span>值出现在最前面，若运行<span>ORDER 
+				BY ... DESC</span>，则<span>NULL</span>值出现在最后面。</p>
+				<p>
+				<span>NULL</span>操作的常见错误是不能在定义为<span>NOT 
+				NULL</span>的列内插入<span>0</span>或空字符串，但事实并非如此。在<span>NULL</span>表示<span>&quot;</span>没有数值<span>&quot;</span>的地方有数值。使用<span>IS
+				</span><span>[</span><span>NOT</span><span>]</span><span> 
+				NULL</span>则可以很容易地进行测试，如下所示：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT 0 IS NULL, 0 IS NOT NULL, &#39;&#39; IS NULL, &#39;&#39; IS NOT NULL;</span></b></span></pre>
+				<pre><span>+-----------+---------------+------------+----------------+</span></pre>
+				<pre><span>| 0 IS NULL | 0 IS NOT NULL | &#39;&#39; IS NULL | &#39;&#39; IS NOT NULL |</span></pre>
+				<pre><span>+-----------+---------------+------------+----------------+</span></pre>
+				<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>+-----------+---------------+------------+----------------+</span></pre>
+				<p>因此完全可以在定义为<span>NOT 
+				NULL</span>的列内插入<span>0</span>或空字符串，实际是<span>NOT 
+				NULL</span>。参见<a href="problems.html#problems-with-null" title="A.5.3. Problems with NULL Values">A.5.3节，“与NULL值有关的问题<code class="literal"></code>”</a>。</div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="pattern-matching"></a>
+				3.3.4.7.&nbsp;模式匹配</h4></div></div></div><a class="indexterm" name="id2736481"></a><a class="indexterm" name="id2736488"></a><a class="indexterm" name="id2736498"></a>
+				<p><strong>
+				<span>
+				MySQ</span><span>L</span></strong>提供标准的<span>SQL</span>模式匹配，以及一种基于象<span>Unix</span>实用程序如<span><b><span>vi</span></b></span><b>、</b><span><b><span>grep</span></b></span>和<span><b><span>sed</span></b></span>的扩展正则表达式模式匹配的格式。</p>
+				<p><span>SQL</span>模式匹配允许你使用<samp><span>“</span><span>_</span><span>”</span></samp>匹配任何单个字符，而<samp><span>“</span><span>%</span><span>”</span></samp>匹配任意数目字符<span>(</span>包括零字符<span>)</span>。在<span> 
+				MySQL</span>中，<span>SQL</span>的模式默认是忽略大小写的。下面给出一些例子。注意使用<span>SQL</span>模式时，不能使用<span>=</span>或<span>!=</span>；而应使用<span>LIKE</span>或<span>NOT 
+				LIKE</span>比较操作符。</p>
+				<p>要想找出以<samp><span>“</span><span>b</span><span>”</span></samp>开头的名字：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name LIKE &#39;b%&#39;;</span></b></span></pre>
+				<pre><span>+--------+--------+---------+------+------------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+------------+</span></pre>
+				<pre><span>| Buffy&nbsp; | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Bowser | Diane&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1989-08-31 | 1995-07-29 |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+------------+</span></pre>
+				<p>要想找出以<samp><span>“</span><span>fy</span><span>”</span></samp>结尾的名字：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name LIKE &#39;%fy&#39;;</span></b></span></pre>
+				<pre><span>+--------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Fluffy | Harold | cat&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1993-02-04 | NULL&nbsp; |</span></pre>
+				<pre><span>| Buffy&nbsp; | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp; |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+-------+</span></pre>
+				<p>要想找出包含<samp><span>“</span><span>w</span><span>”</span></samp>的名字：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name LIKE &#39;%w%&#39;;</span></b></span></pre>
+				<pre><span>+----------+-------+---------+------+------------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | owner | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+------------+</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | Gwen&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1994-03-17 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | Diane | dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1989-08-31 | 1995-07-29 |</span></pre>
+				<pre><span>| Whistler | Gwen&nbsp; | bird&nbsp;&nbsp;&nbsp; | NULL | 1997-12-09 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+------------+</span></pre>
+				<p>要想找出正好包含<span>5</span>个字符的名字，使用<samp><span>“</span><span>_</span><span>”</span></samp>模式字符：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name LIKE &#39;_____&#39;;</span></b></span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Claws | Gwen&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1994-03-17 | NULL&nbsp; |</span></pre>
+				<pre><span>| Buffy | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp; |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<p>由<strong><span style="font-family:
+宋体;">MySQL</span></strong>提供的模式匹配的其它类型是使用扩展正则表达式。当你对这类模式进行匹配测试时，使用<span>REGEXP</span>和<span>NOT 
+				REGEXP</span>操作符<span>(</span>或<span>RLIKE</span>和<span>NOT 
+				RLIKE</span>，它们是同义词<span>)</span>。 </p>
+				<p>扩展正则表达式的一些字符是： </p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>‘<span>.</span>’匹配任何单个的字符。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>字符类<samp><span>“</span><span>[...]</span><span>”</span></samp>匹配在方括号内的任何字符。例如，<samp><span>“</span><span>[abc]</span><span>”</span></samp>匹配<samp><span>“</span><span>a</span><span>”</span></samp>、<samp><span>“</span><span>b</span><span>”</span></samp>或<samp><span>“</span><span>c</span><span>”</span></samp>。为了命名字符的范围，使用一个“<span>-</span>”。<samp><span>“</span><span>[a-z]</span><span>”</span></samp>匹配任何字母，而<samp><span>“</span><span>[0-9]</span><span>”</span></samp>匹配任何数字。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span><samp>
+				<span>“</span><span> 
+				* </span><span>”</span></samp>匹配零个或多个在它前面的字符。例如，<samp><span>“</span><span>x*</span><span>”</span></samp>匹配任何数量的<samp><span>“</span><span>x</span><span>”</span></samp>字符，<samp><span>“</span><span>[0-9]*</span><span>”</span></samp>匹配任何数量的数字，而<samp><span>“</span><span>.*</span><span>”</span></samp>匹配任何数量的任何字符。</p>
+				<ul type="disc">
+					<li>如果<span>REGEXP</span>模式与被测试值的任何地方匹配，模式就匹配<span>(</span>这不同于<span>LIKE</span>模式匹配，只有与整个值匹配，模式才匹配<span>)</span>。 
+					</li>
+				</ul>
+				<ul type="disc">
+					<li>为了定位一个模式以便它必须匹配被测试值的开始或结尾，在模式开始处使用<samp><span>“</span><span>^</span><span>”</span></samp>或<samp>在模式的结尾用<span>“</span><span>$</span><span>”</span></samp>。<span>
+					</span></li>
+				</ul>
+				<p>为了说明扩展正则表达式如何工作，下面使用<span>REGEXP</span>重写上面所示的<span>LIKE</span>查询：</p>
+				<p>为了找出以<samp><span>“</span><span>b</span><span>”</span></samp>开头的名字，使用<samp><span>“</span><span>^</span><span>”</span></samp>匹配名字的开始：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name REGEXP &#39;^b&#39;;</span></b></span></pre>
+				<pre><span>+--------+--------+---------+------+------------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+------------+</span></pre>
+				<pre><span>| Buffy&nbsp; | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Bowser | Diane&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1989-08-31 | 1995-07-29 |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+------------+</span></pre>
+				<p>如果你想强制使<span>REGEXP</span>比较区分大小写，使用<span>BINARY</span>关键字使其中一个字符串变为二进制字符串。该查询只匹配名称首字母的小写‘<span>b</span>’。</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name REGEXP BINARY &#39;^b&#39;;</span></b></span></pre>
+				<p>为了找出以<samp><span>“</span><span>fy</span><span>”</span></samp>结尾的名字，使用<samp><span>“</span><span>$</span><span>”</span></samp>匹配名字的结尾：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name REGEXP &#39;fy$&#39;;</span></b></span></pre>
+				<pre><span>+--------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Fluffy | Harold | cat&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1993-02-04 | NULL&nbsp; |</span></pre>
+				<pre><span>| Buffy&nbsp; | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp; |</span></pre>
+				<pre><span>+--------+--------+---------+------+------------+-------+</span></pre>
+				<p>为了找出包含一个<samp><span>“</span><span>w</span><span>”</span></samp>的名字，使用以下查询：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name REGEXP &#39;w&#39;;</span></b></span></pre>
+				<pre><span>+----------+-------+---------+------+------------+------------+</span></pre>
+				<pre><span>| name&nbsp;&nbsp;&nbsp;&nbsp; | owner | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+------------+</span></pre>
+				<pre><span>| Claws&nbsp;&nbsp;&nbsp; | Gwen&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1994-03-17 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>| Bowser&nbsp;&nbsp; | Diane | dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1989-08-31 | 1995-07-29 |</span></pre>
+				<pre><span>| Whistler | Gwen&nbsp; | bird&nbsp;&nbsp;&nbsp; | NULL | 1997-12-09 | NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+				<pre><span>+----------+-------+---------+------+------------+------------+</span></pre>
+				<p>
+				既然如果一个正则表达式出现在值的任何地方，其模式匹配了，就不必在先前的查询中在模式的两侧放置一个通配符以使得它匹配整个值，就像你使用了一个<span>SQL</span>模式那样。</p>
+				<p>为了找出包含正好<span>5</span>个字符的名字，使用<samp><span>“</span><span>^</span><span>”</span></samp>和<samp><span>“</span><span>$</span><span>”</span></samp>匹配名字的开始和结尾，和<span>5</span>个<samp><span>“</span><span>.</span><span>”</span></samp>实例在两者之间：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name REGEXP &#39;^.....$&#39;;</span></b></span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Claws | Gwen&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1994-03-17 | NULL&nbsp; |</span></pre>
+				<pre><span>| Buffy | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp; |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<p>你也可以使用<samp><span>“</span><span>{n}</span><span>”</span></samp>“重复<span>n</span>次”操作符重写前面的查询：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM pet WHERE name REGEXP &#39;^.{5}$&#39;;</span></b></span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| name&nbsp; | owner&nbsp; | species | sex&nbsp; | birth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | death |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<pre><span>| Claws | Gwen&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | 1994-03-17 | NULL&nbsp; |</span></pre>
+				<pre><span>| Buffy | Harold | dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; | 1989-05-13 | NULL&nbsp; |</span></pre>
+				<pre><span>+-------+--------+---------+------+------------+-------+</span></pre>
+				<p><a href="regexp.html">附录G：</a><a href="regexp.html" title="Appendix G. MySQL Regular Expressions"><i>MySQL正则表达式</i></a><span>
+				</span>提供了关于正则表达式的句法的详细信息。</div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="counting-rows"></a>
+				3.3.4.8.&nbsp;计数行</h4></div></div></div><a class="indexterm" name="id2737005"></a><a class="indexterm" name="id2737015"></a><a class="indexterm" name="id2737025"></a></div><div class="section"><div class="titlepage"><div><div>
+				数据库经常用于回答这个问题，“某个类型的数据在表中出现的频度<span>?</span>”例如，你可能想要知道你有多少宠物，或每位主人有多少宠物，或你可能想要对你的动物进行各种类型的普查。<p>
+				计算你拥有动物的总数目与“在<span>pet</span>表中有多少行<span>?</span>”是同样的问题，因为每个宠物有一个记录。<span><span>COUNT(</span><span>*</span><span>)</span></span>函数计算行数，所以计算动物数目的查询应为：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT COUNT(*) FROM pet;</span></b></span></pre>
+				<pre><span>+----------+</span></pre>
+				<pre><span>| COUNT(*) |</span></pre>
+				<pre><span>+----------+</span></pre>
+				<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9 |</span></pre>
+				<pre><span>+----------+</span></pre>
+				<p>在前面，你检索了拥有宠物的人的名字。如果你想要知道每个主人有多少宠物，你可以使用<span><span>COUNT( 
+				)</span>函数：</span></p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT owner, COUNT(*) FROM pet GROUP BY owner;</span></b></span></pre>
+				<pre><span>+--------+----------+</span></pre>
+				<pre><span>| owner&nbsp; | COUNT(*) |</span></pre>
+				<pre><span>+--------+----------+</span></pre>
+				<pre><span>| Benny&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>| Diane&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>| Gwen&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+				<pre><span>| Harold |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>+--------+----------+</span></pre>
+				<p>注意，使用<span>GROUP 
+				BY</span>对每个<span>owner</span>的所有记录分组，没有它，你会得到错误消息：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT owner, COUNT(*) FROM pet;</span></b></span></pre>
+				<pre><span>ERROR 1140 (42000): Mixing of GROUP columns (MIN(),MAX(),COUNT(),...) </span></pre>
+				<pre><span>with no GROUP columns is illegal if there is no GROUP BY clause</span></pre>
+				<p><span>COUNT( )</span>和<span>GROUP 
+				BY</span>以各种方式分类你的数据。下列例子显示出进行动物普查操作的不同方式。</p>
+				<p>每种动物的数量：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT species, COUNT(*) FROM pet GROUP BY species;</span></b></span></pre>
+				<pre><span>+---------+----------+</span></pre>
+				<pre><span>| species | COUNT(*) |</span></pre>
+				<pre><span>+---------+----------+</span></pre>
+				<pre><span>| bird&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>| dog&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+				<pre><span>| hamster |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| snake&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>+---------+----------+</span></pre>
+				<p>每种性别的动物数量：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT sex, COUNT(*) FROM pet GROUP BY sex;</span></b></span></pre>
+				<pre><span>+------+----------+</span></pre>
+				<pre><span>| sex&nbsp; | COUNT(*) |</span></pre>
+				<pre><span>+------+----------+</span></pre>
+				<pre><span>| NULL |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>| m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+				<pre><span>+------+----------+</span></pre>
+				<p>（在这个输出中，<span>NULL</span>表示“未知性别”。）</p>
+				<p>按种类和性别组合的动物数量： </p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT species, sex, COUNT(*) FROM pet GROUP BY species, sex;</span></b></span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<pre><span>| species | sex&nbsp; | COUNT(*) |</span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<pre><span>| bird&nbsp;&nbsp;&nbsp; | NULL |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| bird&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>| hamster | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| snake&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;1 |</span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<p>若使用<span>COUNT( )</span>，你不必检索整个表。例如<span>,
+				</span>前面的查询，当只对狗和猫进行时，应为：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT species, sex, COUNT(*) FROM pet</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE species = &#39;dog&#39; OR species = &#39;cat&#39;</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>GROUP BY species, sex;</span></b></span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<pre><span>| species | sex&nbsp; | COUNT(*) |</span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| dog&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<p>或，如果你仅需要知道已知性别的按性别的动物数目：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SELECT species, sex, COUNT(*) FROM pet</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE sex IS NOT NULL</span></b></span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>GROUP BY species, sex;</span></b></span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<pre><span>| species | sex&nbsp; | COUNT(*) |</span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<pre><span>| bird&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| dog&nbsp;&nbsp;&nbsp; &nbsp;| f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| dog&nbsp;&nbsp;&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+				<pre><span>| hamster | f&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>| snake&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+				<pre><span>+---------+------+----------+</span></pre>
+				<h4 class="title"><a name="multiple-tables"></a>
+				3.3.4.9.&nbsp;使用1个以上的表<br>
+&nbsp;</h4></div></div></div><a class="indexterm" name="id2737257"></a></div></div></div><div class="section"><div class="titlepage"><div><div>
+		<span>pet</span>表追踪你有哪个宠物。如果你想要记录其它相关信息，例如在他们一生中看兽医或何时后代出生，你需要另外的表。这张表应该像什么呢？需要：<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>它需要包含宠物名字以便你知道每个事件属于哪个动物。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>需要一个日期以便你知道事件是什么时候发生的。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>需要一个描述事件的字段。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果你想要对事件进行分类，则需要一个事件类型字段。</p>
+		<p>综合上述因素，<span>event</span>表的<span>CREATE 
+		TABLE</span>语句应为：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE event (name VARCHAR(20), date DATE,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>type VARCHAR(15), remark VARCHAR(255));</span></b></span></pre>
+		<p>对于<span>pet</span>表，最容易的方法是创建包含信息的用定位符分隔的文本文件来装载初始记录：</p>
+		<table border="1" cellpadding="0" id="table4">
+			<tr>
+				<td>
+				<p><strong>
+				<span>name</span></strong></td>
+				<td>
+				<p><strong>
+				<span>date</span></strong></td>
+				<td>
+				<p><strong>
+				<span>type</span></strong></td>
+				<td>
+				<p><strong>
+				<span>remark</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Fluffy</span></td>
+				<td>
+				<p><span>1995-05-15</span></td>
+				<td>
+				<p><span>litter</span></td>
+				<td>
+				<p><span>4 kittens, 3 female, 1 
+				male</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Buffy</span></td>
+				<td>
+				<p><span>1993-06-23</span></td>
+				<td>
+				<p><span>litter</span></td>
+				<td>
+				<p><span>5 puppies, 2 female, 3 
+				male</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Buffy</span></td>
+				<td>
+				<p><span>1994-06-19</span></td>
+				<td>
+				<p><span>litter</span></td>
+				<td>
+				<p><span>3 puppies, 3 female</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Chirpy</span></td>
+				<td>
+				<p><span>1999-03-21</span></td>
+				<td>
+				<p><span>vet</span></td>
+				<td>
+				<p><span>needed beak straightened</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Slim</span></td>
+				<td>
+				<p><span>1997-08-03</span></td>
+				<td>
+				<p><span>vet</span></td>
+				<td>
+				<p><span>broken rib</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Bowser</span></td>
+				<td>
+				<p><span>1991-10-12</span></td>
+				<td>
+				<p><span>kennel</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Fang</span></td>
+				<td>
+				<p><span>1991-10-12</span></td>
+				<td>
+				<p><span>kennel</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Fang</span></td>
+				<td>
+				<p><span>1998-08-28</span></td>
+				<td>
+				<p><span>birthday</span></td>
+				<td>
+				<p><span>Gave him a new chew toy</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Claws</span></td>
+				<td>
+				<p><span>1998-03-17</span></td>
+				<td>
+				<p><span>birthday</span></td>
+				<td>
+				<p><span>Gave him a new flea 
+				collar</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>Whistler</span></td>
+				<td>
+				<p><span>1998-12-09</span></td>
+				<td>
+				<p><span>birthday</span></td>
+				<td>
+				<p><span>First birthday</span></td>
+			</tr>
+		</table>
+		<p>采用如下方式装载记录：</p>
+		<pre><span>mysql&gt; </span><span><b><span>LOAD DATA LOCAL INFILE &#39;event.txt&#39; INTO TABLE event;</span></b></span></pre>
+		<p>根据你从已经运行在<span>pet</span>表上的查询中学到的，你应该能执行对<span>event</span>表中记录的检索；原理是一样的。但是什么时候<span>event</span>表本身不能回答你可能问的问题呢？</p>
+		<p>当他们有了一窝小动物时，假定你想要找出每只宠物的年龄。我们前面看到了如何通过两个日期计算年龄。<span>event</span>表中有母亲的生产日期，但是为了计算母亲的年龄，你需要她的出生日期，存储在<span>pet</span>表中。说明查询需要两个表：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT pet.name,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>(YEAR(date)-YEAR(birth)) - (RIGHT(date,5)&lt;RIGHT(birth,5)) AS age,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>remark</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>FROM pet, event</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE pet.name = event.name AND event.type = &#39;litter&#39;;</span></b></span></pre>
+		<pre><span>+--------+------+-----------------------------+</span></pre>
+		<pre><span>| name&nbsp;&nbsp; | age&nbsp; | remark&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+--------+------+-----------------------------+</span></pre>
+		<pre><span>| Fluffy |&nbsp;&nbsp;&nbsp; 2 | 4 kittens, 3 female, 1 male |</span></pre>
+		<pre><span>| Buffy&nbsp; |&nbsp;&nbsp;&nbsp; 4 | 5 puppies, 2 female, 3 male |</span></pre>
+		<pre><span>| Buffy&nbsp; |&nbsp;&nbsp;&nbsp; 5 | 3 puppies, 3 female&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+--------+------+-----------------------------+</span></pre>
+		<p><span>关于该查询要注意的几件事情：</span></p>
+		<ul type="disc">
+			<li>
+			<span>FROM</span>子句列出两个表，因为查询需要从两个表提取信息。</li>
+			<li>当从多个表组合<span>(</span>联结<span>)</span>信息时，你需要指定一个表中的记录怎样能匹配其它表的记录。这很简单，因为它们都有一个<span>name</span>列。查询使用<span>WHERE</span>子句基于<span>name</span>值来匹配<span>2</span>个表中的记录。</li>
+			<li>因为<span>name</span>列出现在两个表中，当引用列时，你一定要指定哪个表。把表名附在列名前即可以实现。</li>
+		</ul>
+		<p>
+		<span>你不必有<span>2</span>个不同的表来进行联结。如果你想要将一个表的记录与同一个表的其它记录进行比较，可以将一个表联结到自身。例如，为了在你的宠物之中繁殖配偶，你可以用</span><span >pet</span><span>联结自身来进行相似种类的雄雌配对：</span></p>
+		<p>
+		<span>&nbsp;</span></p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT p1.name, p1.sex, p2.name, p2.sex, p1.species</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>FROM pet AS p1, pet AS p2</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE p1.species = p2.species AND p1.sex = &#39;f&#39; AND p2.sex = &#39;m&#39;;</span></b></span></pre>
+		<pre><span>+--------+------+--------+------+---------+</span></pre>
+		<pre><span>| name&nbsp;&nbsp; | sex&nbsp; | name&nbsp;&nbsp; | sex&nbsp; | species |</span></pre>
+		<pre><span>+--------+------+--------+------+---------+</span></pre>
+		<pre><span>| Fluffy | f&nbsp;&nbsp;&nbsp; | Claws&nbsp; | m&nbsp;&nbsp;&nbsp; | cat&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| Buffy&nbsp; | f&nbsp;&nbsp;&nbsp; | Fang&nbsp;&nbsp; | m&nbsp;&nbsp;&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| Buffy&nbsp; | f&nbsp;&nbsp;&nbsp; | Bowser | m&nbsp;&nbsp;&nbsp; | dog&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+--------+------+--------+------+---------+</span></pre>
+		<p>在这个查询中，我们为表名指定别名以便能引用列并且使得每一个列引用与哪个表实例相关联更直观。</p>
+		<h2 class="title"><a name="getting-information"></a>
+		3.4.&nbsp;获得数据库和表的信息</h2></div></div></div><a class="indexterm" name="id2737770"></a><a class="indexterm" name="id2737780"></a><a class="indexterm" name="id2737790"></a></div><div class="section"><div class="titlepage"><div><div>
+		如果你忘记数据库或表的名字，或给定的表的结构是什么<span>(</span>例如，它的列叫什么<span>)</span>，怎么办？<strong><span style="
+">MySQL</span></strong>通过提供数据库及其支持的表的信息的几个语句解决这个问题。<p>你已经见到了<span>SHOW 
+		DATABASES</span>，它列出由服务器管理的数据库。为了找出当前选择了哪个数据库，使用<span>DATABASE( 
+		)</span>函数：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT DATABASE();</span></b></span></pre>
+		<pre><span>+------------+</span></pre>
+		<pre><span>| DATABASE() |</span></pre>
+		<pre><span>+------------+</span></pre>
+		<pre><span>| menagerie&nbsp; |</span></pre>
+		<pre><span>+------------+</span></pre>
+		<p>如果你还没选择任何数据库，结果是<span>NULL</span>。</p>
+		<p>为了找出当前的数据库包含什么表<span>(</span>例如，当你不能确定一个表的名字<span>)</span>，使用这个命令：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW TABLES;</span></b></span></pre>
+		<pre><span>+---------------------+</span></pre>
+		<pre><span>| Tables in menagerie |</span></pre>
+		<pre><span>+---------------------+</span></pre>
+		<pre><span>| event&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| pet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+---------------------+</span></pre>
+		<p>如果你想要知道一个表的结构，可以使用<span>DESCRIBE</span>命令；它显示表中每个列的信息：</p>
+		<pre><span>mysql&gt; </span><span><b><span>DESCRIBE pet;</span></b></span></pre>
+		<pre><span>+---------+-------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| Field&nbsp;&nbsp; | Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Null | Key | Default | Extra |</span></pre>
+		<pre><span>+---------+-------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| name&nbsp;&nbsp;&nbsp; | varchar(20) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| owner&nbsp;&nbsp; | varchar(20) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| species | varchar(20) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;|</span></pre>
+		<pre><span>| sex&nbsp;&nbsp;&nbsp;&nbsp; | char(1)&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| birth&nbsp;&nbsp; | date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| death&nbsp;&nbsp; | date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+---------+-------------+------+-----+---------+-------+</span></pre>
+		<p><span>Field</span>显示列名字，<span>Type</span>是列的数据类型，<span>Null</span>表示列是否能包含<span>NULL</span>值，<span>Key</span>显示列是否被索引而<span>Default</span>指定列的默认值。</p>
+		<p>如果表有索引，<span>SHOW INDEX 
+		FROM tbl_name</span>生成有关索引的信息。</p>
+		<h2 class="title"><a name="batch-mode"></a>
+		3.5.&nbsp;在批处理模式<span><strong class="command">下使用my</strong></span>sql</h2></div></div></div><a class="indexterm" name="id2737935"></a><a class="indexterm" name="id2737945"></a><a class="indexterm" name="id2737952"></a><a class="indexterm" name="id2737962"></a><a class="indexterm" name="id2737969"></a></div><div class="section"><div class="titlepage"><div><div>
+		在前面的章节中，你交互式地使用<span><b><span>mysql</span></b></span>输入查询并且查看结果。你也可以以批模式运行<span><b><span>mysql</span></b></span>。为了做到这些，把你想要运行的命令放在一个文件中，然后告诉<span><b><span>mysql</span></b></span>从文件读取它的输入：<pre><span>shell&gt; </span><span><b><span>mysql &lt; <i>batch-file</i></span></b></span></pre>
+		<p>如果在<span>Windows</span>下运行<strong><span>mysql</span></strong>，并且文件中有一些可以造成问题的特殊字符，可以这样操作：</p>
+		<pre><span>C:\&gt; </span><span><b><span>mysql -e &quot;source <i>batch-file</i>&quot;</span></b></span></pre>
+		<p>如果你需要在命令行上指定连接参数，命令应为：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql -h <i>host</i> -u <i>user</i> -p &lt; <i>batch-file</i></span></b></span></pre>
+		<pre><span>Enter password: </span><span><b><span>********</span></b></span></pre>
+		<p>当这样操作<span><b><span>mysql</span></b></span>时，则创建一个脚本文件，然后执行脚本。</p>
+		<p>如果你想在语句出现错误的时候仍想继续执行脚本，则应使用<span>--force</span>命令行选项。</p>
+		<p>为什么要使用一个脚本？有很多原因：</p>
+		<ul type="disc">
+			<li>如果你需要重复运行查询<span>(</span>比如说，每天或每周<span>)</span>，可以把它编成一个脚本，则每次执行时不必重新键入。</li>
+			<li>可以通过拷贝并编辑脚本文件从类似的现有的查询生成一个新查询。</li>
+			<li>
+			当你正在开发查询时，批模式也是很有用的，特别对多行命令或多语句命令序列。如果你犯了一个错误，你不必重新输入所有内容，只需要编辑脚本来改正错误，然后告诉<span><b><span>mysql</span></b></span>再次执行脚本。</li>
+			<li>如果你有一个产生多个输出的查询，你可以通过一个分页器而不是盯着它翻屏到屏幕的顶端来运行输出：</li>
+		</ul>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>shell&gt;<b> mysql &lt; batch-file | more</b></span></pre>
+		<ul type="disc">
+			<li>你可以捕捉文件中的输出以便进行进一步的处理：</li>
+		</ul>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>shell&gt;<b> mysql &lt; batch-file &gt; mysql.out</b></span></pre>
+		<ul type="disc">
+			<li>你可以将脚本分发给另外的人，以便他们也能运行命令。</li>
+			<li>某些情况不允许交互地使用，例如<span>, </span>
+			当你从一个<span><b><span>cron</span></b></span>任务中运行查询时。在这种情况下，你必须使用批模式。</li>
+		</ul>
+		<p>
+		当你以批模式运行<span>mysql</span>时，比起你交互地使用它时，其默认输出格式是不同的<span>(</span>更简明些<span>)</span>。例如，当交互式运行<span>SELECT 
+		DISTINCT species FROM pet</span>时，输出应为：</p>
+		<p>
+		<span>&nbsp;</span></p>
+		<pre><span>+---------+</span></pre>
+		<pre><span>| species |</span></pre>
+		<pre><span>+---------+</span></pre>
+		<pre><span>| bird&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| cat&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| dog&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| hamster |</span></pre>
+		<pre><span>| snake&nbsp;&nbsp; |</span></pre>
+		<pre><span>+---------+</span></pre>
+		<p>但是当以批模式运行时，输出应为：</p>
+		<pre><span>species</span></pre>
+		<pre><span>bird</span></pre>
+		<pre><span>cat</span></pre>
+		<pre><span>dog</span></pre>
+		<pre><span>hamster</span></pre>
+		<pre><span>snake</span></pre>
+		<p>如果你想要在批模式中得到交互输出格式，使用<span>mysql 
+		-t</span>。为了回显以输出被执行的命令，使用<span>mysql 
+		-vvv</span>。</p>
+		<p>你还可以使用源代码或 
+		<span>\</span><span>.</span>命令从<strong><span>mysql</span></strong>提示符运行脚本：</p>
+		<pre><span>mysql&gt; </span><span><b><span>source filename;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>\. filename</span></b></span></pre>
+		<h2 class="title"><a name="examples"></a>
+		3.6.&nbsp;常用查询的例子</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="tutorial.html#example-maximum-column">
+			3.6.1. 列的最大值</a></span></dt><dt><span class="section"><a href="tutorial.html#example-maximum-row">
+			3.6.2. 拥有某个列的最大值的行</a></span></dt><dt><span class="section"><a href="tutorial.html#example-maximum-column-group">
+			3.6.3. 列的最大值：按组</a></span></dt><dt><span class="section"><a href="tutorial.html#example-maximum-column-group-row">
+			3.6.4. 拥有某个字段的组间最大值的行</a></span></dt><dt><span class="section"><a href="tutorial.html#example-user-variables">
+			3.6.5. 使用用户变量</a></span></dt><dt><span class="section"><a href="tutorial.html#example-foreign-keys">
+			3.6.6. 使用外键</a></span></dt><dt><span class="section"><a href="tutorial.html#searching-on-two-keys">
+			3.6.7. 根据两个键搜索</a></span></dt><dt><span class="section"><a href="tutorial.html#calculating-days">
+			3.6.8. 根据天计算访问量</a></span></dt><dt><span class="section"><a href="tutorial.html#example-auto-increment">
+			3.6.9. 使用AUTO_INCREMENT</a></span></dt></dl></div><a class="indexterm" name="id2738257"></a><a class="indexterm" name="id2738267"></a>
+		<p>下面是一些学习如何用<strong><span>MySQL</span></strong>解决一些常见问题的例子。</p>
+		<p>在一些例子中，使用数据库表“<span>shop</span>”来储存某个商人（经销商）的每件物品<span>(</span>物品号<span>)</span>的价格。假定每个商人对每项物品有一个固定价格，那么<span>(</span>物品，商人<span>)</span>即为该记录的主关键字。</p>
+		<p>启动命令行工具<strong><span>mysql</span></strong>并选择数据库：</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql <i>your-database-name</i></span></b></span></pre>
+		<p>（在大多数<span>MySQL</span>中，你可以使用<span>test</span>数据库）。</p>
+		<p>你可以使用以下语句创建示例表：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE shop (</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>article INT(4) UNSIGNED ZEROFILL DEFAULT &#39;0000&#39; NOT NULL,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>dealer&nbsp; CHAR(20)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DEFAULT &#39;&#39;&nbsp;&nbsp;&nbsp;&nbsp; NOT NULL,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>price&nbsp;&nbsp; DOUBLE(16,2)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DEFAULT &#39;0.00&#39; NOT NULL,</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>PRIMARY KEY(article, dealer));</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>INSERT INTO shop VALUES</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>(1,&#39;A&#39;,3.45),(1,&#39;B&#39;,3.99),(2,&#39;A&#39;,10.99),(3,&#39;B&#39;,1.45),</span></b></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>(3,&#39;C&#39;,1.69),(3,&#39;D&#39;,1.25),(4,&#39;D&#39;,19.95);</span></b></span></pre>
+		<p>执行语句后，表应包含以下内容：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM shop;</span></b></span></pre>
+		<pre><span>+---------+--------+-------+</span></pre>
+		<pre><span>| article | dealer | price |</span></pre>
+		<pre><span>+---------+--------+-------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 0001 | A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp; 3.45 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 0001 | B&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp; 3.99 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 0002 | A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 10.99 |</span></pre>
+		<pre><span>| &nbsp;&nbsp;&nbsp;0003 | B&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp; 1.45 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 0003 | C&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp; 1.69 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 0003 | D&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp; 1.25 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 0004 | D&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 19.95 |</span></pre>
+		<pre><span>+---------+--------+-------+</span></pre>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="example-maximum-column"></a>
+			3.6.1.&nbsp;列的最大值</h3></div></div></div>
+			<p>“最大的物品号是什么？”</p>
+			<pre class="programlisting">SELECT MAX(article) AS article FROM shop;
+
++---------+
+| article |
++---------+
+|       4 |
++---------+
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="example-maximum-row"></a>
+			3.6.2.&nbsp;拥有某个列的最大值的行</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<em><span>任务：找出最贵物品的编号、销售商和价格。</span></em><p>
+			这很容易用一个子查询做到：</p>
+			<pre><span>SELECT article, dealer, price</span></pre>
+			<pre><span>FROM&nbsp;&nbsp; shop</span></pre>
+			<pre><span>WHERE&nbsp; price=(SELECT MAX(price) FROM shop);</span></pre>
+			<p>另一个解决方案是按价格降序排序所有行并用<strong><span>MySQL</span></strong>特定<span>LIMIT</span>子句只得到第一行：</p>
+			<pre><span>SELECT article, dealer, price</span></pre>
+			<pre><span>FROM shop</span></pre>
+			<pre><span>ORDER BY price DESC</span></pre>
+			<pre><span>LIMIT 1;</span></pre>
+			<p><strong><span>注</span></strong><span>:</span>如果有多项最贵的物品<span>(
+			</span>例如每个的价格为<span>19.95)</span><span>，<span>LIMIT</span></span>解决方案仅仅显示其中一个！</p>
+			<h3 class="title"><a name="example-maximum-column-group"></a>
+			3.6.3.&nbsp;列的最大值：按组</h3></div></div></div>
+			<p><em><span>任务：每项物品的的最高价格是多少？</span></em></p>
+			<pre class="programlisting">SELECT article, MAX(price) AS price
+FROM   shop
+GROUP BY article
+
++---------+-------+
+| article | price |
++---------+-------+
+|    0001 |  3.99 |
+|    0002 | 10.99 |
+|    0003 |  1.69 |
+|    0004 | 19.95 |
++---------+-------+
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="example-maximum-column-group-row"></a>
+			3.6.4.&nbsp;拥有某个字段的组间最大值的行</h3></div></div></div>
+			<p><em><span>任务：对每项物品，找出最贵价格的物品的经销商。</span></em></p>
+			<p>可以用这样一个子查询解决该问题：</p>
+			<pre class="programlisting">SELECT article, dealer, price
+FROM   shop s1
+WHERE  price=(SELECT MAX(s2.price)
+              FROM shop s2
+              WHERE s1.article = s2.article);
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="example-user-variables"></a>
+			3.6.5.&nbsp;使用用户变量</h3></div></div></div>
+			<p>你可以清空<span>MySQL</span>用户变量以记录结果，不必将它们保存到客户端的临时变量中。（参见
+        <a href="language-structure.html#variables" title="9.3. User Variables">
+			9.3节，“用户变量”</a><span>.</span>）。</p>
+			<p>例如，要找出价格最高或最低的物品的，其方法是：</p>
+			<pre class="programlisting">mysql&gt; <strong class="userinput">SELECT @min_price:=MIN(price),@max_price:=MAX(price) FROM shop;</strong>
+mysql&gt; <strong class="userinput">SELECT * FROM shop WHERE price=@min_price OR price=@max_price;</strong>
++---------+--------+-------+
+| article | dealer | price |
++---------+--------+-------+
+|    0003 | D      |  1.25 |
+|    0004 | D      | 19.95 |
++---------+--------+-------+
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="example-foreign-keys"></a>
+			3.6.6.&nbsp;使用外键</h3></div></div></div><a class="indexterm" name="id2738582"></a><a class="indexterm" name="id2738589"></a>
+			<p>在<span>MySQL</span>中，<span>InnoDB</span>表支持对外部关键字约束条件的检查。参见<a href="storage-engines.html#innodb" title="15.2. The InnoDB Storage Engine">15.2节，“InnoDB存储引擎”</a>。还可以参见
+        <a href="introduction.html#ansi-diff-foreign-keys" title="1.8.5.5. Foreign Keys">
+			1.8.5.5节，“外键”</a>。</p>
+			<p>只是联接两个表时，不需要外部关键字。对于除<span>InnoDB</span>类型的表，当使用<span>REFERENCES
+			<i>tbl_name</i>(<i>col_name</i>)</span>子句定义列时可以使用外部关键字，该子句没有实际的效果，<em><span>只作为备忘录或注释来提醒，你目前正定义的列指向另一个表中的一个列。</span></em>执行该语句时，实现下面很重要：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>MySQL</span>不执行表<span><i><span>tbl_name</span></i></span><span>
+			</span>中的动作，例如作为你正定义的表中的行的动作的响应而删除行；换句话说，该句法不会致使<span>ON 
+			DELETE</span>或<span>ON 
+			UPDATE</span>行为（如果你在<span>REFERENCES</span>子句中写入<span>ON 
+			DELETE</span>或<span>ON 
+			UPDATE</span>子句，将被忽略）。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>该句法可以创建一个<em><span>column</span></em>；但不创建任何索引或关键字。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果用该句法定义<span>InnoDB</span>表，将会导致错误。</p>
+			<p>你可以使用作为联接列创建的列，如下所示：</p>
+			<pre><span>CREATE TABLE person (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; name CHAR(60) NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PRIMARY KEY (id)</span></pre>
+			<pre><span>);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>CREATE TABLE shirt (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; style ENUM(&#39;t-shirt&#39;, &#39;polo&#39;, &#39;dress&#39;) NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; color ENUM(&#39;red&#39;, &#39;blue&#39;, &#39;orange&#39;, &#39;white&#39;, &#39;black&#39;) NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; owner SMALLINT UNSIGNED NOT NULL REFERENCES person(id),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PRIMARY KEY (id)</span></pre>
+			<pre><span>);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>INSERT INTO person VALUES (NULL, &#39;Antonio Paz&#39;);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SELECT @last := LAST_INSERT_ID();</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>INSERT INTO shirt VALUES</span></pre>
+			<pre><span>(NULL, &#39;polo&#39;, &#39;blue&#39;, @last),</span></pre>
+			<pre><span>(NULL, &#39;dress&#39;, &#39;white&#39;, @last),</span></pre>
+			<pre><span>(NULL, &#39;t-shirt&#39;, &#39;blue&#39;, @last);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>INSERT INTO person VALUES (NULL, &#39;Lilliana Angelovska&#39;);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SELECT @last := LAST_INSERT_ID();</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>INSERT INTO shirt VALUES</span></pre>
+			<pre><span>(NULL, &#39;dress&#39;, &#39;orange&#39;, @last),</span></pre>
+			<pre><span>(NULL, &#39;polo&#39;, &#39;red&#39;, @last),</span></pre>
+			<pre><span>(NULL, &#39;dress&#39;, &#39;blue&#39;, @last),</span></pre>
+			<pre><span>(NULL, &#39;t-shirt&#39;, &#39;white&#39;, @last);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SELECT * FROM person;</span></pre>
+			<pre><span>+----+---------------------+</span></pre>
+			<pre><span>| id | name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+----+---------------------+</span></pre>
+			<pre><span>|&nbsp; 1 | Antonio Paz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>|&nbsp; 2 | Lilliana Angelovska |</span></pre>
+			<pre><span>+----+---------------------+</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SELECT * FROM shirt;</span></pre>
+			<pre><span>+----+---------+--------+-------+</span></pre>
+			<pre><span>| id | style&nbsp;&nbsp; | color&nbsp; | owner |</span></pre>
+			<pre><span>+----+---------+--------+-------+</span></pre>
+			<pre><span>|&nbsp; 1 | polo&nbsp;&nbsp;&nbsp; | blue&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+			<pre><span>|&nbsp; 2 | dress&nbsp;&nbsp; | white&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+			<pre><span>|&nbsp; 3 | t-shirt | blue&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+			<pre><span>|&nbsp; 4 | dress&nbsp;&nbsp; | orange |&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>|&nbsp; 5 | polo&nbsp;&nbsp;&nbsp; | red&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>|&nbsp; 6 | dress&nbsp;&nbsp; | blue&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>|&nbsp; 7 | t-shirt | white&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>+----+---------+--------+-------+</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SELECT s.* FROM person p, shirt s</span></pre>
+			<pre><span> WHERE p.name LIKE &#39;Lilliana%&#39;</span></pre>
+			<pre><span>&nbsp;&nbsp; AND s.owner = p.id</span></pre>
+			<pre><span>&nbsp;&nbsp; AND s.color &lt;&gt; &#39;white&#39;;</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>+----+-------+--------+-------+</span></pre>
+			<pre><span>| id | style | color&nbsp; | owner |</span></pre>
+			<pre><span>+----+-------+--------+-------+</span></pre>
+			<pre><span>|&nbsp; 4 | dress | orange |&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>|&nbsp; 5 | polo&nbsp; | red&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>|&nbsp; 6 | dress | blue&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>+----+-------+--------+-------+</span></pre>
+			<p>按照这种方式使用，<span>REFERENCES</span>子句不会显示在<span>SHOW 
+			CREATE TABLE</span>或<span>DESCRIBE</span>的输出中<span>:
+			</span></p>
+			<pre><span>SHOW CREATE TABLE shirt\G</span></pre>
+			<pre><span>*************************** 1. row ***************************</span></pre>
+			<pre><span>Table: shirt</span></pre>
+			<pre><span>Create Table: CREATE TABLE `shirt` (</span></pre>
+			<pre><span>`id` smallint(5) unsigned NOT NULL auto_increment,</span></pre>
+			<pre><span>`style` enum(&#39;t-shirt&#39;,&#39;polo&#39;,&#39;dress&#39;) NOT NULL,</span></pre>
+			<pre><span>`color` enum(&#39;red&#39;,&#39;blue&#39;,&#39;orange&#39;,&#39;white&#39;,&#39;black&#39;) NOT NULL,</span></pre>
+			<pre><span>`owner` smallint(5) unsigned NOT NULL,</span></pre>
+			<pre><span>PRIMARY KEY&nbsp; (`id`)</span></pre>
+			<pre><span>) ENGINE=MyISAM DEFAULT CHARSET=latin1</span></pre>
+			<p>在列定义中，按这种方式使用<span>REFERENCES</span>作为注释或“提示”适用于表<span>MyISAM</span>和<span>BerkeleyDB</span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="searching-on-two-keys"></a>
+			3.6.7.&nbsp;根据两个键搜索</h3></div></div></div><a class="indexterm" name="id2738847"></a><a class="indexterm" name="id2738856"></a><a class="indexterm" name="id2738865"></a><a class="indexterm" name="id2738875"></a>
+			<p>可以充分利用使用单关键字的<span>OR</span>子句，如同<span>AND</span>的处理。</p>
+			<p>一个比较灵活的例子是寻找两个通过<span>OR</span>组合到一起的关键字：</p>
+			<pre><span>SELECT field1_index, field2_index FROM test_table</span></pre>
+			<pre><span>WHERE field1_index = &#39;1&#39; OR&nbsp; field2_index = &#39;1&#39;</span></pre>
+			<p>该情形是已经优化过的。参见<a href="optimization.html#index-merge-optimization" title="7.2.6. Index Merge Optimization">7.2.6节，“索引合并优化”</a>。</p>
+			<p>还可以使用<span>UNION</span>将两个单独的<span>SELECT</span>语句的输出合成到一起来更有效地解决该问题。参见<a href="sql-syntax.html#union" title="13.2.7.2. UNION Syntax">13.2.7.2节，“UNION语法<br>
+		”</a>。</p>
+			<p>每个<span>SELECT</span>只搜索一个关键字，可以进行优化：</p>
+			<pre><span>SELECT field1_index, field2_index</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; FROM test_table WHERE field1_index = &#39;1&#39;</span></pre>
+			<pre><span>UNION</span></pre>
+			<pre><span>SELECT field1_index, field2_index</span></pre>
+			<pre><span>&nbsp; &nbsp;&nbsp;FROM test_table WHERE field2_index = &#39;1&#39;;</span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="calculating-days"></a>
+			3.6.8.&nbsp;根据天计算访问量</h3></div></div></div><a class="indexterm" name="id2738963"></a><a class="indexterm" name="id2738972"></a><a class="indexterm" name="id2738981"></a><a class="indexterm" name="id2738990"></a>
+			<p>下面的例子显示了如何使用位组函数来计算每个月中用户访问网页的天数。</p>
+			<pre><span>CREATE TABLE t1 (year YEAR(4), month INT(2) UNSIGNED ZEROFILL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; day INT(2) UNSIGNED ZEROFILL);</span></pre>
+			<pre><span>INSERT INTO t1 VALUES(2000,1,1),(2000,1,20),(2000,1,30),(2000,2,2),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (2000,2,23),(2000,2,23);</span></pre>
+			<p>示例表中含有代表用户访问网页的年－月－日值。可以使用以下查询来确定每个月的访问天数：</p>
+			<pre><span>SELECT year,month,BIT_COUNT(BIT_OR(1&lt;&lt;day)) AS days FROM t1</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GROUP BY year,month;</span></pre>
+			<p>将返回：</p>
+			<pre><span>+------+-------+------+</span></pre>
+			<pre><span>| year | month | days |</span></pre>
+			<pre><span>+------+-------+------+</span></pre>
+			<pre><span>| 2000 |&nbsp;&nbsp;&nbsp; 01 |&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+			<pre><span>| 2000 |&nbsp;&nbsp;&nbsp; 02 |&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+			<pre><span>+------+-------+------+</span></pre>
+			<p>该查询计算了在表中按年<span>/</span>月组合的不同天数，可以自动去除重复的询问。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="example-auto-increment"></a>
+			3.6.9.&nbsp;使用AUTO_INCREMENT</h3></div></div></div><a class="indexterm" name="id2739065"></a><a class="indexterm" name="id2739072"></a><a class="indexterm" name="id2739079"></a>
+			<p>可以通过<span>AUTO_INCREMENT</span>属性为新的行产生唯一的标识：</p>
+			<pre><span>CREATE TABLE animals (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; id MEDIUMINT NOT NULL AUTO_INCREMENT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; name CHAR(30) NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp; PRIMARY KEY (id)</span></pre>
+			<pre><span> );</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>INSERT INTO animals (name) VALUES </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;(&#39;dog&#39;),(&#39;cat&#39;),(&#39;penguin&#39;),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; (&#39;lax&#39;),(&#39;whale&#39;),(&#39;ostrich&#39;);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SELECT * FROM animals;</span></pre>
+			<p>将返回：</p>
+			<pre><span>+----+---------+</span></pre>
+			<pre><span>| id | name&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+----+---------+</span></pre>
+			<pre><span>|&nbsp; 1 | dog&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>|&nbsp; 2 | cat&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>|&nbsp; 3 | penguin |</span></pre>
+			<pre><span>|&nbsp; 4 | lax&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>|&nbsp; 5 | whale&nbsp;&nbsp; |</span></pre>
+			<pre><span>|&nbsp; 6 | ostrich |</span></pre>
+			<pre><span>+----+---------+</span></pre>
+			<p>你可以使用<span>LAST_INSERT_ID()</span><span>SQL</span>函数或<span>mysql_insert_id()</span><span> 
+			C API</span>函数来查询最新的<span>AUTO_INCREMENT</span>值。这些函数与具体连接有关，因此其返回值不会被其它执行插入功能的连接影响。</p>
+			<p><strong><span>注释：</span></strong>对于多行插入，<span>LAST_INSERT_ID()</span>和<span>mysql_insert_id()</span>从插入的第一行实际返回<span>AUTO_INCREMENT</span>关键字。在复制设置中，通过该函数可以在其它服务器上正确复制多行插入。</p>
+			<p>对于<span>MyISAM</span>和<span>BDB</span>表，你可以在第二栏指定<span>AUTO_INCREMENT</span>以及多列索引。此时，<span>AUTO_INCREMENT</span>列生成的值的计算方法为：<span>MAX(<i>auto_increment_column</i>) 
+			+ 1 WHERE prefix=<i>given-prefix</i></span>。如果想要将数据放入到排序的组中可以使用该方法。</p>
+			<pre><span>CREATE TABLE animals (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; grp ENUM(&#39;fish&#39;,&#39;mammal&#39;,&#39;bird&#39;) NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id MEDIUMINT NOT NULL AUTO_INCREMENT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; name CHAR(30) NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PRIMARY KEY (grp,id)</span></pre>
+			<pre><span>);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>INSERT INTO animals (grp,name) VALUES </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;(&#39;mammal&#39;,&#39;dog&#39;),(&#39;mammal&#39;,&#39;cat&#39;),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; (&#39;bird&#39;,&#39;penguin&#39;),(&#39;fish&#39;,&#39;lax&#39;),(&#39;mammal&#39;,&#39;whale&#39;),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; (&#39;bird&#39;,&#39;ostrich&#39;);</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>SELECT * FROM animals ORDER BY grp,id;</span></pre>
+			<p>将返回：</p>
+			<pre><span>+--------+----+---------+</span></pre>
+			<pre><span>| grp&nbsp;&nbsp;&nbsp; | id | name&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+--------+----+---------+</span></pre>
+			<pre><span>| fish&nbsp;&nbsp; |&nbsp; 1 | lax&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| mammal |&nbsp; 1 | dog&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| mammal |&nbsp; 2 | cat&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| mammal |&nbsp; 3 | whale&nbsp;&nbsp; |</span></pre>
+			<pre><span>| bird&nbsp;&nbsp; |&nbsp; 1 | penguin |</span></pre>
+			<pre><span>| bird&nbsp;&nbsp; |&nbsp; 2 | ostrich |</span></pre>
+			<pre><span>+--------+----+---------+</span></pre>
+			<p>请注意在这种情况下（<span>AUTO_INCREMENT</span>列是多列索引的一部分），如果你在任何组中删除有最大<span>AUTO_INCREMENT</span>值的行，将会重新用到<span>AUTO_INCREMENT</span>值。对于<span>MyISAM</span>表也如此<span>,</span>对于该表一般不重复使用<span>AUTO_INCREMENT</span>值。</p>
+			<p>如果<span>AUTO_INCREMENT</span>列是多索引的一部分，<span>MySQL</span>将使用该索引生成以<span>AUTO_INCREMENT</span>列开始的序列值。。例如，如果<span>animals</span>表含有索引<span>PRIMARY 
+			KEY (grp, id)</span>和<span>INDEX(id)</span>，<span>MySQL</span>生成序列值时将忽略<span>PRIMARY 
+			KEY</span>。结果是，该表包含一个单个的序列，而不是符合<span>grp</span>值的序列。</p>
+			<p>要想以<span>AUTO_INCREMENT</span>值开始而不是<span>1</span>，你可以通过<span>CREATE 
+			TABLE</span>或<span>ALTER 
+			TABLE</span>来设置该值，如下所示<span>:</span></p>
+			<pre><span>mysql&gt; </span><span><b><span>ALTER TABLE tbl AUTO_INCREMENT = 100;</span></b></span></pre>
+			<p>关于<span>AUTO_INCREMENT</span>的详细信息：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如何为列指定<span>AUTO_INCREMENT</span>属性：<a href="sql-syntax.html#create-table" title="13.1.5. CREATE TABLE Syntax">13.1.5节，“CREATE 
+				TABLE语法”</a>和
+              <a href="sql-syntax.html#alter-table" title="13.1.2. ALTER TABLE Syntax">
+			13.1.2节，“ALTER 
+				TABLE语法”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>AUTO_INCREMENT</span>的动作取决于<span>SQL</span>模式：<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>找出含有最新<span>AUTO_INCREMENT</span>值的行：<a href="functions.html#comparison-operators" title="12.1.3. Comparison Functions and Operators">12.1.3节，“比较函数和操作符”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>设置将用到的<span>AUTO_INCREMENT</span>值<span>:
+			</span> <a href="sql-syntax.html#set-option" title="13.5.3. SET Syntax">
+			13.5.3节，“SET语法”</a><span>
+			</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>AUTO_INCREMENT</span>和复制：<a href="replication.html#replication-features" title="6.7. Replication Features and Known Problems">6.7节，“复制特性和已知问题”</a><span>. </span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>AUTO_INCREMENT</span>相关的可用于复制的<span>Server-system</span>变量<span>(</span><span>auto_increment_increment</span>和<span>auto_increment_offset</span><span>)</span>：<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+			<p>
+      </p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="twin"></a>
+		3.7.&nbsp;孪生项目的查询</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="tutorial.html#twin-pool">
+			3.7.1. 查找所有未分发的孪生项</a></span></dt><dt><span class="section"><a href="tutorial.html#twin-event">
+			3.7.2. 显示孪生对状态的表</a></span></dt></dl></div><a class="indexterm" name="id2739467"></a><a class="indexterm" name="id2739477"></a>
+		<p>这个项目是<span>Institute of Environmental Medicine at 
+		Karolinska Institutet Stockholm </span>和<span> the Section 
+		on Clinical Research in Aging and Psychology at the University of 
+		Southern California</span>的合作项目。</p>
+		<p>该项目包括筛选部分，即通过电话回访在瑞典超过<span> 65 </span>
+		岁的所有孪生。满足某种标准的孪生进入下一阶段。在下一阶段中，医生<span>/</span>护士小组将访问想参加的孪生。部分检查包括物理检查和神经、心理检查、实验室试验、神经成像、心理状况评估和家族历史搜集。并且，应根据医疗和环境风险因素来搜集数据。</p>
+		<p>可从以下链接找到孪生研究的更多信息：</p>
+		<p><span>
+		<a target="_top"  href="http://www.mep.ki.se/twinreg/index_en.html">
+		http://www.mep.ki.se/twinreg/index_en.html</a> </span></p>
+		<p>用一个用<span>Perl</span>和<strong><span style="
+">MySQL</span></strong>编写的<span>web</span>接口来管理项目的后面部分。</p>
+		<p>每天晚上所有会谈的数据被移入一个<strong><span>MySQL</span></strong>数据库。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="twin-pool"></a>
+			3.7.1.&nbsp;查找所有未分发的孪生项</h3></div></div></div>
+			<p>下列查询用来决定谁进入项目的第二部分：</p>
+			<pre class="programlisting">SELECT
+    CONCAT(p1.id, p1.tvab) + 0 AS tvid,
+    CONCAT(p1.christian_name, ' ', p1.surname) AS Name,
+    p1.postal_code AS Code,
+    p1.city AS City,
+    pg.abrev AS Area,
+    IF(td.participation = 'Aborted', 'A', ' ') AS A,
+    p1.dead AS dead1,
+    l.event AS event1,
+    td.suspect AS tsuspect1,
+    id.suspect AS isuspect1,
+    td.severe AS tsevere1,
+    id.severe AS isevere1,
+    p2.dead AS dead2,
+    l2.event AS event2,
+    h2.nurse AS nurse2,
+    h2.doctor AS doctor2,
+    td2.suspect AS tsuspect2,
+    id2.suspect AS isuspect2,
+    td2.severe AS tsevere2,
+    id2.severe AS isevere2,
+    l.finish_date
+FROM
+    twin_project AS tp
+    /* For Twin 1 */
+    LEFT JOIN twin_data AS td ON tp.id = td.id
+              AND tp.tvab = td.tvab
+    LEFT JOIN informant_data AS id ON tp.id = id.id
+              AND tp.tvab = id.tvab
+    LEFT JOIN harmony AS h ON tp.id = h.id
+              AND tp.tvab = h.tvab
+    LEFT JOIN lentus AS l ON tp.id = l.id
+              AND tp.tvab = l.tvab
+    /* For Twin 2 */
+    LEFT JOIN twin_data AS td2 ON p2.id = td2.id
+              AND p2.tvab = td2.tvab
+    LEFT JOIN informant_data AS id2 ON p2.id = id2.id
+              AND p2.tvab = id2.tvab
+    LEFT JOIN harmony AS h2 ON p2.id = h2.id
+              AND p2.tvab = h2.tvab
+    LEFT JOIN lentus AS l2 ON p2.id = l2.id
+              AND p2.tvab = l2.tvab,
+    person_data AS p1,
+    person_data AS p2,
+    postal_groups AS pg
+WHERE
+    /* p1 gets main twin and p2 gets his/her twin. */
+    /* ptvab is a field inverted from tvab */
+    p1.id = tp.id AND p1.tvab = tp.tvab AND
+    p2.id = p1.id AND p2.ptvab = p1.tvab AND
+    /* Just the screening survey */
+    tp.survey_no = 5 AND
+    /* Skip if partner died before 65 but allow emigration (dead=9) */
+    (p2.dead = 0 OR p2.dead = 9 OR
+     (p2.dead = 1 AND
+      (p2.death_date = 0 OR
+       (((TO_DAYS(p2.death_date) - TO_DAYS(p2.birthday)) / 365)
+        &gt;= 65))))
+    AND
+    (
+    /* Twin is suspect */
+    (td.future_contact = 'Yes' AND td.suspect = 2) OR
+    /* Twin is suspect - Informant is Blessed */
+    (td.future_contact = 'Yes' AND td.suspect = 1
+                               AND id.suspect = 1) OR
+    /* No twin - Informant is Blessed */
+    (ISNULL(td.suspect) AND id.suspect = 1
+                        AND id.future_contact = 'Yes') OR
+    /* Twin broken off - Informant is Blessed */
+    (td.participation = 'Aborted'
+     AND id.suspect = 1 AND id.future_contact = 'Yes') OR
+    /* Twin broken off - No inform - Have partner */
+    (td.participation = 'Aborted' AND ISNULL(id.suspect)
+                                  AND p2.dead = 0))
+    AND
+    l.event = 'Finished'
+    /* Get at area code */
+    AND SUBSTRING(p1.postal_code, 1, 2) = pg.code
+    /* Not already distributed */
+    AND (h.nurse IS NULL OR h.nurse=00 OR h.doctor=00)
+    /* Has not refused or been aborted */
+    AND NOT (h.status = 'Refused' OR h.status = 'Aborted'
+    OR h.status = 'Died' OR h.status = 'Other')
+ORDER BY
+    tvid;
+</pre>
+			<p>一些解释：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>CONCAT(p1.id, p1.tvab) + 0 
+			AS tvid</span></p>
+			<p>我们想要在<span>id</span>和<span>tvab</span>的连接上以数字顺序排序。结果加<span>0</span>使得<strong><span style="font-family:
+宋体;">MySQL</span></strong>把结果变为一个数字。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>列<span>id</span></p>
+			<p>这标识一对孪生。它是所有表中的一个键。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>列<span>tvab</span><span>
+			</span></p>
+			<p>这标识孪生中的一个。它的值为<span>1</span>或<span>2</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>列<span>ptvab</span></p>
+			<p>这是<span><span>tvab</span>的</span>一个逆运算。当<span>tvab</span>是<span>1</span>，它是<span>2</span>，反之亦然。它用来保存输入并且使<strong><span>MySQL</span><span>的</span></strong>优化查询更容易。</p>
+			<p>这个查询表明，怎样用联结<span>(</span><span>p1</span>和<span>p2</span><span>)</span>从同一个表中查找表。在例子中，这被用来检查孪生的一个是否在<span>65</span>岁前死了。如果如此，行不返回值。</p>
+			<p>上述所有孪生信息存在于所有表中。我们对<span>id,tvab</span>（所有表）和<span>id,ptvab</span><span> 
+			(</span><span>person_data</span><span>)
+			</span>上采用键以使查询更快。</p>
+			<p>在我们的生产机器上<span>(</span>一台<span>200MHz 
+			UltraSPARC)</span>，这个查询返回大约<span> 150-200 </span>
+			行并且时间不超过一秒。</p>
+			<table border="1" cellpadding="0" id="table5">
+				<tr>
+					<td width="236">
+					<p><strong><span>表</span></strong></td>
+					<td width="153">
+					<p><strong><span>行数</span></strong></td>
+				</tr>
+				<tr>
+					<td width="236">
+					<p>
+					<span>person_data</span></td>
+					<td width="153">
+					<p><span>71074</span></td>
+				</tr>
+				<tr>
+					<td width="236">
+					<p>
+					<span>lentus</span></td>
+					<td width="153">
+					<p><span>5291</span></td>
+				</tr>
+				<tr>
+					<td width="236">
+					<p>
+					<span>twin_project</span></td>
+					<td width="153">
+					<p><span>5286</span></td>
+				</tr>
+				<tr>
+					<td width="236">
+					<p>
+					<span>twin_data</span></td>
+					<td width="153">
+					<p><span>2012</span></td>
+				</tr>
+				<tr>
+					<td width="236">
+					<p>
+					<span>informant_data</span></td>
+					<td width="153">
+					<p><span>663</span></td>
+				</tr>
+				<tr>
+					<td width="236">
+					<p>
+					<span>harmony</span></td>
+					<td width="153">
+					<p><span>381</span></td>
+				</tr>
+				<tr>
+					<td width="236">
+					<p>
+					<span>postal_groups</span></td>
+					<td width="153">
+					<p><span>100</span></td>
+				</tr>
+			</table>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="twin-event"></a>
+		3.7.2.&nbsp;显示孪生对状态的表</h3></div></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		每一次会面以一个称为<span>event</span>的状态码结束。下面显示的查询被用来显示按事件组合的所有孪生的表。这表明多少对孪生已经完成，多少对的其中之一已完成而另一个拒绝了，等等。<pre><span>SELECT</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t1.event,</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t2.event,</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; COUNT(*)</span></pre>
+		<pre><span>FROM</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lentus AS t1,</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lentus AS t2,</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; twin_project AS tp</span></pre>
+		<pre><span>WHERE</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* We are looking at one pair at a time */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t1.id = tp.id</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND t1.tvab=tp.tvab</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND t1.id = t2.id</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* Just the screening survey */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND tp.survey_no = 5</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* This makes each pair only appear once */</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND t1.tvab=&#39;1&#39; AND t2.tvab=&#39;2&#39;</span></pre>
+		<pre><span>GROUP BY</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t1.event, t2.event;</span></pre>
+		<h2 class="title"><a name="apache"></a>
+		3.8.&nbsp;与Apache一起使用MySQL</h2></div></div></div><a class="indexterm" name="id2739926"></a></div></div><div>
+	还有一些项目，你可以从<span>MySQL</span>数据库鉴别用户，并且你还可以将日志文件写入<span>MySQL</span>数据库表。<p>
+	你可以将以下内容放到<span>Apache</span>配置文件中，更改<span>Apache</span>日志格式，使<span>MySQL</span>更容易读取：</p>
+	<pre><span>LogFormat \</span></pre>
+	<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &quot;\&quot;%h\&quot;,%{%Y%m%d%H%M%S}t,%&gt;s,\&quot;%b\&quot;,\&quot;%{Content-Type}o\&quot;,&nbsp; \</span></pre>
+	<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; \&quot;%U\&quot;,\&quot;%{Referer}i\&quot;,\&quot;%{User-Agent}i\&quot;&quot;</span></pre>
+	<p>要想将该格式的日志文件装载到<span>MySQL</span>，你可以使用以下语句<span>:
+	</span></p>
+	<pre><span>LOAD DATA INFILE &#39;</span><span><i><span>/local/access_log</span></i></span><span>&#39; INTO TABLE </span><span><i><span>tbl_name</span></i></span></pre>
+	<pre><span>FIELDS TERMINATED BY &#39;,&#39; OPTIONALLY ENCLOSED BY &#39;&quot;&#39; ESCAPED BY &#39;\\&#39;</span></pre>
+	<p>所创建的表中的列应与写入日志文件的<span>LogFormat</span>行对应。</p>
+	<hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，<span class="GramE">请访问</span><a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。 
+		原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</p></div>
+</body></html>

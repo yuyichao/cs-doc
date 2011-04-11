@@ -1,0 +1,799 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>创建一个复合构件</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="编写你自己的构件"
+HREF="c2132.html"><LINK
+REL="PREVIOUS"
+TITLE="一个构件的剖析"
+HREF="x2141.html"><LINK
+REL="NEXT"
+TITLE="从头创建构件"
+HREF="x2259.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2141.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>编写你自己的构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2259.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-CREATINGACOMPOSITEWIDGET">创建一个复合构件</H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2154">介绍</H2
+><P
+>你可能乐于创建这样一种类型的构件，它仅仅是其它 GTK 构件的一个组合。为组装用户界面元素以重复使用提供了便利的方法。在标准发布中的文件选择和颜色选择构件就是这种类型构件的示例。</P
+><P
+>我们将要在这一节创建一个井字游戏构件，一个 3X3 的开关按钮矩阵，当同一列、同一行或是对角线的所有三个按钮都被按下时触发一个信号。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/tictactoe.png"></SPAN
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2162">选择一个父类</H2
+><P
+>通常，一个复合构件的父类是一个容纳复合构件的所有元素的容器类。例如，文件选择构件的父类就是对话框类。因为我们的按钮排列在一个表中，看起来应该让表类作为我们的父类。但不幸的是，这样无法工作。构件的创建分为两个函数 - 一个用户调用的 <TT
+CLASS="LITERAL"
+>WIDGETNAME_new()</TT
+> 函数，另一个是 <TT
+CLASS="LITERAL"
+>WIDGETNAME_init()</TT
+> 函数作基本的初始化构件的工作，它不使用传递给 <TT
+CLASS="LITERAL"
+>_new()</TT
+> 函数的参数。子构件只调用父构件的 <TT
+CLASS="LITERAL"
+>_init</TT
+> 函数。但是这个分工不能在表中正常工作，因为创建表时需要知道表的行数和列数。除非我们想重新实现 <TT
+CLASS="LITERAL"
+>gtk_table_new()</TT
+> 的大多数功能,我们最好避免从表派生构件。由于这个原因，代替表，我们从纵向盒派生构件，然后把表放入纵向盒。</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2170">头文件</H2
+><P
+>每个构件类有一个头文件，该头文件用于声明构件的对象、类结构和公共函数。有两个特性是值得指出的。为避免重复定义，我们把整个头文件放入如下语句里：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#ifndef __TICTACTOE_H__
+#define __TICTACTOE_H__
+.
+.
+.
+#endif /* __TICTACTOE_H__ */</PRE
+></TD
+></TR
+></TABLE
+><P
+>并且让 C++ 程序也能包含该头文件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+.
+.
+.
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */</PRE
+></TD
+></TR
+></TABLE
+><P
+>在我们的头文件里，和函数、结构一起声明的还有三个标准宏。 <TT
+CLASS="LITERAL"
+>TICTACTOE(obj)</TT
+>, <TT
+CLASS="LITERAL"
+>TICTACTOE_CLASS(class)</TT
+> 和 <TT
+CLASS="LITERAL"
+>IS_TICTACTOE(obj)</TT
+>，这三个宏分别是将指针转换为指向对象、类的指针和检测一个对象是否是一个井字游戏构件。</P
+><P
+>下面是全部的头文件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;/* GTK - GIMP工具包
+ * 版权 (C) 1995-1997 Peter Mattis, Spencer Kimball 和 Josh MacDonald 所有
+ *
+ * 本程序是自由软件。你可以在自由软件基金发布的 GNU GPL 的条款下重新分发
+ * 或修改它。GPL 可以使用版本 2 或(由你选择)任何随后的版本。
+ *
+ * 本程序分发的目的是它可能对其他人有用，但不提供任何的担保，包括隐含的
+ * 和适合特定用途的保证。请查阅GNU通用公共许可证获得详细的信息。
+ *
+ * 你应该已经随该软件一起收到一份GNU通用公共许可。如果还没有，请写信给
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
+#ifndef __TICTACTOE_H__
+#define __TICTACTOE_H__
+
+
+#include &#60;gdk/gdk.h&#62;
+#include &#60;gtk/gtkvbox.h&#62;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+#define TICTACTOE(obj)          GTK_CHECK_CAST (obj, tictactoe_get_type (), Tictactoe)
+#define TICTACTOE_CLASS(klass)  GTK_CHECK_CLASS_CAST (klass, tictactoe_get_type (), TictactoeClass)
+#define IS_TICTACTOE(obj)       GTK_CHECK_TYPE (obj, tictactoe_get_type ())
+
+
+typedef struct _Tictactoe       Tictactoe;
+typedef struct _TictactoeClass  TictactoeClass;
+
+struct _Tictactoe
+{
+  GtkVBox vbox;
+  
+  GtkWidget *buttons[3][3];
+};
+
+struct _TictactoeClass
+{
+  GtkVBoxClass parent_class;
+
+  void (* tictactoe) (Tictactoe *ttt);
+};
+
+GtkType        tictactoe_get_type        (void);
+GtkWidget*     tictactoe_new             (void);
+void	       tictactoe_clear           (Tictactoe *ttt);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* __TICTACTOE_H__ */&#13;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2182"><TT
+CLASS="LITERAL"
+>_get_type()</TT
+> 函数</H2
+><P
+>现在，我们继续实现我们的构件。<TT
+CLASS="LITERAL"
+>WIDGETNAME_get_type()</TT
+> 函数是每个构件的核心函数。当第一次调用时，该函数告之 GTK 这个构件类并得到一个能唯一识别该构件类的 ID。之后的调用，只返回这个ID。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkType
+tictactoe_get_type ()
+{
+  static guint ttt_type = 0;
+
+  if (!ttt_type)
+    {
+      GtkTypeInfo ttt_info =
+      {
+	"Tictactoe",
+	sizeof (Tictactoe),
+	sizeof (TictactoeClass),
+	(GtkClassInitFunc) tictactoe_class_init,
+	(GtkObjectInitFunc) tictactoe_init,
+	(GtkArgSetFunc) NULL,
+        (GtkArgGetFunc) NULL
+      };
+
+      ttt_type = gtk_type_unique (gtk_vbox_get_type (), &#38;ttt_info);
+    }
+
+  return ttt_type;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>GtkTypeInfo 结构定义如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct _GtkTypeInfo
+{
+  gchar *type_name;
+  guint object_size;
+  guint class_size;
+  GtkClassInitFunc class_init_func;
+  GtkObjectInitFunc object_init_func;
+  GtkArgSetFunc arg_set_func;
+  GtkArgGetFunc arg_get_func;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个结构的域很形象。我们在这里忽略 <TT
+CLASS="LITERAL"
+>arg_set_func</TT
+> 和 <TT
+CLASS="LITERAL"
+>arg_get_func</TT
+> 这两个域：它们很重要，但大部分还未实现，它们允许解释性语言方便地设置构件的属性。一旦 GTK 正确的填充了该结构，它就知道了如何去创建一个特殊构件类型的对象。</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2193"><TT
+CLASS="LITERAL"
+>_class_init()</TT
+> 函数</H2
+><P
+><TT
+CLASS="LITERAL"
+>WIDGETNAME_class_init()</TT
+>函数初始化构件类结构的域，并为类设置任何信号。我们的井字游戏构件是这样的：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>enum {
+  TICTACTOE_SIGNAL,
+  LAST_SIGNAL
+};
+
+
+static gint tictactoe_signals[LAST_SIGNAL] = { 0 };
+
+static void
+tictactoe_class_init (TictactoeClass *class)
+{
+  GtkObjectClass *object_class;
+
+  object_class = (GtkObjectClass*) class;
+  
+  tictactoe_signals[TICTACTOE_SIGNAL] = gtk_signal_new ("tictactoe",
+					 GTK_RUN_FIRST,
+					 object_class-&#62;type,
+					 GTK_SIGNAL_OFFSET (TictactoeClass, tictactoe),
+					 gtk_signal_default_marshaller, GTK_TYPE_NONE, 0);
+
+
+  gtk_object_class_add_signals (object_class, tictactoe_signals, LAST_SIGNAL);
+
+  class-&#62;tictactoe = NULL;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>我们的构件只有一个<TT
+CLASS="LITERAL"
+>tictactoe</TT
+>信号，当连成一行、一列或一个对角线时，该信号被触发。并不是每个复合构件都需要信号，因此当你第一次阅读这节时，可以跳过看下一节，因为这一节对初学者有点难。</P
+><P
+>函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gint gtk_signal_new( const gchar         *name,
+                     GtkSignalRunType     run_type,
+                     GtkType              object_type,
+                     gint                 function_offset,
+                     GtkSignalMarshaller  marshaller,
+                     GtkType              return_val,
+                     guint                nparams,
+                     ...);</PRE
+></TD
+></TR
+></TABLE
+><P
+>创建一个新信号。参数是：</P
+><P
+></P
+><UL
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>name</TT
+>：信号的名称。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>run_type</TT
+>：设定是在用户处理函数之前还是之后运行默认处理函数。该值通常会是 <TT
+CLASS="LITERAL"
+>GTK_RUN_FIRST</TT
+> 或 <TT
+CLASS="LITERAL"
+>GTK_RUN_LAST</TT
+>，虽然也有其它值。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>object_type</TT
+>：发出该信号的对象的ID。(也可能是子对象的ID。)</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>function_offset</TT
+>：类结构指针相对于默认处理函数的偏移量。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>marshaller</TT
+>：一个用于调用信号处理函数的函数。对于除了发出信号的对象和用户数据外没有其它的参数的信号处理函数，我们可以使用事先提供的 marshaller 函数 <TT
+CLASS="LITERAL"
+>gtk_signal_default_marshaller</TT
+>。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>return_val</TT
+>：返回值的类型。</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>nparams</TT
+>：信号处理函数的参数个数 (除了前面提到的"发出信号的对象"和"用户数据"这两个默认参数 )</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>...</TT
+>：参数的数据类型。</P
+></LI
+></UL
+><P
+>当指定类型时，要用到 <TT
+CLASS="LITERAL"
+>GtkType</TT
+> 枚举类型：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef enum
+{
+  GTK_TYPE_INVALID,
+  GTK_TYPE_NONE,
+  GTK_TYPE_CHAR,
+  GTK_TYPE_BOOL,
+  GTK_TYPE_INT,
+  GTK_TYPE_UINT,
+  GTK_TYPE_LONG,
+  GTK_TYPE_ULONG,
+  GTK_TYPE_FLOAT,
+  GTK_TYPE_DOUBLE,
+  GTK_TYPE_STRING,
+  GTK_TYPE_ENUM,
+  GTK_TYPE_FLAGS,
+  GTK_TYPE_BOXED,
+  GTK_TYPE_FOREIGN,
+  GTK_TYPE_CALLBACK,
+  GTK_TYPE_ARGS,
+
+  GTK_TYPE_POINTER,
+
+  /* 如果下面两个最终能被删除就好了。*/
+  GTK_TYPE_SIGNAL,
+  GTK_TYPE_C_CALLBACK,
+
+  GTK_TYPE_OBJECT
+
+} GtkFundamentalType;</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>gtk_signal_new()</TT
+> 返回一个能识别信号的唯一整数，我们把它存储在 <TT
+CLASS="LITERAL"
+>tictactoe_signals</TT
+> 数组里，并用枚举值来做索引。(依照惯例，枚举成员是信号的名称，且是大写的，但在这里会与 <TT
+CLASS="LITERAL"
+>TICTACTOE()</TT
+> 宏冲突，因此我们用 <TT
+CLASS="LITERAL"
+>TICTACTOE_SIGNAL</TT
+> 代替。)</P
+><P
+>创建了信号之后，我们需要让 GTK 将我们的信号和 Tictactoe 类联系起来。调用 <TT
+CLASS="LITERAL"
+>gtk_object_class_add_signals()</TT
+> 函数可以做这件事。然后我们把指向 "tictactoe" 信号默认处理函数的指针设为 NULL，表明没有默认的动作。</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2242"><TT
+CLASS="LITERAL"
+>_init()</TT
+> 函数</H2
+><P
+>每个构件类也需要一个初始化对象结构的函数。通常，该函数有个相当有限的任务，就是设置结构成员为缺省值。对于复合构件，这个函数还创建成分(component)构件。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>static void
+tictactoe_init (Tictactoe *ttt)
+{
+  GtkWidget *table;
+  gint i,j;
+  
+  table = gtk_table_new (3, 3, TRUE);
+  gtk_container_add (GTK_CONTAINER(ttt), table);
+  gtk_widget_show (table);
+
+  for (i=0;i&#60;3; i++)
+    for (j=0;j&#60;3; j++)
+      {
+	ttt-&#62;buttons[i][j] = gtk_toggle_button_new ();
+	gtk_table_attach_defaults (GTK_TABLE(table), ttt-&#62;buttons[i][j], 
+				   i, i+1, j, j+1);
+	gtk_signal_connect (GTK_OBJECT (ttt-&#62;buttons[i][j]), "toggled",
+			    GTK_SIGNAL_FUNC (tictactoe_toggle), ttt);
+	gtk_widget_set_size_request (ttt-&#62;buttons[i][j], 20, 20);
+	gtk_widget_show (ttt-&#62;buttons[i][j]);
+      }
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2247">其余的...</H2
+><P
+>另外还有一个函数每个构件(除了基本的构件类型，如 Bin 不能实例化)都需要 - 被用户调用以创建一个该类型的对象的函数。这个调用通常是 <TT
+CLASS="LITERAL"
+>WIDGETNAME_new()</TT
+>。在有些构件里，该函数获得几个参数，依据这几个参数做一些设置，我们的井字游戏构件没有这样做。另外两个函数是针对井字游戏构件的。</P
+><P
+><TT
+CLASS="LITERAL"
+>tictactoe_clear()</TT
+> 是一个公共函数，它复位构件中的按钮。注意 <TT
+CLASS="LITERAL"
+>gtk_signal_handler_block_by_data()</TT
+> 函数用来防止按钮切换信号处理函数被不必要地触发。</P
+><P
+><TT
+CLASS="LITERAL"
+>tictactoe_toggle()</TT
+> 是当用户点击按钮时调用的信号处理函数。它判断开关按钮中是否出现了导致赢的组合，如果是，则发出 "tictactoe" 信号。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget*
+tictactoe_new ()
+{
+  return GTK_WIDGET ( gtk_type_new (tictactoe_get_type ()));
+}
+
+void	       
+tictactoe_clear (Tictactoe *ttt)
+{
+  int i,j;
+
+  for (i=0;i&#60;3;i++)
+    for (j=0;j&#60;3;j++)
+      {
+	gtk_signal_handler_block_by_data (GTK_OBJECT(ttt-&#62;buttons[i][j]), ttt);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ttt-&#62;buttons[i][j]),
+				     FALSE);
+	gtk_signal_handler_unblock_by_data (GTK_OBJECT(ttt-&#62;buttons[i][j]), ttt);
+      }
+}
+
+static void
+tictactoe_toggle (GtkWidget *widget, Tictactoe *ttt)
+{
+  int i,k;
+
+  static int rwins[8][3] = { { 0, 0, 0 }, { 1, 1, 1 }, { 2, 2, 2 },
+			     { 0, 1, 2 }, { 0, 1, 2 }, { 0, 1, 2 },
+			     { 0, 1, 2 }, { 0, 1, 2 } };
+  static int cwins[8][3] = { { 0, 1, 2 }, { 0, 1, 2 }, { 0, 1, 2 },
+			     { 0, 0, 0 }, { 1, 1, 1 }, { 2, 2, 2 },
+			     { 0, 1, 2 }, { 2, 1, 0 } };
+
+  int success, found;
+
+  for (k=0; k&#60;8; k++)
+    {
+      success = TRUE;
+      found = FALSE;
+
+      for (i=0;i&#60;3;i++)
+	{
+	  success = success &#38;&#38; 
+	    GTK_TOGGLE_BUTTON(ttt-&#62;buttons[rwins[k][i]][cwins[k][i]])-&#62;active;
+	  found = found ||
+	    ttt-&#62;buttons[rwins[k][i]][cwins[k][i]] == widget;
+	}
+      
+      if (success &#38;&#38; found)
+	{
+	  gtk_signal_emit (GTK_OBJECT (ttt), 
+			   tictactoe_signals[TICTACTOE_SIGNAL]);
+	  break;
+	}
+    }
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>最后，一个使用我们的井字游戏构件的程序示例：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &#60;gtk/gtk.h&#62;
+#include "tictactoe.h"
+
+/* 当赢了时调用 */
+void
+win (GtkWidget *widget, gpointer data)
+{
+  g_print ("Yay!\n");
+  tictactoe_clear (TICTACTOE (widget));
+}
+
+int 
+main (int argc, char *argv[])
+{
+  GtkWidget *window;
+  GtkWidget *ttt;
+  
+  gtk_init (&#38;argc, &#38;argv);
+
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  
+  gtk_window_set_title (GTK_WINDOW (window), "Aspect Frame");
+  
+  gtk_signal_connect (GTK_OBJECT (window), "destroy",
+		      GTK_SIGNAL_FUNC (gtk_exit), NULL);
+  
+  gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+
+  /* 创建一个新的井字游戏构件 */
+  ttt = tictactoe_new ();
+  gtk_container_add (GTK_CONTAINER (window), ttt);
+  gtk_widget_show (ttt);
+
+  /* 连接 "tictactoe" 信号的处理函数 */
+  gtk_signal_connect (GTK_OBJECT (ttt), "tictactoe",
+		      GTK_SIGNAL_FUNC (win), NULL);
+
+  gtk_widget_show (window);
+  
+  gtk_main ();
+  
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2141.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2259.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>一个构件的剖析</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2132.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>从头创建构件</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

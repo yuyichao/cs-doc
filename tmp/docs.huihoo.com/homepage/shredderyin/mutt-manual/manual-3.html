@@ -1,0 +1,773 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The Mutt E-Mail Client: Configuration</TITLE>
+ <LINK HREF="manual-4.html" REL=next>
+ <LINK HREF="manual-2.html" REL=previous>
+ <LINK HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc3" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="manual-4.html">Next</A>
+<A HREF="manual-2.html">Previous</A>
+<A HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc3">Contents</A>
+<HR>
+<H2><A NAME="s3">3. Configuration</A></H2>
+
+<P>
+<P>While the default configuration (or ``preferences'') make Mutt
+usable right out of the box, it is often desirable to tailor Mutt to
+suit your own tastes. When Mutt is first invoked, it will attempt to
+read the ``system'' configuration file (defaults set by your local
+system administrator), unless the ``-n'' 
+<A HREF="manual-6.html#commandline">command line</A> option is specified.  This file is typically
+<CODE>/usr/local/share/mutt/Muttrc</CODE> or <CODE>/etc/Muttrc</CODE>. Mutt
+will next look for a file named <CODE>.muttrc</CODE> in your home
+directory.  If this file does not exist and your home directory has
+a subdirectory named <CODE>.mutt</CODE>, mutt try to load a file named
+<CODE>.mutt/muttrc</CODE>. 
+<P><CODE>.muttrc</CODE> is the file where you will usually place your 
+<A HREF="manual-6.html#commands">commands</A> to configure Mutt.
+<P>In addition, mutt supports version specific configuration files that are
+parsed instead of the default files as explained above.  For instance, if
+your system has a <CODE>Muttrc-0.88</CODE> file in the system configuration
+directory, and you are running version 0.88 of mutt, this file will be
+sourced instead of the <CODE>Muttrc</CODE> file.  The same is true of the user
+configuration file, if you have a file <CODE>.muttrc-0.88.6</CODE> in your home
+directory, when you run mutt version 0.88.6, it will source this file
+instead of the default <CODE>.muttrc</CODE> file.  The version number is the
+same which is visible using the ``-v'' 
+<A HREF="manual-6.html#commandline">command line</A> switch or using the <CODE>show-version</CODE> key (default:
+V) from the index menu.
+<P>
+<H2><A NAME="muttrc-syntax"></A> <A NAME="ss3.1">3.1 Syntax of Initialization Files</A>
+</H2>
+
+<P>
+<P>An initialization file consists of a series of 
+<A HREF="manual-6.html#commands">commands</A>.  Each line of the file may contain one or more commands.
+When multiple commands are used, they must be separated by a semicolon (;).
+<BLOCKQUOTE><CODE>
+<PRE>
+set realname='Mutt user' ; ignore x-
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The hash mark, or pound sign
+(``#''), is used as a ``comment'' character. You can use it to
+annotate your initialization file. All text after the comment character
+to the end of the line is ignored. For example,
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+my_hdr X-Disclaimer: Why are you listening to me? # This is a comment
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Single quotes (') and double quotes (&quot;) can be used to quote strings
+which contain spaces or other special characters.  The difference between
+the two types of quotes is similar to that of many popular shell programs,
+namely that a single quote is used to specify a literal string (one that is
+not interpreted for shell variables or quoting with a backslash [see
+next paragraph]), while double quotes indicate a string for which
+should be evaluated.  For example, backtics are evaluated inside of double
+quotes, but <B>not</B> for single quotes.
+<P>\ quotes the next character, just as in shells such as bash and zsh.
+For example, if want to put quotes ``&quot;'' inside of a string, you can use
+``\'' to force the next character to be a literal instead of interpreted
+character.
+<BLOCKQUOTE><CODE>
+<PRE>
+set realname="Michael \"MuttDude\" Elkins"
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>``\\'' means to insert a literal ``\'' into the line.
+``\n'' and ``\r'' have their usual C meanings of linefeed and
+carriage-return, respectively.
+<P>A \ at the end of a line can be used to split commands over
+multiple lines, provided that the split points don't appear in the
+middle of command names.
+<P>It is also possible to substitute the output of a Unix command in an
+initialization file.  This is accomplished by enclosing the command in
+backquotes (``).  For example,
+<BLOCKQUOTE><CODE>
+<PRE>
+my_hdr X-Operating-System: `uname -a`
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The output of the Unix command ``uname -a'' will be substituted before the
+line is parsed.  Note that since initialization files are line oriented, only
+the first line of output from the Unix command will be substituted.
+<P>UNIX environments can be accessed like the way it is done in shells like
+sh and bash: Prepend the name of the environment by a ``$''.  For
+example,
+<BLOCKQUOTE><CODE>
+<PRE>
+set record=+sent_on_$HOSTNAME
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>The commands understood by mutt are explained in the next paragraphs.
+For a complete list, see the 
+<A HREF="manual-6.html#commands">command reference</A>.
+<P>
+<H2><A NAME="alias"></A> <A NAME="ss3.2">3.2 Defining/Using aliases</A>
+</H2>
+
+<P>
+<P>Usage: <CODE>alias</CODE> <EM>key</EM> <EM>address</EM> [ , <EM>address</EM>, ... ]
+<P>It's usually very cumbersome to remember or type out the address of someone
+you are communicating with.  Mutt allows you to create ``aliases'' which map
+a short string to a full address.
+<P><B>Note:</B> if you want to create an alias for a group (by specifying more than
+one address), you <B>must</B> separate the addresses with a comma (``,'').
+<P>To remove an alias or aliases (``*'' means all aliases):
+<P><CODE>unalias</CODE> [ * | <EM>key</EM> <EM>...</EM> ]
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+alias muttdude me@cs.hmc.edu (Michael Elkins)
+alias theguys manny, moe, jack
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Unlike other mailers, Mutt doesn't require aliases to be defined
+in a special file.  The <CODE>alias</CODE> command can appear anywhere in
+a configuration file, as long as this file is 
+<A HREF="manual-3.html#source">sourced</A>.  Consequently, you can have multiple alias files, or
+you can have all aliases defined in your muttrc.
+<P>On the other hand, the 
+<A HREF="manual-2.html#create-alias">create-alias</A>
+function can use only one file, the one pointed to by the 
+<A HREF="manual-6.html#alias_file">$alias_file</A> variable (which is
+<CODE>~/.muttrc</CODE> by default). This file is not special either,
+in the sense that Mutt will happily append aliases to any file, but in
+order for the new aliases to take effect you need to explicitly 
+<A HREF="manual-3.html#source">source</A> this file too.
+<P>For example:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+source /usr/local/share/Mutt.aliases
+source ~/.mail_aliases
+set alias_file=~/.mail_aliases
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>To use aliases, you merely use the alias at any place in mutt where mutt
+prompts for addresses, such as the <EM>To:</EM> or <EM>Cc:</EM> prompt.  You can
+also enter aliases in your editor at the appropriate headers if you have the
+<A HREF="manual-6.html#edit_headers">$edit_headers</A> variable set.
+<P>In addition, at the various address prompts, you can use the tab character
+to expand a partial alias to the full alias.  If there are multiple matches,
+mutt will bring up a menu with the matching aliases.  In order to be
+presented with the full list of aliases, you must hit tab with out a partial
+alias, such as at the beginning of the prompt or after a comma denoting
+multiple addresses.
+<P>In the alias menu, you can select as many aliases as you want with the
+<EM>select-entry</EM> key (default: RET), and use the <EM>exit</EM> key
+(default: q) to return to the address prompt.
+<P>
+<H2><A NAME="bind"></A> <A NAME="ss3.3">3.3 Changing the default key bindings</A>
+</H2>
+
+<P>Usage: <CODE>bind</CODE> <EM>map</EM> <EM>key</EM> <EM>function</EM>
+<P>This command allows you to change the default key bindings (operation
+invoked when pressing a key).
+<P><EM>map</EM> specifies in which menu the binding belongs.  The currently
+defined maps are:
+<P>
+<UL>
+<LI>generic</LI>
+<LI>alias</LI>
+<LI>attach</LI>
+<LI>browser</LI>
+<LI>editor</LI>
+<LI>index</LI>
+<LI>compose</LI>
+<LI>pager</LI>
+<LI>pgp</LI>
+<LI>postpone</LI>
+</UL>
+<P><EM>key</EM> is the key (or key sequence) you wish to bind.  To specify a
+control character, use the sequence <EM>\Cx</EM>, where <EM>x</EM> is the
+letter of the control character (for example, to specify control-A use
+``\Ca'').  Note that the case of <EM>x</EM> as well as <EM>\C</EM> is
+ignored, so that <EM>\CA, \Ca, \cA</EM> and <EM>\ca</EM> are all
+equivalent.  An alternative form is to specify the key as a three digit
+octal number prefixed with a ``\'' (for example <EM>\177</EM> is
+equivalent to <EM>\c?</EM>).
+<P>In addition, <EM>key</EM> may consist of:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+\t              tab
+&lt;tab>           tab
+\r              carriage return
+\n              newline
+\e              escape
+&lt;esc>           escape
+&lt;up>            up arrow
+&lt;down>          down arrow
+&lt;left>          left arrow
+&lt;right>         right arrow
+&lt;pageup>        Page Up
+&lt;pagedown>      Page Down
+&lt;backspace>     Backspace
+&lt;delete>        Delete
+&lt;insert>        Insert
+&lt;enter>         Enter
+&lt;return>        Return
+&lt;home>          Home
+&lt;end>           End
+&lt;space>         Space bar
+&lt;f1>            function key 1
+&lt;f10>           function key 10
+</PRE>
+</CODE></BLOCKQUOTE>
+<P><EM>key</EM> does not need to be enclosed in quotes unless it contains a
+space (`` '').
+<P><EM>function</EM> specifies which action to take when <EM>key</EM> is pressed.
+For a complete list of functions, see the 
+<A HREF="manual-6.html#functions">reference</A>.  The special function <CODE>noop</CODE> unbinds the specify key
+sequence.
+<P>
+<H2><A NAME="charset-hook"></A> <A NAME="ss3.4">3.4 Defining aliases for character sets </A>
+</H2>
+
+<P>Usage: <CODE>charset-hook</CODE> <EM>alias</EM> <EM>charset</EM><BR>
+Usage: <CODE>iconv-hook</CODE> <EM>charset</EM> <EM>local-charset</EM>
+<P>The <CODE>charset-hook</CODE> command defines an alias for a character set.
+This is useful to properly display messages which are tagged with a
+character set name not known to mutt.
+<P>The <CODE>iconv-hook</CODE> command defines a system-specific name for a
+character set.  This is helpful when your systems character
+conversion library insists on using strange, system-specific names
+for character sets.
+<P>
+<P>
+<H2><A NAME="folder-hook"></A> <A NAME="ss3.5">3.5 Setting variables based upon mailbox</A>
+</H2>
+
+<P>Usage: <CODE>folder-hook</CODE> [!]<EM>regexp</EM> <EM>command</EM>
+<P>It is often desirable to change settings based on which mailbox you are
+reading.  The folder-hook command provides a method by which you can execute
+any configuration command.  <EM>pattern</EM> is a regular expression specifying
+in which mailboxes to execute <EM>command</EM> before loading.  If a mailbox
+matches multiple folder-hook's, they are executed in the order given in the
+muttrc.
+<P><B>Note:</B> if you use the ``!'' shortcut for 
+<A HREF="manual-6.html#spoolfile">$spoolfile</A> at the beginning of the pattern, you must place it
+inside of double or single quotes in order to distinguish it from the
+logical <EM>not</EM> operator for the expression.
+<P>Note that the settings are <EM>not</EM> restored when you leave the mailbox.
+For example, a command action to perform is to change the sorting method
+based upon the mailbox being read:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+folder-hook mutt set sort=threads
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>However, the sorting method is not restored to its previous value when
+reading a different mailbox.  To specify a <EM>default</EM> command, use the
+pattern ``.'':
+<P>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+folder-hook . set sort=date-sent
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="macro"></A> <A NAME="ss3.6">3.6 Keyboard macros</A>
+</H2>
+
+<P>Usage: <CODE>macro</CODE> <EM>menu</EM> <EM>key</EM> <EM>sequence</EM> [ <EM>description</EM> ]
+<P>Macros are useful when you would like a single key to perform a series of
+actions.  When you press <EM>key</EM> in menu <EM>menu</EM>, Mutt will behave as if
+you had typed <EM>sequence</EM>.  So if you have a common sequence of commands
+you type, you can create a macro to execute those commands with a single
+key.
+<P><EM>key</EM> and <EM>sequence</EM> are expanded by the same rules as the 
+<A HREF="manual-3.html#bind">key bindings</A>.  There are some additions however.  The
+first is that control characters in <EM>sequence</EM> can also be specified
+as <EM>^x</EM>.  In order to get a caret (`^'') you need to use
+<EM>^^</EM>.  Secondly, to specify a certain key such as <EM>up</EM>
+or to invoke a function directly, you can use the format
+<EM>&lt;key name&gt;</EM> and <EM>&lt;function name&gt;</EM>.  For a listing of key
+names see the section on 
+<A HREF="manual-3.html#bind">key bindings</A>.  Functions
+are listed in the 
+<A HREF="manual-6.html#functions">function reference</A>.
+<P>The advantage with using function names directly is that the macros will
+work regardless of the current key bindings, so they are not dependent on
+the user having particular key definitions.  This makes them more robust
+and portable, and also facilitates defining of macros in files used by more
+than one user (eg. the system Muttrc).
+<P>Optionally you can specify a descriptive text after <EM>sequence</EM>,
+which is shown in the help screens.
+<P><B>Note:</B> Macro definitions (if any) listed in the help screen(s), are
+silently truncated at the screen width, and are not wrapped.   
+<P>
+<H2><A NAME="color"></A> <A NAME="ss3.7">3.7 Using color and mono video attributes</A>
+</H2>
+
+<P>Usage: <CODE>color</CODE> <EM>object</EM> <EM>foreground</EM> <EM>background</EM> [ <EM>regexp</EM> ]<BR>
+Usage: <CODE>color</CODE> index <EM>foreground</EM> <EM>background</EM> <EM>pattern</EM><BR>
+Usage: <CODE>uncolor</CODE> index <EM>pattern</EM> [ <EM>pattern</EM> ...  ]<BR>
+<P>If your terminal supports color, you can spice up Mutt by creating your own
+color scheme.  To define the color of an object (type of information), you
+must specify both a foreground color <B>and</B> a background color (it is not
+possible to only specify one or the other).
+<P><EM>object</EM> can be one of:
+<P>
+<UL>
+<LI>attachment</LI>
+<LI>body (match <EM>regexp</EM> in the body of messages)</LI>
+<LI>bold (hiliting bold patterns in the body of messages)</LI>
+<LI>error (error messages printed by Mutt)</LI>
+<LI>header (match <EM>regexp</EM> in the message header)</LI>
+<LI>hdrdefault (default color of the message header in the pager)</LI>
+<LI>index (match <EM>pattern</EM> in the message index)</LI>
+<LI>indicator (arrow or bar used to indicate the current item in a menu)</LI>
+<LI>markers (the ``+'' markers at the beginning of wrapped lines in the pager)</LI>
+<LI>message (informational messages)</LI>
+<LI>normal</LI>
+<LI>quoted (text matching 
+<A HREF="manual-6.html#quote_regexp">$quote_regexp</A> in the body of a message)</LI>
+<LI>quoted1, quoted2, ..., quoted<B>N</B> (higher levels of quoting)</LI>
+<LI>search (hiliting of words in the pager)</LI>
+<LI>signature</LI>
+<LI>status (mode lines used to display info about the mailbox or message)</LI>
+<LI>tilde (the ``~'' used to pad blank lines in the pager)</LI>
+<LI>tree (thread tree drawn in the message index and attachment menu)</LI>
+<LI>underline (hiliting underlined patterns in the body of messages)</LI>
+</UL>
+<P><EM>foreground</EM> and <EM>background</EM> can be one of the following:
+<P>
+<UL>
+<LI>white</LI>
+<LI>black</LI>
+<LI>green</LI>
+<LI>magenta</LI>
+<LI>blue</LI>
+<LI>cyan</LI>
+<LI>yellow</LI>
+<LI>red</LI>
+<LI>default</LI>
+<LI>color<EM>x</EM></LI>
+</UL>
+<P><EM>foreground</EM> can optionally be prefixed with the keyword <CODE>bright</CODE> to make
+the foreground color boldfaced (e.g., <CODE>brightred</CODE>).
+<P>If your terminal supports it, the special keyword <EM>default</EM> can be
+used as a transparent color.  The value <EM>brightdefault</EM> is also valid.
+If Mutt is linked against the <EM>S-Lang</EM> library, you also need to set
+the <EM>COLORFGBG</EM> environment variable to the default colors of your
+terminal for this to work; for example (for Bourne-like shells):
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+set COLORFGBG="green;black"
+export COLORFGBG
+</PRE>
+</CODE></BLOCKQUOTE>
+<P><B>Note:</B> The <EM>S-Lang</EM> library requires you to use the <EM>lightgray</EM>
+and <EM>brown</EM> keywords instead of <EM>white</EM> and <EM>yellow</EM> when
+setting this variable.
+<P><B>Note:</B> The uncolor command can be applied to the index object only.  It
+removes entries from the list. You <B>must</B> specify the same pattern
+specified in the color command for it to be removed.  The pattern ``*'' is
+a special token which means to clear the color index list of all entries.
+<P>Mutt also recognizes the keywords <EM>color0</EM>, <EM>color1</EM>, ...,
+<EM>color</EM><B>N-1</B> (<B>N</B> being the number of colors supported
+by your terminal).  This is useful when you remap the colors for your
+display (for example by changing the color associated with <EM>color2</EM>
+for your xterm), since color names may then lose their normal meaning.
+<P>If your terminal does not support color, it is still possible change the video
+attributes through the use of the ``mono'' command:
+<P>Usage: <CODE>mono</CODE> <EM>&lt;object&gt; &lt;attribute&gt;</EM> [ <EM>regexp</EM> ]<BR>
+Usage: <CODE>mono</CODE> index <EM>attribute</EM> <EM>pattern</EM><BR>
+Usage: <CODE>unmono</CODE> index <EM>pattern</EM> [ <EM>pattern</EM> ...  ]<BR>
+<P>where <EM>attribute</EM> is one of the following:
+<P>
+<UL>
+<LI>none</LI>
+<LI>bold</LI>
+<LI>underline</LI>
+<LI>reverse</LI>
+<LI>standout</LI>
+</UL>
+<P>
+<H2><A NAME="ignore"></A> <A NAME="ss3.8">3.8 Ignoring (weeding) unwanted message headers</A>
+</H2>
+
+<P>Usage: <CODE>[un]ignore</CODE> <EM>pattern</EM> [ <EM>pattern</EM> ... ]
+<P>Messages often have many header fields added by automatic processing systems,
+or which may not seem useful to display on the screen.  This command allows
+you to specify header fields which you don't normally want to see.
+<P>You do not need to specify the full header field name.  For example,
+``ignore content-'' will ignore all header fields that begin with the pattern
+``content-''.
+<P>To remove a previously added token from the list, use the ``unignore'' command.
+Note that if you do ``ignore x-'' it is not possible to ``unignore x-mailer,''
+for example.  The ``unignore'' command does <B>not</B> make Mutt display headers
+with the given pattern.
+<P>``unignore *'' will remove all tokens from the ignore list.
+<P>For example:
+<BLOCKQUOTE><CODE>
+<PRE>
+# Sven's draconian header weeding
+ignore *
+unignore from date subject to cc
+unignore organization organisation x-mailer: x-newsreader: x-mailing-list:
+unignore posted-to:
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="lists"></A> <A NAME="ss3.9">3.9 Mailing lists</A>
+</H2>
+
+<P>Usage: <CODE>[un]lists</CODE> <EM>address</EM> [ <EM>address</EM> ... ]<BR>
+Usage: <CODE>[un]subscribe</CODE> <EM>address</EM> [ <EM>address</EM> ... ]
+<P>Mutt has a few nice features for 
+<A HREF="manual-4.html#using_lists">handling mailing lists</A>.  In order to take advantage of them, you must
+specify which addresses belong to mailing lists, and which mailing
+lists you are subscribed to.  Once you have done this, the 
+<A HREF="manual-2.html#list-reply">list-reply</A> function will work for all known lists.
+Additionally, when you send a message to a subscribed list, mutt will
+add a Mail-Followup-To header to tell other users' mail user agents
+not to send copies of replies to your personal address.   Note that
+the Mail-Followup-To header is a non-standard extension which is not
+supported by all mail user agents.  Adding it is not bullet-proof against
+receiving personal CCs of list messages.  Also note that the generation
+of the Mail-Followup-To header is controlled by the 
+<A HREF="manual-6.html#followup_to">followup_to</A> configuration variable.
+<P>More precisely, Mutt maintains lists of known and subscribed mailing
+lists.  Every subscribed mailing list is known.  To mark
+a mailing list as known, use the ``lists'' command.  To mark it as
+subscribed, use ``subscribe''.
+<P>Specify as much of the address as you need to to remove ambiguity.  For
+example, if you've subscribed to the Mutt mailing list, you will receive mail
+addresssed to <EM>mutt-users@mutt.org</EM>.  So, to tell Mutt that this is a
+mailing list, you could add ``lists mutt-users'' to your
+initialization file.  To tell mutt that you are subscribed to it,
+add ``subscribe mutt-users'' to your initialization file instead.
+If you also happen to get mail from someone whose address is
+<EM>mutt-users@example.com</EM>, you could use ``lists mutt-users@mutt.org'' 
+or ``subscribe mutt-users@mutt.org'' to
+match only mail from the actual list.
+<P>The ``unlists'' command is used to remove a token from the list of
+known and subscribed mailing-lists. Use ``unlists *'' to remove all
+tokens.
+<P>To remove a mailing list from the list of subscribed mailing lists,
+but keep it on the list of known mailing lists, use ``unsubscribe''.
+<P>
+<P>
+<H2><A NAME="mbox-hook"></A> <A NAME="ss3.10">3.10 Using Multiple spool mailboxes</A>
+</H2>
+
+<P>Usage: <CODE>mbox-hook</CODE> [!]<EM>pattern</EM> <EM>mailbox</EM>
+<P>This command is used to move read messages from a specified mailbox to a
+different mailbox automatically when you quit or change folders.
+<EM>pattern</EM> is a regular expression specifying the mailbox to treat as a
+``spool'' mailbox and <EM>mailbox</EM> specifies where mail should be saved when
+read.
+<P>Unlike some of the other <EM>hook</EM> commands, only the <EM>first</EM> matching
+pattern is used (it is not possible to save read mail in more than a single
+mailbox).
+<P>
+<H2><A NAME="mailboxes"></A> <A NAME="ss3.11">3.11 Defining mailboxes which receive mail</A>
+</H2>
+
+<P>Usage: <CODE>mailboxes</CODE> [!]<EM>filename</EM> [ <EM>filename</EM> ... ]
+<P>This command specifies folders which can receive mail and
+which will be checked for new messages.  By default, the
+main menu status bar displays how many of these folders have
+new messages.
+<P>When changing folders, pressing <EM>space</EM> will cycle
+through folders with new mail.
+<P>Pressing TAB in the directory browser will bring up a menu showing the files
+specified by the <CODE>mailboxes</CODE> command, and indicate which contain new
+messages.  Mutt will automatically enter this mode when invoked from the
+command line with the <CODE>-y</CODE> option.
+<P><B>Note:</B> new mail is detected by comparing the last modification time to
+the last access time.  Utilities like <CODE>biff</CODE> or <CODE>frm</CODE> or any other
+program which accesses the mailbox might cause Mutt to never detect new mail
+for that mailbox if they do not properly reset the access time.  Backup
+tools are another common reason for updated access times.
+<P>
+<P><B>Note:</B> the filenames in the <CODE>mailboxes</CODE> command are resolved when
+the command is executed, so if these names contain 
+<A HREF="manual-4.html#shortcuts">shortcut characters</A> (such as ``='' and ``!''), any variable
+definition that affect these characters (like 
+<A HREF="manual-6.html#folder">$folder</A> and 
+<A HREF="manual-6.html#spoolfile">$spoolfile</A>)
+should be executed before the <CODE>mailboxes</CODE> command.
+<P>
+<H2><A NAME="my_hdr"></A> <A NAME="ss3.12">3.12 User defined headers</A>
+</H2>
+
+<P>Usage:<BR>
+<CODE>my_hdr</CODE> <EM>string</EM><BR>
+<CODE>unmy_hdr</CODE> <EM>field</EM> [ <EM>field</EM> ... ]
+<P>The ``my_hdr'' command allows you to create your own header
+fields which will be added to every message you send.
+<P>For example, if you would like to add an ``Organization:'' header field to
+all of your outgoing messages, you can put the command
+<P>
+<BLOCKQUOTE>
+my_hdr Organization: A Really Big Company, Anytown, USA
+</BLOCKQUOTE>
+<P>in your <CODE>.muttrc</CODE>.
+<P><B>Note:</B>  space characters are <EM>not</EM> allowed between the keyword and
+the colon (``:'').  The standard for electronic mail (RFC822) says that
+space is illegal there, so Mutt enforces the rule.
+<P>If you would like to add a header field to a single message, you should
+either set the 
+<A HREF="manual-6.html#edit_headers">edit_headers</A> variable,
+or use the <EM>edit-headers</EM> function (default: ``E'') in the send-menu so
+that you can edit the header of your message along with the body.
+<P>To remove user defined header fields, use the ``unmy_hdr''
+command.  You may specify an asterisk (``*'') to remove all header
+fields, or the fields to remove.  For example, to remove all ``To'' and
+``Cc'' header fields, you could use:
+<P>
+<BLOCKQUOTE>
+unmy_hdr to cc
+</BLOCKQUOTE>
+<P>
+<H2><A NAME="hdr_order"></A> <A NAME="ss3.13">3.13 Defining the order of headers when viewing messages</A>
+</H2>
+
+<P>Usage: <CODE>hdr_order</CODE> <EM>header1</EM> <EM>header2</EM> <EM>header3</EM>
+<P>With this command, you can specify an order in which mutt will attempt
+to present headers to you when viewing messages.
+<P>``unhdr_order *'' will clear all previous headers from the order list,
+thus removing the header order effects set by the system-wide startup
+file.
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+hdr_order From Date: From: To: Cc: Subject:
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="save-hook"></A> <A NAME="ss3.14">3.14 Specify default save filename</A>
+</H2>
+
+<P>Usage: <CODE>save-hook</CODE> [!]<EM>pattern</EM> <EM>filename</EM>
+<P>This command is used to override the default filename used when saving
+messages.  <EM>filename</EM> will be used as the default filename if the message is
+<EM>From:</EM> an address matching <EM>regexp</EM> or if you are the author and the
+message is addressed <EM>to:</EM> something matching <EM>regexp</EM>.
+<P>See 
+<A HREF="manual-4.html#pattern_hook">Message Matching in Hooks</A> for information on the exact format of <EM>pattern</EM>.
+<P>Examples:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+save-hook me@(turing\\.)?cs\\.hmc\\.edu$ +elkins
+save-hook aol\\.com$ +spam
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Also see the 
+<A HREF="manual-3.html#fcc-save-hook">fcc-save-hook</A> command.
+<P>
+<H2><A NAME="fcc-hook"></A> <A NAME="ss3.15">3.15 Specify default Fcc: mailbox when composing</A>
+</H2>
+
+<P>Usage: <CODE>fcc-hook</CODE> [!]<EM>pattern</EM> <EM>mailbox</EM>
+<P>This command is used to save outgoing mail in a mailbox other than
+<A HREF="manual-6.html#record">$record</A>.  Mutt searches the initial list of
+message recipients for the first matching <EM>regexp</EM> and uses <EM>mailbox</EM>
+as the default Fcc: mailbox.  If no match is found the message will be saved
+to 
+<A HREF="manual-6.html#record">$record</A> mailbox.
+<P>See 
+<A HREF="manual-4.html#pattern_hook">Message Matching in Hooks</A> for information on the exact format of <EM>pattern</EM>.
+<P>Example: <CODE>fcc-hook aol.com$ +spammers</CODE>
+<P>The above will save a copy of all messages going to the aol.com domain to
+the `+spammers' mailbox by default.  Also see the 
+<A HREF="manual-3.html#fcc-save-hook">fcc-save-hook</A> command.
+<P>
+<H2><A NAME="fcc-save-hook"></A> <A NAME="ss3.16">3.16 Specify default save filename and default Fcc: mailbox at once</A>
+</H2>
+
+<P>Usage: <CODE>fcc-save-hook</CODE> [!]<EM>pattern</EM> <EM>mailbox</EM>
+<P>This command is a shortcut, equivalent to doing both a 
+<A HREF="manual-3.html#fcc-hook">fcc-hook</A>
+and a 
+<A HREF="manual-3.html#save-hook">save-hook</A> with its arguments.
+<P>
+<H2><A NAME="send-hook"></A> <A NAME="ss3.17">3.17 Change settings based upon message recipients</A>
+</H2>
+
+<P>Usage: <CODE>send-hook</CODE> [!]<EM>pattern</EM> <EM>command</EM>
+<P>This command can be used to execute arbitrary configuration commands based
+upon recipients of the message.  <EM>pattern</EM> is a regular expression
+matching the desired address.  <EM>command</EM> is executed when <EM>regexp</EM>
+matches recipients of the message.  When multiple matches occur, commands are
+executed in the order they are specified in the muttrc.
+<P>See 
+<A HREF="manual-4.html#pattern_hook">Message Matching in Hooks</A> for information on the exact format of <EM>pattern</EM>.
+<P>Example: <CODE>send-hook mutt &quot;set mime_forward signature=''&quot;</CODE>
+<P>Another typical use for this command is to change the values of the
+<A HREF="manual-6.html#attribution">$attribution</A>, 
+<A HREF="manual-6.html#signature">$signature</A> and 
+<A HREF="manual-6.html#locale">$locale</A>
+variables in order to change the language of the attributions and
+signatures based upon the recipients.
+<P><B>Note:</B> the send-hook's are only executed ONCE after getting the initial
+list of recipients.  Adding a recipient after replying or editing the
+message will NOT cause any send-hook to be executed.  Also note that
+my_hdr commands which modify recipient headers, or the message's
+subject, don't have any effect on the current message when executed
+from a send-hook.
+<P>
+<H2><A NAME="message-hook"></A> <A NAME="ss3.18">3.18 Change settings before formatting a message</A>
+</H2>
+
+<P>Usage: <CODE>message-hook</CODE> [!]<EM>pattern</EM> <EM>command</EM>
+<P>This command can be used to execute arbitrary configuration commands
+before viewing or formatting a message based upon information about the message.
+<EM>command</EM> is executed if the <EM>pattern</EM> matches the message to be
+displayed. When multiple matches occur, commands are executed in the order
+they are specified in the muttrc.
+<P>See 
+<A HREF="manual-4.html#pattern_hook">Message Matching in Hooks</A> for
+information on the exact format of <EM>pattern</EM>.
+<P>Example:
+<BLOCKQUOTE><CODE>
+<PRE>
+message-hook ~A 'set pager=builtin'
+message-hook '~f freshmeat-news' 'set pager="less \"+/^  subject: .*\""'
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="pgp-hook"></A> <A NAME="ss3.19">3.19 Choosing the PGP key of the recipient</A>
+</H2>
+
+<P>Usage: <CODE>pgp-hook</CODE> <EM>pattern</EM> <EM>keyid</EM>
+<P>When encrypting messages with PGP, you may want to associate a certain
+PGP key with a given e-mail address automatically, either because the
+recipient's public key can't be deduced from the destination address,
+or because, for some reasons, you need to override the key Mutt would
+normally use.  The pgp-hook command provides a method by which you can
+specify the ID of the public key to be used when encrypting messages to
+a certain recipient.
+<P>
+<H2><A NAME="push"></A> <A NAME="ss3.20">3.20 Adding key sequences to the keyboard buffer</A>
+</H2>
+
+<P>Usage: <CODE>push</CODE> <EM>string</EM>
+<P>This command adds the named string to the keyboard buffer. The string may
+contain control characters, key names and function names like the sequence
+string in the 
+<A HREF="manual-3.html#macro">macro</A> command. You may use it to
+automatically run a sequence of commands at startup, or when entering
+certain folders.
+<P>
+<H2><A NAME="exec"></A> <A NAME="ss3.21">3.21 Executing functions</A>
+</H2>
+
+<P>Usage: <CODE>exec</CODE> <EM>function</EM> [ <EM>function</EM> ... ]
+<P>This command can be used to execute any function. Functions are
+listed in the 
+<A HREF="manual-6.html#functions">function reference</A>.
+``exec function'' is equivalent to ``push &lt;function&gt;''.
+<P>
+<H2><A NAME="score-command"></A> <A NAME="ss3.22">3.22 Message Scoring</A>
+</H2>
+
+<P>Usage: <CODE>score</CODE> <EM>pattern</EM> <EM>value</EM><BR>
+Usage: <CODE>unscore</CODE> <EM>pattern</EM> [ <EM>pattern</EM> ... ]
+<P>The <CODE>score</CODE> commands adds <EM>value</EM> to a message's score if <EM>pattern</EM>
+matches it.  <EM>pattern</EM> is a string in the format described in the 
+<A HREF="manual-4.html#patterns">patterns</A> section (note: For efficiency reasons, patterns
+which scan information not available in the index, such as <CODE>~b</CODE>,
+<CODE>~B</CODE> or <CODE>~h</CODE>, may not be used).  <EM>value</EM> is a
+positive or negative integer.  A message's final score is the sum total of all
+matching <CODE>score</CODE> entries.  However, you may optionally prefix <EM>value</EM> with
+an equal sign (=) to cause evaluation to stop at a particular entry if there is
+a match.  Negative final scores are rounded up to 0.
+<P>The <CODE>unscore</CODE> command removes score entries from the list.  You <B>must</B>
+specify the same pattern specified in the <CODE>score</CODE> command for it to be
+removed.  The pattern ``*'' is a special token which means to clear the list
+of all score entries.
+<P>
+<H2><A NAME="set"></A> <A NAME="ss3.23">3.23 Setting variables</A>
+</H2>
+
+<P>Usage: <CODE>set</CODE> [no|inv]<EM>variable</EM>[=<EM>value</EM>] [ <EM>variable</EM> ... ]<BR>
+Usage: <CODE>toggle</CODE> <EM>variable</EM> [<EM>variable</EM> ... ]<BR>
+Usage: <CODE>unset</CODE> <EM>variable</EM> [<EM>variable</EM> ... ]<BR>
+Usage: <CODE>reset</CODE> <EM>variable</EM> [<EM>variable</EM> ... ]
+<P>This command is used to set (and unset) 
+<A HREF="manual-6.html#variables">configuration variables</A>.  There are four basic types of variables:
+boolean, number, string and quadoption.  <EM>boolean</EM> variables can be
+<EM>set</EM> (true) or <EM>unset</EM> (false).  <EM>number</EM> variables can be
+assigned a positive integer value.
+<P><EM>string</EM> variables consist of any number of printable characters.
+<EM>strings</EM> must be enclosed in quotes if they contain spaces or tabs.  You
+may also use the ``C'' escape sequences <B>\n</B> and <B>\t</B> for
+newline and tab, respectively.
+<P><EM>quadoption</EM> variables are used to control whether or not to be prompted
+for certain actions, or to specify a default action.  A value of <EM>yes</EM>
+will cause the action to be carried out automatically as if you had answered
+yes to the question.  Similarly, a value of <EM>no</EM> will cause the the
+action to be carried out as if you had answered ``no.''  A value of
+<EM>ask-yes</EM> will cause a prompt with a default answer of ``yes'' and
+<EM>ask-no</EM> will provide a default answer of ``no.''
+<P>Prefixing a variable with ``no'' will unset it.  Example: <CODE>set noaskbcc</CODE>.
+<P>For <EM>boolean</EM> variables, you may optionally prefix the variable name with
+<CODE>inv</CODE> to toggle the value (on or off).  This is useful when writing
+macros.  Example: <CODE>set invsmart_wrap</CODE>.
+<P>The <CODE>toggle</CODE> command automatically prepends the <CODE>inv</CODE> prefix to all
+specified variables.
+<P>The <CODE>unset</CODE> command automatically prepends the <CODE>no</CODE> prefix to all
+specified variables.
+<P>Using the enter-command function in the <EM>index</EM> menu, you can query the
+value of a variable by prefixing the name of the variable with a question
+mark:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+set ?allow_8bit
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>The question mark is actually only required for boolean and quadoption 
+variables.
+<P>The <CODE>reset</CODE> command resets all given variables to the compile time
+defaults (hopefully mentioned in this manual). If you use the command
+<CODE>set</CODE> and prefix the variable with ``&amp;'' this has the same
+behavior as the reset command.
+<P>With the <CODE>reset</CODE> command there exists the special variable ``all'',
+which allows you to reset all variables to their system defaults.
+<P>
+<H2><A NAME="source"></A> <A NAME="ss3.24">3.24 Reading initialization commands from another file</A>
+</H2>
+
+<P>Usage: <CODE>source</CODE> <EM>filename</EM>
+<P>This command allows the inclusion of initialization commands
+from other files.  For example, I place all of my aliases in
+<CODE>~/.mail_aliases</CODE> so that I can make my
+<CODE>~/.muttrc</CODE> readable and keep my aliases private.
+<P>If the filename begins with a tilde (``~''), it will be expanded to the
+path of your home directory.
+<P>If the filename ends with a vertical bar (|), then <EM>filename</EM> is
+considered to be an executable program from which to read input (eg.
+<CODE>source ~</CODE>bin/myscript|/).
+<P>
+<H2><A NAME="unhook"></A> <A NAME="ss3.25">3.25 Removing hooks</A>
+</H2>
+
+<P>Usage: <CODE>unhook</CODE> [ * | <EM>hook-type</EM> ]
+<P>This command permits you to flush hooks you have previously defined.
+You can either remove all hooks by giving the ``*'' character as an
+argument, or you can remove all hooks of a specific type by saying
+something like <CODE>unhook send-hook</CODE>.
+<P>
+<HR>
+<A HREF="manual-4.html">Next</A>
+<A HREF="manual-2.html">Previous</A>
+<A HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc3">Contents</A>
+</BODY>
+</HTML>

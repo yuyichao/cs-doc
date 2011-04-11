@@ -1,0 +1,285 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+  <head>
+    <title>Emacs 绑定键盘的技巧。</title>
+    <meta name="generator" content="emacs-wiki.el">
+    <meta http-equiv="Content-Type"
+	  content="text/html; charset=gb2312">
+    <link rev="made" href="mailto:webmaster@wangyin.com">
+    <link rel="home" href="WelcomePage.html">
+    <link rel="index" href="WikiIndex.html">
+    <LINK rel="stylesheet" href="../main.css" media="screen">
+  </head>
+  <body>
+    <h1>Emacs 绑定键盘的技巧。</h1>
+    <!-- Page published by Emacs Wiki begins here -->
+
+
+
+
+
+
+<h2>万无一失的绑定方法</h2>
+
+<p>
+很多人绑定一些比较特殊的键的时候，都搞不清楚在
+
+</p>
+
+<pre class="example">
+(global-set-key ... 'my-funtion)
+</pre>
+
+<p>
+里写些什么。特别是在 xterm 里的时候就更不知所措了。其实有一
+个万无一失的办法保证你一定写对。这个办法就是：
+
+</p>
+
+<ol>
+<li>M-x global-set-key RET 交互式的绑定你的键。
+</li>
+<li>C-x Esc Esc 调出上一条“复杂命令”。
+</li>
+</ol>
+
+<p>
+好了，你现在就能在 minibuffer 里看到你应该写在 .emacs 的东西
+了。
+
+</p>
+
+<h3>如果你还是失败了……</h3>
+
+<p>
+如果你在第1步的时候发现 Emacs 根本对你的按键没有反应，那么应
+该怀疑是你的窗口管理器拦截了这个按键。比如，我的 FVWM 设置把 
+C-f3 设定成了打开一个 FvwmCommand, 所以
+Emacs 接收不到这个按键。如果我要绑定一个函数到 C-f3, 我必须
+让 FVWM 放过 C-f3。
+
+</p>
+
+<h2>绑定新的前缀键</h2>
+
+<p>
+其实上面的办法只能让你绑定一个已有的前缀。你有可能想绑定一个 
+save-buffer 到 "C-c C-w C-b a"。上面的办法就不灵了。我们必须
+使用另外的办法：
+
+</p>
+
+<pre class="example">
+(global-set-key (kbd &quot;C-c C-w C-b a&quot;) 'save-buffer)
+</pre>
+
+<h3>一点解释</h3>
+
+<p>
+上面的那个 "C-c C-w C-b a" 是自动把 "C-c C-w", "C-c C-w C-b" 
+都定义成了一个 prefix-command. 你可以这样看到它们：
+
+</p>
+
+<ol>
+<li>C-h C-b 显示绑定
+</li>
+<li>C-x o 切换到显示绑定的窗口
+</li>
+<li>C-x C-q 消除这个窗口的只读属性
+</li>
+<li>M-x delete-non-matching-lines RET prefix RET 删除所有不含
+"prefix" 字样的行。
+</li>
+</ol>
+
+<p>
+现在你清楚的看到了 "C-c C-w", "C-c C-w C-b" 都是 prefix
+command 吧？
+
+</p>
+
+<h2>创建新的 prefix command</h2>
+上面这个办法只对开头的键已经是 prefix command 的键序列起作用，
+如果你的第一个键不是一个 prefix，那么就会出错。你可以试试：
+
+</p>
+
+<pre class="example">
+(global-set-key (kbd &quot;C-z C-c C-w b&quot;) 'find-file)
+</pre>
+
+<p>
+出现错误：(error "Key sequence C-z C-c C-w b uses invalid
+prefix characters")
+
+</p>
+
+<p>
+所以你必须事先把第一个键设定为 prefix:
+
+</p>
+
+<pre class="example">
+(define-prefix-command 'ctl-z-map)
+(global-set-key (kbd &quot;C-z&quot;) 'ctl-z-map)
+</pre>
+
+<p>
+然后再用
+
+</p>
+
+<pre class="example">
+(global-set-key (kbd &quot;C-z C-c C-w b&quot;) 'find-file)
+</pre>
+
+<p>
+就行了。"C-z C-c" 和 "C-z C-c C-w" 都会自动被定义为 prefix
+command.
+
+</p>
+
+<h2>绑定中文命令</h2>
+
+<p>
+现在我举一个例子来说明 prefix command 是如何工作的。我们可以
+把中文的 <em>存盘</em> 两个字绑定到save-buffer. 这样你用中文输入法
+敲入“存盘”两个字时，就可以把当前 buffer 保存起来。
+
+</p>
+
+<pre class="example">
+(define-prefix-command '存-map)
+(global-set-key (kbd &quot;存&quot;) '存-map)
+(define-key 存-map (kbd &quot;盘&quot;) 'save-buffer)
+</pre>
+
+<p>
+有趣吧？你可以猜到这里面是怎么回事吧？太简单了是不是？当你输
+入“存”的时候，看到 minibuffer 是这样：
+
+</p>
+
+<p>
+<img src="../images/bind-cun.png" alt="../images/bind-cun.png">
+
+</p>
+
+<p>
+这是因为我们把“存”这个字绑定到了 <em>存-map</em> 这个
+prefix-command. 当读到“存”的时候，Emacs 就会等待下一条命令，
+这个命令是定义在 <em>存-map</em> 这个 map 里的。它读到“盘”，就会执
+行 save-buffer 了。
+
+</p>
+
+<p>
+不过注意，你真的要在文档里输入“存盘”两个字就得先打 C-q 了。
+刚才我就打了好多次 C-q，真累啊。还是用一些不常用的词组比较好，
+或者加一个 ctrl 什么的前缀，就像这个，"C-z 存盘"。
+
+</p>
+
+<pre class="example">
+(define-prefix-command 'ctl-z-map)
+(global-set-key (kbd &quot;C-z&quot;) 'ctl-z-map)
+(define-key ctl-z-map (kbd &quot;存盘&quot;) 'save-buffer)
+</pre>
+
+<p>
+看我们更 bt 一点:
+
+</p>
+
+<pre class="example">
+(define-prefix-command 'ctl-z-map)
+(global-set-key (kbd &quot;C-z&quot;) 'ctl-z-map)
+(define-key ctl-z-map (kbd &quot;给我存盘啦！&quot;) 'save-buffer)
+</pre>
+
+<p>
+嗨哟！yes sir!!
+
+</p>
+
+<p>
+define-key 会自动建立很多 prefix command. 不过自己显式用 
+define-prefix-command 定义前缀命令有一个好处，就是你可以在你
+的 prefix 里再方便的定义更多的命令，而不用把整个前缀都写一遍。
+
+</p>
+
+<pre class="example">
+(define-prefix-command 'ctl-z-map)
+(define-prefix-command '存-map)
+(define-prefix-command '盘-map)
+
+(global-set-key (kbd &quot;C-z&quot;) 'ctl-z-map)
+(define-key ctl-z-map (kbd &quot;存&quot;) '存-map)
+(define-key 存-map (kbd &quot;盘&quot;) '盘-map)
+
+(define-key 盘-map (kbd &quot;！&quot;) 'save-buffer)
+(define-key 盘-map (kbd &quot;到&quot;) 'write-file)
+(define-key 盘-map (kbd &quot;退出&quot;) 
+  (lambda ()
+    (interactive)
+    (save-buffer)
+    (kill-emacs)))
+</pre>
+
+<p>
+这样，到了“C-z 存盘-” 这个时候，我们定义了3个分支：
+
+</p>
+
+<ul>
+<li>“C-z 存盘！”，表示保存这个文件；
+</li>
+<li>“C-z 存盘到”，表示保存到另一个文件；
+</li>
+<li>“C-z 存盘退出”，这个不用解释了吧。
+</li>
+</ul>
+
+<p>
+自定义 prefix command 的另外一个更大的好处就是：你可以修改最
+上层对 prefix command 的绑定，从而修改许多键的绑定。比如，我
+们可以把 “存盘” 轻而易举的改成 “保存”：
+
+</p>
+
+<pre class="example">
+(define-key ctl-z-map (kbd &quot;保存&quot;) '盘-map)
+</pre>
+
+<p>
+这样一来， “C-z 保存！” ，“C-z 保存到” ， “C-z 保存退出”
+就分别有了 “C-z 存盘！” ， “C-z 存盘到” 和 “C-z 存盘退
+出” 的含义了。
+
+</p>
+
+<!-- Page published by Emacs Wiki ends here -->
+    <div class="navfoot">
+    <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：2003-05-22</span>
+	  </td>
+	  <td width="60%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">王垠的主页</a> / <a href="WelcomePage.html">WiKi首页</a>/<a href="WikiIndex.html">索引</a>/<a href="wiki_frame.html" target=_parent>框架页</a>/<a href="KeyBinding.html" target=_parent>取消框架</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    
+	  </td>
+	</tr>
+      </table>
+    </div>
+
+
+  </body>
+</html>

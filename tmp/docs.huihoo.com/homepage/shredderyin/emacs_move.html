@@ -1,0 +1,135 @@
+<!DOCTYPE html public "-//W3C//DTD HTML 4.01 Transitional//EN"     "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>Emacs Movements</title>
+<META http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="main.css" media="screen">
+</HEAD>
+
+<body>
+
+<h1>移动光标</h1>
+<ol>
+<li>基本操作。
+<ul>
+
+<li>C-f, C-b: 以<em>字符</em>为单位移动。
+<li>M-f, M-b: 以<em>单词</em>为单位移动。
+<li>C-a, C-e: 移动到行首，行末。
+<li>M-m: 移动到第一个非空格字符。(back-to-indentation)
+<li>M-a, M-e: 移动到句子头，句子尾。
+<li>M-{, M-}: 移动到段落头，段落尾。
+<li>C-v, M-v: 翻页。
+<li>M-<, M->: 到文件头和文件尾。
+<li>M-r: 加参数，移动到窗口里的某一行。不加参数缺省移动到窗口中间。
+<li>M-x goto-char: 到文件的第 N 字节。
+<li>M-x goto-line: 到文件第  N 行。
+<li>C-x C-n: 设定 goal-column.
+<li>C-u C-x C-n: 取消 goal-column.
+</ul>
+
+<li>以语法结构为单位移动。
+
+<p>文档一般都有各种结构，比如LISP里有S表达式，C语言里的函数，LaTeX 里的 \begin{...}...\end{...} ... 如果我们能够已文档的语法单位来移动，就会使操作非常高效。
+<ol>
+
+<li>defun。defun 在 LISP 里就是最高一级的 sexp，而在 C 语言里，它的含义就是函数。
+
+<pre>
+C-M-a   到 defun 头
+C-M-e   到 defun 尾
+</pre>
+
+这样，我们在C语言程序里可以一个函数一个函数的跳过。也可以从一个函数中间一下跳到函数开头或末尾。
+
+<li>语法单位(sexp)。语法单位在各种 major mode 有不同的定义：
+<ul>
+<li>lisp-mode:
+一个S表达式。
+<li>c-mode:
+一个变量名，一个 (...), 一个 {...}, 一个 [...], ...
+<p>所以在 Emacs 里，寻找匹配的括号可以在括号处使用 C-M-f 和 C-M-b.
+<li>Gnus:
+一个thread。包括所有的 Re:
+
+</ul>
+其实 defun 可以被看作最高一级的 sexp。所以范围小一点的移动操作就是在同级 sexp 之间移动。
+<pre>
+C-M-f   到下一个同级语法结构
+C-M-b   到上一个同级语法结构
+</pre>
+
+<p>注意，这种移动不能越过语法结构的边界而进入上一级结构。所以，你如果在
+<pre class=syntax>
+for (i=0; i&lt;10; i++) { ...}
+</pre>
+的 for 循环的括号里向右移动，到达右边括号时，就会被提示到达边界。
+
+<p>注意，文档中的注释在这两个操作中会被跳过，这是非常方便的。
+
+<li>进入和退出子结构。
+<p>在LISP中，S表达式是嵌套的括号，进入子结构就是进入到这一级 (...) 里面。而在 C 语言中，进入子结构就是进入 (...), {...}, [...] 的里面。
+
+C-M-d: 进入到下一级结构里。C-M-u: 进入到上一级结构里。
+
+<p>C-M-a, C-M-e, C-M-f, C-M-b, C-M-d, C-M-u 这几个命令组合起来可以迅速的在程序里移动。往往手可以按住 C-M 不放，所以还是很顺手的。
+
+<li>段落：
+<pre>
+M-} (forward-paragraph)
+M-{ (backward-paragraph)
+</pre>
+
+段落在不同的mode有不同的含义，它的含义是由 paragraph-start 变量决定的。
+这个正则表达式可以告诉 Emacs 那些符号出现被认为是一个段落开始了。
+
+<li>句子：
+<pre>
+M-e (backward-sentence)
+M-a (forward-sentence)
+</pre>
+
+<p>句子在不同的模式有不同的含义。比如在 c-mode, “句子”成为了“语句”的
+代名词，所以 M-a 和 M-e 可以以语句为单位移动。
+
+<p>句子的含义是由 sentence-end 变量决定的。这个正则表达式可以告诉 
+Emacs 那些符号出现被认为是一个句子结束了……比如我的 sentence-end 是这样
+设置的：
+
+<pre>
+(setq sentence-end "\\([。！？]\\|……\\|[.?!][]\"')}]*\\($\\|[ \t]\\)\\)[ \t\n]*")
+</pre>
+
+<!-- " 
+-->
+
+这样中文的句子就可以被正确识别了。
+
+</ol>
+
+<li>一些特殊模式专有的移动方式。
+<ul>
+<li>HTML 模式。
+<ol class=arabic>
+<li>跳过同一级 tag。
+<pre>
+C-c C-f  向前跳过同一级 tag (sgml-skip-tag-forward)
+C-c C-b  向后跳过同一级 tag (sgml-skip-tag-backward)
+</ol>
+<li>LaTeX 模式。
+<ol>
+<pre>
+C-c C-u   到最近的上一级 \begin{...} 处。
+</pre>
+<pre>
+C-c }     到最近的上一级匹配 {...} 处。
+</pre>
+
+</ol>
+</ul>
+
+</ol>
+<hr>
+<a href="emacs.html" target="_parent">返回</a>
+</body>
+</html>

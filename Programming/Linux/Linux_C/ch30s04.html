@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4. 进程间通信</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch30.html" title="第 30 章 进程" /><link rel="prev" href="ch30s03.html" title="3. 进程控制" /><link rel="next" href="ch30s05.html" title="5. 练习：实现简单的Shell" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">4. 进程间通信</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch30s03.html">上一页</a> </td><th width="60%" align="center">第 30 章 进程</th><td width="20%" align="right"> <a accesskey="n" href="ch30s05.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2867770"></a>4. 进程间通信</h2></div></div></div><p>每个进程各自有不同的用户地址空间，任何一个进程的全局变量在另一个进程中都看不到，所以进程之间要交换数据必须通过内核，在内核中开辟一块缓冲区，进程1把数据从用户空间拷到内核缓冲区，进程2再从内核缓冲区把数据读走，内核提供的这种机制称为进程间通信（IPC，InterProcess Communication）<a id="id2867790" class="indexterm"></a>。如下图所示。</p><div class="figure"><a id="id2867799"></a><p class="title"><b>图 30.6. 进程间通信</b></p><div class="figure-contents"><div><img src="images/process.ipc.png" alt="进程间通信" /></div></div></div><br class="figure-break" /><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2867812"></a>4.1. 管道</h3></div></div></div><p>管道是一种最基本的IPC机制，由<code class="literal">pipe</code>函数创建：</p><pre class="programlisting">#include &lt;unistd.h&gt;
+
+int pipe(int filedes[2]);</pre><p>调用<code class="literal">pipe</code>函数时在内核中开辟一块缓冲区（称为管道）用于通信，它有一个读端一个写端，然后通过<code class="literal">filedes</code>参数传出给用户程序两个文件描述符，<code class="literal">filedes[0]</code>指向管道的读端，<code class="literal">filedes[1]</code>指向管道的写端（很好记，就像0是标准输入1是标准输出一样）。所以管道在用户程序看起来就像一个打开的文件，通过<code class="literal">read(filedes[0]);</code>或者<code class="literal">write(filedes[1]);</code>向这个文件读写数据其实是在读写内核缓冲区。<code class="literal">pipe</code>函数调用成功返回0，调用失败返回-1。</p><p>开辟了管道之后如何实现两个进程间的通信呢？比如可以按下面的步骤通信。</p><div class="figure"><a id="id2867888"></a><p class="title"><b>图 30.7. 管道</b></p><div class="figure-contents"><div><img src="images/process.pipe.png" alt="管道" /></div></div></div><br class="figure-break" /><div class="orderedlist"><ol type="1"><li><p>父进程调用<code class="literal">pipe</code>开辟管道，得到两个文件描述符指向管道的两端。</p></li><li><p>父进程调用<code class="literal">fork</code>创建子进程，那么子进程也有两个文件描述符指向同一管道。</p></li><li><p>父进程关闭管道读端，子进程关闭管道写端。父进程可以往管道里写，子进程可以从管道里读，管道是用环形队列实现的，数据从写端流入从读端流出，这样就实现了进程间通信。</p></li></ol></div><div class="example"><a id="id2867940"></a><p class="title"><b>例 30.7. 管道</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+#define MAXLINE 80
+
+int main(void)
+{
+	int n;
+	int fd[2];
+	pid_t pid;
+	char line[MAXLINE];
+
+	if (pipe(fd) &lt; 0) {
+		perror("pipe");
+		exit(1);
+	}
+	if ((pid = fork()) &lt; 0) {
+		perror("fork");
+		exit(1);
+	}
+	if (pid &gt; 0) { /* parent */
+		close(fd[0]);
+		write(fd[1], "hello world\n", 12);
+		wait(NULL);
+	} else {       /* child */
+		close(fd[1]);
+		n = read(fd[0], line, MAXLINE);
+		write(STDOUT_FILENO, line, n);
+	}
+	return 0;
+}</pre></div></div><br class="example-break" /><p>使用管道有一些限制：</p><div class="itemizedlist"><ul type="disc"><li><p>两个进程通过一个管道只能实现单向通信，比如上面的例子，父进程写子进程读，如果有时候也需要子进程写父进程读，就必须另开一个管道。请读者思考，如果只开一个管道，但是父进程不关闭读端，子进程也不关闭写端，双方都有读端和写端，为什么不能实现双向通信？</p></li><li><p>管道的读写端通过打开的文件描述符来传递，因此要通信的两个进程必须从它们的公共祖先那里继承管道文件描述符。上面的例子是父进程把文件描述符传给子进程之后父子进程之间通信，也可以父进程<code class="literal">fork</code>两次，把文件描述符传给两个子进程，然后两个子进程之间通信，总之需要通过<code class="literal">fork</code>传递文件描述符使两个进程都能访问同一管道，它们才能通信。</p></li></ul></div><p>使用管道需要注意以下4种特殊情况（假设都是阻塞I/O操作，没有设置<code class="literal">O_NONBLOCK</code>标志）：</p><div class="orderedlist"><ol type="1"><li><p>如果所有指向管道写端的文件描述符都关闭了（管道写端的引用计数等于0），而仍然有进程从管道的读端读数据，那么管道中剩余的数据都被读取后，再次<code class="literal">read</code>会返回0，就像读到文件末尾一样。</p></li><li><p>如果有指向管道写端的文件描述符没关闭（管道写端的引用计数大于0），而持有管道写端的进程也没有向管道中写数据，这时有进程从管道读端读数据，那么管道中剩余的数据都被读取后，再次<code class="literal">read</code>会阻塞，直到管道中有数据可读了才读取数据并返回。</p></li><li><p>如果所有指向管道读端的文件描述符都关闭了（管道读端的引用计数等于0），这时有进程向管道的写端<code class="literal">write</code>，那么该进程会收到信号<code class="literal">SIGPIPE</code>，通常会导致进程异常终止。在<a class="xref" href="ch33.html#signal">第 33 章 <i>信号</i></a>会讲到怎样使<code class="literal">SIGPIPE</code>信号不终止进程。</p></li><li><p>如果有指向管道读端的文件描述符没关闭（管道读端的引用计数大于0），而持有管道读端的进程也没有从管道中读数据，这时有进程向管道写端写数据，那么在管道被写满时再次<code class="literal">write</code>会阻塞，直到管道中有空位置了才写入数据并返回。</p></li></ol></div><p>管道的这四种特殊情况具有普遍意义。在<a class="xref" href="ch37.html#socket">第 37 章 <i>socket编程</i></a>要讲的TCP socket也具有管道的这些特性。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2868118"></a>习题</h4></div></div></div><p>1、在<a class="xref" href="ch30s04.html#process.pipe">例 30.7 “管道”</a>中，父进程只用到写端，因而把读端关闭，子进程只用到读端，因而把写端关闭，然后互相通信，不使用的读端或写端必须关闭，请读者想一想如果不关闭会有什么问题。</p><p>2、请读者修改<a class="xref" href="ch30s04.html#process.pipe">例 30.7 “管道”</a>的代码和实验条件，验证我上面所说的四种特殊情况。</p></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2868153"></a>4.2. 其它IPC机制</h3></div></div></div><p>进程间通信必须通过内核提供的通道，而且必须有一种办法在进程中标识内核提供的某个通道，上一节讲的管道是用打开的文件描述符来标识的。如果要互相通信的几个进程没有从公共祖先那里继承文件描述符，它们怎么通信呢？内核提供一条通道不成问题，问题是如何标识这条通道才能使各进程都可以访问它？文件系统中的路径名是全局的，各进程都可以访问，因此可以用文件系统中的路径名来标识一个IPC通道。</p><p>FIFO和UNIX Domain Socket这两种IPC机制都是利用文件系统中的特殊文件来标识的。可以用<code class="literal">mkfifo</code>命令创建一个FIFO文件：</p><pre class="screen">$ mkfifo hello
+$ ls -l hello
+prw-r--r-- 1 akaedu akaedu 0 2008-10-30 10:44 hello</pre><p>FIFO文件在磁盘上没有数据块，仅用来标识内核中的一条通道，各进程可以打开这个文件进行<code class="literal">read</code>/<code class="literal">write</code>，实际上是在读写内核通道（根本原因在于这个<code class="literal">file</code>结构体所指向的<code class="literal">read</code>、<code class="literal">write</code>函数和常规文件不一样），这样就实现了进程间通信。UNIX Domain Socket和FIFO的原理类似，也需要一个特殊的socket文件来标识内核中的通道，例如<code class="literal">/var/run</code>目录下有很多系统服务的socket文件：</p><pre class="screen">$ ls -l /var/run/
+total 52
+srw-rw-rw- 1 root        root           0 2008-10-30 00:24 acpid.socket
+...
+srw-rw-rw- 1 root        root           0 2008-10-30 00:25 gdm_socket
+...
+srw-rw-rw- 1 root        root           0 2008-10-30 00:24 sdp
+...
+srwxr-xr-x 1 root        root           0 2008-10-30 00:42 synaptic.socket</pre><p>文件类型s表示socket，这些文件在磁盘上也没有数据块。UNIX Domain Socket是目前最广泛使用的IPC机制，到后面讲socket编程时再详细介绍。</p><p>现在把进程之间传递信息的各种途径（包括各种IPC机制）总结如下：</p><div class="itemizedlist"><ul type="disc"><li><p>父进程通过<code class="literal">fork</code>可以将打开文件的描述符传递给子进程</p></li><li><p>子进程结束时，父进程调用<code class="literal">wait</code>可以得到子进程的终止信息</p></li><li><p>几个进程可以在文件系统中读写某个共享文件，也可以通过给文件加锁来实现进程间同步</p></li><li><p>进程之间互发信号，一般使用<code class="literal">SIGUSR1</code>和<code class="literal">SIGUSR2</code>实现用户自定义功能</p></li><li><p>管道</p></li><li><p>FIFO</p></li><li><p>mmap函数，几个进程可以映射同一内存区</p></li><li><p>SYS V IPC，以前的SYS V UNIX系统实现的IPC机制，包括消息队列、信号量和共享内存，现在已经基本废弃</p></li><li><p>UNIX Domain Socket，目前最广泛使用的IPC机制</p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch30s03.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch30.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch30s05.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">3. 进程控制 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 5. 练习：实现简单的Shell</td></tr></table></div></body></html>

@@ -1,0 +1,293 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>箭头 Arrows</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="NEXT"
+TITLE="工具提示对象 The Tooltips Object"
+HREF="x873.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c816.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x873.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-ARROWS">箭头 Arrows</H1
+><P
+>箭头构件(Arrow widget)画一个箭头，面向几种不同的方向，并有几种不同的风格。在许多应用程序中，常用于创建带箭头的按钮。和标签构件一样，它不能引发信号。</P
+><P
+>只有两个函数用来操纵箭头构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_arrow_new( GtkArrowType   arrow_type,
+                          GtkShadowType  shadow_type );
+
+void gtk_arrow_set( GtkArrow      *arrow,
+                    GtkArrowType   arrow_type,
+                    GtkShadowType  shadow_type );</PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个函数创建新的箭头构件，指明构件的类型和外观；第二个函数用来改变箭头构件类型和外观。<TT
+CLASS="LITERAL"
+>arrow_type</TT
+>参数可以取下列值：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  GTK_ARROW_UP  向上
+  GTK_ARROW_DOWN  向下
+  GTK_ARROW_LEFT  向左
+  GTK_ARROW_RIGHT  向右</PRE
+></TD
+></TR
+></TABLE
+><P
+>显然，这些值指示箭头指向哪个方向，<TT
+CLASS="LITERAL"
+>shadow_type</TT
+>参数可以取下列值：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  GTK_SHADOW_IN
+  GTK_SHADOW_OUT (缺省值)
+  GTK_SHADOW_ETCHED_IN
+  GTK_SHADOW_ETCHED_OUT</PRE
+></TD
+></TR
+></TABLE
+><P
+>下面是说明这些类型和外观的示例。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/arrow.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+
+/* 用指定的参数创建一个箭头构件并将它组装到按钮中 */
+GtkWidget *create_arrow_button( GtkArrowType  arrow_type,
+				GtkShadowType shadow_type )
+{
+  GtkWidget *button;
+  GtkWidget *arrow;
+
+  button = gtk_button_new ();
+  arrow = gtk_arrow_new (arrow_type, shadow_type);
+
+  gtk_container_add (GTK_CONTAINER (button), arrow);
+  
+  gtk_widget_show (button);
+  gtk_widget_show (arrow);
+
+  return button;
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+  /* GtkWidget 是构件的存储类型 */
+  GtkWidget *window;
+  GtkWidget *button;
+  GtkWidget *box;
+
+  /* 初始化 */
+  gtk_init (&#38;argc, &#38;argv);
+
+  /* 创建一个新窗口 */
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+
+  gtk_window_set_title (GTK_WINDOW (window), "Arrow Buttons");
+
+  /* 对所有的窗口都这样做是一个好主意 */
+  g_signal_connect (G_OBJECT (window), "destroy",
+                    G_CALLBACK (gtk_main_quit), NULL);
+
+  /* 设置窗口的边框的宽度 */
+  gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+
+  /* 建一个组装盒以容纳箭头/按钮 */
+  box = gtk_hbox_new (FALSE, 0);
+  gtk_container_set_border_width (GTK_CONTAINER (box), 2);
+  gtk_container_add (GTK_CONTAINER (window), box);
+
+  /* 组装、显示所有的构件 */
+  gtk_widget_show (box);
+
+  button = create_arrow_button (GTK_ARROW_UP, GTK_SHADOW_IN);
+  gtk_box_pack_start (GTK_BOX (box), button, FALSE, FALSE, 3);
+
+  button = create_arrow_button (GTK_ARROW_DOWN, GTK_SHADOW_OUT);
+  gtk_box_pack_start (GTK_BOX (box), button, FALSE, FALSE, 3);
+  
+  button = create_arrow_button (GTK_ARROW_LEFT, GTK_SHADOW_ETCHED_IN);
+  gtk_box_pack_start (GTK_BOX (box), button, FALSE, FALSE, 3);
+  
+  button = create_arrow_button (GTK_ARROW_RIGHT, GTK_SHADOW_ETCHED_OUT);
+  gtk_box_pack_start (GTK_BOX (box), button, FALSE, FALSE, 3);
+  
+  gtk_widget_show (window);
+  
+  /* 进入主循环，等待用户的动作 */
+  gtk_main ();
+  
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x873.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>杂项构件</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>工具提示对象 The Tooltips Object</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

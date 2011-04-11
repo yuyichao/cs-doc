@@ -1,0 +1,84 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>USBVIEW</TITLE>
+</HEAD>
+<BODY>
+
+<FONT FACE="Verdana"><H2>USBVIEW</H2>
+
+<span style="color:#FF0000">[This is preliminary documentation and subject to change.]</span> 
+
+<H3>SUMMARY</H3>
+</FONT><FONT FACE="Verdana" SIZE=2><P>Usbview.exe is a Windows GUI application that allows you to browse all USB controllers and connected USB devices on your system.  The left pane in the main application window displays a connection-oriented tree view, and the right pane displays the USB data structures pertaining to the selected USB device, such as the Device, Configuration, Interface, and Endpoint Descriptors, as well as the current device configuration.</P>
+<P>This functional application sample demonstrates how a user-mode application can enumerate USB host controllers, USB hubs, and attached USB devices, and query information about the devices from the registry and through USB requests to the devices.</P>
+<P>The IOCTL calls (see the system include file USBIOCTL.H) demonstrated by this sample include:</P><UL>
+<li>IOCTL_GET_HCD_DRIVERKEY_NAME
+<li>IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION
+<li>IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME
+<li>IOCTL_USB_GET_NODE_CONNECTION_INFORMATION
+<li>IOCTL_USB_GET_NODE_CONNECTION_NAME
+<li>IOCTL_USB_GET_NODE_INFORMATION
+<li>IOCTL_USB_GET_ROOT_HUB_NAME</P></UL>
+</FONT><FONT FACE="Verdana"><H3>BUILDING THE SAMPLE</H3>
+</FONT><FONT FACE="Verdana" SIZE=2><P>The Usbview sample compiles and links in the standard DDK build environment with Microsoft&#174; Visual C&#174; 6.0 on both X86 and Alpha systems, producing a single executable binary Usbview.exe.  Both free and checked versions can be built, with assertion error messages enabled in the checked build to indicate unexpected error conditions.</P>
+</FONT><FONT FACE="Verdana"><H3>CODE TOUR</H3>
+<H4>File Manifest</H4>
+</FONT><U><PRE>Files         Description
+</U><FONT FACE="Courier">Usbview.htm&#9;Documentation for this sample (this file)
+Sources&#9;&#9;Generic build-compatible sources file for this sample
+Resource.h&#9;ID definitions for GUI controls
+Usbdesc.h&#9;USB descriptor type definitions
+Usbview.h&#9;Main header file for this sample
+Vndrlist.h&#9;List of USB Vendor IDs and vendor names
+Debug.c&#9;&#9;Assertion routines for the checked build
+Devnode.c&#9;Routines for accessing DevNode information
+Dispaud.c&#9;Routines for displaying USB audio class device information
+Display.c&#9;Routines for displaying USB device information
+Enum.c&#9;&#9;Routines for enumerating host controllers, hubs, and devices
+Usbview.c&#9;Entry point and GUI handling routines
+Usbview.rc&#9;Menu and dialog definitions
+Split.cur&#9;Cursor file
+Usb.ico&#9;&#9;Application icon file
+bang.ico&#9;&#9;Application icon file
+hub.ico&#9;&#9;Application icon file
+monitor.ico&#9;&#9;Application icon file
+port.ico&#9;&#9;Application icon file
+makefile&#9;&#9;DDK build environment makefile
+
+</FONT><FONT FACE="Verdana"> </PRE>
+<H4>Programming Tour</H4>
+</FONT><FONT FACE="Verdana" SIZE=2><P>The major topics covered in this tour are: </P>
+
+<UL>
+<LI>GUI handling routines </LI>
+<LI>Device enumeration routines</LI>
+<LI>Device information display routines</LI></UL>
+
+
+<P>The file Usbview.c contains the sample application entry point and GUI handling routines.  On entry, the main application window is created, which is actually a dialog box as defined in Usbview.rc.  The dialog box consists of a split window with a tree view control on the left side and an edit control on the right side.  <P>
+
+The routine RefreshTree() is called to enumerate USB host controller, hubs, and attached devices and to populate the device tree view control.  RefreshTree() calls the routine EnumerateHostControllers() in Enum.c to enumerate USB host controller, hubs, and attached devices.  After the device tree view control has been populated, USBView_OnNotify() is called when an item is selected in the device tree view control.  This calls UpdateEditControl() in Display.c to display information about the selected item in the edit control.</P>
+
+<P>The file Enum.c contains the routines that enumerate the USB bus and populate the tree view control.  The USB device enumeration and information collection process is the main point of this sample application.  The enumeration process starts at EnumerateHostControllers() and goes like this:</P>
+
+<P>(1) Enumerate Host Controllers and Root Hubs.  Host controllers have symbolic link names of the form HCDx, where x starts at 0.  Use CreateFile() to open each host controller symbolic link.  Create a node in the tree view to represent each host controller. After a host controller has been opened, send the host controller an IOCTL_USB_GET_ROOT_HUB_NAME request to get the symbolic link name of the root hub that is part of the host controller.</P>
+
+<P>(2) Enumerate Hubs (Root Hubs and External Hubs). Given the name of a hub, use CreateFile() to open the hub.  Send the hub an IOCTL_USB_GET_NODE_INFORMATION request to get info about the hub, such as the number of downstream ports.  Create a node in the tree view to represent each hub.</P>
+
+<P>(3) Enumerate Downstream Ports.  Given a handle to an open hub and the number of downstream ports on the hub, send the hub an IOCTL_USB_GET_NODE_CONNECTION_INFORMATION request for each downstream port of the hub to get info about the device (if any) attached to each port.  If there is a device attached to a port, send the hub an IOCTL_USB_GET_NODE_CONNECTION_NAME request to get the symbolic link name of the hub attached to the downstream port.  If there is a hub attached to the downstream port, recurse to step (2).  Create a node in the tree view to represent each hub port and attached device.  USB configuration and string descriptors are retrieved from attached devices in GetConfigDescriptor() and GetStringDescriptor() by sending an IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION() to the hub to which the device is attached.</P>
+
+<P>The file Display.c contains routines that display information about selected devices in the application edit control.  Information about the device was collected during the enumeration of the device tree.  This information includes USB device, configuration, and string descriptors and connection and configuration information that is maintained by the USB stack.  The routines in this file simply parse and print the data structures for the device that were collected when it was enumerated.   The file Dispaud.c parses and prints data structures that are specific to USB audio class devices.</P>
+</FONT><FONT FACE="Verdana" SIZE=2 COLOR="#ff0000"></FONT></BODY>
+</HTML>
+
+</FONT><P ALIGN="CENTER"><A HREF="#top"><FONT FACE="Verdana" SIZE=2>Top of page</FONT></A><FONT FACE="Verdana" SIZE=2> </P></FONT>
+<TABLE CELLSPACING=0 BORDER=0 WIDTH=624>
+<TR><TD VALIGN="MIDDLE" BGCOLOR="#00ffff" HEIGHT=2>
+<P></TD>
+</TR>
+</TABLE>
+
+<FONT FACE="MS Sans Serif" SIZE=1><P>&copy; 1999 Microsoft Corporation</FONT><FONT FACE="Verdana" SIZE=2> </P></FONT></BODY>
+</HTML>

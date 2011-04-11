@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. Shell的基本语法</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch31.html" title="第 31 章 Shell脚本" /><link rel="prev" href="ch31s02.html" title="2. Shell如何执行命令" /><link rel="next" href="ch31s04.html" title="4. bash启动脚本" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. Shell的基本语法</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch31s02.html">上一页</a> </td><th width="60%" align="center">第 31 章 Shell脚本</th><td width="20%" align="right"> <a accesskey="n" href="ch31s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2872661"></a>3. Shell的基本语法</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2872666"></a>3.1. 变量</h3></div></div></div><p>按照惯例，Shell变量由全大写字母加下划线组成，有两种类型的Shell变量：</p><div class="variablelist"><dl><dt><span class="term">环境变量</span></dt><dd><p>在<a class="xref" href="ch30s02.html#process.environ">第 2 节 “环境变量”</a>中讲过，环境变量可以从父进程传给子进程，因此Shell进程的环境变量可以从当前Shell进程传给<code class="literal">fork</code>出来的子进程。用<code class="literal">printenv</code>命令可以显示当前Shell进程的环境变量。</p></dd><dt><span class="term">本地变量</span></dt><dd><p>只存在于当前Shell进程，用<code class="literal">set</code>命令可以显示当前Shell进程中定义的所有变量（包括本地变量和环境变量）和函数。</p></dd></dl></div><p>环境变量是任何进程都有的概念，而本地变量是Shell特有的概念。在Shell中，环境变量和本地变量的定义和用法相似。在Shell中定义或赋值一个变量：</p><pre class="screen">$ VARNAME=value</pre><p>注意等号两边都不能有空格，否则会被Shell解释成命令和命令行参数。</p><p>一个变量定义后仅存在于当前Shell进程，它是本地变量，用<code class="literal">export</code>命令可以把本地变量导出为环境变量，定义和导出环境变量通常可以一步完成：</p><pre class="screen">$ export VARNAME=value</pre><p>也可以分两步完成：</p><pre class="screen">$ VARNAME=value
+$ export VARNAME</pre><p>用<code class="literal">unset</code>命令可以删除已定义的环境变量或本地变量。</p><pre class="screen">$ unset VARNAME</pre><p>如果一个变量叫做<code class="literal">VARNAME</code>，用<code class="literal">${VARNAME}</code>可以表示它的值，在不引起歧义的情况下也可以用<code class="literal">$VARNAME</code>表示它的值。通过以下例子比较这两种表示法的不同：</p><pre class="programlisting">$ echo $SHELL
+$ echo $SHELLabc
+$ echo $SHELL abc
+$ echo ${SHELL}abc</pre><p>注意，在定义变量时不用$，取变量值时要用$。和C语言不同的是，Shell变量不需要明确定义类型，事实上Shell变量的值都是字符串，比如我们定义<code class="literal">VAR=45</code>，其实<code class="literal">VAR</code>的值是字符串<code class="literal">45</code>而非整数。Shell变量不需要先定义后使用，如果对一个没有定义的变量取值，则值为空字符串。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2872839"></a>3.2. 文件名代换（Globbing）<a id="id2872843" class="indexterm"></a>：* ? []</h3></div></div></div><p>这些用于匹配的字符称为通配符（Wildcard）<a id="id2872854" class="indexterm"></a>，具体如下：</p><div class="table"><a id="id2872862"></a><p class="title"><b>表 31.1. 通配符</b></p><div class="table-contents"><table summary="通配符" border="1"><colgroup><col /><col /></colgroup><tbody><tr><td>*</td><td>匹配0个或多个任意字符</td></tr><tr><td>?</td><td>匹配一个任意字符</td></tr><tr><td>[若干字符]</td><td>匹配方括号中任意一个字符的一次出现</td></tr></tbody></table></div></div><br class="table-break" /><pre class="screen">$ ls /dev/ttyS*
+$ ls ch0?.doc
+$ ls ch0[0-2].doc
+$ ls ch[012][0-9].doc</pre><p>注意，Globbing所匹配的文件名是由Shell展开的，也就是说在参数还没传给程序之前已经展开了，比如上述<code class="literal">ls ch0[012].doc</code>命令，如果当前目录下有<code class="literal">ch00.doc</code>和<code class="literal">ch02.doc</code>，则传给<code class="literal">ls</code>命令的参数实际上是这两个文件名，而不是一个匹配字符串。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2872936"></a>3.3. 命令代换：`或 $()</h3></div></div></div><p>由反引号括起来的也是一条命令，Shell先执行该命令，然后将输出结果立刻代换到当前命令行中。例如定义一个变量存放<code class="literal">date</code>命令的输出：</p><pre class="screen">$ DATE=`date`
+$ echo $DATE</pre><p>命令代换也可以用<code class="literal">$()</code>表示：</p><pre class="screen">$ DATE=$(date)</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2872971"></a>3.4. 算术代换：$(())</h3></div></div></div><p>用于算术计算，<code class="literal">$(())</code>中的Shell变量取值将转换成整数，例如：</p><pre class="screen">$ VAR=45
+$ echo $(($VAR+3))</pre><p><code class="literal">$(())</code>中只能用+-*/和()运算符，并且只能做整数运算。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2873001"></a>3.5. 转义字符\</h3></div></div></div><p>和C语言类似，\在Shell中被用作转义字符，用于去除紧跟其后的单个字符的特殊意义（回车除外），换句话说，紧跟其后的字符取字面值。例如：</p><pre class="screen">$ echo $SHELL
+/bin/bash
+$ echo \$SHELL
+$SHELL
+$ echo \\
+\</pre><p>比如创建一个文件名为“<span class="quote">$ $</span>”的文件可以这样：</p><pre class="screen">$ touch \$\ \$</pre><p>还有一个字符虽然不具有特殊含义，但是要用它做文件名也很麻烦，就是-号。如果要创建一个文件名以-号开头的文件，这样是不行的：</p><pre class="screen">$ touch -hello
+touch: invalid option -- h
+Try `touch --help' for more information.</pre><p>即使加上\转义也还是报错：</p><pre class="screen">$ touch \-hello
+touch: invalid option -- h
+Try `touch --help' for more information.</pre><p>因为各种UNIX命令都把-号开头的命令行参数当作命令的选项，而不会当作文件名。如果非要处理以-号开头的文件名，可以有两种办法：</p><pre class="screen">$ touch ./-hello</pre><p>或者</p><pre class="screen">$ touch -- -hello</pre><p>\还有一种用法，在\后敲回车表示续行，Shell并不会立刻执行命令，而是把光标移到下一行，给出一个续行提示符&gt;，等待用户继续输入，最后把所有的续行接到一起当作一个命令执行。例如：</p><pre class="screen">$ ls \
+&gt; -l
+（ls -l命令的输出）</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2873083"></a>3.6. 单引号</h3></div></div></div><p>和C语言不一样，Shell脚本中的单引号和双引号一样都是字符串的界定符（双引号下一节介绍），而不是字符的界定符。单引号用于保持引号内所有字符的字面值，即使引号内的\和回车也不例外，但是字符串中不能出现单引号。如果引号没有配对就输入回车，Shell会给出续行提示符，要求用户把引号配上对。例如：</p><pre class="screen">$ echo '$SHELL'
+$SHELL
+$ echo 'ABC\（回车）
+&gt; DE'（再按一次回车结束命令）
+ABC\
+DE</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2873112"></a>3.7. 双引号</h3></div></div></div><p>双引号用于保持引号内所有字符的字面值（回车也不例外），但以下情况除外：</p><div class="itemizedlist"><ul type="disc"><li><p>$加变量名可以取变量的值</p></li><li><p>反引号仍表示命令替换</p></li><li><p>\$表示$的字面值</p></li><li><p>\`表示`的字面值</p></li><li><p>\"表示"的字面值</p></li><li><p>\\表示\的字面值</p></li><li><p>除以上情况之外，在其它字符前面的\无特殊含义，只表示字面值</p></li></ul></div><pre class="screen">$ echo "$SHELL"
+/bin/bash
+$ echo "`date`"
+Sun Apr 20 11:22:06 CEST 2003
+$ echo "I'd say: \"Go for it\""
+I'd say: "Go for it"
+$ echo "\"（回车）
+&gt;"（再按一次回车结束命令）
+"
+
+$ echo "\\"
+\</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch31s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch31.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch31s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. Shell如何执行命令 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. bash启动脚本</td></tr></table></div></body></html>

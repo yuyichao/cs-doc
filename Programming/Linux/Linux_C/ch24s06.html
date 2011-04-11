@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>6. 可变参数</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch24.html" title="第 24 章 函数接口" /><link rel="prev" href="ch24s05.html" title="5. 回调函数" /><link rel="next" href="ch25.html" title="第 25 章 C标准库" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">6. 可变参数</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch24s05.html">上一页</a> </td><th width="60%" align="center">第 24 章 函数接口</th><td width="20%" align="right"> <a accesskey="n" href="ch25.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2822466"></a>6. 可变参数</h2></div></div></div><p>到目前为止我们只见过一个带有可变参数的函数<code class="literal">printf</code>：</p><pre class="programlisting">int printf(const char *format, ...);</pre><p>以后还会见到更多这样的函数。现在我们实现一个简单的<code class="literal">myprintf</code>函数：</p><div class="example"><a id="id2822499"></a><p class="title"><b>例 24.9. 用可变参数实现简单的printf函数</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdarg.h&gt;
+
+void myprintf(const char *format, ...)
+{
+     va_list ap;
+     char c;
+
+     va_start(ap, format);
+     while (c = *format++) {
+	  switch(c) {
+	  case 'c': {
+	       /* char is promoted to int when passed through '...' */
+	       char ch = va_arg(ap, int);
+	       putchar(ch);
+	       break;
+	  }
+	  case 's': {
+	       char *p = va_arg(ap, char *);
+	       fputs(p, stdout);
+	       break;
+	  }
+	  default:
+	       putchar(c);
+	  }
+     }
+     va_end(ap);
+}
+
+int main(void)
+{
+     myprintf("c\ts\n", '1', "hello");
+     return 0;
+}</pre></div></div><br class="example-break" /><p>要处理可变参数，需要用C到标准库的<code class="literal">va_list</code>类型和<code class="literal">va_start</code>、<code class="literal">va_arg</code>、<code class="literal">va_end</code>宏，这些定义在<code class="literal">stdarg.h</code>头文件中。这些宏是如何取出可变参数的呢？我们首先对照反汇编分析在调用<code class="literal">myprintf</code>函数时这些参数的内存布局。</p><pre class="screen">     myprintf("c\ts\n", '1', "hello");
+ 80484c5:	c7 44 24 08 b0 85 04 	movl   $0x80485b0,0x8(%esp)
+ 80484cc:	08 
+ 80484cd:	c7 44 24 04 31 00 00 	movl   $0x31,0x4(%esp)
+ 80484d4:	00 
+ 80484d5:	c7 04 24 b6 85 04 08 	movl   $0x80485b6,(%esp)
+ 80484dc:	e8 43 ff ff ff       	call   8048424 &lt;myprintf&gt;</pre><div class="figure"><a id="id2822565"></a><p class="title"><b>图 24.6. <code class="literal">myprintf</code>函数的参数布局</b></p><div class="figure-contents"><div><img src="images/interface.vaarg.png" alt="myprintf函数的参数布局" /></div></div></div><br class="figure-break" /><p>这些参数是从右向左依次压栈的，所以第一个参数靠近栈顶，第三个参数靠近栈底。这些参数在内存中是连续存放的，每个参数都对齐到4字节边界。第一个和第三个参数都是指针类型，各占4个字节，虽然第二个参数只占一个字节，但为了使第三个参数对齐到4字节边界，所以第二个参数也占4个字节。现在给出一个<code class="literal">stdarg.h</code>的简单实现，这个实现出自<a class="xref" href="bi01.html#bibli.standardclib" title="The Standard C Library">[<abbr class="abbrev">Standard C Library</abbr>]</a>：</p><div class="example"><a id="id2822618"></a><p class="title"><b>例 24.10. stdarg.h的一种实现</b></p><div class="example-contents"><pre class="programlisting">/* stdarg.h standard header */
+#ifndef _STDARG
+#define _STDARG
+
+/* type definitions */
+typedef char *va_list;
+/* macros */
+#define va_arg(ap, T) \
+	(* (T *)(((ap) += _Bnd(T, 3U)) - _Bnd(T, 3U)))
+#define va_end(ap) (void)0
+#define va_start(ap, A) \
+	(void)((ap) = (char *)&amp;(A) + _Bnd(A, 3U))
+#define _Bnd(X, bnd) (sizeof (X) + (bnd) &amp; ~(bnd))
+#endif</pre></div></div><br class="example-break" /><p>这个头文件中的内部宏定义<code class="literal">_Bnd(X, bnd)</code>将类型或变量<code class="literal">X</code>的长度对齐到<code class="literal">bnd+1</code>字节的整数倍，例如<code class="literal">_Bnd(char, 3U)</code>的值是4，<code class="literal">_Bnd(int, 3U)</code>也是4。</p><p>在<code class="literal">myprintf</code>中定义的<code class="literal">va_list ap;</code>其实是一个指针，<code class="literal">va_start(ap, format)</code>使<code class="literal">ap</code>指向<code class="literal">format</code>参数的下一个参数，也就是指向上图中<code class="literal">esp+4</code>的位置。然后<code class="literal">va_arg(ap, int)</code>把第二个参数的值按<code class="literal">int</code>型取出来，同时使<code class="literal">ap</code>指向第三个参数，也就是指向上图中<code class="literal">esp+8</code>的位置。然后<code class="literal">va_arg(ap, char *)</code>把第三个参数的值按<code class="literal">char *</code>型取出来，同时使<code class="literal">ap</code>指向更高的地址。<code class="literal">va_end(ap)</code>在我们的简单实现中不起任何作用，在有些实现中可能会把<code class="literal">ap</code>改写成无效值，C标准要求在函数返回前调用<code class="literal">va_end</code>。</p><p>如果把<code class="literal">myprintf</code>中的<code class="literal">char ch = va_arg(ap, int);</code>改成<code class="literal">char ch = va_arg(ap, char);</code>，用我们这个<code class="literal">stdarg.h</code>的简单实现是没有问题的。但如果改用<code class="literal">libc</code>提供的<code class="literal">stdarg.h</code>，在编译时会报错：</p><pre class="screen">$ gcc main.c
+main.c: In function ‘myprintf’:
+main.c:33: warning: ‘char’ is promoted to ‘int’ when passed through ‘...’
+main.c:33: note: (so you should pass ‘int’ not ‘char’ to ‘va_arg’)
+main.c:33: note: if this code is reached, the program will abort
+$ ./a.out
+Illegal instruction</pre><p>因此要求<code class="literal">char</code>型的可变参数必须按<code class="literal">int</code>型来取，这是为了与C标准一致，我们在<a class="xref" href="ch15s03.html#type.intpromo">第 3.1 节 “Integer Promotion”</a>讲过Default Argument Promotion规则，传递<code class="literal">char</code>型的可变参数时要提升为<code class="literal">int</code>型。</p><p>从<code class="literal">myprintf</code>的例子可以理解<code class="literal">printf</code>的实现原理，<code class="literal">printf</code>函数根据第一个参数（格式化字符串）来确定后面有几个参数，分别是什么类型。保证参数的类型、个数与格式化字符串的描述相匹配是调用者的责任，实现者只管按格式化字符串的描述从栈上取数据，如果调用者传递的参数类型或个数不正确，实现者是没有办法避免错误的。</p><p>还有一种方法可以确定可变参数的个数，就是在参数列表的末尾传一个Sentinel，例如<code class="literal">NULL</code>。<code class="literal">execl(3)</code>就采用这种方法确定参数的个数。下面实现一个<code class="literal">printlist</code>函数，可以打印若干个传入的字符串。</p><div class="example"><a id="id2818908"></a><p class="title"><b>例 24.11. 根据Sentinel判断可变参数的个数</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdarg.h&gt;
+
+void printlist(int begin, ...)
+{
+     va_list ap;
+     char *p;
+
+     va_start(ap, begin);
+     p = va_arg(ap, char *);
+
+     while (p != NULL) {
+	  fputs(p, stdout);
+	  putchar('\n');
+	  p = va_arg(ap, char*);
+     }
+     va_end(ap);
+}
+
+int main(void)
+{
+     printlist(0, "hello", "world", "foo", "bar", NULL);
+     return 0;
+}</pre></div></div><br class="example-break" /><p><code class="literal">printlist</code>的第一个参数<code class="literal">begin</code>的值并没有用到，但是C语言规定至少要定义一个有名字的参数，因为<code class="literal">va_start</code>宏要用到参数列表中最后一个有名字的参数，从它的地址开始找可变参数的位置。实现者应该在文档中说明参数列表必须以<code class="literal">NULL</code>结尾，如果调用者不遵守这个约定，实现者是没有办法避免错误的。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2818955"></a>习题</h3></div></div></div><p>1、实现一个功能更完整的<code class="literal">printf</code>，能够识别<code class="literal">%</code>，能够处理<code class="literal">%d</code>、<code class="literal">%f</code>对应的整数参数。在实现中不许调用<code class="literal">printf(3)</code>这个Man Page中描述的任何函数。</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch24s05.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch24.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch25.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">5. 回调函数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 第 25 章 C标准库</td></tr></table></div></body></html>

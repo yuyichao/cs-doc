@@ -1,0 +1,208 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>18.3.&#160;TTY 线路设置-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+<link rel="prev" href="ch18s02.html" title="18.2.&#160;tty_driver 函数指针">
+<link rel="next" href="ch18s04.html" title="18.4.&#160;ioctls 函数">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">18.3.&#160;TTY 线路设置</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch18s02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;18&#160;章&#160;TTY 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch18s04.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="TTYLineSettings.sect"></a>18.3.&#160;TTY 线路设置</h2></div></div></div>
+<p>当一个用户要改变一个 tty 设备的线路设置或者获取当前线路设置, 他调用一个许多的不同 termios 用户空间库函数或者直接对这个 tty 设备的节点调用 ioctl. tty 核心转换这 2 种接口为许多不同的 tty 驱动函数回调和 ioctl 调用.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="settermios.sect"></a>18.3.1.&#160;set_termios 函数</h3></div></div></div>
+<p>大部分 termios 用户空间函数被库转换为一个对驱动节点的 ioctl 调用. 大量的不同的 tty ioctl 调用接着被 tty 核心转换为一个对 tty 驱动的单个 set_termios 函数调用. set_termios 调用需要决定哪个线路设置它被请求来改变, 接着在 tty 设备中做这些改变. tty 驱动必须能够解码所有的在 termios 结构中的不同设置并且响应任何需要的改变. 这是一个复杂的任务, 因为所有的线路设置以很多的方式被包装进 termios 结构.</p>
+<p>一个 set_termios 函数应当做的第一件事情是决定任何事情是否真的需要改变. 这可使用下面的代码完成:</p>
+<pre class="programlisting">
+unsigned int cflag;
+cflag = tty-&gt;termios-&gt;c_cflag;
+/* check that they really want us to change something */
+if (old_termios)
+{
+        if ((cflag == old_termios-&gt;c_cflag) &amp;&amp;
+                        (RELEVANT_IFLAG(tty-&gt;termios-&gt;c_iflag) == RELEVANT_IFLAG(old_termios-&gt;c_iflag))) {
+                printk(KERN_DEBUG " - nothing to change...\n");
+                return;
+        }
+}
+</pre>
+<p>RELEVANT_IFLAG 宏定义为:</p>
+<pre class="programlisting">
+#define RELEVANT_IFLAG(iflag) ((iflag) &amp; (IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK))
+</pre>
+<p>而且用在屏蔽掉 cflags 变量的重要位. 接着这个和原来的值比较, 并且看是否它们不同. 如果不, 什么不改变, 因此我们返回. 注意 old_termios 变量是第一个被检查来看是否它指向一个有效的结构, 在它被存取之前. 这是需要的, 因为有时这个变量被设为 NULL. 试图存取一个 NULL 指针成员会导致内核崩溃.</p>
+<p>为查看需要的字节大小, CSIZE 位掩码可用来从 cflag 变量区分出正确的位. 如果这个大小无法知道, 习惯上确实是 8 个数据位. 这个可如下实现:</p>
+<pre class="programlisting">
+/* get the byte size */
+switch (cflag &amp; CSIZE)
+{
+
+case CS5:
+        printk(KERN_DEBUG " - data bits = 5\n");
+        break;
+case CS6:
+        printk(KERN_DEBUG " - data bits = 6\n");
+        break;
+case CS7:
+        printk(KERN_DEBUG " - data bits = 7\n");
+        break;
+default:
+case CS8:
+        printk(KERN_DEBUG " - data bits = 8\n");
+        break;
+}
+</pre>
+<p>为决定需要的奇偶值, PARENB 位掩码可对 cflag 变量检查来告知是否任何奇偶要被设置. 如果这样, PARODD 位掩码可用来决定是否奇偶应当是奇或者偶. 这个的一个实现是:</p>
+<pre class="programlisting">
+/* determine the parity */
+if (cflag &amp; PARENB)
+        if (cflag &amp; PARODD)
+                printk(KERN_DEBUG " - parity = odd\n");
+        else
+                printk(KERN_DEBUG " - parity = even\n");
+else
+        printk(KERN_DEBUG " - parity = none\n");
+</pre>
+<p>请求的停止位也可使用 CSTOPB 位掩码从 cflag 变量中来知道. 一个实现是:</p>
+<pre class="programlisting">
+/* figure out the stop bits requested */
+if (cflag &amp; CSTOPB)
+
+        printk(KERN_DEBUG " - stop bits = 2\n");
+else
+
+        printk(KERN_DEBUG " - stop bits = 1\n");
+</pre>
+<p>有 2 个基本的流控类型: 硬件和软件. 为确定是否用户要求硬件流控, CRTSCTS 位掩码用来对 cflag 变量检查. 它的一个例子是:</p>
+<pre class="programlisting">
+/* figure out the hardware flow control settings */
+if (cflag &amp; CRTSCTS)
+
+        printk(KERN_DEBUG " - RTS/CTS is enabled\n");
+else
+
+        printk(KERN_DEBUG " - RTS/CTS is disabled\n");
+</pre>
+<p>确定软件流控的不同模式和不同的起停字符是有些复杂:</p>
+<pre class="programlisting">
+/* determine software flow control */
+/* if we are implementing XON/XOFF, set the start and
+ 
+ * stop character in the device */
+if (I_IXOFF(tty) || I_IXON(tty))
+{
+        unsigned char stop_char = STOP_CHAR(tty);
+        unsigned char start_char = START_CHAR(tty);
+
+        /* if we are implementing INBOUND XON/XOFF */
+        if (I_IXOFF(tty))
+                printk(KERN_DEBUG " - INBOUND XON/XOFF is enabled, "
+                       "XON = %2x, XOFF = %2x", start_char, stop_char);
+        else
+                printk(KERN_DEBUG" - INBOUND XON/XOFF is disabled");
+
+        /* if we are implementing OUTBOUND XON/XOFF */
+        if (I_IXON(tty))
+                printk(KERN_DEBUG" - OUTBOUND XON/XOFF is enabled, "
+                       "XON = %2x, XOFF = %2x", start_char, stop_char);
+        else
+                printk(KERN_DEBUG" - OUTBOUND XON/XOFF is disabled");
+}
+</pre>
+<p>最后, 波特率需要确定. tty 核心提供了一个函数, tty_get_baud_rate, 来帮助做这个. 这个函数返回一个整型数指示请求的波特率给特定的 tty 设备.</p>
+<pre class="programlisting">
+
+/* get the baud rate wanted */
+printk(KERN_DEBUG " - baud rate = %d", tty_get_baud_rate(tty));
+</pre>
+<p>现在 tty 驱动已经确定了所有的不同的线路设置, 它可以基于这些值正确设置硬件.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="tiocmgetandtiocmset.sect"></a>18.3.2.&#160;tiocmget 和 tiocmset</h3></div></div></div>
+<p>在 2.4 和老的内核, 常常有许多 tty ioctl 调用来获得和设置不同的控制线路设置. 这些被常量 TIOCMGET, TIOCMBIS, TIOCMBIC, 和 TIOCMSET 表示. TIOCMGET 用来获得内核的线路设置值, 并且对于 2.6 内核, 这个 ioctl 调用已经被转换为一个 tty 驱动回调函数, 称为 tiocmget. 其他的 3 个 ioctls 已经被简化并且现在用单个的 tty 驱动回调函数所代表, 称为 tiocmset.</p>
+<p>tty 驱动中的 iocmget 函数被 tty 核心所调用, 当核心需要知道当前的特定 tty 设备的控制线的物理值. 这常常用来获取一个串口的 DTR 和 RTS 线的值. 如果 tty 驱动不能直接读串口的 MSR 或者 MCR 寄存器, 因为硬件不允许这样, 一个它们的拷贝应当在本地保持. 许多 USB-到-串口 驱动必须实现这类的"影子"变量. 这是这个函数能如何被实现, 任何一个本地的这些值的拷贝被保存:</p>
+<pre class="programlisting">
+static int tiny_tiocmget(struct tty_struct *tty, struct file *file)
+{
+        struct tiny_serial *tiny = tty-&gt;driver_ data;
+        unsigned int result = 0;
+        unsigned int msr = tiny-&gt;msr;
+        unsigned int mcr = tiny-&gt;mcr;
+        result = ((mcr &amp; MCR_DTR)  ? TIOCM_DTR  : 0) |  /* DTR is set */
+                 ((mcr &amp; MCR_RTS)  ? TIOCM_RTS  : 0) |  /* RTS is set */
+                 ((mcr &amp; MCR_LOOP)  ? TIOCM_LOOP : 0) |  /* LOOP is set */
+                 ((msr &amp; MSR_CTS)  ? TIOCM_CTS  : 0) |  /* CTS is set */
+                 ((msr &amp; MSR_CD)  ? TIOCM_CAR  : 0) |  /* Carrier detect is set*/
+                 ((msr &amp; MSR_RI)  ? TIOCM_RI  : 0) |  /* Ring Indicator is set */
+                 ((msr &amp; MSR_DSR)  ? TIOCM_DSR  : 0);  /* DSR is set */
+        return result;
+}
+</pre>
+<p>在 tty 驱动中的 tiocmset 函数被 tty 核心调用, 当核心要设置一个特定 tty 设备的控制线值. tty 核心告知 tty 驱动设置什么值和清理什么, 通过传递它们用 2 个变量: set 和 clear. 这些变量包含一个应当改变的线路设置的位掩码. 一个 ioctl 调用从不请求驱动既设置又清理一个特殊的位在同一时间, 因此先发生什么操作没有关系. 这是一个例子, 关于这个函数如何能够由一个 tty 驱动实现:</p>
+<pre class="programlisting">
+static int tiny_tiocmset(struct tty_struct *tty, struct file *file, unsigned int set , unsigned int clear) 
+{
+        struct tiny_serial *tiny = tty-&gt;driver_data;
+        unsigned int mcr = tiny-&gt;mcr;
+
+        if (set &amp; TIOCM_RTS)
+                mcr |= MCR_RTS;
+        if (set &amp; TIOCM_DTR)
+                mcr |= MCR_RTS;
+
+        if (clear &amp; TIOCM_RTS)
+                mcr &amp;= ~MCR_RTS;
+        if (clear &amp; TIOCM_DTR)
+                mcr &amp;= ~MCR_RTS;
+
+        /* set the new MCR value in the device */
+        tiny-&gt;mcr = mcr;
+        return 0;
+
+}
+</pre>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch18s02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch18.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch18s04.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">18.2.&#160;tty_driver 函数指针&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;18.4.&#160;ioctls 函数</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,255 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>信号和回调函数的原理</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="从这里开始"
+HREF="c103.html"><LINK
+REL="PREVIOUS"
+TITLE="编译 Hello World 程序"
+HREF="x175.html"><LINK
+REL="NEXT"
+TITLE="事件"
+HREF="x245.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x175.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>从这里开始</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x245.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-THEORYOFSIGNALSANDCALLBACKS">信号和回调函数的原理</H1
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>在 2.0 版，信号系统已从 GTK 移到 GLib，因此在函数和类型的说明中有前缀 "g_" 而不是 "gtk_"。我们不打算介绍 GLib 2.0 信号系统相对 GTK 1.2 信号系统扩展的细节。</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>在我们详细分析 <I
+CLASS="EMPHASIS"
+>helloworld</I
+> 程序之前，我们会讨论信号和回调函数。GTK 是一个事件驱动的工具包，意味着它会等在 gtk_main() 那里，直到下一个事件发生，才把控制权传给适当的函数。</P
+><P
+>控制权的传递是使用“信号”的办法来完成的。(注意这里的信号并不等同于 Unix 系统里的信号，并且也不是用它们实现的，虽然使用的术语是一样的。) 当一个事件发生时，如按一下鼠标键，所按的构件会“发出”适当的信号。这就是 GTK 的工作机制。有所有构件都继承的信号，如 "destroy"，有构件专有的信号，如开关 (toggle) 按钮发出的 "toggled" 信号。</P
+><P
+>要使一个按钮执行一个动作，我们需设置信号和信号处理函数之间的连接。可以这样使用函数来设置连接：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gulong g_signal_connect( gpointer      *object,
+                         const gchar   *name,
+                         GCallback     func,
+                         gpointer      func_data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个参数是要发出信号的构件，第二个参数是你想要连接的信号的名称，第三个参数是信号被捕获时所要调用的函数，第四个参数是你想传递给这个函数的数据。</P
+><P
+>第三个参数指定的函数叫做回调函数，一般为下面的形式：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void callback_func( GtkWidget *widget,
+                    gpointer   callback_data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个参数是一个指向发出信号的构件的指针，第二个参数是一个指向数据的指针，就是上面 g_signal_connect() 函数的最后一个参数传进来的数据。</P
+><P
+>注意上面回调函数的声明只是一般的形式，有些构件的特殊信号会用不同的调用参数。</P
+><P
+>另一个在 <I
+CLASS="EMPHASIS"
+>helloworld</I
+> 示例中使用的调用，是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gulong g_signal_connect_swapped( gpointer     *object,
+                                 const gchar  *name,
+                                 GCallback    func,
+                                 gpointer     *slot_object );</PRE
+></TD
+></TR
+></TABLE
+><P
+>g_signal_connect_swapped() 和 g_signal_connect() 相同，只是回调函数只用一个参数，一个指向 GTK 对象的指针。所以当使用这个函数连接信号时，回调函数应该是这样的形式</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void callback_func( GtkObject *object );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个对象通常是一个构件。然而我们一般不用函数 g_signal_connect_swapped() 设置回调。它们常用来调用一个只接受一个单独的构件或者对象作为参数的 GTK 函数，如同我们的 <I
+CLASS="EMPHASIS"
+>helloworld</I
+> 示例中那样。</P
+><P
+>拥有两个函数来设置信号连接的目的只是为了允许回调函数有不同数目的参数。GTK 库中许多函数仅接受一个单独的构件指针作为其参数，所以对于这些函数你要用 g_signal_connect_swapped()，然而对你自己定义的函数，你可能需要附加的数据提供给你的回调函数。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x175.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x245.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>编译 Hello World 程序</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c103.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>事件</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

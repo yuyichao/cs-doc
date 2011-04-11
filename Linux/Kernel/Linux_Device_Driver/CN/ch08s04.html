@@ -1,0 +1,101 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>8.4.&#160;每-CPU 的变量-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch08.html" title="第&#160;8&#160;章&#160;分配内存">
+<link rel="prev" href="ch08s03.html" title="8.3.&#160;get_free_page 和其友">
+<link rel="next" href="ch08s05.html" title="8.5.&#160;获得大量缓冲">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">8.4.&#160;每-CPU 的变量</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch08s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;8&#160;章&#160;分配内存</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch08s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="PerCPUVariables.sect"></a>8.4.&#160;每-CPU 的变量</h2></div></div></div>
+<p>每-CPU 变量是一个有趣的 2.6 内核的特性. 当你创建一个每-CPU变量, 系统中每个处理器获得它自己的这个变量拷贝. 这个可能象一个想做的奇怪的事情, 但是它有自己的优点. 存取每-CPU变量不需要(几乎)加锁, 因为每个处理器使用它自己的拷贝. 每-CPU 变量也可存在于它们各自的处理器缓存中, 这样对于频繁更新的量子带来了显著的更好性能.</p>
+<p>一个每-CPU变量的好的使用例子可在网络子系统中找到. 内核维护无结尾的计数器来跟踪有每种报文类型有多少被接收; 这些计数器可能每秒几千次地被更新. 不去处理缓存和加锁问题, 网络开发者将统计计数器放进每-CPU变量. 现在更新是无锁并且快的. 在很少的机会用户空间请求看到计数器的值, 相加每个处理器的版本并且返回总数是一个简单的事情.</p>
+<p>每-CPU变量的声明可在 &lt;linux/percpu.h&gt; 中找到. 为在编译时间创建一个每-CPU变量, 使用这个宏定义:</p>
+<pre class="programlisting">
+DEFINE_PER_CPU(type, name);
+</pre>
+<p>如果这个变量(称为 name 的)是一个数组, 包含这个类型的维数信息. 因此, 一个有 3 个整数的每-CPU 数组应当被创建使用:</p>
+<pre class="programlisting">
+DEFINE_PER_CPU(int[3], my_percpu_array); 
+</pre>
+<p>每-CPU变量几乎不必使用明确的加锁来操作. 记住 2.6 内核是可抢占的; 对于一个处理器, 在修改一个每-CPU变量的临界区中不应当被抢占. 并且如果你的进程在对一个每-CPU变量存取时将, 要被移动到另一个处理器上, 也不好. 因为这个原因, 你必须显式使用 get_cpu_var 宏来存取当前处理器的给定变量拷贝, 并且当你完成时调用 put_cpu_var. 对 get_cpu_var 的调用返回一个 lvalue 给当前处理器的变量版本并且禁止抢占. 因为一个 lvalue 被返回, 它可被赋值给或者直接操作. 例如, 一个网络代码中的计数器时使用这 2 个语句来递增的:</p>
+<pre class="programlisting">
+get_cpu_var(sockets_in_use)++;
+put_cpu_var(sockets_in_use);
+</pre>
+<p>你可以存取另一个处理器的变量拷贝, 使用:</p>
+<pre class="programlisting">
+per_cpu(variable, int cpu_id); 
+</pre>
+<p>如果你编写使处理器涉及到对方的每-CPU变量的代码, 你, 当然, 一定要实现一个加锁机制来使存取安全.</p>
+<p>动态分配每-CPU变量也是可能的. 这些变量可被分配, 使用:</p>
+<pre class="programlisting">
+void *alloc_percpu(type);
+void *__alloc_percpu(size_t size, size_t align);
+</pre>
+<p>在大部分情况, alloc_percpu 做的不错; 你可以调用 __alloc_percpu 在需要一个特别的对齐的情况下. 在任一情况下, 一个 每-CPU 变量可以使用 free_percpu 被返回给系统. 存取一个动态分配的每-CPU变量通过 per_cpu_ptr 来完成:</p>
+<pre class="programlisting">
+per_cpu_ptr(void *per_cpu_var, int cpu_id);
+</pre>
+<p>这个宏返回一个指针指向 per_cpu_var 对应于给定 cpu_id 的版本. 如果你在简单地读另一个 CPU 的这个变量的版本, 你可以解引用这个指针并且用它来完成. 如果, 但是, 你在操作当前处理器的版本, 你可能需要首先保证你不能被移出那个处理器. 如果你存取这个每-CPU变量的全部都持有一个自旋锁, 万事大吉. 常常, 但是, 你需要使用 get_cpu 来阻止在使用变量时的抢占. 因此, 使用动态每-CPU变量的代码会看来如此:</p>
+<pre class="programlisting">
+int cpu; 
+cpu = get_cpu()
+ptr = per_cpu_ptr(per_cpu_var, cpu);
+/* work with ptr */
+put_cpu();
+</pre>
+<p>当使用编译时每-CPU 变量时, get_cpu_var 和 put_cpu_var 宏来照看这些细节. 动态每-CPU变量需要更多的显式的保护.</p>
+<p>每-CPU变量能够输出给每个模块, 但是你必须使用一个特殊的宏版本:</p>
+<pre class="programlisting">
+EXPORT_PER_CPU_SYMBOL(per_cpu_var);
+EXPORT_PER_CPU_SYMBOL_GPL(per_cpu_var);
+</pre>
+<p>为在一个模块内存取这样一个变量, 声明它, 使用:</p>
+<pre class="programlisting">
+DECLARE_PER_CPU(type, name); 
+</pre>
+<p>DECLARE_PER_CPU 的使用(不是 DEFINE_PER_CPU)告知编译器进行一个外部引用.</p>
+<p>如果你想使用每-CPU变量来创建一个简单的整数计数器, 看一下在 &lt;linux/percpu_counter.h&gt; 中的现成的实现. 最后, 注意一些体系有有限数量的地址空间变量给每-CPU变量. 如果你创建每-CPU变量在你自己的代码, 你应当尽量使它们小.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch08s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch08.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch08s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">8.3.&#160;get_free_page 和其友&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;8.5.&#160;获得大量缓冲</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

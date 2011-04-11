@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 宏定义</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch21.html" title="第 21 章 预处理" /><link rel="prev" href="ch21s01.html" title="1. 预处理的步骤" /><link rel="next" href="ch21s03.html" title="3. 条件预处理指示" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 宏定义</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch21s01.html">上一页</a> </td><th width="60%" align="center">第 21 章 预处理</th><td width="20%" align="right"> <a accesskey="n" href="ch21s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2797195"></a>2. 宏定义</h2></div></div></div><p>较大的项目都会用大量的宏定义来组织代码，你可以看看<code class="literal">/usr/include</code>下面的头文件中用了多少个宏定义。看起来宏展开就是做个替换而已，其实里面有比较复杂的规则，C语言有很多复杂但不常用的语法规则本书并不涉及，但有关宏展开的语法规则本节却力图做全面讲解，因为它很重要也很常用。</p><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2797214"></a>2.1. 函数式宏定义</h3></div></div></div><p>以前我们用过的<code class="literal">#define N 20</code>或<code class="literal">#define STR "hello, world"</code>这种宏定义可以称为变量式宏定义（Object-like Macro）<a id="id2797239" class="indexterm"></a>，宏定义名可以像变量一样在代码中使用。另外一种宏定义可以像函数调用一样在代码中使用，称为函数式宏定义（Function-like Macro）<a id="id2797249" class="indexterm"></a>。例如编辑一个文件<code class="literal">main.c</code>：</p><pre class="programlisting">#define MAX(a, b) ((a)&gt;(b)?(a):(b))
+k = MAX(i&amp;0x0f, j&amp;0x0f)</pre><p>我们想看第二行的表达式展开成什么样，可以用<code class="literal">gcc</code>的<code class="literal">-E</code>选项或<code class="literal">cpp</code>命令，尽管这个C程序不合语法，但没关系，我们只做预处理而不编译，不会检查程序是否符合C语法。</p><pre class="screen">$ cpp main.c
+# 1 "main.c"
+# 1 "&lt;built-in&gt;"
+# 1 "&lt;command-line&gt;"
+# 1 "main.c"
+
+k = ((i&amp;0x0f)&gt;(j&amp;0x0f)?(i&amp;0x0f):(j&amp;0x0f))</pre><p>就像函数调用一样，把两个实参分别替换到宏定义中形参<code class="literal">a</code>和<code class="literal">b</code>的位置。注意这种函数式宏定义和真正的函数调用有什么不同：</p><p>1、函数式宏定义的参数没有类型，预处理器只负责做形式上的替换，而不做参数类型检查，所以传参时要格外小心。</p><p>2、调用真正函数的代码和调用函数式宏定义的代码编译生成的指令不同。如果<code class="literal">MAX</code>是个真正的函数，那么它的函数体<code class="literal">return a &gt; b ? a : b;</code>要编译生成指令，代码中出现的每次调用也要编译生成传参指令和<code class="literal">call</code>指令。而如果<code class="literal">MAX</code>是个函数式宏定义，这个宏定义本身倒不必编译生成指令，但是代码中出现的每次调用编译生成的指令都相当于一个函数体，而不是简单的几条传参指令和<code class="literal">call</code>指令。所以，使用函数式宏定义编译生成的目标文件会比较大。</p><p>3、定义这种宏要格外小心，如果上面的定义写成<code class="literal">#define MAX(a, b) (a&gt;b?a:b)</code>，省去内层括号，则宏展开就成了<code class="literal">k = (i&amp;0x0f&gt;j&amp;0x0f?i&amp;0x0f:j&amp;0x0f)</code>，运算的优先级就错了。同样道理，这个宏定义的外层括号也是不能省的，想一想为什么。</p><p>4、调用函数时先求实参表达式的值再传给形参，如果实参表达式有Side Effect，那么这些Side Effect只发生一次。例如<code class="literal">MAX(++a, ++b)</code>，如果<code class="literal">MAX</code>是个真正的函数，<code class="literal">a</code>和<code class="literal">b</code>只增加一次。但如果<code class="literal">MAX</code>是上面那样的宏定义，则要展开成<code class="literal">k = ((++a)&gt;(++b)?(++a):(++b))</code>，<code class="literal">a</code>和<code class="literal">b</code>就不一定是增加一次还是两次了。</p><p>5、即使实参没有Side Effect，使用函数式宏定义也往往会导致较低的代码执行效率。下面举一个极端的例子，也是个很有意思的例子。</p><div class="example"><a id="id2797453"></a><p class="title"><b>例 21.1. 函数式宏定义</b></p><div class="example-contents"><pre class="programlisting">#define MAX(a, b) ((a)&gt;(b)?(a):(b))
+
+int a[] = { 9, 3, 5, 2, 1, 0, 8, 7, 6, 4 };
+
+int max(int n)
+{
+	return n == 0 ? a[0] : MAX(a[n], max(n-1));
+}
+
+int main(void)
+{
+	max(9);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>这段代码从一个数组中找出最大的数，如果<code class="literal">MAX</code>是个真正的函数，这个算法就是从前到后遍历一遍数组，时间复杂度是Θ(n)，而现在<code class="literal">MAX</code>是这样一个函数式宏定义，思考一下这个算法的时间复杂度是多少？</p><p>尽管函数式宏定义和真正的函数相比有很多缺点，但只要小心使用还是会显著提高代码的执行效率，毕竟省去了分配和释放栈帧、传参、传返回值等一系列工作，因此那些简短并且被频繁调用的函数经常用函数式宏定义来代替实现。例如C标准库的很多函数都提供两种实现，一种是真正的函数实现，一种是宏定义实现，这一点以后还要详细解释。</p><p>函数式宏定义经常写成这样的形式（取自内核代码<code class="literal">include/linux/pm.h</code>）：</p><pre class="programlisting">#define device_init_wakeup(dev,val) \
+        do { \
+                device_can_wakeup(dev) = !!(val); \
+                device_set_wakeup_enable(dev,val); \
+        } while(0)</pre><p>为什么要用<code class="literal">do { ... } while(0)</code>括起来呢？不括起来会有什么问题呢？</p><pre class="programlisting">#define device_init_wakeup(dev,val) \
+                device_can_wakeup(dev) = !!(val); \
+                device_set_wakeup_enable(dev,val);
+
+if (n &gt; 0)
+	device_init_wakeup(d, v);</pre><p>这样宏展开之后，函数体的第二条语句不在<code class="literal">if</code>条件中。那么简单地用<code class="literal">{ ... }</code>括起来组成一个语句块不行吗？</p><pre class="programlisting">#define device_init_wakeup(dev,val) \
+                { device_can_wakeup(dev) = !!(val); \
+                device_set_wakeup_enable(dev,val); }
+
+if (n &gt; 0)
+	device_init_wakeup(d, v);
+else
+	continue;</pre><p>问题出在<code class="literal">device_init_wakeup(d, v);</code>末尾的<code class="literal">;</code>号，如果不允许写这个<code class="literal">;</code>号，看起来不像个函数调用，可如果写了这个<code class="literal">;</code>号，宏展开之后就有语法错误，<code class="literal">if</code>语句被这个<code class="literal">;</code>号结束掉了，没法跟<code class="literal">else</code>配对。因此，<code class="literal">do { ... } while(0)</code>是一种比较好的解决办法。</p><p>如果在一个程序文件中重复定义一个宏，C语言规定这些重复的宏定义必须一模一样。例如这样的重复定义是允许的：</p><pre class="programlisting">#define OBJ_LIKE (1 - 1)
+#define OBJ_LIKE /* comment */ (1/* comment */-/* comment */  1)/* comment */</pre><p>在定义的前后多些空白（空格、Tab、注释）没有关系，在定义之中多些空白或少些空白也没有关系，但在定义之中有空白和没有空白被认为是不同的，所以这样的重复定义是不允许的：</p><pre class="programlisting">#define OBJ_LIKE (1 - 1)
+#define OBJ_LIKE (1-1)</pre><p>如果需要重新定义一个宏，和原来的定义不同，可以先用<code class="literal">#undef</code>取消原来的定义，再重新定义，例如：</p><pre class="programlisting">#define X 3
+... /* X is 3 */
+#undef X
+... /* X has no definition */
+#define X 2
+... /* X is 2 */</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2797661"></a>2.2. 内联函数</h3></div></div></div><p>C99引入一个新关键字<code class="literal">inline</code>，用于定义内联函数（inline function）<a id="id2797678" class="indexterm"></a>。这种用法在内核代码中很常见，例如<code class="literal">include/linux/rwsem.h</code>中：</p><pre class="programlisting">static inline void down_read(struct rw_semaphore *sem)
+{
+        might_sleep();
+        rwsemtrace(sem,"Entering down_read");
+        __down_read(sem);
+        rwsemtrace(sem,"Leaving down_read");
+}</pre><p><code class="literal">inline</code>关键字告诉编译器，这个函数的调用要尽可能快，可以当普通的函数调用实现，也可以用宏展开的办法实现。我们做个实验，把上一节的例子改一下：</p><div class="example"><a id="id2797711"></a><p class="title"><b>例 21.2. 内联函数</b></p><div class="example-contents"><pre class="programlisting">inline int MAX(int a, int b)
+{
+	return a &gt; b ? a : b;
+}
+
+int a[] = { 9, 3, 5, 2, 1, 0, 8, 7, 6, 4 };
+
+int max(int n)
+{
+	return n == 0 ? a[0] : MAX(a[n], max(n-1));
+}
+
+int main(void)
+{
+	max(9);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>按往常的步骤编译然后反汇编：</p><pre class="screen">$ gcc main.c -g
+$ objdump -dS a.out
+...
+int max(int n)
+{
+ 8048369:       55                      push   %ebp
+ 804836a:       89 e5                   mov    %esp,%ebp
+ 804836c:       83 ec 0c                sub    $0xc,%esp
+        return n == 0 ? a[0] : MAX(a[n], max(n-1));
+ 804836f:       83 7d 08 00             cmpl   $0x0,0x8(%ebp)
+ 8048373:       75 0a                   jne    804837f &lt;max+0x16&gt;
+ 8048375:       a1 c0 95 04 08          mov    0x80495c0,%eax
+ 804837a:       89 45 fc                mov    %eax,-0x4(%ebp)
+ 804837d:       eb 29                   jmp    80483a8 &lt;max+0x3f&gt;
+ 804837f:       8b 45 08                mov    0x8(%ebp),%eax
+ 8048382:       83 e8 01                sub    $0x1,%eax
+ 8048385:       89 04 24                mov    %eax,(%esp)
+ 8048388:       e8 dc ff ff ff          call   8048369 &lt;max&gt;
+ 804838d:       89 c2                   mov    %eax,%edx
+ 804838f:       8b 45 08                mov    0x8(%ebp),%eax
+ 8048392:       8b 04 85 c0 95 04 08    mov    0x80495c0(,%eax,4),%eax
+ 8048399:       89 54 24 04             mov    %edx,0x4(%esp)
+ 804839d:       89 04 24                mov    %eax,(%esp)
+ 80483a0:       e8 9f ff ff ff          call   8048344 &lt;MAX&gt;
+ 80483a5:       89 45 fc                mov    %eax,-0x4(%ebp)
+ 80483a8:       8b 45 fc                mov    -0x4(%ebp),%eax
+}
+...</pre><p>可以看到<code class="literal">MAX</code>是作为普通函数调用的。如果指定优化选项编译，然后反汇编：</p><pre class="screen">$ gcc main.c -g -O
+$ objdump -dS a.out
+...
+int max(int n)
+{
+ 8048355:       55                      push   %ebp
+ 8048356:       89 e5                   mov    %esp,%ebp
+ 8048358:       53                      push   %ebx
+ 8048359:       83 ec 04                sub    $0x4,%esp
+ 804835c:       8b 5d 08                mov    0x8(%ebp),%ebx
+        return n == 0 ? a[0] : MAX(a[n], max(n-1));
+ 804835f:       85 db                   test   %ebx,%ebx
+ 8048361:       75 07                   jne    804836a &lt;max+0x15&gt;
+ 8048363:       a1 a0 95 04 08          mov    0x80495a0,%eax
+ 8048368:       eb 18                   jmp    8048382 &lt;max+0x2d&gt;
+ 804836a:       8d 43 ff                lea    -0x1(%ebx),%eax
+ 804836d:       89 04 24                mov    %eax,(%esp)
+ 8048370:       e8 e0 ff ff ff          call   8048355 &lt;max&gt;
+inline int MAX(int a, int b)
+{
+        return a &gt; b ? a : b;
+ 8048375:       8b 14 9d a0 95 04 08    mov    0x80495a0(,%ebx,4),%edx
+ 804837c:       39 d0                   cmp    %edx,%eax
+ 804837e:       7d 02                   jge    8048382 &lt;max+0x2d&gt;
+ 8048380:       89 d0                   mov    %edx,%eax
+int a[] = { 9, 3, 5, 2, 1, 0, 8, 7, 6, 4 };
+
+int max(int n)
+{
+        return n == 0 ? a[0] : MAX(a[n], max(n-1));
+}
+ 8048382:       83 c4 04                add    $0x4,%esp
+ 8048385:       5b                      pop    %ebx
+ 8048386:       5d                      pop    %ebp
+ 8048387:       c3                      ret    
+...</pre><p>可以看到，并没有<code class="literal">call</code>指令调用<code class="literal">MAX</code>函数，<code class="literal">MAX</code>函数的指令是内联在<code class="literal">max</code>函数中的，由于源代码和指令的次序无法对应，<code class="literal">max</code>和<code class="literal">MAX</code>函数的源代码也交错在一起显示。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2797840"></a>2.3. <code class="literal">#</code>、<code class="literal">##</code>运算符和可变参数</h3></div></div></div><p>在函数式宏定义中，<code class="literal">#</code>运算符用于创建字符串，<code class="literal">#</code>运算符后面应该跟一个形参（中间可以有空格或Tab），例如：</p><pre class="programlisting">#define STR(s) # s
+STR(hello 	world)</pre><p>用<code class="literal">cpp</code>命令预处理之后是<code class="literal">"hello␣world"</code>，自动用<code class="literal">"</code>号把实参括起来成为一个字符串，并且实参中的连续多个空白字符被替换成一个空格。</p><p>再比如：</p><pre class="programlisting">#define STR(s) #s
+fputs(STR(strncmp("ab\"c\0d", "abc", '\4"')
+	== 0) STR(: @\n), s);</pre><p>预处理之后是<code class="literal">fputs("strncmp(\"ab\\\"c\\0d\", \"abc\", '\\4\"') == 0" ": @\n", s);</code>，注意如果实参中包含字符常量或字符串，则宏展开之后字符串的界定符<code class="literal">"</code>要替换成<code class="literal">\"</code>，字符常量或字符串中的<code class="literal">\</code>和<code class="literal">"</code>字符要替换成<code class="literal">\\</code>和<code class="literal">\"</code>。</p><p>在宏定义中可以用<code class="literal">##</code>运算符把前后两个预处理Token连接成一个预处理Token，和<code class="literal">#</code>运算符不同，<code class="literal">##</code>运算符不仅限于函数式宏定义，变量式宏定义也可以用。例如：</p><pre class="programlisting">#define CONCAT(a, b) a##b
+CONCAT(con, cat)</pre><p>预处理之后是<code class="literal">concat</code>。再比如，要定义一个宏展开成两个<code class="literal">#</code>号，可以这样定义：</p><pre class="programlisting">#define HASH_HASH # ## #</pre><p>中间的<code class="literal">##</code>是运算符，宏展开时前后两个<code class="literal">#</code>号被这个运算符连接在一起。注意中间的两个空格是不可少的，如果写成<code class="literal">####</code>，会被划分成<code class="literal">##</code>和<code class="literal">##</code>两个Token，而根据定义<code class="literal">##</code>运算符用于连接前后两个预处理Token，不能出现在宏定义的开头或末尾，所以会报错。</p><p>我们知道<code class="literal">printf</code>函数带有可变参数，函数式宏定义也可以带可变参数，同样是在参数列表中用<code class="literal">...</code>表示可变参数。例如：</p><pre class="programlisting">#define showlist(...) printf(#__VA_ARGS__)
+#define report(test, ...) ((test)?printf(#test):\
+	printf(__VA_ARGS__))
+showlist(The first, second, and third items.);
+report(x&gt;y, "x is %d but y is %d", x, y);</pre><p>预处理之后变成：</p><pre class="programlisting">printf("The first, second, and third items.");
+((x&gt;y)?printf("x&gt;y"): printf("x is %d but y is %d", x, y));</pre><p>在宏定义中，可变参数的部分用<code class="literal">__VA_ARGS__</code>表示，实参中对应<code class="literal">...</code>的几个参数可以看成一个参数替换到宏定义中<code class="literal">__VA_ARGS__</code>所在的地方。</p><p>调用函数式宏定义允许传空参数，这一点和函数调用不同，通过下面几个例子理解空参数的用法。</p><pre class="programlisting">#define FOO() foo
+FOO()</pre><p>预处理之后变成<code class="literal">foo</code>。<code class="literal">FOO</code>在定义时不带参数，在调用时也不允许传参数给它。</p><pre class="programlisting">#define FOO(a) foo##a
+FOO(bar)
+FOO()</pre><p>预处理之后变成：</p><pre class="programlisting">foobar
+foo</pre><p><code class="literal">FOO</code>在定义时带一个参数，在调用时必须传一个参数给它，如果不传参数则表示传了一个空参数。</p><pre class="programlisting">#define FOO(a, b, c) a##b##c
+FOO(1,2,3)
+FOO(1,2,)
+FOO(1,,3)
+FOO(,,3)</pre><p>预处理之后变成：</p><pre class="programlisting">123
+12
+13
+3</pre><p><code class="literal">FOO</code>在定义时带三个参数，在调用时也必须传三个参数给它，空参数的位置可以空着，但必须给够三个参数，<code class="literal">FOO(1,2)</code>这样的调用是错误的。</p><pre class="programlisting">#define FOO(a, ...) a##__VA_ARGS__
+FOO(1)
+FOO(1,2,3,)</pre><p>预处理之后变成：</p><pre class="programlisting">1
+12,3,</pre><p><code class="literal">FOO(1)</code>这个调用相当于可变参数部分传了一个空参数，<code class="literal">FOO(1,2,3,)</code>这个调用相当于可变参数部分传了三个参数，第三个是空参数。</p><p><code class="literal">gcc</code>有一种扩展语法，如果<code class="literal">##</code>运算符用在<code class="literal">__VA_ARGS__</code>前面，除了起连接作用之外还有特殊的含义，例如内核代码<code class="literal">net/netfilter/nf_conntrack_proto_sctp.c</code>中的：</p><pre class="programlisting">#define DEBUGP(format, ...) printk(format, ## __VA_ARGS__)</pre><p><code class="literal">printk</code>这个内核函数相当于<code class="literal">printf</code>，也带有格式化字符串和可变参数，由于内核不能调用<code class="literal">libc</code>的函数，所以另外实现了一个打印函数。这个函数式宏定义可以这样调用：<code class="literal">DEBUGP("info no. %d", 1)</code>。也可以这样调用：<code class="literal">DEBUGP("info")</code>。后者相当于可变参数部分传了一个空参数，但展开后并不是<code class="literal">printk("info",)</code>，而是<code class="literal">printk("info")</code>，当<code class="literal">__VA_ARGS</code>是空参数时，<code class="literal">##</code>运算符把它前面的<code class="literal">,</code>号“<span class="quote">吃</span>”掉了。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2798306"></a>2.4. 宏展开的步骤</h3></div></div></div><p>以上举的宏展开的例子都是最简单的，有些宏展开的过程要做多次替换，例如：</p><pre class="programlisting">#define sh(x) printf("n" #x "=%d, or %d\n",n##x,alt[x])
+#define sub_z  26
+sh(sub_z)</pre><p><code class="literal">sh(sub_z)</code>要用<code class="literal">sh(x)</code>这个宏定义来展开，形参<code class="literal">x</code>对应的实参是<code class="literal">sub_z</code>，替换过程如下：</p><div class="orderedlist"><ol type="1"><li><p><code class="literal">#x</code>要替换成<code class="literal">"sub_z"</code>。</p></li><li><p><code class="literal">n##x</code>要替换成<code class="literal">nsub_z</code>。</p></li><li><p>除了带<code class="literal">#</code>和<code class="literal">##</code>运算符的参数之外，其它参数在替换之前要对实参本身做充分的展开，所以应该先把<code class="literal">sub_z</code>展开成26再替换到<code class="literal">alt[x]</code>中<code class="literal">x</code>的位置。</p></li><li><p>现在展开成了<code class="literal">printf("n" "sub_z" "=%d, or %d\n",nsub_z,alt[26])</code>，所有参数都替换完了，这时编译器会再扫描一遍，再找出可以展开的宏定义来展开，假设<code class="literal">nsub_z</code>或<code class="literal">alt</code>是变量式宏定义，这时会进一步展开。</p></li></ol></div><p>再举一个例子：</p><pre class="programlisting">#define x 3
+#define f(a) f(x * (a))
+#undef x
+#define x 2
+#define g f
+#define t(a) a
+
+t(t(g)(0) + t)(1);</pre><p>展开的步骤是：</p><div class="orderedlist"><ol type="1"><li><p>先把<code class="literal">g</code>展开成<code class="literal">f</code>再替换到<code class="literal">#define t(a) a</code>中，得到<code class="literal">t(f(0) + t)(1);</code>。</p></li><li><p>根据<code class="literal">#define f(a) f(x * (a))</code>，得到<code class="literal">t(f(x * (0)) + t)(1);</code>。</p></li><li><p>把<code class="literal">x</code>替换成2，得到<code class="literal">t(f(2 * (0)) + t)(1);</code>。注意，一开始定义<code class="literal">x</code>为3，但是后来用<code class="literal">#undef x</code>取消了<code class="literal">x</code>的定义，又重新定义<code class="literal">x</code>为2。当处理到<code class="literal">t(t(g)(0) + t)(1);</code>这一行代码时<code class="literal">x</code>已经定义成2了，所以用2来替换。还要注意一点，现在得到的<code class="literal">t(f(2 * (0)) + t)(1);</code>中仍然有<code class="literal">f</code>，但不能再次根据<code class="literal">#define f(a) f(x * (a))</code>展开了，<code class="literal">f(2 * (0))</code>就是由展开<code class="literal">f(0)</code>得到的，这里面再遇到<code class="literal">f</code>就不展开了，这样规定可以避免无穷展开（类似于无穷递归），因此我们可以放心地使用递归定义，例如<code class="literal">#define a a[0]</code>，<code class="literal">#define a a.member</code>等。</p></li><li><p>根据<code class="literal">#define t(a) a</code>，最终展开成<code class="literal">f(2 * (0)) + t(1);</code>。这时不能再展开<code class="literal">t(1)</code>了，因为这里的<code class="literal">t</code>就是由展开<code class="literal">t(f(2 * (0)) + t)</code>得到的，所以不能再展开了。</p></li></ol></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch21s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch21.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch21s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 预处理的步骤 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 条件预处理指示</td></tr></table></div></body></html>

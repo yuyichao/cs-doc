@@ -1,0 +1,109 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>6.4.&#160;异步通知-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch06.html" title="第&#160;6&#160;章&#160;高级字符驱动操作">
+<link rel="prev" href="ch06s03.html" title="6.3.&#160;poll 和 select">
+<link rel="next" href="ch06s05.html" title="6.5.&#160;移位一个设备">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">6.4.&#160;异步通知</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch06s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;6&#160;章&#160;高级字符驱动操作</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch06s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="AsynchronousNotification.sect1"></a>6.4.&#160;异步通知</h2></div></div></div>
+<p>尽管阻塞和非阻塞操作和 select 方法的结合对于查询设备在大部分时间是足够的, 一些情况还不能被我们迄今所见到的技术来有效地解决.</p>
+<p>让我们想象一个进程, 在低优先级上执行一个长计算循环, 但是需要尽可能快的处理输入数据. 如果这个进程在响应新的来自某些数据获取外设的报告, 它应当立刻知道当新数据可用时. 这个应用程序可能被编写来调用 poll 有规律地检查数据, 但是, 对许多情况, 有更好的方法. 通过使能异步通知, 这个应用程序可能接受一个信号无论何时数据可用并且不需要让自己去查询.</p>
+<p>用户程序必须执行 2 个步骤来使能来自输入文件的异步通知. 首先, 它们指定一个进程作为文件的拥有者. 当一个进程使用 fcntl 系统调用发出 F_SETOWN 命令, 这个拥有者进程的 ID 被保存在 filp-&gt;f_owner 给以后使用. 这一步对内核知道通知谁是必要的. 为了真正使能异步通知, 用户程序必须设置 FASYNC 标志在设备中, 通过 F_SETFL fcntl 命令.</p>
+<p>在这 2  个调用已被执行后, 输入文件可请求递交一个 SIGIO 信号, 无论何时新数据到达. 信号被发送给存储于 filp-&gt;f_owner 中的进程(或者进程组, 如果值为负值).</p>
+<p>例如, 下面的用户程序中的代码行使能了异步的通知到当前进程, 给 stdin 输入文件:</p>
+<pre class="programlisting">
+signal(SIGIO, &amp;input_handler); /* dummy sample; sigaction() is better */
+fcntl(STDIN_FILENO, F_SETOWN, getpid());
+oflags = fcntl(STDIN_FILENO, F_GETFL);
+fcntl(STDIN_FILENO, F_SETFL, oflags | FASYNC);
+</pre>
+<p>这个在源码中名为 asynctest 的程序是一个简单的程序, 读取 stdin. 它可用来测试 scullpipe 的异步能力. 这个程序和 cat 类似但是不结束于文件尾; 它只响应输入, 而不是没有输入.</p>
+<p>注意, 但是, 不是所有的设备都支持异步通知, 并且你可选择不提供它. 应用程序常常假定异步能力只对 socket 和 tty 可用.</p>
+<p>输入通知有一个剩下的问题. 当一个进程收到一个 SIGIO, 它不知道哪个输入文件有新数据提供. 如果多于一个文件被使能异步地通知挂起输入的进程, 应用程序必须仍然靠 poll 或者 select 来找出发生了什么.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheDriversPointofView.sect2"></a>6.4.1.&#160;驱动的观点</h3></div></div></div>
+<p>对我们来说一个更相关的主题是设备驱动如何实现异步信号. 下面列出了详细的操作顺序, 从内核的观点:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>1. 当发出 F_SETOWN, 什么都没发生, 除了一个值被赋值给 filp-&gt;f_owner.</p></li>
+<li><p>2. 当 F_SETFL 被执行来打开 FASYNC, 驱动的 fasync 方法被调用. 这个方法被调用无论何时 FASYNC 的值在 filp-&gt;f_flags 中被改变来通知驱动这个变化, 因此它可正确地响应. 这个标志在文件被打开时缺省地被清除. 我们将看这个驱动方法的标准实现, 在本节.</p></li>
+<li><p>3. 当数据到达, 所有的注册异步通知的进程必须被发出一个 SIGIO 信号.</p></li>
+</ul></div>
+<p>虽然实现第一步是容易的--在驱动部分没有什么要做的--其他的步骤包括维护一个动态数据结构来跟踪不同的异步读者; 可能有几个. 这个动态数据结构, 但是, 不依赖特殊的设备, 并且内核提供了一个合适的通用实现这样你不必重新编写同样的代码给每个驱动.</p>
+<p>Linux 提供的通用实现是基于一个数据结构和 2 个函数(它们在前面所说的第 2 步和第 3 步被调用). 声明相关材料的头文件是&lt;linux/fs.h&gt;(这里没新东西), 并且数据结构被称为 struct fasync_struct. 至于等待队列, 我们需要插入一个指针在设备特定的数据结构中.</p>
+<p>驱动调用的 2 个函数对应下面的原型:</p>
+<pre class="programlisting">
+int fasync_helper(int fd, struct file *filp, int mode, struct fasync_struct **fa);
+void kill_fasync(struct fasync_struct **fa, int sig, int band);
+</pre>
+<p>fasync_helper 被调用来从相关的进程列表中添加或去除入口项, 当 FASYNC 标志因一个打开文件而改变. 它的所有参数除了最后一个, 都被提供给 fasync 方法并且被直接传递. 当数据到达时 kill_fasync 被用来通知相关的进程. 它的参数是被传递的信号(常常是 SIGIO)和 band, 这几乎都是 POLL_IN<sup>[<a name="id437432" href="ch06s04.html#ftn.id437432">25</a>]</sup>(但是这可用来发送"紧急"或者带外数据, 在网络代码里).</p>
+<p>这是 scullpipe 如何实现 fasync 方法的:</p>
+<pre class="programlisting">
+static int scull_p_fasync(int fd, struct file *filp, int mode)
+{
+ struct scull_pipe *dev = filp-&gt;private_data;
+ return fasync_helper(fd, filp, mode, &amp;dev-&gt;async_queue);
+}
+</pre>
+<p>显然所有的工作都由 fasync_helper 进行. 但是, 不可能实现这个功能在没有一个方法在驱动里的情况下, 因为这个帮忙函数需要存取正确的指向 struct fasync_struct (这里是 与dev-&gt;async_queue)的指针, 并且只有驱动可提供这个信息.</p>
+<p>当数据到达, 下面的语句必须被执行来通知异步读者. 因为对 sucllpipe 读者的新数据通过一个发出 write 的进程被产生, 这个语句出现在 scullpipe 的 write 方法中.</p>
+<pre class="programlisting">
+if (dev-&gt;async_queue)
+ kill_fasync(&amp;dev-&gt;async_queue, SIGIO, POLL_IN);
+</pre>
+<p>注意, 一些设备还实现异步通知来指示当设备可被写入时; 在这个情况, 当然, kill_fasnyc 必须被使用一个 POLL_OUT 模式来调用.</p>
+<p>可能会出现我们已经完成但是仍然有一件事遗漏. 我们必须调用我们的 fasync 方法, 当文件被关闭来从激活异步读者列表中去除文件. 尽管这个调用仅当 filp-&gt;f_flags 被设置为 FASYNC 时需要, 调用这个函数无论如何不会有问题并且是常见的实现. 下面的代码行, 例如, 是 scullpipe 的 release 方法的一部分:</p>
+<pre class="programlisting">
+/* remove this filp from the asynchronously notified filp's */
+scull_p_fasync(-1, filp, 0);
+</pre>
+<p>这个在异步通知之下的数据结构一直和结构 struct wait_queue 是一致的, 因为 2 种情况都涉及等待一个事件. 区别是这个 struct file 被用来替代 struct task_struct. 队列中的结构 file 接着用来存取 f_owner, 为了通知进程.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id437432" href="ch06s04.html#id437432">25</a>] </sup>POLL_IN 是一个符号, 用在异步通知代码中; 它等同于 POLLIN|POLLRDNORM.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch06s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch06.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch06s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">6.3.&#160;poll 和 select&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;6.5.&#160;移位一个设备</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

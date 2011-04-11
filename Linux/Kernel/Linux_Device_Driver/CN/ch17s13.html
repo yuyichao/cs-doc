@@ -1,0 +1,84 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.13.&#160;统计信息-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s12.html" title="17.12.&#160;定制 ioctl 命令">
+<link rel="next" href="ch17s14.html" title="17.14.&#160;多播">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.13.&#160;统计信息</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s12.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s14.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="StatisticalInformation"></a>17.13.&#160;统计信息</h2></div></div></div>
+<p>驱动需要的最后一个方法是 get_stats. 这个方法返回一个指向给设备的统计的指针. 它的实现非常简单; 展示过的这个即便在几个接口由同一个驱动管理时都好用, 因为统计量驻留于设备数据结构内部.</p>
+<pre class="programlisting">
+struct net_device_stats *snull_stats(struct net_device *dev)
+{
+    struct snull_priv *priv = netdev_priv(dev);
+    return &amp;priv-&gt;stats;
+}
+</pre>
+<p>需要返回有意义统计的真正工作是分布在整个驱动中的, 有各种成员量被更新. 下列列表展示了最有趣的结构 net_device_stats 中的成员:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>unsigned long rx_packets;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned long tx_packets;</span></span></dt>
+<dd><p>接口成功传送的进入和出去报文的总和.</p></dd>
+<dt><span class="term"><span>unsigned long rx_bytes;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned long tx_bytes;</span></span></dt>
+<dd><p>接口接收和发送的字节数.</p></dd>
+<dt><span class="term"><span>unsigned long rx_errors;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned long tx_errors;</span></span></dt>
+<dd><p>接收和发送的错误数. 报文发送可能出错的事情是没有结束的, net_device_stats 结构包括 6 个计数器给特定的接收错误以及有 5 个给发送错误. 完整列表看 &lt;&lt;linux/netdevice.h&gt;. 如果可能, 你的驱动调用维护详细的错误统计, 因为它们是对系统管理员试图追踪问题的最大帮助.</p></dd>
+<dt><span class="term"><span>unsigned long rx_dropped;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned long tx_dropped;</span></span></dt>
+<dd><p>在接收和发送中丢失的报文数目. 当没有可用内存给报文数据时丢弃报文. tx_dropped 极少使用.</p></dd>
+<dt><span class="term"><span>unsigned long collisions;</span></span></dt>
+<dd><p>由于介质拥塞引起的冲突数目.</p></dd>
+<dt><span class="term"><span>unsigned long multicast;</span></span></dt>
+<dd><p>收到的多播报文数目.</p></dd>
+</dl></div>
+<p>值得重复一下, get_stats 方法可以在任何时候调用 -- 即便在接口关闭时 -- 因此只要 net_device 结构存在驱动必须保持统计信息.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s12.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s14.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.12.&#160;定制 ioctl 命令&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.14.&#160;多播</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

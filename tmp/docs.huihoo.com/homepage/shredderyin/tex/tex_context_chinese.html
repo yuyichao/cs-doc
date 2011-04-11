@@ -1,0 +1,101 @@
+<html>
+<head>
+<title>ConTeXt Chinese</title>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="tex.css" media="screen">
+</head>
+
+<body bgcolor="#FFF4FF">
+<H1>ConTeXt 中文支持安装指南</H1>
+
+摘自 http://bbs.ctex.org. 作者cxterm.有修改。
+
+<p>较新版本的 TeX 系统都已经包括了 ConTeXt，如 teTeX, fpTeX/TeXLive
+MikTeX 2.2 beta 等。因此，如果你使用的是这些 TeX 系统的话，就可以
+不必自己安装了。不过，最好还是去 http://www.pragma-ade.com/ 下载
+最新版本的 cont-tmf.zip，解压缩到你的 texmf 或 local texmf 目录下。
+另外，需要注意的是要安装 Perl。 Linux/Unix 下一般都已经装了 Perl，
+Windows 下可安装 activeperl（http://www.activeperl.com）。
+
+<p>使用中文必须先生成并安装中文字体，配置 pdftex 使用中文 Type1
+或 Truetype 字体。具体的方法可参考本论坛的有关文章。
+
+<OL>
+<LI>编辑 tex/context/base/font-uni.tex
+<p>如果你使用的是 GBK 编码的中文字体，编辑 tex/context/base/font-uni.tex,
+并将下面这段代码前面的注释去掉。注意不要把 "%D \starttypen" 和 "%D \stoptypen" 的注释给去掉了！
+
+<pre class=example>
+\defineucharmapping{GBK}#1#2%                            
+ {\unicodeposition=#1                                    
+  \advance\unicodeposition -129                          
+  \multiply\unicodeposition 190                          
+  \advance\unicodeposition #2                            
+  \advance\unicodeposition-\ifnum#2&gt;127 65\else64\fi    
+  \dorepositionunicode}                                  
+</pre>
+
+
+<LI>编辑 tex/context/base/cont-sys.ori
+<p>在其中加上：
+<pre class=example>
+\def\currentucharmapping{GBK}
+</pre>
+
+<p>必须加在 \protect \endinput 一行前，否则不起作用。然后另
+存为 tex/context/base/cont-sys.tex
+
+<LI>添加字体别名
+<p>此外，由于 ConTeXt 缺省定义的简体中文字体名分别为：
+gbsong gbkai gbhei gbfs gbli(具体参看 font-chi.tex),
+所以如果你的中文字体名不同的话，也可以在此文件中
+修改。例如你使用的是 gbksong,...,gbkli, 可相应添加：
+
+<pre class=example>
+\definefontsynonym [gbsong]   [gbksong]   [encoding=gbk]
+\definefontsynonym [gbsongsl] [gbksongsl] [encoding=gbk]
+\definefontsynonym [gbhei]    [gbkhei]    [encoding=gbk]
+\definefontsynonym [gbheisl]  [gbkheisl]  [encoding=gbk]
+\definefontsynonym [gbkai]    [gbkkai]    [encoding=gbk]
+\definefontsynonym [gbkaisl]  [gbkkaisl]  [encoding=gbk]
+\definefontsynonym [gbfs]     [gbkfs]     [encoding=gbk]
+\definefontsynonym [gbfssl]   [gbkfssl]   [encoding=gbk]
+\definefontsynonym [gbli]     [gbkli]     [encoding=gbk]
+\definefontsynonym [gblisl]   [gbklisl]   [encoding=gbk]
+</pre>
+
+<LI>重新生成 ConTeXt 的格式文件了
+<pre class=example>
+texexec --make
+</pre>
+
+<LI>测试
+<p>然后，可测试下面的文件：
+
+<pre class=example>
+\usemodule[chinese]
+\starttext
+\chapter{逍遥游}
+北冥有鱼，其名为鲲。鲲之大，不知其几千里也。化而为鸟，其名为鹏。鹏之背，
+不知其几千里也。怒而飞，其翼若垂天之云。是鸟也 ，海运则将徙于南冥。南冥者，
+天池也。
+\stoptext
+</pre>
+
+<h1>常见问题</h1>
+<ol>
+<li>安装完毕测试上面的文件出现错误：
+<pre>
+Error: pdfetex (file /usr/share/fonts/zh_CN/TrueType/simsun.ttf): can't find ta
+ble `maxp'
+ ==> Fatal error occurred, the output PDF file is not finished!     
+</pre>
+
+<p>这一般是由于你的 ttf 字体文件有错误。更换一个完好的ttf文
+件就可以了。
+
+</ol>
+
+</body>
+</html>
+

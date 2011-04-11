@@ -1,0 +1,259 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>6.6.&#160;在一个设备文件上的存取控制-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch06.html" title="第&#160;6&#160;章&#160;高级字符驱动操作">
+<link rel="prev" href="ch06s05.html" title="6.5.&#160;移位一个设备">
+<link rel="next" href="ch06s07.html" title="6.7.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">6.6.&#160;在一个设备文件上的存取控制</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch06s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;6&#160;章&#160;高级字符驱动操作</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch06s07.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="AccessControlonaDeviceFile.sect1"></a>6.6.&#160;在一个设备文件上的存取控制</h2></div></div></div>
+<p>提供存取控制对于一个设备节点来说有时是至关重要的. 不仅是非授权用户不能使用设备(由文件系统许可位所强加的限制), 而且有时只有授权用户才应当被允许来打开设备一次.</p>
+<p>这个问题类似于使用 ttys 的问题. 在那个情况下, login 进程改变设备节点的所有权, 无论何时一个用户登录到系统, 为了阻止其他的用户打扰或者偷听这个 tty 的数据流. 但是, 仅仅为了保证对它的唯一读写而使用一个特权程序在每次打开它时改变一个设备的拥有权是不实际的. </p>
+<p>迄今所显示的代码没有实现任何的存取控制, 除了文件系统许可位. 如果系统调用 open 将请求递交给驱动, open 就成功了. 我们现在介绍几个新技术来实现一些额外的检查.</p>
+<p>每个在本节中展示的设备有和空的  scull 设备有相同的行为(即, 它实现一个持久的内存区)但是在存取控制方面和 scull 不同, 这个实现在 open 和 release 操作中.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="SingleOpenDevices.sect2"></a>6.6.1.&#160;单 open 设备</h3></div></div></div>
+<p>提供存取控制的强力方式是只允许一个设备一次被一个进程打开(单次打开). 这个技术最好是避免因为它限制了用户的灵活性. 一个用户可能想运行不同的进程在一个设备上, 一个读状态信息而另一个写数据. 在某些情况下, 用户通过一个外壳脚本运行几个简单的程序可做很多事情, 只要它们可并发存取设备. 换句话说, 实现一个单 open 行为实际是在创建策略, 这样可能会介入你的用户要做的范围.</p>
+<p>只允许单个进程打开设备有不期望的特性, 但是它也是一个设备驱动最简单实现的存取控制, 因此它在这里被展示. 这个源码是从一个称为 scullsingle 的设备中提取的.</p>
+<p>scullsingle 设备维护一个 atiomic_t 变量, 称为 scull_s_available; 这个变量被初始化为值 1, 表示设备确实可用. open 调用递减并测试 scull_s_available 并拒绝存取如果其他人已经使设备打开.</p>
+<pre class="programlisting">
+static atomic_t scull_s_available = ATOMIC_INIT(1);
+static int scull_s_open(struct inode *inode, struct file *filp)
+{
+
+        struct scull_dev *dev = &amp;scull_s_device; /* device information */
+        if (! atomic_dec_and_test (&amp;scull_s_available))
+        {
+                atomic_inc(&amp;scull_s_available);
+                return -EBUSY; /* already open */
+        }
+
+        /* then, everything else is copied from the bare scull device */
+        if ( (filp-&gt;f_flags &amp; O_ACCMODE) == O_WRONLY)
+
+                scull_trim(dev);
+        filp-&gt;private_data = dev;
+        return 0; /* success */
+}
+</pre>
+<p>release 调用, 另一方面, 标识设备为不再忙:</p>
+<pre class="programlisting">
+static int scull_s_release(struct inode *inode, struct file *filp)
+{
+        atomic_inc(&amp;scull_s_available); /* release the device */
+        return 0;
+}
+</pre>
+<p>正常地, 我们建议你将 open 标志 scul_s_available 放在设备结构中( scull_dev 这里), 因为, 从概念上, 它属于这个设备. scull 驱动, 但是, 使用独立的变量来保持这个标志, 因此它可使用和空 scull 设备同样的设备结构和方法, 并且最少的代码复制.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="RestrictingAccesstoaSingleUserataTime.sect2"></a>6.6.2.&#160;一次对一个用户限制存取</h3></div></div></div>
+<p>单打开设备之外的下一步是使一个用户在多个进程中打开一个设备, 但是一次只允许一个用户打开设备. 这个解决方案使得容易测试设备, 因为用户一次可从几个进程读写, 但是假定这个用户负责维护在多次存取中的数据完整性. 这通过在 open 方法中添加检查来实现; 这样的检查在通常的许可检查后进行, 并且只能使存取更加严格, 比由拥有者和组许可位所指定的限制. 这是和 ttys 所用的存取策略是相同的, 但是它不依赖于外部的特权程序.</p>
+<p>这些存取策略实现地有些比单打开策略要奇怪. 在这个情况下, 需要 2 项: 一个打开计数和设备拥有者 uid. 再一次, 给这个项的最好的地方是在设备结构中; 我们的例子使用全局变量代替, 是因为之前为 scullsingle 所解释的的原因. 这个设备的名子是 sculluid.</p>
+<p>open 调用在第一次打开时同意了存取但是记住了设备拥有者. 这意味着一个用户可打开设备多次, 因此允许协调多个进程对设备并发操作. 同时, 没有其他用户可打开它, 这样避免了外部干扰. 因为这个函数版本几乎和之前的一致, 这样相关的部分在这里被复制:</p>
+<pre class="programlisting">
+spin_lock(&amp;scull_u_lock);
+if (scull_u_count &amp;&amp;
+                (scull_u_owner != current-&gt;uid) &amp;&amp; /* allow user */
+                (scull_u_owner != current-&gt;euid) &amp;&amp; /* allow whoever did su */
+                !capable(CAP_DAC_OVERRIDE))
+{ /* still allow root */
+        spin_unlock(&amp;scull_u_lock);
+        return -EBUSY; /* -EPERM would confuse the user */
+}
+
+if (scull_u_count == 0)
+        scull_u_owner = current-&gt;uid; /* grab it */
+
+scull_u_count++;
+spin_unlock(&amp;scull_u_lock);
+</pre>
+<p>注意 sculluid 代码有 2 个变量 ( scull_u_owner 和 scull_u_count)来控制对设备的存取, 并且这样可被多个进程并发地存取. 为使这些变量安全, 我们使用一个自旋锁控制对它们的存取( scull_u_lock ). 没有这个锁, 2 个(或多个)进程可同时测试 scull_u_count , 并且都可能认为它们拥有设备的拥有权. 这里使用一个自旋锁, 是因为这个锁被持有极短的时间, 并且驱动在持有这个锁时不做任何可睡眠的事情.</p>
+<p>我们选择返回 -EBUSY 而不是 -EPERM, 即便这个代码在进行许可检测, 为了给一个被拒绝存取的用户指出正确的方向. 对于"许可拒绝"的反应常常是检查 /dev 文件的模式和拥有者, 而"设备忙"正确地建议用户应当寻找一个已经在使用设备的进程.</p>
+<p>这个代码也检查来看是否正在试图打开的进程有能力来覆盖文件存取许可; 如果是这样, open 被允许即便打开进程不是设备的拥有者. CAP_DAC_OVERRIDE 能力在这个情况中适合这个任务.</p>
+<p>release 方法看来如下:</p>
+<pre class="programlisting">
+static int scull_u_release(struct inode *inode, struct file *filp)
+{
+        spin_lock(&amp;scull_u_lock);
+        scull_u_count--; /* nothing else */
+        spin_unlock(&amp;scull_u_lock);
+        return 0;
+}
+</pre>
+<p>再次, 我们在修改计数之前必须获得锁, 来确保我们没有和另一个进程竞争.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="BlockingopenasanAlternativetoEBUSY.sect2"></a>6.6.3.&#160;阻塞 open 作为对 EBUSY 的替代</h3></div></div></div>
+<p>当设备不可存取, 返回一个错误常常是最合理的方法, 但是有些情况用户可能更愿意等待设备.</p>
+<p>例如, 如果一个数据通讯通道既用于规律地预期地传送报告(使用 crontab), 也用于根据用户的需要偶尔地使用, 对于被安排的操作最好是稍微延迟, 而不是只是因为通道当前忙而失败.</p>
+<p>这是程序员在设计一个设备驱动时必须做的一个选择之一, 并且正确的答案依赖正被解决的实际问题.</p>
+<p>对 EBUSY 的替代, 如同你可能已经想到的, 是实现阻塞 open. scullwuid 设备是一个在打开时等待设备而不是返回 -EBUSY 的 sculluid 版本. 它不同于 sculluid 只在下面的打开操作部分:</p>
+<pre class="programlisting">
+spin_lock(&amp;scull_w_lock);
+while (! scull_w_available())
+{
+        spin_unlock(&amp;scull_w_lock);
+        if (filp-&gt;f_flags &amp; O_NONBLOCK)
+                return -EAGAIN;
+        if (wait_event_interruptible (scull_w_wait, scull_w_available()))
+                return -ERESTARTSYS; /* tell the fs layer to handle it */
+        spin_lock(&amp;scull_w_lock);
+}
+if (scull_w_count == 0)
+        scull_w_owner = current-&gt;uid; /* grab it */
+scull_w_count++;
+spin_unlock(&amp;scull_w_lock);
+</pre>
+<p>这个实现再次基于一个等待队列. 如果设备当前不可用, 试图打开它的进程被放置到等待队列直到拥有进程关闭设备.</p>
+<p>release 方法, 接着, 负责唤醒任何挂起的进程:</p>
+<pre class="programlisting">
+static int scull_w_release(struct inode *inode, struct file *filp)
+{
+
+ int temp;
+ spin_lock(&amp;scull_w_lock);
+ scull_w_count--;
+ temp = scull_w_count;
+ spin_unlock(&amp;scull_w_lock); 
+    if (temp == 0)
+ wake_up_interruptible_sync(&amp;scull_w_wait); /* awake other uid's */
+ return 0;
+}
+</pre>
+<p>这是一个例子, 这里调用 wake_up_interruptible_sync 是有意义的. 当我们做这个唤醒, 我们只是要返回到用户空间, 这对于系统是一个自然的调度点. 当我们做这个唤醒时不是潜在地重新调度, 最好只是调用 "sync" 版本并且完成我们的工作.</p>
+<p>阻塞式打开实现的问题是对于交互式用户真的不好, 他们不得不猜想哪里出错了. 交互式用户常常调用标准命令, 例如 cp 和 tar, 并且不能增加 O_NONBLOCK 到 open 调用. 有些使用磁带驱动器做备份的人可能喜欢有一个简单的"设备或者资源忙"消息, 来替代被扔在一边猜为什么今天的硬盘驱动器这么安静, 此时 tar 应当在扫描它.</p>
+<p>这类的问题(需要一个不同的, 不兼容的策略对于同一个设备)最好通过为每个存取策略实现一个设备节点来实现. 这个做法的一个例子可在 linux 磁带驱动中找到, 它提供了多个设备文件给同一个设备. 例如, 不同的设备文件将使驱动器使用或者不用压缩记录, 或者自动回绕磁带当设备被关闭时.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="CloningtheDeviceonopen.sect2"></a>6.6.4.&#160;在 open 时复制设备</h3></div></div></div>
+<p>管理存取控制的另一个技术是创建设备的不同的私有拷贝, 根据打开它的进程.</p>
+<p>明显地, 这只当设备没有绑定到一个硬件实体时有可能; scull 是一个这样的"软件"设备的例子. /dev/tty 的内部使用类似的技术来给它的进程一个不同的 /dev 入口点呈现的视图. 当设备的拷贝被软件驱动创建, 我们称它们为虚拟设备--就象虚拟控制台使用一个物理 tty 设备.</p>
+<p>结构这类的存取控制很少需要, 这个实现可说明内核代码是多么容易改变应用程序的对周围世界的看法(即, 计算机).</p>
+<p>/dev/scullpriv 设备节点在 scull 软件包只实现虚拟设备. scullpriv 实现使用了进程的控制 tty 的设备号作为对存取虚拟设备的钥匙. 但是, 你可以轻易地改变代码来使用任何整数值作为钥匙; 每个选择都导致一个不同的策略. 例如, 使用 uid 导致一个不同地虚拟设备给每个用户, 而使用一个 pid 钥匙创建一个新设备为每个存取它的进程.</p>
+<p>使用控制终端的决定打算用在易于使用 I/O 重定向测试设备: 设备被所有的在同一个虚拟终端运行的命令所共享, 并且保持独立于在另一个终端上运行的命令所见到的.</p>
+<p>open 方法看来象下面的代码. 它必须寻找正确的虚拟设备并且可能创建一个. 这个函数的最后部分没有展示, 因为它拷贝自空的 scull, 我们已经见到过.</p>
+<pre class="programlisting">
+/* The clone-specific data structure includes a key field */
+struct scull_listitem
+{
+        struct scull_dev device;
+        dev_t key;
+        struct list_head list;
+
+};
+/* The list of devices, and a lock to protect it */
+static LIST_HEAD(scull_c_list);
+static spinlock_t scull_c_lock = SPIN_LOCK_UNLOCKED;
+
+/* Look for a device or create one if missing */
+static struct scull_dev *scull_c_lookfor_device(dev_t key)
+{
+
+        struct scull_listitem *lptr;
+        list_for_each_entry(lptr, &amp;scull_c_list, list)
+        {
+                if (lptr-&gt;key == key)
+                        return &amp;(lptr-&gt;device);
+        }
+
+        /* not found */
+        lptr = kmalloc(sizeof(struct scull_listitem), GFP_KERNEL);
+        if (!lptr)
+                return NULL;
+        /* initialize the device */
+        memset(lptr, 0, sizeof(struct scull_listitem));
+        lptr-&gt;key = key;
+        scull_trim(&amp;(lptr-&gt;device)); /* initialize it */
+        init_MUTEX(&amp;(lptr-&gt;device.sem));
+
+        /* place it in the list */
+        list_add(&amp;lptr-&gt;list, &amp;scull_c_list);
+
+        return &amp;(lptr-&gt;device);
+}
+
+static int scull_c_open(struct inode *inode, struct file *filp)
+{
+        struct scull_dev *dev;
+
+        dev_t key;
+        if (!current-&gt;signal-&gt;tty)
+        {
+                PDEBUG("Process \"%s\" has no ctl tty\n", current-&gt;comm);
+                return -EINVAL;
+
+        }
+        key = tty_devnum(current-&gt;signal-&gt;tty);
+
+        /* look for a scullc device in the list */
+        spin_lock(&amp;scull_c_lock);
+        dev = scull_c_lookfor_device(key);
+        spin_unlock(&amp;scull_c_lock);
+
+        if (!dev)
+                return -ENOMEM;
+
+        /* then, everything else is copied from the bare scull device */
+</pre>
+<p>这个 release 方法没有做特殊的事情. 它将在最后的关闭时正常地释放设备, 但是我们不选择来维护一个 open 计数而来简化对驱动的测试. 如果设备在最后的关闭被释放, 你将不能读相同的数据在写入设备之后, 除非一个后台进程将保持它打开. 例子驱动采用了简单的方法来保持数据, 以便在下一次打开时, 你会发现它在那里. 设备在 scull_cleanup 被调用时释放.</p>
+<p>这个代码使用通用的 linux 链表机制, 而不是从头开始实现相同的功能. linux 链表在第 11 章中讨论.</p>
+<p>这里是 /dev/scullpriv 的 release 实现, 它结束了对设备方法的讨论.</p>
+<pre class="programlisting">
+static int scull_c_release(struct inode *inode, struct file *filp)
+{
+        /*
+        *Nothing to do, because the device is persistent.
+        *A `real' cloned device should be freed on last close */
+
+        return 0;
+}
+</pre>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch06s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch06.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch06s07.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">6.5.&#160;移位一个设备&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;6.7.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

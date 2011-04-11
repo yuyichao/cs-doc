@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 第二个汇编程序</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch18.html" title="第 18 章 x86汇编程序基础" /><link rel="prev" href="ch18s02.html" title="2. x86的寄存器" /><link rel="next" href="ch18s04.html" title="4. 寻址方式" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 第二个汇编程序</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch18s02.html">上一页</a> </td><th width="60%" align="center">第 18 章 x86汇编程序基础</th><td width="20%" align="right"> <a accesskey="n" href="ch18s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2769960"></a>3. 第二个汇编程序</h2></div></div></div><div class="example"><a id="id2769965"></a><p class="title"><b>例 18.2. 求一组数的最大值的汇编程序</b></p><div class="example-contents"><pre class="programlisting">#PURPOSE: This program finds the maximum number of a
+#	  set of data items.
+#
+#VARIABLES: The registers have the following uses:
+#
+# %edi - Holds the index of the data item being examined
+# %ebx - Largest data item found
+# %eax - Current data item
+#
+# The following memory locations are used:
+#
+# data_items - contains the item data. A 0 is used
+# to terminate the data
+#
+ .section .data
+data_items: 		#These are the data items
+ .long 3,67,34,222,45,75,54,34,44,33,22,11,66,0
+
+ .section .text
+ .globl _start
+_start:
+ movl $0, %edi  	# move 0 into the index register
+ movl data_items(,%edi,4), %eax # load the first byte of data
+ movl %eax, %ebx 	# since this is the first item, %eax is
+			# the biggest
+
+start_loop: 		# start loop
+ cmpl $0, %eax  	# check to see if we've hit the end
+ je loop_exit
+ incl %edi 		# load next value
+ movl data_items(,%edi,4), %eax
+ cmpl %ebx, %eax 	# compare values
+ jle start_loop 	# jump to loop beginning if the new
+ 			# one isn't bigger
+ movl %eax, %ebx 	# move the value as the largest
+ jmp start_loop 	# jump to loop beginning
+
+loop_exit:
+ # %ebx is the status code for the _exit system call
+ # and it already has the maximum number
+ movl $1, %eax  	#1 is the _exit() syscall
+ int $0x80</pre></div></div><br class="example-break" /><p>汇编、链接、运行：</p><pre class="screen">$ as max.s -o max.o
+$ ld max.o -o max
+$ ./max
+$ echo $?
+</pre><p>这个程序在一组数中找到一个最大的数，并把它作为程序的退出状态。这组数在<code class="literal">.data</code>段给出：</p><pre class="programlisting">data_items:
+ .long 3,67,34,222,45,75,54,34,44,33,22,11,66,0</pre><p><code class="literal">.long</code>指示声明一组数，每个数占32位，相当于C语言中的数组。这个数组开头定义了一个符号<code class="literal">data_items</code>，汇编器会把数组的首地址作为<code class="literal">data_items</code>符号所代表的地址，<code class="literal">data_items</code>类似于C语言中的数组名。<code class="literal">data_items</code>这个标号没有用<code class="literal">.globl</code>声明，因为它只在这个汇编程序内部使用，链接器不需要用到这个名字。除了<code class="literal">.long</code>之外，常用的数据声明还有：</p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">.byte</code>，也是声明一组数，每个数占8位</p></li><li><p><code class="literal">.ascii</code>，例如<code class="literal">.ascii "Hello world"</code>，声明11个数，取值为相应字符的ASCII码。注意，和C语言不同，这样声明的字符串末尾是没有<code class="literal">'\0'</code>字符的，如果需要以<code class="literal">'\0'</code>结尾可以声明为<code class="literal">.ascii "Hello world\0"</code>。</p></li></ul></div><p><code class="literal">data_items</code>数组的最后一个数是0，我们在一个循环中依次比较每个数，碰到0的时候让循环终止。在这个循环中：</p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">edi</code>寄存器保存数组中的当前位置，每次比较完一个数就把<code class="literal">edi</code>的值加1，指向数组中的下一个数。</p></li><li><p><code class="literal">ebx</code>寄存器保存到目前为止找到的最大值，如果发现有更大的数就更新<code class="literal">ebx</code>的值。</p></li><li><p><code class="literal">eax</code>寄存器保存当前要比较的数，每次更新<code class="literal">edi</code>之后，就把下一个数读到<code class="literal">eax</code>中。</p></li></ul></div><pre class="programlisting">_start:
+ movl $0, %edi</pre><p>初始化<code class="literal">edi</code>，指向数组的第0个元素。</p><pre class="programlisting"> movl data_items(,%edi,4), %eax</pre><p>这条指令把数组的第0个元素传送到<code class="literal">eax</code>寄存器中。<code class="literal">data_items</code>是数组的首地址，<code class="literal">edi</code>的值是数组的下标，4表示数组的每个元素占4字节，那么数组中第<code class="literal">edi</code>个元素的地址应该是<code class="literal">data_items + edi * 4</code>，写在指令中就是<code class="literal">data_items(,%edi,4)</code>，这种地址表示方式在下一节还会详细解释。</p><pre class="programlisting"> movl %eax, %ebx</pre><p><code class="literal">ebx</code>的初始值也是数组的第0个元素。下面我们进入一个循环，循环的开头定义一个符号<code class="literal">start_loop</code>，循环的末尾之后定义一个符号<code class="literal">loop_exit</code>。</p><pre class="programlisting">start_loop:
+ cmpl $0, %eax
+ je loop_exit</pre><p>比较<code class="literal">eax</code>的值是不是0，如果是0就说明到达数组末尾了，就要跳出循环。<code class="literal">cmpl</code>指令将两个操作数相减，但计算结果并不保存，只是根据计算结果改变<code class="literal">eflags</code>寄存器中的标志位。如果两个操作数相等，则计算结果为0，<code class="literal">eflags</code>中的ZF位置1。<code class="literal">je</code>是一个条件跳转指令，它检查<code class="literal">eflags</code>中的ZF位，ZF位为1则发生跳转，ZF位为0则不跳转，继续执行下一条指令。可见比较指令和条件跳转指令是配合使用的，前者改变标志位，后者根据标志位决定是否跳转。<code class="literal">je</code>可以理解成“<span class="quote">jump if equal</span>”，如果参与比较的两数相等则跳转。</p><pre class="programlisting"> incl %edi
+ movl data_items(,%edi,4), %eax</pre><p>将<code class="literal">edi</code>的值加1，把数组中的下一个数传送到<code class="literal">eax</code>寄存器中。</p><pre class="programlisting"> cmpl %ebx, %eax
+ jle start_loop</pre><p>把当前数组元素<code class="literal">eax</code>和目前为止找到的最大值<code class="literal">ebx</code>做比较，如果前者小于等于后者，则最大值没有变，跳转到循环开头比较下一个数，否则继续执行下一条指令。<code class="literal">jle</code>表示“<span class="quote">jump if less than or equal</span>”。</p><pre class="programlisting"> movl %eax, %ebx
+ jmp start_loop</pre><p>更新了最大值<code class="literal">ebx</code>然后跳转到循环开头比较下一个数。<code class="literal">jmp</code>是一个无条件跳转指令，什么条件也不判断，直接跳转。<code class="literal">loop_exit</code>符号后面的指令调<code class="literal">_exit</code>系统调用退出程序。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch18s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch18.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch18s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. x86的寄存器 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. 寻址方式</td></tr></table></div></body></html>

@@ -1,0 +1,252 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 21. Triggers</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="stored-procedures.html" title="Chapter 20. Stored Procedures and Functions"><link rel="next" href="views.html" title="Chapter 22. Views">
+<style>
+<!--
+ div.MsoNormal
+	{mso-style-parent:"";
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	
+	; margin-left:0cm; margin-right:0cm; margin-top:0cm}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="triggers"></a>
+	第21章：触发程序</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="triggers.html#create-trigger">21.1. 
+			CREATE TRIGGER语法</a></span></dt><dt><span class="section"><a href="triggers.html#drop-trigger">21.2. 
+			DROP TRIGGER语法</a></span></dt><dt><span class="section"><a href="triggers.html#using-triggers">
+			21.3. 使用触发程序</a></span></dt></dl></div><a class="indexterm" name="id2996166"></a>
+	<p><span>MySQL 5.1</span>包含对触发程序的支持。触发程序是与表有关的命名数据库对象，当表上出现特定事件时，将激活该对象。例如，下述语句将创建<span>1</span>个表和<span>1</span>个<span><span>INSERT</span>触发程序。</span>触发程序将插入表中某一列的值加在一起：</p>
+	<pre><span>mysql&gt; <span><b>CREATE TABLE account (acct_num INT, amount DECIMAL(10,2));</b></span></span></pre>
+	<pre><span>mysql&gt; <span><b>CREATE TRIGGER ins_sum BEFORE INSERT ON account</b></span></span></pre>
+	<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>FOR EACH ROW SET @sum = @sum + NEW.amount;</b></span></span></pre>
+	<p>在本章中，介绍了创建和撤销触发程序的语法，并给出了一些使用它们的示例。关于对触发程序使用的限制，请参见<a href="restrictions.html">附录I：</a><a href="restrictions.html" title="Appendix I. Feature Restrictions"><i>特性限制</i></a>。</p>
+	<p>关于触发程序的二进制日志功能，请参见<a href="stored-procedures.html#stored-procedure-logging" title="20.4. Binary Logging of Stored Routines and Triggers">20.4节，“存储子程序和触发程序的二进制日志功能”</a>。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="create-trigger"></a>21.1. CREATE 
+		TRIGGER语法</h2></div></div></div>
+		<pre><span>CREATE TRIGGER <span><i>trigger_name</i></span> <span><i>trigger_time</i></span> <span><i>trigger_event</i></span></span></pre>
+		<pre><span> &nbsp;&nbsp;&nbsp;ON <span><i>tbl_name</i></span> FOR EACH ROW <span><i>trigger_stmt</i></span></span></pre>
+		<p>触发程序是与表有关的命名数据库对象，当表上出现特定事件时，将激活该对象。</p>
+		<p>触发程序与命名为<span><i><span>tbl_name</span></i></span>的表相关。<span><i><span>tbl_name</span></i></span>必须引用永久性表。不能将触发程序与<span><span>TEMPORARY</span>表或视图关联起来。</span></p>
+		<p><span><i><span>trigger_time</span></i></span>是触发程序的动作时间。它可以是<span>BEFORE</span>或<span><span>AFTER</span>，以指明触发程序是在激活它的语句之前或之后触发。</span></p>
+		<p><span><i><span>trigger_event</span></i></span>指明了激活触发程序的语句的类型。<span><i><span>trigger_event</span></i></span>可以是下述值之一：</p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>INSERT</span></span>：将新行插入表时激活触发程序，例如，通过<span>INSERT</span>、<span>LOAD 
+		DATA</span>和<span><span>REPLACE</span>语句。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>UPDATE</span>：更改某一行时激活触发程序，例如，通过<span><span>UPDATE</span>语句。</span></p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>DELETE</span></span>：从表中删除某一行时激活触发程序，例如，通过<span>DELETE</span>和<span><span>REPLACE</span>语句。</span></p>
+		<p>请注意，<span><i><span>trigger_event</span></i></span>与以表操作方式激活触发程序的<span>SQL</span>语句并不很类似，这点很重要。例如，关于<span>INSERT</span>的<span><span>BEFORE</span>触发程序不仅能被<span>INSERT</span>语句激活，也能被<span>LOAD 
+		DATA</span>语句激活。</span></p>
+		<p>可能会造成混淆的例子之一是<span>INSERT 
+		INTO .. ON DUPLICATE UPDATE ...</span>语法：<span><span>BEFORE 
+		INSERT</span>触发程序对于每一行将激活，</span>后跟<span>AFTER 
+		INSERT</span>触发程序，或<span>BEFORE 
+		UPDATE</span>和<span><span>AFTER 
+		UPDATE</span>触发程序，具体情况取决于行上是否有重复键。</span></p>
+		<p>对于具有相同触发程序动作时间和事件的给定表，不能有两个触发程序。例如，对于某一表，不能有两个<span><span>BEFORE 
+		UPDATE</span>触发程序。</span>但可以有<span>1</span>个<span><span>BEFORE 
+		UPDATE</span>触发程序和<span>1</span>个<span>BEFORE INSERT</span>触发程序，或</span><span>1</span>个<span><span>BEFORE 
+		UPDATE</span>触发程序和<span>1</span>个<span>AFTER UPDATE</span>触发程序。</span></p>
+		<p><span><i><span>trigger_stmt</span></i></span>是当触发程序激活时执行的语句。如果你打算执行多个语句，可使用<span>BEGIN 
+		... END</span>复合语句结构。这样，就能使用存储子程序中允许的相同语句。请参见<a href="stored-procedures.html#begin-end" title="20.2.7. BEGIN ... END Compound Statement">20.2.7节，“BEGIN 
+		... END复合语句”</a>。</p>
+		<p>在<span>MySQL 5.1</span>中，可以编写包含按名称对表进行直接引用的触发程序，如下例中所示的名为<span><span>testref</span>的触发程序：</span></p>
+		<pre><span>CREATE TABLE test1(a1 INT);</span></pre>
+		<pre><span>CREATE TABLE test2(a2 INT);</span></pre>
+		<pre><span>CREATE TABLE test3(a3 INT NOT NULL AUTO_INCREMENT PRIMARY KEY);</span></pre>
+		<pre><span>CREATE TABLE test4(</span></pre>
+		<pre><span>&nbsp; a4 INT NOT NULL AUTO_INCREMENT PRIMARY KEY, </span></pre>
+		<pre><span>&nbsp;&nbsp;b4 INT DEFAULT 0</span></pre>
+		<pre><span>);</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>DELIMITER |</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>CREATE TRIGGER testref BEFORE INSERT ON test1</span></pre>
+		<pre><span>&nbsp; FOR EACH ROW BEGIN</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; INSERT INTO test2 SET a2 = NEW.a1;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; DELETE FROM test3 WHERE a3 = NEW.a1;&nbsp; </span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;UPDATE test4 SET b4 = b4 + 1 WHERE a4 = NEW.a1;</span></pre>
+		<pre><span>&nbsp; END</span></pre>
+		<pre><span>|</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>DELIMITER ;</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>INSERT INTO test3 (a3) VALUES </span></pre>
+		<pre><span>&nbsp;&nbsp;(NULL), (NULL), (NULL), (NULL), (NULL), </span></pre>
+		<pre><span>&nbsp;&nbsp;(NULL), (NULL), (NULL), (NULL), (NULL);</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>INSERT INTO test4 (a4) VALUES </span></pre>
+		<pre><span>&nbsp;&nbsp;(0), (0), (0), (0), (0), (0), (0), (0), (0), (0);</span></pre>
+		<p>如果将下述值插入表<span><span>test1</span>，如下所示：</span></p>
+		<pre><span>mysql&gt; <span><b>INSERT INTO test1 VALUES </b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>(1), (3), (1), (7), (1), (8), (4), (4);</b></span></span></pre>
+		<pre><span>Query OK, 8 rows affected (0.01 sec)</span></pre>
+		<pre><span>Records: 8&nbsp; Duplicates: 0&nbsp; Warnings: 0</span></pre>
+		<p>那么<span>4</span>个表中的数据如下：</p>
+		<pre><span>mysql&gt; <span><b>SELECT * FROM test1;</b></span></span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| a1&nbsp;&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 7 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 8 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>8 rows in set (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT * FROM test2;</b></span></span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| a2&nbsp;&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 7 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 8 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>8 rows in set (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT * FROM test3;</b></span></span></pre>
+		<pre><span>+----+</span></pre>
+		<pre><span>| a3 |</span></pre>
+		<pre><span>+----+</span></pre>
+		<pre><span>|&nbsp; 2 |</span></pre>
+		<pre><span>|&nbsp; 5 |</span></pre>
+		<pre><span>|&nbsp; 6 |</span></pre>
+		<pre><span>|&nbsp; 9 |</span></pre>
+		<pre><span>| 10 |</span></pre>
+		<pre><span>+----+</span></pre>
+		<pre><span>5 rows in set (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT * FROM test4;</b></span></span></pre>
+		<pre><span>+----+------+</span></pre>
+		<pre><span>| a4 | b4&nbsp;&nbsp; |</span></pre>
+		<pre><span>+----+------+</span></pre>
+		<pre><span>|&nbsp; 1 |&nbsp;&nbsp;&nbsp; 3 |</span></pre>
+		<pre><span>|&nbsp; 2 |&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>|&nbsp; 3 |&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp; 4 |&nbsp;&nbsp;&nbsp; 2 |</span></pre>
+		<pre><span>|&nbsp; 5 |&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>|&nbsp; 6 |&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>|&nbsp; 7 |&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp; 8 |&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>|&nbsp; 9 |&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>| 10 |&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>+----+------+</span></pre>
+		<pre><span>10 rows in set (0.00 sec)</span></pre>
+		<p>使用别名<span>OLD</span>和<span>NEW</span>，能够引用与触发程序相关的表中的列。<span>OLD.<i>col_name</i></span>在更新或删除它之前，引用已有行中的<span>1</span>列。<span>NEW.<i>col_name</i></span>在更新它之后引用将要插入的新行的<span>1</span>列或已有行的<span>1</span>列。</p>
+		<p>激活触发程序时，对于触发程序引用的所有<span>OLD</span>和<span>NEW</span>列，需要具有<span>SELECT</span>权限，对于作为<span>SET</span>赋值目标的所有<span>NEW</span>列，需要具有<span><span>UPDATE</span>权限。</span></p>
+		<p><strong><span>注释：</span></strong>目前，触发程序不会被级联的
+		外键动作激活。该限制将会被尽早放宽。</p>
+		<p><span>CREATE TRIGGER</span>语句需要<span><span>SUPER</span>权限。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="drop-trigger"></a>21.2. DROP 
+		TRIGGER语法</h2></div></div></div>
+		<pre><span>DROP TRIGGER [<span><i>schema_name</i></span>.]<span><i>trigger_name</i></span></span></pre>
+		<p>舍弃触发程序。方案名称（<span>schema_name</span>）是可选的。如果省略了<span>schema</span>（方案），将从当前方案中舍弃触发程序。</p>
+		<p><em><span>注释：</span></em>从<span>MySQL 
+		5.0.10<span>之前的</span>MySQL</span>版本升级到<span>5.0.10</span>或更高版本时（包括所有的<span>MySQL 
+		5.1</span>版本），必须在升级之前舍弃所有的触发程序，并在随后重新创建它们，否则，在升级之后<span><span>DROP 
+		TRIGGER</span>不工作。关于推荐的升级步骤</span>，请参见<a href="installing.html#upgrading-from-5-0" title="2.10.1. Upgrading from Version 5.0">2.10.1节，“从5.0版升级”</a> 。</p>
+		<p><span>DROP TRIGGER</span>语句需要<span><span>SUPER</span>权限。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="using-triggers"></a>
+		21.3.&nbsp;使用触发程序</h2></div></div></div>
+		<p>在本节中，介绍了在<span>MySQL 5.1</span>中使用触发程序的方法，并介绍了在使用触发程序方面的限制。</p>
+		<p>
+		触发程序是与表有关的命名数据库对象，当表上出现特定事件时，将激活该对象。在某些触发程序的用法中，可用于检查插入到表中的值，或对更新涉及的值进行计算。</p>
+		<p>触发程序与表相关，当对表执行<span><span>INSERT</span>、<span>DELETE</span></span>或<span><span>UPDATE</span>语句时，将激活触发程序。可以将触发程序设置为在执行语句之前或之后激活。</span>例如，可以在从表中删除每一行之前，或在更新了每一行后激活触发程序。</p>
+		<p>要想创建触发程序或舍弃触发程序，可使用<span>CREATE 
+		TRIGGER</span>或<span><span>DROP 
+		TRIGGER</span>语句。关于这些语句的语法，请参见</span><a href="triggers.html#create-trigger" title="21.1. CREATE TRIGGER Syntax">21.1节，“CREATE 
+		TRIGGER语法”</a>和<a href="triggers.html#drop-trigger" title="21.2. DROP TRIGGER Syntax">21.2节，“DROP 
+		TRIGGER语法”</a>。</p>
+		<p>下面给出了<span>1</span>个简单的示例，在该示例中，针对<span><span>INSERT</span>语句，</span>将触发程序和表关联了起来。其作用相当于累加器，能够将插入表中某一列的值加起来。</p>
+		<p>在下面的语句中，创建了<span>1</span>个表，并为表创建了<span>1</span>个触发程序：</p>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE account (acct_num INT, amount DECIMAL(10,2));</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TRIGGER ins_sum BEFORE INSERT ON account</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>FOR EACH ROW SET @sum = @sum + NEW.amount;</b></span></span></pre>
+		<p><span><span>CREATE TRIGGER</span>语句创建</span>了与账户表相关的、名为<span><span>ins_sum</span>的触发程序。它还包括一些子句，这些子句指定了触发程序激活时间、触发程序事件、以及激活触发程序时作些什么：</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>关键字<span><span>BEFORE</span>指明了</span>触发程序的动作时间。在本例中，应在将每一行插入表之前激活触发程序。这类允许的其他关键字是<span>AFTER</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>关键字<span><span>INSERT</span>指明了激活触发程序的事件。</span>在本例中，<span><span>INSERT</span>语句</span>将导致触发程序的激活。你也可以为<span>DELETE</span>和<span>UPDATE</span>语句创建触发程序。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>跟在<span><span>FOR 
+		EACH ROW</span>后面的语句</span>定义了每次激活触发程序时将执行的程序，对于受触发语句影响的每一行执行一次。在本例中，触发的语句是简单的<span><span>SET</span>语句，负责将插入<span>amount</span>列的值加起来。该</span>语句将列引用为<span><span>NEW.amount</span>，意思是<span>“</span>将要插入到新行的<span>amount</span>列的值<span>”</span>。</span></p>
+		<p>要想使用触发程序，将累加器变量设置为<span>0</span>，执行<span><span>INSERT</span>语句，然后查看变量的值：</span></p>
+		<pre><span>mysql&gt; <span><b>SET @sum = 0;</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO account VALUES(137,14.98),(141,1937.50),(97,-100.00);</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT @sum AS &#39;Total amount inserted&#39;;</b></span></span></pre>
+		<pre><span>+-----------------------+</span></pre>
+		<pre><span>| Total amount inserted |</span></pre>
+		<pre><span>+-----------------------+</span></pre>
+		<pre><span>| 1852.48&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-----------------------+</span></pre>
+		<p>在本例中，执行了<span>INSERT</span>语句后，<span><span>@sum</span>的值是<span>14.98 
+		+ 1937.50 – 100</span>，</span>或<span>1852.48</span>。</p>
+		<p>要想销毁触发程序，可使用<span><span>DROP 
+		TRIGGER</span>语句。如果触发程序不在默认的方案中，必须指定方案名称：</span></p>
+		<pre><span>mysql&gt; <span><b>DROP TRIGGER test.ins_sum;</b></span></span></pre>
+		<p>触发程序名称存在于方案的名称空间内，这意味着，在<span>1</span>个方案中，所有的触发程序必须具有唯一的名称。位于不同方案中的触发程序可以具有相同的名称。</p>
+		<p>在<span>1</span>个方案中，所有的触发程序名称必须是唯一的，除了该要求外，对于能够创建的触发程序的类型还存在其他限制。尤其是，对于具有相同触发时间和触发事件的表，不能有<span>2</span>个触发程序。例如，不能为某一表定义<span>2</span>个<span>BEFORE 
+		INSERT</span>触发程序或<span>2</span>个<span>AFTER 
+		UPDATE</span>触发程序。这几乎不是有意义的限制，这是因为，通过在<span><span>FOR 
+		EACH ROW</span>之后使用<span>BEGIN ... END</span>复合语句结构，能够定义执行多条语句的触发程序。请参见本节后面给出的示例。</span></p>
+		<p>此外，激活触发程序时，对触发程序执行的语句也存在一些限制：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>触发程序不能调用将数据返回客户端的存储程序，也不能使用采用<span>CALL</span>语句的动态<span>SQL</span>（允许存储程序通过参数将数据返回触发程序）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>触发程序不能使用以显式或隐式方式开始或结束事务的语句，如<span>START 
+		TRANSACTION</span>、<span>COMMIT</span>或<span>ROLLBACK</span>。</p>
+		<p>使用<span>OLD</span>和<span><span>NEW</span>关键字，</span>能够访问受触发程序影响的行中的列（<span>OLD</span>和<span>NEW</span>不区分大小写）。在<span><span>INSERT</span>触发程序中，</span>仅能使用<span>NEW.<i>col_name</i></span>，没有旧行。在<span><span>DELETE</span>触发程序中，</span>仅能使用<span>OLD.<i>col_name</i></span>，没有新行。在<span><span>UPDATE</span>触发程序中，</span>可以使用<span>OLD.<i>col_name</i></span>来引用更新前的某一行的列，也能使用<span>NEW.<i>col_name</i></span>来引用更新后的行中的列。</p>
+		<p>用<span><span>OLD</span>命名的列是只读的。你可以引用它，但不能更改它。</span>对于用<span><span>NEW</span>命名的列，如果具有</span><span>SELECT</span>权限，可引用它。在<span><span>BEFORE</span>触发程序中，如果你具有<span>UPDATE</span>权限，可使用<span>“SET 
+		NEW.<i>col_name</i> = <i>value</i>”</span>更改它的值</span>。这意味着，你可以使用触发程序来更改将要插入到新行中的值，或用于更新行的值。</p>
+		<p>在<span><span>BEFORE</span>触发程序中，<span>AUTO_INCREMENT</span>列的<span>NEW</span>值</span>为<span>0</span>，不是实际插入新记录时将自动生成的序列号。</p>
+		<p><span><span>OLD</span>和<span>NEW</span>是对触发程序的</span><span>MySQL</span>扩展。</p>
+		<p>通过使用<span><span>BEGIN ... END</span>结构，能够定义执行多条语句的触发程序。在<span>BEGIN</span></span>块中，还能使用存储子程序中允许的其他语法，如条件和循环等。但是，正如存储子程序那样，定义执行多条语句的触发程序时，如果使用<span>mysql</span>程序来输入触发程序，需要重新定义语句分隔符，以便能够在触发程序定义中使用字符“<span>;</span>”。在下面的示例中，演示了这些要点。在该示例中，定义了<span>1</span>个<span><span>UPDATE</span>触发程序，用于检查更新每一行时将使用的新值，并更改值，使之位于<span>0</span>～<span>100</span>的范围内。它必须是<span>BEFORE</span>触发程序，这是因为，需要在将值用于更新行之前对其进行检查：</span></p>
+		<pre><span>mysql&gt; <span><b>delimiter //</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TRIGGER upd_check BEFORE UPDATE ON account</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>FOR EACH ROW</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>BEGIN</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp; &nbsp;&nbsp;&nbsp;<span><b>IF NEW.amount &lt; 0 THEN</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<span><b>SET NEW.amount = 0;</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>ELSEIF NEW.amount &gt; 100 THEN</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<span><b>SET NEW.amount = 100;</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>END IF;</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>END;//</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>delimiter ;</b></span></span></pre>
+		<p>较为简单的方法是，单独定义存储程序，然后使用简单的<span>CALL</span>语句从触发程序调用存储程序。如果你打算从数个触发程序内部调用相同的子程序，该方法也很有帮助。</p>
+		<p>在触发程序的执行过程中，<span>MySQL</span>处理错误的方式如下：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果<span>BEFORE</span>触发程序失败，不执行相应行上的操作。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>仅当<span>BEFORE</span>触发程序（如果有的话）和行操作均已成功执行，才执行<span>AFTER</span>触发程序。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果在<span>BEFORE</span>或<span>AFTER</span>触发程序的执行过程中出现错误，将导致调用触发程序的整个语句的失败。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		对于事务性表，如果触发程序失败（以及由此导致的整个语句的失败），该语句所执行的所有更改将回滚。对于非事务性表，不能执行这类回滚，因而，即使语句失败，失败之前所作的任何更改依然有效。</p>
+		<div align="center">
+			<span><hr size="2" width="100%" align="center"></span>
+		</div>
+		<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div></div>
+</body></html>

@@ -1,0 +1,101 @@
+/outsidecircletext
+{
+	circtextdict begin
+		/radius exch def
+		/centerangle exch def
+		/ptsize exch def
+		/str exch def
+		/xradius radius ptsize 4 div add def
+
+		gsave
+			centerangle str findhalfangle add rotate
+
+			str 
+			{
+				/charcode exch def
+				( ) dup 0 charcode put outsideplacechar
+			}forall
+		grestore
+	end
+}def
+
+/insidecircletext
+{
+	circtextdict begin
+		/radius exch def
+		/centerangle exch def
+		/ptsize exch def
+		/str exch def
+
+		/xradius radius ptsize 3 div sub def
+		gsave
+			centerangle str findhalfangle sub rotate
+			str
+			{/charcode exch def
+			( ) dup 0 charcode put insideplacechar
+			}forall
+		grestore
+	end
+}def
+
+/circtextdict 16 dict def
+circtextdict begin
+	/findhalfangle
+	{
+		stringwidth pop 2 div
+		xradius div 360 2 pi mul div mul
+	}def
+
+	/outsideplacechar
+	{
+		/char exch def
+		/halfangle char findhalfangle def
+		gsave
+			halfangle neg rotate
+			radius 0 translate
+			-90 rotate 
+			char stringwidth pop 2 div neg 0 moveto
+			char show
+		grestore
+		halfangle 2 mul neg rotate
+	}def
+
+	/insideplacechar
+	{
+		/char exch def
+		/halfangle char findhalfangle def
+		gsave
+			halfangle rotate
+			radius 0 translate
+			90 rotate
+			char stringwidth pop 2 div neg 0 moveto
+			char show
+		grestore
+		halfangle 2 mul rotate
+	}def
+
+	/pi 3.1415923 def
+end
+
+/R 110 def
+/r R .8 mul def
+/Helvetica-Bold findfont 20 scalefont setfont
+
+300 300 translate
+(GUARANTEED) 20 90 R outsidecircletext
+
+/Helvetica-Roman findfont 18 scalefont setfont
+(-  DESIGNED  TESTED  AND  APPROVED  BY  TEAM  ELEMENT  -)  15 270 R outsidecircletext
+
+
+10 setlinewidth
+1 setlinecap
+1 setlinejoin
+3 setmiterlimit
+
+r 0 moveto
+0 0 lineto
+0 r lineto
+stroke
+
+showpage

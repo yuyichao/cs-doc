@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1. 单步执行和跟踪函数调用</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch10.html" title="第 10 章 gdb" /><link rel="prev" href="ch10.html" title="第 10 章 gdb" /><link rel="next" href="ch10s02.html" title="2. 断点" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">1. 单步执行和跟踪函数调用</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch10.html">上一页</a> </td><th width="60%" align="center">第 10 章 gdb</th><td width="20%" align="right"> <a accesskey="n" href="ch10s02.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2740199"></a>1. 单步执行和跟踪函数调用</h2></div></div></div><p>看下面的程序：</p><div class="example"><a id="id2740211"></a><p class="title"><b>例 10.1. 函数调试实例</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int add_range(int low, int high)
+{
+	int i, sum;
+	for (i = low; i &lt;= high; i++)
+		sum = sum + i;
+	return sum;
+}
+
+int main(void)
+{
+	int result[100];
+	result[0] = add_range(1, 10);
+	result[1] = add_range(1, 100);
+	printf("result[0]=%d\nresult[1]=%d\n", result[0], result[1]);
+	return 0;
+}</pre></div></div><br class="example-break" /><p><code class="literal">add_range</code>函数从<code class="literal">low</code>加到<code class="literal">high</code>，在<code class="literal">main</code>函数中首先从1加到10，把结果保存下来，然后从1加到100，再把结果保存下来，最后打印的两个结果是：</p><pre class="screen">result[0]=55
+result[1]=5105</pre><p>第一个结果正确<sup>[<a id="id2740258" href="#ftn.id2740258" class="footnote">20</a>]</sup>，第二个结果显然不正确，在小学我们就听说过高斯小时候的故事，从1加到100应该是5050。一段代码，第一次运行结果是对的，第二次运行却不对，这是很常见的一类错误现象，这种情况不应该怀疑代码而应该怀疑数据，因为第一次和第二次运行的都是同一段代码，如果代码是错的，那为什么第一次的结果能对呢？然而第一次和第二次运行时相关的数据却有可能不同，错误的数据会导致错误的结果。在动手调试之前，读者先试试只看代码能不能看出错误原因，只要前面几章学得扎实就应该能看出来。</p><p>在编译时要加上<code class="literal">-g</code>选项，生成的可执行文件才能用<code class="literal">gdb</code>进行源码级调试：</p><pre class="screen">$ gcc -g main.c -o main
+$ gdb main
+GNU gdb 6.8-debian
+Copyright (C) 2008 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "i486-linux-gnu"...
+(gdb) </pre><p><code class="literal">-g</code>选项的作用是在可执行文件中加入源代码的信息，比如可执行文件中第几条机器指令对应源代码的第几行，但并不是把整个源文件嵌入到可执行文件中，所以在调试时必须保证<code class="literal">gdb</code>能找到源文件。<code class="literal">gdb</code>提供一个类似Shell的命令行环境，上面的<code class="literal">(gdb)</code>就是提示符，在这个提示符下输入<code class="literal">help</code>可以查看命令的类别：</p><pre class="screen">(gdb) help
+List of classes of commands:
+
+aliases -- Aliases of other commands
+breakpoints -- Making program stop at certain points
+data -- Examining data
+files -- Specifying and examining files
+internals -- Maintenance commands
+obscure -- Obscure features
+running -- Running the program
+stack -- Examining the stack
+status -- Status inquiries
+support -- Support facilities
+tracepoints -- Tracing of program execution without stopping the program
+user-defined -- User-defined commands
+
+Type "help" followed by a class name for a list of commands in that class.
+Type "help all" for the list of all commands.
+Type "help" followed by command name for full documentation.
+Type "apropos word" to search for commands related to "word".
+Command name abbreviations are allowed if unambiguous.</pre><p>也可以进一步查看某一类别中有哪些命令，例如查看<code class="literal">files</code>类别下有哪些命令可用：</p><pre class="screen">(gdb) help files
+Specifying and examining files.
+
+List of commands:
+
+add-shared-symbol-files -- Load the symbols from shared objects in the dynamic linker's link map
+add-symbol-file -- Load symbols from FILE
+add-symbol-file-from-memory -- Load the symbols out of memory from a dynamically loaded object file
+cd -- Set working directory to DIR for debugger and program being debugged
+core-file -- Use FILE as core dump for examining memory and registers
+directory -- Add directory DIR to beginning of search path for source files
+edit -- Edit specified file or function
+exec-file -- Use FILE as program for getting contents of pure memory
+file -- Use FILE as program to be debugged
+forward-search -- Search for regular expression (see regex(3)) from last line listed
+generate-core-file -- Save a core file with the current state of the debugged process
+list -- List specified function or line
+...</pre><p>现在试试用<code class="literal">list</code>命令从第一行开始列出源代码：</p><pre class="screen">(gdb) list 1
+1	#include &lt;stdio.h&gt;
+2	
+3	int add_range(int low, int high)
+4	{
+5		int i, sum;
+6		for (i = low; i &lt;= high; i++)
+7			sum = sum + i;
+8		return sum;
+9	}
+10</pre><p>一次只列10行，如果要从第11行开始继续列源代码可以输入</p><pre class="screen">(gdb) list</pre><p>也可以什么都不输直接敲回车，<code class="literal">gdb</code>提供了一个很方便的功能，在提示符下直接敲回车表示重复上一条命令。</p><pre class="screen">(gdb) （直接回车）
+11	int main(void)
+12	{
+13		int result[100];
+14		result[0] = add_range(1, 10);
+15		result[1] = add_range(1, 100);
+16		printf("result[0]=%d\nresult[1]=%d\n", result[0], result[1]);
+17		return 0;
+18</pre><p><code class="literal">gdb</code>的很多常用命令有简写形式，例如<code class="literal">list</code>命令可以写成<code class="literal">l</code>，要列一个函数的源代码也可以用函数名做参数：</p><pre class="screen">(gdb) l add_range
+1	#include &lt;stdio.h&gt;
+2	
+3	int add_range(int low, int high)
+4	{
+5		int i, sum;
+6		for (i = low; i &lt;= high; i++)
+7			sum = sum + i;
+8		return sum;
+9	}
+10</pre><p>现在退出<code class="literal">gdb</code>的环境：</p><pre class="screen">(gdb) quit</pre><p>我们做一个实验，把源代码改名或移到别处再用<code class="literal">gdb</code>调试，这样就列不出源代码了：</p><pre class="screen">$ mv main.c mian.c
+$ gdb main
+...
+(gdb) l
+5	main.c: No such file or directory.
+	in main.c</pre><p>可见<code class="literal">gcc</code>的<code class="literal">-g</code>选项并不是把源代码嵌入到可执行文件中的，在调试时也需要源文件。现在把源代码恢复原样，我们继续调试。首先用<code class="literal">start</code>命令开始执行程序：</p><pre class="screen">$ gdb main
+...
+(gdb) start
+Breakpoint 1 at 0x80483ad: file main.c, line 14.
+Starting program: /home/akaedu/main 
+main () at main.c:14
+14		result[0] = add_range(1, 10);
+(gdb)</pre><p><code class="literal">gdb</code>停在<code class="literal">main</code>函数中变量定义之后的第一条语句处等待我们发命令，<code class="literal">gdb</code>列出的这条语句是即将执行的下一条语句。我们可以用<code class="literal">next</code>命令（简写为<code class="literal">n</code>）控制这些语句一条一条地执行：</p><pre class="screen">(gdb) n
+15		result[1] = add_range(1, 100);
+(gdb) （直接回车）
+16		printf("result[0]=%d\nresult[1]=%d\n", result[0], result[1]);
+(gdb) （直接回车）
+result[0]=55
+result[1]=5105
+17		return 0;</pre><p>用<code class="literal">n</code>命令依次执行两行赋值语句和一行打印语句，在执行打印语句时结果立刻打出来了，然后停在<code class="literal">return</code>语句之前等待我们发命令。虽然我们完全控制了程序的执行，但仍然看不出哪里错了，因为错误不在<code class="literal">main</code>函数中而在<code class="literal">add_range</code>函数中，现在用<code class="literal">start</code>命令重新来过，这次用<code class="literal">step</code>命令（简写为<code class="literal">s</code>）钻进<code class="literal">add_range</code>函数中去跟踪执行：</p><pre class="screen">(gdb) start
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Breakpoint 2 at 0x80483ad: file main.c, line 14.
+Starting program: /home/akaedu/main 
+main () at main.c:14
+14		result[0] = add_range(1, 10);
+(gdb) s
+add_range (low=1, high=10) at main.c:6
+6		for (i = low; i &lt;= high; i++)</pre><p>这次停在了<code class="literal">add_range</code>函数中变量定义之后的第一条语句处。在函数中有几种查看状态的办法，<code class="literal">backtrace</code>命令（简写为<code class="literal">bt</code>）可以查看函数调用的栈帧：</p><pre class="screen">(gdb) bt
+#0  add_range (low=1, high=10) at main.c:6
+#1  0x080483c1 in main () at main.c:14</pre><p>可见当前的<code class="literal">add_range</code>函数是被<code class="literal">main</code>函数调用的，<code class="literal">main</code>传进来的参数是<code class="literal">low=1, high=10</code>。<code class="literal">main</code>函数的栈帧编号为1，<code class="literal">add_range</code>的栈帧编号为0。现在可以用<code class="literal">info</code>命令（简写为<code class="literal">i</code>）查看<code class="literal">add_range</code>函数局部变量的值：</p><pre class="screen">(gdb) i locals
+i = 0
+sum = 0</pre><p>如果想查看<code class="literal">main</code>函数当前局部变量的值也可以做到，先用<code class="literal">frame</code>命令（简写为<code class="literal">f</code>）选择1号栈帧然后再查看局部变量：</p><pre class="screen">(gdb) f 1
+#1  0x080483c1 in main () at main.c:14
+14		result[0] = add_range(1, 10);
+(gdb) i locals 
+result = {0, 0, 0, 0, 0, 0, 134513196, 225011984, -1208685768, -1081160480, 
+...
+  -1208623680}</pre><p>注意到<code class="literal">result</code>数组中有很多元素具有杂乱无章的值，我们知道未经初始化的局部变量具有不确定的值。到目前为止一切正常。用<code class="literal">s</code>或<code class="literal">n</code>往下走几步，然后用<code class="literal">print</code>命令（简写为<code class="literal">p</code>）打印出变量<code class="literal">sum</code>的值：</p><pre class="screen">(gdb) s
+7			sum = sum + i;
+(gdb) （直接回车）
+6		for (i = low; i &lt;= high; i++)
+(gdb) （直接回车）
+7			sum = sum + i;
+(gdb) （直接回车）
+6		for (i = low; i &lt;= high; i++)
+(gdb) p sum
+$1 = 3</pre><p>第一次循环<code class="literal">i</code>是1，第二次循环<code class="literal">i</code>是2，加起来是3，没错。这里的<code class="literal">$1</code>表示<code class="literal">gdb</code>保存着这些中间结果，$后面的编号会自动增长，在命令中可以用<code class="literal">$1</code>、<code class="literal">$2</code>、<code class="literal">$3</code>等编号代替相应的值。由于我们本来就知道第一次调用的结果是正确的，再往下跟也没意义了，可以用<code class="literal">finish</code>命令让程序一直运行到从当前函数返回为止：</p><pre class="screen">(gdb) finish
+Run till exit from #0  add_range (low=1, high=10) at main.c:6
+0x080483c1 in main () at main.c:14
+14		result[0] = add_range(1, 10);
+Value returned is $2 = 55</pre><p>返回值是55，当前正准备执行赋值操作，用<code class="literal">s</code>命令赋值，然后查看<code class="literal">result</code>数组：</p><pre class="screen">(gdb) s
+15		result[1] = add_range(1, 100);
+(gdb) p result
+$3 = {55, 0, 0, 0, 0, 0, 134513196, 225011984, -1208685768, -1081160480, 
+...
+  -1208623680}</pre><p>第一个值55确实赋给了<code class="literal">result</code>数组的第0个元素。下面用<code class="literal">s</code>命令进入第二次<code class="literal">add_range</code>调用，进入之后首先查看参数和局部变量：</p><pre class="screen">(gdb) s
+add_range (low=1, high=100) at main.c:6
+6		for (i = low; i &lt;= high; i++)
+(gdb) bt
+#0  add_range (low=1, high=100) at main.c:6
+#1  0x080483db in main () at main.c:15
+(gdb) i locals 
+i = 11
+sum = 55</pre><p>由于局部变量<code class="literal">i</code>和<code class="literal">sum</code>没初始化，所以具有不确定的值，又由于两次调用是挨着的，<code class="literal">i</code>和<code class="literal">sum</code>正好取了上次调用时的值，原来这跟<a class="xref" href="ch03s04.html#func.localvalidate">例 3.7 “验证局部变量存储空间的分配和释放”</a>是一样的道理，只不过我这次举的例子设法让局部变量<code class="literal">sum</code>在第一次调用时初值为0了。<code class="literal">i</code>的初值不是0倒没关系，在<code class="literal">for</code>循环中会赋值为0的，但<code class="literal">sum</code>如果初值不是0，累加得到的结果就错了。好了，我们已经找到错误原因，可以退出<code class="literal">gdb</code>修改源代码了。如果我们不想浪费这次调试机会，可以在<code class="literal">gdb</code>中马上把<code class="literal">sum</code>的初值改为0继续运行，看看这一处改了之后还有没有别的Bug：</p><pre class="screen">(gdb) set var sum=0
+(gdb) finish
+Run till exit from #0  add_range (low=1, high=100) at main.c:6
+0x080483db in main () at main.c:15
+15		result[1] = add_range(1, 100);
+Value returned is $4 = 5050
+(gdb) n
+16		printf("result[0]=%d\nresult[1]=%d\n", result[0], result[1]);
+(gdb) （直接回车）
+result[0]=55
+result[1]=5050
+17		return 0;</pre><p>这样结果就对了。修改变量的值除了用<code class="literal">set</code>命令之外也可以用<code class="literal">print</code>命令，因为<code class="literal">print</code>命令后面跟的是表达式，而我们知道赋值和函数调用也都是表达式，所以也可以用<code class="literal">print</code>命令修改变量的值或者调用函数：</p><pre class="screen">(gdb) p result[2]=33
+$5 = 33
+(gdb) p printf("result[2]=%d\n", result[2])
+result[2]=33
+$6 = 13</pre><p>我们讲过，<code class="literal">printf</code>的返回值表示实际打印的字符数，所以<code class="literal">$6</code>的结果是13。总结一下本节用到的<code class="literal">gdb</code>命令：</p><div class="table"><a id="id2741101"></a><p class="title"><b>表 10.1. gdb基本命令1</b></p><div class="table-contents"><table summary="gdb基本命令1" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>命令</th><th>描述</th></tr></thead><tbody><tr><td>backtrace（或bt）</td><td>查看各级函数调用及参数</td></tr><tr><td>finish</td><td>连续运行到当前函数返回为止，然后停下来等待命令</td></tr><tr><td>frame（或f） 帧编号</td><td>选择栈帧</td></tr><tr><td>info（或i） locals</td><td>查看当前栈帧局部变量的值</td></tr><tr><td>list（或l）</td><td>列出源代码，接着上次的位置往下列，每次列10行</td></tr><tr><td>list 行号</td><td>列出从第几行开始的源代码</td></tr><tr><td>list 函数名</td><td>列出某个函数的源代码</td></tr><tr><td>next（或n）</td><td>执行下一行语句</td></tr><tr><td>print（或p）</td><td>打印表达式的值，通过表达式可以修改变量的值或者调用函数</td></tr><tr><td>quit（或q）</td><td>退出<code class="literal">gdb</code>调试环境</td></tr><tr><td>set var</td><td>修改变量的值</td></tr><tr><td>start</td><td>开始执行程序，停在<code class="literal">main</code>函数第一行语句前面等待命令</td></tr><tr><td>step（或s）</td><td>执行下一行语句，如果有函数调用则进入到函数中</td></tr></tbody></table></div></div><br class="table-break" /><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2741237"></a>习题</h3></div></div></div><p>1、用<code class="literal">gdb</code>一步一步跟踪<a class="xref" href="ch05s03.html#func2.recursion">第 3 节 “递归”</a>讲的<code class="literal">factorial</code>函数，对照着<a class="xref" href="ch05s03.html#func2.factorial">图 5.2 “factorial(3)的调用过程”</a>查看各层栈帧的变化情况，练习本节所学的各种<code class="literal">gdb</code>命令。</p></div><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2740258" href="#id2740258" class="para">20</a>] </sup>这么说不够准确，在有些平台和操作系统上第一个结果也未必正确，如果在你机器上运行第一个结果也不正确，首先检查一下程序有没有抄错，如果没抄错那就没关系了，顺着我的讲解往下看就好了，结果是多少都无关紧要。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch10.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch10.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch10s02.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">第 10 章 gdb </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 2. 断点</td></tr></table></div></body></html>

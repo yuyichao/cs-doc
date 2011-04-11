@@ -1,0 +1,112 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>16.4.&#160;一些其他的细节-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch16.html" title="第&#160;16&#160;章&#160;块驱动">
+<link rel="prev" href="ch16s03.html" title="16.3.&#160;请求处理">
+<link rel="next" href="ch16s05.html" title="16.5.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">16.4.&#160;一些其他的细节</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch16s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;16&#160;章&#160;块驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch16s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="SomeOtherDetails.sect1"></a>16.4.&#160;一些其他的细节</h2></div></div></div>
+<p>本节涵盖块层的几个其他的方面, 对于高级读者可能有兴趣. 对于编写一个正确的驱动下面的内容都不需要, 但是它们在某些情况下可能是有用的.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="CommandPrePreparation.sect2"></a>16.4.1.&#160;命令预准备</h3></div></div></div>
+<p>块层为驱动提供一个进制来检查和预处理请求, 在它们被从 elv_next_request 返回前. 这个机制允许驱动提前设立真正的驱动器命令, 决定是否这个请求可被完全处理, 或者进行其他的维护工作.</p>
+<p>如果你想使用这个特性, 创建一个命令准备函数, 它要适应这个原型:</p>
+<pre class="programlisting">
+typedef int (prep_rq_fn) (request_queue_t *queue, struct request *req); 
+</pre>
+<p>请求结构包含一个成员 cmd, 它是一个 BLK_MAX_CDB 字节的数组; 这个数组可被这个准备函数用来存储实际的硬件命令(或者任何其他的有用信息). 这个函数应当返回一个下列的值:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>BLKPREP_OK </span></span></dt>
+<dd><p>命令准备正常进行, 并且这个请求可被传递给你的驱动的请求函数.</p></dd>
+<dt><span class="term"><span>BLKPREP_KILL </span></span></dt>
+<dd><p>这个请求不能完成; 它带有一个错误码而失败.</p></dd>
+<dt><span class="term"><span>BLKPREP_DEFER </span></span></dt>
+<dd><p>这个请求这次无法完成. 它位于队列的前面, 但是不能传递给请求函数.</p></dd>
+</dl></div>
+<p>准备函数被 elv_next_request 在请求返回到你的驱动之前立刻调用. 如果这个函数返回 BLKPREP_DEFER, 从 elv_next_request 返回给你的驱动的返回值是 NULL. 这个操作描述可能是有用的, 如果, 例如你的设备已达到它能够等候的请求的最大数目.</p>
+<p>为使块层调用你的准备函数, 传递它到:</p>
+<pre class="programlisting">
+void blk_queue_prep_rq(request_queue_t *queue, prep_rq_fn *func); 
+</pre>
+<p>缺省地, 请求队列没有准备函数.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TaggedCommandQueueing.sect2"></a>16.4.2.&#160;被标识的命令排队</h3></div></div></div>
+<p>可同时有多个请求被激活的硬件, 常常支持某种被标识的命令排队(TCQ). TCQ 简单地说是关联一个整数 "tag" 到每个请求的技术, 注意当驱动器完成每个请求时, 他可告知驱动是哪一个. 在以前的内核版本, 实现 TCQ 的块驱动不得不自己做所有的工作; 在2.6, 一个 TCQ 支持框架已经被添加到块层, 以给所有的驱动来使用.</p>
+<p>如果你的驱动器进行标记命令排队, 你应当在初始化时通知内核这个事实, 使用:</p>
+<pre class="programlisting">
+int blk_queue_init_tags(request_queue_t *queue, int depth, struct blk_queue_tag *tags);
+</pre>
+<p>这里, queue 是你的请求队列, 而 depth 是你的设备能够在任何时间拥有的等待的标记请求的数目. tags 是一个可选的指针指向一个 struct blk_queue_tag 结构数组; 必须有 depth 个. 正常地, tags 可用 NULL, 并且 blk_queue_init_tags 分配这个 数组. 如果, 但是, 你需要和多个设备分享通用的 tags, 你可传递这个标记数组指针(存储在 queue_tags 成员)从另一个请求队列. 你应当从不真正自己分配这个标记数组; 块层需要初始化这个数组并且不输出这个初始化函数给模块.</p>
+<p>因为 blk_queue_init_tags 分配内存, 它可能失败. 在那个情况下它返回一个负的错误码给调用者.</p>
+<p>如果你的设备可处理的标记的数目改变了, 你可通知内核, 使用:</p>
+<pre class="programlisting">
+int blk_queue_resize_tags(request_queue_t *queue, int new_depth); 
+</pre>
+<p>这个队列锁必须在这个调用期间被持有. 这个调用可能失败, 返回一个负错误码.</p>
+<p>一个标记和一个请求结构的关联被 blk_queue_start_tag 来完成, 它必须在成员队列锁被持有时调用:</p>
+<pre class="programlisting">
+int blk_queue_start_tag(request_queue_t *queue, struct request *req); 
+</pre>
+<p>如果一个 tag 可用, 这个函数分配它给这个请求, 存储这个标识号在 req-&gt;tag, 并且返回 0. 它还从队列中解除这个请求, 并且连接它到它自己的标识跟踪结构, 因此你的驱动应当小心不从队列中解除这个请求, 如果在使用标识. 如果没有标识可用, blk_queue_start_tag 将这个请求留在队列并且返回一个非零值.</p>
+<p>当一个给定的请求的所有的传送都已完成, 你的驱动应当返回标识, 使用:</p>
+<pre class="programlisting">
+void blk_queue_end_tag(request_queue_t *queue, struct request *req); 
+</pre>
+<p>再一次, 你必须持有队列锁, 在调用这个函数之前. 这个调用应当在 end_that_request_first 返回 0 之后进行(意味着这个请求完成), 但要在调用 end_that_request_last 之前. 记住这个请求已经从队列中解除, 因此它对于你的驱动在此点这样做可能是一个错误.</p>
+<p>如果你需要找到关联到一个给定标识上的请求(当驱动器报告完成, 例如), 使用 blk_queue_find_tag:</p>
+<pre class="programlisting">
+struct request *blk_queue_find_tag(request_queue_t *qeue, int tag);
+</pre>
+<p>返回值是关联的请求结构, 除非有些事情已经真的出错了.</p>
+<p>如果事情真地出错了, 你的请求可能发现它自己不得不复位或者对其中一个它的设备进行一些其他的大动作. 在这种情况下, 任何等待中的标识命令将不会完成. 块层提供一个函数可用帮助在这种情况下恢复:</p>
+<pre class="programlisting">
+void blk_queue_invalidate_tags(request_queue_t *queue); 
+</pre>
+<p>这个函数返回所有的等待的标识给这个池, 并且将关联的请求放回请求队列. 你调用这个函数时必须持有队列锁.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch16s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch16.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch16s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">16.3.&#160;请求处理&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;16.5.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

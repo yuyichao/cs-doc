@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>6. fcntl</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch28.html" title="第 28 章 文件与I/O" /><link rel="prev" href="ch28s05.html" title="5. lseek" /><link rel="next" href="ch28s07.html" title="7. ioctl" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">6. fcntl</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch28s05.html">上一页</a> </td><th width="60%" align="center">第 28 章 文件与I/O</th><td width="20%" align="right"> <a accesskey="n" href="ch28s07.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2852909"></a>6. fcntl</h2></div></div></div><p>先前我们以<code class="literal">read</code>终端设备为例介绍了非阻塞I/O，为什么我们不直接对<code class="literal">STDIN_FILENO</code>做非阻塞<code class="literal">read</code>，而要重新<code class="literal">open</code>一遍<code class="literal">/dev/tty</code>呢？因为<code class="literal">STDIN_FILENO</code>在程序启动时已经被自动打开了，而我们需要在调用<code class="literal">open</code>时指定<code class="literal">O_NONBLOCK</code>标志。这里介绍另外一种办法，可以用<code class="literal">fcntl</code>函数改变一个已打开的文件的属性，可以重新设置读、写、追加、非阻塞等标志（这些标志称为File Status Flag<a id="id2852976" class="indexterm"></a>），而不必重新<code class="literal">open</code>文件。</p><pre class="programlisting">#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+
+int fcntl(int fd, int cmd);
+int fcntl(int fd, int cmd, long arg);
+int fcntl(int fd, int cmd, struct flock *lock);</pre><p>这个函数和<code class="literal">open</code>一样，也是用可变参数实现的，可变参数的类型和个数取决于前面的<code class="literal">cmd</code>参数。下面的例子使用<code class="literal">F_GETFL</code>和<code class="literal">F_SETFL</code>这两种<code class="literal">fcntl</code>命令改变<code class="literal">STDIN_FILENO</code>的属性，加上<code class="literal">O_NONBLOCK</code>选项，实现和<a class="xref" href="ch28s04.html#io.nonblockread">例 28.3 “非阻塞读终端”</a>同样的功能。</p><div class="example"><a id="id2853051"></a><p class="title"><b>例 28.5. 用fcntl改变File Status Flag</b></p><div class="example-contents"><pre class="programlisting">#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+
+#define MSG_TRY "try again\n"
+
+int main(void)
+{
+	char buf[10];
+	int n;
+	int flags;
+	flags = fcntl(STDIN_FILENO, F_GETFL);
+	flags |= O_NONBLOCK;
+	if (fcntl(STDIN_FILENO, F_SETFL, flags) == -1) {
+		perror("fcntl");
+		exit(1);
+	}
+tryagain:
+	n = read(STDIN_FILENO, buf, 10);
+	if (n &lt; 0) {
+		if (errno == EAGAIN) {
+			sleep(1);
+			write(STDOUT_FILENO, MSG_TRY, strlen(MSG_TRY));
+			goto tryagain;
+		}
+		perror("read stdin");
+		exit(1);
+	}
+	write(STDOUT_FILENO, buf, n);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>以下程序通过命令行的第一个参数指定一个文件描述符，同时利用Shell的重定向功能在该描述符上打开文件，然后用<code class="literal">fcntl</code>的<code class="literal">F_GETFL</code>命令取出File Status Flag并打印。</p><pre class="programlisting">#include &lt;sys/types.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(int argc, char *argv[])
+{
+	int val;
+	if (argc != 2) {
+		fputs("usage: a.out &lt;descriptor#&gt;\n", stderr);
+		exit(1);
+	}
+	if ((val = fcntl(atoi(argv[1]), F_GETFL)) &lt; 0) {
+		printf("fcntl error for fd %d\n", atoi(argv[1]));
+		exit(1);
+	}
+	switch(val &amp; O_ACCMODE) {
+	case O_RDONLY:
+		printf("read only");
+		break;
+	case O_WRONLY:
+		printf("write only");
+		break;
+	case O_RDWR:            
+		printf("read write");
+		break;
+	default:
+		fputs("invalid access mode\n", stderr);
+		exit(1);
+	}
+	if (val &amp; O_APPEND)  
+		printf(", append");
+	if (val &amp; O_NONBLOCK)           
+		printf(", nonblocking");
+	putchar('\n');
+	return 0;
+}</pre><p>运行该程序的几种情况解释如下。</p><pre class="screen">$ ./a.out 0 &lt; /dev/tty
+read only</pre><p>Shell在执行<code class="literal">a.out</code>时将它的标准输入重定向到<code class="literal">/dev/tty</code>，并且是只读的。<code class="literal">argv[1]</code>是0，因此取出文件描述符0（也就是标准输入）的File Status Flag，用掩码<code class="literal">O_ACCMODE</code>取出它的读写位，结果是<code class="literal">O_RDONLY</code>。注意，Shell的重定向语法不属于程序的命令行参数，这个命行只有两个参数，<code class="literal">argv[0]</code>是"./a.out"，<code class="literal">argv[1]</code>是"0"，重定向由Shell解释，在启动程序时已经生效，程序在运行时并不知道标准输入被重定向了。</p><pre class="screen">$ ./a.out 1 &gt; temp.foo
+$ cat temp.foo
+write only</pre><p>Shell在执行<code class="literal">a.out</code>时将它的标准输出重定向到文件<code class="literal">temp.foo</code>，并且是只写的。程序取出文件描述符1的File Status Flag，发现是只写的，于是打印<code class="literal">write only</code>，但是打印不到屏幕上而是打印到<code class="literal">temp.foo</code>这个文件中了。
+</p><pre class="screen">$ ./a.out 2 2&gt;&gt;temp.foo
+write only, append</pre><p>Shell在执行<code class="literal">a.out</code>时将它的标准错误输出重定向到文件<code class="literal">temp.foo</code>，并且是只写和追加方式。程序取出文件描述符2的File Status Flag，发现是只写和追加方式的。</p><pre class="screen">$ ./a.out 5 5&lt;&gt;temp.foo
+read write</pre><p>Shell在执行<code class="literal">a.out</code>时在它的文件描述符5上打开文件<code class="literal">temp.foo</code>，并且是可读可写的。程序取出文件描述符5的File Status Flag，发现是可读可写的。</p><p>我们看到一种新的Shell重定向语法，如果在&lt;、&gt;、&gt;&gt;、&lt;&gt;前面添一个数字，该数字就表示在哪个文件描述符上打开文件，例如2&gt;&gt;temp.foo表示将标准错误输出重定向到文件temp.foo并且以追加方式写入文件，注意2和&gt;&gt;之间不能有空格，否则2就被解释成命令行参数了。文件描述符数字还可以出现在重定向符号右边，例如：</p><pre class="screen">$ command &gt; /dev/null 2&gt;&amp;1</pre><p>首先将某个命令command的标准输出重定向到<code class="literal">/dev/null</code>，然后将该命令可能产生的错误信息（标准错误输出）也重定向到和标准输出（用&amp;1标识）相同的文件，即<code class="literal">/dev/null</code>，如下图所示。</p><div class="figure"><a id="id2853285"></a><p class="title"><b>图 28.3. 重定向之后的文件描述符表</b></p><div class="figure-contents"><div><img src="images/io.fdredirect.png" alt="重定向之后的文件描述符表" /></div></div></div><br class="figure-break" /><p><code class="literal">/dev/null</code>设备文件只有一个作用，往它里面写任何数据都被直接丢弃。因此保证了该命令执行时屏幕上没有任何输出，既不打印正常信息也不打印错误信息，让命令安静地执行，这种写法在Shell脚本中很常见。注意，文件描述符数字写在重定向符号右边需要加&amp;号，否则就被解释成文件名了，2&gt;&amp;1其中的&gt;左右两边都不能有空格。</p><p>除了<code class="literal">F_GETFL</code>和<code class="literal">F_SETFL</code>命令之外，<code class="literal">fcntl</code>还有很多命令做其它操作，例如设置文件记录锁等。可以通过<code class="literal">fcntl</code>设置的都是当前进程如何访问设备或文件的访问控制属性，例如读、写、追加、非阻塞、加锁等，但并不设置文件或设备本身的属性，例如文件的读写权限、串口波特率等。下一节要介绍的<code class="literal">ioctl</code>函数用于设置某些设备本身的属性，例如串口波特率、终端窗口大小，注意区分这两个函数的作用。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch28s05.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch28.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch28s07.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">5. lseek </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 7. ioctl</td></tr></table></div></body></html>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1. 多目标文件的链接</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch20.html" title="第 20 章 链接详解" /><link rel="prev" href="ch20.html" title="第 20 章 链接详解" /><link rel="next" href="ch20s02.html" title="2. 定义和声明" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">1. 多目标文件的链接</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch20.html">上一页</a> </td><th width="60%" align="center">第 20 章 链接详解</th><td width="20%" align="right"> <a accesskey="n" href="ch20s02.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2786161"></a>1. 多目标文件的链接</h2></div></div></div><p>现在我们把<a class="xref" href="ch12s02.html#stackqueue.stackreverse">例 12.1 “用堆栈实现倒序打印”</a>拆成两个程序文件，<code class="literal">stack.c</code>实现堆栈，而<code class="literal">main.c</code>使用堆栈：</p><pre class="programlisting">/* stack.c */
+char stack[512];
+int top = -1;
+
+void push(char c)
+{
+	stack[++top] = c;
+}
+
+char pop(void)
+{
+	return stack[top--];
+}
+
+int is_empty(void)
+{
+	return top == -1;
+}</pre><p>这段程序和原来有点不同，在<a class="xref" href="ch12s02.html#stackqueue.stackreverse">例 12.1 “用堆栈实现倒序打印”</a>中<code class="literal">top</code>总是指向栈顶元素的下一个元素，而在这段程序中<code class="literal">top</code>总是指向栈顶元素，所以要初始化成-1才表示空堆栈，这两种堆栈使用习惯都很常见。</p><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+
+int a, b = 1;
+
+int main(void)
+{
+	push('a');
+	push('b');
+	push('c');
+	
+	while(!is_empty())
+		putchar(pop());
+	putchar('\n');
+
+	return 0;
+}</pre><p><code class="literal">a</code>和<code class="literal">b</code>这两个变量没有用，只是为了顺便说明链接过程才加上的。编译的步骤和以前一样，可以一步编译：</p><pre class="screen">$ gcc main.c stack.c -o main</pre><p>也分可以多步编译：</p><pre class="screen">$ gcc -c main.c
+$ gcc -c stack.c
+$ gcc main.o stack.o -o main</pre><p>如果按照<a class="xref" href="ch19s02.html#asmc.main">第 2 节 “<code class="literal">main</code>函数和启动例程”</a>的做法，用<code class="literal">nm</code>命令查看目标文件的符号表，会发现<code class="literal">main.o</code>中有未定义的符号<code class="literal">push</code>、<code class="literal">pop</code>、<code class="literal">is_empty</code>、<code class="literal">putchar</code>，前三个符号在<code class="literal">stack.o</code>中实现了，链接生成可执行文件<code class="literal">main</code>时可以做符号解析，而<code class="literal">putchar</code>是<code class="literal">libc</code>的库函数，在可执行文件<code class="literal">main</code>中仍然是未定义的，要在程序运行时做动态链接。</p><p>我们通过<code class="literal">readelf -a main</code>命令可以看到，<code class="literal">main</code>的<code class="literal">.bss</code>段合并了<code class="literal">main.o</code>和<code class="literal">stack.o</code>的<code class="literal">.bss</code>段，其中包含了变量<code class="literal">a</code>和<code class="literal">stack</code>，<code class="literal">main</code>的<code class="literal">.data</code>段也合并了<code class="literal">main.o</code>和<code class="literal">stack.o</code>的<code class="literal">.data</code>段，其中包含了变量<code class="literal">b</code>和<code class="literal">top</code>，<code class="literal">main</code>的<code class="literal">.text</code>段合并了<code class="literal">main.o</code>和<code class="literal">stack.o</code>的<code class="literal">.text</code>段，包含了各函数的定义。如下图所示。</p><div class="figure"><a id="id2787068"></a><p class="title"><b>图 20.1. 多目标文件的链接</b></p><div class="figure-contents"><div><img src="images/link.multiobj.png" alt="多目标文件的链接" /></div></div></div><br class="figure-break" /><p>为什么在可执行文件<code class="literal">main</code>的每个段中来自<code class="literal">main.o</code>的变量或函数都在前面，而来自<code class="literal">stack.o</code>的变量或函数都在后面呢？我们可以试试把<code class="literal">gcc</code>命令中的两个目标文件反过来写：</p><pre class="screen">$ gcc stack.o main.o -o main</pre><p>结果正如我们所预料的，可执行文件<code class="literal">main</code>的每个段中来自<code class="literal">main.o</code>的变量或函数都排到后面了。实际上链接的过程是由一个链接脚本（Linker Script）<a id="id2787132" class="indexterm"></a>控制的，链接脚本决定了给每个段分配什么地址，如何对齐，哪个段在前，哪个段在后，哪些段合并到同一个Segment，另外链接脚本还要插入一些符号到最终生成的文件中，例如<code class="literal">__bss_start</code>、<code class="literal">_edata</code>、<code class="literal">_end</code>等。如果用<code class="literal">ld</code>做链接时没有用<code class="literal">-T</code>选项指定链接脚本，则使用<code class="literal">ld</code>的默认链接脚本，默认链接脚本可以用<code class="literal">ld --verbose</code>命令查看（由于比较长，只列出一些片断）：</p><pre class="screen">$ ld --verbose
+...
+using internal linker script:
+==================================================
+/* Script for -z combreloc: combine and sort reloc sections */
+OUTPUT_FORMAT("elf32-i386", "elf32-i386",
+	      "elf32-i386")
+OUTPUT_ARCH(i386)
+ENTRY(_start)
+...
+SECTIONS
+{
+  /* Read-only sections, merged into text segment: */
+  PROVIDE (__executable_start = 0x08048000); . = 0x08048000 + SIZEOF_HEADERS;
+  .interp         : { *(.interp) }
+  .note.gnu.build-id : { *(.note.gnu.build-id) }
+  .hash           : { *(.hash) }
+  .gnu.hash       : { *(.gnu.hash) }
+  .dynsym         : { *(.dynsym) }
+  .dynstr         : { *(.dynstr) }
+  .gnu.version    : { *(.gnu.version) }
+  .gnu.version_d  : { *(.gnu.version_d) }
+  .gnu.version_r  : { *(.gnu.version_r) }
+  .rel.dyn        :
+...
+  .rel.plt        : { *(.rel.plt) }
+...
+  .init           :
+...
+  .plt            : { *(.plt) }
+  .text           :
+...
+  .fini           :
+...
+  .rodata         : { *(.rodata .rodata.* .gnu.linkonce.r.*) }
+...
+  .eh_frame       : ONLY_IF_RO { KEEP (*(.eh_frame)) }
+...
+  /* Adjust the address for the data segment.  We want to adjust up to
+     the same address within the page on the next page up.  */
+  . = ALIGN (CONSTANT (MAXPAGESIZE)) - ((CONSTANT (MAXPAGESIZE) - .) &amp; (CONSTANT (MAXPAGESIZE) - 1)); . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE));
+...
+  .ctors          :
+...
+  .dtors          :
+...
+  .jcr            : { KEEP (*(.jcr)) }
+...
+  .dynamic        : { *(.dynamic) }
+  .got            : { *(.got) }
+...
+  .got.plt        : { *(.got.plt) }
+  .data           :
+...
+  _edata = .; PROVIDE (edata = .);
+  __bss_start = .;
+  .bss            :
+...
+  _end = .; PROVIDE (end = .);
+  . = DATA_SEGMENT_END (.);
+  /* Stabs debugging sections.  */
+...
+  /* DWARF debug sections.
+     Symbols in the DWARF debugging sections are relative to the beginning
+     of the section so we begin them at 0.  */
+...
+}
+
+
+==================================================</pre><p><code class="literal">ENTRY(_start)</code>说明<code class="literal">_start</code>是整个程序的入口点，因此<code class="literal">_start</code>是入口点并不是规定死的，是可以改用其它函数做入口点的。</p><p><code class="literal">PROVIDE (__executable_start = 0x08048000); . = 0x08048000 + SIZEOF_HEADERS;</code>是Text Segment的起始地址，这个Segment包含后面列出的那些段，<code class="literal">.plt</code>、<code class="literal">.text</code>、<code class="literal">.rodata</code>等等。每个段的描述格式都是“<span class="quote">段名 : { 组成 }</span>”，例如<code class="literal">.plt : { *(.plt) }</code>，左边表示最终生成的文件的<code class="literal">.plt</code>段，右边表示所有目标文件的<code class="literal">.plt</code>段，意思是最终生成的文件的<code class="literal">.plt</code>段由各目标文件的<code class="literal">.plt</code>段组成。</p><p><code class="literal">. = ALIGN (CONSTANT (MAXPAGESIZE)) - ((CONSTANT (MAXPAGESIZE) - .) &amp; (CONSTANT (MAXPAGESIZE) - 1)); . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE));</code>是Data Segment的起始地址，要做一系列的对齐操作，这个Segment包含后面列出的那些段，<code class="literal">.got</code>、<code class="literal">.data</code>、<code class="literal">.bss</code>等等。</p><p>Data Segment的后面还有其它一些Segment，主要是调试信息。关于链接脚本就介绍这么多，本书不做深入讨论。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch20.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch20.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch20s02.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">第 20 章 链接详解 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 2. 定义和声明</td></tr></table></div></body></html>

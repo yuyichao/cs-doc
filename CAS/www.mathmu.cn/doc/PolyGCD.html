@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>一元多项式的最大公因子 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>一元多项式的最大公因子
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="PolyGCD.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="PolyGCD.html#sec1">Euclid算法</a>
+  </dt>
+  <dt>
+    <a href="PolyGCD.html#sec2">域上多项式的快速Euclid算法</a>
+  </dt>
+  <dt>
+    <a href="PolyGCD.html#sec3">结式与子结式</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="PolyGCD.html#sec4">结式</a>
+      </dt>
+      <dt>
+	<a href="PolyGCD.html#sec5">子结式</a>
+      </dt>
+      <dt>
+	<a href="PolyGCD.html#sec6">Euclid算法计算子结式</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="PolyGCD.html#sec7"><img src="latex/latex2png-PolyGCD_27044286_-5.gif" alt="$\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">中的模GCD算法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="PolyGCD.html#sec8">Mignotte界</a>
+      </dt>
+      <dt>
+	<a href="PolyGCD.html#sec9">大素数模公因子算法(Big Prime Modular Gcd Algorithm)</a>
+      </dt>
+      <dt>
+	<a href="PolyGCD.html#sec10">小素数模公因子算法(Small Prime Modular Gcd Algorithm)</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="PolyGCD.html#sec11">多项式组的概率算法</a>
+  </dt>
+</dl>
+</div>
+
+<p>设<img src="latex/latex2png-PolyGCD_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为UFD(即唯一析因整环,例如<img src="latex/latex2png-PolyGCD_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">),<img src="latex/latex2png-PolyGCD_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">为域(例如<img src="latex/latex2png-PolyGCD_41964624_0.gif" alt="$\mathbb{R}$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">)，则<img src="latex/latex2png-PolyGCD_48855570_-5.gif" alt="$D[x],F[x]$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">也是UFD，对其上两多项式可讨论GCD问题.最古典的方法即是Euclid算法。然而，在上世纪六十年代末一些试验中发现这种算法在<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$D[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">或<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$F[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">中的系数增长很快，甚至于指数式。</p>
+
+<p>为了解决这一问题，1971年，Collins,Brown提出了UFD上的多项式模最大公因子算法。对于多元情形，Mozes和Yun于1973年提出了基于Hensel提升方法的模因子算法。下面对经典的Euclid算法和改进算法进行论述。</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="PolyGCD.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Euclid算法</h2>
+
+<p class="first">在Euclid整环<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$F[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">中,我们有如下的Euclid除法:</p>
+
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name">(Euclid除法)</span>
+设<img src="latex/latex2png-PolyGCD_23361945_-5.gif" alt="$f,g\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,其中<img src="latex/latex2png-PolyGCD_80414436_-4.gif" alt="$g\neq 0$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">,则存在唯一的<img src="latex/latex2png-PolyGCD_208632217_-5.gif" alt="$q,r\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">使得
+<img src="latex/latex2png-PolyGCD_11627037_.gif" alt="$$f=qg+r,$$" class="latex-display" width="580" height="16">
+其中<img src="latex/latex2png-PolyGCD_229222222_-4.gif" alt="$\deg r<\deg g$" class="latex-inline" style="vertical-align: -4px" width="94" height="16">.定义此除法过程为Euclid除法,并且记商<img src="latex/latex2png-PolyGCD_70350816_-4.gif" alt="$q=f\quo g$" class="latex-inline" style="vertical-align: -4px" width="80" height="16">,余式<img src="latex/latex2png-PolyGCD_103839712_-4.gif" alt="$r=f\rem g$" class="latex-inline" style="vertical-align: -4px" width="81" height="16">.
+
+
+</div>
+
+<p><img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$F[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">是Euclid整环，因而有以下的扩展Euclid算法：</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name="al:EEA"></a></span><span class="theorem-name">(扩展Euclid算法)</span>
+
+<p>输入：<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$F[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">上多项式<img src="latex/latex2png-PolyGCD_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-PolyGCD_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,</p>
+
+<p>输出：<img src="latex/latex2png-PolyGCD_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-PolyGCD_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的最大公因子<img src="latex/latex2png-PolyGCD_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,Bezout等式中的系数<img src="latex/latex2png-PolyGCD_15600398_-5.gif" alt="$S=(s,t)$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">使得<img src="latex/latex2png-PolyGCD_52560674_-4.gif" alt="$sf+tg=u$" class="latex-inline" style="vertical-align: -4px" width="83" height="16">.</p>
+
+<p>1.<img src="latex/latex2png-PolyGCD_8139801_-5.gif" alt="$u=f,v=g,S=(1,0),T=(0,1)$" class="latex-inline" style="vertical-align: -5px" width="242" height="18">,</p>
+
+<p>2.如果<img src="latex/latex2png-PolyGCD_234720236_-1.gif" alt="$v=0$" class="latex-inline" style="vertical-align: -1px" width="39" height="12">,则转到第4步,</p>
+
+<p>3.<img src="latex/latex2png-PolyGCD_195735663_-4.gif" alt="$r=u\rem v,q=u\quo v,L=S-qT,u=v,v=r,S=T,T=L$" class="latex-inline" style="vertical-align: -4px" width="457" height="16">,并转回第2步,</p>
+
+<p>4.输出<img src="latex/latex2png-PolyGCD_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">，<img src="latex/latex2png-PolyGCD_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">.</p>
+
+
+</div>
+
+<p>实际上在计算机中进行的是<img src="latex/latex2png-PolyGCD_27044295_-5.gif" alt="$\mathbb{Q}[x]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">上的运算，我们总可以找到整数乘到该多项式上使其化为<img src="latex/latex2png-PolyGCD_27044286_-5.gif" alt="$\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">上的多项式。</p>
+
+<div class="definition">
+<span class="theorem-header">定义2<a name="def:cont"></a></span><span class="theorem-name">(本原多项式)</span>
+容度<img src="latex/latex2png-PolyGCD_182220963_-5.gif" alt="$\mathrm{cont}(f)$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">定义为：<img src="latex/latex2png-PolyGCD_98071291_.gif" alt="$$\mathrm{cont}(f)=\mathrm{gcd}(a_0,a_1,\ldots,a_n),$$" class="latex-display" width="580" height="18">其中<img src="latex/latex2png-PolyGCD_142086132_-5.gif" alt="$f=\sum a_ix^i\in D[x]$" class="latex-inline" style="vertical-align: -5px" width="132" height="19">，且gcd对单项的定义为
+<img src="latex/latex2png-PolyGCD_88253105_.gif" alt="$$\mathrm{gcd}(a_0)=\mathrm{normal}(a_0),$$" class="latex-display" width="580" height="18">
+<img src="latex/latex2png-PolyGCD_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的本原部分(primitive part)定义为<img src="latex/latex2png-PolyGCD_149216873_-5.gif" alt="$\mathrm{pp}(f)=f/\mathrm{cont}(f)$" class="latex-inline" style="vertical-align: -5px" width="134" height="18">，若<img src="latex/latex2png-PolyGCD_58573080_-5.gif" alt="$f=\mathrm{pp}(f)$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,则称其为本原多项式。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注1<a name=""></a></span><span class="theorem-name"></span>
+在UFD中,可逆的元素称为单位,若有两个元素<img src="latex/latex2png-PolyGCD_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">满足<img src="latex/latex2png-PolyGCD_25398252_-5.gif" alt="$a|b$" class="latex-inline" style="vertical-align: -5px" width="21" height="18">且<img src="latex/latex2png-PolyGCD_8686572_-5.gif" alt="$b|a$" class="latex-inline" style="vertical-align: -5px" width="20" height="18">,则称二者相伴,易证这是一等价关系,且<img src="latex/latex2png-PolyGCD_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">和<img src="latex/latex2png-PolyGCD_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">相伴当且仅当存在一个单位<img src="latex/latex2png-PolyGCD_41907218_0.gif" alt="$e$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">使得<img src="latex/latex2png-PolyGCD_253791175_0.gif" alt="$a=be$" class="latex-inline" style="vertical-align: 0px" width="45" height="12">.在这个等价关系下将UFD分类,在每个等价类中可取一个代表元,并记<img src="latex/latex2png-PolyGCD_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">所在类的代表元为<img src="latex/latex2png-PolyGCD_225459514_-5.gif" alt="$\mathrm{normal}(a)$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">.对于整数环,我们知道单位为<img src="latex/latex2png-PolyGCD_120813234_-1.gif" alt="$\pm 1$" class="latex-inline" style="vertical-align: -1px" width="19" height="12">,且可取<img src="latex/latex2png-PolyGCD_250691197_-5.gif" alt="$\mathrm{normal}(a)=|a|$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyGCD_86329544_-5.gif" alt="$\forall f\in D[x],c\in D$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,我们有<img src="latex/latex2png-PolyGCD_134743530_-5.gif" alt="$\mathrm{cont}(cf)=\mathrm{cont}(c)\mathrm{cont}(f),\mathrm{pp}(cf)=\mathrm{pp}(c)\mathrm{pp}(f)$" class="latex-inline" style="vertical-align: -5px" width="344" height="18">.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name="th:Gauss' Lemma"></a></span><span class="theorem-name">(Gauss引理)</span>
+<img src="latex/latex2png-PolyGCD_26236703_-5.gif" alt="$\forall f,g\in D[x]$" class="latex-inline" style="vertical-align: -5px" width="86" height="18">,若<img src="latex/latex2png-PolyGCD_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">本原，则<img src="latex/latex2png-PolyGCD_18969658_-4.gif" alt="$h=fg$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">也是本原的。
+
+
+</div>
+
+<p>类似的结论还有以下一些命题，相关内容可参阅相关的高等代数学内容,如<span class="cite"><a class="cite" href="PolyGCD.html#ref-1" name="cite-1">[1]</a></span>.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyGCD_107359708_-5.gif" alt="$\forall f,g\in D[x],\mathrm{cont}(fg)=\mathrm{cont}(f)\mathrm{cont}(g),\mathrm{pp}(fg)=\mathrm{pp}(f)\mathrm{pp}(g)$" class="latex-inline" style="vertical-align: -5px" width="444" height="18">
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理4<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-PolyGCD_78191228_-5.gif" alt="$f,g\in D[x],h=\mathrm{gcd}(f,g)\in D[x]$" class="latex-inline" style="vertical-align: -5px" width="230" height="18">,则<img src="latex/latex2png-PolyGCD_237093735_.gif" alt="$$\mathrm{cont}(h)=\mathrm{gcd}(\mathrm{cont}(f),\mathrm{cont}(g))\in D,$$" class="latex-display" width="580" height="18">
+<img src="latex/latex2png-PolyGCD_97477238_.gif" alt="$$\mathrm{pp}(h)=\mathrm{gcd}(\mathrm{pp}(f),\mathrm{pp}(g))\in D[x].$$" class="latex-display" width="580" height="18">
+
+
+</div>
+
+<p>于是有下面的：</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name=""></a></span><span class="theorem-name">(一个UFD上多项式的Euclid算法)</span>
+
+<p>输入：<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$D[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">上的多项式<img src="latex/latex2png-PolyGCD_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-PolyGCD_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,</p>
+
+<p>输出：<img src="latex/latex2png-PolyGCD_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">在<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$D[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">上的最大公因子<img src="latex/latex2png-PolyGCD_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">.</p>
+
+<p><img src="latex/latex2png-PolyGCD_14550758_-5.gif" alt="$h=\mathrm{gcd}(f,g)\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="145" height="18">,</p>
+
+<p><img src="latex/latex2png-PolyGCD_126023094_-5.gif" alt="$b=\mathrm{gcd}(\plc{f},\plc{g})$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">,</p>
+
+<p>输出<img src="latex/latex2png-PolyGCD_132281362_0.gif" alt="$bh$" class="latex-inline" style="vertical-align: 0px" width="16" height="12">.</p>
+
+
+</div>
+
+<p>尽管<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$D[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">不是Euclid整环，但我们可引入<img src="latex/latex2png-PolyGCD_6255674_-5.gif" alt="$D[x]$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">上的伪除法，来构造类似Euclid余式序列。</p>
+
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name">(伪除法)</span>
+<img src="latex/latex2png-PolyGCD_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">是UFD,<img src="latex/latex2png-PolyGCD_23361945_-5.gif" alt="$f,g\in D[x]$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,则存在<img src="latex/latex2png-PolyGCD_52138810_-4.gif" alt="$\alpha,\beta\in D$" class="latex-inline" style="vertical-align: -4px" width="62" height="16">,<img src="latex/latex2png-PolyGCD_208632217_-5.gif" alt="$q,r\in D[x]$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">使得
+<img src="latex/latex2png-PolyGCD_138792754_.gif" alt="$$\alpha f=qg+\beta r,$$" class="latex-display" width="580" height="16">
+其中<img src="latex/latex2png-PolyGCD_229222222_-4.gif" alt="$\deg r<\deg g$" class="latex-inline" style="vertical-align: -4px" width="94" height="16">,且<img src="latex/latex2png-PolyGCD_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">是本原多项式,将此过程称为多项式的伪除法,并记伪商<img src="latex/latex2png-PolyGCD_34780384_-4.gif" alt="$q=f\pquo g$" class="latex-inline" style="vertical-align: -4px" width="90" height="16">,伪余式<img src="latex/latex2png-PolyGCD_2274528_-4.gif" alt="$r=f\prem g$" class="latex-inline" style="vertical-align: -4px" width="90" height="16">.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义4<a name=""></a></span><span class="theorem-name">(多项式余式序列)</span>
+若<img src="latex/latex2png-PolyGCD_23361945_-5.gif" alt="$f,g\in D[x]$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,且<img src="latex/latex2png-PolyGCD_48646347_-5.gif" alt="$\mathrm{deg}(f)\ge\mathrm{deg}(g)$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">，令<img src="latex/latex2png-PolyGCD_46824148_-4.gif" alt="$R_0=f,R_1=g$" class="latex-inline" style="vertical-align: -4px" width="109" height="16">,且对于<img src="latex/latex2png-PolyGCD_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">，令<img src="latex/latex2png-PolyGCD_186483578_-4.gif" alt="$\alpha_iR_{i-1}=Q_iR_i+\beta_iR_{i+1}$" class="latex-inline" style="vertical-align: -4px" width="179" height="16">,最后使得<img src="latex/latex2png-PolyGCD_246087311_-4.gif" alt="$R_{k-1}\prem R_k=0$" class="latex-inline" style="vertical-align: -4px" width="131" height="16">,则<img src="latex/latex2png-PolyGCD_62894498_-4.gif" alt="$R_0,R_1,\ldots,R_k$" class="latex-inline" style="vertical-align: -4px" width="104" height="16">称为多项式余式序列.
+
+
+</div>
+
+<p>在用伪除法求最大公因子时就会导致系数增长很快，在后面介绍素数模方法之前，我们可以用下面定义的几个多项式余式序列一定程度上减小系数增长速度。</p>
+
+<div class="definition">
+<span class="theorem-header">定义5<a name="def:quo-series"></a></span><span class="theorem-name">(几种多项式余式序列)</span>
+若记<img src="latex/latex2png-PolyGCD_195701590_-5.gif" alt="$\delta_i=\mathrm{deg}(R_{i-1})-\mathrm{deg}(R_i)$" class="latex-inline" style="vertical-align: -5px" width="183" height="18">,则有如下定义:
+
+<p>(1)通常的伪余式序列：<img src="latex/latex2png-PolyGCD_149090715_-5.gif" alt="$\alpha_i=(\plc{R_i})^{\delta_i+1},\beta_i=\mathrm{cont}(R_{i-1}\prem R_i)$" class="latex-inline" style="vertical-align: -5px" width="306" height="20">.</p>
+
+<p>(2)子结式余式序列：<img src="latex/latex2png-PolyGCD_170964510_.gif" alt="$$\alpha_i=(\plc{R_i})^{\delta_i+1},\beta_1=(-1)^{\delta_1+1},$$" class="latex-display" width="580" height="21">
+<img src="latex/latex2png-PolyGCD_238710616_.gif" alt="$$\beta_i=-(\plc{R_{i-1}})\psi_i^{\delta_i},(2\le i\le k),$$" class="latex-display" width="580" height="21">
+<img src="latex/latex2png-PolyGCD_162331657_.gif" alt="$$\psi_1=-1,\psi_i=(-\plc{R_{i-1}})^{\delta_{i-1}}\psi_{i-1}^{1-\delta_{i-1}},(2\le i\le k),$$" class="latex-display" width="580" height="23"></p>
+
+<p>此方法计算量最小。</p>
+
+<p>(3)约化多项式余式序列：<img src="latex/latex2png-PolyGCD_62861555_.gif" alt="$$\alpha_i=(\plc{R_{i-1}})^{\delta_i+1},$$" class="latex-display" width="580" height="21">
+<img src="latex/latex2png-PolyGCD_145337247_.gif" alt="$$\beta_1=1,\beta_i=\alpha_{i-1},(2\le i\le k).$$" class="latex-display" width="580" height="18"></p>
+
+
+</div>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="PolyGCD.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>域上多项式的快速Euclid算法</h2>
+
+<p class="first">1938年Lehmer最先提出了快速Euclid算法，后来Knuth(1970)，Schoenhage(1971),Moenck(1973),Aho,Hopcroft,UUman(1978),Schwartz(1980),Brent,Gustavson,Yun(1980),Strassen(1983)对这些算法也有论述。</p>
+
+<p>在域(例如<img src="latex/latex2png-PolyGCD_68858421_-5.gif" alt="$\mathbb{Z}_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">)中，Euclid算法可表示为（各<img src="latex/latex2png-PolyGCD_265063404_-2.gif" alt="$r_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="10">均为首一的）:
+<img src="latex/latex2png-PolyGCD_207870820_.gif" alt="$$r_0=f,\quad r_1=g,\quad s_0=t_1=1,\quad s_1=t_0=0,$$" class="latex-display" width="580" height="16">
+<img src="latex/latex2png-PolyGCD_182664413_.gif" alt="
+\begin{align*}
+&\rho_2r_2=r_0-q_1r_1,&&\rho_2s_2=s_0-q_1s_1,&&\rho_2t_2=t_0-q_1t_1,\\
+&\cdots &&\cdots &&\cdots\\
+&0=r_{l-1}-q_lr_l, &&\rho_{l+1}s_{l+1}=s_{l-1}-q_ls_l, &&\rho_{l+1}t_{l+1}=t_{l-1}-q_lt_l,
+\end{align*}
+" class="latex-display" width="580" height="78"></p>
+
+<p>若设<img src="latex/latex2png-PolyGCD_94743561_-4.gif" alt="$\rho_{l+1}=1,r_{l+1}=0$" class="latex-inline" style="vertical-align: -4px" width="128" height="15">，还可记<img src="latex/latex2png-PolyGCD_147861304_.gif" alt="$$Q_i=\begin{pmatrix}0 &1\\ \rho_{i+1}^{-1} &-q_i\rho_{i+1}^{-1}\end{pmatrix},$$" class="latex-display" width="580" height="50">则<img src="latex/latex2png-PolyGCD_1971844_.gif" alt="$$R_i=Q_iQ_{i-1}\cdots Q_1=\begin{pmatrix}s_i &t_i\\ s_{i+1} &t_{i+1}\end{pmatrix}.$$" class="latex-display" width="580" height="50"></p>
+
+<p>易知<img src="latex/latex2png-PolyGCD_54197147_-21.gif" alt="$\displaystyle\begin{pmatrix}r_i\\r_{i+1}\end{pmatrix}=R_i\begin{pmatrix}r_0\\r_1\end{pmatrix}.$" class="latex-inline" style="vertical-align: -21px" width="142" height="50"></p>
+
+<p>在随机情况下，可证明域<img src="latex/latex2png-PolyGCD_68858419_-5.gif" alt="$\mathbb{F}_p$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">中<img src="latex/latex2png-PolyGCD_100964967_-4.gif" alt="$\deg r_2<\deg r_1-1$" class="latex-inline" style="vertical-align: -4px" width="135" height="16">的概率<img src="latex/latex2png-PolyGCD_131777825_-15.gif" alt="$\mathrm{P}(\mathrm{deg}r_2<\mathrm{deg}r_1 - 1)=\displaystyle\frac{1}{p}$" class="latex-inline" style="vertical-align: -15px" width="188" height="37">，当素数<img src="latex/latex2png-PolyGCD_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">很大时，可认为<img src="latex/latex2png-PolyGCD_265063404_-2.gif" alt="$r_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="10">序列的下降速度很慢。为了说明快速Euclid算法，我们先引入下面一些定义和定理。该算法的基本原理在于利用多项式的前某些系数来计算余式序列.</p>
+
+<div class="definition">
+<span class="theorem-header">定义6<a name=""></a></span><span class="theorem-name">(截式)</span>
+对于<img src="latex/latex2png-PolyGCD_212007146_-6.gif" alt="$f=\sum_{i=0}^{n} f_ix^i\in\mathrm{Z}_p[x],k\in\mathrm{Z},k$" class="latex-inline" style="vertical-align: -6px" width="223" height="20">-截式(k-truncated polynomial)定义为<img src="latex/latex2png-PolyGCD_22917028_.gif" alt="$$f \upharpoonright k=f_nx^k+f_{n-1}x^{k-1}+\cdots+f_{n-k},$$" class="latex-display" width="580" height="19">若<img src="latex/latex2png-PolyGCD_82998292_-1.gif" alt="$i<0$" class="latex-inline" style="vertical-align: -1px" width="36" height="13">则定义<img src="latex/latex2png-PolyGCD_184387946_-4.gif" alt="$f_i=0$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">，若<img src="latex/latex2png-PolyGCD_116552724_-1.gif" alt="$k<0$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">则令<img src="latex/latex2png-PolyGCD_63767925_-4.gif" alt="$f\upharpoonright k=0$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">，即取<img src="latex/latex2png-PolyGCD_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的前<img src="latex/latex2png-PolyGCD_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个系数作一个新的多项式。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注2<a name=""></a></span><span class="theorem-name"></span>
+当<img src="latex/latex2png-PolyGCD_12018526_-3.gif" alt="$k\le n$" class="latex-inline" style="vertical-align: -3px" width="41" height="15">时,有<img src="latex/latex2png-PolyGCD_170588168_-4.gif" alt="$f\upharpoonright k=f \quo x^{n-k}$" class="latex-inline" style="vertical-align: -4px" width="132" height="18">,反之有<img src="latex/latex2png-PolyGCD_168471713_-4.gif" alt="$f\upharpoonright k=fx^{k-n}$" class="latex-inline" style="vertical-align: -4px" width="101" height="18">.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理5<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyGCD_258612381_-5.gif" alt="$\forall i\ge 0,(fx^i)\upharpoonright k=f\upharpoonright k$" class="latex-inline" style="vertical-align: -5px" width="173" height="19">.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义7<a name=""></a></span><span class="theorem-name">(k-度重合)</span>
+对于<img src="latex/latex2png-PolyGCD_245661074_-5.gif" alt="$f,g,f^*,g^*\in\mathrm{Z}_p[x]\setminus\{0\}$" class="latex-inline" style="vertical-align: -5px" width="168" height="18">,且<img src="latex/latex2png-PolyGCD_247024583_-4.gif" alt="$\mathrm{deg}f\ge\mathrm{deg}g,\mathrm{deg}f^*\ge\mathrm{deg}g^*,k\in\mathrm{Z}$" class="latex-inline" style="vertical-align: -4px" width="251" height="16">，则称<img src="latex/latex2png-PolyGCD_266635650_-5.gif" alt="$(f,g)$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">与<img src="latex/latex2png-PolyGCD_208043753_-5.gif" alt="$(f^*,g^*)k$" class="latex-inline" style="vertical-align: -5px" width="62" height="18">-度重合(coincide up to k)，如果<img src="latex/latex2png-PolyGCD_157207557_.gif" alt="$$f\upharpoonright k=f^*\upharpoonright k\wedge g\upharpoonright(k-\mathrm{deg}f+\mathrm{deg}g)=g^*\upharpoonright(k-\mathrm{deg}f^*+\mathrm{deg}g^*),$$" class="latex-display" width="580" height="18">记为<img src="latex/latex2png-PolyGCD_198110192_-5.gif" alt="$(f,g)\overset{k}{\sim}(f^*,g^*)$" class="latex-inline" style="vertical-align: -5px" width="111" height="22">,此为一等价关系。
+
+
+</div>
+
+<p>易知该等价关系有如下性质：</p>
+
+<div class="theorem">
+<span class="theorem-header">定理6<a name="th:ksimpro"></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-PolyGCD_198110192_-5.gif" alt="$(f,g)\overset{k}{\sim}(f^*,g^*)$" class="latex-inline" style="vertical-align: -5px" width="111" height="22">且<img src="latex/latex2png-PolyGCD_54230432_-4.gif" alt="$k\ge\mathrm{deg}f-\mathrm{deg}g$" class="latex-inline" style="vertical-align: -4px" width="120" height="16">,则<img src="latex/latex2png-PolyGCD_103364068_-4.gif" alt="$\mathrm{deg}f-\mathrm{deg}g=\mathrm{deg}f^*-\mathrm{deg}g^*$" class="latex-inline" style="vertical-align: -4px" width="214" height="16">.
+
+
+</div>
+
+<p>关于<img src="latex/latex2png-PolyGCD_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">-度重合，有如下重要的命题：</p>
+
+<div class="theorem">
+<span class="theorem-header">定理7<a name="th:baseforFEEA"></a></span><span class="theorem-name"></span>
+对于<img src="latex/latex2png-PolyGCD_184517408_-1.gif" alt="$k\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="40" height="13">，若非零式<img src="latex/latex2png-PolyGCD_101611553_-4.gif" alt="$f,g,f^*,g^*$" class="latex-inline" style="vertical-align: -4px" width="71" height="16">满足<img src="latex/latex2png-PolyGCD_224838171_-5.gif" alt="$(f,g)\overset{2k}{\sim}(f^*,g^*)$" class="latex-inline" style="vertical-align: -5px" width="113" height="22">,且<img src="latex/latex2png-PolyGCD_135702530_-4.gif" alt="$k\ge\mathrm{deg}f-\mathrm{deg}g\ge 0$" class="latex-inline" style="vertical-align: -4px" width="150" height="16">,若有Euclid除法：<img src="latex/latex2png-PolyGCD_131054212_.gif" alt="$$f=qg+r,\quad f^*=q^*g^*+r^*,$$" class="latex-display" width="580" height="17">则
+
+<ol>
+<li><img src="latex/latex2png-PolyGCD_15960417_-4.gif" alt="$q=q^*$" class="latex-inline" style="vertical-align: -4px" width="44" height="16">,</li>
+<li><img src="latex/latex2png-PolyGCD_25648825_-5.gif" alt="$(g,r)\overset{2(k-\mathrm{deg}q)}{\sim}(g^*,r^*)\vee r=0\vee k-\mathrm{deg}q<\mathrm{deg}g-\mathrm{deg}r$" class="latex-inline" style="vertical-align: -5px" width="404" height="25">.</li>
+</ol>
+
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+乘以<img src="latex/latex2png-PolyGCD_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的适当幂次后，可使<img src="latex/latex2png-PolyGCD_175713579_-4.gif" alt="$\mathrm{deg}f=\mathrm{deg}f^*\ge k$" class="latex-inline" style="vertical-align: -4px" width="131" height="16">成立，不妨设命题中的多项式已满足此式，则由定理<a class="ref-th" href="PolyGCD.html#th:ksimpro">6</a>有<img src="latex/latex2png-PolyGCD_57736763_-4.gif" alt="$\mathrm{deg}g=\mathrm{deg}g^*$" class="latex-inline" style="vertical-align: -4px" width="95" height="16">.下面分两部分证明本定理。
+
+<p>(1)首先我们有如下四个不等式:</p>
+
+<p><img src="latex/latex2png-PolyGCD_130186160_-4.gif" alt="$k\ge\mathrm{deg}q=\mathrm{deg}f-\mathrm{deg}g=\mathrm{deg}f^*-\mathrm{deg}g^*=\mathrm{deg}q^*$" class="latex-inline" style="vertical-align: -4px" width="363" height="16">,</p>
+
+<p><img src="latex/latex2png-PolyGCD_19014442_-5.gif" alt="$\mathrm{deg}(f-f^*)<\mathrm{deg}f-2k\le\mathrm{deg}g-k$" class="latex-inline" style="vertical-align: -5px" width="266" height="18">(注意<img src="latex/latex2png-PolyGCD_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">-截式取多项式的前<img src="latex/latex2png-PolyGCD_98792468_-2.gif" alt="$k+1$" class="latex-inline" style="vertical-align: -2px" width="36" height="14">项),</p>
+
+<p><img src="latex/latex2png-PolyGCD_238906267_-5.gif" alt="$\mathrm{deg}(g-g^*)<\mathrm{deg}g-(2k-(\mathrm{deg}f-\mathrm{deg}g))=\mathrm{deg}f-2k\le\mathrm{deg}g-k\le\mathrm{deg}g-\mathrm{deg}q$" class="latex-inline" style="vertical-align: -5px" width="601" height="18">,</p>
+
+<p><img src="latex/latex2png-PolyGCD_103627313_-5.gif" alt="$\mathrm{deg}(r-r^*)\le\max\{\mathrm{deg}r,\mathrm{deg}r^*\}<\mathrm{deg}g$" class="latex-inline" style="vertical-align: -5px" width="287" height="18">,</p>
+
+<p>根据上面的不等式,由<img src="latex/latex2png-PolyGCD_236480245_-5.gif" alt="$f-f^*=q(g-g^*)+(q-q^*)g^*+(r-r^*)$" class="latex-inline" style="vertical-align: -5px" width="304" height="18">可知<img src="latex/latex2png-PolyGCD_82644323_-5.gif" alt="$\mathrm{deg}[(q-q^*)g^*]<\mathrm{deg}g$" class="latex-inline" style="vertical-align: -5px" width="163" height="18">,故<img src="latex/latex2png-PolyGCD_15960417_-4.gif" alt="$q=q^*$" class="latex-inline" style="vertical-align: -4px" width="44" height="16">.</p>
+
+<p>(2)假定<img src="latex/latex2png-PolyGCD_80411620_-4.gif" alt="$r\neq 0$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">且<img src="latex/latex2png-PolyGCD_65444880_-4.gif" alt="$k-\mathrm{deg}q\ge\mathrm{deg}g-\mathrm{deg}r$" class="latex-i67_-5.gif" alt="$\mathrm{deg}(g-g^*)<\mathrm{deg}g-(2k-(\mathrm{deg}f-\mathrm{deg}g))=\mathrm{deg}f-2k\le\mathrm{deg}g-k\le\mathrm{deg}g-\mathrm{deg}q$" class="latex-inline" style="vertical-align: -5px" width="601" height="18">,</p>
+
+<p><img src="latex/latex2png-PolyGCD_103627313_-5.gif" alt="$\mathrm{deg}(r-r^*)\le\max\{\mathrm{deg}r,\mathrm{deg}r^*\}<\mathrm{deg}g$" class="latex-inline" style="vertical-align: -5px" width="287" height="18">,</p>
+
+<p>

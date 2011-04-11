@@ -1,0 +1,678 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 27. Extending MySQL</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="connectors.html" title="Chapter 26.   Connectors"><link rel="next" href="problems.html" title="Appendix A. Problems and Common Errors"></head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="extending-mysql"></a>
+第27章：扩展MySQL</h2></div></div></div><div class="toc"><p><b>目录</b></p><dl><dt><span class="section">
+	<a href="#mysql-internals">27.1. MySQL内部控件</a></span></dt><dd><dl><dt><span class="section">
+		<a href="#mysql-threads">27.1.1. MySQL线程</a></span></dt><dt><span class="section">
+		<a href="#mysql-test-suite">27.1.2. MySQL测试套件</a></span></dt></dl></dd><dt><span class="section">
+	<a href="#adding-functions">27.2. 为MySQL添加新函数</a></span></dt><dd><dl><dt><span class="section">
+		<a href="#udf-features">27.2.1. 自定义函数接口的特性</a></span></dt><dt><span class="section">
+		<a href="#create-function">27.2.2. CREATE FUNCTION/DROP FUNCTION 
+		语法</a></span></dt><dt><span class="section"><a href="#adding-udf">27.2.3. 
+		添加新的自定义函数</a></span></dt><dt><span class="section">
+		<a href="#adding-native-function">27.2.4. 添加新的固有函数</a></span></dt></dl></dd><dt><span class="section">
+	<a href="#adding-procedures">27.3. 为MySQL添加新步骤</a></span></dt><dd><dl><dt><span class="section">
+		<a href="#procedure-analyse">27.3.1. 步骤分析</a></span></dt><dt><span class="section">
+		<a href="#writing-a-procedure">27.3.2. 编写步骤</a></span></dt></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="mysql-internals"></a>27.1. MySQL内部控件</h2></div></div></div><div class="toc"><dl><dt><span class="section">
+	<a href="#mysql-threads">27.1.1. MySQL线程</a></span></dt><dt><span class="section">
+	<a href="#mysql-test-suite">27.1.2. MySQL测试套件</a></span></dt></dl></div><a class="indexterm" name="id3068802"></a><a class="indexterm" name="id3068809"></a><p>
+      &nbsp;&nbsp;&nbsp; 本章包含许多在你处理MySQL代码时需要了解的你事情。如果你想投入到MySQL的开发中，或想要接触到最新的中间版本的代码，或者就是想了解开发的进度，请参阅<a href="installing.html#installing-source-tree" title="2.8.3. Installing from the Development Source Tree">2.8.3节，“从开发源代码树安装”</a>的说明。如果你对MySQL的内部插件感兴趣，你也可以订阅我们的内部插件邮件列表。这个列表的流量相对低一些。欲知如何订阅的详情，请参阅<a href="introduction.html#mailing-list" title="1.7.1.1. The MySQL Mailing Lists">1.7.1.1节，“MySQL邮件列表”</a>。在MySQL AB 的所有开发人员都在内部插件列表里，
+		此外，我们帮助那些正在处理MySQL代码的人。请随意使用这个邮件列表来问代码有关的问题，也可用它来发送你想奉献给MySQL项目的 
+		补丁！
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="mysql-threads"></a>27.1.1. MySQL线程</h3></div></div></div><p>
+        &nbsp;&nbsp;&nbsp; MySQL服务器创建如下线程：
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+            TCP/IP 连接线程处理所有连接请求，并为每一个连接创建一个新的专用线程来处理认证和SQL查询处理。
+          </p></li><li><p>
+			Windows NT 平台上有一个名为管道处理程序（pipe handler）的线程，它和名为管道连接请求（pipe connect 
+			requests）的TCP/IP连接线程做同样的工作。
+          </p></li><li><p>
+            信号线程处理所有的信号，这个线程通常也处理报警和调用process_alarm() 
+			函数来强制使得空闲时间太长的连接超时。
+          </p></li><li><p>
+            <span>若<strong class="command">mysqld</strong></span>是与DUSE_ALARM_THREAD线程一起编译的，这个专用线程是处理 
+			创建的警报的。这个线程用在一些sigwait()函数有问题的系统上，或者用在你想在应用程序中使用thr_alarm()代码而不带专用信号处理线程之时。
+          </p></li><li><p>
+            若想使用flush_time=<em class="replaceable">val</em>选项，会创建一个专用线程以给定的时间间隔刷新所有表格。
+          </p></li><li><p>
+            每个连接都有它自己的线程。</p></li><li><p>
+            每个被使用INSERT
+            DELAYED 的不同表格都会有自己的线程。
+          </p></li><li><p>
+            若使用了master-host, 
+			则会创建一个从属的复制线程从主线程读取并实施更新。
+          </p></li></ul></div><p>
+        <span><strong class="command">mysqladmin processlist</strong></span> 
+		仅显示连接，INSERT DELAYED, 及复制线程</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="mysql-test-suite"></a>27.1.2. MySQL测试套件</h3></div></div></div><div class="toc"><dl><dt><span class="section">
+		<a href="#running-mysqltest">27.1.2.1. 运行MySQL测试套件</a></span></dt><dt><span class="section">
+		<a href="#extending-mysqltest">27.1.2.2. 扩展MySQL测试套件</a></span></dt><dt><span class="section">
+		<a href="#reporting-mysqltest-bugs">27.1.2.3. MySQL测试套件报告缺陷</a></span></dt></dl></div><a class="indexterm" name="id3068998"></a><a class="indexterm" name="id3069009"></a><p>
+        &nbsp;&nbsp;&nbsp;&nbsp; 包含在Unix源码和二进制分发版中的测试系统可以让用户和开发人员对MySQL代码施行回归测试。这些测试可以在Unix上进行，目前它们还不能在原生的Windows环境下进行。
+      </p><p>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 当前的测试案例套件不能在MySQL中测试所有东西，但是它能发现SQL处理代码，OS/library文件中大多数明显的缺陷，并且在测试复件方面也是非常彻底的。我们的终极目标是对100%的代码进行测试。我们欢迎大家给我们的测试套件添加内容。你可能会特别想贡献出那些检查你系统里功能性危机的测试，因为这将确保未来所有发行版的MySQL会与你的应用程序一起更好地运行。
+      </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="running-mysqltest"></a>27.1.2.1. 运行MySQL测试套件</h4></div></div></div><p>
+          &nbsp;&nbsp;&nbsp; 测试系统包括一个测试语言解释器(<span><strong class="command">mysqltest</strong></span>)，一个运行所有测试的外壳脚本(<span><strong class="command">mysql-test-run</strong></span>)，用专用语言编写的测试案例，以及它们的预期结果。在系统上编译好之后，在源代码的root下键入<span><strong class="command">make test</strong></span> 
+			或mysql-test/mysql-test-run。如果安装了一个二进制分发版， cd 到安装root (如
+          /usr/local/mysql), 然后键入
+          scripts/mysql-test-run。所有测试应该都通过，假使有没通过的，若是一个MySQL里的缺陷，你可以试着找找是因为什么，并且报告这个问题。请参阅<a href="#reporting-mysqltest-bugs" title="27.1.2.3. Reporting Bugs in the MySQL Test Suite">27.1.2.3节，“在MySQL测试套件里报告缺陷”</a>。
+        </p><p>
+          如果你想要运行测试套件的机器上已经运行了一个 <span><strong class="command">mysqld</strong></span> 
+			，只要它不占用9306 和 9307端口，就不用停掉它。如果占用了其中的一个，以可以编辑<span><strong class="command">mysql-test-run</strong>把主端口和（或）从端口号改为其它可用的。</span>.
+        </p><p>
+          可使用下面指令运行单个测试案例
+          mysql-test/mysql-test-run test_name.
+        </p><p>
+          若一个测试未通过，你可以用--force选项来检查运行着的<span><strong class="command">mysql-test-run</strong>看是否是别的测试未通过</span>。
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="extending-mysqltest"></a>27.1.2.2. 扩展MySQL测试套件</h4></div></div></div><p>
+          你可以用<span><strong class="command">mysqltest</strong></span> 
+			语言编写你自己的测试案例。不幸地是，我们还没有写完相关方面完整地文档。但是，你可以查看我们现有的测试案例，并将它们作为范例。下面几点将有助于你入手：
+        </p><div class="itemizedlist"><ul type="disc"><li><p>
+              测试位于
+              mysql-test/t/*.test
+            </p></li><li><p>
+              测试案例包括终止声明，测试案例类似于<span><strong class="command">mysql</strong>命令行客户端的输入。
+				默认的声明是一个被发送到MySQL服务器的查询，除非这个声明被识别为内部命令（如</span>
+              <span><strong class="command">sleep</strong>）。</span>
+            </p></li><li><p>
+              所有产生结果的查询，例如SELECT, SHOW,
+              EXPLAIN等，必须在 
+              <em class="replaceable">@/path/to/result/file</em>之前。那个文件必须包含期望的结果。生成结果文件的一个简单办法是在mysql-test目录<span>运行<strong class="command">mysqltest -r &lt;
+              t/test-case-name.test</strong></span> 
+				，然后编辑生成的结果文件，如果需要，可将它们调整到想要的输出端。在那种情况下，要小心避免添加或删除任何不可见的字符，确保只改变文本和（或）删除行。如果插入一行，要确保插入的区域被一个硬标识隔开，且在行尾有一个硬标识。你可能会想要使用<span><strong class="command">od -c</strong>来确保你的文本编辑器在编辑
+				步骤中没有搞乱任何东西。当你发现一个缺陷而不得不编辑<strong class="command">mysqltest -r</strong>的输出时，我们真希望你不要编辑它。</span>
+            </p></li><li><p>
+              为和我们的设置一致，你应该把你的结果文件放在mysql-test/r
+              目录，并取名为test_name.result。如果测试产生不止一个结果，你应该使用诸如
+              test_name.a.result，test_name.b.result等这样的名字。
+            </p></li><li><p>
+              如果声明返回一个错误，你可以在声明的前一行使用--error error-number来详细说明它。错误号可能是由“,”分开的可能错误号的列表。</p></li><li><p>
+              如果你正编写一个重复的测试案例，你应该在测试文件的第一行写：source
+              include/master-slave.inc;。用connection
+              master; 和 connection
+              slave;来切换主案例和从案例。如果你需要对一个替换的连接做点什么，对于主连接，用connection
+              master1;，对于从连接，用connection
+              slave1;。</p></li><li><p>
+              如果需要在一个循环里做点什么，可以用些这样的内容：
+            </p><pre class="programlisting">let $1=1000;
+while ($1)
+{
+ # do your queries here
+ dec $1;
+}
+</pre></li><li><p>
+              在查询之间休眠，使用<span><strong class="command">sleep</strong></span>命令。此命令支持几分之几秒，所以，例如你想要休眠1.3秒，你可以使用<span><strong class="command">sleep 1.3;</strong> 
+				命令</span>。
+            </p></li><li><p>
+              对你的测试案例要运行带附加选项的从案例，以命令行方式把它们放在mysql-test/t/test_name-slave.opt。对于主案例，把它们放在mysql-test/t/test_name-master.opt。</p></li><li><p>
+              如果对测试套件有问题，和想要献出一个测试案例，发送邮件信息到MySQL 内部插件 
+				邮件列表。请参阅<a href="introduction.html#mailing-list" title="1.7.1.1. The MySQL Mailing Lists">1.7.1.1节，“MySQL邮件列表”</a>。 
+				虽然这个列表不接受附件，你可以把相关文件通过ftp上传到：<a href="ftp://ftp.mysql.com/pub/mysql/upload/" target="_top">ftp://ftp.mysql.com/pub/mysql/upload/</a>
+            </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="reporting-mysqltest-bugs"></a>
+			27.1.2.3.&nbsp;在MySQL测试套件中报告缺陷</h4></div></div></div><p>
+          如果你的MySQL的版本没有通过测试套件，你可以采取如下措施：
+        </p><div class="itemizedlist"><ul type="disc"><li><p>
+              在尽可能多地找到出错之时的错误之前，不要发送缺陷报告。查找之时，请使用<span><strong class="command">mysqlbug</strong>脚本比便我们能获取你的系统和MySQL版本信息</span>，参阅<a href="introduction.html#bug-reports" title="1.7.1.3. How to Report Bugs or Problems">1.7.1.3节
+				，“如何报告缺陷或问题</a><a href="introduction.html#bug-reports">”</a>。</p></li><li><p>
+              确保包含了<span><strong class="command">mysql-test-run</strong>的输出，以及</span>&nbsp;
+              mysql-test/r目录<span>下所有</span>.reject<span>文件的内容。</span>
+            </p></li><li><p>
+              如果测试套件里的测试未通过，用如下命令检查一下看它自己运行时是否通过测试：
+            </p><pre class="programlisting">cd mysql-test
+mysql-test-run --local test-name
+</pre><p>
+              如果未能通过，你应该用
+              --with-debug 配置MySQL并使用--debug选项来运行<span><strong class="command">mysql-test-run</strong>。如果这样也未能通过，请把追踪文件</span>var/tmp/master.trace
+              上传到 <a href="ftp://ftp.mysql.com/pub/mysql/upload/" target="_top">ftp://ftp.mysql.com/pub/mysql/upload/</a> 
+				以便我们能检查它。请记得也要包含你系统的完整描述，<span><strong class="command">mysqld</strong></span> 
+				二进制文件的版本，以及你是如何编译它的。
+            </p></li><li><p>
+              也试着带--force选项运行一下<span><strong class="command">mysql-test-run</strong></span> 
+				，看是否还有别的测试未通过。
+            </p></li><li><p>
+              如果你是自己编译的MySQL，查看我们的手册看看如何在你的平台上编译MySQL，最好用一个在<a href="http://dev.mysql.com/downloads/" target="_top">http://dev.mysql.com/downloads/</a>上我们已经为你编译好的二进制版本。我们所有标准的二进制版本都能通过测试套件的测试！</p></li><li><p>
+              如果错误是Result length
+              mismatch 或 Result content
+              mismatch ，这意味测试的输出于期望的输出不匹配，这可能是在MySQL或你的<span><strong class="command">mysqld</strong> 
+				版本里的缺陷在某些环境下产生稍有不同的结果。</span>
+            </p><p>
+              未通过的测试结果放在和结果文件同主名但扩展名为.reject的文件里。如果测试案例未通过，你应该对两个文件做diff操作。如果你不能发现它们是如何不同，用od -c 
+				命令检查它们，也检查一下文件长度。</p></li><li><p>
+              如果测试完全未通过，你应该检查mysql-test/var/log目录下的日志文件以获得有关错误的一些提示。
+            </p></li><li><p>
+              如果你是为调试而编译MySQL，试一下带--gdb和（或）--debug参数运行<span><strong class="command">mysql-test-run</strong></span>
+              。请参阅<a href="porting.html#making-trace-files" title="E.1.2. Creating Trace Files">E.1.2节，“创建跟踪文件”</a>。
+            </p><p>
+              如果你没有为调试而编译MySQL，这应该是你可能去做的。只要带－-with-debug参数运行<span><strong class="command">configure</strong></span>。 
+				请参阅<a href="installing.html#installing-source" title="2.8. MySQL Installation Using a Source Distribution">2.8节，“使用源码分发版安装MySQL 
+				”</a>。
+            </p></li></ul></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+	<h2 class="title" align="left"><a name="adding-functions"></a>27.2. 为MySQL添加新函数</h2></div></div></div><div class="toc"><dl><dt><span class="section">
+		<a href="#udf-features">27.2.1. 自定义函数接口的特性</a></span></dt><dt><span class="section">
+		<a href="#create-function">27.2.2. CREATE FUNCTION/DROP FUNCTION 
+		语法</a></span></dt><dt><span class="section"><a href="#adding-udf">27.2.3. 
+		添加新的自定义函数</a></span></dt><dt><span class="section">
+		<a href="#adding-native-function">27.2.4. 添加新的固有函数</a></span></dt></dl></div><a class="indexterm" name="id3069669"></a><a class="indexterm" name="id3069679"></a><a class="indexterm" name="id3069689"></a><a class="indexterm" name="id3069699"></a><a class="indexterm" name="id3069709"></a><p>
+      有两个途径来为MySQL添加新函数：</p><div class="itemizedlist"><ul type="disc"><li><p>
+          你可以通过自行医函数接口 (UDF)来添加函数。自定义函数被编译为目标文件，然后用CREATE FUNCTION 
+			和DROP
+          FUNCTION 声明动态地添入到服务器中及从服务器中移出。参阅<a href="#create-function" title="27.2.2. CREATE FUNCTION/DROP FUNCTION Syntax">27.2.2节，“CREATE FUNCTION/DROP FUNCTION 
+			语法”</a>。
+        </p></li><li><p>
+          你可以将函数添加为MySQL固有（内建）函数。固有函数被编译进<span><strong class="command">mysqld</strong>服务器中，成为永久可用的。</span>
+        </p></li></ul></div><p>
+      每种途径都有其优点和缺点：</p><div class="itemizedlist"><ul type="disc"><li><p>
+          如果你编写自定义函数，你除了安装服务器本身之外还要安装目标文件。如果将你的函数编译进服务器中，你就不需要这么做了。
+        </p></li><li><p>
+          你可以给二进制版本的MySQL分发版添加UDF。固有函数需要你去修正源码分发版。.
+        </p></li><li><p>
+          如果你升级你的MySQL分发版，你可以继续使用先前安装了的UDF， 除非你升级到一个UDF接口改变了的新版本。对固有函数而言，每次升级你都必须重复一次修正。
+        </p></li></ul></div><p>
+      无论你使用哪种方法去添加新函数，它们都可以被SQL声明调用，就像
+      ABS() 或 SOUNDEX()这样的固有函数一样。
+    </p><p>
+      另一个添加函数的方法时创建存储函数。这些函数时用SQL声明编写的，而不是编译目标代码。编写存储函数的语法在<a href="stored-procedures.html">第20章：</a><a href="stored-procedures.html" title="Chapter 20. Stored Procedures and Functions">存储程序和函数 </a>中描述。</p><p>
+      下面的小节描述UDF接口的特性，给出编写UDF的指令，并讨论MySQL为防止UDF被误用而采取的安全预防措施。
+    </p><p>
+      给出源代码的例子来说明如何编写UDF，看一看MySQL源码分发版中提供的sql/udf_example.cc 
+		文件。
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="udf-features"></a>27.2.1. 自定义函数接口的特性</h3></div></div></div><p>
+        MySQL自定义函数接口有如下特性和功能：
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+            函数能分÷返回字符串，整数或实数。</p></li><li><p>
+            你可以定义一次作用于一行的简单函数，或作用于多行的组的集合函数。
+          </p></li><li><p>
+            提供给函数的信息使得函数可以检查传递给它们的参量的数目和类型。
+          </p></li><li><p>
+            你可以让MySQL在将某参量传递给函数之前强制其为某一类型。
+          </p></li><li><p>
+            你可以表示函数返回NULL 或发生错误。
+          </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="create-function"></a>27.2.2. CREATE FUNCTION/DROP FUNCTION 
+		语法</h3></div></div></div><a class="indexterm" name="id3069934"></a><a class="indexterm" name="id3069943"></a><a class="indexterm" name="id3069952"></a><a class="indexterm" name="id3069963"></a><a class="indexterm" name="id3069973"></a><a class="indexterm" name="id3069982"></a><a class="indexterm" name="id3069991"></a><pre class="programlisting">CREATE [AGGREGATE] FUNCTION <em class="replaceable">function_name</em> RETURNS {STRING|INTEGER|REAL}
+       SONAME <em class="replaceable">shared_library_name</em>
+
+DROP FUNCTION <em class="replaceable">function_name</em>
+</pre><p>
+        一个自定义函数 (UDF)就是用一个象ABS() 或 CONCAT()这样的固有（内建）函数一样作用的新函数去扩展MySQL。
+      </p><p>
+        <em class="replaceable">function_name</em> 是
+		用在SQL声明中以备调用的函数名字。RETURNS 子句说明函数返回值的类型。
+        <em class="replaceable">shared_library_name</em> 
+		是共享目标文件的基本名，共享目标文件含有实现函数的代码。该文件必须位于一个能被你系统的动态连接者搜索的目录里。</p><p>
+        你必须有mysql 数据库的INSERT 
+		权限才能创建一个函数，你必须有mysql 数据库的DELETE权限才能撤销一个函数。这是因为CREATE FUNCTION 
+		往记录函数名字，类型和共享名的mysql.func系统表里添加了一行，而DROP FUNCTION则是从表中删掉这一行。如果你没有这个系统表，你应该运行<span><strong class="command">mysql_fix_privilege_tables</strong></span>脚本来创建一个。请参阅<a href="installing.html#upgrading-grant-tables" title="2.10.2. Upgrading the Grant Tables">2.10.2节，“升级授权表”</a>。
+      </p><p>
+        一个有效的函数是一个用CREATE FUNCTION加载且没有用DROP FUNCTION移除的函数。每次服务器启动的时候会重新加载所有有效函数，除非你使用--skip-grant-tables参数启动<span><strong class="command">mysqld</strong>。在这种情况下，
+		将跳过UDF的初始化，UDF不可用。</span></p><p>
+        要了解编写自定义函数的说明，请参阅<a href="#adding-udf" title="27.2.3. Adding a New User-Defined Function">27.2.3节，“添加新的自定义函数”</a>。要使得UDF机制能够起作用，必须使用C或者C++编写函数，你的系统必须支持动态加载，而且你必须是动态编译的<span><strong class="command">mysqld</strong></span>（非静态）。
+      </p><p>
+        一个AGGREGATE函数就像一个MySQL固有的集合（总和）函数一样起作用，比如，SUM或COUNT()函数。要使得AGGREGATE 
+		起作用，你的mysql.func表必须包括一个type列。如果你的mysql.func表没有这一
+		列，你应该运行<span><strong class="command">mysql_fix_privilege_tables</strong></span>脚本来创建此
+		列。
+      </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="adding-udf"></a>
+			27.2.3.&nbsp;添加新的自定义函数</h3></div></div></div><div class="toc"><dl><dt><span class="section">
+		<a href="#udf-calling">27.2.3.1. UDF对简单函数的调用顺序</a></span></dt><dt><span class="section">
+		<a href="#udf-aggr-calling">27.2.3.2. UDF对集合函数的调用顺序</a></span></dt><dt><span class="section">
+		<a href="#udf-arguments">27.2.3.3. UDF参量处理</a></span></dt><dt><span class="section">
+		<a href="#udf-return-values">27.2.3.4. UDF返回值和错误处理</a></span></dt><dt><span class="section">
+		<a href="#udf-compiling">27.2.3.5. 编译和安装自定义函数</a></span></dt><dt><span class="section">
+		<a href="#udf-security">27.2.3.6. 自定义函数安全预报措施</a></span></dt></dl></div><a class="indexterm" name="id3070227"></a><a class="indexterm" name="id3070237"></a><a class="indexterm" name="id3070248"></a><p>
+        要使得UDF机制能够起作用，必须使用C或者C++编写函数，你的系统必须支持动态加载。MySQL 源码分发版包括一个sql/udf_example.cc 
+		文件，此文件定义了5个新函数。可以参考这个文件，看UDF是如何调用常规工作。</p><p>
+        为了能使用UDF，你需要动态链接<span><strong class="command">mysqld</strong>。不要配置MySQL使用</span>--with-mysqld-ldflags=-all-static参数。如果你想使用一个需要从<span><strong class="command">mysqld</strong></span> 
+		访问符号的UDF（例如在使用default_charset_info的sql/udf_example.cc文件中的metaphone函数），你必须使用-rdynamic参数来链接程序（参阅man
+        dlopen）。如果你计划使用UDF, 一个经验法则就是，用with-mysqld-ldflags=-rdynamic设定MySQL，除非你有很好的理由不去这么做。
+      </p><p>
+        如果你使用的是预编译分发版的MySQL， 请使用MySQL-Max，其中含有一个动态链接了的服务器，它可以支持动态加载。</p><p>
+        对于每个你想要使用在SQL声明中的函数，你应该定义相应的C （或 C++）函数。在下面的讨论中，xxx用来表示范例函数的名字，为了区分使用SQL还是C/C++，xxx()(上标）表示SQL函数调用，xxx()（下标）表示C/C++函数调用。
+      </p><p>
+        你为xxx()编写来实现接口的C/C++ 函数如下：</p><div class="itemizedlist"><ul type="disc"><li><p>
+            xxx() (必有)
+          </p><p>
+            主函数。 这是函数结果被计算的地方。SQL函数数据类型与C/C++函数返回类型的对应关系如下：
+          </p><div class="informaltable"><table border="1"><colgroup><col><col></colgroup><tbody><tr><td><span class="bold"><strong>SQL 
+					类型</strong></span></td><td><span class="bold"><strong>C/C++ 
+					类型</strong></span></td></tr><tr><td>STRING</td><td>char *</td></tr><tr><td>INTEGER</td><td>long long</td></tr><tr><td>REAL</td><td>double</td></tr></tbody></table></div></li><li><p>
+            xxx_init() (可选)
+          </p><p>
+            对xxx()的初始化函数。它可以被用来：
+          </p><div class="itemizedlist"><ul type="circle"><li><p>
+                检查传递给xxx()的参量数目。</p></li><li><p>
+                检查参量是否为必需的类型，或者，除此之外，在主函数被调用的时候告诉MySQL将参量强制为想要的类型。
+              </p></li><li><p>
+                分配主函数需要的内存。</p></li><li><p>
+                指定结果的最大长度。</p></li><li><p>
+                指定（对于REAL 函数）小数的最多位数。</p></li><li><p>
+                指定结果是否可以为
+                NULL。</p></li></ul></div></li><li><p>
+            xxx_deinit() （可选）
+          </p><p>
+            对xxx()的去初始化函数。它释放初始化函数分配的内存。
+          </p></li></ul></div><p>
+        当SQL声明调用XXX()时，MySQL调用初始化函数xxx_init()，让它执行必要的设置，比如，检查
+		参量或分配内存。如果xxx_init() 
+		返回一个错误，SQL声明会退出并给出错误信息，而主函数和去初始化函数并没有被调用。 否则，主函数xxx() 
+		对每一行都被调用一次。所有行都处理完之后，调用去初始化函数xxx_deinit() 
+		执行必要的清除。</p><p>
+        对于象SUM()一样工作的集合函数，你也必须提供如下的函数：
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+            xxx_clear() （在5.1节中必须）
+          </p><p>
+            对一个新组重置当前集合值为初试集合值，但不插入任何参量。
+          </p></li><li><p>
+            xxx_add() （必须）</p><p>
+            添加参量到当前集合值。</p></li></ul></div><p>
+        MySQL 按下列操作来处理集合UDF：
+      </p><div class="orderedlist"><ol type="1"><li><p>
+            调用 xxx_init() 让集合函数分配它需要用来存储结果的内存。
+          </p></li><li><p>
+            按照GROUP BY表达式来排序表。</p></li><li><p>
+            为每个新组中的第一行调用xxx_clear()函数。</p></li><li><p>
+            为属于同组的每一个新行调用xxx_add()函数。</p></li><li><p>
+            当组改变时或每组的最后一行被处理完之后，调用xxx()来获取集合结果。
+          </p></li><li><p>
+            重复，以上3-步直到所有行被处理完。</p></li><li><p>
+            调用xxx_deinit() 函数去释放UDF分配的内存。.
+          </p></li></ol></div><p>
+        所有函数必须时线程安全的，这不仅对主函数，对初始化和去初始化函数也一样，也包括集合函数要求的附加函数。这个要求的一个结果就是，你不能分配任何变化的全局或静态变量。如果你需要内存，你可以在xxx_init()函数分配内存，然后在xxx_deinit()函数释放掉。
+      </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="udf-calling"></a>27.2.3.1. UDF 
+			对简单函数的调用顺序</h4></div></div></div><a class="indexterm" name="id3070740"></a><p>
+          下面介绍创建简单UDF时需要定义的不同函数。<a href="#adding-udf" title="27.2.3. Adding a New User-Defined Function">27.2.3节，“添加新的自定义函数”</a>中介绍了MySQL调用这些函数的顺序。</p><p>
+          如本节所示，应该说明主函数xxx()。注意返回值和参数会有所不同，这取决于你说明的SQL函数xxx()在CREATE
+          FUNCTION声明中返回的是STRING，INTEGER类型还是REAL类型示：
+        </p><p>
+          对于STRING 型函数：
+        </p><pre class="programlisting">char *xxx(UDF_INIT *initid, UDF_ARGS *args,
+          char *result, unsigned long *length,
+          char *is_null, char *error);
+</pre><p>
+          对于INTEGER型函数：</p><pre class="programlisting">long long xxx(UDF_INIT *initid, UDF_ARGS *args,
+              char *is_null, char *error);
+</pre><p>
+          对于REAL型函数：
+        </p><pre class="programlisting">double xxx(UDF_INIT *initid, UDF_ARGS *args,
+              char *is_null, char *error);
+</pre><p>
+          初始化和去初始化函数如下说明：</p><pre class="programlisting">my_bool xxx_init(UDF_INIT *initid, UDF_ARGS *args, char *message);
+
+void xxx_deinit(UDF_INIT *initid);
+</pre><p>
+          initid 参数被传递给所有的三个函数。它指向一个UDF_INIT
+          结构，这个结构被用来在函数之间交换信息。UDF_INIT 
+			结构项跟随着。初始化函数应该给任何它想要改变的项赋值。（要使用项的默认值，就让它不被改变）</p><div class="itemizedlist"><ul type="disc"><li><p>
+              my_bool maybe_null
+            </p><p>
+              如果xxx() 能返回NULL，xxx_init()应maybe_null 
+				为 1 。如果任一参量被说明了
+              maybe_null值，其
+				默认值是1 
+				。</p></li><li><p>
+              unsigned int decimals
+            </p><p>
+              小数位数。默认值是传到主函数的参量里小数的最大位数。（例如，如果函数传递
+              1.34, 1.345, 
+				和1.3, 那么默认值为，因为1.345 
+				有3位小数。
+            </p></li><li><p>
+              unsigned int max_length
+            </p><p>
+              结果的最大长度。max_length 
+				的默认值因函数的结果类型而异。对字符串函数，默认值是最长参量的长度。对整型函数，默认是21位。对实型函数，默认是13再加上initid-&gt;decimals指示的小数位数。（对数字函数，长度包含正负号或者小数点符）。
+            </p><p>
+              如果想返回团值，你可以把max_length 设为从65KB到16MB。这个内存不会被分配，但是如果有临时数据需要存储，这个设置了的值被用来决定使用哪种
+				列的类型。
+            </p></li><li><p>
+              char *ptr
+            </p><p>
+              函数可以用作本身目的的指针。比如，函数可以用initid-&gt;ptr 
+				来在分配了的内存内部通讯。 xxx_init()
+              应该分配内存，并指派给这个指针：
+            </p><pre class="programlisting">initid-&gt;ptr = allocated_memory;
+</pre><p>
+              在 xxx() 和
+              xxx_deinit()中，借用
+              initid-&gt;ptr 来使用或分配内存。</p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="udf-aggr-calling"></a>27.2.3.2. UDF对集合函数的调用顺序</h4></div></div></div><a class="indexterm" name="id3071037"></a><p>
+          本节介绍创建集合UDF之时需要定义的不同函数。<a href="#adding-udf" title="27.2.3. Adding a New User-Defined Function">27.2.3节，“添加新的自定义函数”</a> 
+			介绍了MySQL调用这些函数的顺序。</p><div class="itemizedlist"><ul type="disc"><li><p>
+              xxx_reset()
+            </p><p>
+              当MySQL在一个新组中发现第一行时调用这个函数。它对这个组重置任何内部总和变量，然后使用给定的UDF_ARGS参量作为内部总和值的第一个值。如下说明
+              xxx_reset() 函数：
+            </p><pre class="programlisting">char *xxx_reset(UDF_INIT *initid, UDF_ARGS *args,
+                char *is_null, char *error);
+</pre><p>
+              &nbsp;在MySQL5.1版中UDF接口不需要或不使用xxx_reset()函数，而是使用xxx_clear()函数作为替代。但是如果你想让UDF也能在老版本的服务器上运行，你也可以定义 xxx_reset() 
+				和
+              xxx_clear() 函数。（如果你使用了这两个函数，xxx_reset()函数在很多情况下可以通过调用函数来内部实现，即调用xxx_clear()函数重置所有变量，然后添加UDF_ARGS参量作为组的第一个值。）
+            </p></li><li><p>
+              xxx_clear()
+            </p><p>
+              当MySQL需要重置总和结果时调用此函数。对每一个新组，在开始之时调用它，但是它也可以被调用来为一个没有匹配行在其中的查询重置值。如下说明xxx_clear()：
+            </p><pre class="programlisting">char *xxx_clear(UDF_INIT *initid, char *is_null, char *error);
+</pre><p>
+              在调用xxx_clear()之前is_null 被设置指向
+              CHAR(0) 。
+            </p><p>
+              如果发生错误，你可以存储一个值在 error参量指向的变量中。error指向一单字节变量，而不是一个字符串缓冲区。</p><p>
+              xxx_clear() 是MySQL
+              5.1必须的。
+            </p></li><li><p>
+              xxx_add()
+            </p><p>
+              为同组除了第一行之外，所有的行调用这个函数。你应该用它在UDF_ARGS参量中向内部总和变量加值。.</p><pre class="programlisting">char *xxx_add(UDF_INIT *initid, UDF_ARGS *args,
+              char *is_null, char *error);
+</pre></li></ul></div><p>
+          对集合UDF而言xxx() 函数应该用与非集合UDF一样的方法来说明。请参阅<a href="#udf-calling" title="27.2.3.1. UDF Calling Sequences for Simple Functions">27.2.3.1节，“UDF调用简单函数的顺序”</a>。
+        </p><p>
+          对一个集合UDF，MySQL 在组内所有行被处理之后调用xxx()函数。这里你应该一般不会接触到它的UDF_ARGS参量，但是取而代之地根据内部总和变量返回给你值。
+        </p><p>
+          在xxx()中处理的返回值应该用与对非集合UDF一样的方法来操作。请参阅<a href="#udf-return-values" title="27.2.3.4. UDF Return Values and Error Handling">27.2.3.4节，“UDF返回值和错误处理”</a>。
+        </p><p>
+          xxx_reset() 和
+          xxx_add() 函数用与非集合UDF一样的方法来处理它们的UDF_ARGS 
+			参量。请参阅<a href="#udf-arguments" title="27.2.3.3. UDF Argument Processing">27.2.3.3节，“UDF参量处理”</a>。
+        </p><p>
+          到is_null和error的指针
+			参量和所有到xxx_reset(),
+          xxx_clear(), xxx_add()
+          和 xxx()调用一样。你可以用这个来提醒你获取一个错误或无论xxx()是否返回NULL的一个结果。你不能把一个字符串存到*error！error指向单字节变量而不是字符串缓冲区。
+        </p><p>
+          *is_null 对每一个组都重置（调用xxx_clear()前），
+          *error 从不重置。</p><p>
+          如果 xxx()返回时，*is_null 
+			或 *error
+          被设置，MySQL返回
+          NULL作为组函数的结果。</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="udf-arguments"></a>27.2.3.3. UDF参量处理</h4></div></div></div><a class="indexterm" name="id3071381"></a><a class="indexterm" name="id3071387"></a><p>
+          args 参数指向列着结构元的
+          UDF_ARGS 结构：</p><div class="itemizedlist"><ul type="disc"><li><p>
+              unsigned int arg_count
+            </p><p>
+              参量个数。如果你需要你的函数带着某个数目的参量被调用，在初始化函数检查这个值，例如：
+            </p><pre class="programlisting">if (args-&gt;arg_count != 2)
+{
+    strcpy(message,"XXX() requires two arguments");
+    return 1;
+}
+</pre></li><li><p>
+              enum Item_result *arg_type
+            </p><p>
+              一个指针，对每个参量指向包含类型的一个数列。可能的类型值是STRING_RESULT,
+              INT_RESULT 和
+              REAL_RESULT。</p><p>
+              要确信一个参量是给定类型的，并且如果不是的话就返回一个错误，请检查初始化函数中的arg_type数列。比如：
+            </p><pre class="programlisting">if (args-&gt;arg_type[0] != STRING_RESULT ||
+    args-&gt;arg_type[1] != INT_RESULT)
+{
+    strcpy(message,"XXX() requires a string and an integer");
+    return 1;
+}
+</pre><p>
+              要求你函数的参量是某一类型的另一方法是，使用初始化函数设置arg_type元素为你想要的类型。对所有对xxx()的调用而言，这会导致MySQL强制参量为这些类型。比如，要指定投两个参量强制成字符串和整数，在xxx_init()中分别：</p><pre class="programlisting">args-&gt;arg_type[0] = STRING_RESULT;
+args-&gt;arg_type[1] = INT_RESULT;
+</pre></li><li><p>
+              char **args
+            </p><p>
+              args-&gt;args 
+				与初始化函数做有关传到你函数的参量的一般情况做通讯。对于常参量i，args-&gt;args[i] 
+				指向参量值。（看下面的说明了解如何妥善地访问这个值）。对非－常参量，args-&gt;args[i] 
+				为
+              0。一个常参量为仅使用参量的表达式，如 3 
+				或
+              4*7-2 或 SIN(3.14)。一个非常
+				参量是一个行与行不同的表达式，如，列名或带非－常参量调用的函数。
+            </p><p>
+              对主函数的每次调用，args-&gt;args 
+				包含为每个当前处理的行传递的实际参量。
+            </p><p>
+              如下使用参量i的函数：
+            </p><div class="itemizedlist"><ul type="circle"><li><p>
+                  给一个STRING_RESULT 
+					型的参量作为一个字符串加一个长度，可以允许所有二进制数或任意长度的数处理。字符串内容作为args-&gt;args[i] 
+					而字符串长度为args-&gt;lengths[i]。你不能采用null结尾的字符串。
+                </p></li><li><p>
+                  对一个INT_RESULT型的参量，你必须转换args-&gt;args[i] 
+					为一个long long 值：
+                </p><pre class="programlisting">long long int_val;
+int_val = *((long long*) args-&gt;args[i]);
+</pre></li><li><p>
+                  对一个REAL_RESULT型参量，你必须转换args-&gt;args[i]为一个双精度值：</p><pre class="programlisting">double    real_val;
+real_val = *((double*) args-&gt;args[i]);
+</pre></li></ul></div></li><li><p>
+              unsigned long *lengths
+            </p><p>
+              对初始化函数，lengths数列表示对每个参量的最大字符串长度。你不要改变它。对主函数的每次调用，lengths包含了对当前处理行传递的任何字符串
+				参量的实际长度。对于INT_RESULT 
+				或
+              REAL_RESULT类型的参量，lengths
+              仍包含参量的最大长度（对初始化函数）。
+            </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="udf-return-values"></a>27.2.3.4. UDF返回值和错误处理</h4></div></div></div><a class="indexterm" name="id3071717"></a><a class="indexterm" name="id3071727"></a><a class="indexterm" name="id3071737"></a><a class="indexterm" name="id3071747"></a><p>
+          如果没有错误发生，初始化函数应该返回0，否则就返回1。如果有错误发生，xxx_init() 
+			应该在message 
+			参数存储一个以null结尾的错误消息。该消息被返回给客户端。消息缓冲区是
+          MYSQL_ERRMSG_SIZE 
+			字符长度，但你应该试着把消息保持在少于80个字符，以便它能适合标准终端屏幕的宽度。</p><p>
+          对于long long 和
+          double 类型的函数，主函数 xxx()的返回返回值是函数值。字符函数返回一个指向结果的指针，并且设置 *result 和 *length&nbsp; 
+			为返回值的内容和长度。例如：</p><pre class="programlisting">memcpy(result, "result string", 13);
+*length = 13;
+</pre><p>
+          被传给
+          xxx() 函数的结果缓冲区是 255 
+			字节长。如果你的结果适合这个长度，你就不需要担心对结果的内存分配。</p><p>
+          如果字符串函数需要返回一个超过255字节的字符串，你必须用 malloc() 在你的 xxx_init() 
+			函数或者 xxx() 函数里为字符串分配空间，并且在 xxx_deinit() 
+			函数里释放此空间。你可以将已分配内存存储在 UDF_INIT&nbsp; 结构里的 ptr&nbsp; 位置以备将来
+          xxx() 调用。请参阅<a href="#udf-calling" title="27.2.3.1. UDF Calling Sequences for Simple Functions">27.2.3.1节，“UDF 
+			对简单函数的调用顺序”</a>。
+        </p><p>
+          要在主函数中指明一个 NULL 的返回值，设置 *is_null 为
+          1 ：
+        </p><pre class="programlisting">*is_null = 1;
+</pre><p>
+          要在主函数中指明错误返回，设置 *error 为 1 
+			：
+        </p><pre class="programlisting">*error = 1;
+</pre><p>
+          如果 xxx() 对任意行设置 *error 
+			为
+          1&nbsp; ，对于任何
+          XXX()被调用的语句处理的当前行和随后的任意行，该函数值为 NULL （甚至都不为随后的行调用 xxx()）。</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="udf-compiling"></a>27.2.3.5. 编译和安装自定义函数</h4></div></div></div><a class="indexterm" name="id3071946"></a><a class="indexterm" name="id3071957"></a><a class="indexterm" name="id3071967"></a><p>
+          实现UDF的文件必须在运行服务器的主机上编译和安装。这个步骤在下面介绍，以包含在MySQL源码分发版里的UDF文件sql/udf_example.cc 
+			为例。</p><p>
+          紧接着下面的指令是对Unix的，对Windows的指令在本节稍后给出。
+        </p><p>
+          &nbsp;udf_example.cc 文件包含下列函数：</p><div class="itemizedlist"><ul type="disc"><li><p>
+              metaphon() 返回字符串参量的一个变音位(metaphon)字符串，这有点象一个探测法（soundex）字符串，但是它英语更协调。
+            </p></li><li><p>
+              myfunc_double()返回在其参量中所有字符的ASCII值的和，除以其
+				参量长度之和。</p></li><li><p>
+              myfunc_int()返回其参量长度之和。</p></li><li><p>
+              sequence([const int]) 
+				返回一个序列，从给定数开始，若没有给定数则从1开始。
+            </p></li><li><p>
+              lookup() 返回对应主机名的IP数。</p></li><li><p>
+              reverse_lookup() 返回对应一个IP数的主机名。函数可以带'xxx.xxx.xxx.xxx'形式的一个单字符串
+				参量调用，要么带4个数字调用。
+            </p></li></ul></div><p>
+          一个可动态加载的文件应使用如下这样的命令编译为一个可共享的对象文件：
+        </p><pre class="programlisting">shell&gt; <strong class="userinput">gcc -shared -o udf_example.so udf_example.cc</strong>
+</pre><p>
+          如果你使用<span><strong class="command">gcc</strong>，你应该能用一个更简单的命令创建</span>udf_example.so 
+			：</p><pre class="programlisting">shell&gt; <strong class="userinput">make udf_example.so</strong>
+</pre><p>
+          通过运行MySQL源码树下sql里的如下命令，你可以容易地为你的系统决定正确的编译器选项：
+        </p><pre class="programlisting">shell&gt; <strong class="userinput">make udf_example.o</strong>
+</pre><p>
+          你应该运行一个类似于<strong class="command"><span>make</span></strong>所显示那样的编译命令，除了要在行尾附近删除-c选项，并在行尾加上加上 -o udf_example.so。（在某些系统上，你可能需要在命令行留着-c 
+			选项）。
+        </p><p>
+          编译好一个包含有UDF的共享目标后，你必须安装它并通知MySQL。从udf_example.cc编译一个共享目标文件产生一个名字类似于udf_example.so 
+			的文件（确切名字可能因平台而异）。把这个文件复制到 /usr/lib 
+			这样被你系统的动态（运行时）链接器搜索到的目录下，或者 把你放共享目标文件的目录添加到链接器配置文件（如，/etc/ld.so.conf 
+			）。</p><p>
+          动态链接器的名字时系统特定的（如，在FreeBSD上是<span><strong class="command">ld-elf.so.1 </strong>
+			，在</span>Linux上是
+          <span><strong class="command">ld.so</strong></span>，在Mac OS X上是<span><strong class="command">dyld</strong></span>
+          ）。查看一下你系统的文档，看看链接器的名字是什么及如何配置链接器。</p><p>
+          在许多系统上，你也可以设置环境变量LD_LIBRARY 或
+          LD_LIBRARY_PATH 指向你放UDF的目录。dlopen 
+			手册会告诉你，在你系统上用哪个变量名。你可以在<span><strong class="command">mysql.server</strong></span> 
+			或
+          <span><strong class="command">mysqld_safe</strong></span> 
+			启动脚本里设置这个然后重启
+          <span><strong class="command">mysqld</strong></span>。</p><p>
+          在一些系统上，配置动态链接器的<span><strong class="command">ldconfig</strong>不能识别不是以</span>lib<span>做名字开头的共享目标。在这种情况下，你应该把</span>udf_example.so 
+			改名为
+          libudf_example.so。
+        </p><p>
+          在Windows系统上，你可以通过下列步骤编译自定义函数：
+        </p><div class="orderedlist"><ol type="1"><li><p>
+              你需要获得BitKeeper source repository for
+              MySQL 5.1。 请参阅<a href="installing.html#installing-source-tree" title="2.8.3. Installing from the Development Source Tree"> 2.8.3节，“从开发源树安装”</a>。
+            </p></li><li><p>
+              在源数据仓里的VC++Files/examples/udf_example目录下，有名为udf_example.def,
+              udf_example.dsp, 和
+              udf_example.dsw&nbsp; 的文件。
+            </p></li><li><p>
+              在数据仓的sql目录下，复制
+              udf_example.cc 文件到 VC++Files/examples/udf_example
+              目录，并改其名为udf_example.cpp。</p></li><li><p>
+              Visual Studio VC++用打开 udf_example.dsw 
+				文件，用它把UDF编译为一个一般项目。
+            </p></li></ol></div><p>
+          共享目标文件安装完以后，为新函数信息修改
+          <span><strong class="command">mysqld</strong></span> ，做如下声明：
+        </p><pre class="programlisting">mysql&gt; <strong class="userinput">CREATE FUNCTION metaphon RETURNS STRING SONAME 'udf_example.so';</strong>
+mysql&gt; <strong class="userinput">CREATE FUNCTION myfunc_double RETURNS REAL SONAME 'udf_example.so';</strong>
+mysql&gt; <strong class="userinput">CREATE FUNCTION myfunc_int RETURNS INTEGER SONAME 'udf_example.so';</strong>
+mysql&gt; <strong class="userinput">CREATE FUNCTION lookup RETURNS STRING SONAME 'udf_example.so';</strong>
+mysql&gt; <strong class="userinput">CREATE FUNCTION reverse_lookup</strong>
+    -&gt;        <strong class="userinput">RETURNS STRING SONAME 'udf_example.so';</strong>
+mysql&gt; <strong class="userinput">CREATE AGGREGATE FUNCTION avgcost</strong>
+    -&gt;        <strong class="userinput">RETURNS REAL SONAME 'udf_example.so';</strong>
+</pre><p>
+          可以使用DROP
+          FUNCTION删除函数：
+        </p><pre class="programlisting">mysql&gt; <strong class="userinput">DROP FUNCTION metaphon;</strong>
+mysql&gt; <strong class="userinput">DROP FUNCTION myfunc_double;</strong>
+mysql&gt; <strong class="userinput">DROP FUNCTION myfunc_int;</strong>
+mysql&gt; <strong class="userinput">DROP FUNCTION lookup;</strong>
+mysql&gt; <strong class="userinput">DROP FUNCTION reverse_lookup;</strong>
+mysql&gt; <strong class="userinput">DROP FUNCTION avgcost;</strong>
+</pre><p>
+          CREATE FUNCTION 和 DROP
+          FUNCTION 声明更新mysql 数据库中的func 
+			系统表。函数名，类型和共享库名存进表中。你必须有mysql 数据库的INSERT 
+			和DELETE
+          权限来创建和移除函数。
+        </p><p>
+          你不能使用 CREATE FUNCTION 
+			去田间一个先前已经被创建的函数。如果你需要重新安装一个函数，你可以用DROP
+          FUNCTION移除它，然后再用CREATE
+          FUNCTION重新安装它。你可能会需要这么做，比如你重新编译新版本的函数以便<span><strong class="command">mysqld</strong></span>得到这个新版本。不然，服务器还继续使用旧的版本。
+        </p><p>
+          一个有效程序是已被
+          CREATE FUNCTION加载且没有被DROP FUNCTION移除的函数。所有有效函数在每次服务器启动时重新加载，除非你使用--skip-grant-tables选项来启动<span><strong class="command">mysqld</strong>。这种情况下，UDF的初始化将被跳过，UDF不可用。</span>
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="udf-security"></a>27.2.3.6. 自定义函数安全预防措施</h4></div></div></div><p>
+          MySQL 采取下列措施来防止误用自定义函数。
+        </p><p>
+          你必须有 INSERT 权限才能使用 CREATE FUNCTION 
+			及有
+          DELETE 权限才能使用
+          DROP FUNCTION。这是很必要的，因为这些声明在mysql.func表里添加合删除行。
+        </p><p>
+          除了对应主
+          xxx()函数的xxx 
+			符号，UDF应该至少定义一个符号。这些辅助符号对应 xxx_init(),
+          xxx_deinit(),
+          xxx_reset(),
+          xxx_clear() 和
+          xxx_add() 函数。<span><strong class="command">mysqld</strong></span> 
+			也支持一个控制仅有一个xxx符号的UDF是否被加载的--allow-suspicious-udfs。这个选项
+			默认是关，以防止从共享目标文件而不是从这些已包含的合法UDF加载的企图。如果你有仅含xxx符号的老版本UDF，以及不能重编译来包含辅助符号的老版本UDF，那就有必要选--allow-suspicious-udfs 
+			选项。否则，你应该避免打开这个选项。
+        </p><p>
+          UDF 
+			目标文件不能放在任意目录。它们必须位于动态链接器被配置来搜索到的一些系统目录。为强制执行这个限制并防止指定被动态链接器搜索到的目录之外的路径，MySQL在加载函数的时候检查在CREATE
+          FUNCTION 中指定的共享目标文件名，以及存在mysql.func表中的文件的路径分隔符。这防止通过直接操作mysql.func表指定非法路径名。有关UDF和运行时链接器，请参阅<a href="#udf-compiling" title="27.2.3.5. Compiling and Installing User-Defined Functions">27.2.3.5节，“编译和安装自定义函数”</a>。</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="adding-native-function"></a>27.2.4. 添加新的固有函数</h3></div></div></div><a class="indexterm" name="id3072655"></a><a class="indexterm" name="id3072665"></a><a class="indexterm" name="id3072675"></a><p>
+        下面介绍添加新固有函数的步骤。要注意你不能添加固有函数到二进制分发版里，因为这个步骤包含修改MySQL源代码。你必须从源码分发版自己编译MySQL。另外要注意，如果你把MySQL移植到另一个版本（比如新版本放出来的时候），你需要用新版本重复这个添加
+		步骤。
+      </p><p>
+        采取下列步骤来添加MySQL新的固有函数：</p><div class="orderedlist"><ol type="1"><li><p>
+            在定义函数名的lex.h文件中的sql_functions[]数列里添加一行。</p></li><li><p>
+            如果函数原型是简单的（只有零个，一个，二个或三个参量），你应该在lex.h中指定
+            SYM(FUNC_ARG<em class="replaceable">N</em>)
+            （其中<em class="replaceable">N</em> 是参量的个数）作为sql_functions[]数列中的第二个
+			参量，并添加一个在item_create.cc中创建函数目标的函数。可以看看
+            "ABS" 和
+            create_funcs_abs() 作为举例说明。</p><p>
+            如果函数原型是复杂的（举例，如果函数有多种参量），你应该给sql_yacc.yy添加两行。一行表示<span><strong class="command">yacc</strong>应该定义的预处理程序记号，（这应该在文件的开始添加）。然后定义函数
+			参数，并添加一个带这些参数的项到</span>simple_expr<span>分析规则中。举一个例子，你可以检查</span>
+            sql_yacc.yy 中所有出现的ATAN 
+			看看这个定义是什么样子的。
+          </p></li><li><p>
+            在 item_func.h中说明一个继承自Item_num_func 
+			还是
+            Item_str_func的类，取决于你的函数是返回一个数还是一个字符串。</p></li><li><p>
+            在 item_func.cc中是否添加下列说明之一，取决于你是定义一个数字函数还是字符函数：
+          </p><pre class="programlisting">double   Item_func_newname::val()
+longlong Item_func_newname::val_int()
+String  *Item_func_newname::Str(String *str)
+</pre><p>
+            如果你从任何标准项继承了你的目标（类似于Item_num_func），你或许只要定义这些函数中的一个，然后让父目标照管别的函数。比如，Item_str_func 
+			类定义了一个
+            val() 函数，它这个函数对::str()返回的值进行
+            atof()操作。</p></li><li><p>
+            你或许也定义了下列目标函数：</p><pre class="programlisting">void Item_func_newname::fix_length_and_dec()
+</pre><p>
+            这个函数至少应该计算基于给定参量的max_length。
+            max_length 是函数可能返回字符的最大个数。如果主函数不能返回 NULL值，这个函数也应该设置 maybe_null = 0。函数可以通过检查函数的maybe_null值来检查是否有函数
+			参量能返回NULL值。你可以看一下Item_func_mod::fix_length_and_dec 
+			作为典型的例子来说明这个问题。</p></li></ol></div><p>
+        所有函数都必须是线程安全的，换句话说就是，如果没有互斥体保护，不要在函数中使用任何全局或静态变量。
+      </p><p>
+        如果你想要从函数::val(), ::val_int()或::str()返回NULL，你应该设null_value为1,并返回0。
+      </p><p>
+        对于目标函数 ::str() 有一些需要而外考虑之处：:
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+            字符串参量*str 
+			提供一个字符串缓冲可以用来保持结果（更多关于字符串类型的信息请参阅 sql_string.h文件）。&nbsp;
+          </p></li><li><p>
+            如果结果为NULL，::str() 函数应该返回保持这个结果的字符串或(char*) 0。</p></li><li><p>
+            除非有绝对地需要，所有当前的字符串函数要避免分配内存！
+          </p></li></ul></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="adding-procedures"></a>
+		27.3.&nbsp;为MySQL添加新步骤</h2></div></div></div><div class="toc"><dl><dt><span class="section">
+	<a href="#procedure-analyse">27.3.1. 步骤分析</a></span></dt><dt><span class="section">
+	<a href="#writing-a-procedure">27.3.2. 编写步骤</a></span></dt></dl></div><a class="indexterm" name="id3073021"></a><a class="indexterm" name="id3073031"></a><a class="indexterm" name="id3073041"></a><p>
+      在MySQL中，你可以用C++定义一个步骤，在一个查询被发送到客户端之前访问和修改其中的数据。修改可以一行接一行地做，或者按照级别成组（GROUP）地做。</p><p>
+      我们创建一个范例步骤来演示你可以做的。
+    </p><p>
+      此外，我们推荐你看一下mylua。通过它你可以用&nbsp; LUA语言把运行时里的一个
+		步骤加载到<span><strong class="command">mysqld</strong>中。</span>
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="procedure-analyse"></a>27.3.1. 步骤分析</h3></div></div></div><p>
+        analyse([<em class="replaceable">max_elements</em>,[<em class="replaceable">max_memory</em>]])
+      </p><p>
+        这个步骤在sql/sql_analyse.cc定义，这个步骤检查你查询的结果，并且返回对此结果的一个分析：
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+            <em class="replaceable">max_elements</em> (默认值 256) 是analyse注意到每
+			列不同值的最高数目。analyse使用此 
+			参数来检查是否最优化的列的类型是ENUM类型。</p></li><li><p>
+            <em class="replaceable">max_memory</em> (默认值 8192) 是analyse在查找所有不同值时分配给每
+			列的最大内存数。i</p></li></ul></div><pre class="programlisting">SELECT ... FROM ... WHERE ... PROCEDURE ANALYSE([<em class="replaceable">max_elements</em>,[<em class="replaceable">max_memory</em>]])
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="writing-a-procedure"></a>
+			27.3.2.&nbsp;编写步骤</h3></div></div></div><p>
+        当前来说，相关的文档只有源码。
+      </p><p>
+        检查下列文件可以获得关于步骤的所有信息：
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+            sql/sql_analyse.cc
+          </p></li><li><p>
+            sql/procedure.h
+          </p></li><li><p>
+            sql/procedure.cc
+          </p></li><li><p>
+            sql/sql_select.cc
+          </p></li></ul></div></div></div></div><div><hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a href="http://dev.mysql.com/doc/mysql/en" target="_top">dev.mysql.com</a>。 
+		原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。&nbsp;
+    </p></div>
+</body></html>

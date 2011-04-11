@@ -1,0 +1,238 @@
+<!DOCTYPE html public "-//W3C//DTD HTML 4.01 Transitional//EN"     "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>MAXIMA</TITLE>
+<META http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="main.css" media="screen">
+</HEAD>
+
+<body>
+<H1>计算机代数系统 MAXIMA </H1>
+<p>计算机代数系统 (CAS) 已经成为应用数学不可缺少的工具，常见的计算机代数系统有 MAXIMA, Mathematica, Maple, MuPAD, Reduce, AXIOM, Derive 等。
+
+<H2>下载地址</H2>
+<p>MAXIMA 可以在 <a href="http://sourceforge.net/projects/maxima">http://sourceforge.net/projects/maxima</a> 免费下载。如果不是从源码安装，你需要下载一个 maxima 和一个 maxima-exec 包。推荐用 maxima-exec_gcl-*，因为用这个你不需要再安装 LISP 解释器了。
+
+<H2>MAXIMA 的历史</H2>
+<p>MAXIMA 是由 DOE-MACSYMA 演变而来的。MACSYMA 是 MIT 在 60年代末创造的一种 CAS。它是用 LISP 实现的。MACSYMA 早期的赞助包括 ARPA, DOE, ... 它运行于一台 ARPAnet 早期的PDP-10主机上。 一直以来 MACSYMA 都是世界上最大的 LISP 程序，用于公式推导和符号计算。
+
+<p>但是由于 MIT 1982年的时候决定把MACSYMA变成一个关闭源码的商业
+程序，帮助销售 LISP 机器。所以产生了很多 MACSYMA 的分支，比如 VAXIMA,
+MAXIMA, ... 
+商业利益的诱惑使得 MIT 从 Berkeley 收回了 50 份正在使用的
+MACSYMA 系统，引起很多人不满，使人想起了当年 AT&amp;T 在 UNIX 身上的作法。
+同时也直接导致了 Richard Stallman 从 MIT 辞职，创立自由软
+件基金会(FSF)和GNU项目，这样才会有我们今天使用的 GNU/Linux.
+
+<p>商业的 MACSYMA 是由 Symbolics Inc 销售的，后来是 Macsyma Inc，但是
+Macsyma Inc 在 1999 年突然不明原因的解体了，程序员各奔东西，众多的用户
+失去了支持。
+
+<p>现在的MAXIMA 是 MACSYMA 的一个 GPL 的衍生版本，它是自由软件。它就是 MACSYMA 未来的希望。虽然以前有 REDUCE, CAMAL, Mathlab-68, PM, ... 但是 MACSYMA 在Mathematica 和 Maple 出现以前显然是没有对手的。但是现在似乎Mathematica 和 Maple 已经挤垮了 MACSYMA。不过各有各的好处，你继续看下去就知道 MAXIMA 哪些地方比 Mathematica 和 Maple 好。
+
+<p>由于 MAXIMA 就是 MACSYMA 的一个版本。下文中我们的 "MAXIMA" 和 "MACSYMA" 两个单词可以互换。
+
+<H2>MAXIMA 简介</H2>
+<p>MAXIMA 是完全可以跟 Mathematica 和 Maple 比美的 CAS。实际上 Mathematica 和 Maple 的很多优点都是从 MACSYMA 身上学来的。
+
+<OL>
+<LI>严密的逻辑
+<p>Maple 和 Mathematica 经常做错的东西，MACSYMA 经常会给你一个合理的答复。当然它也会做错。小心！计算机代数系统给出的答案都有可能是错误的，不能完全依赖它们。
+
+<p>你可以试试积分： integrate(x^i,x) 和 
+Integrate 1/sqrt(2-2*cos(x)) from x=-pi/2 to pi/2。
+Mathematica 4.1 会立即给你一个不完全正确甚至错误的答案。
+
+<p>在这种情况下，MAXIMA 的表现要聪明的多，因为它毕竟有几十年的经验。MAXIMA 缺省是一个非常严密的系统，如果你要积分:
+<pre>
+integrate(x^i,x);
+</pre>
+<p>MAXIMA 会问你：
+<pre class=prompt>
+Is  i + 1  zero or nonzero?
+</pre>
+<p>这是因为现在我们不知道 i 是否等于 -1。如果 i=-1, 那么这个积分应该等于 LOG(x)，其中 LOG 是 MAXIMA 的自然对数符号。如果 i 不等于 -1，那么积分应该等于 
+<pre class=prompt>
+                                     i + 1
+                                    x
+                                    ------
+                                    i + 1
+</pre>		  
+
+<p>这样每次都要问你有时很麻烦，你也可以告诉它，没有特殊指明的情况下，假设积分里的符号都是正数：
+<pre>
+ASSUME_POS: True;
+</pre>
+<p>它以后遇到 integrate(x^i,x); 就会直接给你
+<pre class=prompt>
+                                     i + 1
+                                    x
+                                    ------
+                                    i + 1
+</pre>		  
+而不会再问你问题了。
+
+<LI>方便的推理
+<p>不仅严密，而且 MAXIMA 有比 Mathematica 和 Maple 方便的推理系统。你跟 MAXIMA 就像在对话：
+<p>看看这个例子：
+如果A&gt;=B, B&gt;=C, C&gt;=A, 那么 A=C 吗？
+
+<pre>
+(C1) ASSUME(A&gt;=B, B&gt;=C); 
+
+(D1)                           [A &gt;= B, B &gt;= C]
+(C2) ASSUME(C&gt;=A);
+
+(D2)                               [C &gt;= A]
+(C3) IS(EQUAL(A,B));
+
+(D3)                                 TRUE
+</pre>
+另一个例子: 
+如果 x&gt;y, 那么x^2 &gt;y^2 吗？
+<pre>
+(C4) ASSUME(x&gt;y);
+
+(D4)                                [x &gt; y]
+(C5) IS(x^2&gt;=y^2);
+
+MACSYMA was unable to evaluate the predicate:
+ 2     2
+x  &gt;= y
+ -- an error.  Quitting.  To debug this try DEBUGMODE(TRUE);)
+</pre>
+
+MAXIMA 不能回答你，因为 x,y 的符号未知。
+
+现在你告诉它 x 和 y 都是正数：
+<pre>
+(C6) assume(x&gt;0, y&gt;0);
+
+(D6)                            [x &gt; 0, y &gt; 0]
+(C7) is(x^2&gt;y^2);
+
+(D7)                                 TRUE
+</pre>
+这下它告诉你答案了。
+
+<p>它可以根据一些事实来化简式子。我们有这样一个复杂的式子：
+<pre>
+(C11) EXP:-K^2*L^2*M^2*N^2-K^2*L^2*N^2+K^2*M^2*N^2+K^2*N^2
+                     2  2  2  2    2  2  2    2  2  2    2  2
+(D11)             - K  L  M  N  + K  M  N  - K  L  N  + K  N
+</pre>
+
+我们还有两个简单的事实：
+<pre>
+(C12) EQ1:L^2+K^2 = 1
+                                   2    2
+(D12)                             L  + K  = 1
+(C13) EQ2:N^2-M^2 = 1
+                                   2    2
+(D13)                             N  - M  = 1
+</pre>
+
+让它根据这两个事实化简第一个式子：
+<pre>
+(C14) SCSIMP(EXP,EQ1,EQ2)
+</pre>
+
+得到一个很简单的答案：
+<pre>
+                                      4  4
+(D14)                                K  N
+</pre>
+
+<LI>抽象代数
+<p>在你还没有函数的定义时，你就可以声明这个函数的一些性质。这样你可以在很多时候大大简化结果。比如，你可以声明一个函数是奇函数：
+<pre>
+(C1) DECLARE(F,ODDFUN);
+
+(D1)                                 DONE
+(C2) F(-A); 
+(D2)                                -F(A)
+</pre>
+F(-A) 以后简化时就可以被当成 -F(A)。你再声明 F(X) 是 OUTATIVE:
+<pre>
+(C5) DECLARE(F,OUTATIVE);
+
+(D5)                                 DONE
+(C6) F(3*A);
+
+(D6)                                3 F(A)
+</pre>
+这样，F(3a) 可以被当成 3F(a)。综合以上两个事实，我们可以得到：
+
+<pre>
+(C7)  F(-A)+F(2*A)-F(A);
+
+(D7)                                   0
+</pre>
+<p>如果你告诉 MAXIMA，n 是一个整数，那么它就知道 sin(n pi) = 0.
+<pre>
+(C1) declare(n,integer);
+(D1) 			    DONE
+(C2) sin(n*%pi);
+(D2) 			     0
+</pre>
+
+
+<p>你甚至可以定义自己的操作符，它可以有中缀，前缀，后缀，nary等各种方式，可以有任意的优先级，可以设定它是左结合还是右结合。比如我们来定义一个NARY操作 "&amp;"，它的优先级是180（缺省），它是右结合的。
+<pre>
+(C6) NARY("&");
+
+(D6)                                  "&"
+(C7) declare("&",RASSOCIATIVE);
+
+(D7)                                 DONE
+(C8) x&y&a&b;
+
+(D8)                          x & (y & (a & b))
+</pre>
+
+<LI>超强的扩展能力
+<p>另外，MAXIMA 是可以用自己的语言或者 LISP 进行扩展的。比如你可以用 recur 
+包来推导递推关系：
+
+<pre>
+(C8) load(recur);
+
+(D8)          /usr/share/maxima/5.9.0rc3/share/algebra/recur.mac
+</pre>
+
+<p>现在我们来解一个“快速排序”的时间复杂度分析里出现的简单的递推关系：
+<pre>
+T(0)=0
+T(N)=2*T(N-1)+1
+</pre>
+
+<P>这样输入到 MAXIMA:
+<pre>
+(C14) CHAR(T(N+1)-2*T(N),1,T,N,1,[T(0)=0]);
+
+                                         N
+(D14)                            T(N) = 2  - 1
+</pre>
+
+<p>这个 recur 实际上只是一个200多行的小程序，就可以帮你处理线性递推关系，
+生成函数……
+
+<p>MAXIMA 有函数式的程序语言，它比通常的过程式语言要强大的多。你甚至可以接触到它底层的 LISP。Mathematica 的语法就是跟 MACSYMA 学来的。
+
+<p>MAXIMA 完全是用 LISP 语言写的，所以它继承了 LISP 语言天生的特征。它分为上下两层，上面一层叫做 MAXIMA level，下面一层叫做 LISP level。上下两层是相通的，如果你懂得 LISP，你可以随时按 Ctrl-C 进入到 LISP 的环境，定义一个函数，然后退回到 MAXIMA 层调用那个函数。当然在 LISP level 还有很多工作可以做。你也可以在 MAXIMA level 定义了函数，然后在 LISP level 进行调用。
+
+
+<H2>资料</H2>
+<p>MAXIMA 跟商业的 MACSYMA 的功能基本相同。如果你有商业的 MACSYMA 那就可以用它的手册。如果你没有，就只好看 MAXIMA 自带的 manual 了。那个 manual 不容易看懂。这里有一个 MAXIMA book，是从MAXIMA的 cvs 下过来的 TeX 文件生成的。可以作为参考。
+<p>点击这里下载 <a href="src/maximabook.pdf">MAXIMA book</a>。
+
+
+<p>更多的 MAXIMA 资料可以点击<a
+href="wiki/MaximaProblems.html">我的 MAXIMA WiKi 页</a>。
+
+<p><a href="comp.html">返回</a>
+
+
+</body>
+</html>
+

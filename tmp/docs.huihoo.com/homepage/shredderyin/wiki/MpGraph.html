@@ -1,0 +1,274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+  <head>
+    <title>mpgraph 如何能够在 setrange 之后只显示曲线中范围之内的部分？</title>
+    <meta name="generator" content="emacs-wiki.el">
+    <meta http-equiv="Content-Type"
+	  content="text/html; charset=gb2312">
+    <link rev="made" href="mailto:webmaster@wangyin.com">
+    <link rel="home" href="WelcomePage.html">
+    <link rel="index" href="WikiIndex.html">
+    <LINK rel="stylesheet" href="../main.css" media="screen">
+  </head>
+  <body>
+    <h1>mpgraph 如何能够在 setrange 之后只显示曲线中范围之内的部分？</h1>
+    <!-- Page published by Emacs Wiki begins here -->
+
+
+
+
+
+
+<h2>问题的提出</h2>
+
+<p>
+这个问题是 "Ma Yue" <<a href="mailto:mayue@ee.tokushima-u.ac.jp">mayue@ee.tokushima-u.ac.jp</a>> 提出来的。
+
+</p>
+
+<p>
+他想把一个 <a href="../src/pd1_tc1d6_V8_E10_c">数据文件</a> 绘制出来，
+但是只显示其中从 (-0.15, 0) 到 (0.1, 1.1) 之间的部分。他写的
+<a href="MetaPost.html">MetaPost</a> 代码如下：
+
+</p>
+
+<pre class="example">
+input graph;
+fs = 1.5;
+
+beginfig(1)
+    draw begingraph(10cm,10cm);
+    setrange(-0.15,0, 0.1,1.1);
+    glabel.lft(btex $I_{\mathrm{ref}}$ etex,OUT) scaled fs rotated 90;
+    glabel.bot(btex $\kappa$ etex,OUT) scaled fs;
+    gdraw(&quot;pd1_tc1d6_V8_E10_c&quot;);
+    endgraph;
+endfig;
+end
+</pre>
+
+<p>
+结果得到的图形是这个：
+
+</p>
+
+<p>
+<img src="../images/metapost-outrange.png" alt="../images/metapost-outrange.png">
+
+</p>
+
+<p>
+可以看到，数据文件里本来有点落在他要求的 range 之外。
+但是 graph.mp 本来提供的函数是没有办法不画某些点的。所以我们
+必须采取其它办法。
+
+</p>
+
+<p>
+我们可以把 endgraph 拆开来达到这个目的。
+
+</p>
+
+<h2>分析</h2>
+
+<h3>Gfin_ 和 Gxyscale</h3>
+
+<p>
+首先我们要明确一下两个变量的地位：
+
+</p>
+
+<dl>
+<dt>Gfin_</dt>
+<dd>
+是一个 picture 类型变量。它实际上就是我们画到 graph
+里的图形。
+</dd>
+<dt>Gxyscale</dt>
+<dd>
+就是当前 graph 的 bouding box 的大小。它是一个宏，
+它被定义为：
+</dd>
+</dl>
+
+<pre class="example">
+def Gxyscale = xscaled X_.gdim yscaled Y_.gdim enddef;
+</pre>
+
+<p>
+所以我们只要用
+
+</p>
+
+<pre class="example">
+unitsquare Gxyscale
+</pre>
+
+<p>
+就可以得到一个当前 Gfin_ 的 bounding rectangle.
+
+</p>
+
+<h3>endgraph 做了什么？</h3>
+
+<p>
+我们来分析一下，graph.mp 的 endgraph。它的代码如下：
+
+</p>
+
+<pre class="example">
+def endgraph =
+  if Gneedgr_: autogrid(otick.bot, otick.lft); fi
+  if Gneedfr_: frame; fi
+  setcoords(linear,linear);
+  interim truecorners:=1;
+  for b=bbox Gfin_:
+    setbounds Gfin_ to b;
+    for i=0 step .5 until 3.5:
+      if known Ggl_[i]: addto Gfin_ also Ggl_[i] shifted point i of b; fi
+    endfor
+  endfor
+  Gfin_
+  endgroup
+enddef;
+</pre>
+
+<p>
+通常在 endgraph 被调用之前，所有的数据点都已经由 gdraw 记录
+ Gfin_ 中。所有的 glable 做的标记，记录到了Ggl_[] 数组里。
+
+</p>
+
+<p>
+当 endgraph 被调用时，它首先用 autogrid 和 frame 两条语句把
+grid 和 frame 信息记录到下来. 但是 grid 和 frame 必须在 
+setcoords 被调用时才会真正被加到 Gfin_ 中，而且是以当前的
+setrange 设定的范围为界限的。
+
+</p>
+
+<p>
+所以 endgraph 调用了 setcoords, 这样 grid 和 frame 被加入到
+了 Gfin_ 中。
+
+</p>
+
+<p>
+然后 endgraph 一一把 label 加到 Gfin_。最后返回 Gfin_ 给
+draw。于是一个数据图就被画出来了。
+
+</p>
+
+<p>
+这里总结一下就是：
+
+</p>
+
+<ol>
+<li>所有的数据绘图操作 gdraw, glable, autogrid, frame, ... 实
+   际上都是以当前的 setrange() 设定的范围在操作。但是这些操
+   作并没有被加到 Gfin_ 中。必须等到 setcoords 被调用。
+</li>
+<li>一旦 setcoords 被调用，它就会把数据点，grid, frame 都加到 
+   Gfin_ 中。但是没有加入标记为 OUT 的 label.
+</li>
+<li>标记为 OUT 的 label 都被记录到了 Ggl_[] 数组里，它们由
+   endgraph 的一个循环加入到 Gfin_.
+</li>
+</ol>
+
+<p>
+这样我的解决方案就是这样：
+
+</p>
+
+<pre class="example">
+input graph;
+
+fs = 1.5;
+
+beginfig(1)
+
+  draw begingraph(10cm,10cm);    
+
+  % 首先调用 setrange 设定绘图范围
+  setrange(-0.15, 0, 0.1, 1.1);
+
+  % 用 gdraw 把数据点路径记录下来
+  gdraw(&quot;pd1_tc1d6_V8_E10_c&quot;);
+
+  % 把数据点绘制到 Gfin_ 中成为一个曲线，然后把 Gfin_ 超出范
+  % 围的部分用 clip 切掉
+  setcoords(linear,linear);
+  clip Gfin_ to unitsquare Gxyscale;
+
+  % setcoords 会忘记当前的 range, 必须重新设定
+  setrange(-0.15, 0, 0.1, 1.1);
+
+  % 然后把 grid 信息记录下来
+  autogrid(otick.bot, otick.lft); 
+
+  % 把 frame 信息记录下来
+  frame;
+  
+  % 再次调用 setcoords. grid 和 frame 都被加到 Gfin_
+  setcoords(linear,linear);
+
+  % 记录两个外围 label
+  glabel.lft(btex $I_{\mathrm{ref}}$ etex,OUT) scaled fs rotated 90;
+  glabel.bot(btex $\kappa$ etex,OUT) scaled fs;
+
+  % 把 label 都加到 Gfin_
+  interim truecorners:=1;
+  for b=bbox Gfin_:
+    setbounds Gfin_ to b;
+    for i=0 step .5 until 3.5:
+      if known Ggl_[i]: addto Gfin_ also Ggl_[i] shifted point i of b; fi
+    endfor
+  endfor
+
+  % 返回 Gfin_ 给 draw
+  Gfin_
+  endgroup
+
+endfig;
+end
+</pre>
+
+<p>
+最后的 endgroup 是由于 begingraph 里实际上有一个 begingroup
+跟它配对。
+
+</p>
+
+<p>
+于是我们绘制的图形如下：
+
+</p>
+
+<p>
+<img src="../images/metapost-inrange.png" alt="../images/metapost-inrange.png">
+</p><!-- Page published by Emacs Wiki ends here -->
+    <div class="navfoot">
+    <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：2003-09-16</span>
+	  </td>
+	  <td width="60%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">王垠的主页</a> / <a href="WelcomePage.html">WiKi首页</a>/<a href="WikiIndex.html">索引</a>/<a href="wiki_frame.html" target=_parent>框架页</a>/<a href="MpGraph.html" target=_parent>取消框架</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    
+	  </td>
+	</tr>
+      </table>
+    </div>
+
+
+  </body>
+</html>

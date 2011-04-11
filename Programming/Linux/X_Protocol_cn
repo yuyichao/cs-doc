@@ -1,0 +1,3411 @@
+一 协议格式
+
+1、请求格式
+    每个请求都以4个字节为单位表示。每个请求都含有一个8位主opcode和16位的length
+域，每个请求中有4个字节的头部（其中包括主opcode、length域及数据字节），其后有零
+个或多个字节的数据。length域定义了请求（包括头部）的总长度。请求中的length必须
+等于包含请求的最小长度。若指定的length小于或大于所需的长度，则会产生错误。请求
+中不用的字节不必为零。主操作码128到255是保留作为扩展使用的。扩展是打算用来装载
+多个请求，所以扩展请求一般有存储在请求头部中第二数据字节中的次opcode。但核心协
+议没有定义扩展请求中次opcode和其他字段的位置与解释。给定连接上的每一个请求均被
+隐含地赋予一个序号，此序号从1开始编号，它用于回答、错误及事件。
+
+2、回答格式
+    每个回答都以4个字节为单位表示。每个回答中含有一个32位length域。它由32字节和
+随后的零个或多个数据字节组成。随后的数据长度由length指定。回答中的不用字节不必都
+为零。每个回答中有对应请求的序号的低16位。
+
+3、错误格式
+    错误报告的长度为32字节。每个错误中有8位的错误码。错误码128至255保留作为扩展。
+错误中有不成功请求的主、次opcode和请求序号的低16位。对于以下的错误（参见第4节）：
+Colormap, Cursor, Drawable, Font, Gcontext, IDChoice, Pixmap 及 Window，返回失
+败资源的标识。对于Atom错误，返回失败的原子。对于Value错误，返回失败值（value）。
+其他核心错误不返回额外的信息。错误中不用的字节不必为零。
+
+4、事件格式
+    事件的长度为32字节。事件中的不用字节不必位零。事件中有一个8位的类型码。若事
+件由SendEvent请求产生，则设置类型码中的最高位。事件码64至127保留作为扩展使用，但
+核心协议没有定义选择此类事件的方法。每个核心事件（除KeymapNotify外）中有服务器处
+理的客户所发出最后请求的序号的低16位。
+
+二 语法约定
+
+本文档余下的部分使用下面的语法约定：
+●   {...} 包含一组备选项
+●   [...] 包含一组结构（struct）成分
+●   一般地，类型（TYPE）全部大写，备选值以大写字母开头。
+●   第9节的请求按下述格式描述：
+
+    请求名：
+        arg1: type1
+        ...
+        argN: typeN
+    ->
+        result: type1
+        ...
+        resultM: typeM
+
+        Errors: kind1, ... , kindk
+
+        说明。
+
+    若在说明中无“->”，则表示该请求无回答（是异步的），但仍报告错误。若有->+，则
+表示对单个请求可能会产生一个或多个回答。
+●   第11节的事件按如下的格式说明：
+
+        事件名
+	value1: type1
+	...
+	valueN: typeN
+
+	说明。
+
+三 常见类型
+
+  名字                  值
+LISTofFOO    形如LISTofFOO的类型名意指类型为FOO的元素的可数表。length域的长度
+	     是可变的（它不必同FOO一样），并且在某些情况下，length可以是隐含
+	     的。附录B中有充分的解释。除非明确指出，零长度表也是合法的。
+BITMASK      类型BITMASKHE 和 LISTofVALUE比较特殊。许多请求中包含形如
+LISTofVALUE  value-mask: BITMASK
+    	     value-list: LISTofVALUE
+             的参数。其用途是允许客户指定可选参数的分散集合的子集。value-mask
+             指出可提供哪些参数，每个这样的参数与一个唯一的位相对应。BITMASK表
+             示中的位数一般比所定义的参数个数多。value-mask中的不用位必须为零
+             （否则服务器产生Value错误）。对于value-mask中由最低位至最高位的每
+             个值为1的位，value-list中都有一个对应的值。每个值用4字节表示，但实
+             际的值仅占用所需的最低字节。不用字节的值不产生影响。
+OR           形如T1 or...or T2的类型意指所表示类型的并集。给出单元素类型时可仅
+             给其元素而不需括号。
+WINDOW	     32位值（最高三位保证为0）
+PIXMAP	     32位值（最高三位保证为0）
+CURSOR	     32位值（最高三位保证为0）
+FONT	     32位值（最高三位保证为0）
+GCONTEXT     32位值（最高三位保证为0）
+COLORMAP     32位值（最高三位保证为0）
+DRAWABLE     WINDOW 或 PIXMAP
+FONTABLE     FONT 或 GCONTEXT
+ATOM         32位值（最高三位保证为0）
+VISUALID     32位值（最高三位保证为0）
+VALUE	     32位值（仅在LISTofVALUE中使用）
+BYTE	     8位值
+INT8	     8位有符号值
+INT16	     16位有符号值
+INT32	     32位有符号值
+CARD8	     8位无符号值
+CARD16	     16位无符号值
+CARD32	     32位无符号值
+TIMESTAMP    CARD32
+BITGRAVITY   { Forget, Static, NorthWest, North, NorthEast, West, Center,
+               East, SouthWest, South, SouthEast }
+WINGRAVITY   { Unmap, Static, NorthWest, North, NorthEast, West, Center,
+               East, SouthWest, South,southEast }
+BOOL         { True, False }
+EVENT        { KeyPress, KeyRelease, OwerGrabButton, ButtonPress,
+               ButtonRelease, EnterWindow, LeaveWindow, PointerMotion,
+               PointerMotionHint, Button1Motion, Button2Motion, Button3Motion,
+               Button4Motion, Button5Motion, ButtonMotion, Exposure,
+               VisibilityChange, StuctureNotify, ResizeRedirect,
+               SubstructureNotify, SubstructureRedirecrt,FocusChange,
+               PropertyChange, ColormapChange, KeymapState }
+POINTEREVENT { ButtonPress, ButtonRelease, EnterWindow, LeaveWindow,
+               PointerMotion, PointerMotionHint, Button1Motion, Button2Motion,
+               Button3Motion, Button4Motion, Button5Motion, ButtonMotion,
+               KeymapState }
+DEVICEEVENT  { KeyPress, KeyRelease, ButtonPress, ButtonRelease, PointerMotion,
+               Button1Motion, Button2Motion, Button3Motion, Button4Motion,
+               Button5Motion, ButtonMotion }
+KEYSYM       32位值（最高三位保证为0）
+KEYCODE      CARD8
+BUTTON       CARD8
+KEYMASK      { Shift, Lock, Control, Mod1, Mod2, Mod3, Mod4, Mod5 }
+BUTMASK      { Button1, Button2, Button3, Button4, Button5 }
+KEYBUTMASK   KEYMASK 或 BUTMASK
+STRING8      LISTofCARD8
+STRING16     LISTofCHAR2B
+CHAR2B       [byte1,byte2: CARD8]
+POINT        [x,y: INT16]
+RECTANGLE    [x,y: INT16,
+              width,height: CARD16]
+ARC          [x,y: INT16,
+              width,height: CARD16,
+              angle1,angle2: INT16]
+HOST         [family: { Internet, DECnet, Chaos }
+              address: LISTofBYTE]
+
+    RECTANGLE中的坐标[x,y]指出左上角坐标。
+    STRING16中之所以包含大量的字符是因为它们由用于索引二维矩阵的二字节组成。因
+此使用CHAR2B而不使用CARD16。它对应JIS／ISO的2字节索引的方法。最好的情况是多数字
+体可用2字节矩阵索引方法定义。对于使用线性索引方法构造的大量字体，CHAR2B 可解释
+为一个16位数，其中byte1为最高字节。因此，由于服务器按字节交换CHAR2B数，客户应发
+送这样的16位字符值且以最高字节开头。
+    HOST地址中的length、format、interpretation随族而定（参见ChangeHost请求）。
+
+四 错误
+
+    一般地，当请求以错误结束时，此请求无副作用（即，系统没有部分被执行）。例外
+情况是 ChangeWindowAttributes, ChangeGC, PolyText8, PolyText16, FreColors,
+StoreColors 及 ChangeKeyboardControl。
+    下面是各种请求返回的错误码：
+
+  错误                  说明
+Access          试图捕获已被其他客户捕获的键/按钮组合。
+	  	试图释放未被客户分配的色彩表项，或者试图释放
+	  	所有项都可写的色彩表中的项。
+	  	试图将数据存入只读或未分配的色彩表项。
+	  	试图由非本机客户（或授权客户）修改“存取控制表”。
+	  	试图选择某时刻只能有一个客户选择且已有客户选择的事件类型。
+Alloc     	服务器不能分配请求的资源。请注意，请求中明显出现的Alloc错误
+	  	仅指出较粗的错误分类，它不表示在服务过程中服务器用尽分配空间。
+	  	当服务器用完分配空间时，Alloc的语义未定义。但服务器应对由于这
+	  	个原因而产生影响的任何请求产生一个 Alloc 错误，因此，客户应作
+	  	好准备接收此类错误并处理或放弃它们。
+Atom		用于 ATOM 参数的值不在已定义的 ATOM 中。
+Colormap	用于 COLORMAP 参数的值不在已定义的 COLORMAP 中。
+CURSOR		用于 Cursor 参数的值不在已定义的 Cursor 中。
+Drawable	用于 Drawable 参数的值不在已定义的 WINDOW 或 PIXMAP 中。
+Font		用于 FONT 参数的值不在已定义的 FONT 中。
+		用于 FONTABLE 参数的值不在已定义的 FONT 或 GCONTEXT 中。
+GContext	用于 GCONTEXT 参数的值不在已定义的 GCONTEXT 中。
+IDChoice	选为资源标识符的值不在指定给客户的范围之内或者已被使用。
+Implementation  服务器没有实现请求的某些方面。对于核心请求产生此错误的服务器
+		是有缺陷的。因此，对于任何请求不引出此错误，但客户应作好准备
+		接收此错误并处理或放弃它们。
+Lenth		请求的长度小于或大于包含参数的最小长度。
+Match		InputOnly 窗口用作 DRAWABLE。
+		在图形请求中，GCONTEXT 参数与目标 DRAWABLE 的根和深度不相同。
+		某些参数（或参数对）其类型和范围正确，但与请求所要求的不匹配。
+Name		指定的字体或颜色名不存在。
+Pixmap          用作PIXMAP参数的名不在已定义的 PIXMAP 中。
+Request         主或次 opcode 未指定合法请求。
+Value		某些数值超出请求所能接收的范围之外。一般地除非专门指定参数的
+		范围，请求接收参数类型的全范围。定义一组可选项的参数一般会产
+		生此错误（由于编码越界）。
+Window          用作 WINDOW 参数的值不在已定义的 WINDOW 中。
+
+    注意：当用一组“固定备选项联合”扩展参数类型时，Atom、Colormap、Cursor、
+Drawable、Font、GContext、Pixmap 及 Window 错误也会使用。例如，<WINDOW或
+PointerRoot或 None>。
+
+五 键盘
+
+    KEYCODE 表示物理（或逻辑）键盘。键码的范围是8到255。键码值无内在信息，但服
+务器实现者可能希望在这些值中编码几何信息（如矩阵），并以依赖于服务器的方式进行
+解释。不能使用协议修改键与键码间的映射关系。
+    KEYSYM 是键盘上的符号编码。已定义的KEYSYM集有 拉丁1、拉丁2、拉丁3、拉丁4、
+日语假名、阿拉伯、Cryllic、希腊、技术、专业、出版业符号、APL、希伯来文及键盘上
+的常用符号（回车、Help、Tab等）。设置了最高位（第29位）的 KEYSYM保留给商业销售
+者专用。
+
+    每个KEYCODE都与KEYSYM相关，表长随KEYCODE变化。此表的目的是传递对应键上的符
+号集。如果列表（除去末尾的 NoSymbol 条目）是一个单一的 KEYSYM "K"，那么这个列表
+是
+按约定，若表中只有单个KEYSYM且此KEYSYM是数字字母，并与大小写分别相关，则
+把此表作为具有大小写KEYSYM的二元素表进行处理。例如，若表中有大写A的单个KEYSYM，
+则客户应把作为含有一对元素（第一个KEYSYM为小写a，第二个KEYSYM为大写A）的表处理。
+    对于 KEYCODE，一般选择表中的第一个 KEYSYM 作为无修饰符时按下 KeyPress 的解
+释。表中的第二个 KEYSYM 作为 Shift 有效时或 LOCK 修饰符有效且 LOCK 解释为
+ShiftLock 时的解释。当 Lock 修饰符有效且解释为 CapsLock 时，则在选择 KEYSYM 时
+应施用 Shift 修饰符。但是，若 KEYSYM 时小写字母，则应使用对应的大写KEYSYM。对
+CapsLock 还有其他解释。例如，当第一个 KEYSYM 是小写字母，且第二个 KEYSYM 是对
+应的大写字母时，CapsLock 可看作 ShiftLock。协议不解释表中前二个 KEYSYM 后的
+KEYSYM。虽然键盘符号的空间几何位置由销售商制定，但在 KEYSYM 表中不按次序定义键
+盘符号的几何位置。
+    名为LOCK的KEYSYM修饰符被映射为一个CapsLock键，具体选择哪一个，由应用程序
+和/或用户确定，但最好依据与对应KEYCODE相关的KEYSYM确定。
+
+////// 我做的修补工作，没有完成，大家一起来完成他。:)  --  gogoliu at china linux forum
+
+A list of KEYSYMs is associated with each KEYCODE. 
+一个 KEYSYM 列表关联到一个 KEYCODE。
+The list is intended to convey the set of symbols on the corresponding key. 
+此表的目的是传递相应键的符号集。
+If the list (ignoring trailing NoSymbol entries) is a single KEYSYM ‘‘K’’, then the list is treated as if it were the list ‘‘K NoSymbol K NoSymbol’’. 
+如果此表（不计末尾的 NoSymbol 条目）是一个单 KEYSYM “K”，那么该列表被视为型如“K NoSymbol K NoSymbol”的列表。
+If the list (ignoring trailing NoSymbol entries) is a pair of KEYSYMs ‘‘K1 K2’’, then the list is treatedas if it were the list ‘‘K1 K2 K1 K2’’. 
+如果此表（不计末尾的 NoSymbol 条目）是一个 KEYSYM 对 “K1 K2”，那么该列表被视为型如“K1 K2 K1 K2”的列表。
+If the list (ignoring trailing NoSymbol entries) is a triple of KEYSYMs ‘‘K1 K2 K3’’, then the list is treated as if it were the list ‘‘K1 K2 K3 NoSymbol’’.
+如果此表（不计末尾的 NoSymbol 条目）是一个 KEYSYM 三元组 “K1 K2 K3”，那么该列表被视为型如“K1 K2 K3 NoSymbol”的列表。
+When an explicit ‘‘void’’ element is desired in the list, the value VoidSymbol can be used.
+当一个显式“void”元素出现在列表中，VoidSymbol 值可以使用。
+The first four elements of the list are split into two groups of KEYSYMs. 
+列表开头的4个元素分成两组 KEYSYM。
+Group 1 contains the first and second KEYSYMs, Group 2 contains the third and fourth KEYSYMs. 
+组1包含了第一、第二个 KEYSYM，组2包含了第三、第四个 KEYSYM。
+Within each group, if the second element of the group is NoSymbol, then the group should be treated as if the second element were the same as the first element, except when the first element is an alphabetic KEYSYM ‘‘K’’ for which both lowercase and uppercase forms are defined. 
+在每个组中，如果该组的第二个元素是 NoSymbol，那么该组应该视为第二个元素与第一个元素相同，除非当第一个元素是一个小写字母和大写字母都定义了的字母KEYSYM "K"。
+In that case, the group should be treated as if the first element were the lowercase form of ‘‘K’’ and the second element were the uppercase form of ‘‘K’’.
+在那种情况下，该组应该视为第一个元素是"K"的小写形式，第二个元素是 "K" 的大写形式。
+The standard rules for obtaining a KEYSYM from a KeyPress event make use of only the Group 1 and Group 2 KEYSYMs; no interpretation of other KEYSYMs in the list is defined. 
+从一个 KeyPress 事件中得到一个 KEYSYM 的标准规则是利用组1和组2 KEYSYM，不解释列表中的其它 KEYSYM。
+The modifier state determines which group to use. 
+修饰符状态决定了使用哪一组。
+Switching between groups is controlled by the KEYSYM named MODE SWITCH, 
+组的转换由 KEYSYM 由称为 MODE SWITCH 的 KEYSYM 控制，
+by attaching that KEYSYM to some KEYCODE and attaching that KEYCODE to any one of the modifiers Mod1 through Mod5. 
+利用附加那个 KEYSYM 到一些 KEYCODE 和附加那个 KEYCODE 到从 Mod1 到 mod5 的修饰符中的某一个。
+This modifier is called the ‘‘group modifier’’. 
+修饰符被称为“组修饰符”。
+For any KEYCODE, Group 1 is used when the group modifier is off, and Group 2 is used when the group modifier is on.
+对于任何 KEYCODE，当组修饰符无效时将使用组1，组修饰符有效时将使用组2。
+The Lock modifier is interpreted as CapsLock when the KEYSYM named CAPS LOCK is attached to some KEYCODE and that KEYCODE is attached to the Lock modifier. 
+当名为 CAPS LOCK 的 KEYSYM 附加到某些 KEYCODE 并且那个 KEYCODE 附加到 Lock 修饰符，Lock 修饰符解释为 CapsLock。
+The Lock modifier is interpreted as ShiftLock when the KEYSYM named SHIFT LOCK is attached to some KEYCODE and that KEYCODE is attached to the Lock modifier. 
+当名为 SHIFT LOCK 的 KEYSYM 附加到某些 KEYCODE 并且那个 KEYCODE 附加到 Lock 修饰符，Lock 修饰符解释为 ShiftLock。
+If the Lock modifier could be interpreted as both CapsLock and ShiftLock, the CapsLock interpretation is used.
+如果 Lock 修饰符可以解释为 CapLock 和 ShiftLock，CapsLock 译码会被使用。
+The operation of ‘‘keypad’’ keys is controlled by the KEYSYM named NUM LOCK, by attaching that KEYSYM to some KEYCODE and attaching that KEYCODE to any one of the modifiers Mod1 through Mod5. 
+小键盘的键的操作由名为 NumLock 的 KEYSYM控制，利用附加那个 KEYSYM 到某些 KEYCODE 和附加那个 KEYCODE 到从 Mod1 到 mod5 的修饰符中的某一个。
+This modifier is called the ‘‘numlock modifier’’. 
+这个修饰符被称为 “NumLock 修饰符”。
+The standard KEYSYMs with the prefix KEYPAD in their name are called ‘‘keypad’’ KEYSYMs; 
+名字中以 KEYPAD 开头的标准 KEYSYM 被称为"keypad" KEYSYM；
+these are KEYSYMS with numeric value in the hexadecimal range #xFF80 to #xFFBD inclusive. 
+那些 KEYSYM 包含十六进制范围 #xFF80 到 #xFFBD 内的数字值。
+In addition, vendor-specific KEYSYMS in the hexadecimal range #x11000000 to #x1100FFFF are also keypad KEYSYMs.
+此外，从 #x11000000 到 #x1100FFFF 十六进制范围内商家定义的 KEYSYM 同时也是小键盘 KEYSYM。
+Within a group, the choice of KEYSYM is determined by applying the first rule that is satisfied from the following list:
+在一组中，KEYSYM 的选择由首先适用于如下规则第一条规则决定。
+
+●   NumLock 修饰键有效并且第二个 KEYSYM 是一个小键盘 KEYSYM。在这种情况下，
+    如果 Shift 修饰键有效或者 Lock 修饰键有效并且解释为 CapsLock，那么使用
+    第一个 KEYSYM；否则，使用第二个 KEYSYM。
+●   Shift 修饰键和 Lock 修饰键无效。在这种情况下，使用第一个 KEYSYM。
+●   Shift 修饰键无效，并且 Lock 修饰键有效并且解释为 CapsLock。在这种情况下，
+    使用第一个 KEYSYM，但如果 KEYSYM 是小写字母，那么就使用相应的大写字母的
+    KEYSYM。
+●   Shift 修饰键有效或者 Lock 修饰键有效并且解释为 CapsLock。在这种情况下，使
+    用第二个 KEYSYM，单如果 KEYSYM 是小写字母，那么就使用相应的大写字母 KEYSYM。
+●   Shift 修饰键有效或者 Lock 修饰键有效并且解释为 ShiftLock，或者两者都有效。
+    在这种情况下，使用第二个 KEYSYM。
+    服务器不直接使用 KEYCODE 与 KEYSYM 之间的映射关系。保存它仅供客户读写之用。
+
+六 指针
+
+    案钮从1开始编号。
+
+七 预定义原子
+
+    预定义原子不是严格必须的，且不一定在所有的环境中有用，但它们可取消多数应用
+程序中InternAtom请求。预定义是指这些原子有一个数值，而不是具有所需的语义。核心
+协议对预定义原子名没有给出语义，但是在其它的X联盟标准中定义了规定的语义，例如
+“内部客户通信约定手册”和“X逻辑字体描述约定”。
+    下列名字具有预定义原子值。其中的大小写是有区别的。
+
+PRIMARY 	1	WM_HINTS 		35
+SECONDARY 	2	WM_CLIENT_MACHINE 	36
+ARC 		3	WM_ICON_NAME 		37
+ATOM 		4	WM_ICON_SIZE 		38
+BITMAP 		5	WM_NAME 		39
+CARDINAL 	6 	WM_NORMAL_HINTS 	40
+COLORMAP 	7	WM_SIZE_HINTS 		41
+CURSOR 		8 	WM_ZOOM_HINTS 		42
+CUT_BUFFER0	9 	MIN_SPACE 		43
+CUT_BUFFER1 	10 	NORM_SPACE 		44
+CUT_BUFFER2 	11 	MAX_SPACE 		45
+CUT_BUFFER3 	12 	END_SPACE 		46
+CUT_BUFFER4 	13 	SUPERSCRIPT_X 		47
+CUT_BUFFER5 	14 	SUPERSCRIPT_Y 		48
+CUT_BUFFER6 	15 	SUBSCRIPT_X 		49
+CUT_BUFFER7 	16 	SUBSCRIPT_Y 		50
+DRAWABLE 	17 	UNDERLINE_POSITION 	51
+FONT 		18 	UNDERLINE_THICKNESS 	52
+INTEGER 	19 	STRIKEOUT_ASCENT 	53
+PIXMAP 		20 	STRIKEOUT_DESCENT 	54
+POINT 		21 	ITALIC_ANGLE 		55
+RECTANGLE 	22 	X_HEIGHT 		56
+RESOURCE_MANAGER 23 	QUAD_WIDTH 		57
+RGB_COLOR_MAP 	24 	WEIGHT 			58
+RGB_BEST_MAP 	25 	POINT_SIZE 		59
+RGB_BLUE_MAP 	26 	RESOLUTION 		60
+RGB_DEFAULT_MAP 27 	COPYRIGHT 		61
+RGB_GRAY_MAP 	28 	NOTICE 			62
+RGB_GREEN_MAP 	29 	FONT_NAME 		63
+RGB_RED_MAP 	30 	FAMILY_NAME 		64
+STRING 		31 	FULL_NAME 		65
+VISUALID 	32 	CAP_HEIGHT 		66
+WINDOW 		33 	WM_CLASS 		67
+WM_COMMAND 	34 	WM_TRANSIENT_FOR 	68
+
+    为了避免与以后可能用到的有语义含义的名字（协议级或者高级用户界面模型中的）
+冲突，销售商或部门私用的原子名应以下划线为开头。为保证销售商与部门之间无冲突，
+还需使用前缀。但协议没有定义选择此前缀的机制。单个应用程序或最终用户专用的但存
+在于全局可存取位置处的原子名，应以两个先导下划线开始已防同其他名字冲突。
+
+
+八 建立连接
+
+    对于远程客户，X协议可被建立在任何可靠的字节流上。
+
+    连接初始化
+    客户必须发送数据的初始字节以标识发送的字节次序。初始字节必须是八进制的102或
+154。值102（ASCII大写字母B）意指首先传送数据的最高位字节，值154（ASCII小写字母
+l）意指首先传送数据的最低位字节。除非在协议中明显指出，客户发送的16位及32位数都
+按此字节次序传送，服务器返回的16位及32位数也按此字节次序传送。
+    紧跟着字节次序字节，客户在建立连接时发送如下信息：
+	protocol-major-version: CARD16
+	protocol-minor-version: CARD16
+	authorization-protocol-name: STRING8
+	authorization-protocol-data: STRING8
+    其中的version号码指出客户希望服务器实现的协议版本号。
+    Authorization name 表示客户希望服务器使用的授权（和验证）协议，data是协议专
+用的数据。合法授权机制的规范说明不属于核心X协议的一部分。不能实现客户所希望的协
+议或仅实现基于宿主机制的服务器可能会忽略这些信息。若name和data均为空，则解释为
+“无明确授权”。
+
+    服务器响应
+    在连接建立时，客户接收到如下信息：
+        success: { Failed, Success, Authenticate }
+    如果返回值是Failed的话，客户还会收到下面的附带数据，而且连接没有成功建立。
+        protocol-major-version: CARD16
+	protocol-minor-version: CARD16
+	reason: STRING8
+    如果返回值是Authenticate，客户会收到下面的附带数据，要求进一步的认证协商。
+	reason:STRING8
+    Reason 字符串的内容因使用的认证协议而异。除非协商必须最终以一个包含Failed
+或 Success的结果值的服务器回答作为结束，否则认证协商过程的语义不是必须的。
+
+    如果返回值是Success的话，客户还会收到下面的附带数据，而且连接成功建立。
+	protocol-major-version: CARD16
+	protocol-minor-version: CARD16
+	vendor: STRING8
+	release-number: CARD32
+	resource-id-base, resource-id-mask: CARD32
+	image-byte-order: {LSBFirst, MSBFirst}
+	bitmap-scanline-unit: {8, 16, 32}
+	bitmap-scanline-pad: {8, 16, 32}
+	bitmap-bit-order: {LeastSignificant, MostSignificant}
+	pixmap-formats: LISTofFORMAT
+	roots: LISTofSCREEN
+	motion-buffer-size: CARD32
+	maximum-request-length: CARD16
+	min-keycode, max-keycode: KEYCODE
+	其中:
+		FORMAT: [depth: CARD8,
+			 bits-per-pixel: {1, 4, 8, 16, 24, 32}
+			 scanline-pad: {8, 16, 32}]
+		SCREEN: [root: WINDOW
+			 width-in-pixels, height-in-pixels: CARD16
+			 width-in-millimeters, height-in-millimeters: CARD16
+			 allowed-depths: LISTofDEPTH
+			 root-depth: CARD8
+			 root-visual: VISUALID
+			 default-colormap: COLORMAP
+			 white-pixel, black-pixel: CARD32
+			 min-installed-maps, max-installed-maps: CARD16
+			 backing-stores: {Never, WhenMapped, Always}
+			 save-unders: BOOL
+			 current-input-masks: SETofEVENT]
+		 DEPTH: [depth: CARD8
+			 visuals: LISTofVISUALTYPE]
+	    VISUALTYPE: [visual-id: VISUALID
+			 class: {StaticGray, StaticColor, TrueColor,
+				 GrayScale, PseudoColor, DirectColor}
+			 red-mask, green-mask, blue-mask: CARD32
+			 bits-per-rgb-value: CARD8
+			 colormap-entries: CARD16]
+
+    服务器信息
+    服务器全局信息如下：
+    协议版本号码为将来修改协议提供了一个解决办法，为了协议的未来版本考虑这是必
+须的。一般地，当作不兼容修改时major version应增加，当作少量向上兼容的修改时，
+minor version应增加。除非协议修改了，major version应为11，minor version应为0。
+返回的协议版本指出服务器实际支持的协议。它可能不等于客户发送的版本。服务器可以
+（但不是必须的）拒绝来自于提供不同于服务器的版本号码的客户连接。服务器可以（但
+不是必须的）同时支持多种版本。
+    Vendor字符串给出了服务器实现者的标识。Vendor控制realease的语义。
+    resource-id-mask 中有一个（至少）18位的相邻集合。客户通过这些位集合的子集选
+择一个值并与resource-id-base做“或”运算来为类型 WINDOW、PIXMAP、CURSOR、FONT、
+GCONTEXT 和 COLORMAP 分配资源ID。只有用此方法构造的名字可用于命名此连接上新创建
+的资源。资源ID从不置其前三位。不要求客户线形地或连续地分配资源ID。一旦某个ID已
+被释放，则还可再使用它。相对于所有其他（不仅是同类）资源的ID，ID必须是唯一的。
+但是，资源标识符、原子、visualid及keysym的值空间应能根据上下文区别开来，因此不
+要求它们不相交。例如，一个给定的数值既可能是一个合法窗口ID，或是一个合法的原子
+或合法的keysym。
+    虽然服务器一般负责字节交换以与客户匹配，但传送和接收图象时要使用服务器指定
+的格式（包括字节次序）。图象的字节次序由 image-byte-order 指出，它适用于XY格式
+（位图格式）中的每一条扫描线和 Z 格式中的每个像素值。
+    位图(bitmap)以扫描线序的格式表示。每条扫描线被填充为 bitmap-sacnline-pad
+所给定的多位。填充位为任意值。扫描线按 bitmap-scanline-unit 所给出的多位记数。
+Bitmap-scanline-unit 总小于或等于 bitmpa-sacnline-pad。对于每种单位，
+bitmap-bit-order 确定位图中的最左位是最低位还是最高位。若像素映像(pixmap)用XY格
+式表示，则每个平面(plane)表示为一个位图，平面的出现是由位次序中的最高位到最低位
+且平面之间无填充。
+    像素映像(pixmap)格式中对每个depth值都有一个条目。此条目描述用于表示此深度
+的图象的Z格式。若屏幕支持某depth则应有此depth的条目，且所有支持此depth的屏幕必
+须只支持此 depth 的 Z格式。在 Z格式中，像素按扫描线次序组织，扫描线由左至右。
+bits-per-pixel给出保存一个像素所需的位数。Bits-per-pixel可大于depth所需的大小。
+在这种情况下低位用于保存像素映像(pximap)数据，且未用的高位的值是不明确。当
+bits-per-pixel为4时，字节中的半字节(4 bits)次序同图象字节次序。当bits-per-pixel
+为1时，格式跟位图(bitmap)格式一样。每条扫描线被填充为由sacnline-pad指定的多位。
+当bits-per-pixel为1时，这将同bitmap-scanline-pad一样。
+    指针如何遍历屏幕根据服务器的实现而定，它对协议是透明的。屏幕之间不规定几何
+位置。
+    服务器可保存指针移动的最近历史，并为此提供比MotionNotify事件更详细的信息。
+GetMotionEvents 请求使用此历史。Motion-buffer-size 给出历史缓冲区的近似尺寸。
+    Maximum-request-length 指定服务器接收的请求的最大长度，单位为4字节。即，
+length是可出现在请求中length字段的最大值。大于此长度的请求会产生length错误，并
+且服务器不处理整个请求。Maximum-request-length 一般至少为4096（即，长度小于或
+等于16384字节的请求均可被服务器接收）。
+    Min-keycode 和 max-keycode 指定服务器传送的最小及最大键码值。Min-keycode
+从不小于8，max-keycode从不大于255。并非此范围内的所有键码都有对应键。
+
+    屏幕信息
+    适用于每个屏幕的信息为：
+    Allow-depths 指出所支持的 pixmap 和窗口深度。对于每种列出的深度，系统均支持
+这样的pixmap，如果至少列出了此深度的一个可视类型（visual type），则系统支持该深
+度的窗口。系统一般支持深度为1的pixmap并将其列出，但不一定支持深度为1的窗口。深
+度0从不列出，但一定支持零深度的 InputOnly 窗口。
+    Root-depth 和 root-visual 指出根窗口的深度和可视类型。Width-in-pixel 和
+height-in-pixels 指出根窗口的尺寸（这不能被改变）。根窗口的类别总是InputOnly。
+Width-in-millimeters 和 height-in-millimeters 可用于确定物理尺寸和纵横比。
+    Default-colormap 初始时与根窗口相关。创建同根一样深度的窗口时所需较少颜色
+的客户缺省地从此图中分配色彩表。
+    Black-pixel 和 while-pixel 可用于实现单色应用程序。这些像素值是
+default-colormap 中的永久分配表项。实际的RGB值在某些屏幕上是可设置的，并且在
+某些情况下，实际上不可能是黑白。名字用于提示所希望的颜色的相对强度。
+    根窗口的边界初始时是一个用 black-pixel 填充的像素。根窗口的初始背景是一个
+使用 black-pixel 和 while-pixle 的未指定的两色图案填充的 pixmap。
+    Min-installed-maps 指出不考虑每个图中已分配表项的数目时可同时保证安装（用
+InstallColormap）的图数。Max-installed-maps 指出根据分配情况可同时安装的最大图
+数。对于此数来说，内容相同但资源ID不同的多项静态可视色彩表应视为一个图。对于单
+硬件色彩表的典型情况，上述两个值均应为1。
+    Backing-stores 指出服务器什么时候支持屏幕后备存储，但对同时支持的窗口有存
+储限制。若save-unders为True，则服务器支持CreateWindow和ChangeWindowAttributes
+中的 save-under 方式，但还是有存储限制问题。
+    Current-input-events 是 GetWindowAttributes 对根窗口的 all-event-masks 的
+返回结果。
+
+    可视(Visual)信息
+    适用于每种可视类型(visual-type)的信息：
+    一个给定的可视类型可被列入多个深度或多个屏幕。对于 PseudoColor，像素值索引
+一个色彩表以产生独立的 RGB 值；RGB 值可动态地改变。处理 GrayScale 的方式同
+PseudoColor 类似，区别是屏幕主驱动没有定义；因此，客户应该保存红、绿、蓝相同的
+值在颜色表中。对于 DirectColor，一个像素值分解成单独的 RGB 子域，每个子域分别
+索引色彩表以寻找相应的值。RGB 值可动态地改变。处理 TrueColor 的方法跟
+DirectColor 类似，不同之处是色彩表有预定义的的只读 RGB 值。这些值与服务器相关，
+但是在每个主索引中提供线形的或近似线形增加。处理 StaticColor 的方法跟
+PseudoColor 类似，不同之处是色彩表有预定义的与服务器相关的只读RGB值。处理
+StaticGray 的方法同 StaticColor 类似，区别只是此处对任何像素，红、绿、蓝值都相
+等，因此得到灰度。带有二表目色彩表的 StaticGray 可认为是单色的。
+    Red-mask、green-mask 和 blue-mask 仅为 DirectColor 和 TrueColor 而定义。它
+们每个都有一组被置为1的连续位且互不相交。一般情况下，屏幕中被置为1的位数相同。
+    Bits-per-rgb-value 指出红、绿、蓝的不同颜色亮度值的以2为基的对数。此数不必
+与色彩表中表项数目有任何联系。协议中传送实际RGB值时一般以16位的光谱为单位，其
+中 0 表示亮度最小，65535表示亮度最大。在提供线形零基的亮度接线开关的硬件中，有
+下列关系存在：
+    hw-intensity = protocol-intensity / (65536 / total-hw-intensities)
+    色彩表表目从零开始索引。Colormap-entries 定义新创建的色彩表中可用的色彩表
+表目的数量。对于 DirectColor 和 TrueColor，这个数目一般以2为底，以 red-mask、
+green-mask、blue-mask 中置为1的最大位数为指数。
+
+
+九 请求
+
+    CreateWindow
+      wid, parent: WINDOW
+      class: {InputOutput, InputOnly, CopyFromParent}
+      depth: CARD8
+      visual: VISUALID or CopyFromParent
+      x, y: INT16
+      width, height, border-width: CARD16
+      value-mask: BITMASK
+      value-list: LISTofVALUE
+      错误: Alloc, Colormap, Cursor, IDChoice, Match, Pixmap, Value, Window
+
+    此请求创建一个未映像窗口并将标识符 wid 赋给它。
+    CopyFromParent表示class取自父窗口。深度为零的 InputOutput或 CopyFromParent
+类表示 depth 取自父窗口。Visual 为 CopyFromParent 表示可视类型取自父窗口。对于
+InputOutput 类，可视类型和深度必须是屏幕能支持的组合（否则产生 Match 错误）。
+depth不必同父窗口一样，但父窗口必须不是 InputOnly 类（否则产生 Match 错误）。
+对于InputOnly类，depth必须为零（否则产生 Match 错误），且visual必须是屏幕所支持
+的（否则产生 Match 错误）。但是，父窗口的 depth 和 Class 可是任意的。
+    服务器假定 InputOnly 窗口没有对图形请求、暴露处理和 VisibilityNotify 事件的
+操作。InputOnly窗口不能用作drawable（图形请求的源或目标）。InputOnly 和
+InputOutput 窗口在性质、捕获、输入控制等方面是一样的。
+    坐标系统有水平X轴和垂直Y轴，起始坐标[0,0]在左上角。坐标为整数，以象素为单
+位，与象素中心重合。每一个窗口和象素映像都有自己的坐标系统。对于一个窗口，起点
+位于边界内部左上角。
+    窗口的 x,y坐标相对于父窗口的原点，它指定窗口的外左上角（不是原点）的位置。
+width 和 height 指定窗口的内部尺寸（不包括边界），它们必须不为零（否则产生
+Value错误）。InputOnly 窗口的border-width必须为零（否则产生 Match 错误）。
+    窗口被置于相对兄弟窗口的栈次序的顶端。
+    value-mask 和 value-list 指定待显式初始化的窗口属性，其可能的值为：
+
+    属性			类型
+    background-pixmap		PIXMAP or None or ParentRelative
+    background-pixel		CARD32
+    border-pixmap 		PIXMAP or CopyFromParent
+    border-pixel 		CARD32
+    bit-gravity 		BITGRAVITY
+    win-gravity 		WINGRAVITY
+    backing-store 		{NotUseful, WhenMapped, Always}
+    backing-planes 		CARD32
+    backing-pixel 		CARD32
+    save-under 			BOOL
+    event-mask 			SETofEVENT
+    do-not-propagate-mask 	SETofDEVICEEVENT
+    override-redirect 		BOOL
+    colormap 			COLORMAP or CopyFromParent
+    cursor 			CURSOR or None
+
+    当属性未显式初始化时，缺省值为：
+
+    属性			类型
+    background-pixmap		None
+    border-pixmap 		CopyFromParent
+    bit-gravity 		FORGET
+    win-gravity 		NorthWest
+    backing-store 		NotUseful
+    backing-planes 		全为1
+    backing-pixel 		0
+    save-under 			False
+    event-mask 			{}空集
+    do-not-propagate-mask 	{}空集
+    override-redirect 		False
+    colormap 			CopyFromParent
+    cursor 			None
+
+    对于 InputOnly 窗口仅定义了如下属性：
+    ●   win-gravity
+    ●   event-mask
+    ●   do-not-propagate-mask
+    ●   override-redirect
+    ●   cursor
+    为 InpuOnly 窗口指定任何其他的属性都会产生 Match 错误。
+    如果给出 background-pixmap，则它覆盖缺省的 background-pixmap。背景 pixmap
+与窗口必须有相同的根和深度（否则产生 Match 错误）。任何尺寸的 pixmap 均可使用，
+但某些尺寸的 pixmap 速度快些。若 background-pixmap 为 None，则表示窗口无已定义
+的背景。若它为 ParentRelative，则使用父窗口的背景，但要求窗口的 depth 同父窗口
+一样（否则产生 Match 错误）。若父窗口的 background-pixmap 为 None，则该窗口的
+background-pixmap 也为 None，不产生父窗口的背景拷贝。每次需要窗口背景时都重检查
+父窗口的背景。若给出 background-pixel，则覆盖缺省的 background-pixel 和任何给出
+的 background-pixmap，且将一个以 background-pixel 填充的未定义尺寸的 pixmap 将
+会用作背景。不对 background-pixel 值作范围检查，仅将其截成合适的数位。对于
+ParentRelative 背景，背景顶面原点一般应与父窗口背景顶面原点对齐，否则，背景顶面
+原点总是为窗口原点。
+    当窗口区域内无合法的内容且此区域是可见的或服务器正作后备存储工作时，服务器
+自动用窗口的背景铺满区域，除非窗口的背景为 None。当背景为 None 时，若先前屏幕内
+容来自父窗口或父窗口下面的窗口，则来自于同窗口同深度的内容仍留在原处；否则，暴
+露的区域的初始化内容无定义。即使背景为 None，也为此区域产生暴露事件。
+    边界图块(tile)原点一般同背景顶面原点一样。若给出 border-pixmap，则它覆盖缺
+省的border-pixmap。边界 pixmap 的根和深度必须和窗口一样（否则产生 Match错误）。
+可使用任意尺寸的 pixmap，但某些尺寸的 pixmap 速度快。若给出 CopyFromParent，则
+复制父窗口的边界 pixmap（以后改变父窗口的边界 pixmap 不影响子窗口），但要求窗口
+的深度须同父窗口一样（否则产生 Match 错误）。可通过子窗口和父窗口共享同一pixmap
+或完全复制 pixmap 内容来对 pixmap 备份。如果给出 border-pixel，则它覆盖缺省的
+border-pixel 和显式指定的 border-pixmap，且将用 border-pixel 填充的未定义大小的
+pixmap 用于边界。系统不对 border-pixel 值作范围检查，而是仅截取合适的数位。
+    向窗口的输出一般被剪截入窗口内部，因此从不影响边界。
+    bit-gravity 定义重定窗口尺寸时要保留的窗口区域，win-gravity 定义重定义父窗
+口尺寸时窗口如何重定位（详见 ConfigureWindow 请求）。
+    backing-store 为 Whenmapped时提示服务器当窗口被映象时也维护被遮区域的内容。
+backing-store 为 Always时提示服务器即使当窗口被非映象时也维护内容。在这种情况
+下，当创建窗口时服务器产生暴露事件。backing-store 为 NotUseful 时提示服务器没有
+必要维护内容，但当窗口被映象时服务器仍然维护内容。请注意，若服务器维护内容，则
+它应该维护完整的内容而不仅仅是父窗口边界内的区域中的内容，即使所维护的窗口比其
+窗口大。当服务器维护内容时，一般不产生暴露事件，但服务器可随时停止维护内容。
+    若 save-under 为 True，则提示服务器当此窗口被映象时，保存它遮盖的窗口内容。
+    当正在维护窗口被遮区域内容时，被非下层窗口遮盖的区域包括在图形请求的目标中
+（当窗口为源时，它包括在源中），但不包括被下层窗口遮盖的区域。
+    backing-plane（有若干位被置为1）指出窗口的哪个平面应保存在 backing-store 和
+save-under 期间必须保存的动态数据。backing-pixel 指定在未被 backing-planes 覆盖
+的平面中使用的值。在 backing-store 或 save-under 时服务器可自由地保存指定的位平
+面，并用指定的象素值重产生剩余的平面。在这些值中，系统不考虑超过指定窗口深度的
+位。
+    event-mask 定义客户为此窗口（或为某事件类型，窗口的下层窗口）感兴趣的事件。
+do-not-propagate 定义当无事件具有此窗口选择的事件类型时不向父辈窗口传播的事件。
+    voerride-redirect 指定此窗口上图或配置请求是否应覆盖父窗口上的
+SubstructureRedirect，一般是为了通知窗口管理程序不要损害窗口。
+    Colormap 指定最能反映窗口真实颜色的色彩表。具有支持多种硬件色彩表能力的服务
+器可利用此信息，并且窗口管理程序可将其用于 InstallColormap 请求。Colormap 的可
+视类型须同窗口的一样（否则产生 Match 错误）。若指定了 CopyFromParent，则复制父
+窗口的色彩表（以后对父窗口色彩表的修改不影响子窗口）。但是，窗口的可视类型须同
+父窗口的一样（否则产生 Match 错误），且父窗口的色彩表不能为 None（否则产生
+Match 错误）。有关 None的解释，见 FreeColormap 请求。通过子窗口和父窗口间共享色
+彩表对象不完全复制色彩表内容便可以复制色彩表。
+    若指定了 Cursor，则当指针位于窗口中时就使用它。若将其指定为 None，则使用父
+窗口的光标并且父窗口中光标的变化会立即引起所显光标的变化。
+    此事件产生 CreateNotify 事件。
+    当不再使用 background-pixmap, border-pixmap 及 Cursor 时应立即释放它们。
+    以后在 background-pixmap 或 border-pixmap 中绘画会导致对窗口状态的未定义的
+影响。服务器可能复制后不复制 pixmap。
+
+
+    ChangeWindowAttributes
+      window: WINDOW
+      value-mask: BITMASK
+      value-list: LISTofVALUE
+      错误: Access, Colormap, Cursor, Match, Pixmap, Value, Window
+
+    value-mask 和 value-list 指出待修改的属性，其值和限制同 CreateWindow。
+    通过 backgroud-pixmap 或 background-pixel 设置新背景将覆盖以前的背景。通过
+border-pixel 或 border-pixmap 设置新的边界将覆盖以前的边界。
+    修改背景不会引起窗口内容变化。使边界顶面原点发生变化的边界设置或背景修改会
+引起边界重画。将根窗口的背景改为 None 或 RarentRelative时恢复缺省的背景pixmap。
+将根窗口的边界改为 CopyFromParent 时恢复缺省的边界 pixmap。
+    修改 win-gravity 不影响窗口的当前位置。
+    将被遮盖窗口的 backing-store 改为 WhenMapped 或 Always，或修改被映象窗口的
+backing-planes，backing-pixel 或 save-under 不一定会立即产生效果。
+    多个客户可同在一个窗口中选取输入，它们的 event-mask 不相交。当产生事件时，
+事件将被告诉给所有对此感兴趣的客户。但是，某时刻只能有一个客户选择 
+SubstructureRedirect，只能有一个客户选择 ResizeRedirect，只能有一个客户选择
+ButtonPress，试图违反这些限制都会产生 Access 错误。
+    每个窗口都只有一个 do-not-propagate-mask，而每个客户却没有。
+    通过新定义一个色彩表（而不是通过修改现存色彩表中的项）来修改窗口的色彩表会
+产生 ColomapNotify 事件。修改可视窗口的色彩表可能不会有立即反应（详见 
+InstallColormap 请求）。
+    根窗口的 cursor 被改为 None 时恢复缺省光标。
+    验证并改变属性的次序随服务器而定。如果出现错误，则不改变后续属性。
+    
+    
+    GetWindowAttributes
+      window: WINDOW
+    ->
+      visual: VISUALID
+      class: {InputOutput, InputOnly}
+      bit-gravity: BITGRAVITY
+      win-gravity: WINGRAVITY
+      backing-store: {NotUseful, WhenMapped, Always}
+      backing-planes: CARD32
+      backing-pixel: CARD32
+      save-under: BOOL
+      colormap: COLORMAP or None
+      map-is-installed: BOOL
+      map-state: {Unmapped, Unviewable, Viewable}
+      all-event-masks, your-event-mask: SETofEVENT
+      do-not-propagate-mask: SETofDEVICEEVENT
+      override-redirect: BOOL
+      错误: Window
+      
+      此请求返回窗口的当前属性。若窗口被映像但其某些先辈窗口未被映象，则称此窗
+口是不可见的（Unviewable）。all-event-masks 是客户在窗口选择的事件屏蔽的异域。
+your-event-mask 为询问客户选择的事件屏蔽。
+
+
+    DestroyWindow
+      window: WINDOW
+      错误: Window
+      
+    如果参数 window 是被映象的，则自动执行 UnmapWindow 请求。然后撤销窗口及其下
+层窗口，且对每个窗口产生 DestroyNotify 事件。DestroyNotify 事件的次序是：对于任
+何窗口，在对其本身产生 DestroyNotify 事件之前，先对其下层窗口产生该事件。但不限
+制兄弟窗口之间和子层次窗口之间的次序。
+    在以前被遮掩的窗口上要执行正常的暴露处理。
+    若 window 是根窗口，则该请求无用。
+    
+    
+    DestroySubwindows
+      window: WINDOW
+      错误: Window
+    
+    此请求以自底向上底次序对窗口底所有子窗口执行 DestroyNotify 事件。
+    
+    
+    ChangeSaveSet
+      window: WINDOW
+      mode: {Insert, Delete}
+      错误: Match, Value, Window
+    
+    此请求往（从）客户的 save-set 中增加（删除）指定窗口。此窗口必须是其他客户
+创建的（否则产生 Match 错误）。有关 save-set 的详细情况，见第10节。
+    当撤销窗口时，服务器把它们从 save-set 中删除。
+    
+    
+    ReparentWindow
+      window, parent: WINDOW
+      x, y: INT16
+      错误: Match, Window
+    
+    若 window 是映象的，则首先自动执行 UnmapNotify 事件。然后把窗口由其原位置移
+走并插入到指定 parent 窗口的子窗口位置处。坐标x,y相对于窗口的原点，他们指定窗口
+的外层左上角。窗口被置于相对于兄弟窗口的栈顶端。然后产生 ReparentNotify 事件。
+此事件传递窗口的 override-redirect 属性：当其为 True 时表示窗口管理程序不要损害
+此窗口。最后，若窗口原为映象的，则自动执行 MapWindow 请求。
+    对以前为遮掩的窗口，执行一般的暴露处理。对被最终映象遮掩的初始非映象区域，
+服务器不产生暴露事件。
+    若有下列情况，则产生 Mathc 错误：
+    。新、旧父窗口不在同屏幕。
+    。新父窗口就是窗口本身或其下层窗口之一。
+    。窗口有 ParentRelative 背景，但新父窗口的深度同窗口不一样。
+    
+    
+    MapWindow
+      window: WINDOW
+      错误: Window
+    
+    若窗口已被映象，则本请求无用。
+    若窗口的 override-redirect 属性为 False，且某些客户有父窗口上选择的
+SubstructureRedirect，则产生 MapRequet 请求，但窗口仍非映象。否则窗口被映象，
+并且产生 MapNotify 事件。
+    如果窗口目前是可视的且其内容已被废弃，则窗口的背景（若未定义背景，则不改变
+现存屏幕内容）作为窗口顶面，并产生零个或多个暴露事件。若在窗口未被映象时已维护
+backing-store，则不产生暴露事件。若 backing-store 将被维护，则产生全窗口暴露事
+件。否则，仅可见区域被报告。对于新可见的下层窗口，其顶面和暴露情况类似。
+
+
+    MapSubwindows
+      window: WINDOW
+      错误: Window
+    
+    此请求以自底向上的栈次序对窗口的所有非映象子窗口执行 MapWindow 请求。
+    
+    
+    UnmapWindow
+      window: WINDOW
+      错误: Window
+
+    若窗口已经非映象，此请求无用。否则，窗口被非映象且产生 UnmapNotify 事件。在
+以前被遮掩的窗口上执行正常的暴露处理。
+
+
+    UnmapSubwindows
+      window: WINDOW
+      错误: Window
+    
+    此请求以自底向下底栈次序对窗口底所有映象子窗口执行 UnmapWindow 请求。
+    
+    
+    ConfigureWindow
+      window: WINDOW
+      value-mask: BITMASK
+      value-list: LISTofVALUE
+      错误: Match, Value, Window
+
+    此请求修改窗口的配置。value-mask 和 value-list 指出待给定的值。可能的值有：
+
+    属性            类型
+    x		    INT16
+    y	            INT16
+    width	    CARD16
+    height	    CARD16
+    border-width    CASRD16
+    sibliing	    WINDOW
+    stack-mode	    {Above,Below,TopIf,BottomIf,Opposite}
+
+    坐标x,y相对于父窗口的原点，它指出窗口的外左上角位置。width 和 height 指出内
+部尺寸，但不包括边界，它必须不为零（否则产生 Value 错误）。若未制定这些值，则采
+用窗口的现有值。请注意，仅修改 border-width 使窗口的外左上角不变，但移动了窗口
+原点的绝对值。试图将 InputOnly 窗口的 border-width 修改为非零值，则会产生 Match
+错误。
+    如果窗口的 override-redirect 属性为 False，且某些客户具有父窗口上选择的
+SubstructureRedirect，则产生 ConfigureRequest 事件，且不作进一步的处理。否则，
+执行过程如下：
+    如果有其他客户具有窗口选择的 ResizeRedirect 并将修改窗口的内部宽度或高度，
+则产生 ResizeRquest 事件，并使用当前内部宽度或高度。请注意，窗口的
+override-redirect 属性对 ResizeRedirect 无影响，父窗口上的 SubstructureRedirect
+的优先级比窗口上的 ResizeRedirect 高。
+    如果窗口的状态发生变化，则按指定值修改窗口的几何构形，重排窗口与其兄弟窗口
+之间的关系，并产生 ConfigureNotify 事件。若窗口的内部宽度或高度已被修改，则要据
+子窗口的 win-gravity 对其进行修改。对于以前被遮掩的窗口（若窗口和其下层的窗口的
+区域以前被遮掩但现在不被遮掩，则还包括窗口本身和其下层窗口）执行暴露处理，对于
+（由于增加窗口的宽度或高度而）新产生的窗口区域和其窗口内容丢失的区域也执行暴露
+处理。
+    若未修改窗口的内部宽度或长度，但移动了窗口或修改了其边界，则窗口内容不会丢
+失而是同窗口一起移动。修改窗口的内部宽度或高度会使窗口移动或丢失其内容，这要据
+窗口的 bit-gravity 而定。它还会引起（据其 win-gravity）重构子窗口，对于宽度W，
+高度H的变化，我们定义[x,y]偶对：
+
+    方向           增量
+    NorthWest	   [0, 0]
+    Notrh	   [W/2, 0]
+    NorthEast	   [W, 0]
+    West	   [0, H/2]
+    Center	   [W/2, H/2]
+    East	   [W, H/2]
+    SouthWest	   [0, H]
+    South	   [W/2, H]
+    SouthEast	   [W, H]
+
+    当重定带有这些 bit-gravity 之一的窗口的尺寸时，对应偶对定义窗口中像素位置的
+变化。此重定位产生 GravityNotify 事件。在产生 ConfigureNotify 事件之后产生
+GravityNotify 事件。
+    当 gravity 为 Static 时表示不应相对于根窗口原点移动内容或原点。若修改窗口尺
+寸时位置变化为[x,y]，则对于 bit-gravity，像素的位置变化为[-x,-y]，对于
+win-gravity，其子窗口的位置变化为[-x,y]。请注意，当修改窗口的宽度或高度时，
+Static 仍起作用。但仅移动窗口时它不起作用。
+    bit-gravity 为 Forget 表示修改尺寸后，其有 backing-store或 save-under请求，
+一般放弃窗口内容。用背景作窗口的顶面（例外情况是，若未定义背景，则不改变现有屏
+幕内容）并产生零个或多个暴露事件。服务器有可能忽略指定的 bit-gravity 而仅使用
+Forget。
+    win-gravity 为 Unmap 时同 NorthWest 相似，但当父窗口被重定尺寸子窗口还是非
+映象的，并产生 UnmapNotify 事件。UnmapNotify 事件在产生 ConfigureNotify 事件之
+后产生。
+    若指定了 sibling 和 stack-mode，则按下述规则重排窗口的栈次序：
+    Above	     将窗口置于 sibling 之上。
+    Below	     将窗口置于 sibling 之下。
+    TopIf	     若 sibling 堵塞(occlude)该窗口，则将该窗口置于栈顶。
+    BottomIf	     若窗口堵塞 sibling，则将窗口置于栈底。
+    Opposite	     若 sibling 堵塞窗口，则将窗口置于栈顶。否则，若窗口堵塞
+		     sibling，则将窗口置于栈底。
+    若指定了 stack-mode 但未指定 sibling，重定窗口栈序原则为：
+    Above	     将窗口置于栈顶。
+    Below	     将窗口置于栈底。
+    TopIf	     若有兄弟堵塞窗口，则将该窗口置于栈顶。
+    BottomIf	     若窗口堵塞兄弟窗口，则将窗口置于栈底。
+    Opposite	     若兄弟窗口堵塞窗口，则将窗口置于栈顶。否则，若窗口堵塞
+		     兄弟，则将窗口置于栈底。
+    若指定了 sibling 但没有 stack-mode 或该窗口实际上不是兄弟窗口，则产生 Match
+错误。请注意，对于 BottomIf、TopIf 和 Opposite 的计算相对于窗口的最终几何参数（
+由请求的其他参数控制），而不是初始几何参数。
+    试图配置根窗口是无用的。
+    
+    
+    CirculateWindow
+      window: WINDOW
+      direction: {RaiseLowest, LowerHighest}
+      错误: Value, Window
+
+    若有其他客户已在窗口上选择了 SubstructureRedirect，则产生 CirculateRequest
+事件，且不作进一步处理。否则，执行下面的操作，且若实际重排了窗口的栈次序，则产
+生 CirculateNotify 事件。
+    对于 RaiseLowest，CirculateWindow 将被其他子窗口堵塞的最底映象子窗口（如有
+的话）升到栈顶。对于 LowerHighest，CirculateWindow 将堵塞其他子窗口且是最高的映
+象窗口（如有的话）降到栈底。对以前被遮掩的窗口要执行暴露处理。
+
+
+    GetGeometry
+      drawable: DRAWABLE
+    ->
+      root: WINDOW
+      depth: CARD8
+      x, y: INT16
+      width, height, border-width: CARD16
+      错误: Drawable
+
+    此请求返回 drawable 的根和当前几何参数。depth 是对象的每像素位数。对于
+pixmap，x,y 和 border-width 应为零。对于窗口，坐标x,y 指定相对于父窗口原点的窗
+口外左上角，width 和 height 指出窗口的内部尺寸，它不包括边界。
+    可将 InputOnly 窗口作为 drawable 参数传给此请求。
+
+
+    QueryTree
+      window: WINDOW
+    ->
+      root: WINDOW
+      parent: WINDOW or None
+      children: LISTofWINDOW
+      错误: Window
+
+    此请求返回窗口的根窗口、父窗口及子窗口。子窗口以自底向上的栈次序列出。
+
+
+    InternAtom
+      name: STRING8
+      only-if-exists: BOOL
+    ->
+      atom: ATOM or None
+      错误: Alloc, Value
+
+    此请求返回指定名字的原子。若 only-if-exists 为 False，则原子不存在时就创建
+它。字符串应使用 ISO 拉丁-1 编码。大小写字母有区别。
+    原子的生命周期与扣留(interning)客户不相关。直到服务器复位前原子仍有定义（见
+第10节）。
+
+
+    GetAtomName
+      atom: ATOM
+    ->
+      name: STRING8
+      错误: Atom
+
+    此请求返回给定原子的名称。
+
+
+    ChangeProperty
+      window: WINDOW
+      property, type: ATOM
+      format: {8, 16, 32}
+      mode: {Replace, Prepend, Append}
+      data: LISTofINT8 or LISTofINT16 or LISTofINT32
+      错误: Alloc, Atom, Match, Value, Window
+
+    此请求改变指定窗口的特征。服务器不解释 type。format 指出 data 是8位表还是16
+位表或32位表，以便服务器必要时作正确的字节交换。
+    若 mode 为 Replace，则抛弃原来的特征。若 mode 为 Prepend 或 Append，则 type
+和 format 应与现存的特征一致（否则产生 Match 错误）。若未定义过特征，则认为它已
+定义过，且类型和格式正确，数据长度为零。对于Prepend，数据被置于现存数据的首端，
+对于 Append，则置于现存数据的末端。此请求在窗口上产生 PropertyNotify 事件。
+    特征的生命周期与存储客户无关。在明显地删除，或撤消窗口或服务器复位之前，特
+征一直存在（见第10节）。
+    特征的最大尺寸随服务器而定且可动态地变化。
+
+
+    DeleteProperty
+      window: WINDOW
+      property: ATOM
+      错误: Atom, Window
+
+    此请求删除指定窗口上的特征「若特征存在）且在窗口产生 PropertyNotify 事件，
+除非不存在此特征。
+
+
+    GetProperty
+      window: WINDOW
+      property: ATOM
+      type: ATOM or AnyPropertyType
+      long-offset, long-length: CARD32
+      delete: BOOL
+    ->
+      type: ATOM or None
+      format: {0, 8, 16, 32}
+      bytes-after: CARD32
+      value: LISTofINT8 or LISTofINT16 or LISTofINT32
+      错误: Atom, Value, Window
+
+    若指定窗口上无指定的特征，则返回类型为 None，且 format，bytes-after 为零，
+value 为空。在这种情况下忽略 delete 参数。若指定的特征存在但其类型与指定的类型
+不一致，则返回类型为特征的实际类型，format 是特征的实际格式（从不会为零），
+bytes-after 为特征的长度，单位为字节（若 format 为16或32，则它为偶数），value为
+空。在这种情况下忽略 delete 参数。若指定的特征存在，并且指定了 AnyPropertyType
+或指定的类型与特征的实际类型一致，则返回类型是特征的实际类型，format 为特征的实
+际格式（从不会为零），bytes-after 和 value 的计算如下：
+
+    N = 存储的特征的实际长度，单位为字节（若 format 为16或32，则它为偶数）
+    I = 4 * long - offset
+    T = N - 1
+    L = MINIMUM(T, 4 * long - length)
+    A = N - (I + L)
+
+    返回值在特征值中下标为 I 处开始，长度为 L，他们的单位为字节。但给出的
+long-offset 使 L 为负数，则出现 Value 错误。bytes-after 的值为A，它给出的特征中
+尾部未读取的字节数。若 delete 为 True且 bytes-after为零，则从窗口上删除此特征，
+并在窗口上产生 propertyNotify 事件。
+
+
+    RotateProperties
+      window: WINDOW
+      delta: INT16
+      properties: LISTofATOM
+      错误: Atom, Match, Window
+
+    如果把表中的特征名看成从零开始编号,且表中有N个特征值,则与特征名 I 相关的值
+变成与特征名 (I+delta)mod N 相关，其中I=0,1, ... , N-1，此请求的效果是沿特征名
+虚环旋转 delta 个位置（对于正 delta 向右旋转，负 delta 向左旋转）。若 delta mod
+N 不为零，则依次对每个特征产生 PropertyNotify 事件。
+    若表中有一个原子出现二次以上或与某名字相关的特征未定义，则产生 Match 错误。
+如果产生 Atom 或 Match 错误，则不修改特征。
+
+
+    ListProperties
+      window: WINDOW
+    ->
+      atoms: LISTofATOM
+      错误: Window
+
+    此请求返回窗口上当前定义的特征原子。
+
+
+    SetSelectionOwner
+      selection: ATOM
+      owner: WINDOW or None
+      time: TIMESTAMP or CurrentTime
+      错误: Atom, Window
+
+    此请求修改指定选择的拥有者，拥有者窗口及最近的修改时间。若指定的时间早于选
+择的当前最新修改时间或迟于当前服务器时间，则此请求无效果。否则将最近修改时间置
+为指定的时间，若为 CurrentTime，则用当前服务器时间。如果拥有者窗口指定为 None，
+则选择的拥有者有 None（即，无拥有者）。否则，选择的拥有者变为执行此请求的客户。
+若新拥有者（客户或 None）与当前拥有者不同且当前拥有者不是 None，则向当前拥有者
+发送 SelectClear 事件。
+    如果选择的拥有者客户过后终止（即，其连接关闭）或在请求中指定的拥有者窗口被
+撤消，则选择的拥有者自动变为 None，但不影响 last-change 时间。
+    服务器不解释选择原子。拥有者窗口由 GetSelectionOwner 请求返回且在
+SelectionRequest 和 SelectionClear 事件中报告。
+    选择在服务器中是全局的。
+
+
+    GetSelectionOwner
+      selection: ATOM
+    ->
+      owner: WINDOW or None
+      错误: Atom
+
+    此请求返回指定选择的当前拥有者窗口，若无拥有者，则返回 None。
+
+
+    ConvertSelection
+      selection, target: ATOM
+      property: ATOM or None
+      requestor: WINDOW
+      time: TIMESTAMP or CurrentTime
+      错误: Atom, Window
+
+    如果指定的选择有拥有者，服务器便向此拥有者发送 SelectionRequest 事件。若指
+定的选择无拥有者，服务器便向具有特征 None 的请求者产生 SelectionNotify 事件。在
+这两种事件中所传送的参数不变。
+
+
+    SendEvent
+      destination: WINDOW or PointerWindow or InputFocus
+      propagate: BOOL
+      event-mask: SETofEVENT
+      event: <normal-event-format>
+      错误: Value, Window
+
+    若指定了 PointerWindow，则用指针所在的窗口替换 destination。若指定了
+InputFocus 且关注窗口中有指针，则用指针所在窗口替换 destination，否则用关注窗口
+替换 destination。
+    若 event-mask 为空集，则向创建目标窗口的客户发送事件。如果客户不再存在，则
+不发送事件。
+    如果 propagate 为 False，则向在 destination 上选择 event-mask 中类型之一的
+每个客户发送事件。
+    如果 propagate 为 True 且无客户在目标上选择了 event-mask 中的事件类型，则用
+目标的最近先辈窗口替换目标，此最近先辈窗口应满足：有客户已选择 event-mask 中的
+类型且无中间窗口的 do-not-propagate-mask 中有此类型。如果没有这样的窗口存在或此
+窗口是关注窗口的先辈窗口且原来把 InputFocus指定为目标，则不向任何客户发送事件。
+否则，向在最终目标上选择 event-mask 中指出的类型的每个客户报告事件。
+    事件代码必须是核心事件或扩展定义的事件（否则产生 Value 错误），这样服务器在
+必要时可正确按字节交换内容。否则，服务器不改变和检查事件内容，除非强制事件代码
+的最高位，且正确设置事件中的序号。
+    此请求忽略主动捕获。
+
+
+    GrabPointer
+      grab-window: WINDOW
+      owner-events: BOOL
+      event-mask: SETofPOINTEREVENT
+      pointer-mode, keyboard-mode: {Synchronous, Asynchronous}
+      confine-to: WINDOW or None
+      cursor: CURSOR or None
+      time: TIMESTAMP or CurrentTime
+    ->
+      status: {Success, AlreadyGrabbed, Frozen, InvalidTime, NotViewable}
+      错误: Cursor, Value, Window
+
+    此请求主动捕获指针控制。后续的指针事件仅向捕获事件报告。此请求覆盖此客户的
+主动指针捕获。
+    如果 owner-events 为 False，则所产生的指针事件报告相对于 grab-window，且仅
+当被 event-mask 选择时才报告。如果 owner-events 为 True，且产生的指针事件一般向
+此客户报告，则正常报告事件。否则报告事件相对于 grab-window 且仅被 event-mask 选
+择时才报告。对于 owner-event 的两种取值，未解释的事件被放弃。
+    若 pointer-mode 为 Asynchronous，则指针事件处理正常继续。若指针当前被此客户
+冻结，则恢复指针事件的处理。如果 pointer-mode 为 Synchronous，则指针状态（通过
+协议来看）被冻结，且直到捕获客户发出 AllowEvnets 请求或释放指针捕获之前，服务器
+不产生指针事件。当指针被冻结时，实际的指针变化不会丢失，它们被排成队列以备以后
+处理。
+    如果 keyboard-mode 为 Asynchronous，则捕获活动不影响键盘事件处理。若
+keyboard-mode 为 Synchronous，则键盘状态（通过协议来看）被冻结，且直到捕获客户
+发出 AllowEvents 请求或释放指针捕获之前，服务器不产生键盘事件。当键盘被冻结时，
+实际的键盘变化不会丢失，它们被排成队列以备以后处理。
+    若指定了 Cursor，则不管指针在哪个窗口中，均要显示光标。如果没有指定光标，则
+当前指针在 grab-window 或其子窗口中时，显示此窗口的正常光标。否则，显示用于
+grab-window 的光标。
+    如果指定了 confine-to 窗口，则指针将局限于此窗口中。Confine-to 窗口不必同
+grab-window 有联系。若初始时指针不在 confine-to 窗口中，则在捕获活动之前，指针
+自动向最近边缘靠近「且一般要产生 enter/leave 事件」。如果 confine-to 窗口后来被
+重配置，则指针自动向其靠近以在窗口中。
+    此请求产生 EnterNofity 和 LeaveNotify 事件。
+    如果指针已被其他客户捕获，则此请求失败且状态为 AlreadyGrabbed。如果指针已被
+其他客户的主动捕获冻结，则请求失败，状态为 Frozen。如果 grab-window 或
+confine-to 窗口不可见或者 confine-to 窗口完全在根窗口的边界之外，则请求失败，状
+态为 NotViewable，如果指定的时间早于 last-pointer-grab 时间或晚于当前服务器时
+间，则请求失败，状态为 InvalidTime。否则，将 last-pointer-grab 时间置为指定的时
+间。若其为 CurrentTime，则用当前服务器时间替换。
+
+
+    UngrabPointer
+      time: TIMESTAMP or CurrentTime
+
+    如果客户（由GrabPointer 或 GrabButton 或正常按下按钮）已捕获指针，则此请求
+释放和已进入队列的事件。若指定的时间早于las-pointer-grab 或迟于当前服务器时间，
+则请求无效。
+    此请求产生 EnterNotify 和 LeaveNotify 事件。
+    如果活动的指针捕获的事件窗口或 Confint-to 窗口变得不可见或窗口重配置，使
+Confint-to 窗口完全在根窗口的边界之外，则自动执行 UngrabPointer 请求。
+    
+
+    GrabButton
+      modifiers: SETofKEYMASK or AnyModifier
+      button: BUTTON or AnyButton
+      grab-window: WINDOW
+      owner-events: BOOL
+      event-mask: SETofPOINTEREVENT
+      pointer-mode, keyboard-mode: {Synchronous, Asynchronous}
+      confine-to: WINDOW or None
+      cursor: CURSOR or None
+      错误: Access, Cursor, Value, Window
+
+    此请求建立被动捕获。指针将来被捕获的情况同 GrabPointer 中说明的一样。
+last-pointer-grab 时间置为按钮被压下的时间（同 ButtonPress 事件中的时间）。如果
+下列条件成立，则报告 ButtonPress 事件：
+    。指针没被捕获并且当指定的修饰符键被逻辑地按下其无逻辑地按下其它按钮或修饰
+      符键时，指定的按钮被逻辑地按下。
+    。grab-window 中有指针。
+    。confine-to 窗口（若有的话）是可见的。
+    。在 grab-window 的先辈窗口上没有相同的按钮/键被捕获。
+    其余参数的解释同 GrabPointer 一样。当指针的逻辑状态已释放所有按钮『这独立于
+修饰符键的逻辑状态』时，活动捕获自动终止。请注意，若设备事件处理被冻结，则设备
+的逻辑状态可能滞后于物理状态。
+    此请求覆盖同窗口上同一客户对相同按钮/键组合所有以前的被动捕获。修饰符
+AnyModifier 等价于向所有可能的修饰符组合（包括无修饰符组合）发布请求。不要求所
+有指定的修饰符当前有指派的键码。AnyButton 等价向所有可能的按钮发布请求，否则，
+不要求指定的按钮当前被赋予一个物理按钮。
+    如果其他客户在同一窗口中已发布了对相同按钮/键组合的 GrabButton 请求，则产生
+Access 错误。当使用 AnyModifier 或 AnyButton 时，请求完全失败「不能建立捕获」，
+若对组合有冲突捕获而产生 Access 错误。此请求在主动捕获上无效。
+
+
+    UngrabButton
+      modifiers: SETofKEYMASK or AnyModifier
+      button: BUTTON or AnyButton
+      grab-window: WINDOW
+      错误: Value, Window
+
+    如果此客户曾在指定的窗口上被动捕获按钮/键组合，则此请求释放它。modifiers 为
+AnyModifier 等价于对所有可能的修饰符组合『包括无修饰符组合』发布请求。button 为
+AnyButton 等价于向所有可能的按钮发布请求。此请求对主动捕获无效。
+
+
+    ChangeActivePointerGrab
+      event-mask: SETofPOINTEREVENT
+      cursor: CURSOR or None
+      time: TIMESTAMP or CurrentTime
+      错误: Cursor, Value
+
+    如果定位被客户活动地捕获并且指定的时间不早于 last-pointer-grab 时间也不迟于
+当前服务器时间，则此请求修改指定的动态参数。event-mask 和 cursor 的解释同
+GrabPointer 中一样。此请求对用 GrabButton 建立的被动捕获的参数无用。
+
+
+    GrabKeyboard
+      grab-window: WINDOW
+      owner-events: BOOL
+      pointer-mode, keyboard-mode: {Synchronous, Asynchronous}
+      time: TIMESTAMP or CurrentTime
+    ->
+      status: {Success, AlreadyGrabbed, Frozen, InvalidTime, NotViewable}
+      错误: Value, Window
+
+    此请求主动捕获键盘的控制。以后的键事件仅向捕获客户报告。此请求覆盖此客户的
+所有主动键盘控制。
+    若 keyboard-mode 为 Asynchronous，键盘事件处理正常进行。如果键盘当前客户冻
+结，则恢复键盘事件的处理。如果 keyboard-mode 为 Synchronous，则键盘的状态冻结。
+在捕获客户发出释放性 AllowEvents 请求或释放键盘捕获之前。服务器不再产生键盘事
+件。当键盘被冻结时不丢失实时的键盘变化。它们被排成队列以备处理。
+    如果 pointer-mode 为 Asychronous，则指针事件处理不受捕获激活的影响。若
+pointer-mode为 Synchronous，则指针状态被冻结。在捕获客户发出的释放性AllowEvents
+请求或释放键盘捕获之前，服务器不再产生指针事件。当定位器被冻结时，实际的指针变
+化不会丢失，它们被排成队列以备处理。
+    此请求产生 FocusIn 和 FocusOut 事件。
+    若键盘已被其他客户主动捕获，则此请求失败，状态为 Already-Grabbed。若键盘被
+其他客户的主动捕获冻结，则请求失败，状态为 Frozen。若 grab-window 不可见，则请
+求失败，状态为 NotViewable。若指定的时间早于 last-keyboard-grab 事件或晚于当前
+服务器时间，则请求失败，状态为InvalidTime。否则，将 last-keyboard-grab 时间置为
+指定的时间，若是为CurrentTime，则置成当前服务器时间。
+
+
+    UngrabKeyboard
+      time: TIMESTAMP or CurrentTime
+
+    如果客户（通过 GrabKeyboard 或 GrabKey)已主动捕获了键盘，则此请求释放键盘并
+释放队列中的事件。如果指定的时间早于 last-keyboard-grab 时间或晚于当前服务器时
+间，则请求无效。
+    此请求产生 FocusIn 和 FocusOut 事件。
+    如果主动键盘捕获的事件窗口变为不可见，则自动执行 UngrabKeyboard。
+
+
+    GrabKey
+      key: KEYCODE or AnyKey
+      modifiers: SETofKEYMASK or AnyModifier
+      grab-window: WINDOW
+      owner-events: BOOL
+      pointer-mode, keyboard-mode: {Synchronous, Asynchronous}
+      错误: Access, Value, Window
+
+    此请求在键盘上建立被动捕获。键盘将来按 GrabKeyboard中说明的方式被主动捕获。
+last-keyboard-grab 时间被置为按键时间（同 KeyPress 事件中一样），并且如果下列条
+件成立，则报告 KeyPress 事件：
+    。键盘没被捕获并且当指定的修饰符键被逻辑地按下，但没有逻辑地按下其它修饰符
+      键时，逻辑地按下指定的键（它自身可为修饰符键）。
+    。grab-window 是关注窗口或其先辈窗口，或 grab-window 时关注窗口的后裔窗口且
+      其中有指针。
+    。在 grab-window 的先辈窗口上没有对相同的键组合的被动捕获。
+    其余参数的解释同 GrabKeyboard。当键盘的逻辑状态使指定键释放，这不依赖于修饰
+符键的逻辑状态，这时主动捕获自动终止。请注意，若设备事件处理被冻结，则设备的逻
+辑状态可能滞后于设备的物理状态。
+    此请求覆盖同一窗口上同一客户对相同键组合的所有以前的被动捕获。modifier 为
+AnyModifier 等价于向所有可能的修饰符组合（包括无修饰符组合）发布请求。不要求所
+有指定的修饰符当前有被赋予的键码。Key 为 AnyKey 等价向所有可能的键码发出请求。
+否则，Key 必须在建立连接时确定的 min-keycode 和 max-keycode 之间，否则出现Value
+错误。
+    如果其他客户在同一窗口中已用相同的键组合发出 GrabKey，则产生 Access 错误。
+当使用 AnyModifier 或 AnyKey 时，如果对组合有冲突捕获，则请求完全失败（未能建立
+捕获），且产生 Access 错误。
+
+
+    UngrabKey
+      key: KEYCODE or AnyKey
+      modifiers: SETofKEYMASK or AnyModifier
+      grab-window: WINDOW
+      错误: Value, Window
+
+    如果此客户捕获了指定窗口上的键组合，则此请求释放它。modifier 为 AnyModifier
+等价于向所有可能的修饰符组合（包括无修饰符组合）发出请求。key 为 AnyKey 等价于
+向所有可能的键码发请求。此请求对活动捕获无效。
+
+
+    AllowEvents
+      mode: {AsyncPointer, SyncPointer, ReplayPointer, AsyncKeyboard,
+      SyncKeyboard, ReplayKeyboard, AsyncBoth, SyncBoth}
+      time: TIMESTAMP or CurrentTime
+      错误: Value
+
+    如果客户已使某一设备冻结，则此请求释放队列中的事件。如果指定时间早于客户的
+多数最新主动捕获的 last-grab 时间或迟于当前服务器时间，则请求无效。
+    对于 AsyncPointer，如果指针被客户冻结，则指针事件处理正常进行。如果客户以两
+次单独捕获的名义对指针冻结两次，则 AsyncPoiner 将其解冻。如果客户没有冻结指针，
+但不必捕获指针时，AsyncPointer 无效。对于 SyncPointer，如果客户冻结了指针并主动
+捕获，则正常进行指针事件的处理直到向客户报告下一个 ButtonPress 或 ButtonRelease
+事件为止，此时指针再次冻结。但，若报告的事件使捕获获释，则指针不冻结。如果指针
+未被客户冻结或捕获，则 SyncPointer 无效。
+    对于 ReplayPointer，如果指针被客户主动捕获，并且由于客户发送事件（由于带
+SyncPointer 方式的 AllowEvents 或 GrabButton 但不是 GrabPointer 的激活造成）使
+指针冻结，则释放指针捕获且完全重处理事件，此时不考虑刚释放的 grab-window 上或至
+根窗口以上的任何被动捕获。如果指针未被客户捕获或指针未由于事件的结构被冻结，则
+请求无效。
+    对于 AsyncKeyboard，若键盘被客户冻结，则键盘事件处理正常进行。如果客户以二
+次单独捕获的名义对键盘冻结，则 AsyncKeyboard 将其解冻。如果客户没有冻结键盘，
+但不必捕获键盘时，AsyncKeyboard 无效。对于 SyncKeyboard，如果客户冻结了键盘并主
+动捕获，则正常进行键盘事件的处理直到向客户报告下一个 KeyPress 或 KeyRelease 事
+件为止，此时键盘再次冻结。但是，若报告的事件使键盘捕获获释，则键盘不冻结。如果
+键盘未被客户冻结或主动捕获，则 SyncKeyboard 无效。
+    对于 ReplayKeyboard，如果键盘被客户主动捕获，并且由于客户发送事件（由于带
+SyncKeyboard 方式的 AllowEvents 或 GrabKey 但不是 GrabKeyboard 的激活造成）使
+键盘被冻结，则释放指针捕获且完全重处理事件，此时不考虑刚释放的捕获的grab-window
+上或至根窗口以上的任何被动捕获。如果键盘未被客户捕获或键盘未由于事件的结构被冻
+结，则请求无效。
+    对于 SyncBoth，若指针和键盘都被客户冻结，则正常进行两种设备的事件处理直到向
+被捕获设备的客户报告下一个 ButtonPress、Button|Release、KeyPress、KeyRelease 事
+件「对于指针应是按钮事件，对于键盘应是键盘事件」，此时设备再次冻结。但是，若报
+告的事件使捕获获释，则设备不冻结『但如果其他设备仍被捕获，则其后继的事件仍使设
+备都冻结』。除非指针和键盘都被客户冻结，否则 SyncBoth 无效。如果客户以二个单独
+捕获冻结指针或键盘两次，则 SyncBoth 将其解冻（但后继的 SyncBoth 冻结将使每个设
+备再冻结一次）。
+    对于 AsyncBoth，若指针和键盘被客户冻结，则对这两种设备的事件处理正常进行。
+如果客户以二个单独名义两次冻结一个设备，则 AsyncBoth 均将其解冻。除非客户已冻结
+指针和键盘，否则 AsyncBoth 无效。
+    AsyncPointer、SyncPointer 和 ReplayPointer 对键盘事件处理无影响。
+AsyncKeyboard、SyncKeyboard 和 ReplayKeyboard 对指针事件处理无影响。
+    有可能指针捕获和键盘捕获同时是主动的。当某个设备由于这两个捕获中的一个被冻
+结，则不执行此设备的事件处理。有可能由于这两种捕获使某个设备被冻结，在这种情况
+中，在事件处理再开始之前，应以两个捕获为名义释放冻结。
+
+
+    GrabServer
+
+    此请求在除此请求所到达的连接之外的所有连接上禁止对请求和关闭（close-down）
+的处理。
+
+
+    UngrabServer
+
+    此请求在其他连接上重开始对请求和关闭的处理。
+
+
+    QueryPointer
+      window: WINDOW
+    ->
+      root: WINDOW
+      child: WINDOW or None
+      same-screen: BOOL
+      root-x, root-y, win-x, win-y: INT16
+      mask: SETofKEYBUTMASK
+      错误: Window
+
+    返回指针所在的根窗口以及相对于根窗口原点的指针坐标。若 same-scerrn为Fasle，
+则指针与参数 window 不在同一屏幕，child 为 None，且 win-x，win-y 为零，若
+same-screen 为 True，则 win-y，win-y 是相对参数 window 的原点的指针坐标，且
+child 为包括指针的子窗口「若有的话」。同时还返回修饰符键和按钮的当前逻辑状态。
+请注意，当设备事件处理被冻结时设备的逻辑状态可能会滞后于物理状态。
+
+
+    GetMotionEvents
+      start, stop: TIMESTAMP or CurrentTime
+      window: WINDOW
+    ->
+      events: LISTofTIMECOORD
+      where:
+      TIMECOORD: [x, y: INT16
+      time: TIMESTAMP]
+      错误: Window
+
+    此请求返回动作『或操作』历史缓冲区中位于指定的 start 和 stop 时间范围（包括
+start 和 stop）内的、且其坐标位于指定窗口之中「包括边界」的所有事件。坐标x，y
+相对于 window 的原点。
+    如果 start 时间晚于 stop 时间或 start 时间还未到，则不返回任何事件。若 stop
+时间还未到，则它等价于 CurrentTime。
+
+
+    TranslateCoordinates
+      src-window, dst-window: WINDOW
+      src-x, src-y: INT16
+    ->
+      same-screen: BOOL
+      child: WINDOW or None
+      dst-x, dst-y: INT16
+      错误: Window
+
+    当 dst-x, dst-y 坐标相对 dst-window 原点时，返回相对 src-window 原点的
+src-x, src-y 坐标。若 same-screen 为 False，则 src-window 和 dst-window 不在同
+一屏幕上，dst-x, dst-y 为零。若坐标被包括在 dst-window 的映象子窗口中，则返回该
+子窗口。
+
+
+    WarpPointer
+      src-window: WINDOW or None
+      dst-window: WINDOW or None
+      src-x, src-y: INT16
+      src-width, src-height: CARD16
+      dst-x, dst-y: INT16
+      错误: Window
+
+    如果 dst-window 为 None，此请求相对于指针的当前位值移动指针，位移为 [dst-x,
+dst-y]。若 dst-window 为一个窗口，此请求相对于 dst-window 的原点移动指针至
+[dst-x, dst-y]。但如 src-window 不为 None，则仅当 src-window 中有指针且指针在
+src-window 中指定的矩形中时，才移动指针。
+    坐标 src-x, src-y 相对于 src-window 原点。若 src-height为零，则用src-window
+的当前高度减去 src-y 代替它。若 src-width 为零，则用 src-window 的当前宽度减去
+src-x 代替它。
+    此请求不能用于将指针移出主动指针捕获的 Confine-to 窗口之外，仅能将它最远移
+至 confine-to 窗口的最近边界。
+    此请求将产生就好像用户瞬时移动指针一样的事件。
+
+
+    SetInputFocus
+      focus: WINDOW or PointerRoot or None
+      revert-to: {Parent, PointerRoot, None}
+      time: TIMESTAMP or CurrentTime
+      错误: Match, Value, Window
+
+    此请求修改输入关注和 last-focus-change 时间。如果指定的时间早于当前
+last-focus-change 时间或晚于当前服务器时间。则请求无效。否则，将
+last-focus-change 时间置为指定时间，若为 CurrentTiem，则用当前服务器时间。
+    如果 focus 被指定为 None，则取消所有键盘事件，直到设置了新关注事件。在这种
+情况下，忽略 revert-to 参数。
+    如果某个窗口被指定为关注，则它变为键盘关注窗口。如果产生的键盘事件能正常向
+此窗口或其下层窗口报告，则事件能正常报告。否则，事件报告相对于关注窗口。
+
+
+    GetInputFocus
+    ->
+      focus: WINDOW or PointerRoot or None
+      revert-to: {Parent, PointerRoot, None}
+
+
+    QueryKeymap
+    ->
+      keys: LISTofCARD8
+
+    
+
+
+    OpenFont
+      fid: FONT
+      name: STRING8
+      错误: Alloc, IDChoice, Name
+
+
+    CloseFont
+      font: FONT
+      错误: Font
+
+    此请求删除资源ID与字体之间的关系。当无其他资源引起字体时，将其释放。
+
+
+    QueryFont
+      font: FONTABLE
+    ->
+      font-info: FONTINFO
+      char-infos: LISTofCHARINFO
+
+      其中:
+            FONTINFO: [draw-direction: {LeftToRight, RightToLeft}
+		       min-char-or-byte2, max-char-or-byte2: CARD16
+		       min-byte1, max-byte1: CARD8
+		       all-chars-exist: BOOL
+		       default-char: CARD16
+		       min-bounds: CHARINFO
+		       max-bounds: CHARINFO
+		       font-ascent: INT16
+		       font-descent: INT16
+		       properties: LISTofFONTPROP]
+	    FONTPROP: [name: ATOM
+		       value: <32-bit-value>]
+	    CHARINFO: [left-side-bearing: INT16
+		       right-side-bearing: INT16
+		       character-width: INT16
+		       ascent: INT16
+		       descent: INT16
+		       attributes: CARD16]
+      错误: Font
+
+    此请求返回有关字体的逻辑信息，如果给定了字体的 GContext，则使用当前包括的字
+体。
+    draw-direction 仅是一个提示，它指示多数 char-infos 有正数（LeftToRight）或
+负数（RightToLeft）字符宽度单位。核心协议未定义垂直正文支持。
+    如果 min-byte1 和 max-byte1 均为零，则 min-char-or-byte2 指出对应char-infos
+的首元素的线性字符索引，max-char-or-byte2 指出对应元素的线性字符索引。如果
+min-byte1 或 max-byte1 不为零，则 min-char-or-byte2 和 max-char-or-byte2 都应小
+于256，且对应 char-infos 元素N「从0开始计数」的20字节字符索引值为：
+    byte1 = N / D + min-byte1
+    byte2 = N \\ D + min-char-or-byte2
+其中
+    D = max-char-or-byte2 - min-char-or-byte2 + 1
+    / = 整数除法
+    \\ = 整数取模
+    如果 char-infos 的长度为零，则 min-bounds 和 max-bounds 值相同，并且有效的
+char-infos 用长度为：
+    L = D * (max-byte1 - min-byte1 + 1)
+的 char-info 填充。即指定的线性或矩阵范围中的 glyphs 具有相同的信息，其值由
+min-bounds『和 max-bounds』给定。若 all-chars-exist 为 True，则 char-infos 中的
+字符都有非零的边界框。
+    default-char 指出使用未定义或不存在的字符时使用的字符。请注意，default-char
+是 CARD16 而不是 CARD2B，对于使用2字节矩阵格式的字体，default-char 的最高字节是
+byte1，最低字节是 byte2，若 default-char 本身定义一个未定义或不存在的字符，则对
+未定义或不存在的字符不打印。
+    min-bounds 和 max-bounds 中是 char-infos 上每个 CHARINFO 成分的最小值和最大
+值（不考虑不存在的字符）。字体的边界框「即，包括将所有字符显示同一原点[x,y]而形
+成的字形的最小矩形」的坐上角坐标为：
+	[x + min-bounds.left-side-bearing, y - max-bouns.ascent ]
+其宽度为：
+	max-bounds.right-side-bearing - max-bounds.left-side-bearing
+高度为：
+	max-bounds.ascent + max-bounds.descent
+    font-ascent是基线上的字体逻辑范围，它用于确定行距。某些字符可能会超过此值。
+font-descent 是字体在基上『或以下』的逻辑范围，它用于确定行距。某些字符可能会超
+过此值。若基线位于Y坐标y处，则字体的逻辑范围在Y坐标值 (y - font-ascent),
+(y + font-descent + 1) 之间。
+    系统不保证字体有任何特征。特征值「例如，INT32，CARD32」的解释必须由特征的预
+先知识推导出来。可能的话，字体至少应有下列特征『注意，大小写没有区别』：
+-------------------------------------------------------------------------------
+    特征                   类型                说明
+-------------------------------------------------------------------------------
+MIN_SPACE              CARD32        最小的字间距离，单位为像素。
+NORM_SPACE	       CARD32	     正常的字间距离，单位为像素。
+MAX_SPACE	       CARD32	     最大的字间距离，单位为像素。
+END_SPACE	       CARD32	     句字末尾的空格，单位为像素。
+
+SUPERSCRIPT_X	       INT32	     上标开始处离字符原点的位移量，单位为像素。
+SUPERSCRIPT_Y	       INT32	     若原点在 [x, y]，则上标开始处为：
+				     [X + SUPERSCRIPT_X, Y + SUPERSCRIPT_Y]
+
+SUBSCRIPT_X	       INT32	     下标开始处离字符原点的位移量。单位为像素。
+SUBSCRIPT_Y	       INT32	     若原点在 [x, y]，则下标开始处为：
+				     [X + SUBSCRIPT_X, Y + SUBSCRIPT_Y]
+
+UNDERLINE_POSITION     INT32	     由基线至下划线顶之间的Y偏移量，单位为像素。
+				     若基线在Y坐标y处，则下划线顶位于：
+				     [y + UNDERLINE_POSITION]
+UNDERLINE_THICKNESS    CARD32	     下划线的宽度，单位为像素。
+
+STRIKEOUT_ASCENT       INT32	     小框或空字符的垂直范围，单位为像素。
+STRIKEOUT_DESCENT      INT32	     如果基线位于Y坐标y处，则重写框的顶位于：
+				     (y - STRIKEOUT_ASCENT)，且高度为：
+				     ( STRIKEOUT_ASCENT+ STRIKEOUT_DESCENT)
+
+ITALIC_ANGLE	       INT32	     字体中字符主体部分的角度，单位为角度/64，
+				     相对于从字符原点的3点钟位置。若为正数，
+				     表示顺时针移动（同 Arc 请求）。
+X_HEIGHT	       INT32	     在 Tex 中为 lex，但用像素为单位表示。
+				     一般是小写字母 x 的高度。
+QUAD_WIDTH	       INT32	     在 Tex 中为 lem，但用像素为单位表示。
+				     一般时数字0-9的宽度。
+CAP_HEIGHT	       INT32	     由基线至大写字母顶的Y偏移量，不考虑重音符
+				     号，单位为像素。如果基线位于Y坐标y处，则大
+				     写字母顶位于 (y - CAP_HEIGTH)
+HEIGHT		       CARD32	     字体的重量，其值可为0至1000。
+POINT_SIZE	       CARD32	     在理想分辨率下此字体的尺寸，单位为1/10。
+RESOLUTION	       CARD32	     创建此字体所选用的每点像素值，单位为1/100。
+-------------------------------------------------------------------------------
+    对于原点位于[x,y]的字符，其边界框（即，包含字形的最小矩形）的坐上角位于（用
+CHARINFO 成分描述）：
+	 [x + left-side-bearing, y - ascent]
+且宽度为：
+	 right-side-bearing - left-side-bearing
+高度为：
+	 ascent + descent
+且下个字符的原点为：
+	 [x + character-width, y]
+    请注意，逻辑上把基线看成在非下降字符之下（当 descent 为零时，仅画小于 y 的
+Y坐标像素），逻辑上把原点看成是与非实心字符的左边界「当 left-side-bearing 为零
+时，不应小于 x 的 X 坐标像素」。
+    请注意，CHARINFO 单位值可为负数。
+    所有 CHARINFO 成分为零表示不存在的字符。
+    属性字段 per-character 的解释与服务器有关。
+
+
+    QueryTextExtents
+      font: FONTABLE
+      string: STRING16
+    ->
+      draw-direction: {LeftToRight, RightToLeft}
+      font-ascent: INT16
+      font-descent: INT16
+      overall-ascent: INT16
+      overall-descent: INT16
+      overall-width: INT32
+      overall-left: INT32
+      overall-right: INT32
+      错误: Font
+
+    此请求返回指定字体的指定字符串的逻辑范围。若给出了字体的 GContext，则使用当
+前包括的字体。draw-direction, font-ascent 及 font-descent 同 QueryFont 中一样。
+overall-ascent 是串中字符的最大上升单位，overall-descent 为最大下降单位。
+overall-width 是串中所有字符的宽度之和。对于串中的每个字符，设W为串中此字符之前
+的所有字符的 character-width 之和，L为字符的 left-side-bearing 加 W，R为
+right-side-bearing 加 W，则 overall-left 为串中字符的L的最小值，overall-right
+为最大的R值。
+    对于带有线性索引而不是用二字节矩阵索引的字体，服务器将把每个 CHAR2B 解释为
+一个16位数，传送时首先传送其最高字节『CHAR2B 的 byte1 被认为时最高字节』。若字
+体定义 default-char，则认为串中的未定义字符的单位均为零。
+
+
+    ListFonts
+      pattern: STRING8
+      max-names: CARD16
+    ->
+      names: LISTofSTRING8
+
+    此请求返回与模式匹配的一系列可用字体名（其由字体搜索路径控制，详见
+SetFontPath 请求）。最多返回 max-names 个字体名。pattern 应使用 ISO Latin-1 编
+码且大小写一样。在 pattern 中，"?" 字符「八进制值为77」能匹配任何单个字符，"*"
+字符『八进制值为52』能匹配任意数量的字符。返回的字体名为小写。
+
+
+    ListFontsWithInfo
+      pattern: STRING8
+      max-names: CARD16
+    ->
+      name: STRING8
+      info: FONTINFO
+      replies-hint: CARD32
+      其中:
+      FONTINFO: <与 QueryFont 中的类型定义一样>
+
+    此请求同 ListFonts 类似，但它还返回有关字体的信息。返回的有关字体的信息同
+QueryFont 返回的一样，但不返回 PerCharater 单位。请注意，此请求可能会产生多个回
+答。在每个回答中，replies-hint 给出返回字体的数量的提示。此数仅是一个提示，它可
+能大于或小于实际返回的数量。零值并不保证不再返回字体。在字体回答之后，发送其名
+为长度的回答已指示回答序列结束。
+
+
+    SetFontPath
+      path: LISTofSTRING8
+      错误: Value
+
+    此请求定义查找字体的搜索路径。每个服务器仅有一个搜索路径，而每个客户则没有。
+串的解释随操作系统而定。但串应指出待搜索的目录。
+    将 path 置为空表即恢复服务器的缺省路径。
+    作为执行此请求的一个副作用，服务器保证刷新所有缓冲的但目前没有显式分配资源
+ID的字体信息。
+    此请求的错误含义随系统而定。
+
+
+    GetFontPath
+    ->
+      path: LISTofSTRING8
+
+    此请求返回字体的当前搜索路径。
+
+
+    CreatePixmap
+      pid: PIXMAP
+      drawable: DRAWABLE
+      depth: CARD8
+      width, height: CARD16
+      错误: Alloc, Drawable, IDChoice, Value
+
+    此请求创建一个 pixmap 并将标识符 pid 赋给它。width 和 height 必须非零（否则
+产生 Value 错误）。depth 必须是指定的 drawable 的根所支持的 depth 之一「否则产
+生 Value 错误」。pixmap 的初值未定义。
+    在此请求中，可把 InputOnly 窗口作为可画区传入。
+
+
+    FreePixmap
+      pixmap: PIXMAP
+      错误: Pixmap
+
+    此请求删除资源ID与 pixmap 之间的关系。当无其他资源引用该 pixmap 时，释放它
+所占空间。
+
+
+    CreateGC
+      cid: GCONTEXT
+      drawable: DRAWABLE
+      value-mask: BITMASK
+      value-list: LISTofVALUE
+      错误: Alloc, Drawable, Font, IDChoice, Match, Pixmap, Value
+
+    此请求创建一个图形上下文并将标识符 cid 赋给它。对于与指定 drawable 有相同的
+根和深度的目的 drawable，可使用 GContext。若用其他 drawable 会出现 Match 错误。
+    value-mask 和 value-list 指出待初始化的成分。上下文成分有：
+      成分	          类型
+    function	           {Clear, And, AndReverse, Copy, AndInverted, 
+			    NoOp, Xor, Or, Nor, Equiv, Invert, OrReverse, 
+			    CopyInverted, OrInverted, Nand, Set} 
+    plane-mask		   CARD32 
+    foreground		   CARD32 
+    background		   CARD32 
+    line-width		   CARD16 
+    line-style		   {Solid, OnOffDash, DoubleDash} 
+    cap-style		   {NotLast, Butt, Round, Projecting} 
+    join-style		   {Miter, Round, Bevel} 
+    fill-style		   {Solid, Tiled, OpaqueStippled, Stippled} 
+    fill-rule		   {EvenOdd, Winding} 
+    arc-mode		   {Chord, PieSlice} 
+    tile		   PIXMAP 
+    stipple		   PIXMAP 
+    tile-stipple-x-origin  INT16 
+    tile-stipple-y-origin  INT16 
+    font		   FONT 
+    subwindow-mode	   {ClipByChildren, IncludeInferiors} 
+    graphics-exposures	   BOOL
+    clip-x-origin	   INT16 
+    clip-y-origin	   INT16 
+    clip-mask		   PIXMAP or None 
+    dash-offset		   CARD16 
+    dashes		   CARD8
+
+    在图形操作中，给出源和目标像素，则按像素中的对应位依次序计算结果；即，布尔
+操作在每个平面上操作。plane-mask 将操作限制到平面子集，因此结果为：
+	((src FUNC dst) AND plane-mask) OR (dst AND (NOT plane-mask))
+    对 foreground, background 或 plane-mask 值不作范围检查。而是仅将其截成合适
+的位数。
+    函数的含义如下：
+
+    函数	   操作
+    Clear	   0
+    And		   src AND dst 
+    AndReverse	   src AND (NOT dst) 
+    Copy	   src 
+    AndInverted	   (NOT src) AND dst 
+    NoOp	   dst 
+    Xor		   src XOR dst 
+    Or		   src OR dst 
+    Nor		   (NOT src) AND (NOT dst) 
+    Equiv	   (NOT src) XOR dst 
+    Invert	   NOT dst 
+    OrReverse	   src OR (NOT dst) 
+    CopyInverted   NOT src 
+    OrInverted	   (NOT src) OR dst 
+    Nand	   (NOT src) OR (NOT dst) 
+    Set		   1
+
+    line-width 的单位为像素，它可大于或等于1「即一个宽线」或0『即一个细线』。
+    画宽线时集中在图形请求描述的路径上。除非通过合并或空隙格式指定，则端点为
+[X1, Y1], [X2, Y2], 宽度为W的宽线的边框为一个矩形，其顶点坐标为：
+         [x1 (w*sn/2), y1+(w*cs/2)], [x1+(w*sn/2), y1 (w*cs/2)], 
+         [x2 (w*sn/2), y2+(w*cs/2)], [x2+(w*sn/2), y2 (w*cs/2)]
+其中 sn 时该宽线角度的正弦值，cs 是其余弦值。若某像素的中心完全位于边界框（可把
+其边看成是无限细）中，则该像素是线的组成部分，因此要画它。若像素的中心正处于边
+框上，则当其仅当内部紧在其右边「X增长方向」时，它才是线的一部分。中心在水平边的
+像素是特殊情况，当且仅当内部或边界紧跟之下『y增长方向』且内部或边界紧在其右边（
+X增长方向）时，该像素是线的一部分。请注意，此描述时画线时的数学模型，它并不意味
+要实现这样的几何。当线宽大于一个像素时，计算线端点时最好使用实型或定点算术运算。
+    细线「line-width为零」是使用未指定、依赖于设备的算法绘制的“一像素宽”线。
+对此算法仅有二个限制。第一点，如果由 [X1,Y1] 至 [X2,Y2] 所画的线未被剪裁，且由
+[X1+dx, Y1+dy] 至 [X2+dx, Y2+dy]所画的另一条线也未被剪裁，则当且仅当画第二条线
+时遇到点 [x+dx, y+dy] 时，画第一条线时碰到点 [x, y]。第二点，剪裁不影响组成线条
+的有效点集合。因此，当且仅当某点位于剪裁区域内时且当画线时会碰到该点时，则该点
+出现在被剪裁的线上。
+    请注意，有 [X1, Y1] 至 [X2, Y2] 画宽线时的像素同由 [X2, Y2] 至 [X1, Y1] 画
+宽线一样多『不包括 cap-Style 和 join-Style』。实现者可将细线的此特征置为 true，
+但不是必须的。line-width 为0和 line-width 为1的区别是所画像素不同。一般地，画一
+条细线比画一条宽度为1的宽线快，但由于画线算法的原因，所画细线不如宽线美观。若希
+望得到精确且一致的结果，客户应使用 line-width 为1，而不是为0的线条。
+
+    line-style 定义所画线段：
+    Solid      画全线。
+    DoubleDash 画全线，但偶数点与奇数点的填充不一样（见 fill-style）。
+	       当 cap-style 为 Butt 时，碰到奇数或偶数点时使用 cap-style。
+    OnOffDash  仅画奇数点，每个点的内部结束处使用 cap-style
+	       （除把 Notlast 当作 Butt 处理』）。
+
+    cap-style 定义画端点的方法：
+    NotLast    结果等价于 Butt，但对 line-width 为零时，不画最终端点。
+    Butt       结果为端点处的小正方形「垂直于线段」且无投影。
+    Round      结果为圆，其直径为 line-width，焦点为 endpoint。
+	       当 line-width 为零时，它与 Butt 等价。
+    Projecting 在所得结果中终点处有小方格，但线条越过终点继续伸展出
+	       line-width 的一半。当 line-width 为零时，它等价于 Butt。
+
+    join-style 定义宽线边界的画法：
+    Miter      扩展两条线的外边以适合一个角度。但若角度小于11度，则使用 Bevel。
+    Round      结果为圆弧，直径为 line-width，圆心在 joinpoint。
+    Bevel      结果为 Butt 终点型，并填充三角形 "notch"。
+
+    对于端点相重(X1=X2, Y1=Y2)的线段，对端点使用 cap-style 时，其结果取决于
+line-width 和 cap-style。
+    NotLast     thin  这与设备有关，但希望的结果是不画任何线段。
+    Butt	thin  这与设备无关，但希望的结果是仅画一个像素。
+    Round       thin  同 Butt/thin
+    Projecting  thin  同 Butt/thin
+    Butt        wide  不画任何东西
+    Round       wide  封闭路径为一个圆，原点在端点，直径为 line-width
+    Projecting  wide  封闭路径为一个正方形，它与坐标轴对齐，焦点在端点，
+		      边长为 line-width
+
+    对于端点重合(X1=X2, Y1=Y2)的线段。对一个或两个端点使用 join-style 的效果就
+像从整个路径上的移走该线段一样。但若总路径由一个单点组成。则效果同对两个端点都
+使用 cap-style 一样。
+    tile/stipple 和 clip 原点的解释相对于图形请求中声明的目的 drawable。
+    tile pixmap的根与深度必须同 gcontext 一样（否则产生 Match 错误）。stipple 
+pixmap 的深度必须为1，其根须同 gcontext 一样「否则产生 Mathc 错误」。对于
+Stippled 的 fill-style『但不是 OpaqueStippled 和 fill-style』，点画模式在单面上
+被加窗口标题区。
+    fill-style 定义线段、正文和填充请求的源内容。对于所有正文和填充请求（例如，
+PolyTest8，PolyTest16，PolyfillRectangle, Fillpoly 及 PolyFillArc）和line-style
+为 Solid 的线请求「例如，PolyLine，PolySeqment，PolyRectangle，PolyArc」和
+line-style 为 OnOffDash 或 DoubleDash 的线段请求的偶数点，均有：
+    Solid	    前景
+    Tiled           窗口标题区
+    OpaqueStippled  同 stipple 具有相同的 width 和 height 的 tile，
+		    但在背景中点画为0，前景中点画为1
+    Stippled	    被 Stipple 屏蔽的前景
+    对于 line-style 为 DoubleDesh 的线段请求的奇数点：
+    Solid	    背景
+    Tiled	    同偶数点
+    OpaqueStippled  同偶数点
+    Stippled	    被 Stipple 屏蔽的背景
+    此处允许的点值实际上是用 SetDashes 设置的一般形式的简化。此处指定值N等价于
+在 SetDashes 中指定两元素表[N,N]。值必须非零『否则产生 Value错误』。dash-offset
+及 dashes 的解释见 SetDashes 请求。
+    clip-mask 限制对目的 drawable 的写，仅画 clip-mask 中将其置为1的像素，不画
+clip-mask 中置为0的或超出 clip-mask 覆盖范围之外的像素。clip-mask 影响所有图形
+请求，但它不剪裁源。clip-mask 原点的解释相对于图形请求中指定的 drawable 目的的
+原点。若把 clip-mask 指定为 pixmap，则其深度、根须同 gcontext 一样（否则产生
+Match 错误）。若 clip-mask 为 None，则永远可画像素，可用 SetClipRetangles 请求
+设置 clip-mask。
+    对于 ClipByChildren，源窗口和目的窗口都要再被所有可视的 InputOutput 窗口剪
+裁。对于 IncludeInferiors，源窗口和目的窗口均不被下层窗口剪裁。这将导致子窗口内
+容在源窗口中并且通过目的窗口的子窗口边界。对具有相同深度的源窗口或目的窗口且其
+被映象的下层窗口深度不一使用 IncludeInferiors 并不非法，但核心协议未定义其语义。
+    fill-rule 定义在 FillPoly 请求给定的路径中哪些像素在内径内「即要画」。
+Evenodd 意指若以某点为原点的无穷射线穿过路径奇数次，则该点在内部。对于Winding，
+若以某点为原点的无穷射线穿越的顺时针有向线段数与逆时针有向线段数不一样，则该点
+在内部。
+    对于上述两种填充规则，点是无穷小且路径是无穷细线。若像素的关注在内部且关注
+不在边界上，则像素在内部。若关注在边界上，则当且仅当内部多边形紧在其右『X增长方
+向』时，像素在内部。
+    arc-mode 控制 PolyFillArc 请求中的填充。
+    graphics-exposures 标记控制 CopyArea 和 CopyPlane 请求（以及扩展定义的类似
+请求）中 GraphicsExposure 事件的产生。
+    下面是成分的缺省值：
+      成分		  缺省值
+    function		  Copy 
+    plane-mask		  全为1
+    foreground		  0 
+    background		  1 
+    line-width		  0 
+    line-style		  Solid 
+    cap-style		  Butt 
+    join-style		  Miter 
+    fill-style		  Solid 
+    fill-rule		  EvenOdd 
+    arc-mode		  PieSlice 
+    tile		  用前景像素填充的任意大小的 pixmap「即客户指定的像素，
+			  否则为0」『以后修改前景不影响此 pixmap』
+    stipple		  用1填充的任意大小的 pixmap
+    tile-stipple-x-origin 0 
+    tile-stipple-y-origin 0 
+    font		  <随服务器而定的字型> 
+    subwindow-mode	  ClipByChildren 
+    graphics-exposures	  True 
+    clip-x-origin	  0 
+    clip-y-origin	  0 
+    clip-mask		  None 
+    dash-offset		  0 
+    dashes		  4（即表[4, 4]）
+
+
+    ChangeGC
+      gc: GCONTEXT
+      value-mask: BITMASK
+      value-list: LISTofVALUE
+      错误: Alloc, Font, GContext, Match, Pixmap, Value
+
+    此请求改变 gc 中的成分。value-mask 和 value-list 指出待修改的成分。值和限制
+同 CreateGC。
+    修改 clip-mask 同样覆盖正文上的 SetClipRectangles 请求。修改 dash-offset 或
+dashes 覆盖正文上的 SetDashes 请求。
+    验证并修改成分的次序随服务器而定。若出现错误，则有可能已修改了部分成分。
+
+
+    CopyGC
+      src-gc, dst-gc: GCONTEXT
+      value-mask: BITMASK
+      错误: Alloc, GContext, Match, Value
+
+    此请求将成分由 src-gc 到 dst-gc 复制。value-mask 指出待复制的成分。两个
+gcontext 必须具有相同的根和深度（否则产生 Match 错误）。
+
+
+    SetDashes
+      gc: GCONTEXT
+      dash-offset: CARD16
+      dashes: LISTofCARD8
+      错误: Alloc, GContext, Value
+
+    此请求为点线型设置 gc 中的 dash-offset 和 dashes。Dashes 不能为空「否则产生
+Value 错误」。dash-offset 定义模式长度，它指出应有多少像素进入图形请求中的点模
+式。
+
+
+    SetClipRectangles
+      gc: GCONTEXT
+      clip-x-origin, clip-y-origin: INT16
+      rectangles: LISTofRECTANGLE
+      ordering: {UnSorted, YSorted, YXSorted, YXBanded}
+      错误: Alloc, GContext, Match, Value
+
+    此请求修改 gc 中的 clip-mask 为指定的 rectangles，并设置剪裁原点。输出将被
+剪裁以仅包括 rectangles 中的内容。剪裁原点的解释相对于图形请求中的目的 drawable
+的原点。rectangles 坐标相对于剪裁原点。rectangles 应不相交，否则图形结果没定义。
+rectangles 表可为空，这实际上时禁止输出。
+    若客户知道 rectangles 上的次序关系，则可使用 ordering 参数来指定次序。这可
+提高处理速度。若指出不正确的次序，服务器可能会产生 Match 错误，但不必这样做。若
+没有产生错误，则图形输出没有定义。UnSorted 意指 rectangles 的次序任意。YSorted
+意指 rectangles 在其Y原点方向上是非递减的。YXSorted 进一步要求对于Y原点相同的
+rectangles，在其X原点上是非递减的。YXBanded 进一步要求，对于所有可能的Y扫描线，
+包括此扫描线的所有 rectangles 有相同的 Y 原点和 Y 扩展。
+
+
+    FreeGC
+      gc: GCONTEXT
+      错误: GContext
+
+    此请求删除资源ID与gcontext之间的联系并消除 gcontext。
+
+
+    ClearArea
+      window: WINDOW
+      x, y: INT16
+      width, height: CARD16
+      exposures: BOOL
+      错误: Match, Value, Window
+
+    x,y 坐标相对于 window 的原点，它指出长方形的坐上角。若 width 为0，则用当前
+窗口的 width 减去 x 替换它。若 height 为0，则用窗口的当前 height 减去 y 替换它。
+    若窗口有预定义的背景窗口标题区，则长方形 tangle 用全1的 plane-mask 和 Copy
+功能以及 ClipByChildren 的子窗口模式左窗口标题区。若窗口的背景为 None，则不改变
+窗口的内容。这时，若 exposures 为 True，则为可视的或在后备存储保存的长方形区域
+产生一个或多个暴露事件。
+    当把 InputOnly 窗口用于此请求，会产生 Match 错误。
+
+
+    CopyArea
+      src-drawable, dst-drawable: DRAWABLE
+      gc: GCONTEXT
+      src-x, src-y: INT16
+      width, height: CARD16
+      dst-x, dst-y: INT16
+      错误: Drawable, GContext, Match
+
+    此请求联合 src-drawable 的指定长方形和 dst-drawable 的指定长方形。src-x，
+src-y 坐标相对于 src-drawable 的原点。dst-x，dst-y 坐标相对于 dst-drawable 的原
+点。它们分别指出长方形的坐上角。src-drawable 与 dst-drawable 必须有相同的根和深
+度（否则产生 Match 错误）。
+    如果源长方形区域被遮掩并且未在后备存储中保存，或者指定的区域超出源 drawable
+的边界，则不复制这些区域，但对可视的或在后备存储中保存的对应目的区域执行下面的
+操作：若 dst-drawable 是一个窗口且其背景不为 None，则用背景贴盖这些目的区域。不
+管贴面和目的是窗口还是 pixmap，若 gc 中的 graphics-exposures 为 True，则对所有
+对应目的区域产生 GraphicsExposure 事件。
+    若 graphics-exposures 为 True 但未产生 GraphicsExposures 事件，则产生
+NoExposure 事件。
+    GC 成分：function, plane-mask, subwindow-mode, graphics-exposures, clip-x,
+origin, clip-y-origin, clip-mask。
+
+
+    CopyPlane
+      src-drawable, dst-drawable: DRAWABLE
+      gc: GCONTEXT
+      src-x, src-y: INT16
+      width, height: CARD16
+      dst-x, dst-y: INT16
+      bit-plane: CARD32
+      错误: Drawable, GContext, Match, Value
+
+    src-drawable 的根必须同 dst-drawable 的一样（否则产生 Match 错误），但depth
+不必相同。bit-plane 中必须有已位置为1，且其值应小于2^N，其中N是 src-drawable 的
+深度「否则产生 Value 错误」。实际上，通过使用 gc中前景/背景像素『当src-drawable
+中 bit-plane 有置为1的位时用前景，当 bit-plane 中有置为0的位时用背景』，形成一
+个与 dst-drawable 同深度，尺寸为源区域指定的 pixmap，并且执行等价的 CopyArea。
+    GC 成分：function, plane-mask, foreground, background, sub-window-mode,
+graphics-exposures, clip-x, origin, clip-y-origin, clip-mask。
+
+
+    PolyPoint
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      coordinate-mode: {Origin, Previous}
+      points: LISTofPOINT
+      错误: Drawable, GContext, Match, Value
+
+    此请求组合 gc 中的前景像素与 drawable中的每点处的像素。按所列次序画出各点。
+    第一点总是相对于 drawable 的原点。其余各点或相对于原点后相对于前一点，这取
+决于 coordinate-mode。
+    GC 成分：function, plane-mask, foreground, sub-window-mode, clip-x,
+origin, clip-y-origin, clip-mask。
+
+
+    PolyLine
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      coordinate-mode: {Origin, Previous}
+      points: LISTofPOINT
+      错误: Drawable, GContext, Match, Value
+
+    此请求在每对点（point[i],point[i+1]）之间画直线。画线次序按所列次序。若第一
+点与最末点相同，线段在中间点处正确相接。第一条线和最后一条线也正确相接。
+    对于任何给出的线段，无像素被画一次以上。若细线「line-width 为0」相交，则相
+交处像素被画多次。若宽线相交，相交处像素仅被画一次，就象整个 PolyLine 是一个填
+充形状。
+    第一点总相对于 drawable 原点，其余各点可相对于原点也可以以相对于前一点，这
+取决于 corrdinate-mode。
+    GC 成分：function, plane-mask, line-width, line-style, cap-style,join-style,
+fill-style, sub-window-mode, clip-x, origin, clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background, tile, stipple,
+tile-stipple-x-origin, tile-stipple-y-orgin, dash-offset, dashes。
+
+
+    PolySegment
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      segments: LISTofSEGMENT
+      where:
+      SEGMENT: [x1, y1, x2, y2: INT16]
+      错误: Drawable, GContext, Match
+
+
+    PolyRectangle
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      rectangles: LISTofRECTANGLE
+      错误: Drawable, GContext, Match
+
+    此请求画出指定矩形的边框，就像对每个这样的矩形：
+    [x,y] [x+width,y] [x+width,y+height] [x,y+height] [x,y] 指定一个五点的
+PolyLine。每个矩形的 x, y 坐标相对于 drawable 的原点，它定义矩形的左上角。
+    画矩形的次序按所给次序。对于任何给定的矩形，无像素被画多次。若矩形相交，相
+交处像素被画多次。
+    GC 成分：function, plane-mask, line-width, line-style, cap-style,join-style,
+fill-style, sub-window-mode, clip-x, origin, clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background, tile, stipple,
+tile-stipple-x-origin, tile-stipple-y-orgin, dash-offset, dashes。
+
+
+    PolyArc
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      arcs: LISTofARC
+      错误: Drawable, GContext, Match
+
+    此请求画圆弧或椭圆弧。每个弧由一个矩形和二个角度指定。角度是带符号的整数度
+数，其单位是64度，正数表示逆时针移动，负数表示顺时针移动。弧的起点由 angle1 指
+定，它相对于以矩形中心的三点钟位置。弧长由相对于弧起点的 angle2 指定。若 angle2
+大于360度，则将其截为360度。矩形的x,y坐标相对于 drawable 的原点。对于弧
+[x,y,w,h,a1,a2]，主、副轴的原点在 [x+(w/2),y+(h/2)]处，描述整个圆/椭圆的无限细
+弧在 [x,y+(h/2)] 和 [x+w,y+(h/2)] 处与水平轴相交，在[x+(w/2),y]和 [x+(w/2),y+h]
+处与垂直轴相交。这些坐标可为小数，即不把它们截为整数坐标。
+    对于弧 [x,y,w,h,a1,a2]，指定角度时必须采用椭圆的有效斜坐标『对于圆弧，角度
+与坐标是相同的』。斜角与屏幕正常坐标下的角度（用量角器测量）之间的关系为：
+	斜角 ＝ atan(atan(正常角度) * w / h) + adjust
+    斜角和正常角用弧度表示，其范围为 [0, 2*PI]。atan 返回值范围为[-PI/2, PI/2],
+adjust 值为：
+       0	当正常角在范围[0, PI/2]之中
+       PI	当正常角在范围[PI/2, 3*PI/2]之中
+       2*PI	当正常角在范围[3*PI/2, 2*PI]之中
+    画弧的次序按所列次序。若某弧的最后一点与下一个弧的第一点相重，则两弧正确相
+交。若第一个弧的第一点与最后一个弧的最后一点相交，则两弧正确相交。对于任何给定
+的弧，无像素被画多次。若两弧正确相交，且 line-width 大于0，相无像素被画多次。否
+则相交处像素被画多次。
+    将一个轴指定为0，则可画出一条垂直或水平线。
+    计算角度时完全基于坐标系统，不考虑纵横比。
+    GC 成分：function, plane-mask, line-width, line-style, cap-style,join-style,
+fill-style, sub-window-mode, clip-x, origin, clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background, tile, stipple,
+tile-stipple-x-origin, tile-stipple-y-orgin, dash-offset, dashes。
+
+
+    FillPoly
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      shape: {Complex, Nonconvex, Convex}
+      coordinate-mode: {Origin, Previous}
+      points: LISTofPOINT
+      错误: Drawable, GContext, Match, Value
+
+    此请求填充由指定路径封闭的区域。若表中的最后一点不与第一点重合，则路径自动
+封闭。区域中无像素被画多次。
+    第一点总是相对于 drawable 的原点。其余各点可相对于原点也可相对于上一点，这
+取决于 coordinate-mode。
+    服务器可以使用 shape 参数改善性能。Complex 意指路径可能自身相交。
+    NonConvex 意指路径不自身相交，但形状不是完全凸的。若客户知道形状的情况，则
+应声明 shape 参数已提高性能。若为自相交路径提供 NonConvex 参数，则图形结果无定
+义。
+    Convex 意指路径是完全凸的，若客户知道这一情况，指定 shape 参数为 Convex 可
+提高性能。若为非凸路径指定 Convex 参数，则图形结果无定义。
+    GC 成分：function, plane-mask, fill-style, fill-rule, sub-window-mode,
+clip-x, origin, clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background, tile, stipple,
+tile-stipple-x-origin, tile-stipple-y-orgin。
+
+
+    PolyFillRectangle
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      rectangles: LISTofRECTANGLE
+      错误: Drawable, GContext, Match
+
+    此请求填充指定的矩形，就像为每个如下的矩形：
+	[x,y] [x+width,y] [x+width,y+height] [x,y+height]
+指定四点的 FillPoly 请求。
+    每个矩形的坐标x,y相对于 drawable 的原点，它定义矩形的左上角。
+    画矩形的次序按所列次序。对于任何给定的矩形，无像素被画多次。若矩形相交，相
+交点像素被画多次。
+    GC 成分：function, plane-mask, fill-style, sub-window-mode, clip-x,
+origin, clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background, tile, stipple,
+tile-stipple-x-origin, tile-stipple-y-orgin, tile-stipple-y-origin。
+
+
+    PolyFillArc
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      arcs: LISTofARC
+      错误: Drawable, GContext, Match
+
+    对于每个弧，此请求填充由无限细路径和一个或二个线段组成的区域，具体情况决定
+于 arc-mode。对于 Chord，使用与弧结束点相交的单线段。对于 PieSlice，使用两个线
+段。arcs 同 PolyArc 请求中的一样。
+    填充弧的次序按所列次序。对于任何给定的弧，无像素被画一次以上。若区域相交，
+则相交处像素被画多次。
+    GC 成分：function, plane-mask, fill-style, arc-mode, sub-window-mode,
+clip-x, origin, clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background, tile, stipple,
+tile-stipple-x-origin, tile-stipple-y-orgin。
+
+
+    PutImage
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      depth: CARD8
+      width, height: CARD16
+      dst-x, dst-y: INT16
+      left-pad: CARD8
+      format: {Bitmap, XYPixmap, ZPixmap}
+      data: LISTofBYTE
+      错误: Drawable, GContext, Match, Value
+
+    此请求用 drawable 的矩形组合某个图像。坐标 dst-x, dst-y 相对于 drawable 原
+点。
+    若使用 Bitmap 格式，则深度必须为1「否则产生 Match 错误」，且图像必须为XY格
+式。gc 中前景像素定义图像中为1的位源，背景像素定义为0的位源。
+    对于XYPixmap 和 ZPixmap，深度必须匹配 drawable 的深度『否则产生 Match 错误
+』。对于XYPixmap，必须把图像置成XY格式。对于 ZPixmap，必须把图像置成指定深度定
+义的Z格式。
+    对于 ZPixmap 格式，left-pad 必须为0（否则产生 Match 错误）。对于 Bitmap 和
+XYPixmap 格式，left-pad 必须小于服务器连接建立信息中的 bitmap-scanline-pad『否
+则产生 Match 错误」。服务器忽略每条扫描线中的第一个 left-pad 位。实际图像从进入
+data 的位开始。参数 width 定义实际图像的宽度，它不包括 left-pad。
+    GC 成分：function, plane-mask, sub-window-mode, clip-x, origin,
+clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background。
+
+
+    GetImage
+      drawable: DRAWABLE
+      x, y: INT16
+      width, height: CARD16
+      plane-mask: CARD32
+      format: {XYPixmap, ZPixmap}
+    ->
+      depth: CARD8
+      visual: VISUALID or None
+      data: LISTofBYTE
+      错误: Drawable, Match, Value
+
+    此请求按指定格式返回 drawable 的指定矩形的内容。坐标x,y相对于 drawable 的原
+点，它定义矩形的左上角。若指定 XYPixmap，则仅传递在 plane-mask 中指定的位平面。
+若指定了 ZPixmap，则把未在 plane-mask 指定的所有平面中的位作为零传递。不对
+plane-mask 作范围检查；超出的位被忽略。当创建 drawable，且它是（连接建立中）
+FORMAT 结构中的 depth 成分，而不是 bits-per-pixel 成分时，按指定返回 depth。若
+drawable 是一个窗口，则返回其可视类型。若 drawable 为 pixmap，则 visual为None。
+    若 drawable 为 pixmap，则给定的矩形必须完全包括在该 pixmap 中「否则产生
+Match 错误」。若 drawable 为窗口，则该窗口必须可视，并且若无下层或重叠窗口，窗
+口的指定矩形必须完全可视且完全包括在常用之内『否则产生 Match 错误』。若窗口有后
+备存储，则对被非下层窗口遮掩的窗口矩形，返回其 backint-store 内容。否则，这样被
+遮掩窗口的返回内容无定义。同样，对于 depth 不同于指定窗口的下层窗口的可视区域的
+返回内容也无定义。
+    同其他图形请求相比，此请求不是通用的。它专用于基本硬拷贝支持。
+
+
+    PolyText8
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      x, y: INT16
+      items: LISTofTEXTITEM8
+      where:
+      TEXTITEM8: TEXTELT8 or FONT
+      TEXTELT8: [delta: INT8
+      string: STRING8]
+      错误: Drawable, Font, GContext, Match
+
+    坐标x,y相对于 drawable 的原点，它定义基线起始位置（首字符位置）。依次处理每
+个正文项。字体项使字体 font 存入 gc 并用于后续正文。切换字体不影响下一个字符的
+起点。正文元素 delta 指出画字符之前沿x轴的变化；delta 总是加到字符起点上。由 gc
+中字体定义的每个字符图像作为 drawable 上的填充操作的 mask 处理。
+    所有包括的 FONT 总是先传送高字节。
+    若对某项产生 Font 错误，则以前的项已被画上。
+    对于用2字节矩阵索引定义的字体，每 STRING8 字节被解释为 CHAR2B 的 byte2 值且
+byte1 为0。
+    GC 成分：function, plane-mask, font, sub-window-mode, clip-x-origin,
+clip-y-origin, clip-mask。
+    GC mode 相关成分：foreground, background, tile, stipple,
+tile-stipple-x-origin, tile-stipple-y-origin。
+
+
+    PolyText16
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      x, y: INT16
+      items: LISTofTEXTITEM16
+      where:
+      TEXTITEM16: TEXTELT16 or FONT
+      TEXTELT16: [delta: INT8
+      string: STRING16]
+      错误: Drawable, Font, GContext, Match
+
+    此请求与 PolyText8 类似，区别是使用2字节「或16位」字符。对于用线性索引而不
+是2字节矩阵索引定义的字体，服务器把每个 CHAR2B 解释为16位数字，传递时先传最高字
+节『即，CHAR2B 的 byte1 作为最高字节』。
+
+
+    ImageText8
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      x, y: INT16
+      string: STRING8
+      错误: Drawable, GContext, Match
+
+    坐标x,y相对于 drawable 的原点，它定义基线起始位置（首字符的起点）。该请求的
+实际效果是首先用 gc 中定义的背景像素填充目的矩阵，然后用前景像素绘制正文。被填
+充矩形的左上角为 [x, y - font-ascent]，宽度为 overall-width，高度为
+font-ascent + font-descent。
+    通过调用 QueryTextExtents 返回 overall-width，font-ascent，font-descent。
+    此请求忽略 gc 中定义的 function 和 fill-style。实际 function 为 copy，实际
+fill-style 为 Solid。对于用2字节矩阵索引定义的字体，每个 STRING8 字节解释为
+CHAR2B 的 byte2 值，其 byte1 为0。
+    GC 成分：plane-mask, foreground, background, font, sub-window-mode,
+clip-x-origin, clip-y-origin, clip-mask。
+
+
+    ImageText16
+      drawable: DRAWABLE
+      gc: GCONTEXT
+      x, y: INT16
+      string: STRING16
+      错误: Drawable, GContext, Match
+
+    此请求与 ImageText8 类似，区别是使用2字节「或16位」字符。对于用线性索引而不
+是2字节矩阵索引定义的字体，服务器把每个 CHAR2B 解释为16位数字，传递时先传最高字
+节『即，CHAR2B 的 byte1 作为最高字节』。
+
+
+    CreateColormap
+      mid: COLORMAP
+      visual: VISUALID
+      window: WINDOW
+      alloc: {None, All}
+      错误: Alloc, IDChoice, Match, Value, Window
+
+    此请求在窗口所在的屏幕上创建指定 visual 类型的色彩表，并将标识符mid赋给它。
+visual 类型必须是屏幕所支持的类型（否则产生 Match 错误）。对于 GrabScale，
+PseudoColor 及 DirectColor 类，色彩表的初始值无定义。对于 StaticGray，
+StaticColor 及  TrueColor 有预定义值，但这些值与特定的 visual 有关，核心协议并
+未定义。对于 StaticGrab，StaticColor 及 TrueColor 必须为 None「否则产生 Match
+错误」。对于其他类别，若 alloc 为 None，则初始时色彩图未分配条目，客户应分配条
+目。
+    若 alloc 为 All，则整个色彩图被“分配为”可写的。所有分配条目的初值没有定
+义。对于 GrayScale 和 PseudoColor，效果就像 AllocColorCells 请求返回由0至N-1的
+所有像素值，其中N是指定 visual 中色彩图条目值。对于 DirectColor，效果就像
+AllocColorCells 请求返回0，red-mask, green-mask 及 blue-mask『它们包括同指定
+visual 中对应 mask 一样多的位』的像素值。但是，在所有情况下，这些条目不能用
+FreeColors 释放。
+
+
+    FreeColormap
+      cmap: COLORMAP
+      错误: Colormap
+
+    此请求删除资源ID与色彩表之间的联系并释放色彩图存储空间。若色彩表是屏幕的安
+装图，则它被卸去（见 UninstallColormap 请求）。若「通过 CreateWindow 或
+ChangeWindowAttributes 方法」把色彩表定义为某个窗口的色彩表，则将窗口的色彩表改
+为 None，并产生 ColormapNotify 事件。协议未定义 colormap 为 None 时窗口中所显示
+的颜色。
+    此请求对屏幕的缺省色彩表无效。
+
+
+    CopyColormapAndFree
+      mid, src-cmap: COLORMAP
+      错误: Alloc, Colormap, IDChoice
+
+    此请求创建一个同 src-cmap 具有相同屏幕和 visual 类型的色彩表，并将它与标识
+符 mid 联系起来。它同时把 scr-cmap 中现存的客户分配移至新色彩表中，不改变其色彩
+值和只读或可读特性。然后释放 src-cmap 中的这些条目。新色彩表中的其他值无定义。
+若 src-cmap 时客户用 alloc 为 All（见 CreateColormap 请求）创建的，则新色彩表也
+用 alloc 为 All 创建，并复制 src-cmap中的所有条目的所有色彩值，然后释放src-cmap
+中的所有条目。若 src-cmap 不是由客户用 alloc All 创建的，则待移动的分配为客户用
+AllocColor 或 AllocNameColor，AllocColorCells，AlloccolorPlanes 已分配的像素和
+平面，并且这些像素和平面自分配一直位释放。
+
+
+    InstallColormap
+      cmap: COLORMAP
+      错误: Colormap
+
+    此请求使 cmap 成为屏幕的安装图。与此色彩表相关的所有窗口立刻显示真实颜色。
+副作用是，服务器必须隐含地安装或拆卸其他色彩表。要安装或拆卸哪个色彩表随服务器
+而定，但指定的表必须仍然时安装的。
+    若 cmap 不再是安装图，则在把 cmap 作为属性的所有窗口上产生 ColormapNotify
+事件。另外，对于用了其他由于请求的结果而安装或拆卸的色彩表，在每个把此色彩表作
+为属性的窗口上产生 ColormapNotify 事件。
+    在任何时候，有一个安装图子集，可把它看成是有序表，称为需求表。需求表的最大
+长度位M，其中M时建立连接时为屏幕指定的 min-installed-maps。需求表的维护如下：
+    当色彩表是 InstallColormap 的参数时，将其加至表的头部。必要时截去表尾以保持
+表长度为M。当某色彩表是 UninstallColormap 的参数且在需求表中，则从表中将其移走。
+    初始时安装屏幕的缺省色彩表「但不要求在需求表中」。
+
+
+    UninstallColormap
+      cmap: COLORMAP
+      错误: Colormap
+
+    若 cmap 在其屏幕的需求表中『见 InstallColormap 请求』，则从表中删除它。其副
+作用是 cmap 可能被拆卸。
+    若 cmap 被拆卸，则在把 cmap 作为一个属性的每个窗口上产生 ColormapNotify
+事件。另外，对于每个由于请求而安装或拆卸的色彩表，在以此色彩表作为属性的窗口上
+产生 ColormapNotify 事件。
+
+
+    ListInstalledColormaps
+      window: WINDOW
+    ->
+      cmaps: LISTofCOLORMAP
+      错误: Window
+
+    此请求返回指定窗口屏幕当前安装的色彩表列表。
+
+
+    AllocColor
+      cmap: COLORMAP
+      red, green, blue: CARD16
+    ->
+      pixel: CARD32
+      red, green, blue: CARD16
+      错误: Alloc, Colormap
+
+    此请求分配一个与硬件提供的最接近的 RGB 值对应的只读色彩表条目。它同时也返回
+实际使用的像素和 RGB 值。
+
+
+    AllocNamedColor
+      cmap: COLORMAP
+      name: STRING8
+    ->
+      pixel: CARD32
+      exact-red, exact-green, exact-blue: CARD16
+      visual-red, visual-green, visual-blue: CARD16
+      错误: Alloc, Colormap, Name
+
+    此请求查找与色彩表相关的屏幕的指明的颜色。然后在 cmap 上执行 AllocColor。
+
+
+    AllocColorCells
+      cmap: COLORMAP
+      colors, planes: CARD16
+      contiguous: BOOL
+    ->
+      pixels, masks: LISTofCARD32
+      错误: Alloc, Colormap, Value
+
+    颜色种类数必须为正数，平面个数必须为非负数（否则产生 Value 错误），若C个颜
+色和P个平面被请求，则返回C个像素，P个屏蔽。屏蔽与其他屏蔽或任何像素无相同位。通
+过将屏蔽与像素作或运算，可得到 C * 2^P 个不同的像素，所有这些被请求分配为可写的。
+
+
+    AllocColorPlanes
+      cmap: COLORMAP
+      colors, reds, greens, blues: CARD16
+      contiguous: BOOL
+    ->
+      pixels: LISTofCARD32
+      red-mask, green-mask, blue-mask: CARD32
+      错误: Alloc, Colormap, Value
+
+    colors 须为正数，reds, greens, blues 须为非负数「否则产生 Value 错误」。若
+请求C个颜色，R个红色，G个绿色，B个蓝色，则返回C像素，且屏幕的R,G,B位已被设置。
+若 contiguous 为 True，则每个屏蔽有连续位被置。
+
+
+    FreeColors
+      cmap: COLORMAP
+      pixels: LISTofCARD32
+      plane-mask: CARD32
+      错误: Access, Colormap, Value
+
+    plane-mask 不应同任何 pixels 有相同的位。通过 plane-mask 的子集与 pixels 作
+或运算产生所有 pixels 集合。此请求释放所有已被客户『用 AllocColor,
+AllocNamedColor, AllocColorCells 及 AllocColorPlanes』分配的 pixels。请求释放所
+有被客户在 cmap 中已分配的指定 pixels，即使一个或多个 pixels 产生错误。
+
+
+    StoreColors
+      cmap: COLORMAP
+      items: LISTofCOLORITEM
+      where:
+      COLORITEM: [pixel: CARD32
+      do-red, do-green, do-blue: BOOL
+      red, green, blue: CARD16]
+      错误: Access, Colormap, Value
+
+    此请求修改指定 pixels 的色彩表条目。do-red, do-green 及 do-blue 字段指出应
+实际修改的成分。若色彩表是其屏幕的已安装图，则修改结果立即可见。
+
+
+    StoreNamedColor
+      cmap: COLORMAP
+      pixel: CARD32
+      name: STRING8
+      do-red, do-green, do-blue: BOOL
+      错误: Access, Colormap, Name, Value
+
+    此请求相对于与 cmap 相关的屏幕查找指定的颜色，然后在cmap上执行StoreColors。
+name 应使用 ISO Latin-1 编码，大小写无关紧要。
+
+
+    QueryColors
+      cmap: COLORMAP
+      pixels: LISTofCARD32
+    ->
+      colors: LISTofRGB
+    其中:
+      RGB: [red, green, blue: CARD16]
+      错误: Colormap, Value
+
+    此请求返回指定像素的存储在 cmap中的颜色值。对于未分配的条目，返回值无定义。
+若 pixels 不是合法的 cmap 索引，则产生 Value 错误。
+
+
+    LookupColor
+      cmap: COLORMAP
+      name: STRING8
+    ->
+      exact-red, exact-green, exact-blue: CARD16
+      visual-red, visual-green, visual-blue: CARD16
+      错误: Colormap, Name
+
+    此请求相对于与 cmap 有关的屏幕查找颜色串名称，并返回相对 cmap 的 visual 类
+型的硬件提供的真实颜色值和最相近值。name 应用 ISO Latin-1 编码，大小写无区别。
+
+
+    CreateCursor
+      cid: CURSOR
+      source: PIXMAP
+      mask: PIXMAP or None
+      fore-red, fore-green, fore-blue: CARD16
+      back-red, back-green, back-blue: CARD16
+      x, y: CARD16
+      错误: Alloc, IDChoice, Match, Pixmap
+
+    此请求创建一个光标，并用标识符 cid 与之相联。即使服务器仅有 StaticGray 或
+GrayScale屏幕，也必须指定前景和背景RGB值。前景用于 source 中置为1的位，背景用于
+source 中置为0的位。source 和 mask 的深度必须为1（否则产生 Match 错误），但其根
+可任意。mask pixmap 定义光标的形状。若未声明 mask，则显示 source 的所有像素。若
+有 mask，则其大小与 source 相同「否则产生 Match 错误」。坐标x,y定义相对于source
+原点热点『hotspot』，它必须是 source 中的一点（否则产生 Match 错误）。
+
+
+    CreateGlyphCursor
+      cid: CURSOR
+      source-font: FONT
+      mask-font: FONT or None
+      source-char, mask-char: CARD16
+      fore-red, fore-green, fore-blue: CARD16
+      back-red, back-green, back-blue: CARD16
+      错误: Alloc, Font, IDChoice, Value
+
+    此请求类似于 CreateCursor，不同之处在于 source 和 mask 来自于指定的字型。
+source-char 必须是 source-font 中已定义的文字。如果给出 mask-font，则 mask-char
+必须是 mask-font 中已定义的文字「否则产生 Value 错误」。
+
+
+    FreeCursor
+      cursor: CURSOR
+      错误: Cursor
+
+    此请求删除资源ID与光标之间的联系。若无其他资源引用该光标，则释放该光标的存
+储区。
+
+
+    RecolorCursor
+      cursor: CURSOR
+      fore-red, fore-green, fore-blue: CARD16
+      back-red, back-green, back-blue: CARD16
+      错误: Cursor
+
+    此请求改变光标的颜色。若光标正在屏幕上显示，则修改结果立即可见。
+
+
+    QueryBestSize
+      class: {Cursor, Tile, Stipple}
+      drawable: DRAWABLE
+      width, height: CARD16
+    ->
+      width, height: CARD16
+      错误: Drawable, Match, Value
+
+    此请求返回一个最佳尺寸，它最接近参数尺寸。对于 Cursor，此尺寸是能被完全显示
+的最大尺寸。对于 Tile，这是能被最快贴面的尺寸。对于 Stipple，这是能被最快点刻的
+尺寸。
+
+
+    QueryExtension
+      name: STRING8
+    ->
+      present: BOOL
+      major-opcode: CARD8
+      first-event: CARD8
+      first-error: CARD8
+
+    此请求决定是否有指定的扩展。若有，则返回扩展的主 opcode。否则返回零。若扩展
+涉及其他事件类型，则返回基本事件类型码。否则，返回零。若扩展涉及其他错误码，则
+返回基本错误码，否则返回零。
+
+
+    ListExtensions
+    ->
+      names: LISTofSTRING8
+
+    此请求返回服务器所支持的所有扩展。
+
+
+    SetModifierMapping
+      keycodes-per-modifier: CARD8
+      keycodes: LISTofKEYCODE
+    ->
+      status: {Success, Busy, Failed}
+      错误: Alloc, Value
+
+    此请求指定键的 keycodes『若有的话』用作修饰键。表中 keycodes 的数目必须为
+8 * keycodes-per-modifier（否则产生 length 错误）。
+    keycodes 被划分为8个集合，每个集合中有 keycodes-per-modifier 元素。这些集合
+依次称为 Shift, Lock, Control, Mod1, Mod2, Mod3, Mod4 和 Mod5。
+
+
+    GetModifierMapping
+    ->
+      keycodes-per-modifier: CARD8
+      keycodes: LISTofKEYCODE
+
+    此请求返回用作修饰键的 keycode。表中的 keycode 数目为
+8 * keycode-per-modifier。keycodes 被划分为8个集合，每个集合中有
+keycodes-per-modifer 元素。这些集合依次称为 Shift, Lock, Control, Mod1, Mod2,
+Mod3, Mod4 和 Mod5。
+
+
+    ChangeKeyboardMapping
+      first-keycode: KEYCODE
+      keysyms-per-keycode: CARD8
+      keysyms: LISTofKEYSYM
+      错误: Alloc, Value
+
+    此请求定义从指定 keycode 开始的指定数目的 keycodes 的符号，超出此范围的
+keycodes 符号未被改动。keysyms 表中元素个数必须是 keysyms-per-keycode 的倍数
+「否则产生 Length 错误」。first-keycode 必须大于等于连接创建时返回的min-keycode
+『否则产生 Value 错误』，
+first-keycode + (keysyms-length / keysyms-per-keycode) - 1 必须小于或等于连接创
+建时返回的 max-keycode（否则产生 Value 错误）。
+    此请求产生 MappintNotify 事件。
+
+
+(K - first-keycode) * keysyms-per-keycode + N
+
+
+    GetKeyboardMapping
+      first-keycode: KEYCODE
+      count: CARD8
+    ->
+      keysyms-per-keycode: CARD8
+      keysyms: LISTofKEYSYM
+      错误: Value
+
+    此请求返回从指定的 keycode 开始的指定数目的 keycode。first-keycode 必须大于
+等于连接建立时返回的 min-keycode『否则产生 Value 错误』。first-keycode+count -1
+必须小于或等于连接建立时返回的 max-keycode（否则产生 Value 错误），keysyms 表中
+元素个数为 count * keysyms-per-keycode。keycode K 的 KEYSYM 编号 N「从零开始计
+算」在 keysyms 中的索引为 (K - first-keycode) * keysyms-per-keycode + N。
+
+
+    ChangeKeyboardControl
+      value-mask: BITMASK
+      value-list: LISTofVALUE
+      错误: Match, Value
+
+    此请求控制键盘的各个方面。value-mask 和 value-list 指出待修改的控制。其可能
+值为：
+    控制量		类型
+    key-click-percent	INT8 
+    bell-percent	INT8 
+    bell-pitch		INT16 
+    bell-duration	INT16 
+    led			CARD8 
+    led-mode		{On, Off} 
+    key			KEYCODE 
+    auto-repeat-mode	{On, Off, Default}
+
+
+    GetKeyboardControl
+    ->
+      key-click-percent: CARD8
+      bell-percent: CARD8
+      bell-pitch: CARD16
+      bell-duration: CARD16
+      led-mask: CARD32
+      global-auto-repeat: {On, Off}
+      auto-repeats: LISTofCARD8
+
+    此请求返回键盘的当前控制值。对于LED，led-mask 的最低位对应LED1，led-mask 中
+每一位指示一个已亮的LED。auto-repeats 是一个位向量：每位指示对应键允许
+auto-repeat。此向量表示为32字节，第N字节『从零开始算起』中有对应8N 至 8N + 7 键
+的位。
+
+
+    Bell
+      percent: INT8
+      错误: Value
+
+    此请求以相对于键盘的基本音量振铃。percent 的范围是 -100 至 100（超出此范围
+产生 Value 错误），当 percent 为非负数时，振铃的音量为：
+    base - [(base * percent) / 100] + percent
+当 percent 为负数时，音量为 base + [(base * percent) / 100]。
+
+
+    SetPointerMapping
+      map: LISTofCARD8
+    ->
+      status: {Success, Busy}
+      错误: Value
+
+    此请求设置指针的映象。表元素索引从1开始。表长度必须同 GetPointerMapping 返
+回的一样「否则产生 Value 错误」。索引是一个核心案钮号，表元素定义有效号。
+    此请求对 Success 状态产生 MappingNotify 事件。
+
+
+    GetPointerMapping
+    ->
+      map: LISTofCARD8
+
+    此请求返回指针的映象。表元素索引从1开始，表长度指示物理案钮的数目。
+    指针的正常映射为恒等映射：map[i]=i。
+
+
+    ChangePointerControl
+      do-acceleration, do-threshold: BOOL
+      acceleration-numerator, acceleration-denominator: INT16
+      threshold: INT16
+      错误: Value
+
+    此请求定义指针移动方式。acceleration 为移动因子，表示为分数。例如，3/1 意指
+指针移动速度比正常快3倍。仅当指针移动多于 threshold 个像素加速才有效，它仅适用
+于大于 threshold 的值。
+
+
+    GetPointerControl
+    ->
+      acceleration-numerator, acceleration-denominator: CARD16
+      threshold: CARD16
+
+    此请求返回指针的当前加速和阀值。
+
+
+    SetScreenSaver
+      timeout, interval: INT16
+      prefer-blanking: {Yes, No, Default}
+      allow-exposures: {Yes, No, Default}
+      错误: Value
+
+    timeout 和 interval 的单位为秒；将其置为 -1 表示恢复缺省值。其他负数产生
+Value 错误。若 timeout 为0，则禁止屏幕保护。若 timeout 为非零值，则屏幕保护有
+效。若在 timeout 秒内没有来自键盘或指针的输入，则激活屏幕保护。对于每个屏幕，若
+定义了 prefer-blanking，且硬件支持视频闪烁，则屏幕闪烁。否则，若允许暴露或不向
+客户发送暴露事件但重产生屏幕，则修改屏幕。否则，屏幕状态不改变且屏幕保护未被激
+活。在下一次键盘或指针输入时或 mode 为 Reset 的 ForceSceenSaver 时，挂起屏幕保
+护且恢复所有屏幕状态。
+
+
+    GetScreenSaver
+    ->
+      timeout, interval: CARD16
+      prefer-blanking: {Yes, No}
+      allow-exposures: {Yes, No}
+
+    此请求返回当前屏幕保护的控制值。
+
+
+    ForceScreenSaver
+      mode: {Activate, Reset}
+      错误: Value
+
+    若 mode 为 Activate 且屏幕保护当前被挂起，则激活屏幕保护『即使用 timeout 为
+0禁止过屏幕保护』。如果 mode 为 Reset 且允许屏幕保护，则屏幕保护被挂起（如果它
+是激活的），并将激活计时器复位为初始状态，就像刚收到设备输入一样。
+
+
+    ChangeHosts
+      mode: {Insert, Delete}
+      host: HOST
+      错误: Access, Value
+
+    此请求在存取控制表中增加或删除指定的 host。当存取控制机制有效时且某宿主希望
+建立与服务器的连接，此宿主必须在此表中，否则服务器拒绝其连接要求。
+    客户必须驻留在与服务器同样的宿主上或被授权可执行此请求「否则产生 Access 错
+误」。
+
+
+    ListHosts
+    ->
+      mode: {Enabled, Disabled}
+      hosts: LISTofHOST
+
+    此请求返回存取控制表中的宿主以及在建立连接时此表是有效还是无效的信息。
+    每个 HOST 被填充为4字节的倍数。
+
+
+    SetAccessControl
+      mode: {Enable, Disable}
+      错误: Access, Value
+
+    此请求设置或禁止在建立连接时使用存取控制表。
+    客户必须驻留在与服务器同样的宿主上或被授权可执行此请求「否则产生 Access 错
+误」。
+
+
+    SetCloseDownMode
+      mode: {Destroy, RetainPermanent, RetainTemporary}
+      错误: Value
+
+    此请求定义关闭连接时对客户资源的处理。close-down 方式的含义见第10节。
+
+
+    KillClient
+      resource: CARD32 or AllTemporary
+      错误: Value
+
+    若指出合法的 resource，则 KillClient 强迫创建此资源的客户关闭。若客户已以
+RetainPermanent 或 Retaintemporary 方式终止，则取消客户的所有资源『见第10节』。
+若指定 AllTemporary，则取消所有以 RetainPermanent 方式终止的客户的资源。
+
+
+    NoOperation
+
+    此请求无参数，无结果，但请求长度字段不为零，它可使请求的长度为4字节的倍数。
+服务器不解释请求中的字节。
+
+
+十 关闭连接
+
+    关闭连接是，废除客户执行的所有事件选择。若客户使指针被动地捕获了，则执行
+UngrabPointer。若客户主动捕获了键盘，则执行 UngrabKeyboard。释放客户的所有被动
+捕获。若客户捕获了服务器，则执行 UngrabServer。取消客户拥有的所有选择（见
+SetSelectionOwner请求）。若 color-down 方式（见SetCloseDownMode请求）为
+RetainPermanent 或 RetainTemporary，则将客户分配的资源标为永久或临时（但这不能
+阻止其他客户撤消它们）。若 mode 为 Destroy，则销毁客户的所有资源。
+    在撤消客户资源时，对于客户 save-set 中的每个窗口，若该窗口位于客户创建窗口
+之下，则将 save-set 窗口的父窗口重定义为最近前辈窗口，使得 save-set 窗口不再位
+于客户窗口之下。若 save-set 窗口未被映像，则在其上执行 MapWindow 请求（即使它不
+位于客户创建的窗口之下）。重定窗口的父窗口并不修改 save-set 窗口左上角的绝对坐
+标（相对于 root 窗口）。save-set 处理完成之后，撤消了客户创建的所有窗口。对于每
+个非客户创建的非窗口资源，执行相应的 Free 请求。释放客户分配的所有颜色和色彩表
+条目。
+    服务器在有连接和无连接的过程中循环。用 close-down 模式为 Destory 关闭连接时
+服务器进入无连接状态时，服务器复位其状态就像它刚启动一样。它撤消以
+RetainPermanent 或 RetainTemporary 方式终止的客户的所有未撤消的资源。
+    此外，它还删除除预定义原子标识符以外的所有标识符，删除所有 root 窗口上的所
+有特征，复位存取控制表，恢复标准根贴面和光标，恢复缺省的字型路径，以及恢复输入
+关注为 PointerRoot 状态。
+    注意，以 close-down 方式为 RetainPermanent 或 RetainTemporary 关闭连接不会
+引起服务器复位。
+
+
+十一 事件
+
+    当指针在窗口 W中且过程中无主动指针捕获时处理按下按钮时，从根往下搜索 W的前
+辈窗口，寻找被动捕获以激活。若无匹配的被动捕获，则为接收事件的客户当前服务器时
+间。
+其效果基本上等价于用下列参数执行 GrabButton：
+
+    参数		   值
+    event－window	事件窗口
+    event－mask		事件窗口上客户选择的指针事件
+    pointer-mode 和
+    keyboard-mode	Asynchronous
+    owner-events	若客户在事件窗口上选择了OwnerGrabButton，
+			则为 True，否则为 False
+    confine-to		None
+    cursor		None
+
+    当指针的逻辑状态已释放所有按钮时，捕获自动终止。UngrabPointer 和
+ChangeActiveGrab 可用来修改主动捕获。
+
+
+    KeyPress
+    KeyRelease
+    ButtonPress
+    ButtonRelease
+    MotionNotify
+      root, event: WINDOW
+      child: WINDOW or None
+      same-screen: BOOL
+      root-x, root-y, event-x, event-y: INT16
+      detail: <see below>
+      state: SETofKEYBUTMASK
+      time: TIMESTAMP
+    当键逻辑地改变状态时，X服务器向需要这些信息的逻辑改变状态的键信息的客户报告
+KeyPress 或 KeyRelease 事件。请注意，对于所有的键，即使对应修饰位的键都产生这些
+事件。当按钮逻辑地改变状态时，X服务器向需要这些信息地客户报告 ButtonPress 或
+ButtonRelease 事件。
+    当指针逻辑地移动时，X服务器向需要这些信息地客户报告 MotionNotify 事件。只要
+指针移动及指针在窗口中开始和结束移动。X服务器便产生此事件。但不保证MotionNotify
+事件地颗粒度，选择此事件地客户应保证指针移动时不少收一个事件。若冻结设备事件处
+理，则逻辑变化的产生滞后物理变化。要收到 KeyPress, KeyRelease, ButtonPress 及
+ButtonRelease事件，应在窗口的事件屏蔽属性位中设置 KeyPressMask, KeyReleaseMask,
+ButtonPressMask 及 ButtonReleaseMask。
+    要收到 MotionNotify 事件，应在窗口的事件屏蔽属性位中设置下列事件屏蔽中的一
+个或多个：
+    Button1MotionMask    仅当按下所指定的按钮的一个或多个时，客户
+    Button2MotionMask    才收到 MotionNotify 事件
+    Button3MotionMask
+    Button4MotionMask
+    Button5MotionMask
+    ButtonMotionMask     仅当按下至少一个按钮时，客户应用程序才收到
+			 MotionNotify 事件
+    PointerMotionMask    客户应用程序接收 MotionNotify 事件下不依赖于定点
+			 器按钮的状态
+    PointerMotionHint    若选择了 PointerMotionHintMask，X服务器可自由地
+			 为事件窗口向客户仅发送一个 MotionNotify 事件
+			 （XPointerMovedEvent 结构中地 is-hint 置为
+			 NotifyHint），直到键或按钮状态发生变化，指针离开
+			 窗口或客户调用 XQueryPointer 或 XGetMotionEvents
+			 为止
+    事件源是指针所在的可视窗口。X服务器用来报告事件的窗口取决于窗口在窗口层次中
+的位置以及是否有中间窗口禁止事件的产生。X服务器从源窗口开始，向上在窗口层次中搜
+寻，直到找到客户指定的对这些事件感兴趣的第一个窗口。若某个中间窗口将其
+do-not-propagate-mask（不传播屏蔽）置为禁止产生某事件类型，则将禁止该类型的事
+件。
+客户可以通过执行自动捕获来改用报告的实际窗口，对于键盘事件，可使用关注窗口。
+    root 被置为源窗口的根窗口。x-root，y-root被置为事件发生时相对于根窗口原点的
+指针坐标。
+    same-screen 可作为 True 或 False，它用来表示事件窗口与根窗口是否在同一屏幕
+上。若为 True，则表示在同一屏幕上。若为 False，则表示事件窗口与根窗口不在同一
+屏幕上。
+    time 被置为发生事件的时间，其单位为毫秒。
+    如果事件窗口与根窗口同在一个屏幕上，则x,y置为相对于事件窗口原点的坐标位置，
+否则，置为0。
+    state 用于表示指针按钮或事件前的修饰键的逻辑状态，它为一个或多个按钮或修饰
+键屏蔽的异或：Button1Mask, Button2Mask, Button3Mask, Button4Mask, Button5Mask,
+ShiftMask, LockMask, ControlMask, Mod1Mask, Mod2Mask, Mod3Mask, Mod4Mask 和
+Mod5Mask。
+
+
+    EnterNotify
+    LeaveNotify
+      root, event: WINDOW
+      child: WINDOW or None
+      same-screen: BOOL
+      root-x, root-y, event-x, event-y: INT16
+      mode: {Normal, Grab, Ungrab}
+      detail: {Ancestor, Virtual, Inferior, Nonlinear, NonlinearVirtual}
+      focus: BOOL
+      state: SETofKEYBUTMASK
+      time: TIMESTAMP
+    如果指针移动或窗口层次变化使得指针不在以前的窗口中，X服务器向选择此事件的客
+户报告 EnterNotify 或 LeaveNotify 事件。有层次变化引起的所有 EventNotify 及
+LeaveNotify 事件都在由此变化引起的任何层次事件（UnmapNotify，MapNotify，
+ConfigureNotify，GravityNotify，CirculateNotify）之后产生；但是，X协议不规定
+EnterNotify 和 LeaveNotify 事件与 FocusOut，VisibilityNotify 及 Expose 事件之间
+的次序。
+    这同 MotionNotify 事件不同，其产生的条件是定点器移动且仅当指针在一个窗口中
+开始和结束移动。当客户运用程序调用 XGrabPointer 和 XUngrabPointer 时也产生
+EnterNotify 或 LeaveNotify。
+    event 被置为在其上发生 EnterNotify 或 LeaveNotif 事件的窗口，它称为事件窗
+口。
+X服务器利用该窗口报告事件。它相对于事件发生处的根窗口。root 置为事件出现时屏幕
+上的根窗口。
+    time 被置成事件产生的时间，其单位为毫秒。x,y为指针在事件窗口中的坐标。此坐
+标一般是指针的最终位置，而不是初始位置。若事件窗口与根窗口同在一屏幕，则x,y是相
+对事件窗口原点的指针坐标。否则，x,y 置为0，x-root，y-root置为事件发生时相对根窗
+口原点的指针坐标。
+    same-screen 可作为 True 或 False，它用来表示事件窗口与根窗口是否在同一屏幕
+上。若为 True，则表示在同一屏幕上。若为 False，则表示事件窗口与根窗口不在同一
+屏幕上。
+    focus 表示事件窗口是否是关注窗口或是否是位于关注窗口之下。X服务器可将其值置
+为 True 或 False。若为 True，表示事件窗口是中心窗口或位于其下。若为 False，则表
+示事件窗口不是中心窗口或位于其下方。
+    mode 用来表示当捕获活动时事件是否为正常事件，伪移动事件或捕获不活动时是否为
+伪移动事件。detail 用来表示提示细节。
+
+
+    FocusIn
+    FocusOut
+      event: WINDOW
+      mode: {Normal, WhileGrabbed, Grab, Ungrab}
+      detail: {Ancestor, Virtual, Inferior, Nonlinear, NonlinearVirtual, Pointer,
+               PointerRoot, None}
+    当输入关注变化时，X服务器向需要这类信息的客户报告 FocusIn 和 FocusOut 事件。
+键盘一般总是跟某个窗口相联（一般时根窗口或是顶上的窗口），称此窗口为关注窗口。
+关注窗口及指针的位置确定哪个窗口接收键盘输入。客户要知道输入关注变化的时间，以
+控制屏幕上区域的亮度加强。
+    要接收 FocusIn 和 FocusOut 事件，应设置窗口的 eventmask 属性中的
+FocusChangeMask 位。
+    event 被置成 FocusIn 或 FocusOut 事件发生处的窗口。X服务器使用此窗口报告事
+件。mode 用于表示关注事件是否是正常关注事件，被捕获时的关注事件，捕获活动时的关
+注事件或捕获不活动时的关注事件。
+    由窗口非映象（unmap）引起的所有 FocusOut 事件在 UnmapNotify 事件之后产生，
+但X协议不规定 FocusOut事件与所产生的 EnterNotify, LeaveNotify, VisibilityNotify
+及 Expose 事件之间的次序。
+    依事件方式而定，detail 用来表示细节情况。
+    X服务器按下述过程处理正常关注事件和被捕获时的关注事件：
+    。当关注从窗口A移至窗口B，且A位于B之下，并设指针在窗口P中，X服务器完成下述
+工作：
+    －－在窗口A上产生 FocusIn 事件，并将 detail 置为 Ancestor。
+    －－在窗口A,B之间的窗口（不包括A,B）上产生 FocusOut 事件，并将 detail 置为
+	Virtual。
+    －－在窗口B上产生 FocusIn 事件，并将 detail 置为 Inferior。
+    －－若窗口P位于窗口B之下，但窗口P不是窗口A，且不在窗口A之下也是其先辈，则在
+	窗口B与窗口P之间的窗口（包括P）上产生 FocusIn 事件，并将 detail 置为
+	Pointer。
+
+    。关注窗口A移至窗口B，且B位于A之下。设指针位于窗口P中，此时X服务器完成下列
+工作：
+    －－若窗口P位于窗口A之下，但P不在窗口B之下，也不是其先辈，则窗口P至窗口A之
+	间的窗口（不包括A）上产生 FocusIn 事件，并将 detail 置为 Pointer。
+    －－在窗口A上产生 FocusOut 事件，并将 detail 置为 Inferior。
+    －－在窗口A,C之间的窗口（不包括A,B）上产生 FocusIn 事件，并将 detail 置为
+	Virtual。
+    －－在窗口B上产生 FocusIn 事件，并将 detail 置为 Ancestor。
+
+    。关注窗口A移至窗口B，且窗口C是其最小共同先辈窗口。设指针在窗口P中。此时，
+X服务器完成下列工作：
+    －－若窗口P位于窗口A之下，则在窗口P至窗口A之间的窗口（不包括A）产生FocusOut
+	事件，并将 detail 置为 Pointer。
+    －－在窗口A上产生 FocusOut 事件，并将 detail 置为 Nonlinear。
+    －－在窗口A,C之间的窗口（不包括A,C）上产生 FocusOut 事件，并将 detail 置为
+	NonlinearVirtual。
+    －－在窗口B之间的窗口（不包括C,B）上生产 FocusIn 事件，并将 detail 置为
+	NonlinearVirtual。
+    －－在窗口B上产生 FocusIn 事件，并将 detail 置为 Nonlinear。
+    －－在窗口P位于窗口B之下，则在窗口B至窗口P之间的窗口（包括P）上产生 FocusIn
+	事件，并将 detail 置为 Pointer。
+
+    。当关注由窗口移至不在同屏幕的窗口B，且指针在窗口P时，X服务器完成下述工作：
+    －－若窗口P位于窗口A之下，但P不在窗口B之下，也不是其先辈，则窗口P至窗口A之
+	间的窗口（不包括A）上产生 FocusOut 事件，并将 detail置为 Pointer。
+    －－在窗口A上产生 FocusOut 事件，并将 detail 置为 Inferior。
+    －－若窗口A不是根窗口，则在窗口A至其根窗口之间的窗口（包括根窗口）上产生
+	FocusOut 事件，并将 detail 置为 NonlinearVirtual。
+    －－若窗口B不是根窗口，则在窗口B至其根窗口之间的窗口（不包括B）上产生
+	FocusIn 事件，并将 detail 置为 NonlinearVirtual。
+    －－在窗口B之间的窗口（不包括C,B）上产生 FocusIn 事件，并将 detail 置成
+	NonlinearVirtual。
+    －－在窗口B上产生 FocusIn 事件，并将 detail 置成  Nonlinear。
+    －－在窗口P位于窗口B之下，则在窗口B至窗口P之间的窗口（包括P）生产 FocusIn
+	事件，并将 detail 置成 Pointer。
+
+    。关注由窗口A移至 PointerRoot（在指针下发送给窗口的事件）或 None（不处理）
+时，设指针在窗口P中，此时，X服务器完成下列工作：
+    －－若窗口P位于窗口A之下，但P不在窗口B之下，也不是其先辈，则窗口P至窗口A之
+	间的窗口（不包括A）上产生 FocusOut 事件，并将 detail 置为 Pointer。
+    －－在窗口A上产生 FocusOut 事件，并将 detail 置为 Inferior。
+    －－若窗口A不是根窗口，则在窗口A至其根窗口之间的窗口（包括根窗口）上产生
+	FocusOut 事件，并将 detail 置为 NonlinearVirtual。
+    －－在所有屏幕的根窗口上产生 FocusIn 事件，并将 detail 置为 PointerRoot
+	或 None。
+    －－若新关注的是 PointerRoot，则在窗口P至其根之间窗口（包括窗口P）上产生
+	FocusIn 事件，并将 detail 置为 Pointer。
+
+    。若关注由 PointerRoot（在指针下发送给窗口的事件）或 None 移至窗口A，指针在
+窗口P中，此时，X服务器完成下列工作：
+    －－若老的关注是 PointerRoot，则在窗口P至其根窗口之间的窗口（包括根窗口）上
+	产生 FocusOut 事件，并将 detail 置成 Pointer。
+    －－在所有根窗口上产生 FocusOut事件，并将 detail置为PointerRoot（或None）。
+    －－若窗口A不是根窗口，则在窗口A至其根窗口之间的窗口（不包括A）上产生
+	FocusIn事件，并将 detail 置为 NonlinearVirtual。
+    －－在窗口A上产生 FocusIn 事件，并将 detail 置为 Nonlinear。
+    －－若窗口P位于窗口A上，则在窗口A至窗口P之间的窗口（包括P）上产生 FocusIn
+	事件，并将 detail 置成 Pointer。
+
+    。若关注由 PointerRoot（在指针下发送给窗口的事件）移至 None（或相反），且指
+针在窗口P中，则X服务器完成下列工作：
+    －－若老的关注是 PointerRoot，则在窗口P至其根窗口之间的窗口（包括根窗口）上
+产生 FocusOut 事件，并将 detail 置成 Pointer。
+    －－在所有根窗口上生产 FocusOut事件，并将 detail置为PointerRoot（或None）。
+    －－在所有根窗口上产生 FocusIn 事件，，并将 detail置为 DetailNone 或
+	PointerRoot。
+    －－若新的关注是 PointerRoot，则在窗口P至其根窗口之间的窗口（包括窗口P）上
+产生 FocusIn 事件，并将 detail 置成 Pointer。
+    键盘捕获活动的关注事件由其 mode 为 NotifyGrab 的 XFocusInEvent 或 
+XFocusOutEvent 结构标识。键盘捕获不活动的关注事件由其 mode  为 NotifyUngrab 的
+XFocusInEvent 或 XFocusOutEvent 结构标识（参见XGrabKeyBoard）。
+
+    。当产生能激活捕获的实际 KeyPress事件之前键盘捕获激活时，设G是grab-window，
+F是当前关注，X服务器完成下述工作：
+    －－产生 FocusIn 和 FocusOut 事件，并将 mode 置为 Grab。产生事件时好像关注
+	由F移至G。
+    。当产生禁止捕获活动的实际 KeyPress 事件之前，键盘捕获不活动时，设G是
+grab-window，F是当前关注。X服务器完成下述工作：
+    －－产生 FocusIn 和 FocusOut 事件，并将 mode置为 Ungrab。产生事件时好像中心
+	点由G移至F。
+
+
+    KeymapNotify
+      keys: LISTofCARD8
+    当键盘状态事件发生时，X服务器能向需要此信息的客户报告 KeymapNotify 事件。
+    要接收 KeymapNotify 事件，可设置窗口 event-mask 属性的 KeymapStateMask 位。
+在 EnterNotify 和 FocusIn 事件之后，X服务器立即产生事件。
+    keys 用来表示键盘的位(bit)向量。若某位为1，则表示正按下了对应的键。向量的表
+现形式为 32字节。第N字节（N从0开始）中是第8N至8N+7键的位(bit)，且其最低位在表示
+第8N键的字节中。
+
+
+    Expose
+      window: WINDOW
+      x, y, width, height: CARD16
+      count: CARD16
+    当窗口被遮挡或对其重新设置时，X协议并不保证保存窗口区域的内容。某些实现保存
+窗口的内容，而某些实现在窗口暴露时，可自由地破坏窗口的内容。X希望客户应用程序负
+责恢复暴露窗口区域的内容。（暴露窗口是曾被遮挡但现在变为可见的窗口。）因此，X服
+务程序发送 Expose 事件，表示窗口或窗口的部分区域已暴露。简单的客户应用程序通常
+重写整个窗口。较高级的程序仅重写暴露的区域。
+    X服务器向需要了解窗口区域内容丢失时间的客户报告 Expose 事件。X服务器产生 
+Expose 事件的环境不如类型的环境那样确定。但是，X服务器决不会在指定为 InputOnly
+类的窗口上产生 Expose 事件。X服务器产生 Expose 事件的情况有：窗口的某区域无有效
+内容，区域是可见或可视的且服务器正（也许重新开始）转储窗口，或窗口不可视但服务
+器正（也许新开始）兑现窗口的 Always 或 WhenMapped 的 backing-store 属性。区域分
+解为（任意的）一组矩形，并为每个矩形产生 Expose 事件。对于给定的窗口，X服务器保
+证连续报告由引起 Expose 事件操作（如提升窗口）造成的暴露区域。
+    window 被置为暴露的（已被破坏的）窗口。x,y置为相对于窗口原点的坐标，它是矩
+形的左上角。width,heigth 是矩形的尺寸。count 置为后续 Expose 事件的数目。若为
+零，表示此窗口无后续 Expose 事件，但若不为零，则至少是（或大于）此窗口的后续
+Expose 事件数量。不想通过区分窗口的子区域来优化重显示的简单应用程序可忽略所有非
+零计数值的 Expose 事件，但对零计数值的事件，则全部重新显示。
+
+
+    GraphicsExposure
+      drawable: DRAWABLE
+      x, y, width, height: CARD16
+      count: CARD16
+      major-opcode: CARD8
+      minor-opcode: CARD16    
+    X服务器可向需要了解在图形请求 XCopyArea 或 XCopyPlane期间不能计算目标区信息
+的客户报告 GraphicsExpose 事件。一旦由于源区域被遮掩或出界面不能计算出目标区，X
+服务器便产生此事件。另外，X服务器保证连续报告由某些图形请求（例如，将一个可画区
+拷贝至可画的目标）引起暴露的区域。
+
+
+    NoExposure
+      drawable: DRAWABLE
+      major-opcode: CARD8
+      minor-opcode: CARD16
+
+    只要会产生 GraphicsExpose 事件的图形请求并不产生事件时，X服务器便产生
+NoExpose 事件。换句话说，客户正要求 GraphicsExpose 事件，但却收到 NoExpose
+事件。
+    要想收到 GraphicsExpose 或 NoExpose 事件，首先应将图形上下文的
+graphics-exposure 属性置为 True。使用 XGreateGC 创建图形上下文时或调用
+XSetGraphicsExposures 均可设置 graphics-exposure 属性。
+    drawable 置为在其上执行图形请求的目标区的可画部分。major-code 为客户初始化
+的图形请求，其值可为 X-CopyArea 或 X-CopyPlane。若其是 X-CopyArea，则 XCopyArea
+调用初始化请求。若其是 X-CopyPlane，则 XCopyPlane调用初始化请求。这些常量的定义
+在<X11/Xproto.h> 中。minor-code 同 major-code 一样，表示哪个图形请求是由客户初
+始化的。但是，核心X协议没有定义 minor-code，在这种情况其值均为0。扩展协议可能会
+使用它。
+    x,y 置为对于 drawable 原点的坐标，它表示矩形的左上角。width,heigth 是矩形的
+尺寸。count 置为后续 GraphicsExpose 事件的数目。但是其值非零，它至少等于（或大
+于）窗口的后续 GraphicsExpose 事件的数目。
+
+
+    VisibilityNotify
+      window: WINDOW
+      state: {Unobscured, PartiallyObscured, FullyObscured}
+
+    当指定窗口的可视性变化时，X服务器向客户报告 VisibilityNotify 事件。若能实际
+看到窗口的某区域，则该窗口是可视的。一旦窗口的可视性发生变化，X服务器便产生
+VisibilityNotify 事件。但从不对类别为 InputOnly 的窗口产生此事件。X在计算中不考
+虑子窗口。
+    VisibilityNotify 事件的原因是结构层次变化，结构层次事件(UnmapNotify,
+MapNotify, ConfigureNotify, GravityNotify, CirculateNotify)都会引起这种变化。指
+定窗口上的 VisibilityNotify 事件必须在该窗口上的 Expose 事件之前产生，但不要求
+所有窗口上的 VisibilityNotify 事件均要在所有窗口上的 Expose 事件之前产生。X协议
+没有规定 VisibilityNotify 事件与 FocusOut, EnterNotify 及 LeaveNotify 事件之间
+的次序。
+    window 为其可视性发生变化的窗口。state 为窗口的可视性状态，其值可为
+Unobscured, ParitiallyObscured 或 FullyObscured。X服务器在确定窗口的可视性时不
+考虑窗口的子窗口。VisibilityNotify 事件的处理为：
+    。当窗口由部分或全遮掩或不可视变为可视和全不遮掩时，X服务器产生一个
+VisibilityNotify 事件，并将其结构中的 state 置为 UnObscured。
+    。当窗口由可视和完全不被遮掩或不可视变为可视和部分遮掩时时，X服务器产生一个
+VisibilityNotify 事件，并将其结构中的 state 置为 PartiallyObscured。
+    。当窗口由可视且完全不被遮掩，或可视且部分被遮掩或不可视变为可视且完全被遮
+掩时，X服务器产生一个 VisibilityNotify 事件，并将其结构中的 state 置为
+FullyObscured。
+
+
+    CreateNotify
+      parent, window: WINDOW
+      x, y: INT16
+      width, height, border-width: CARD16
+      override-redirect: BOOL
+    X服务器可向需要有关窗口创建消息的客户报告 CreateNotify 事件。每当客户应用程
+序调用 XCreateWindow 或 CreateSimpleWindow 创建窗口时，X服务器便产生
+CreateNotify 事件。要接收到 CreateNotify 事件，应设置窗口的 event-mask 属性中的
+SubstructureNotifyMask 位。创建任何子窗口便产生一个事件。
+    parent 置为所创建窗口的父窗口。window 声明所要创建的窗口。x,y 时相对于父窗
+口原点的所创建窗口的坐标，它是所创建窗口的外部左上角。width,heigth时所创建窗口
+的内部尺寸，它不包括边界，其值总不为零。border-width 时所创建窗口的边界宽度，单
+位为象素。
+    override-redirect 被置成为窗口的 override-redirect 属性。若它为 True，则窗
+口管理程序客户一般不考虑此窗口。
+
+
+    DestroyNotify
+      event, window: WINDOW
+
+    X服务器向需要有关窗口撤消消息的客户报告  DestroyNotify 事件。当客户应用程序
+调用 XDestroyWindow 或 XDestroySubwindow 释放窗口时，X服务器产生 DestroyNotify
+事件。
+    DestroyNotify 事件的次序是：对于任何给定的窗口，先在其下部的窗口上产生
+DestroyNotify，然后才在该窗口上产生此事件。X协议不对兄弟窗口和子层次之间的窗口
+的次序作限制。
+    要接收到 DestroyNotify 事件，应设置窗口的 event-mask 属性中的
+StructureNotifyMask 位或父窗口的 event-mask 属性中的 SubstructureNotifyMask 位
+（在这种情况下，撤消任何子窗口均会产生事件）。
+    根据选择 StructureNotifyMask 或 SubstructureNotifyMask 的情况，event 置为被
+释放窗口或其父窗口。window 置为被释放的窗口。
+
+
+    UnmapNotify
+      event, window: WINDOW
+      from-configure: BOOL
+
+    当窗口非映象时，X服务器向客户报告 UnmapNotify 事件。当客户应用程序将窗口的
+状态由映象变为非映象时，X服务器就产生 UnmapNotify 事件。
+    要接收此事件，可将窗口ID和把 StructureNotifyMask 作为 event-mask 参数传给
+XSelectInput。也可传递父窗口ID及 SubstructureNotifyMask。
+    event 是在其上产生 UnmapNotify 事件，并且在其上用户通过使用 XSelectInput 请
+求提示窗口的ID。X服务器利用此窗口报告事件。window 是被非映象的窗口的ID。当窗口
+自身有 UnmapGravity 的 win-gravity 时，若由于重定窗口的父窗口尺寸而产生事件，则
+将from-configure 置为 True。
+
+
+    MapNotify
+      event, window: WINDOW
+      override-redirect: BOOL
+
+    X服务器向需要有关窗口被映象情况的客户报告 MapNotify 事件。当客户应用程序调
+用XMapWindow，XMapRased，XMapSubwindow，XReparentWindow，或由于执行 save-set 处
+理将窗口状态有 unmapped 改为 mapped 时，X服务器便产生 MapNotify 事件。
+    要收到 MapNotify 事件，应设置窗口的 evetn-mask 属性中的StructureNotifyMask 
+位或父窗口的 event-mask 属性中的 SubstructureNotifyMask 位（在这种情况下，撤消
+任何子窗口均会产生事件）。
+    根据选择 StructureNotify 或 SubstructureNotify 的情况，将 event 置成被映象
+的窗口或其父窗口。window 置为被映象的窗口。override-redirect 被置成为窗口的
+override-redirect 属性。若它为 True，则窗口管理程序客户一般不考虑此窗口，这是因
+为这些事件一般由重载控制结构的上弹窗口产生。
+
+
+    MapRequest
+      parent, window: WINDOW
+
+    当另一个客户想映象窗口时，X服务器向客户报告 MapRequest 事件。映象窗口请求完
+成时。则认为窗口时映象过的。当另一个客户对其 Override-redirect 为 False 的未映
+象过窗口发送窗口映象请求时，X服务器产生 MapRequest 事件。客户调用 XMapWindow，
+XMapRaised 或 XMapSubwindows 可发送映象窗口请求。
+    要接收 MapRequest 事件，应设置窗口属性 event-mask 中的
+SubstructureRedirectMask 位。这意味侦听另一个客户通过调用映象窗口函数试图映象到
+一个子窗口，并且能接收到 MapRequest。例如，假设某客户应用程序调用 XMapWindow 映
+象窗口，若（一般时窗口管理程序）已在父窗口上选择了 SubstructureRedirectMask，并
+且窗口属性 override-redirect 置为 False，则X服务器报告 MapRequest 事件，但并不
+映象指定的窗口。因此，此事件时窗口管理程序客户可控制子窗口的位置。
+    parent 置为父窗口。window 置为待映象的窗口。
+
+
+    ReparentNotify
+      event, window, parent: WINDOW
+      x, y: INT16
+      override-redirect: BOOL
+
+    若窗口的父窗口发生变化，X服务器向客户报告 ReparentNotify 事件。但客户应用程
+序调用 XReparentWindow 并实际更改窗口的父窗口，X服务器则产生 ReparentNotify 事
+件。
+    要接收 ReparentNotify 事件，应设置窗口的 event-mask 属性中的
+StructureNotifyMask 位或新、旧父窗口的 event-mask属性中的SubstructureNotifyMask
+位（在这种情况下，变动子窗口的父窗口便会产生事件）。
+    根据选择 StructureNotify 或 SubstructureNotify 的情况，将 event 置成被改变
+父窗的窗口或旧的或新的父窗口。window 置为被改变父窗口的窗口。parent 被置成新的
+父窗口。
+x,y 是相对于新父窗口原点的改变父窗口的窗口的坐标，它定义窗口的外部左上角位置。
+override-redirect 被置成为窗口的 voerride-redirect 属性。若它为 True，则窗口管
+理程序客户一般不考虑此窗口。
+
+
+    ConfigureNotify
+      event, window: WINDOW
+      x, y: INT16
+      width, height, border-width: CARD16
+      above-sibling: WINDOW or None
+      override-redirect: BOOL
+
+    当另一个客户对指定窗口的子窗口发出配置窗口请求时，X服务器向客户报告
+ConfigureRequest 事件。配置窗口请求配置窗口的尺寸、位置、边界和栈次序。当另一个
+客户调用 XConfigureWindow，XLowerWindow，XRaiseWindow，XMapRaised，
+XMoveResizeWindow，XMoveWindow，XRestackWindows 或 XSetWindowBorderWidth 发出配
+置窗口请求时，X服务器产生 ConfigureRequest 事件。
+    要接收 ConfigureRequest 事件，应设置窗口属性 vevent-mask 中的
+SubstructureRedirectMask。当另一个客户在子窗口上发出 ConfigureWindow 协议请求
+时，便产生 ConfigureRequest 事件。例如，假设客户一一次性调用 XLowerWindow 降低
+窗口，如果在父窗口上选择了 SubstructureRedirectMask，并将窗口属性
+everride-redirect 置为 False，则X服务器报告 ConfigureRequest 事件，并不降低指定
+的窗口。
+    window 置为其尺寸、位置、边界宽度和（或）栈次序等重配置的窗口。
+
+
+    GravityNotify
+      event, window: WINDOW
+      x, y: INT16
+    
+    由于窗口的父窗口尺寸改变引起引起窗口移动时，X服务器向客户报告 GravityNotify
+事件。当客户应用程序调用 XConfigureWindow，XMoveResizeWindow 或 XResizeWindow
+重定父窗口的尺寸，实际移动子窗口时，X服务器产生 GravityNotify 事件。
+    要接收到 GravityNotify 事件，应设置窗口的 event-mask 属性中的
+StructureNotifyMask 位或父窗口的 event-mask 属性中的 SubstructureNotifyMask 位
+（在这种情况下，由于重定父窗口的尺寸而移动任何子窗口均产生此事件）。
+    据选择 StructureNotify 或 SubstructNotify 的情况，将 event 置成被移动的窗口
+或其窗口。window 置成被移动的子窗口。x,y 是相对于新父窗口原点的坐标，它是窗口的
+外左上角位置。
+
+
+    ResizeRequest
+      window: WINDOW
+      width, height: CARD16
+    
+    当一个客户试图改变窗口的尺寸时，X服务器便向需要这类信息的客户报告
+ResizeRequest 事件。当某个客户调用 XConfigureWindow，XResizeWindow 或
+XMoveResizeWindow 改变指定窗口的尺寸时，X服务器产生 ResizeRequest 事件。
+    要接收 ResizeRequest 事件，应设置窗口属性 event-mask 中的 Resizedirect 位。
+这样，其他客户改变尺寸的试图就会被重定向。
+    window 置成另一个客户试图改变其尺寸的窗口。width, height 是窗口哦内部尺寸，
+它不包括边界。
+
+
+    ConfigureRequest
+      parent, window: WINDOW
+      x, y: INT16
+      width, height, border-width: CARD16
+      sibling: WINDOW or None
+      stack-mode: {Above, Below, TopIf, BottomIf, Opposite}
+      value-mask: BITMASK
+    
+    当另一个客户对指定窗口的子窗口发出配置请求时，X服务器向客户报告
+ConfigureRequest 事件。配置窗口请求配置窗口的尺寸，位置，边界和栈序。当另一个客
+户调用 XConfigureWindow，XLowerWindow，XRaiseWindow，XMapRaised，
+XMoveResizeWindow，XMoveWindow，XResizeWindow，XRestackWindows 或
+XSetWindowBorderWidth 发出配置请求时，X服务器产生 ConfigureRequest 事件。
+    要接收 ConfigureRequest 事件，应设置窗口属性 evetn-mask 中的
+SubstructureRedircetMask 位。当另一个客户在子窗口上发出 ConfigureWindow 协议请
+求时，便产生 ConfigureRequest 事件。例如，假设客户应用程序调用 XLowerWindow 降
+低窗口，如果在父窗口上选择了 SubstructureRedircetMask，并将窗口属性
+override-redirect 置为 False，则X服务器报告 ConfigureRequest 事件，并不降低指定
+的窗口。
+    parent 置为父窗口。window 置为其尺寸，位置，边界宽度和（或）栈序等重配置的
+窗口。value-mask 指出 ConfigureWindow协议请求指定哪部分。对应的值在请求中指定。
+其余的值由窗口的当前几何位置决定，但 above（兄弟）和 detail（栈模式）除外，若在
+请求中没指定，则它们分别未 Above 和 None。
+
+
+    CirculateNotify
+      event, window: WINDOW
+      place: {Top, Bottom}
+    
+    X服务器向需要知道窗口在栈中改变其位置的客户报告 CirculateNotify 事件。由于
+客户应用程序调用 XCirculateSubwindws，XCirculateSubwindowUp 或
+XCirculateSubwindowDown 使得窗口在栈中的位置变化时，X服务器便产生该事件类型。
+    要想接收到 CirculateNotify 事件，应设置窗口的 event-mask 属性中的
+StructureNotifyMask 位或父窗口的 event-mask 属性中的 SubStructureNotifyMask 位
+（在这种情况下，重排子窗口便会产生事件）。
+    据选择 StructureNotify 或 SubStructureNotify 的情况，parent 被置成重排栈后
+的窗口或其父窗口。window 置成被重排栈的窗口。place 置成重排栈后窗口的位置，其值
+可为 Top 或 Bottom。若为 Top，则窗口现在同胞窗口之上。若为 Bottom，则在同胞窗口
+之下。
+
+
+    CirculateRequest
+      parent, window: WINDOW
+      place: {Top, Bottom}
+    
+    当另一个客户在指定的窗口发出轮转窗口请求时，X服务器向客户报告
+CirculateRequest 事件。当客户对窗口发出轮转窗口请求并且子窗口确实需要重排序时，
+X服务器便产生 CirculateRequest 事件。客户调用 XCirculateSubwindow，
+XCirculateSubwindowsUp 或 XCirculateSubwindowDown 可对窗口发出轮转窗口请求。
+    要接收 CirculateRequest 事件，应设置窗口属性 even-mask 中的
+SubstructureRedirectMask。这样，将来便不执行对指定窗口的轮转窗口请求，因此，子
+窗口在栈中的位置不变。例如，客户应用程序调用 XCirculateSubwindowsUp 将子窗口升
+到栈顶。若已在窗口上选择了 SubstructureRedirectMask，则X服务器使报告
+CirculateRequest 事件，并不把子窗口提升到栈顶。
+    parent 置为父窗口。window 置为待重排序的子窗口。place 是窗口在栈中的位置，
+其值可为 Top 或 Bottom。若为 Top，则窗口应在所有兄弟窗口之上。若为 Bottom，则子
+窗口应在所有兄弟窗口之下。
+
+
+    PropertyNotify
+      window: WINDOW
+      atom: ATOM
+      state: {NewValue, Deleted}
+      time: TIMESTAMP
+    
+    当指定窗口的特征变化时，X服务器向客户报告 PropertyNotify 事件。
+    要接收 PropertyNotify 事件，应设置窗口属性 event-mask 中的
+PropertyChangeMask 位。
+    window 置为其特征被修改的窗口。atom 置成特征的原子，它表示修改或需要哪个特
+征。time 是修改特征时的服务器时间。
+    state 表示是将特征改为新值还是删除特征，其值可为 NewValue 或 Delete，当调用
+XChangeProperty 或 XRotateWindowProperties修改窗口特征（包括使用XChangeProperty
+增加零个数据），和使用 XChangeProperty 或 XrotateWindowProperties用与原数据相同
+的数据替换全部或部分特征时，应将 state 置为 NewValue。当使用 XDeleteProperty 或
+XGetWindowProperty（其 delete 为 True）删除窗口特征时，应将 state 置为 Delete。
+
+
+    SelectionClear
+      owner: WINDOW
+      selection: ATOM
+      time: TIMESTAMP
+    
+    X服务器向选择的当前拥有者报告 SelectionClear 事件。X服务器在将选择拥有权移
+交给新拥有者的窗口上产生此事件。当客户调用 XSetSelectionOwner 时便会产生这样的
+结果。
+    selection 是选择原子。time 为此选择的最新改变时间。owner 是
+XSetSelectionOwner 调用中当前拥有者指定的窗口。
+
+
+    SelectionRequest
+      owner: WINDOW
+      selection: ATOM
+      target: ATOM
+      property: ATOM or None
+      requestor: WINDOW
+      time: TIMESTAMP or CurrentTime
+    
+    X服务器向选择的拥有者报告 SelectionRequest 事件。当客户调用
+XConvertSelection 请求变换选择并且某窗口拥有所指定的选择，这时X服务器产生
+SelectionRequest 事件。
+    owner 是拥有选择的窗口，且是 XSetSelectionOwner 调用中当前 owner 指定的窗
+口。requestor 为请求选择的窗口。selection 指出选择的名字。target 表示所希望选择
+具有的类型的原子。property 是特征名或 None。time 是一个时间，它是
+XConvertSelection 请求中的 CurrentTime。
+    拥有选择的客户应完成下列的工作：
+     。 拥有者客户应据 target 中的原子变换选择。
+     。 若指定了特征（即设置了 property），拥有者客户应把 requestor 窗口上的特
+        征作为结果存储，并调用 XSendEvent（其 event-mask 为空）向 requestor 发
+        送 SelectionNotify 事件，即应将此事件发送给 requestor 窗口的创建者。
+     。 若将 Property 指定为 None，拥有者客户应从 requestor 窗口上选择一个特征
+     	名，然后发送 SelectinNotify，给出实际的名字。
+     。 若不能按要求变换选择，拥有者客户将 Property 置为 None，并发送
+     	SelectionNotify 事件。
+
+
+    SelectionNotify
+      requestor: WINDOW
+      selection, target: ATOM
+      property: ATOM or None
+      time: TIMESTAMP or CurrentTime
+    
+    当选择无拥有者时，XF服务器产生此事件以响应 ConvertSelection 协议请求。当有
+拥有者时，事件由选择的拥有者调用 XSendEvent 产生。当自己变换选择，且作为特征保
+存或不能执行选择变换（这可将 property 置为 None 来表示）时，选择拥有者给请求者
+发送 SelectionNotify 事件。
+    若在 ConvertSelection 协议请求中 None 被指定为 property，则拥有者应选择一个
+特征名，作为 requestor 窗口上的特征保存，然后发送 SelectionNotify，给出实际的特
+征名。
+    requestor 是与选择的请求者有关的窗口。selection 是用于表示选择的原子。
+target 也是一个原子，它用于表示变换后的类型。property 是一个原子，它指出哪个特
+征作为结果保存。若变换失败，则它为 None。time 是变换时的时间，它可以是具体的时
+间也可以是 CurrentTime。
+
+
+    ColormapNotify
+      window: WINDOW
+      colormap: COLORMAP or None
+      new: BOOL
+      state: {Installed, Uninstalled}
+    
+    当色彩表变化和安装和拆卸色彩表时，X服务器向客户报告 ColormapNotify 事件。当
+客户应用程序：
+     。 调用 XChangeWindowAttributes，XFreeColormap 或 XSetWindowColormap 修改
+     	XSetWindowAttributes 结构中的 Colormap 时；
+     。 调用 XInstallColormap 或 XUninstallColormap 安装或拆卸色彩表时，X服务器
+     	便产生 ColormapNotify 事件。
+    要接收到 ColormapNotify 事件，应设置窗口属性 event-mask 中的
+ColormapChangeMask 位。
+    window 置为其色彩表被改变、安装或拆卸的窗口。对于被修改、安装或拆卸的颜色
+图，colormap 置成此色彩表。对于由于调用 XFreeColormap 而被修改的色彩表，
+colormap 应置为 None。new 表示是否修改、安装或拆卸指定窗口的色彩表，其值可为
+True 或 False。若为 True，则修改色彩表。若为 False，则安装或拆卸颜色图。state
+用来表示是否安装或拆卸了色彩表，其值可为 Installed 或 Uninstalled。
+
+
+    MappingNotify
+      request: {Modifier, Keyboard, Pointer}
+      first-keycode, count: CARD8
+    
+    X服务器向所有客户报告 MappingNotify 事件，并且客户无法屏蔽它。当客户应用程
+序成功地调用：
+    。XSetModifierMapping 指出哪个 KeyCode 作为修饰键；
+    。XChangeKeyboardMapping 改变键盘映象；
+    。XSetPointerMapping 设置指针映象
+时，X服务器便产生 MappingNotify 事件。
+    request 表示出现地映象种类，其值可为 Modifier，Keyboard，Pointer。若为
+Modifier，则改变修饰键映象。若是 Keyboard，则改变键盘映象。若是 Pointer，则修改
+按钮映象。仅当 request 被置为 Keyboard 时，才设置 first-keycode 和 count。
+first-keycode 中的数表示改变后的映象的范围的首位数。count 是所改变的 keycode 数
+目。
+
+
+    ClientMessage
+      window: WINDOW
+      type: ATOM
+      format: {8, 16, 32}
+      data: LISTofINT8 or LISTofINT16 or LISTofINT32
+    
+    仅当客户调用函数 XSendEvent 时，X服务器才产生 ClientMessage 事件。
+    window 置为向其发送事件的窗口。type 的类型为 ATOM，它表示接收事件的客户解释
+数据的方式。format 可为 8，16 或 32，它表示能否将数据看成字节表，短整数表或长整
+数表。data 是一个联合，它有成员 b，s 及 l。 b，s 及 l 分别表示20个8位的值，10个
+16位的值和5个32位的值。某些特征的消息类型不会使用这些全部数据。X服务器不对 type
+和 data 中的值作解释。
+
+
+十二 控制流及并发机制
+
+    每当服务器向一个连接中写入时，允许它停止从该连接上读（但若写操作阻塞，则必
+须为其他连接提供服务）。在某时间，不要求服务器为每个连接缓冲一个以上的请求。对
+于与服务器的给定连接，当从连接读时应能阻塞，但当写操作阻塞时，应能完成读（事件
+和错误）操作。若有客户不遵循此规则，则可能会产生死锁连接，虽然死锁一般不太可能，
+除非传输层几乎没有缓冲机制，或客户试图发送大量请求而不读取回答或检查错误和结果。
+    若服务器实现时带有内部并发机制，则整体效果必须好象每个请求是依次执行完成的，
+来自给定连接的请求必须按先后次序执行（即，总执行次序是单个次序的混合）。请求执
+行过程包括验证所有参数，收集用于回答的所有数据，产生并排队所有请求事件。但不包
+括回答和事件的实际传送。另外，能产生多个事件的原因（例如，捕获激活指针移动）必
+须有效地产生并排队所有请求事件，且对其他原因是不可见的。对于来自某客户的请求，
+由于执行请求而产生的且目的为该客户的事件必须在回答或错误发送前发给该客户。
+

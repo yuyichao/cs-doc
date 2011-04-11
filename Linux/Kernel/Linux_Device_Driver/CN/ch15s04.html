@@ -1,0 +1,506 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>15.4.&#160;直接内存存取-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch15.html" title="第&#160;15&#160;章&#160;内存映射和 DMA ">
+<link rel="prev" href="ch15s03.html" title="15.3.&#160;进行直接 I/O">
+<link rel="next" href="ch15s05.html" title="15.5.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">15.4.&#160;直接内存存取</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch15s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;15&#160;章&#160;内存映射和 DMA </th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch15s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="DirectMemoryAccess.sect1"></a>15.4.&#160;直接内存存取</h2></div></div></div>
+<p>直接内存存取, 或者 DMA, 是结束我们的内存问题概览的高级主题. DMA 是硬件机制允许外设组件来直接传输它们的 I/O 数据到和从主内存, 而不需要包含系统处理器. 这种机制的使用能够很大提高吞吐量到和从一个设备, 因为大量的计算开销被削减了.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="OverviewofDMADataTransfer.sect2"></a>15.4.1.&#160;一个 DMA 数据传输的概况</h3></div></div></div>
+<p>在介绍程序细节之前, 让我们回顾一个 DMA 传输如何发生的, 只考虑输入传输来简化讨论.</p>
+<p>数据传输可由 2 种方法触发:或者软件请求数据(通过一个函数例如 read)或者硬件异步推数据到系统.</p>
+<p>在第一种情况, 包含的步骤总结如下:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>1. 当一个进程调用 read, 驱动方法分配一个 DMA 缓冲并引导硬件来传输它的数据到那个缓冲. 这个进程被置为睡眠.</p></li>
+<li><p>2. 硬件写数据到这个 DMA 缓冲并且在它完成时引发一个中断.</p></li>
+<li><p>3. 中断处理获得输入数据, 确认中断, 并且唤醒进程, 它现在可以读数据了.</p></li>
+</ul></div>
+<p>第 2 种情况到来是当 DMA 被异步使用. 例如, 这发生在数据获取设备, 它在没有人读它们的时候也持续推入数据. 在这个情况下, 驱动应当维护一个缓冲以至于后续的读调用能返回所有的累积的数据给用户空间. 这类传输包含的步骤有点不同:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>1. 硬件引发一个中断来宣告新数据已经到达.</p></li>
+<li><p>2. 中断处理分配一个缓冲并且告知硬件在哪里传输数据.</p></li>
+<li><p>3. 外设写数据到缓冲并且引发另一个中断当完成时.</p></li>
+<li><p>处理者分派新数据, 唤醒任何相关的进程, 并且负责杂务.</p></li>
+</ul></div>
+<p>异步方法的变体常常在网卡中见到. 这些卡常常期望见到一个在内存中和处理器共享的环形缓冲(常常被称为一个 DMA 的缓冲); 每个到来的报文被放置在环中下一个可用的缓冲, 并且发出一个中断. 驱动接着传递网络本文到内核其他部分并且在环中放置一个新 DMA 缓冲.</p>
+<p>在所有这些情况中的处理的步骤都强调, 有效的 DMA 处理依赖中断报告. 虽然可能实现 DMA 使用一个轮询驱动, 它不可能有意义, 因为一个轮询驱动可能浪费 DMA 提供的性能益处超过更容易的处理器驱动的I/O.<sup>[<a name="id498425" href="ch15s04.html#ftn.id498425">49</a>]</sup></p>
+<p>在这里介绍的另一个相关项是 DMA 缓冲. DMA 要求设备驱动来分配一个或多个特殊的适合 DMA 的缓冲. 注意许多驱动分配它们的缓冲在初始化时并且使用它们直到关闭 -- 在之前列表中的分配一词, 意思是"获得一个之前分配的缓冲".</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AllocationgtheDMABuffer.sect2"></a>15.4.2.&#160;分配 DMA 缓冲</h3></div></div></div>
+<p>本节涵盖 DMA 缓冲在底层的分配; 我们稍后介绍一个高级接口, 但是来理解这里展示的内容仍是一个好主意.</p>
+<p>随 DMA 缓冲带来的主要问题是, 当它们大于一页, 它们必须占据物理内存的连续页因为设备使用 ISA 或者 PCI 系统总线传输数据, 它们都使用物理地址. 注意有趣的是这个限制不适用 SBus ( 见 12 章的"SBus"一节 ), 它在外设总线上使用虚拟地址. 一些体系结构还可以在 PCI 总线上使用虚拟地址, 但是一个可移植的驱动不能依赖这个功能.</p>
+<p>尽管 DMA 缓冲可被分配或者在系统启动时或者在运行时, 模块只可在运行时分配它们的缓冲. (第 8 章介绍这些技术; "获取大缓冲"一节涵盖在系统启动时分配, 而"kmalloc 的真实"和"get_free_page 和其友"描述在运行时分配). 驱动编写者必须关心分配正确的内存,当它被用做 DMA 操作时; 不是所有内存区是合适的. 特别的, 在一些系统中的一些设备上高端内存可能不为 DMA 工作 - 外设完全无法使用高端地址.</p>
+<p>在现代总线上的大部分设备可以处理 32-位 地址, 意思是正常的内存分配对它们是刚刚好的. 一些 PCI 设备, 但是, 不能实现完整的 PCI 标准并且不能使用 32-位 地址. 并且 ISA 设备, 当然, 限制只在 24-位 地址.</p>
+<p>对于有这种限制的设备, 内存应当从 DMA 区进行分配, 通过添加 GFP_DMA 标志到 kmalloc 或者 get_free_pages 调用. 当这个标志存在, 只有可用 24-位 寻址的内存被分配. 另一种选择, 你可以使用通用的 DMA 层( 我们马上讨论这个 )来分配缓冲以解决你的设备的限制.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Doityourselfallocation.sect3"></a>15.4.2.1.&#160;自己做分配</h4></div></div></div>
+<p>我们已见到 get_free_pages 如何分配直到几个 MByte (由于 order 可以直到 MAX_ORDER, 当前是 11), 但是高级数的请求容易失败当请求的缓冲远远小于 128 KB, 因为系统内存时间长了变得碎裂.<sup>[<a name="id498543" href="ch15s04.html#ftn.id498543">50</a>]</sup></p>
+<p>当内核无法返回请求数量的内存或者当你需要多于 128 KB(例如, 一个通常的 PCI 帧抓取的请求), 一个替代返回 -ENOMEM 的做法是在启动时分配内存或者保留物理 RAM 的顶部给你的缓冲. 我们在第 8 章的 "获得大量缓冲" 一节描述在启动时间分配, 但是它对模块是不可用的. 保留 RAM 的顶部是通过在启动时传递一个 mem= 参数给内核实现的. 例如, 如果你有 256 MB, 参数 mem=255M 使内核不使用顶部的 MByte. 你的模块可能后来使用下列代码来获得对这个内存的存取:</p>
+<pre class="programlisting">
+dmabuf = ioremap (0xFF00000 /* 255M */, 0x100000 /* 1M */); 
+</pre>
+<p>分配器, 配合本书的例子代码的一部分, 提供了一个简单的 API 来探测和管理这样的保留 RAM 并且已在几个体系上被成功使用. 但是, 这个技巧当你有一个高内存系统时无效(即, 一个有比适合 CPU 地址空间更多的物理内存的系统 ).</p>
+<p>当然, 另一个选项, 是使用 GFP_NOFAIL 来分配你的缓冲. 这个方法, 但是, 确实严重地对内存管理子系统有压力, 并且它冒锁住系统的风险; 最好是避免除非确实没有其他方法.</p>
+<p>如果你分配一个大 DMA 缓冲到这样的长度, 但是, 值得想一下替代的方法. 如果你的设备可以做发散/汇聚 I/O, 你可以分配你的缓冲以更小的片段并且让设备做其他的. 发散/汇聚 I/O 也可以用当进行直接 I/O 到用户空间时, 它可能是最好地解决方法当需要一个真正大缓冲时.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="BusAddresses.sect2"></a>15.4.3.&#160;总线地址</h3></div></div></div>
+<p>一个使用 DMA 的设备驱动必须和连接到接口总线的硬件通讯, 总线使用物理地址, 而程序代码使用虚拟地址.</p>
+<p>事实上, 情况比这个稍微有些复杂. 基于DMA 的硬件使用总线地址, 而不是物理地址. 尽管 ISA 和 PCI 总线地址在 PC 上完全是物理地址, 这对每个平台却不总是真的. 有时接口总线被通过桥接电路连接, 它映射 I/O 地址到不同的物理地址. 一些系统甚至有一个页映射机制, 使任意的页连续出现在外设总线.</p>
+<p>在最低级别(再次, 我们将马上查看一个高级解决方法), Linux 内核提供一个可移植的方法, 通过输出下列函数, 在 &lt;asm/io.h&gt; 定义. 这些函数的使用不被推荐, 因为它们只在有非常简单的 I/O 体系的系统上正常工作; 但是, 你可能遇到它们当使用内核代码时.</p>
+<pre class="programlisting">
+unsigned long virt_to_bus(volatile void *address);
+void *bus_to_virt(unsigned long address);
+</pre>
+<p>这些函数进行一个简单的转换在内核逻辑地址和总线地址之间. 它们在许多情况下不工作, 一个 I/O 内存管理单元必须被编程的地方或者必须使用反弹缓冲的地方. 做这个转换的正确方法是使用通用的 DMA 层, 因此我们现在转移到这个主题.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheGenericDMALayer.sect2"></a>15.4.4.&#160;通用 DMA 层</h3></div></div></div>
+<p>DMA 操作, 最后, 下到分配一个缓冲并且传递总线地址到你的设备. 但是, 编写在所有体系上安全并正确进行 DMA 的可移植启动的任务比想象的要难. 不同的系统有不同的概念, 关于缓存一致性应当如何工作的概念; 如果你不正确处理这个问题, 你的驱动可能破坏内存. 一些系统有复杂的总线硬件, 它使 DMA 任务更容易 - 或者更难. 并且不是所有的系统可以在内存所有部分进行 DMA. 幸运的是, 内核提供了一个总线和体系独立的 DMA 层来对驱动作者隐藏大部分这些问题. 我们非常鼓励你来使用这个层来 DMA 操作, 在任何你编写的驱动中.</p>
+<p>下面的许多函数需要一个指向 struct device 的指针. 这个结构是 Linux 设备模型中设备的低级表示. 它不是驱动常常必须直接使用的东西, 但是你确实需要它当使用通用 DMA 层时. 常常地, 你可发现这个结构, 深埋在描述你的设备的总线. 例如, 它可在 struct pci_device 或者 struct usb_device 中发现它作为 dev 成员. 设备结构在 14 章中详细描述.</p>
+<p>使用下面函数的驱动应当包含 &lt;linux/dma-mapping.h&gt;.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Dealingwithdifficulthardware.sect3"></a>15.4.4.1.&#160;处理困难硬件</h4></div></div></div>
+<p>在尝试 DMA 之前必须回答的第一个问题是给定设备是否能够在当前主机上做这样的操作. 许多设备受限于它们能够寻址的内存范围, 因为许多理由. 缺省地, 内核假定你的设备能够对任何 32-位 地址进行 DMA. 如果不是这样, 你应当通知内核这个事实, 使用一个调用:</p>
+<pre class="programlisting">
+ int dma_set_mask(struct device *dev, u64 mask); 
+</pre>
+<p>mask 应当显示你的设备能够寻址的位; 如果它被限制到 24 位, 例如, 你要传递 mask 作为 0x0FFFFFF. 返回值是非零如果使用给定的 mask 可以 DMA; 如果 dma_set_mask 返回 0, 你不能对这个设备使用  DMA 操作. 因此, 设备的驱动中的初始化代码限制到 24-位 DMA 操作可能看来如:</p>
+<pre class="programlisting">
+if (dma_set_mask (dev, 0xffffff))
+        card-&gt;use_dma = 1;
+else
+{
+        card-&gt;use_dma = 0; /* We'll have to live without DMA */
+        printk (KERN_WARN, "mydev: DMA not supported\n");
+}
+</pre>
+<p>再次, 如果你的设备支持正常的, 32-位 DMA 操作, 没有必要调用 dma_set_mask.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="DMAmappings.sect3"></a>15.4.4.2.&#160;DMA 映射</h4></div></div></div>
+<p>一个 DMA 映射是分配一个 DMA 缓冲和产生一个设备可以存取的地址的结合. 它试图使用一个简单的对 virt_to_bus 的调用来获得这个地址, 但是有充分的理由来避免那个方法. 它们中的第一个是合理的硬件带有一个 IOMMU	来为总线提供一套映射寄存器. IOMMU 可为任何物理内存安排来出现在设备可存取的地址范围内, 并且它可使物理上散布的缓冲对设备看来是连续的. 使用 IOMMU 需要使用通用的 DMA 层; virt_to_bus 不负责这个任务.</p>
+<p>注意不是所有的体系都有一个 IOMMU; 特别的, 流行的 x86 平台没有 IOMMU 支持. 一个正确编写的驱动不需要知道它在之上运行的 I/O 支持硬件, 但是.</p>
+<p>为设备设置一个有用的地址可能也, 在某些情况下, 要求一个反弹缓冲的建立. 反弹缓冲是当一个驱动试图在一个外设不能达到的地址上进行 DMA 时创建的, 比如一个高内存地址. 数据接着根据需要被拷贝到和从反弹缓冲. 无需说, 反弹缓冲的使用能拖慢事情, 但是有时没有其他选择.</p>
+<p>DMA 映射也必须解决缓存一致性问题. 记住现代处理器保持最近存取的内存区的拷贝在一个快速的本地缓冲中; 如果没有这个缓存, 合理的性能是不可能的. 如果你的设备改变主存一个区, 会强制使任何包含那个区的处理器缓存被失效; 负责处理器可能使用不正确的主存映象, 并且导致数据破坏. 类似地, 当你的设备使用 DMA 来从主存中读取数据, 任何对那个驻留在处理器缓存的内存的改变必须首先被刷新. 这些缓存一致性问题可以产生无头的模糊和难寻的错误, 如果编程者不小心. 一个体系在硬件中管理缓存一致性, 但是其他的要求软件支持. 通用的 DMA 层深入很多来保证在所有体系上事情都正确工作, 但是, 如同我们将见到的, 正确的行为要求符合一些规则.</p>
+<p>DMA 映射设置一个新类型, dma_addr_t, 来代表总线地址. 类型 dma_addr_t 的变量应当被驱动当作不透明的; 唯一可允许的操作是传递它们到 DMA 支持过程和设备自身. 作为一个总线地址, dma_addr_t 可导致不期望的问题如果被 CPU 直接使用.</p>
+<p>PCI 代码在 2 类 DMA 映射中明显不同, 依赖 DMA 缓冲被期望停留多长时间:</p>
+Coherent DMA mappings 
+<p>连贯的 DMA 映射. 这些映射常常在驱动的生命期内存在. 一个连贯的缓冲必须是同时对 CPU 和外设可用(其他的映射类型, 如同我们之后将看到的, 在任何给定时间只对一个或另一个可用). 结果, 一致的映射必须在缓冲一致的内存. 一致的映射建立和使用可能是昂贵的.</p>
+Streaming DMA mappings 
+<p>流 DMA 映射. 流映射常常为一个单个操作建立. 一些体系当使用流映射时允许大的优化, 如我们所见, 但是这些映射也服从一个更严格的关于如何存取它们的规则. 内核开发者建议使用一致映射而不是流映射在任何可能的时候. 这个建议有 2 个原因. 第一个, 在支持映射寄存器的系统上, 每个 DMA 映射在总线上使用它们一个或多个. 一致映射, 有长的生命周期, 可以长时间独占这些寄存器, 甚至当它们不在使用时. 另外一个原因是, 在某些硬件上, 流映射可以用无法在一致映射中使用的方法来优化.</p>
+<p>这 2 种映射类型必须以不同的方式操作; 是时候看看细节了.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="SettingupcoherentDMAmappings.sect3"></a>15.4.4.3.&#160;建立一致 DMA 映射</h4></div></div></div>
+<p>一个驱动可以建立一个一致映射, 使用对 dma_alloc_coherent 的调用:</p>
+<pre class="programlisting">
+void *dma_alloc_coherent(struct device *dev, size_t size, dma_addr_t *dma_handle, int flag);
+</pre>
+<p>这个函数处理缓冲的分配和映射. 前 2 个参数是设备结果和需要的缓冲大小. 这个函数返回 DMA 映射的结果在 2 个地方. 来自这个函数的返回值是缓冲的一个内核虚拟地址, 它可被驱动使用; 其间相关的总线地址在 dma_handle 中返回. 分配在这个函数中被处理以至缓冲被放置在一个可以使用 DMA 的位置; 常常地内存只是使用 get_free_pages 来分配(但是注意大小是以字节计的, 而不是一个 order 值). flag 参数是通常的 GFP_ 值来描述内存如何被分配; 常常应当是 GFP_KERNEL (常常) 或者 GFP_ATOMIC (当在原子上下文中运行时).</p>
+<p>当不再需要缓冲(常常在模块卸载时), 它应当被返回给系统, 使用 dma_free_coherent:</p>
+<pre class="programlisting">
+void dma_free_coherent(struct device *dev, size_t size,
+ void *vaddr, dma_addr_t dma_handle);
+</pre>
+<p>注意, 这个函数象许多通常的 DMA 函数, 需要提供所有的大小, CPU 地址, 和 总线地址参数.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="DMApools.sect3"></a>15.4.4.4.&#160;DMA 池</h4></div></div></div>
+<p>一个 DMA池 是分配小的, 一致DMA映射的分配机制. 从 dma_alloc_coherent 获得的映射可能有一页的最小大小. 如果你的驱动需要比那个更小的 DMA 区域, 你应当可能使用一个 DMA 池. DMA 池也在这种情况下有用, 当你可能试图对嵌在一个大结构中的小区域进行 DMA 操作. 一些非常模糊的驱动错误已被追踪到缓存一致性问题, 在靠近小 DMA 区域的结构成员. 为避免这个问题, 你应当一直明确分配进行 DMA 操作的区域, 和其他的非 DMA 数据结构分开.</p>
+<p>DMA 池函数定义在 &lt;linux/dmapool.h&gt;.</p>
+<p>一个 DMA 池必须在使用前创建, 使用一个调用:</p>
+<pre class="programlisting">
+struct dma_pool *dma_pool_create(const char *name, struct device *dev,
+ size_t size, size_t align,
+ size_t allocation); 
+</pre>
+<p>这里, name 是池的名子, dev 是你的设备结构, size 是要从这个池分配的缓冲区大小, align 是来自池的分配要求的硬件对齐(以字节表达的), 以及 allocation是, 如果非零, 一个分配不应当越过的内存边界. 如果 allocation 以 4096 传递, 例如, 从池分配的缓冲不越过 4-KB 边界.</p>
+<p>当你用完一个池, 可被释放, 用:</p>
+<pre class="programlisting">
+void dma_pool_destroy(struct dma_pool *pool); 
+</pre>
+<p>你应当返回所有的分配给池, 在销毁它之前. 分配被用 dma_pool_alloc 处理:</p>
+<pre class="programlisting">
+void *dma_pool_alloc(struct dma_pool *pool, int mem_flags, dma_addr_t *handle);
+</pre>
+<p>对这个调用, mem_flags 是常用的 GFP_ 分配标志的设置. 如果所有都进行顺利, 一个内存区(大小是当池创建时指定的)被分配和返回. 至于 dam_alloc_coherent, 结果 DMA 缓冲地址被返回作为一个内核虚拟地址, 并作为一个总线地址被存于 handle.</p>
+<p>不需要的缓冲应当返回池, 使用:</p>
+<pre class="programlisting">
+void dma_pool_free(struct dma_pool *pool, void *vaddr, dma_addr_t addr); 
+</pre>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="SettingupstreamingDMAmapping.sect3"></a>15.4.4.5.&#160;建立流 DMA 映射</h4></div></div></div>
+<p>流映射比一致映射有更复杂的接口, 有几个原因. 这些映射行为使用一个由驱动已经分配的缓冲, 因此, 必须处理它们没有选择的地址. 在一些体系上, 流映射也可以有多个不连续的页和多部分的"发散/汇聚"缓冲. 所有这些原因, 流映射有它们自己的一套映射函数.</p>
+<p>当建立一个流映射时, 你必须告知内核数据移向哪个方向. 一些符号(enum dam_data_direction 类型)已为此定义:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>DMA_TO_DEVICE</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>DMA_FROM_DEVICE </span></span></dt>
+<dd><p>这 2 个符号应当是自解释的. 如果数据被发向这个设备(相应地, 也许, 到一个 write 系统调用), DMA_IO_DEVICE 应当被使用; 去向 CPU 的数据, 相反, 用 DMA_FROM_DEVICE 标志.</p></dd>
+<dt><span class="term"><span>DMA_BIDIRECTIONAL </span></span></dt>
+<dd><p>如果数据被在任一方向移动, 使用 DMA_BIDIRECTIONAL.</p></dd>
+<dt><span class="term"><span>DMA_NONE </span></span></dt>
+<dd><p>这个符号只作为一个调试辅助而提供. 试图使用带这个方向的缓冲导致内核崩溃.</p></dd>
+</dl></div>
+<p>可能在所有时间里试图只使用 DMA_BIDIRECTIONAL, 但是驱动作者应当抵挡住这个诱惑. 在一些体系上, 这个选择会有性能损失.</p>
+<p>当你有单个缓冲要发送, 使用 dma_map_single 来映射它:</p>
+<pre class="programlisting">
+dma_addr_t dma_map_single(struct device *dev, void *buffer, size_t size, enum dma_data_direction direction);
+</pre>
+<p>返回值是总线地址, 你可以传递到设备, 或者是 NULL 如果有错误.</p>
+<p>一旦传输完成, 映射应当用 dma_unmap_single 来删除:</p>
+<pre class="programlisting">
+void dma_unmap_single(struct device *dev, dma_addr_t dma_addr, size_t size, enum dma_data_direction direction);
+</pre>
+<p>这里, size 和 direction 参数必须匹配那些用来映射缓冲的.</p>
+<p>一些重要的规则适用于流 DMA 映射:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>缓冲必须用在只匹配它被映射时给定的方向的传输.</p></li>
+<li><p>一旦一个缓冲已被映射, 它属于这个设备, 不是处理器. 直到这个缓冲已被去映射, 驱动不应当以任何方式触动它的内容. 只在调用 dma_unmap_single 后驱动才可安全存取缓冲的内容(有一个例外, 我们马上见到). 其他的事情, 这个规则隐含一个在被写入设备的缓冲不能被映射, 直到它包含所有的要写的数据.</p></li>
+<li><p>这个缓冲必须不被映射, 当 DMA 仍然激活, 否则肯定会有严重的系统不稳定.</p></li>
+</ul></div>
+<p>你可能奇怪为什么一旦一个缓冲已被映射驱动就不能再使用它. 为什么这个规则有意义实际上有 2 个原因. 第一, 当一个缓冲为 DMA 而被映射, 内核必须确保缓冲中的所有的数据实际上已被写入内存. 有可能一些数据在处理器的缓存当 dma_unmap_single 被调用时, 并且必须被明确刷新. 被处理器在刷新后写入缓冲的数据可能对设备不可见.</p>
+<p>第二, 考虑一下会发生什么, 当被映射的缓冲在一个对设备不可存取的内存区. 一些体系在这种情况下完全失败, 但是其他的创建一个反弹缓冲. 反弹缓冲只是一个分开的内存区, 它对设备可存取. 如果一个缓冲被映射使用 DMA_TO_DEVICE 方向, 并且要求一个反弹缓冲, 原始缓冲的内容作为映射操作的一部分被拷贝. 明显地, 在拷贝后的对原始缓冲的改变设备见不到. 类似地, DMA_FROM_DEVICE 反弹缓冲被 dma_unmap_single 拷回到原始缓冲; 来自设备的数据直到拷贝完成才出现.</p>
+<p>偶然地, 为什么获得正确方向是重要的, 反弹缓冲是一个原因. DMA_BIDIRECTIONAL 反弹缓冲在操作前后被拷贝, 这常常是一个 CPU 周期的不必要浪费.</p>
+<p>偶尔一个驱动需要存取一个流 DMA 缓冲的内容而不映射它. 已提供了一个调用来做这个:</p>
+<pre class="programlisting">
+void dma_sync_single_for_cpu(struct device *dev, dma_handle_t bus_addr, size_t size, enum dma_data_direction direction); 
+</pre>
+<p>这个函数应当在处理器存取一个流 DMA 缓冲前调用. 一旦已做了这个调用, CPU "拥有" DMA 缓冲并且可以按需使用它. 在设备存取这个缓冲前, 但是, 拥有权应当传递回给它, 使用:</p>
+<pre class="programlisting">
+void dma_sync_single_for_device(struct device *dev, dma_handle_t bus_addr, size_t size, enum dma_data_direction direction); 
+</pre>
+<p>处理器, 再一次, 在调用这个之后不应当存取 DMA 缓冲.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Singlepagestreamingmappings.sect3"></a>15.4.4.6.&#160;单页流映射</h4></div></div></div>
+<p>偶然地, 你可能想建立一个缓冲的映射, 这个缓冲你有一个 struct page 指针; 例如, 这可能发生在使用 get_user_pages 映射用户缓冲. 为建立和取消流映射使用 struct page 指针, 使用下面:</p>
+<pre class="programlisting">
+dma_addr_t dma_map_page(struct device *dev, struct page *page,
+ unsigned long offset, size_t size,
+ enum dma_data_direction direction); 
+void dma_unmap_page(struct device *dev, dma_addr_t dma_address,
+ size_t size, enum dma_data_direction direction);
+</pre>
+<p>offset 和 size 参数可被用来映射页的部分. 但是, 建议部分页映射应当避免, 除非你真正确信你在做什么. 映射一页的部分可能导致缓存一致性问题, 如果这个分配只覆盖一个缓存线的一部分; 这, 随之, 会导致内存破坏和严重的难以调试的错误.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Scattergathermapping.sect3"></a>15.4.4.7.&#160;发散/汇聚映射</h4></div></div></div>
+<p>发散/汇聚映射是一个特殊类型的流 DMA 映射. 假设你有几个缓冲, 都需要传送数据到或者从设备. 这个情况可来自几个方式, 包括从一个 readv 或者 writev 系统调用, 一个成簇的磁盘 I/O 请求, 或者一个页链表在一个被映射的内核 I/O 缓冲. 你可简单地映射每个缓冲, 轮流的, 并且进行要求的操作, 但是有几个优点来一次映射整个链表.</p>
+<p>许多设备可以接收一个散布表数组指针和长度, 并且传送它们全部在一个 DMA 操作中; 例如, "零拷贝"网络是更轻松如果报文在多个片中建立. 另一个映射发散列表为一个整体的理由是利用在总线硬件上有映射寄存器的系统. 在这样的系统上, 物理上不连续的页从设备的观点看可被汇集为一个单个的, 连续的数组. 这个技术只当散布表中的项在长度上等于页大小(除了第一个和最后一个), 但是当它做这个工作时, 它可转换多个操作到一个单个的 DMA, 和有针对性的加速事情.</p>
+<p>最后, 如果一个反弹缓冲必须被使用, 应该连接整个列表为一个单个缓冲(因为它在被以任何方式拷贝).</p>
+<p>因此现在你确信散布表的映射在某些情况下是值得的. 映射一个散布表的第一步是创建和填充一个 struct scatterlist 数组, 它描述被传输的缓冲. 这个结构是体系依赖的, 并且在 &lt;asm/scatterlist.h&gt; 中描述. 但是, 它常常包含 3 个成员:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct page *page;</span></span></dt>
+<dd><p>struct page 指针, 对应在发散/汇聚操作中使用的缓冲.</p></dd>
+<dt><span class="term"><span>unsigned int length;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned int offset;</span></span></dt>
+<dd><p>缓冲的长度和它的页内偏移.</p></dd>
+</dl></div>
+<p>为映射一个发散/汇聚 DMA 操作, 你的驱动应当设置 page, offset, 和 length 成员在一个 struct scatterlist 项给每个要被发送的缓冲. 接着调用:</p>
+<pre class="programlisting">
+int dma_map_sg(struct device *dev, struct scatterlist *sg, int nents, enum dma_data_direction direction)
+</pre>
+<p>这里 nents 是传入的散布表项的数目. 返回值是要发送的 DMA 缓冲的数目. 它可能小于 nents.</p>
+<p>对于输入散布表中的每个缓冲, dma_map_sg 决定了正确的给设备的总线地址. 作为任务的一部分, 它也连接在内存中相近的缓冲. 如果你的驱动运行的系统有一个 I/O 内存管理单元, dma_map_sg 也编程这个单元的映射寄存器, 可能的结果是, 从你的驱动的观点, 你能够传输一个单个的, 连续的缓冲. 你将不会知道传送的结果将看来如何, 但是, 直到在调用之后.</p>
+<p>你的驱动应当传送由 pci_map_sg 返回的每个缓冲. 总线地址和每个缓冲的长度存储于 struct scatterlist 项, 但是它们在结构中的位置每个体系不同. 2 个宏定义已被定义来使得可能编写可移植的代码:</p>
+<pre class="programlisting">
+dma_addr_t sg_dma_address(struct scatterlist *sg); 
+</pre>
+<p>从这个散布表入口返回总线(	DMA )地址.</p>
+<pre class="programlisting">
+unsigned int sg_dma_len(struct scatterlist *sg); 
+</pre>
+<p>返回这个缓冲的长度.</p>
+<p>再次, 记住要传送的缓冲的地址和长度可能和传递给 dma_map_sg 的不同.</p>
+<p>一旦传送完成, 一个 发散/汇聚 映射被使用 dma_unmap_sg 去映射:</p>
+<pre class="programlisting">
+void dma_unmap_sg(struct device *dev, struct scatterlist *list, int nents, enum dma_data_direction direction);
+</pre>
+<p>注意 nents 必须是你起初传递给 dma_map_sg 的入口项的数目, 并且不是这个函数返回给你的 DMA 缓冲的数目.</p>
+<p>发散/汇聚映射是流 DMA 映射, 并且同样的存取规则如同单一映射一样适用. 如果你必须存取一个被映射的发散/汇聚列表, 你必须首先同步它:</p>
+<pre class="programlisting">
+void dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg,
+ int nents, enum dma_data_direction direction);
+void dma_sync_sg_for_device(struct device *dev, struct scatterlist *sg, 
+ int nents, enum dma_data_direction direction); 
+</pre>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="PCIdoubleaddresscyclemapping.sect3"></a>15.4.4.8.&#160;PCI 双地址周期映射</h4></div></div></div>
+<p>正常地, DMA 支持层使用 32-位 总线地址, 可能受限于一个特定设备的 DMA 掩码. PCI 总线, 但是, 也支持一个 64-位地址模式, 双地址周期(DAC). 通常的 DMA 层不支持这个模式, 因为几个理由, 第一个是它是一个 PCI-特定 的特性. 还有, 许多 DAC 的实现满是错误, 并且, 因为 DAC 慢于一个常规的, 32-位 DMA, 可能有一个性能开销. 即便如此, 有的应用程序使用 DAC 是正确的事情; 如果你有一个设备可能使用非常大的位于高内存的缓冲, 你可能要考虑实现 DAC 支持. 这个支持只对 PCI 总线适用, 因此 PCI-特定的函数必须被使用.</p>
+<p>为使用 DAC, 你的驱动必须包含 &lt;linux/pci.h&gt;. 你必须设置一个单独的 DMA 掩码:</p>
+<pre class="programlisting">
+int pci_dac_set_dma_mask(struct pci_dev *pdev, u64 mask);
+</pre>
+<p>你可使用 DAC 寻址只在这个调用返回 0 时. 一个特殊的类型 (dma64_addr_t) 被用作 DAC 映射. 为建立一个这些映射, 调用 pci_dac_page_to_dma:</p>
+<pre class="programlisting">
+dma64_addr_t pci_dac_page_to_dma(struct pci_dev *pdev, struct page *page, unsigned long offset, int direction);
+</pre>
+<p>DAC 映射, 你将注意到, 可能被完成只从 struct page 指针(它们应当位于高内存, 毕竟, 否则使用它们没有意义了); 它们必须一次一页地被创建. direction 参数是在通用 DMA 层中使用的 enum dma_data_direction 的 PCI 对等体; 它应当是 PCI_DMA_TODEVICE, PCI_DMA_FROMDEVICE, 或者 PCI_DMA_BIRDIRECTIONAL.</p>
+<p>DAC 映射不要求外部资源, 因此在使用后没有必要明确释放它们. 但是, 有必要象对待其他流映射一样对待 DAC 映射, 并且遵守关于缓冲所有权的规则. 有一套函数来同步 DMA 缓冲, 和通常的变体相似:</p>
+<pre class="programlisting">
+void pci_dac_dma_sync_single_for_cpu(struct pci_dev *pdev,
+ dma64_addr_t dma_addr,
+ size_t len,
+ int direction); 
+
+void pci_dac_dma_sync_single_for_device(struct pci_dev *pdev,
+ dma64_addr_t dma_addr,
+ size_t len,
+ int direction);
+</pre>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="AsimplePCIDMAexample.sect3"></a>15.4.4.9.&#160;一个简单的 PCI DMA 例子</h4></div></div></div>
+<p>作为一个 DMA 映射如何被使用的例子, 我们展示了一个简单的给一个 PCI 设备的 DMA 编码的例子. 在 PCI 总线上的数据的 DMA 操作的形式非常依赖被驱动的设备. 因此, 这个例子不适用于任何真实的设备; 相反, 它是一个称为 dad ( DMA Acquisiton Device) 的假想驱动的一部分. 一个给这个设备的驱动可能定义一个传送函数象这样:</p>
+<pre class="programlisting">
+int dad_transfer(struct dad_dev *dev, int write, void *buffer,
+ size_t count)
+{
+ dma_addr_t bus_addr;
+
+ /* Map the buffer for DMA */
+ dev-&gt;dma_dir = (write ? DMA_TO_DEVICE : DMA_FROM_DEVICE);
+ dev-&gt;dma_size = count;
+ bus_addr = dma_map_single(&amp;dev-&gt;pci_dev-&gt;dev, buffer, count,
+
+ dev-&gt;dma_dir);
+ dev-&gt;dma_addr = bus_addr;
+
+ /* Set up the device */
+ writeb(dev-&gt;registers.command, DAD_CMD_DISABLEDMA);
+ writeb(dev-&gt;registers.command, write ? DAD_CMD_WR : DAD_CMD_RD);
+ writel(dev-&gt;registers.addr, cpu_to_le32(bus_addr));
+ writel(dev-&gt;registers.len, cpu_to_le32(count));
+
+ /* Start the operation */
+ writeb(dev-&gt;registers.command, DAD_CMD_ENABLEDMA);
+ return 0;
+
+} 
+</pre>
+<p>这个函数映射要被传送的缓冲并且启动设备操作. 这个工作的另一半必须在中断服务过程中完成, 这个看来如此:</p>
+<pre class="programlisting">
+void dad_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+{
+ struct dad_dev *dev = (struct dad_dev *) dev_id;
+
+ /* Make sure it's really our device interrupting */
+ /* Unmap the DMA buffer */
+ dma_unmap_single(dev-&gt;pci_dev-&gt;dev, dev-&gt;dma_addr,
+ dev-&gt;dma_size, dev-&gt;dma_dir);
+
+ /* Only now is it safe to access the buffer, copy to user, etc. */
+ ...
+}
+</pre>
+<p>显然, 这个例子缺乏大量的细节, 包括可能需要的任何步骤来阻止启动多个同时的 DMA 操作.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="DMAforISADevices.sect2"></a>15.4.5.&#160;ISA 设备的 DMA</h3></div></div></div>
+<p>ISA 总线允许 2 类 DMA 传送: 本地 DMA 和 ISA 总线主 DMA. 本地 DMA 使用在主板上的标准 DMA-控制器电路来驱动 ISA 总线上的信号线. ISA 总线主 DMA, 另一方面, 完全由外设处理, 至少从驱动的观点看. 一个 ISA 总线主的例子是 1542 SCSI 控制器, 在内核源码中是在 drivers/scsi/aha1542.c.</p>
+<p>至于本地 DMA, 有 3 个实体包含在 ISA 总线上的 DMA 数据传送.</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>The 8237 DMA controller (DMAC) </span></span></dt>
+<dd><p>控制器持有关于 DMA 传送的信息, 诸如方向, 内存地址, 以及传送的大小. 它还包含一个计数器来跟踪进行中的传送的状态. 当这个控制器收到一个 DMA 请求信号, 它获得总线的控制权并且驱动信号线以便设备可读或些它的数据.</p></dd>
+<dt><span class="term"><span>The peripheral device </span></span></dt>
+<dd><p>这个设备必须激活 DMA 请求线当它准备传送数据时. 实际的传送由 DMAC 管理; 硬件设备顺序读或写数据到总线当控制器探测设备时. 设备常常触发中断当传送结束时.</p></dd>
+<dt><span class="term"><span>The device driver </span></span></dt>
+<dd><p>这个驱动什么不做; 它提供给 DMA 控制器方向, 总线地址,和传送的大小. 它还和它的外设通讯来准备传送数据和响应中断当 DMA 结束时.</p></dd>
+</dl></div>
+<p>开始的在 PC 上使用的 DMA 控制器管理 4 个"通道", 每个有一套 DMA 寄存器. 4 个设备可同时存储它们的 DMA 信息在控制器中. 更新的 PC 包含相同的 2 个 DMAC 设备<sup>[<a name="id500013" href="ch15s04.html#ftn.id500013">51</a>]</sup>: 第 2 个控制器(主)被连接到系统的处理器, 并且第 1 个(从)被连接到第 2 个控制器的通道 0.</p>
+<p>最初的 PC 只有一个控制器; 第 2 个是在基于 286 的平台上增加的. 但是, 第 2 个控制器如同主控制器一样被连接, 因为它处理 16-位的传送; 第 1 个只传送 8 位每次并且它为向后兼容而存在.</p>
+<p>通道的编号从 0 到 7: 通道 4 对 ISA 外设不可用, 因为它在内部用来层叠从控制器到主控制器. 因此, 可用的通道是 0 到 3 在从控制器上( 8-位 通道) 和 5 到 7 到主控制器上( 16-位通道). 任何 DMA 传送的大小, 当被存储于控制器中, 是一个代表总线周期的数目的 16-位数. 最大的传送大小是, 因此, 64KB 对于从控制器(因为它传送 8 位在一个周期)和 128KB 对于主控制器( 它进行 16-位 传送).</p>
+<p>因为 DMA 控制器是一个系统范围的资源, 内核帮助处理这个. 它使用一个 DMA 注册来提供一个请求并释放机制给 DMA 通道, 和一套函数来在 DMA 控制器中配置通道信息.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="RegisteringDMAusage.sect3"></a>15.4.5.1.&#160;注册 DMA 使用</h4></div></div></div>
+<p>你应当熟悉内核注册 -- 我们已经见到它们在 I/O 端口和中断线. DMA 通道注册和其他的类似. 在 &lt;asm/dma.h&gt; 中已经包含, 下面的函数可用来获得和释放一个 DMA 通道的拥有权:</p>
+<pre class="programlisting">
+int request_dma(unsigned int channel, const char *name); 
+void free_dma(unsigned int channel);
+</pre>
+<p>通道参数是一个在 0 到 7 之间的数, 更精确些, 一个小于 MAX_DMA_CHANNELS 的正值. 在 PC 上, MAX_DMA_CHANNELS 定义为 8 来匹配硬件. name 参数是一个字符串来标识设备. 特定的 name 出现在文件 /proc/dma, 它可被用户程序读.</p>
+<p>从 request_dma 的返回值是 0 对于成功, 是 -EINVAL 或者 -EBUSY 如果有错误. 前者意思是请求的通道超范围, 后者意思是另一个设备持有这个通道.</p>
+<p>我们推荐你象对待 I/O 端口和中断线一样小心对待 DMA 通道; 在打开时请求通道好于从模块初始化函数里请求它. 延后请求允许在驱动之间的一些共享; 例如, 你的声卡和模拟 I/O 接口可以共享 DMA 通道只要它们不同时使用.</p>
+<p>我们还建议你请求 DMA 通道在你已请求中断线之后并且你在中断前释放它. 这是惯用的顺序来请求这 2 个资源; 遵循这个惯例避免了死锁的可能. 注意每个使用 DMA 的设备需要一个 IRQ 线; 否则, 它不能指示数据传送的完成.</p>
+<p>在一个典型的情况, open 代码看来如下, 引用了我们的假想的 dad 模块. dad 设备使用了一个快速中断处理, 不带共享 IRQ 线支持.</p>
+<pre class="programlisting">
+int dad_open (struct inode *inode, struct file *filp)
+{
+
+ struct dad_device *my_device; 
+
+/* ... */
+ if ( (error = request_irq(my_device.irq, dad_interrupt,
+ SA_INTERRUPT, "dad", NULL)) )
+ return error; /* or implement blocking open */
+
+ if ( (error = request_dma(my_device.dma, "dad")) ) {
+ free_irq(my_device.irq, NULL);
+ return error; /* or implement blocking open */
+ }
+
+ /* ... */
+ return 0; 
+} 
+</pre>
+<p>和 open 匹配的 close 实现看来如此:</p>
+<pre class="programlisting">
+void dad_close (struct inode *inode, struct file *filp)
+{
+
+ struct dad_device *my_device;
+ /* ... */
+ free_dma(my_device.dma);
+ free_irq(my_device.irq, NULL);
+ /* ... */ 
+} 
+</pre>
+<p>这是 /proc/dma 文件 在一个安装有声卡的系统中的样子:</p>
+<pre class="screen">
+merlino% cat /proc/dma
+ 1: Sound Blaster8
+ 4: cascade
+</pre>
+<p>注意, 缺省的声音驱动获得 DMA 通道在系统启动时并且从不释放它. 层叠的入口是一个占位者, 指出通道 4 对驱动不可用, 如同前面解释的.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="TalkingtotheDMAcontroller.sect3"></a>15.4.5.2.&#160;和 DMA 控制器通讯</h4></div></div></div>
+<p>在注册后, 驱动工作的主要部分包括配置 DMA 控制器正确操作. 这个任务并非微不足道的, 但是幸运的是, 内核输出了典型驱动需要的所有的函数.</p>
+<p>驱动需要配置 DMA 控制器或者读或写被调用时, 或者当准备异步传送时. 后面这个任务或者在打开时进行或者响应一个 ioctl 命令, 根据驱动和它实现的策略. 这里展示的代码是典型地被读或写设备方法调用的.</p>
+<p>这一小节提供一个对于 DMA 控制器内部的快速概览, 这样你可理解这里介绍的代码. 如果你想知道更多, 我们劝你读 &lt;asm/dma.h&gt; 和一些描述 PC 体系的硬件手册. 特别地, 我们不处理 8-位 和 16-位 传送的问题. 如果你在编写设备驱动给 ISA 设备板, 你应当在设备的硬件手册中找到相关的信息.</p>
+<p>DMA 控制器是一个共享的资源, 并且如果多个处理器试图同时对它编程会引起混乱. 为此, 控制器被一个自旋锁保护, 称为 dma_spin_lock. 驱动不应当直接操作这个锁; 但是, 2 个函数已提供给你来做这个:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>unsigned long claim_dma_lock( );</span></span></dt>
+<dd><p>获取 DMA 自旋锁. 这个函数还在本地处理器上阻塞中断; 因此, 返回值是一些描述之前中断状态的标志; 它必须被传递给随后的函数来恢复中断状态, 当你用完这个锁.</p></dd>
+<dt><span class="term"><span>void release_dma_lock(unsigned long flags);</span></span></dt>
+<dd><p>返回 DMA 自旋锁并且恢复前面的中断状态.</p></dd>
+</dl></div>
+<p>自旋锁应当被持有, 当使用下面描述的函数时. 但是, 它不应当被持有, 在实际的 I/O 当中. 一个驱动应当从不睡眠当持有一个自旋锁时.</p>
+<p>必须被加载到控制器中的信息包括 3 项: RAM 地址, 必须被传送的原子项的数目(以字节或字计), 以及传送的方向. 为此, 下列函数由 &lt;asm/dma.h&gt; 输出:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>void set_dma_mode(unsigned int channel, char mode);</span></span></dt>
+<dd><p>指示是否这个通道必须从设备读( DMA_MODE_READ)或者写到设备(DMA_MODE_WRITE). 存在第 3 个模式, DMA_MODE_CASCADE, 它被用来释放对总线的控制. 层叠是第 1 个控制器连接到第 2 个控制器顶部的方式, 但是它也可以被真正的 ISA 总线主设备使用. 我们这里不讨论总线控制.</p></dd>
+<dt><span class="term"><span>void set_dma_addr(unsigned int channel, unsigned int addr);</span></span></dt>
+<dd><p>分配 DMA 缓冲的地址. 这个函数存储 addr 的低 24 有效位在控制器中. addr 参数必须是一个总线地址(见"总线地址"一节, 在本章前面).</p></dd>
+<dt><span class="term"><span>void set_dma_count(unsigned int channel, unsigned int count);</span></span></dt>
+<dd><p>分配传送的字节数. count 参数也表示给 16-位 通道的字节; 在这个情况下, 这个数必须是偶数.</p></dd>
+</dl></div>
+<p>除了这些函数, 有一些维护工具必须用, 当处理 DMA 设备时:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>void disable_dma(unsigned int channel);</span></span></dt>
+<dd><p>一个 DMA 通道可在控制器内部被关闭. 这个通道应当在控制器被配置为阻止进一步不正确的操作前被关闭. (否则, 会因为控制器被通过 8-位数据传送被编程而发生破坏, 并且, 因此, 之前的功能都不自动执行.</p></dd>
+<dt><span class="term"><span>void enable_dma(unsigned int channel);</span></span></dt>
+<dd><p>这个函数告知控制器 DMA 通道包含有效数据.</p></dd>
+<dt><span class="term"><span>int get_dma_residue(unsigned int channel);</span></span></dt>
+<dd><p>这个驱动有时需要知道是否一个 DMA 传输已经完成. 这个函数返回仍要被传送的字节数. 在一次成功的传送后的返回值是 0 并且在控制器在工作时是不可预测的 (但不是 0). 这种不可预测性来自需要通过 2 个8-位输入操作来获得 16-位 的余数.</p></dd>
+<dt><span class="term"><span>void clear_dma_ff(unsigned int channel) ;</span></span></dt>
+<dd><p>这个函数清理 DMA flip-flop. 这个 flip-flop 用来控制对 16-位 寄存器的存取. 这些寄存器被 2 个连续的 8-位操作来存取, 并且这个 flip-flop 被用来选择低有效字节(当它被清零)或者是最高有效字节(当它被置位). flip-flop 自动翻转当已经传送了 8 位; 程序员必须清除 flip-flop( 来设置它为已知的状态 )在存取 DMA 寄存器之前.</p></dd>
+</dl></div>
+<p>使用这些, 一个驱动可如下实现一个函数来准备一次 DMA 传送:</p>
+<pre class="programlisting">
+int dad_dma_prepare(int channel, int mode, unsigned int buf, unsigned int count)
+{
+ unsigned long flags;
+
+    flags = claim_dma_lock();
+ disable_dma(channel);
+ clear_dma_ff(channel);
+ set_dma_mode(channel, mode);
+ set_dma_addr(channel, virt_to_bus(buf));
+ set_dma_count(channel, count);
+ enable_dma(channel);
+ release_dma_lock(flags);
+ return 0;
+}
+</pre>
+<p>接着, 一个象下一个的函数被用来检查 DMA 的成功完成:</p>
+<pre class="programlisting">
+int dad_dma_isdone(int channel)
+{
+
+int residue;
+    unsigned long flags = claim_dma_lock ();
+ residue = get_dma_residue(channel);
+ release_dma_lock(flags);
+    return (residue == 0);
+}
+</pre>
+<p>未完成的唯一一个事情是配置设备板. 这个设备特定的任务常常包含读或写几个 I/O 端口. 设备在几个大的方面不同. 例如, 一些设备期望程序员告诉硬件 DMA 缓冲有多大, 并且有时驱动不得不读一个被硬连到设备中的值. 为配置板, 硬件手册是你唯一的朋友.</p>
+</div>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id498425" href="ch15s04.html#id498425">49</a>] </sup>当然, 什么事情都有例外; 见"接收中断缓解"一节在 17 章, 演示了高性能网络驱动如何被使用轮询最好地实现.</p></div>
+<div class="footnote"><p><sup>[<a name="ftn.id498543" href="ch15s04.html#id498543">50</a>] </sup>碎片一词常常用于磁盘来表达文件没有连续存储在磁介质上. 相同的概念适用于内存, 这里每个虚拟地址空间在整个物理 RAM 散布, 并且难于获取连续的空闲页当请求一个 DMA 缓冲.</p></div>
+<div class="footnote"><p><sup>[<a name="ftn.id500013" href="ch15s04.html#id500013">51</a>] </sup>这些电路现在是主板芯片组的一部分, 但是几年前它们是 2 个单独的 8237 芯片.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch15s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch15.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch15s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">15.3.&#160;进行直接 I/O&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;15.5.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

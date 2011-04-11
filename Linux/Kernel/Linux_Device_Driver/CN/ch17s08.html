@@ -1,0 +1,133 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>17.8.&#160;接收中断缓解-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch17.html" title="第&#160;17&#160;章&#160;网络驱动">
+<link rel="prev" href="ch17s07.html" title="17.7.&#160;中断处理">
+<link rel="next" href="ch17s09.html" title="17.9.&#160;连接状态的改变">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">17.8.&#160;接收中断缓解</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch17s07.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;17&#160;章&#160;网络驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch17s09.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ReceiveInteruptMitigation"></a>17.8.&#160;接收中断缓解</h2></div></div></div>
+<p>当一个网络驱动如我们上面所述编写出来, 你的接口收到每个报文都中断处理器. 在许多情况下, 这是希望的操作模式, 它不是个问题. 然而, 高带宽接口能够在每秒内收到几千个报文. 这个样子的中断负载下, 系统的整体性能会受损害.</p>
+<p>作为一个提高高端 Linux 系统性能的方法, 网络子系统开发者已创建了一种可选的基于查询的接口(称为 NAPI). <sup>[<a name="id517777" href="ch17s08.html#ftn.id517777">52</a>]</sup>"查询"可能是一个不妥的字在驱动开发者看来, 他们常常看到查询是不灵巧和低效的. 查询是低效的, 但是, 仅仅在接口没有工作做的时候被查询. 当系统有一个处理大流量的高速接口时, 会一直有更多的报文来处理. 在这种情况下没有必要中断处理器; 时常从接口收集新报文是足够的.</p>
+<p>停止接收中断能够减轻相当数量的处理器负载. 适应 NAPI 的驱动能够被告知不要输送报文给内核, 如果这些报文只是在网络代码里因拥塞而被丢弃, 这样能够在最需要的时候对性能有帮助. 由于各种理由, NAPI 驱动也比较少可能重排序报文.</p>
+<p>不是所有的设备能够以 NAPI 模式操作, 但是. 一个 NAPI 适应的接口必须能够存储几个报文( 要么在接口卡上, 要么在内存内 DMA 环). 接口应当能够禁止中断来接收报文, 却可以继续因成功发送或其他事件而中断. 有其他微妙的事情使得编写一个适应 NAPI 的驱动更有难度; 详情见内核源码中的 Documentation/networking/NAPI_HOWTO.txt.</p>
+<p>相对少有驱动实现 NAPI 接口. 如果你在编写一个驱动给一个可能产生大量中断的接口, 但是, 花点时间来实现 NAPI 会被证明是很值得的.</p>
+<p>snull 驱动, 当用非零的 use_napi 参数加载时, 在 NAPI 模式下操作. 在初始化时, 我们不得不建立一对格外的结构 net_device 的成员:</p>
+<pre class="programlisting">
+if (use_napi) {
+    dev-&gt;poll  = snull_poll;
+    dev-&gt;weight  = 2;
+}
+</pre>
+<p>poll 成员必须设置为你的驱动的查询函数; 我们简短看一下 snull_poll. weight 成员描述接口的相对重要性: 有多少流量可以从接口收到, 当资源紧张时. 如何设置 weight 参数没有严格的规则; 依照惯例, 10 MBps 以太网接口设置 weight 为 16, 而快一些的接口使用 64. 你不能设置 weight 为一个超过你的接口能够存储的报文数目的值. 在 snull, 我们设置 weight 为 2, 作为一个演示不同报文接收的方法.</p>
+<p>创建适应 NAPI	的驱动的下一步是改变中断处理. 当你的接口(它应当在接收中断使能下启动)示意有报文到达, 中断处理不应当处理这个报文. 相反, 它应当禁止后面的接收中断并告知内核到时候查询接口了. 在 snull的"中断"处理里, 响应报文接收中断的代码已变为如下:</p>
+<pre class="programlisting">
+if (statusword &amp; SNULL_RX_INTR) {
+    snull_rx_ints(dev, 0); /* Disable further interrupts */
+    netif_rx_schedule(dev);
+}
+</pre>
+<p>当接口告诉我们有报文来了, 中断处理将其留在接口中; 此时需要的所有东西就是调用 netif_rx_schedule, 它使得我们的 poll 方法在后面某个时候被调用.</p>
+<p>poll 方法有下面原型:</p>
+<pre class="programlisting">
+int (*poll)(struct net_device *dev, int *budget); 
+</pre>
+<p>snull 的 poll 方法实现看来如此:</p>
+<pre class="programlisting">
+static int snull_poll(struct net_device *dev, int *budget)
+{
+    int npackets = 0, quota = min(dev-&gt;quota, *budget);
+    struct sk_buff *skb;
+    struct snull_priv *priv = netdev_priv(dev);
+    struct snull_packet *pkt;
+
+    while (npackets &lt; quota &amp;&amp; priv-&gt;rx_queue) {
+        pkt = snull_dequeue_buf(dev);
+        skb = dev_alloc_skb(pkt-&gt;datalen + 2);
+        if (! skb) {
+
+            if (printk_ratelimit())
+                printk(KERN_NOTICE "snull: packet dropped\n"); priv-&gt;stats.rx_dropped++; snull_release_buffer(pkt); continue;
+        }
+        memcpy(skb_put(skb, pkt-&gt;datalen), pkt-&gt;data, pkt-&gt;datalen);
+        skb-&gt;dev = dev;
+        skb-&gt;protocol = eth_type_trans(skb, dev);
+        skb-&gt;ip_summed = CHECKSUM_UNNECESSARY; /* don't check it */
+        netif_receive_skb(skb);
+
+        /* Maintain stats */
+        npackets++;
+        priv-&gt;stats.rx_packets++;
+        priv-&gt;stats.rx_bytes += pkt-&gt;datalen;
+        snull_release_buffer(pkt);
+
+    }
+    /* If we processed all packets, we're done; tell the kernel and reenable ints */
+    *budget -= npackets;
+    dev-&gt;quota -= npackets;
+    if (! priv-&gt;rx_queue) {
+
+        netif_rx_complete(dev);
+        snull_rx_ints(dev, 1);
+        return 0;
+
+    }
+    /* We couldn't process everything. */
+    return 1;
+
+}
+</pre>
+<p>函数的中心部分是关于创建一个保持报文的 skb; 这部分代码和我们之前在 snull_rx 中见到的一样. 但是, 有些东西不一样:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>budget 参数提供了一个我们允许传给内核的最大报文数目. 在设备结构里, quota 成员给出了另一个最大值; poll 方法必须遵守这两个限制中的较小者. 它也应当以实际收到的报文数目递减 dev-&gt;quota 和 *budget. budget 值是当前 CPU 能够从所有接口收到的最多报文数目, 而 quota 是一个每接口值, 常常在初始化时安排给接口以 weight 为起始.</p></li>
+<li><p>报文应当用 netif_receive_skb 递交内核, 而不是 netif_rx.</p></li>
+<li><p>如果 poll 方法能够在给定的限制内处理所有的报文, 它应当重新使能接收中断, 调用 netif_rx_complete 来关闭 查询, 并且返回 0. 返回值 1 指示有剩下的报文需要处理.</p></li>
+</ul></div>
+<p>网络子系统保证任何给定的设备的 poll 方法不会在多于一个处理器上被同时调用. 但是, poll 调用仍然可以与你的其他设备方法的调用并发.</p>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id517777" href="ch17s08.html#id517777">52</a>] </sup>NAPI 代表"new API"; 网络黑客们精于创建接口却疏于给它们起名.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch17s07.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch17.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch17s09.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">17.7.&#160;中断处理&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;17.9.&#160;连接状态的改变</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

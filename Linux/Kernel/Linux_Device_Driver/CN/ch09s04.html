@@ -1,0 +1,233 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>9.4.&#160;使用 I/O 内存-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch09.html" title="第&#160;9&#160;章&#160;与硬件通讯">
+<link rel="prev" href="ch09s03.html" title="9.3.&#160;一个 I/O 端口例子">
+<link rel="next" href="ch09s05.html" title="9.5.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">9.4.&#160;使用 I/O 内存</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch09s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;9&#160;章&#160;与硬件通讯</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch09s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="UsingIOMemory.sect"></a>9.4.&#160;使用 I/O 内存</h2></div></div></div>
+<p>尽管 I/O 端口在 x86 世界中流行, 用来和设备通讯的主要机制是通过内存映射的寄存器和设备内存. 2 者都称为 I/O 内存, 因为寄存器和内存之间的区别对软件是透明的.</p>
+<p>I/O 内存是简单的一个象 RAM 的区域, 它被处理器用来跨过总线存取设备. 这个内存可用作几个目的, 例如持有视频数据或者以太网报文, 同时实现设备寄存器就象 I/O 端口一样的行为(即, 它们有读和写它们相关联的边际效果).</p>
+<p>存取 I/O 内存的方式依赖计算机体系, 总线, 和使用的设备, 尽管外设到处都一样. 本章的讨论主要触及 ISA 和 PCI 内存, 而也试图传递通用的信息. 尽管存取 PCI 内存在这里介绍, 一个 PCI 的通透介绍安排在第 12 章.</p>
+<p>依赖计算机平台和使用的总线, I/O 内存可以或者不可以通过页表来存取. 当通过页表存取, 内核必须首先安排从你的驱动可见的物理地址, 并且这常常意味着你必须调用 ioremap 在做任何 I/O 之前. 如果不需要页表, I/O 内存位置看来很象 I/O 端口, 并且你只可以使用正确的包装函数读和写它们.</p>
+<p>不管是否需要 ioremap 来存取 I/O 内存, 不鼓励直接使用 I/O 内存的指针. 尽管(如同在 "I/O 端口和 I/O 内存" 一节中介绍的 )I/O 内存如同在硬件级别的正常 RAM 一样寻址, 在"I/O 寄存器和传统内存"一节中概述的额外的小心建议避免正常的指针. 用来存取 I/O 内存的包装函数在所有平台上是安全的并且在任何时候直接的指针解引用能够进行操作时, 会被优化掉.</p>
+<p>因此, 尽管在 x86 上解引用一个指针能工作(在现在), 不使用正确的宏定义阻碍了驱动的移植性和可读性.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="IOMemoryAllocationandMapping.sect"></a>9.4.1.&#160;I/O 内存分配和映射</h3></div></div></div>
+<p>I/O 内存区必须在使用前分配. 分配内存区的接口是( 在 &lt;linux/ioport.h&gt; 定义):</p>
+<pre class="programlisting">
+struct resource *request_mem_region(unsigned long start, unsigned long len, char *name);
+</pre>
+<p>这个函数分配一个 len 字节的内存区, 从 start 开始. 如果一切顺利, 一个 非NULL 指针返回; 否则返回值是 NULL. 所有的 I/O 内存分配来 /proc/iomem 中列出.</p>
+<p>内存区在不再需要时应当释放:</p>
+<pre class="programlisting">
+void release_mem_region(unsigned long start, unsigned long len); 
+</pre>
+<p>还有一个旧的检查 I/O 内存区可用性的函数:</p>
+<pre class="programlisting">
+int check_mem_region(unsigned long start, unsigned long len); 
+</pre>
+<p>但是, 对于 check_region, 这个函数是不安全和应当避免的.</p>
+<p>在存取内存之前, 分配 I/O 内嵌不是唯一的要求的步骤. 你必须也保证这个 I/O 内存已经对内核是可存取的. 使用 I/O 内存不只是解引用一个指针的事情; 在许多系统, I/O 内存根本不是可以这种方式直接存取的. 因此必须首先设置一个映射. 这是 ioremap 函数的功能, 在第 1 章的 "vmalloc 及其友"一节中介绍的. 这个函数设计来特别的安排虚拟地址给 I/O 内存区.</p>
+<p>一旦装备了 ioremap (和iounmap), 一个设备驱动可以存取任何 I/O 内存地址, 不管是否它是直接映射到虚拟地址空间. 记住, 但是, 从 ioremap 返回的地址不应当直接解引用; 相反, 应当使用内核提供的存取函数. 在我们进入这些函数之前, 我们最好回顾一下 ioremap 原型和介绍几个我们在前一章略过的细节.</p>
+<p>这些函数根据下列定义调用:</p>
+<pre class="programlisting">
+#include &lt;asm/io.h&gt;
+void *ioremap(unsigned long phys_addr, unsigned long size);
+void *ioremap_nocache(unsigned long phys_addr, unsigned long size);
+void iounmap(void * addr);
+</pre>
+<p>首先, 你注意新函数 ioremap_nacache. 我们在第 8 章没有涉及它, 因为它的意思是明确地硬件相关的. 引用自一个内核头文件:"It’s useful if some control registers are in such an area, and write combining or read caching is not desirable.". 实际上, 函数实现在大部分计算机平台上与 ioremap 一致: 在所有 I/O 内存已经通过非缓冲地址可见的地方, 没有理由使用一个分开的, 非缓冲 ioremap 版本.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AccessingIOMemory.sect"></a>9.4.2.&#160;存取 I/O 内存</h3></div></div></div>
+<p>在一些平台上, 你可能逃过作为一个指针使用 ioremap 的返回值的惩罚. 这样的使用不是可移植的, 并且, 更加地, 内核开发者已经努力来消除任何这样的使用. 使用 I/O 内存的正确方式是通过一系列为此而提供的函数(通过 &lt;asm/io.h&gt; 定义的).</p>
+<p>从 I/O 内存读, 使用下列之一:</p>
+<pre class="programlisting">
+unsigned int ioread8(void *addr);
+unsigned int ioread16(void *addr);
+unsigned int ioread32(void *addr);
+</pre>
+<p>这里, addr 应当是从 ioremap 获得的地址(也许与一个整型偏移); 返回值是从给定 I/O 内存读取的.</p>
+<p>有类似的一系列函数来写 I/O 内存:</p>
+<pre class="programlisting">
+void iowrite8(u8 value, void *addr);
+void iowrite16(u16 value, void *addr);
+void iowrite32(u32 value, void *addr);
+</pre>
+<p>如果你必须读和写一系列值到一个给定的 I/O 内存地址, 你可以使用这些函数的重复版本:</p>
+<pre class="programlisting">
+void ioread8_rep(void *addr, void *buf, unsigned long count);
+void ioread16_rep(void *addr, void *buf, unsigned long count);
+
+void ioread32_rep(void *addr, void *buf, unsigned long count);
+void iowrite8_rep(void *addr, const void *buf, unsigned long count);
+void iowrite16_rep(void *addr, const void *buf, unsigned long count);
+void iowrite32_rep(void *addr, const void *buf, unsigned long count);
+</pre>
+<p>这些函数读或写 count 值从给定的 buf 到 给定的 addr. 注意 count 表达为在被写入的数据大小; ioread32_rep 读取 count 32-位值从 buf 开始.</p>
+<p>上面描述的函数进行所有的 I/O 到给定的 addr. 如果, 相反, 你需要操作一块 I/O 地址, 你可使用下列之一:</p>
+<pre class="programlisting">
+void memset_io(void *addr, u8 value, unsigned int count);
+void memcpy_fromio(void *dest, void *source, unsigned int count);
+void memcpy_toio(void *dest, void *source, unsigned int count);
+</pre>
+<p>这些函数行为如同它们的 C 库类似物.</p>
+<p>如果你通览内核源码, 你可看到许多调用旧的一套函数, 当使用 I/O 内存时. 这些函数仍然可以工作, 但是它们在新代码中的使用不鼓励. 除了别的外, 它们较少安全因为它们不进行同样的类型检查. 但是, 我们在这里描述它们:</p>
+<pre class="programlisting">
+unsigned readb(address);
+unsigned readw(address);
+unsigned readl(address); 
+</pre>
+<p>这些宏定义用来从 I/O 内存获取 8-位, 16-位, 和 32-位 数据值.</p>
+<pre class="programlisting">
+void writeb(unsigned value, address);
+void writew(unsigned value, address);
+void writel(unsigned value, address); 
+</pre>
+<p>如同前面的函数, 这些函数(宏)用来写 8-位, 16-位, 和 32-位数据项.</p>
+<p>一些 64-位平台也提供 readq 和 writeq, 为 PCI 总线上的 4-字(8-字节)内存操作. 这个 4-字 的命名是一个从所有的真实处理器有 16-位 字的时候的历史遗留. 实际上, 用作 32-位 值的 L 命名也已变得不正确, 但是命名任何东西可能使事情更混淆.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="PortsasIOMemory.sect"></a>9.4.3.&#160;作为 I/O 内存的端口</h3></div></div></div>
+<p>一些硬件有一个有趣的特性: 一些版本使用 I/O 端口, 而其他的使用 I/O 内存. 输出给处理器的寄存器在任一种情况中相同, 但是存取方法是不同的. 作为一个使驱动处理这类硬件的生活容易些的方式, 并且作为一个使 I/O 端口和内存存取的区别最小化的方法, 2.6 内核提供了一个函数, 称为 ioport_map:</p>
+<pre class="programlisting">
+void *ioport_map(unsigned long port, unsigned int count); 
+</pre>
+<p>这个函数重映射 count I/O 端口和使它们出现为 I/O 内存. 从这点以后, 驱动可以在返回的地址上使用 ioread8 和其友并且根本忘记它在使用 I/O 端口.</p>
+<p>这个映射应当在它不再被使用时恢复:</p>
+<pre class="programlisting">
+void ioport_unmap(void *addr); 
+</pre>
+<p>这些函数使 I/O 端口看来象内存. 但是, 注意 I/O 端口必须仍然使用 request_region 在它们以这种方式被重映射前分配.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ReusingshortforIOMemory.sect"></a>9.4.4.&#160;重用 short 为 I/O 内存</h3></div></div></div>
+<p>short 例子模块, 在存取 I/O 端口前介绍的, 也能用来存取 I/O 内存. 为此, 你必须告诉它使用 I/O 内存在加载时; 还有, 你需要改变基地址来使它指向你的 I/O 区.</p>
+<p>例如, 这是我们如何使用 short 来点亮调试 LED, 在一个 MIPS 开发板上:</p>
+<pre class="screen">
+mips.root# ./short_load use_mem=1 base=0xb7ffffc0
+mips.root# echo -n 7 &gt; /dev/short0
+</pre>
+<p>使用 short 给 I/O 内存是与它用在 I/O 端口上同样的.</p>
+<p>下列片段显示了 short 在写入一个内存位置时用的循环:</p>
+<pre class="programlisting">
+while (count--) {
+ iowrite8(*ptr++, address);
+    wmb(); 
+} 
+</pre>
+<p>注意, 这里使用一个写内存屏障. 因为在很多体系上 iowrites8 可能转变为一个直接赋值, 需要内存屏障来保证以希望的顺序来发生.</p>
+<p>short 使用 inb 和 outb 来显示它如何完成. 对于读者它可能是一个直接的练习, 但是, 改变 short 来使用 ioport_map 重映射 I/O 端口, 并且相当地简化剩下的代码.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ISAMemoryBelow1MB.sect"></a>9.4.5.&#160;在 1 MB 之下的 ISA 内存</h3></div></div></div>
+<p>一个最著名的 I/O 内存区是在个人计算机上的 ISA 范围. 这是在 640 KB(0xA0000)和 1 MB(0x100000)之间的内存范围. 因此, 它正好出现于常规内存 RAM 中间. 这个位置可能看起来有点奇怪; 它是一个在 1980 年代早期所作的决定的产物, 当时 640 KB 内存看来多于任何人可能用到的大小.</p>
+<p>这个内存方法属于非直接映射的内存类别. <sup>[<a name="id457608" href="ch09s04.html#ftn.id457608">36</a>]</sup>你可以读/写几个字节在这个内存范围, 如同前面解释的使用 short 模块, 就是, 通过在加载时设置 use_mem.</p>
+<p>尽管 ISA I/O 内存只在 x86-类 计算机中存在, 我们认为值得用几句话和一个例子驱动.</p>
+<p>我们不会谈论 PCI 在本章, 因为它是最干净的一类 I/O 内存: 一旦你知道内存地址, 你可简单地重映射和存取它. PCI I/O 内存的"问题"是它不能为本章提供一个能工作的例子, 因为我们不能事先知道你的 PCI 内存映射到的物理地址, 或者是否它是安全的来存取任一这些范围. 我们选择来描述 ISA 内存范围, 因为它不但少干净并且更适合运行例子代码.</p>
+<p>为演示存取 ISA 内存, 我们还使用另一个 silly 小模块( 例子源码的一部分). 实际上, 这个称为 silly, 作为 Simple Tool for Unloading and Printing ISA Data 的缩写, 或者如此的东东.</p>
+<p>模块补充了 short 的功能, 通过存取整个 384-KB 内存空间和通过显示所有的不同 I/O 功能. 它特有 4 个设备节点来进行同样的任务, 使用不同的数据传输函数. silly 设备作为一个 I/O 内存上的窗口, 以类似 /dev/mem 的方式. 你可以读和写数据, 并且lseek 到一个任意 I/O 内存地址.</p>
+<p>因为 silly 提供了对 ISA 内存的存取, 它必须开始于从映射物理 ISA 地址到内核虚拟地址. 在 Linux 内核的早期, 一个人可以简单地安排一个指针给一个感兴趣的 ISA 地址, 接着直接对它解引用. 在现代世界, 但是, 我们必须首先使用虚拟内存系统和重映射内存范围. 这个映射使用 ioremap 完成, 如同前面为 short 解释的:</p>
+<pre class="programlisting">
+#define ISA_BASE 0xA0000
+#define ISA_MAX 0x100000 /* for general memory access */
+
+/* this line appears in silly_init */
+io_base = ioremap(ISA_BASE, ISA_MAX - ISA_BASE); 
+</pre>
+<p>ioremap 返回一个指针值, 它能被用来使用 ioread8 和其他函数, 在"存取 I/O 内存"一节中解释.</p>
+<p>让我们回顾我们的例子模块来看看这些函数如何被使用. /dev/sillyb, 特有次编号 0, 存取 I/O 内存使用 ioread8 和 iowrite8. 下列代码显示了读的实现, 它使地址范围 0xA0000-0xFFFF 作为一个虚拟文件在范围 0-0x5FFF. 读函数构造为一个 switch 语句在不同存取模式上; 这是 sillyb 例子:</p>
+<pre class="programlisting">
+case M_8:
+ while (count) {
+ *ptr = ioread8(add);
+ add++;
+ count--;
+ ptr++;
+
+ }
+ break;
+</pre>
+<p>实际上, 这不是完全正确. 内存范围是很小和很频繁的使用, 以至于内核在启动时建立页表来存取这些地址. 但是, 这个用来存取它们的虚拟地址不是同一个物理地址, 并且因此无论如何需要 ioremap.</p>
+<p>下 2 个设备是 /dev/sillyw (次编号 1) 和 /dev/silly1 (次编号 2). 它们表现象 /dev/sillyb, 除了它们使用 16-位 和 32-位 函数. 这是 sillyl 的写实现, 又一次部分 switch:</p>
+<pre class="programlisting">
+case M_32:
+ while (count &gt;= 4) {
+ iowrite8(*(u32 *)ptr, add);
+ add += 4;
+ count -= 4;
+ ptr += 4;
+
+ }
+ break;
+</pre>
+<p>最后的设备是 /dev/sillycp (次编号 3), 它使用 memcpy_*io 函数来进行同样的任务. 这是它的读实现的核心:</p>
+<pre class="programlisting">
+case M_memcpy:
+ memcpy_fromio(ptr, add, count);
+ break;
+</pre>
+<p>因为 ioremap 用来提供对 ISA 内存区的存取, silly 必须调用 iounmap 当模块卸载时:</p>
+<pre class="programlisting">
+iounmap(io_base); 
+</pre>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="isareadbandFriends.sect"></a>9.4.6.&#160;isa_readb 和其友</h3></div></div></div>
+<p>看一下内核源码会展现另一套函数, 有如 isa_readb 的名子. 实际上, 每个刚才描述的函数都有一个 isa_ 对等体. 这些函数提供对 ISA 内存的存取不需要一个单独的 ioremap 步骤. 但是, 来自内核开发者的话, 是这些函数打算用来作为暂时的驱动移植辅助, 并且它可能将来消失. 因此, 你应当避免使用它们.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch09s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch09.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch09s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">9.3.&#160;一个 I/O 端口例子&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;9.5.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,662 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>整数因子分解 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>整数因子分解
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<p>相对于素数判定来说，因子分解的实现就没办法达到那么快速了。因子分解至今仍没有类似于素数判定的多项式算法，这也成为了RSA公钥系统安全得以保障的基础。鉴于这两个问题的难度相差较大，在我们施行分解之前，最好是预先知道目标整数的确不是一个素数，否则很可能花费了很大力气只干了素数判定的活——杀鸡用牛刀了。</p>
+
+<p>因子分解的分为一般方法和特殊方法两大类，通常倾向于先针对数的特殊性（例如<img src="latex/latex2png-IntegerFactorization_151389722_0.gif" alt="$N=2^n-1$" class="latex-inline" style="vertical-align: 0px" width="82" height="12">）使用特殊方法，如果目标数的形式不那么特殊，再尝试使用一般方法。当然，前者往往要比后者快上许多。</p>
+
+<p>我们这里着重介绍因子分解的一般方法，且总是用<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">表示待分解的目标数。特殊方法可以以后视实际情况逐渐加入。</p>
+
+<a href="IntegerFactorization.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="IntegerFactorization.html#sec1">试除法</a>
+  </dt>
+  <dt>
+    <a href="IntegerFactorization.html#sec2">Euclid算法</a>
+  </dt>
+  <dt>
+    <a href="IntegerFactorization.html#sec3">Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15"> 方法</a>
+  </dt>
+  <dt>
+    <a href="IntegerFactorization.html#sec4">Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12"> 方法</a>
+  </dt>
+  <dt>
+    <a href="IntegerFactorization.html#sec5">平方型分解(SQUFOF)</a>
+  </dt>
+  <dt>
+    <a href="IntegerFactorization.html#sec6">连分式方法(CFRAC)</a>
+  </dt>
+  <dt>
+    <a href="IntegerFactorization.html#sec7">Lenstra椭圆曲线方法(ECM)</a>
+  </dt>
+  <dt>
+    <a href="IntegerFactorization.html#sec8">二次筛法(QS)</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="IntegerFactorization.html#sec9">单个多项式二次筛法(SPQS)</a>
+      </dt>
+      <dt>
+	<a href="IntegerFactorization.html#sec10">多个多项式二次筛法(MPQS)</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="IntegerFactorization.html#sec11">数域筛法(NFS)</a>
+  </dt>
+</dl>
+</div>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>试除法</h2>
+
+<p class="first">无论素数判定还是因子分解，试除法(Trial Division)都是首先要进行的步骤。在试除的策略上有两种不同的选择：</p>
+
+<ul>
+<li>用足够大的空间来储存试除用的素数因子（储存方法可以相当紧凑，比如用<img src="latex/latex2png-IntegerFactorization_209951675_-1.gif" alt="$6k\pm1$" class="latex-inline" style="vertical-align: -1px" width="45" height="13">对应的0-1向量表示的大整数）。</li>
+<li>不耗费大量空间来储存所有需要的素因子，这时需要一个快速生成素数的子程序，或者干脆只用2,3以及<img src="latex/latex2png-IntegerFactorization_209951675_-1.gif" alt="$6k\pm1$" class="latex-inline" style="vertical-align: -1px" width="45" height="13">型的整数来作为试除因子。</li>
+</ul>
+
+<p>很少发生一个数没有小因子的情况，例如根据Mertens定理<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-1" name="cite-1">[1]</a></span>，奇数中没有<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">以下因子的比例<img src="latex/latex2png-IntegerFactorization_172398897_.gif" alt="$$P=\prod_{p\ge3}^x(1-\frac{1}{p})\sim \frac{2e^{-\gamma}}{\ln x},\quad x\rightarrow+\infty.$$" class="latex-display" width="580" height="50">可以知道76%的奇数都有小于100的素因子，而没有小于<img src="latex/latex2png-IntegerFactorization_102396985_-1.gif" alt="$10^8$" class="latex-inline" style="vertical-align: -1px" width="21" height="15">因子的奇数比例仅为6.1%<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-2" name="cite-2">[2]</a></span>。因此在大多数情况，试除法的第二种选择已经足够，实现却是最为简单的。</p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Euclid算法</h2>
+
+<p class="first">Euclid算法用于因子分解也非常简单。我们预先计算好小于100的素数之积<img src="latex/latex2png-IntegerFactorization_141154980_.gif" alt="$$p_0=\prod_{2\le p\le97\atop p\text{为素数}}p=2305567963945518424753102147331756070.$$" class="latex-display" width="580" height="47">然后将<img src="latex/latex2png-IntegerFactorization_237138964_-4.gif" alt="$p_0$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">与目标数<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">进行Euclid算法，最终得到<img src="latex/latex2png-IntegerFactorization_237138964_-4.gif" alt="$p_0$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">与<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的最大公因子，继续分解公因子就可以得到在100以下的因子分解了。同样可以预先计算出100到200，200到300的素数乘积<img src="latex/latex2png-IntegerFactorization_237204500_-4.gif" alt="$p_1$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">,<img src="latex/latex2png-IntegerFactorization_237270036_-4.gif" alt="$p_2$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">等等。这本质上是试除法的一个实现，当<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">非常大时，必须借助高精度算术来进行<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">除以<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的操作，因此频繁的试除会十分耗时，而Euclid方法可以施行很少次数，再在机器精度上完成最终的分解，提高效率。</p>
+
+
+<h2><a name="sec3" id="sec3"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15"> 方法</h2>
+
+<p class="first">Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法由Pollard于1974年提出，其基本想法是这样的：设素数<img src="latex/latex2png-IntegerFactorization_240321051_-5.gif" alt="$p\mid N$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">，由Fermat小定理，又有<img src="latex/latex2png-IntegerFactorization_163235381_-5.gif" alt="$p\mid a^{p-1}-1$" class="latex-inline" style="vertical-align: -5px" width="84" height="19">，因此<img src="latex/latex2png-IntegerFactorization_192512770_-5.gif" alt="$(a^{p-1}-1,N)$" class="latex-inline" style="vertical-align: -5px" width="95" height="19">就可能是<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个非平凡因子。当然，问题在于我们并不知道<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">是多少。一个合理的假设是<img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">的因子都很小，比如说，<img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">所有素因子都包含在因子基<img src="latex/latex2png-IntegerFactorization_133088970_-5.gif" alt="$FB=\{p_1,p_2,\ldots p_m\}$" class="latex-inline" style="vertical-align: -5px" width="153" height="18">中，我们来尝试着找到一个<img src="latex/latex2png-IntegerFactorization_139240640_-20.gif" alt="$\displaystyle c=\prod_{i=1}^mp_i^{\alpha_i}$" class="latex-inline" style="vertical-align: -20px" width="74" height="46">能够“覆盖”<img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">，即是说<img src="latex/latex2png-IntegerFactorization_255296741_-5.gif" alt="$p-1\mid c$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">，从而<img src="latex/latex2png-IntegerFactorization_71594683_-5.gif" alt="$a^{p-1}-1\mid a^c-1$" class="latex-inline" style="vertical-align: -5px" width="119" height="19">，因此我们可以转而求<img src="latex/latex2png-IntegerFactorization_58156530_-5.gif" alt="$(a^c-1,N)$" class="latex-inline" style="vertical-align: -5px" width="77" height="18">来获得所要的非平凡因子。例如设素因子上限为<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">，便可以简单的取<img src="latex/latex2png-IntegerFactorization_247237575_0.gif" alt="$c=B!$" class="latex-inline" style="vertical-align: 0px" width="46" height="12">或是最小公倍数<img src="latex/latex2png-IntegerFactorization_207272823_-5.gif" alt="$\text{LCM}\{1,2,\ldots,B\}$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">.</p>
+
+<p>下面给出Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法的一个版本：
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15"> 方法)</span></p>
+
+<ol>
+<li>设素因子搜索的上限为<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">，生成<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">以下的形如<img src="latex/latex2png-IntegerFactorization_116880825_-5.gif" alt="$p_i^{\alpha_i}$" class="latex-inline" style="vertical-align: -5px" width="21" height="17">数对应的素数因子之表<img src="latex/latex2png-IntegerFactorization_149285488_-5.gif" alt="$\{p_i\}$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">，即：2,3,2,5,7,2,3,11,13,2...</li>
+
+<li>随机选择正整数<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">，顺次计算
+<img src="latex/latex2png-IntegerFactorization_108817138_.gif" alt="
+\begin{align*}
+  b_1&=a\\
+  b_{i+1}&\equiv b_i^{p_i}\pmod{N}\quad i=1,2,\ldots
+\end{align*}
+" class="latex-display" width="580" height="48"></li>
+<li>定期检查（例如每当<img src="latex/latex2png-IntegerFactorization_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为20的倍数时）<img src="latex/latex2png-IntegerFactorization_58161058_-5.gif" alt="$(b_n-1,N)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">，若<img src="latex/latex2png-IntegerFactorization_115932075_-5.gif" alt="$(b_n-1,N)>1$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">，则得到一个<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的因子；否则继续第2步中的递推计算。</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注1<a name=""></a></span><span class="theorem-name"></span>
+由于越小素数在<img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">分解中出现的幂次可能越高，<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">中小素数（例如2,3）应当较多重复出现，第1步中的生成方法便考虑到了这一点，（实际上最终计算了<img src="latex/latex2png-IntegerFactorization_207272823_-5.gif" alt="$\text{LCM}\{1,2,\ldots,B\}$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">）
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注2<a name=""></a></span><span class="theorem-name"></span>
+在极少的情形，也可能出现<img src="latex/latex2png-IntegerFactorization_115080107_-5.gif" alt="$(b_n-1,N)=N$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">，即所有<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的素因子都同时出现在了<img src="latex/latex2png-IntegerFactorization_117213550_-2.gif" alt="$b_n-1$" class="latex-inline" style="vertical-align: -2px" width="43" height="14">之中，这时可以重新选取定期检查的时机或者换一个<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">进行计算。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注3<a name=""></a></span><span class="theorem-name"></span>
+另一种类似的Williams <img src="latex/latex2png-IntegerFactorization_182678548_-4.gif" alt="$p+1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法依赖于<img src="latex/latex2png-IntegerFactorization_182678548_-4.gif" alt="$p+1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">只有小的因子，著名的Lucas序列替代了这里的<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的幂次，乘法群<img src="latex/latex2png-IntegerFactorization_55147730_-5.gif" alt="$\mathbb{Z}/p\mathbb{Z}(\sqrt{t})^*$" class="latex-inline" style="vertical-align: -5px" width="77" height="19">(<img src="latex/latex2png-IntegerFactorization_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">为<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的二次非剩余)代替了乘法群<img src="latex/latex2png-IntegerFactorization_34583337_-5.gif" alt="$\mathbb{Z}/p\mathbb{Z}^*$" class="latex-inline" style="vertical-align: -5px" width="44" height="18">。因此Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法与Williams <img src="latex/latex2png-IntegerFactorization_182678548_-4.gif" alt="$p+1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法的关系就好像素数检测中的Lehmer <img src="latex/latex2png-IntegerFactorization_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">检测与Lucas <img src="latex/latex2png-IntegerFactorization_253529068_-2.gif" alt="$N+1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">检测的关系一样。具体可参看<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-3" name="cite-3">[3]</a></span>.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注4<a name=""></a></span><span class="theorem-name"></span>
+实践中<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">一般取<img src="latex/latex2png-IntegerFactorization_102265913_-1.gif" alt="$10^6$" class="latex-inline" style="vertical-align: -1px" width="21" height="15">左右。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注5<a name=""></a></span><span class="theorem-name"></span>
+Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法的时间复杂度为<img src="latex/latex2png-IntegerFactorization_54422631_-5.gif" alt="$O(N^{1/4+\varepsilon})$" class="latex-inline" style="vertical-align: -5px" width="76" height="20">，其中<img src="latex/latex2png-IntegerFactorization_103393821_-1.gif" alt="$\varepsilon$" class="latex-inline" style="vertical-align: -1px" width="7" height="9">为一个正数<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-4" name="cite-4">[4]</a></span>。
+
+
+
+</div>
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12"> 方法</h2>
+
+<p class="first">目前几乎所有实用的分解方法都是概率性的算法，目标是找到能计算<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的算法，使得<img src="latex/latex2png-IntegerFactorization_219537731_-5.gif" alt="$(x,N)>1$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">的概率较大(而最大公因子可以很快地计算)。上面的Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">就是一例，下面即将看到的Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">方法也不例外。</p>
+
+<p>Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">方法由Pollard在1975年提出，它来自一个有趣的事实：随机选取大约<img src="latex/latex2png-IntegerFactorization_94862351_-6.gif" alt="$c\sqrt{p}$" class="latex-inline" style="vertical-align: -6px" width="30" height="17">个整数（<img src="latex/latex2png-IntegerFactorization_41776146_0.gif" alt="$c$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">为一个常数），就有很大概率在这些整数中找到两个是<img src="latex/latex2png-IntegerFactorization_239932411_-4.gif" alt="$\bmod p$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">同余的。实践中可以采用同余递推序列<img src="latex/latex2png-IntegerFactorization_397361_.gif" alt="$$x_{i+1}\equiv f(x_i)\pmod{N}$$" class="latex-display" width="580" height="18">来产生伪随机数，其中<img src="latex/latex2png-IntegerFactorization_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">为映射：<img src="latex/latex2png-IntegerFactorization_256781175_-5.gif" alt="$\mathbb{Z}/N\mathbb{Z}\rightarrow\mathbb{Z}/N\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">。设<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">是<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个因子，且找到<img src="latex/latex2png-IntegerFactorization_101737635_-5.gif" alt="$x_j\equiv x_i\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">，则计算<img src="latex/latex2png-IntegerFactorization_79652244_-5.gif" alt="$(x_j-x_i, N)$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">便可能得到<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个非平凡因子。</p>
+
+<table class="image" width="100%">
+  <tr><td align="center"><img src="images/rho.png" alt="Pollard $\rho$ 方法"></td></tr>
+  <tr><td align="center" class="image-caption">Pollard $\rho$ 方法</td></tr>
+</table>
+
+<p>由<img src="latex/latex2png-IntegerFactorization_146901167_-5.gif" alt="$\mathbb{Z}/p\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">的有限性，如上定义的一阶的递推序列<img src="latex/latex2png-IntegerFactorization_149285480_-5.gif" alt="$\{x_i\}$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">在<img src="latex/latex2png-IntegerFactorization_239932411_-4.gif" alt="$\bmod p$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">意义下必定是最终循环的(如图，看上去就像希腊字母<img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">）。设其开头的非循环部分长度为<img src="latex/latex2png-IntegerFactorization_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">，循环节长度为<img src="latex/latex2png-IntegerFactorization_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="4" height="12">。著名的Floyd算法可以在<img src="latex/latex2png-IntegerFactorization_133592084_-2.gif" alt="$m+l$" class="latex-inline" style="vertical-align: -2px" width="39" height="14">步内高效地找出序列中的两个重复元素，并且只用常数的储存空间。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name="alg:floyd"></a></span><span class="theorem-name">(Floyd)</span>
+
+<ol>
+<li>依次判断是否<img src="latex/latex2png-IntegerFactorization_261610107_-2.gif" alt="$x_{2i}=x_i$" class="latex-inline" style="vertical-align: -2px" width="58" height="10">，<img src="latex/latex2png-IntegerFactorization_18425423_-4.gif" alt="$i=1, 2, 3,\cdots$" class="latex-inline" style="vertical-align: -4px" width="93" height="16"></li>
+<li>若相等，则终止；否则继续第1步。</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法的有效性)</span>
+只需证明必定存在<img src="latex/latex2png-IntegerFactorization_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">满足<img src="latex/latex2png-IntegerFactorization_259595119_-3.gif" alt="$m<i\le m+l$" class="latex-inline" style="vertical-align: -3px" width="103" height="15">且<img src="latex/latex2png-IntegerFactorization_261610107_-2.gif" alt="$x_{2i}=x_i$" class="latex-inline" style="vertical-align: -2px" width="58" height="10">。由于<img src="latex/latex2png-IntegerFactorization_261610107_-2.gif" alt="$x_{2i}=x_i$" class="latex-inline" style="vertical-align: -2px" width="58" height="10">等价于<img src="latex/latex2png-IntegerFactorization_239468059_-5.gif" alt="$l\mid i$" class="latex-inline" style="vertical-align: -5px" width="24" height="18">，因此取<img src="latex/latex2png-IntegerFactorization_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">为<img src="latex/latex2png-IntegerFactorization_3785738_-5.gif" alt="$(m, m+l]$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">中<img src="latex/latex2png-IntegerFactorization_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="4" height="12">的倍数即可。算法过程中不必保存所有<img src="latex/latex2png-IntegerFactorization_149285480_-5.gif" alt="$\{x_i\}$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">，可以存下当前的<img src="latex/latex2png-IntegerFactorization_56927880_-4.gif" alt="$x_i, x_{2i}$" class="latex-inline" style="vertical-align: -4px" width="43" height="12">并递推计算<img src="latex/latex2png-IntegerFactorization_148754813_-5.gif" alt="$x_{i+1}=f(x_i)$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">，<img src="latex/latex2png-IntegerFactorization_634191_-6.gif" alt="$x_{2(i+1)}=f(f(x_{2i}))$" class="latex-inline" style="vertical-align: -6px" width="136" height="19">。
+<span class="proof-end">□</span>
+
+</div>
+
+<p>实践中常采用的<img src="latex/latex2png-IntegerFactorization_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">为<img src="latex/latex2png-IntegerFactorization_43181714_.gif" alt="$$x_{i+1}\equiv x_i^2+a\pmod{N}, $$" class="latex-display" width="580" height="20">选择二次的递推序列一方面能提供足够的随机性，另一方面计算起来也非常简便。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法3<a name=""></a></span><span class="theorem-name">(Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">)</span>
+
+<ol>
+<li>随机选取<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">与<img src="latex/latex2png-IntegerFactorization_165448684_-2.gif" alt="$x_1$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">。</li>
+<li>顺次计算<img src="latex/latex2png-IntegerFactorization_209328669_-4.gif" alt="$x_{i+1}=x_i^2+a \mod N$" class="latex-inline" style="vertical-align: -4px" width="163" height="18">。</li>
+<li>计算<img src="latex/latex2png-IntegerFactorization_20507916_.gif" alt="$$Q_n=\prod_{i=1}^n(x_{2i}-x_i) \mod N.$$" class="latex-display" width="580" height="45"></li>
+<li>每隔一段时间（例如<img src="latex/latex2png-IntegerFactorization_263031750_-1.gif" alt="$k=20$" class="latex-inline" style="vertical-align: -1px" width="47" height="13">），检测<img src="latex/latex2png-IntegerFactorization_132299706_-5.gif" alt="$(Q_{nk},N)$" class="latex-inline" style="vertical-align: -5px" width="62" height="18">，若非平凡则算法终止，否则继续第2步。</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注6<a name=""></a></span><span class="theorem-name"></span>
+当<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">较大时，对每个<img src="latex/latex2png-IntegerFactorization_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">都去检测<img src="latex/latex2png-IntegerFactorization_124919115_-5.gif" alt="$(x_{2i}-x_i,N)$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">可能会耗费大量时间，因为我们的目标只是得到<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的非平凡因子，可以通过计算<img src="latex/latex2png-IntegerFactorization_147295212_-4.gif" alt="$Q_n$" class="latex-inline" style="vertical-align: -4px" width="20" height="16">，再定时检测<img src="latex/latex2png-IntegerFactorization_132299706_-5.gif" alt="$(Q_{nk},N)$" class="latex-inline" style="vertical-align: -5px" width="62" height="18">来减少计算次数。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注7<a name=""></a></span><span class="theorem-name"></span>
+如同Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法，也可能出现计算出来的最大公因子<img src="latex/latex2png-IntegerFactorization_260958115_-5.gif" alt="$(Q_n,N)=N$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">，这时可改变检测间隔<img src="latex/latex2png-IntegerFactorization_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">或干脆改变<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">重新进行计算。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注8<a name=""></a></span><span class="theorem-name"></span>
+Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">方法的时间复杂度为<img src="latex/latex2png-IntegerFactorization_54422631_-5.gif" alt="$O(N^{1/4+\varepsilon})$" class="latex-inline" style="vertical-align: -5px" width="76" height="20"><span class="cite"><a class="cite" href="IntegerFactorization.html#ref-4" name="cite-4">[4]</a></span>。
+实际上复杂度依赖于<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的最小素因子<img src="latex/latex2png-IntegerFactorization_49570446_-5.gif" alt="$P^-(N)$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">，在分离<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的小因子时尤其有效。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注9<a name=""></a></span><span class="theorem-name"></span>
+1980年，Brent<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-5" name="cite-5">[5]</a></span>给出了Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">方法的一个改进，在分解整数时，该方法平均能够加速24%。这个改进是针对Floyd的算法<a class="ref-th" href="IntegerFactorization.html#alg:floyd">2</a>的，因为Floyd算法中，往往要重复计算<img src="latex/latex2png-IntegerFactorization_205628319_-4.gif" alt="$x_2, x_4, x_6,\cdots$" class="latex-inline" style="vertical-align: -4px" width="91" height="12">等，Brent有如下改进，无需重复计算，但仍能同样有效的找出重复元素，并且只要常数的储存空间。
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+<div class="algorithm">
+<span class="theorem-header">算法4<a name=""></a></span><span class="theorem-name">(Brent的改进)</span>
+
+<ol>
+<li>令<img src="latex/latex2png-IntegerFactorization_100955156_-4.gif" alt="$j=2$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">, <img src="latex/latex2png-IntegerFactorization_84112404_0.gif" alt="$i=1$" class="latex-inline" style="vertical-align: 0px" width="35" height="12">，若<img src="latex/latex2png-IntegerFactorization_104204872_-5.gif" alt="$x_j=x_i$" class="latex-inline" style="vertical-align: -5px" width="53" height="13">，则算法终止。</li>
+<li>若<img src="latex/latex2png-IntegerFactorization_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">为2的幂，即<img src="latex/latex2png-IntegerFactorization_136672920_-4.gif" alt="$j=2^k$" class="latex-inline" style="vertical-align: -4px" width="46" height="18">，令<img src="latex/latex2png-IntegerFactorization_85226516_-4.gif" alt="$i=j$" class="latex-inline" style="vertical-align: -4px" width="35" height="16">, 依次令<img src="latex/latex2png-IntegerFactorization_34464985_-4.gif" alt="$j=3\cdot 2^{k-1}+1, 3\cdot 2^{k-1}+2,\cdots, 2^{k+1}$" class="latex-inline" style="vertical-align: -4px" width="274" height="18">，判断是否有<img src="latex/latex2png-IntegerFactorization_104204872_-5.gif" alt="$x_j=x_i$" class="latex-inline" style="vertical-align: -5px" width="53" height="13">，若相等则算法终止。</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法的有效性)</span>
+注意算法过程中<img src="latex/latex2png-IntegerFactorization_85160980_-4.gif" alt="$j-i$" class="latex-inline" style="vertical-align: -4px" width="34" height="16">能够依次遍历所有正整数，重复算法<a class="ref-th" href="IntegerFactorization.html#alg:floyd">2</a>的论证可知。
+<span class="proof-end">□</span>
+
+</div>
+
+
+<h2><a name="sec5" id="sec5"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>平方型分解(SQUFOF)</h2>
+
+<p class="first">平方型分解(SQUare FOrm Factorization)是由Shanks在大约三十前发展的算法，但他从来没有正式发表过<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-6" name="cite-6">[6]</a></span>。尽管SQUFOF复杂度为<img src="latex/latex2png-IntegerFactorization_54422631_-5.gif" alt="$O(N^{1/4+\varepsilon})$" class="latex-inline" style="vertical-align: -5px" width="76" height="20">也是一个指数级的算法（而下面介绍的CFRAC, ECM, QS等都是次指数级的），但其仍有自身的优势：一方面算法十分简洁优美、便于实现（甚至可以在袖珍计算器上实现），并且在<img src="latex/latex2png-IntegerFactorization_73001077_-1.gif" alt="$10^{10}$" class="latex-inline" style="vertical-align: -1px" width="28" height="15">到<img src="latex/latex2png-IntegerFactorization_81389685_-1.gif" alt="$10^{18}$" class="latex-inline" style="vertical-align: -1px" width="28" height="15">范围的整数分解仍然是最快的。</p>
+
+<p>SQUFOF依赖于对二次域结构的分析，我们在这里仅给出算法的描述，略去证明，具体可参见<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-6" name="cite-6">[6]</a></span>：</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法5<a name=""></a></span><span class="theorem-name">(SQUFOF)</span>
+设<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">非平方数，非素数，一下算法输出<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个非平凡因子。
+
+<ol>
+<li>设<img src="latex/latex2png-IntegerFactorization_257845498_-5.gif" alt="$P_0=\lfloor\sqrt{N}\rfloor$" class="latex-inline" style="vertical-align: -5px" width="82" height="20">，<img src="latex/latex2png-IntegerFactorization_67335849_-4.gif" alt="$Q_0=1$" class="latex-inline" style="vertical-align: -4px" width="49" height="16">，<img src="latex/latex2png-IntegerFactorization_46557894_-5.gif" alt="$Q_1=N-P_0^2$" class="latex-inline" style="vertical-align: -5px" width="96" height="19">。</li>
+<li>顺次计算<img src="latex/latex2png-IntegerFactorization_255099785_-11.gif" alt="$b_i=\left\lfloor\frac{\lfloor\sqrt{N}\rfloor+P_{i-1}}{Q_i}\right\rfloor$" class="latex-inline" style="vertical-align: -11px" width="126" height="30">，<img src="latex/latex2png-IntegerFactorization_251729060_-4.gif" alt="$P_i=b_iQ_i-P_{i-1}$" class="latex-inline" style="vertical-align: -4px" width="122" height="16">，<img src="latex/latex2png-IntegerFactorization_185964871_-5.gif" alt="$Q_{i+1}=Q_{i-1}+b_i(P_{i-1}-P_i)$" class="latex-inline" style="vertical-align: -5px" width="206" height="18">，直到<img src="latex/latex2png-IntegerFactorization_147491820_-4.gif" alt="$Q_k$" class="latex-inline" style="vertical-align: -4px" width="19" height="16">为完全平方数。(<img src="latex/latex2png-IntegerFactorization_172130922_-4.gif" alt="$i=1, 2, \ldots$" class="latex-inline" style="vertical-align: -4px" width="77" height="16">)</li>
+<li>计算<img src="latex/latex2png-IntegerFactorization_209495408_-11.gif" alt="$b_0=\left\lfloor\frac{\lfloor\sqrt{N}\rfloor-P_{i-1}}{\sqrt{Q_k}}\right\rfloor$" class="latex-inline" style="vertical-align: -11px" width="128" height="30">，<img src="latex/latex2png-IntegerFactorization_208306815_-4.gif" alt="$P_0=b_o\sqrt{Q_k}+P_{i-1}$" class="latex-inline" style="vertical-align: -4px" width="142" height="17">，<img src="latex/latex2png-IntegerFactorization_157844324_-4.gif" alt="$Q_0=\sqrt{Q_k}$" class="latex-inline" style="vertical-align: -4px" width="78" height="17">，<img src="latex/latex2png-IntegerFactorization_145617760_-9.gif" alt="$Q_1=\frac{N-P_0^2}{Q_0}$" class="latex-inline" style="vertical-align: -9px" width="83" height="28">。</li>
+<li>重复第二步中的计算，直到<img src="latex/latex2png-IntegerFactorization_59067779_-4.gif" alt="$P_{i+1}=P_i$" class="latex-inline" style="vertical-align: -4px" width="71" height="16">，输出<img src="latex/latex2png-IntegerFactorization_54386979_-5.gif" alt="$(N,P_i)$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">。</li>
+</ol>
+
+
+</div>
+
+
+
+
+<h2><a name="sec6" id="sec6"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>连分式方法(CFRAC)</h2>
+
+
+<p>连分式方法(Continued FRACtion)是由Morrison和Brillhart于1975年提出的<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-7" name="cite-7">[7]</a></span>，他们运用此方法成功地分解了Fermat数<img src="latex/latex2png-IntegerFactorization_204043284_-3.gif" alt="$F_7$" class="latex-inline" style="vertical-align: -3px" width="17" height="15">。它以及之后要介绍的二次筛(QS)以及数域筛(NFS)都基于如下一个简单的事实：如果<img src="latex/latex2png-IntegerFactorization_104692681_.gif" alt="$$x^2\equiv y^2 \pmod{N},\quad\text{且}~x\not\equiv y\pmod{N}.$$" class="latex-display" width="580" height="20">则<img src="latex/latex2png-IntegerFactorization_66287074_-5.gif" alt="$(N,x\pm y)$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">就是<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个非平凡因子。</p>
+
+<p>当然，寻找这样的<img src="latex/latex2png-IntegerFactorization_240350267_-4.gif" alt="$x, y$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">不能只靠运气，CFRAC方法构造一组同余式
+<img src="latex/latex2png-IntegerFactorization_27788130_.gif" alt="
+\begin{equation*}
+  x_k^2\equiv (-1)^{e_{0k}}p_1^{e_{1k}} \cdots p_m^{e_{mk}}\pmod{N},\tag{1}
+\end{equation*}
+" class="latex-display" name="eqref-1" width="580" height="20">
+其中<img src="latex/latex2png-IntegerFactorization_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">都是因子基<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">中较小的素数。如果找到足够多这样的同余式(例如个数<img src="latex/latex2png-IntegerFactorization_132347548_-2.gif" alt="$n>m+1$" class="latex-inline" style="vertical-align: -2px" width="74" height="13">)，那么利用二元域<img src="latex/latex2png-IntegerFactorization_67416627_-2.gif" alt="$\mathbb{F}_2$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">上的Gauss消元法，可以找到组合系数<img src="latex/latex2png-IntegerFactorization_31487607_-2.gif" alt="$\varepsilon_k\in \mathbb{F}_2$" class="latex-inline" style="vertical-align: -2px" width="52" height="14">使得<img src="latex/latex2png-IntegerFactorization_263146363_.gif" alt="$$\sum_{k=1}^n\varepsilon_k(e_{0k},e_{1k},\ldots,e_{mk})\equiv(0,0,\ldots,0)\pmod{2}.$$" class="latex-display" width="580" height="45">我们记<img src="latex/latex2png-IntegerFactorization_139267527_.gif" alt="$$(v_0,\ldots,v_m)=\frac{1}{2}\sum_{k=1}^n\varepsilon_k(e_{0k},e_{1k},\ldots,e_{mk}),$$" class="latex-display" width="580" height="45">此时若令
+<img src="latex/latex2png-IntegerFactorization_221815319_.gif" alt="
+\begin{equation*}
+x=\prod_{k=1}^nx_k^{\varepsilon_k},\quad y=(-1)^{v_0}\prod_{i=1}^m{p_i^{v_i}},\tag{2}
+\end{equation*}
+" class="latex-display" name="eqref-2" width="580" height="45">
+便则有我们所需要的<img src="latex/latex2png-IntegerFactorization_23955941_.gif" alt="$$x^2\equiv y^2 \pmod{N}.$$" class="latex-display" width="580" height="20"></p>
+
+<p>如何构造这么多同余式呢？我们知道用连分式部分展式可以得到二次无理数<img src="latex/latex2png-IntegerFactorization_47739395_-2.gif" alt="$\sqrt{KN}$" class="latex-inline" style="vertical-align: -2px" width="44" height="17">(<img src="latex/latex2png-IntegerFactorization_197100192_-1.gif" alt="$K\in\mathbb{N}$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">)的好的有理数逼近。设<img src="latex/latex2png-IntegerFactorization_10831439_-15.gif" alt="$\displaystyle\frac{P}{Q}$" class="latex-inline" style="vertical-align: -15px" width="14" height="38">为其近似分数，那么<img src="latex/latex2png-IntegerFactorization_121276724_-4.gif" alt="$t=P^2-KNQ^2$" class="latex-inline" style="vertical-align: -4px" width="118" height="18">的绝对值就很小，从而<img src="latex/latex2png-IntegerFactorization_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">很可能在因子基<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下分解，同时<img src="latex/latex2png-IntegerFactorization_245465745_-5.gif" alt="$P^2\equiv t\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="120" height="19">，便能得到我们所期望的同余式<a class="ref-eq" href="IntegerFactorization.html#eqref-1"  title="公式(1)">(1)</a>。</p>
+
+
+<div class="algorithm">
+<span class="theorem-header">算法6<a name="alg:CFRAC"></a></span><span class="theorem-name">(CFRAC方法)</span>
+
+<ol>
+<li>选择适当的<img src="latex/latex2png-IntegerFactorization_197100192_-1.gif" alt="$K\in\mathbb{N}$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">（通常取为1，当连分式展式周期太小而无法产生足够的同余式时选择另一个<img src="latex/latex2png-IntegerFactorization_42824722_0.gif" alt="$K$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">），令<img src="latex/latex2png-IntegerFactorization_133088970_-5.gif" alt="$FB=\{p_1,p_2,\ldots p_m\}$" class="latex-inline" style="vertical-align: -5px" width="153" height="18">，使得<img src="latex/latex2png-IntegerFactorization_2535623_-16.gif" alt="$\displaystyle\legendre{KN}{p_i}\not=-1, i=1,\ldots, m$" class="latex-inline" style="vertical-align: -16px" width="190" height="40">。</li>
+<li>计算<img src="latex/latex2png-IntegerFactorization_47739395_-2.gif" alt="$\sqrt{KN}$" class="latex-inline" style="vertical-align: -2px" width="44" height="17">的连分式展式，得到一系列近似分式<img src="latex/latex2png-IntegerFactorization_96838904_-15.gif" alt="$\displaystyle\frac{P_k}{Q_k}$" class="latex-inline" style="vertical-align: -15px" width="22" height="38">。</li>
+<li>计算<img src="latex/latex2png-IntegerFactorization_189019281_-5.gif" alt="$t_k=P_k^2-KNQ_k^2$" class="latex-inline" style="vertical-align: -5px" width="127" height="19">，尝试在<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下得到<img src="latex/latex2png-IntegerFactorization_231377900_-2.gif" alt="$t_k$" class="latex-inline" style="vertical-align: -2px" width="13" height="13">的分解，若分解成功则有<img src="latex/latex2png-IntegerFactorization_226242278_.gif" alt="$$P_k^2\equiv (-1)^{e_{0k}}\prod_{i=1}^mp_i^{e_{ik}}.$$" class="latex-display" width="580" height="45"></li>
+<li>当得到足够多的同余式时（<img src="latex/latex2png-IntegerFactorization_132347548_-2.gif" alt="$n>m+1$" class="latex-inline" style="vertical-align: -2px" width="74" height="13">即可），用<img src="latex/latex2png-IntegerFactorization_67416627_-2.gif" alt="$\mathbb{F}_2$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">上的Gauss消元法得到<a class="ref-eq" href="IntegerFactorization.html#eqref-2"  title="公式(2)">(2)</a>中的<img src="latex/latex2png-IntegerFactorization_240350267_-4.gif" alt="$x, y$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">。</li>
+<li>若<img src="latex/latex2png-IntegerFactorization_2754663_-5.gif" alt="$x\not\equiv\pm y\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="125" height="18">，输出<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的非平凡因子<img src="latex/latex2png-IntegerFactorization_66287074_-5.gif" alt="$(N,x\pm y)$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">。</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注10<a name=""></a></span><span class="theorem-name"></span>
+由于<img src="latex/latex2png-IntegerFactorization_174511495_-5.gif" alt="$(P_k,Q_k)=1$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">，因此若<img src="latex/latex2png-IntegerFactorization_50987640_-5.gif" alt="$p_i\mid t_k=P_k^2-KNQ_k^2$" class="latex-inline" style="vertical-align: -5px" width="156" height="19">，必有<img src="latex/latex2png-IntegerFactorization_89776759_-5.gif" alt="$p_i\nmid Q_k$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">，因此<img src="latex/latex2png-IntegerFactorization_151024658_0.gif" alt="$KN$" class="latex-inline" style="vertical-align: 0px" width="30" height="12">必定为模<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的平方数，从而第一步中可以只选择限定条件的素数<img src="latex/latex2png-IntegerFactorization_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注11<a name=""></a></span><span class="theorem-name"></span>
+连分式的计算可以只用简单的四则运算，Gauss消元法可以用一些稀疏矩阵的专用算法来加速，因此CFRAC最花时间的部分在<img src="latex/latex2png-IntegerFactorization_231377900_-2.gif" alt="$t_k$" class="latex-inline" style="vertical-align: -2px" width="13" height="13">的分解上，当分解<img src="latex/latex2png-IntegerFactorization_231377900_-2.gif" alt="$t_k$" class="latex-inline" style="vertical-align: -2px" width="13" height="13">花去太久时间时可以直接放弃，转而求下一个同余式。
+
+
+</div>
+
+
+<div class="remark">
+<span class="proof-header">注12<a name=""></a></span><span class="theorem-name"></span>
+CFRAC方法的时间复杂度为<img src="latex/latex2png-IntegerFactorization_265085766_-6.gif" alt="$L_N[\frac{1}{2},\sqrt{2}]$" class="latex-inline" style="vertical-align: -6px" width="72" height="21">(见<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-4" name="cite-4">[4]</a></span>)，其中<img src="latex/latex2png-IntegerFactorization_149058578_0.gif" alt="$L $" class="latex-inline" style="vertical-align: 0px" width="11" height="12">记号如下定义：
+<img src="latex/latex2png-IntegerFactorization_101823482_.gif" alt="$$L_N[\alpha,c]=O\left(\exp\left({(c+o(1))(\ln N)^\alpha(\ln\ln N)^{1-\alpha}}\right)\right).$$" class="latex-display" width="580" height="21">
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注13<a name=""></a></span><span class="theorem-name"></span>
+寻找同余式<a class="ref-eq" href="IntegerFactorization.html#eqref-1"  title="公式(1)">(1)</a>来进行分解的想法首先来自Dixon<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-8" name="cite-8">[8]</a></span>，他当时的做法是直接随机地选取<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">，然后在<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下分解<img src="latex/latex2png-IntegerFactorization_166431724_0.gif" alt="$x^2$" class="latex-inline" style="vertical-align: 0px" width="15" height="14">，算法复杂度为<img src="latex/latex2png-IntegerFactorization_224075117_-6.gif" alt="$L_N[\frac{1}{2},2\sqrt{2}]$" class="latex-inline" style="vertical-align: -6px" width="80" height="21">，这也是第一个次指数阶的一般整数分解方法。
+
+
+</div>
+
+
+
+<h2><a name="sec7" id="sec7"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Lenstra椭圆曲线方法(ECM)</h2>
+
+<p class="first">因子分解说到底就是寻找<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">，使得<img src="latex/latex2png-IntegerFactorization_250907009_-5.gif" alt="$(x,N)$" class="latex-inline" style="vertical-align: -5px" width="42" height="18">非平凡，关键在于提高寻找的<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的成功率。Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法通过计算<img src="latex/latex2png-IntegerFactorization_176335810_0.gif" alt="$a^{p-1}-1$" class="latex-inline" style="vertical-align: 0px" width="61" height="14">来提高成功率，实质上是在群<img src="latex/latex2png-IntegerFactorization_34583337_-5.gif" alt="$\mathbb{Z}/p\mathbb{Z}^*$" class="latex-inline" style="vertical-align: -5px" width="44" height="18">中考虑问题。椭圆曲线方法(Elliptic Curve Method)转而在有限域上随机的椭圆曲线群中考虑问题。由于椭圆曲线可以有许多不同的选择，ECM方法要比Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">高效许多，到目前为止是第三快的因子分解方法，仅次于数域筛和二次筛。</p>
+
+<p>首先我们给出域上椭圆曲线的定义：
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name">(域<img src="latex/latex2png-IntegerFactorization_142767122_0.gif" alt="$F $" class="latex-inline" style="vertical-align: 0px" width="12" height="12">上的椭圆曲线)</span>
+设<img src="latex/latex2png-IntegerFactorization_142767122_0.gif" alt="$F $" class="latex-inline" style="vertical-align: 0px" width="12" height="12">是特征不为2，3的域，<img src="latex/latex2png-IntegerFactorization_58252021_-5.gif" alt="$x^3+ax+b\in F[x]$" class="latex-inline" style="vertical-align: -5px" width="133" height="19">无平方因子，<img src="latex/latex2png-IntegerFactorization_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">表示无穷远点，则<img src="latex/latex2png-IntegerFactorization_107151419_.gif" alt="$$E=\{(x,y)\in F^2\mid y^2=x^3+ax+b\}\cup\{O\}$$" class="latex-display" width="580" height="20">称为<img src="latex/latex2png-IntegerFactorization_142767122_0.gif" alt="$F $" class="latex-inline" style="vertical-align: 0px" width="12" height="12">上的一条椭圆曲线。</p>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注14<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-IntegerFactorization_51762544_-2.gif" alt="$x^3+ax+b$" class="latex-inline" style="vertical-align: -2px" width="83" height="16">无平方因子等价于判别式<img src="latex/latex2png-IntegerFactorization_123327148_-5.gif" alt="$-16(4a^3+27b^2)\ne0$" class="latex-inline" style="vertical-align: -5px" width="148" height="19">，即椭圆曲线是非奇异的，在几何上看没有“尖点”。
+
+
+</div>
+
+
+<p>椭圆曲线既是代数曲线又是一个加法群：
+<div class="definition">
+<span class="theorem-header">定义2<a name=""></a></span><span class="theorem-name">(椭圆曲线上的加法运算)</span>
+设<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为一椭圆曲线，<img src="latex/latex2png-IntegerFactorization_86353534_-4.gif" alt="$P, Q\in E$" class="latex-inline" style="vertical-align: -4px" width="65" height="16">，过<img src="latex/latex2png-IntegerFactorization_240350267_-4.gif" alt="$P, Q$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">的直线交<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">于三点<img src="latex/latex2png-IntegerFactorization_90547886_-5.gif" alt="$\{P, Q, S\}$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">。<img src="latex/latex2png-IntegerFactorization_119895058_-1.gif" alt="$-S$" class="latex-inline" style="vertical-align: -1px" width="23" height="13">表示<img src="latex/latex2png-IntegerFactorization_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">关于<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">轴的对称点。定义加法<img src="latex/latex2png-IntegerFactorization_141534306_.gif" alt="$$P+Q=-S.$$" class="latex-display" width="580" height="16">另有三种特殊约定：</p>
+
+<ol>
+<li>若<img src="latex/latex2png-IntegerFactorization_199003116_-4.gif" alt="$P=Q$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">，则直线视为<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">处的切线；</li>
+<li>若<img src="latex/latex2png-IntegerFactorization_2323515_-4.gif" alt="$P=-Q$" class="latex-inline" style="vertical-align: -4px" width="60" height="16">，则定义<img src="latex/latex2png-IntegerFactorization_217877484_-4.gif" alt="$P+Q$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">为无穷远点<img src="latex/latex2png-IntegerFactorization_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">；</li>
+<li>若<img src="latex/latex2png-IntegerFactorization_182356972_-4.gif" alt="$Q=O$" class="latex-inline" style="vertical-align: -4px" width="46" height="16">，则定义<img src="latex/latex2png-IntegerFactorization_2454470_-5.gif" alt="$P+O=-(-P)=P$" class="latex-inline" style="vertical-align: -5px" width="155" height="18">。</li>
+</ol>
+
+
+</div>
+<table class="image" width="100%">
+  <tr><td align="center"><img src="images/ecm.png" alt="椭圆曲线"></td></tr>
+  <tr><td align="center" class="image-caption">椭圆曲线</td></tr>
+</table>
+
+<p>由定义通过简单的计算我们可以得到：
+<div class="proposition">
+<span class="theorem-header">命题1<a name="pr:arith"></a></span><span class="theorem-name">(加法的显式表达)</span>
+设<img src="latex/latex2png-IntegerFactorization_104388182_-5.gif" alt="$P=(x_1,y_1)$" class="latex-inline" style="vertical-align: -5px" width="86" height="18">，<img src="latex/latex2png-IntegerFactorization_40154569_-5.gif" alt="$Q=(x_2,y2)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">，<img src="latex/latex2png-IntegerFactorization_145172218_-5.gif" alt="$P+Q=(x_3,y_3)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">，则
+<img src="latex/latex2png-IntegerFactorization_24157270_.gif" alt="
+\begin{equation*}
+  \begin{cases}
+  x_3=\lambda^2-x_1-x_2\\
+  y_3=\lambda(x_1-x_3)-y_1
+  \end{cases}\tag{3}
+\end{equation*}
+" class="latex-display" name="eqref-3" width="580" height="61">
+其中
+<img src="latex/latex2png-IntegerFactorization_195467676_.gif" alt="
+\begin{equation*}
+  \lambda=
+  \begin{cases}
+    \displaystyle\frac{y_1-y_2}{x_1-x_2}&\text{若}P\ne Q,\smallskip\\
+    \displaystyle\frac{3x_1^2+a}{2y_1}&\text{若}P= Q.\\
+  \end{cases}
+\end{equation*}
+" class="latex-display" width="580" height="82"></p>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注15<a name=""></a></span><span class="theorem-name"></span>
+可以知道以上加法定义确实使<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">成为了一个加法交换群（尽管结合性的验证需要一些繁琐的计算）。
+
+
+</div>
+
+<p>上面我们考虑了域上的椭圆曲线，然而对于因子分解的任务来说，我们需要考虑<img src="latex/latex2png-IntegerFactorization_46237871_-5.gif" alt="$\mathbb{Z}/N\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">上的椭圆曲线。由于<img src="latex/latex2png-IntegerFactorization_103221814_-2.gif" alt="$x_1-x_2$" class="latex-inline" style="vertical-align: -2px" width="52" height="10">等在<img src="latex/latex2png-IntegerFactorization_46237871_-5.gif" alt="$\mathbb{Z}/N\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">中未必可逆，此时上面的加法运算未必能定义好，不过这无关紧要，例如当<img src="latex/latex2png-IntegerFactorization_103221814_-2.gif" alt="$x_1-x_2$" class="latex-inline" style="vertical-align: -2px" width="52" height="10">不可逆时，我们已经可以通过计算<img src="latex/latex2png-IntegerFactorization_26364298_-5.gif" alt="$(x_1-x_2,N)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">来得到<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的非平凡因子，从而直接完成分解的目标；而当<img src="latex/latex2png-IntegerFactorization_103221814_-2.gif" alt="$x_1-x_2$" class="latex-inline" style="vertical-align: -2px" width="52" height="10">可逆时，一切可以正常按照上面的显式表达进行运算。因此在这里我们不再花功夫用严格的语言来定义<img src="latex/latex2png-IntegerFactorization_46237871_-5.gif" alt="$\mathbb{Z}/N\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">上的椭圆曲线了。</p>
+
+<p>下面我们将Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">中类似的想法用在椭圆曲线中。
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name">(整数的光滑性)</span>
+整数<img src="latex/latex2png-IntegerFactorization_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">称为是<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">-光滑，若其最大素因子<img src="latex/latex2png-IntegerFactorization_179159803_-5.gif" alt="$P^+(n)\le B$" class="latex-inline" style="vertical-align: -5px" width="82" height="19">。</p>
+
+
+</div>
+
+<p>Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法的实质就是期望整数<img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">足够光滑而能在因子基<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下分解。和Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法中的想法类似，ECM中首先从椭圆曲线<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">中随机取一点<img src="latex/latex2png-IntegerFactorization_153252882_0.gif" alt="$P $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">，我们期望<img src="latex/latex2png-IntegerFactorization_153252882_0.gif" alt="$P $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的阶<img src="latex/latex2png-IntegerFactorization_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是足够光滑的，从而可以在<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下分解，然后通过加法规则计算<img src="latex/latex2png-IntegerFactorization_145912850_0.gif" alt="$nP$" class="latex-inline" style="vertical-align: 0px" width="23" height="12">（当然我们预先并不知道<img src="latex/latex2png-IntegerFactorization_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">），利用计算过程中出现的不可逆元，求得<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个因子。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法7<a name="alg:ecm"></a></span><span class="theorem-name">(Lenstra ECM)</span>
+设<img src="latex/latex2png-IntegerFactorization_218489121_-5.gif" alt="$(N,6)=1$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">，<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为给定的搜索极限，<img src="latex/latex2png-IntegerFactorization_264263422_-4.gif" alt="$p_1,\ldots,p_m$" class="latex-inline" style="vertical-align: -4px" width="74" height="12">为<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">以下的所有素数。
+
+<ol>
+<li>随机选取整数<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">，<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为曲线<img src="latex/latex2png-IntegerFactorization_196749926_-4.gif" alt="$y^2=x^3+ax+1$" class="latex-inline" style="vertical-align: -4px" width="121" height="18">。</li>
+<li>设<img src="latex/latex2png-IntegerFactorization_255723533_-5.gif" alt="$P=(0,1)$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">，<img src="latex/latex2png-IntegerFactorization_21395059_-5.gif" alt="$e_k=\lfloor\ln_{p_k}B\rfloor$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">，根据式<a class="ref-eq" href="IntegerFactorization.html#eqref-3"  title="公式(3)">(3)</a>递推地计算<img src="latex/latex2png-IntegerFactorization_221496526_-21.gif" alt="$\displaystyle\left(\prod_{k=1}^m p_k^{e_k}\right)P$" class="latex-inline" style="vertical-align: -21px" width="88" height="50">。若计算过程中出现不可逆元<img src="latex/latex2png-IntegerFactorization_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">，则到第三步，否则到第一步。</li>
+<li>计算<img src="latex/latex2png-IntegerFactorization_250743794_-5.gif" alt="$d=(t,N)$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">。如果<img src="latex/latex2png-IntegerFactorization_11494350_-4.gif" alt="$d\ne N$" class="latex-inline" style="vertical-align: -4px" width="46" height="16">则输出<img src="latex/latex2png-IntegerFactorization_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">，算法终止；如果<img src="latex/latex2png-IntegerFactorization_2126868_0.gif" alt="$d=N$" class="latex-inline" style="vertical-align: 0px" width="46" height="12">则到第一步。</li>
+</ol>
+
+
+</div>
+
+<p>下面我们谈一下搜索极限<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的取法，和Pollard <img src="latex/latex2png-IntegerFactorization_184775700_-4.gif" alt="$p-1$" class="latex-inline" style="vertical-align: -4px" width="37" height="15">方法中一样，我们需要知道有限域<img src="latex/latex2png-IntegerFactorization_146901167_-5.gif" alt="$\mathbb{Z}/p\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">上群<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的阶，下面有限域上椭圆曲线最主要的定理归功于Hasse，告诉我们群<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的阶在<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">左右<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-9" name="cite-9">[9]</a></span>：</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name="th:Hasse"></a></span><span class="theorem-name">(Hasse)</span>
+设<img src="latex/latex2png-IntegerFactorization_141718546_0.gif" alt="$E $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为一有限域<img src="latex/latex2png-IntegerFactorization_146901167_-5.gif" alt="$\mathbb{Z}/p\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">上的椭圆曲线，则<img src="latex/latex2png-IntegerFactorization_132288248_-5.gif" alt="$|E|=p+1-a_p$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">，其中<img src="latex/latex2png-IntegerFactorization_265427940_-6.gif" alt="$|a_p|<2\sqrt{p}$" class="latex-inline" style="vertical-align: -6px" width="78" height="19">。
+
+
+</div>
+
+<p>下面的定理则给出了关于光滑性的一个估计<span class="cite"><a class="cite" href="IntegerFactorization.html#ref-9" name="cite-9">[9]</a></span>：</p>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name="th:CEP"></a></span><span class="theorem-name">(Canfield-Erd&#337;s-Pomerance)</span>
+记<img src="latex/latex2png-IntegerFactorization_158592297_.gif" alt="$$\psi(x, y)=\#\{n<x\mid P^+(x)\le y\},$$" class="latex-display" width="580" height="20">其中<img src="latex/latex2png-IntegerFactorization_47473294_-5.gif" alt="$P^+(x)$" class="latex-inline" style="vertical-align: -5px" width="44" height="19">表示<img src="latex/latex2png-IntegerFactorization_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的最大素因子，再设<img src="latex/latex2png-IntegerFactorization_54528966_.gif" alt="$$L(x)=\exp\left(\sqrt{\ln x\ln\ln x}\right),$$" class="latex-display" width="580" height="30">则有估计<img src="latex/latex2png-IntegerFactorization_94913303_.gif" alt="$$\psi(x,L(x)^a)=xL(x)^{-\frac{1}{2a}+o(1)},\quad x\rightarrow+\infty.$$" class="latex-display" width="580" height="22">其中<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">为正实数。
+
+
+</div>
+
+<p>由上面两个定理我们可以得到选取<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的一些信息，设素数<img src="latex/latex2png-IntegerFactorization_240321051_-5.gif" alt="$p\mid N$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">，而<img src="latex/latex2png-IntegerFactorization_256103934_-5.gif" alt="$B=L(p)^a$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">，由定理<a class="ref-th" href="IntegerFactorization.html#th:Hasse">1</a>和<a class="ref-th" href="IntegerFactorization.html#th:CEP">2</a>知道平均要试<img src="latex/latex2png-IntegerFactorization_143055423_-5.gif" alt="$L(p)^{\frac{1}{2a}+o(1)}$" class="latex-inline" style="vertical-align: -5px" width="82" height="21">条曲线可以得到一个阶为<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">-光滑的椭圆曲线，算法<a class="ref-th" href="IntegerFactorization.html#alg:ecm">7</a>计算总共需要<img src="latex/latex2png-IntegerFactorization_138209353_-5.gif" alt="$L(p)^{a+\frac{1}{2a}+o(1)}$" class="latex-inline" style="vertical-align: -5px" width="99" height="21">个群运算，为使运算量最小，因此可取<img src="latex/latex2png-IntegerFactorization_87772977_-9.gif" alt="$a=\frac{1}{\sqrt{2}}$" class="latex-inline" style="vertical-align: -9px" width="51" height="24">。实践中<img src="latex/latex2png-IntegerFactorization_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的选择依赖于时间的承受限度，例如我们将搜索的素数因子限制在<img src="latex/latex2png-IntegerFactorization_89778293_-1.gif" alt="$10^{20}$" class="latex-inline" style="vertical-align: -1px" width="28" height="15">以下，那么可取<img src="latex/latex2png-IntegerFactorization_214631914_-1.gif" alt="$B=12000$" class="latex-inline" style="vertical-align: -1px" width="76" height="13">（接近<img src="latex/latex2png-IntegerFactorization_257972395_-5.gif" alt="$L(10^{20})^{1/\sqrt{2}}$" class="latex-inline" style="vertical-align: -5px" width="86" height="22">）。</p>
+
+<p>由上面的讨论可以看出，ECM的时间复杂度依赖于<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的最小素因子<img src="latex/latex2png-IntegerFactorization_49570446_-5.gif" alt="$P^-(N)$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">而非<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">本身（为<img src="latex/latex2png-IntegerFactorization_65611811_-6.gif" alt="$L_{P^-(N)}[\frac{1}{2},1]$" class="latex-inline" style="vertical-align: -6px" width="88" height="21">），因此很适宜在试除法和Pollard <img src="latex/latex2png-IntegerFactorization_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">方法之后用ECM来找出较小的因子（10-20个十进制位左右）。</p>
+
+<p>ECM算法的效率很大程度取决于群运算的快慢，最关键的是模<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的求逆运算。我们在本节最后给出Montgomery的一个加速算法，使得我们能够同时对多条椭圆曲线进行求逆运算。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法8<a name=""></a></span><span class="theorem-name">(Montgomery)</span>
+设<img src="latex/latex2png-IntegerFactorization_2218194_-4.gif" alt="$a_1, \ldots, a_k$" class="latex-inline" style="vertical-align: -4px" width="69" height="12">为不能被<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">整除的整数，本算法求出其逆<img src="latex/latex2png-IntegerFactorization_14563118_-4.gif" alt="$b_1, \ldots, b_k$" class="latex-inline" style="vertical-align: -4px" width="65" height="16">或给出<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个非平凡因子。
+
+<ol>
+<li>递推计算
+<img src="latex/latex2png-IntegerFactorization_32395469_.gif" alt="
+\begin{align*}
+  c_1&\equiv a_1\pmod{N}\\
+  c_2&\equiv a_1a_2\pmod{N}\\
+  \vdots\\
+  c_k&\equiv a_1\cdots a_k\pmod{N}
+  \end{align*}
+" class="latex-display" width="580" height="119"></li>
+<li>施行一次扩展Euclid算法求出<img src="latex/latex2png-IntegerFactorization_267247891_-5.gif" alt="$(u,v,d)$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">满足<img src="latex/latex2png-IntegerFactorization_59469861_-5.gif" alt="$d=(c_k,N)$" class="latex-inline" style="vertical-align: -5px" width="80" height="18">，<img src="latex/latex2png-IntegerFactorization_190871694_-2.gif" alt="$uc_k+vN=d$" class="latex-inline" style="vertical-align: -2px" width="100" height="14">。
+
+<ul>
+<li>若<img src="latex/latex2png-IntegerFactorization_226324_0.gif" alt="$d=1$" class="latex-inline" style="vertical-align: 0px" width="38" height="12">，则<img src="latex/latex2png-IntegerFactorization_13405164_-2.gif" alt="$a_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">均有逆，到第三步；</li>
+<li>若<img src="latex/latex2png-IntegerFactorization_1274900_-1.gif" alt="$d>1$" class="latex-inline" style="vertical-align: -1px" width="38" height="13">，依次计算<img src="latex/latex2png-IntegerFactorization_16448752_-5.gif" alt="$(d, a_1), (d, a_2), \ldots$" class="latex-inline" style="vertical-align: -5px" width="122" height="18">直到<img src="latex/latex2png-IntegerFactorization_64116741_-5.gif" alt="$(d, a_i)>1$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">，输出<img src="latex/latex2png-IntegerFactorization_211668235_-5.gif" alt="$(d, a_i)$" class="latex-inline" style="vertical-align: -5px" width="41" height="18">为<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个非平凡因子。</li>
+</ul></li>
+<li>递推计算逆<img src="latex/latex2png-IntegerFactorization_3372052_-2.gif" alt="$b_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="14">并输出：
+<img src="latex/latex2png-IntegerFactorization_16723430_.gif" alt="
+\begin{align*}
+  b_k&\equiv uc_{k-1}\pmod{N}\\
+  b_{k-1}&\equiv (ua_k)c_{k-2}\pmod{N}\\
+  \vdots\\
+  b_1&\equiv (ua_k\cdots a_2)\pmod{N}
+\end{align*}
+" class="latex-display" width="580" height="119"></li>
+</ol>
+
+
+</div>
+
+
+
+<h2><a name="sec8" id="sec8"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>二次筛法(QS)</h2>
+
+<p class="first">二次筛法(Quadratic Seive)是由Pomerance于1981年提出的，直到1993年是世界上渐进最快的通用大整数因子分解方法，第一的位置后来被数域筛所取代，不过对于120位以下的整数，二次筛还是要比数域筛快一些。</p>
+
+<h3><a name="sec9" id="sec9"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>单个多项式二次筛法(SPQS)</h3>
+
+<p class="first">正如我们在CFRAC方法中提到的，QS方法也要构造一组同余式<a class="ref-eq" href="IntegerFactorization.html#eqref-1"  title="公式(1)">(1)</a>，但通过筛法避免了其中<img src="latex/latex2png-IntegerFactorization_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">在因子基<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下的分解，而这种分解在不存在的情况下常常会大量消耗时间。设<img src="latex/latex2png-IntegerFactorization_122529397_-5.gif" alt="$Q(a)\in\mathbb{Z}[a]$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">，若<img src="latex/latex2png-IntegerFactorization_74189047_-5.gif" alt="$m\mid Q(a)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">，则不难验证对于任意<img src="latex/latex2png-IntegerFactorization_184517408_-1.gif" alt="$k\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="40" height="13">，也有<img src="latex/latex2png-IntegerFactorization_192790900_-5.gif" alt="$m\mid Q(a+k\cdot m)$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">。于是我们找到了一系列数都有因子<img src="latex/latex2png-IntegerFactorization_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">，这样一个事实构成了QS方法的基础。</p>
+
+<p>我们取<img src="latex/latex2png-IntegerFactorization_71590556_-5.gif" alt="$y=Q(a)$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">，为了使其与某个<img src="latex/latex2png-IntegerFactorization_166431724_0.gif" alt="$x^2$" class="latex-inline" style="vertical-align: 0px" width="15" height="14">模<img src="latex/latex2png-IntegerFactorization_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">同余，且尽可能小以便在<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下分解，考虑二次多项式<img src="latex/latex2png-IntegerFactorization_228873363_-5.gif" alt="$Q(a)=通过求解(\lfloor\sqrt{N}\rfloor+a)^2-N$" class="latex-inline" style="vertical-align: -5px" width="202" height="20">，<img src="latex/latex2png-IntegerFactorization_98589880_-5.gif" alt="$x=\lfloor\sqrt{N}\rfloor+a$" class="latex-inline" style="vertical-align: -5px" width="104" height="20">，则<img src="latex/latex2png-IntegerFactorization_199966701_-5.gif" alt="$x^2\equiv Q(a)\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="145" height="19">且<img src="latex/latex2png-IntegerFactorization_71601093_-5.gif" alt="$Q(a)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">为<img src="latex/latex2png-IntegerFactorization_54423143_-5.gif" alt="$O(N^{1/2+\varepsilon})$" class="latex-inline" style="vertical-align: -5px" width="76" height="20">的阶，符合我们的要求。接下来是筛法的过程：对于<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">中满足搜索极限<img src="latex/latex2png-IntegerFactorization_236943000_-4.gif" alt="$B>p^e$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">的素数<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">及幂次<img src="latex/latex2png-IntegerFactorization_41907218_0.gif" alt="$e$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">，首先求解方程<img src="latex/latex2png-IntegerFactorization_238416674_-5.gif" alt="$z^2\equiv N\pmod{p^e}$" class="latex-inline" style="vertical-align: -5px" width="125" height="19">，其解数（如果有解的话）
+<img src="latex/latex2png-IntegerFactorization_90548331_.gif" alt="
+\begin{equation*}
+  n(p,e)=
+  \begin{cases}
+    1 & p=2, e=1,2,\\
+    4 & p=2, e\ge3, \\
+    2 & p\ge3.
+  \end{cases}
+\end{equation*}" class="latex-display" width="580" height="90">
+并且解都可以快速地求得。对方程的任一个解<img src="latex/latex2png-IntegerFactorization_43283474_0.gif" alt="$z$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">,令<img src="latex/latex2png-IntegerFactorization_130123486_-5.gif" alt="$a_0=z-\lfloor\sqrt{N}\rfloor$" class="latex-inline" style="vertical-align: -5px" width="108" height="20">，则有<img src="latex/latex2png-IntegerFactorization_46170672_-5.gif" alt="$p^k\mid Q(a_0)$" class="latex-inline" style="vertical-align: -5px" width="72" height="19">。给定一个搜索区间<img src="latex/latex2png-IntegerFactorization_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">（通常很长），则对任意与<img src="latex/latex2png-IntegerFactorization_14519276_-3.gif" alt="$a_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">差<img src="latex/latex2png-IntegerFactorization_236942356_-4.gif" alt="$p^e$" class="latex-inline" style="vertical-align: -4px" width="15" height="15">的整数倍的<img src="latex/latex2png-IntegerFactorization_129262590_-1.gif" alt="$a\in I$" class="latex-inline" style="vertical-align: -1px" width="38" height="13">，<img src="latex/latex2png-IntegerFactorization_71601093_-5.gif" alt="$Q(a)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">都有因子<img src="latex/latex2png-IntegerFactorization_236942356_-4.gif" alt="$p^e$" class="latex-inline" style="vertical-align: -4px" width="15" height="15">。可用一张表储存区间<img src="latex/latex2png-IntegerFactorization_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">中每个整数对应的因子，当对所有<img src="latex/latex2png-IntegerFactorization_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">与<img src="latex/latex2png-IntegerFactorization_41907218_0.gif" alt="$e$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">进行如上过程后，通过检查表，即可得到许多<img src="latex/latex2png-IntegerFactorization_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">中在<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">下完全分解的整数了。接下来的步骤则与CFRAC的后半部分完全相同。</p>
+
+<div class="remark">
+<span class="proof-header">注16<a name=""></a></span><span class="theorem-name"></span>
+实践过程中可以构造这样一张表，若<img src="latex/latex2png-IntegerFactorization_34862816_-5.gif" alt="$p^e\mid Q(a)$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">，则对应<img src="latex/latex2png-IntegerFactorization_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的表项增加<img src="latex/latex2png-IntegerFactorization_139097778_-4.gif" alt="$\ln p$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">（这可预先计算），最后检查表项若接近<img src="latex/latex2png-IntegerFactorization_68846441_-5.gif" alt="$\ln Q(a)$" class="latex-inline" style="vertical-align: -5px" width="50" height="18">，即可知道<img src="latex/latex2png-IntegerFactorization_71601093_-5.gif" alt="$Q(a)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">在<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">可完全分解，此处的对数函数的计算可以不那么精确，只要绝对误差在1以下即可。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注17<a name=""></a></span><span class="theorem-name"></span>
+在一些启发性假设下，利用Canfield-Erd&#337;s-Pomerance的定理<a class="ref-th" href="IntegerFactorization.html#th:CEP">2</a>，可以知道QS的时间复杂度为<img src="latex/latex2png-IntegerFactorization_102378170_-6.gif" alt="$L_N[\frac{1}{2}, 1]$" class="latex-inline" style="vertical-align: -6px" width="57" height="21">，与ECM差不多。但由于筛法的运用，QS的运算更简单一些，实践中要快于ECM，除非是在<img src="latex/latex2png-IntegerFactorization_49570446_-5.gif" alt="$P^-(N)$" class="latex-inline" style="vertical-align: -5px" width="51" height="18">较小的情形。
+
+
+</div>
+
+
+<h3><a name="sec10" id="sec10"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>多个多项式二次筛法(MPQS)</h3>
+
+<p class="first">MPQS是对上述只用一个二次多项式的SPQS方法的一个改进，使用更多的二次多项式来减小<img src="latex/latex2png-IntegerFactorization_71601093_-5.gif" alt="$Q(a)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">的值，从而减小<img src="latex/latex2png-IntegerFactorization_144995346_0.gif" alt="$FB$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">的大小和搜索区间的长度。考虑<img src="latex/latex2png-IntegerFactorization_226853305_-5.gif" alt="$Q(a)=A a^2+2B a+C$" class="latex-inline" style="vertical-align: -5px" width="169" height="19">形式的多项式(<img src="latex/latex2png-IntegerFactorization_85095444_-1.gif" alt="$A>0$" class="latex-inline" style="vertical-align: -1px" width="43" height="13">)，配方得<img src="latex/latex2png-IntegerFactorization_61476439_-5.gif" alt="$AQ(a)=(Aa+B)^2-(B^2-AC)$" class="latex-inline" style="vertical-align: -5px" width="243" height="19">，因此可选取系数使<img src="latex/latex2png-IntegerFactorization_236300100_-5.gif" alt="$N\mid B^2-AC$" class="latex-inline" style="vertical-align: -5px" width="95" height="19">，设<img src="latex/latex2png-IntegerFactorization_200056147_-2.gif" alt="$x=Aa+b$" class="latex-inline" style="vertical-align: -2px" width="80" height="14">，则<img src="latex/latex2png-IntegerFactorization_223602761_-5.gif" alt="$AQ(a)\equiv x^2\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="158" height="19">。我们需要<img src="latex/latex2png-IntegerFactorization_71601093_-5.gif" alt="$Q(a)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">尽可能的小，设搜索区间的长度<img src="latex/latex2png-IntegerFactorization_7314848_-5.gif" alt="$|I|=2M$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">，自然的把<img src="latex/latex2png-IntegerFactorization_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的中心设置在<img src="latex/latex2png-IntegerFactorization_71601093_-5.gif" alt="$Q(a)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">的极小点<img src="latex/latex2png-IntegerFactorization_127223548_-11.gif" alt="$-\dfrac{B}{A}$" class="latex-inline" style="vertical-align: -11px" width="28" height="34">处，此时<img src="latex/latex2png-IntegerFactorization_52255520_.gif" alt="$$|Q\left(-B/a\right)|=\dfrac{B^2-AC}{A},$$" class="latex-display" width="580" height="37">且<img src="latex/latex2png-IntegerFactorization_71601093_-5.gif" alt="$Q(a)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">在<img src="latex/latex2png-IntegerFactorization_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">上的最大值与最小值之差为<img src="latex/latex2png-IntegerFactorization_22540447_.gif" alt="$$Q\left(-\dfrac{B}{A}+M\right)-Q\left(-\dfrac{B}{A}\right)=AM^2-2\dfrac{B^2-AC}{A},$$" class="latex-display" width="580" height="41">从而宜取<img src="latex/latex2png-IntegerFactorization_146213533_-1.gif" alt="$B^2-AC=N$" class="latex-inline" style="vertical-align: -1px" width="104" height="15">，且<img src="latex/latex2png-IntegerFactorization_137524242_0.gif" alt="$A $" class="latex-inline" style="vertical-align: 0px" width="12" height="12">接近<img src="latex/latex2png-IntegerFactorization_113416837_-5.gif" alt="$\sqrt{2N}/M$" class="latex-inline" style="vertical-align: -5px" width="62" height="20">。因此选择系数的过程可以如下进行</p>
+
+<ol>
+<li>选择区间长度<img src="latex/latex2png-IntegerFactorization_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">。</li>
+<li>选择接近于<img src="latex/latex2png-IntegerFactorization_113416837_-5.gif" alt="$\sqrt{2N}/M$" class="latex-inline" style="vertical-align: -5px" width="62" height="20">的素数<img src="latex/latex2png-IntegerFactorization_137524242_0.gif" alt="$A $" class="latex-inline" style="vertical-align: 0px" width="12" height="12">。</li>
+<li>求解<img src="latex/latex2png-IntegerFactorization_2915696_-5.gif" alt="$B^2\equiv N\pmod{A}$" class="latex-inline" style="vertical-align: -5px" width="126" height="19">(例如利用Shanks算法<a class="ref-th-external" href="FindRoot.html#al:shanks">3</a>)。</li>
+<li>令<img src="latex/latex2png-IntegerFactorization_214960794_-5.gif" alt="$C=(B^2-N)/A$" class="latex-inline" style="vertical-align: -5px" width="123" height="19">。</li>
+</ol>
+
+<p>接下来的步骤便是对这样选取的多个多项式进行筛法，最终得到足够多的同余式进行<img src="latex/latex2png-IntegerFactorization_67416627_-2.gif" alt="$\mathbb{F}_2$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">上的Gauss消元法。</p>
+
+<div class="remark">
+<span class="proof-header">注18<a name=""></a></span><span class="theorem-name"></span>
+MPQS的过程明显有着并行化的特性。
+
+
+</div>
+
+
+
+<h2><a name="sec11" id="sec11"></a>
+<a href="IntegerFactorization.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>数域筛法(NFS)</h2>
+
+<p class="first">数域筛法(Number Field Sieve)是目前渐进最快的通用因子分解方法，其时间复杂度为<img src="latex/latex2png-IntegerFactorization_104472445_-7.gif" alt="$L_N[\frac{1}{3},c]$" class="latex-inline" style="vertical-align: -7px" width="56" height="22">，其中常数<img src="latex/latex2png-IntegerFactorization_41776146_0.gif" alt="$c$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">依赖于不同的算法实现。例如对于针对<img src="latex/latex2png-IntegerFactorization_1930914_0.gif" alt="$r^e-s$" class="latex-inline" style="vertical-align: 0px" width="42" height="11">形式整数的特殊数域筛法(SNFS)有<img src="latex/latex2png-IntegerFactorization_102822411_-7.gif" alt="$c=(\frac{32}{9})^{\frac{1}{3}}$" class="latex-inline" style="vertical-align: -7px" width="67" height="23">，而对于一般数域筛法(GNFS)有<img src="latex/latex2png-IntegerFactorization_102822414_-7.gif" alt="$c=(\frac{64}{9})^{\frac{1}{3}}$" class="latex-inline" style="vertical-align: -7px" width="67" height="23">。对于120位以上的大数，NFS是最强有力的分解算法。例如互联网上的分布式大整数分解项目<a href="http://www.nfsnet.org/" class="external">NFSNet</a>采用的便是此法。</p>
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="IntegerFactorization.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Mend&egrave;s France M. and  Tenenbaum G.著 姚家燕 译, </span><span class="ref-title-chs">素数论, </span><span class="ref-publisher">清华大学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2007. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Hans Riesel, </span><span class="ref-title">Prime Numbers and Computer Methods for Factorization, </span><span class="ref-publisher">Boston; Basel; Stuttgart: Birkh&auml;user, </span><span class="ref-year">1985. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-3" name="ref-3">[3]</a><span class="ref-author">H. C. Williams, </span><span class="ref-title">A $p+1$ Method of Factoring, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">39 </span><span class="ref-year">(1982), </span><span class="ref-number">no.159, </span><span class="ref-pages">225-234. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-4" name="ref-4">[4]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-5" name="ref-5">[5]</a><span class="ref-author">Richard P. Brent, </span><span class="ref-title">An improved Monte Carlo factorization algorithm, </span><span class="ref-journal">BIT Numerical Mathematics </span><span class="ref-volume">20 </span><span class="ref-year">(1980), </span><span class="ref-number">no.2, </span><span class="ref-pages">176--194. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-6" name="ref-6">[6]</a><span class="ref-author">Jason E. Gower and Samuel S. Wagstaff, JR., </span><span class="ref-title">Square form factorization, </span><span class="ref-journal">Mathematics of computation </span><span class="ref-volume">77 </span><span class="ref-year">(2008), </span><span class="ref-number">no.261, </span><span class="ref-pages">551-588. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-7" name="ref-7">[7]</a><span class="ref-author">Michael A. Morrison and John Brillhart, </span><span class="ref-title">A Method of Factoring and the Factorization of $F_7$, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">29 </span><span class="ref-year">(1975), </span><span class="ref-number">no.129, </span><span class="ref-pages">183-205. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-8" name="ref-8">[8]</a><span class="ref-author">John D. Dixon, </span><span class="ref-title">Asymptotically Fast Factorization of Integers, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">36 </span><span class="ref-year">(1981), </span><span class="ref-number">no.153, </span><span class="ref-pages">255-260. </span></p>
+<p class="ref"><a class="ref" href="IntegerFactorization.html#cite-9" name="ref-9">[9]</a><span class="ref-author">Henri Cohen, </span><span class="ref-title">A Course in Computational Algebraic Number Theory, </span><span class="ref-publisher">Springer Verlag, </span><span class="ref-year">1993. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年03月18日 16:52:26
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

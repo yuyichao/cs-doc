@@ -1,0 +1,942 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>15.1. Memory Management in Linux</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-15.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-15-sect-2.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-15-sect-1"></a>
+<h3 class="docSection1Title">15.1. Memory Management in Linux</h3>
+
+<p class="docText">Rather than describing <a name="chp-15-ITERM-6953"></a>
+<a name="chp-15-ITERM-6954"></a>
+<a name="chp-15-ITERM-6955"></a>
+<a name="chp-15-ITERM-6956"></a>the
+theory of memory management in operating systems, this section tries
+to pinpoint the main features of the Linux implementation. Although
+you do not need to be a Linux virtual memory guru to implement
+<span class="docEmphasis">mmap</span>, a basic overview of how things work is
+useful. What follows is a fairly lengthy description of the data
+structures used by the kernel to manage memory. Once the necessary
+background has been covered, we can get into working with these
+structures.</p>
+
+<a name="chp-15-sect-1.1"></a>
+<h4 class="docSection2Title">15.1.1. Address Types</h4>
+
+<p class="docText"><a name="chp-15-ITERM-6957"></a>
+<a name="chp-15-ITERM-6958"></a>Linux
+is, of course, a <a name="chp-15-ITERM-6959"></a>virtual memory
+<a name="chp-15-ITERM-6960"></a>system, meaning that the
+addresses seen by user programs do not directly correspond to the
+physical addresses used by the hardware. Virtual memory introduces a
+layer of indirection that allows a number of nice things. With
+virtual memory, programs running on the system can allocate far more
+memory than is physically available; indeed, even a single process
+can have a virtual address space larger than the
+system's physical memory. Virtual memory also allows
+the program to play a number of tricks with the
+process's address space, including mapping the
+program's memory to device memory.</p>
+
+<p class="docText">Thus far, we have talked about virtual and physical addresses, but a
+number of the details have been glossed over. The Linux system deals
+with several types of addresses, each with its own semantics.
+Unfortunately, the kernel code is not always very clear on exactly
+which type of address is being used in each situation, so the
+programmer must be careful.</p>
+
+<p class="docText">The following is a list of address types used in Linux. <a class="docLink" href="chp-15-sect-1.shtml#chp-15-FIG-1">Figure 15-1</a> shows how these address
+types relate to physical memory.</p>
+
+<a name="chp-15-ITERM-6961"></a><a name="chp-15-ITERM-6962"></a><a name="chp-15-ITERM-6963"></a><a name="chp-15-ITERM-6964"></a><a name="chp-15-ITERM-6965"></a><a name="chp-15-ITERM-6966"></a><a name="chp-15-ITERM-6967"></a><a name="chp-15-ITERM-6968"></a><dl class="docList"><dt><i><span class="docPubcolor">User virtual addresses</span></i></dt></P>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-6961"></a>These
+are the regular addresses seen by user-space programs. User addresses
+are either 32 or 64 bits in length, depending on the underlying
+hardware architecture, and each process has its own virtual address
+space.</p>
+</dd>
+<dt><i><span class="docPubcolor">Physical addresses</span></i></dt></p>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-6962"></a>The
+addresses used between the processor and the
+system's memory. Physical addresses are 32- or
+64-bit quantities; even 32-bit systems can use larger physical
+addresses in some situations.</P>
+</dd>
+<dt><I><span class="docPubcolor">Bus addresses</span></I></dt></p>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-6963"></a>The
+addresses used between peripheral buses and memory. Often, they are
+the same as the physical addresses used by the processor, but that is
+not necessarily the case. Some architectures can provide an I/O
+<a name="chp-15-ITERM-6964"></a>memory management unit (IOMMU) that remaps
+addresses between a bus and main memory. An IOMMU can make life
+easier in a number of ways (making a buffer scattered in memory
+appear contiguous to the device, for example), but programming the
+IOMMU is an extra step that must be performed when setting up DMA
+operations. Bus addresses are highly architecture dependent, of
+course.</p>
+</dd>
+<dt><I><span class="docPubcolor">Kernel logical addresses</span></I></dt></P>
+<dd>
+<p class="docList">These make up the normal
+<a name="chp-15-ITERM-6965"></a> <a name="chp-15-ITERM-6966"></a>address space of the kernel. These
+addresses map some portion (perhaps all) of main memory and are often
+treated as if they were physical addresses. On most architectures,
+logical addresses and their associated physical addresses differ only
+by a constant offset. Logical addresses use the
+hardware's native pointer size and, therefore, may
+be unable to address all of physical memory on heavily equipped
+32-bit systems. Logical addresses are usually stored in variables of
+type <tt>unsigned</tt> <tt>long</tt> or
+<tt>void</tt> <tt>*</tt>. Memory returned from
+<span class="docEmphasis">kmalloc</span> has a kernel logical address.</p>
+</dd>
+<dt><i><span class="docPubcolor">Kernel virtual addresses</span></i></dt></p>
+<dd>
+<p class="docList">Kernel virtual addresses
+are<a name="chp-15-ITERM-6967"></a> <a name="chp-15-ITERM-6968"></a> similar to logical addresses in that
+they are a mapping from a kernel-space address to a physical address.
+Kernel virtual addresses do not necessarily have the linear,
+one-to-one mapping to physical addresses that characterize the
+logical address space, however. All logical addresses
+<span class="docEmphasis">are</span> kernel virtual addresses, but many kernel
+virtual addresses are not logical addresses. For example, memory
+allocated by <span class="docEmphasis">vmalloc</span> has a virtual address (but
+no direct physical mapping). The <span class="docEmphasis">kmap</span> function
+(described later in this chapter) also returns virtual addresses.
+Virtual addresses are usually stored in pointer variables.</p>
+</dd>
+</dl>
+
+<a name="chp-15-FIG-1"></a><P><center>
+<h5 class="docFigureTitle">Figure 15-1. Address types used in Linux</h5>
+<img border="0" alt="" width="464" height="299" SRC="images/0596005903/figs/ldr3_1501.gif"></center></P><br>
+
+<p class="docText">If you have a logical address, the macro <span class="docEmphasis">_ _pa(
+)</span> (defined in <i>&lt;asm/page.h&gt;</I>)
+returns its associated physical address. Physical addresses can be
+mapped back to logical addresses with <span class="docEmphasis">_ _va( )</span>,
+but only for low-memory pages.</p>
+
+<p class="docText">Different kernel functions require different types of addresses. It
+would be nice if there were different C types defined, so that the
+required address types were explicit, but we have no such luck. In
+this chapter, we try to be clear on which types of addresses are used
+where.</P>
+
+
+<a name="chp-15-sect-1.2"></a>
+<h4 class="docSection2Title">15.1.2. Physical Addresses and Pages</h4>
+
+<p class="docText">Physical memory
+<a name="chp-15-ITERM-6969"></a> <a name="chp-15-ITERM-6970"></a>is divided
+into discrete units called <i>pages</i>. Much of the
+system's internal handling of memory is done on a
+per-page basis. Page size varies from one architecture to the next,
+although most systems currently use 4096-byte pages. The constant
+<tt>PAGE_SIZE</tt> (defined in
+<i>&lt;asm/page.h&gt;</i>) gives the page size on any
+given architecture.</p>
+
+<p class="docText">If you look at a memory address—virtual or physical—it is
+divisible into a page number and an offset within the page. If
+4096-byte pages are being used, for example, the 12 least-significant
+bits are the offset, and the remaining, higher bits indicate the page
+number. If you discard the offset and shift the rest of an offset to
+the right, the result is called a <i>page frame
+number</i><a name="chp-15-ITERM-6971"></a> <a name="chp-15-ITERM-6972"></a>
+<a name="chp-15-ITERM-6973"></a>
+(PFN). Shifting bits to convert between page frame numbers and
+addresses is a fairly common<a name="chp-15-ITERM-6974"></a> operation; the macro
+<tt>PAGE_SHIFT</tt><a name="chp-15-ITERM-6975"></a>
+<a name="chp-15-ITERM-6976"></a>
+tells how many bits must be shifted to make this conversion.</p>
+
+
+<a name="chp-15-sect-1.3"></a>
+<h4 class="docSection2Title">15.1.3. High and Low Memory</h4>
+
+<p class="docText"><a name="chp-15-ITERM-6977"></a>
+<a name="chp-15-ITERM-6978"></a><a name="chp-15-ITERM-6979"></a><a name="chp-15-ITERM-6980"></a><a name="chp-15-ITERM-6981"></a><a name="chp-15-ITERM-6982"></a>The difference between logical and kernel
+virtual addresses is highlighted on 32-bit systems that are equipped
+with large amounts of memory. With 32 bits, it is possible to address
+4 GB of memory. Linux on 32-bit systems has, until recently, been
+limited to substantially less memory than that, however, because of
+the way it sets up the virtual address space.</p>
+
+<p class="docText">The kernel (on the x86 architecture, in the default configuration)
+splits the 4-GB virtual address space between user-space and the
+kernel; the same set of mappings is used in both contexts. A typical
+split dedicates 3 GB to user space, and 1 GB for kernel
+space.<sup class="docFootnote"><a class="docLink" href="chp-15-sect-1.shtml#chp-15-FNOTE-1">[1]</a></sup> The kernel's code and
+data structures must fit into that space, but the biggest consumer of
+kernel address space is virtual mappings for physical memory. The
+kernel cannot directly manipulate memory that is not mapped into the
+kernel's address space. The kernel, in other words,
+needs its own virtual address for any memory it must touch directly.
+Thus, for many years, the maximum amount of physical memory that
+could be handled by the kernel was the amount that could be mapped
+into the kernel's portion of the virtual address
+space, minus the space needed for the kernel code itself. As a
+result, x86-based Linux systems could work with a maximum of a little
+under 1 GB of physical memory.</P><blockquote><p class="docFootnote"><sup><a name="chp-15-FNOTE-1">[1]</a></sup> Many non-x86 architectures are able to
+efficiently do without the kernel/user-space split described here, so
+they can work with up to a 4-GB kernel address space on 32-bit
+systems. The constraints described in this section still apply to
+such systems when more than 4 GB of memory are installed,
+however.</p></blockquote>
+
+<p class="docText">In response to commercial pressure to support more memory while not
+breaking 32-bit application and the system's
+compatibility, the processor manufacturers have added
+"address extension" features to
+their products. The result is that, in many cases, even 32-bit
+processors can address more than 4 GB of physical memory. The
+limitation on how much memory can be directly mapped with logical
+addresses remains, however. Only the lowest portion of memory (up to
+1 or 2 GB, depending on the hardware and the kernel configuration)
+has logical addresses;<sup class="docFootnote"><a class="docLink" href="chp-15-sect-1.shtml#chp-15-FNOTE-2">[2]</a></sup> the rest (high
+memory) does not. Before accessing a specific high-memory page, the
+kernel must set up an explicit virtual mapping to make that page
+available in the kernel's address space. Thus, many
+kernel data structures must be placed in low memory; high memory
+tends to be reserved for user-space process pages.</P><blockquote><p class="docFootnote"><sup><a name="chp-15-FNOTE-2">[2]</a></sup> The 2.6 kernel (with an added
+patch) can support a "4G/4G" mode
+on x86 hardware, which enables larger kernel and user virtual address
+spaces at a mild performance cost.</P></blockquote>
+
+<p class="docText">The term "high memory" can be
+confusing to some, especially since it has other meanings in the PC
+world. So, to make things clear, we'll define the
+terms here:</p>
+
+<dl class="docList"><dt><I><span class="docPubcolor">Low memory</span></i></dt></P>
+<dd>
+<p class="docList">Memory for which logical addresses exist in kernel space. On almost
+every system you will likely encounter, all memory is low memory.</P>
+</dd>
+<dt><i><span class="docPubcolor">High memory</span></i></dt></p>
+<dd>
+<p class="docList">Memory for which logical addresses do not exist, because it is beyond
+the address range set aside for kernel virtual addresses.</P>
+</dd>
+</dl>
+
+<p class="docText">On i386 systems, the boundary between low and high memory is usually
+set at just under 1 GB, although that boundary can be changed at
+kernel configuration time. This boundary is not related in any way to
+the old 640 KB limit found on the original PC, and its placement is
+not dictated by the hardware. It is, instead, a limit set by the
+kernel itself as it splits the 32-bit address space between kernel
+and user space.</P>
+
+<p class="docText">We will point out<a name="chp-15-ITERM-6983"></a> <a name="chp-15-ITERM-6984"></a> <a name="chp-15-ITERM-6985"></a> <a name="chp-15-ITERM-6986"></a> limitations on the use of high memory
+as we come to them in this chapter.</P>
+
+
+<a name="chp-15-sect-1.4"></a>
+<h4 class="docSection2Title">15.1.4. The Memory Map and Struct Page</H4>
+
+<p class="docText">Historically, the kernel <a name="chp-15-ITERM-6987"></a>
+<a name="chp-15-ITERM-6988"></a>
+<a name="chp-15-ITERM-6989"></a>has
+used logical addresses to refer to pages of physical memory. The
+addition of high-memory support, however, has exposed an obvious
+problem with that approach—logical addresses are not available
+for high memory. Therefore, kernel functions that deal with memory
+are increasingly using pointers to <tt>struct</tt>
+<tt>page</tt> (defined in
+<I>&lt;linux/mm.h&gt;</i>) instead. This data structure
+is used to keep track of just about everything the kernel needs to
+know about physical memory; there is one <tt>struct
+page</tt> for each physical page on the system. Some of the
+fields of this structure include the following:</p>
+
+<a name="chp-15-ITERM-6990"></a><a name="chp-15-ITERM-6991"></a><a name="chp-15-ITERM-6992"></a><a name="chp-15-ITERM-6993"></a><a name="chp-15-ITERM-6994"></a><a name="chp-15-ITERM-6995"></a><a name="chp-15-ITERM-6996"></a><a name="chp-15-ITERM-6997"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">atomic_t count;</span></span><a name="chp-15-ITERM-6990"></a></span></dt></P>
+<dd>
+<p class="docList">The number of references there are to this page. When the count drops
+to <tt>0</tt>, the page is returned to the free list.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *virtual;</span></span><a name="chp-15-ITERM-6991"></a></span></dt></p>
+<dd>
+<p class="docList">The kernel virtual address of the page, if it is mapped;
+<tt>NULL</tt>, otherwise. Low-memory pages are always
+mapped; high-memory pages usually are not. This field does not appear
+on all architectures; it generally is compiled only where the kernel
+virtual address of a page cannot be easily calculated. If you want to
+look at this field, the proper method is to use the
+<span class="docEmphasis">page_address</span><a name="chp-15-ITERM-6992"></a>
+<a name="chp-15-ITERM-6993"></a>
+macro, described below.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long flags;</span></span><a name="chp-15-ITERM-6994"></a></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-6995"></a>
+<a name="chp-15-ITERM-6996"></a><a name="chp-15-ITERM-6997"></a>A set of bit flags describing the status of
+the page. These include <tt>PG_locked</tt>, which indicates
+that the page has been locked in memory, and
+<tt>PG_reserved</tt>, which prevents the memory management
+system from working with the page at all.</p>
+</dd>
+</dl>
+
+<p class="docText">There is much more information within <tt>struct page</tt>,
+but it is part of the deeper black magic of memory management and is
+not of concern to driver writers.</p>
+
+<p class="docText">The kernel maintains one or
+<a name="chp-15-ITERM-6998"></a>more arrays of <tt>struct
+page</tt> entries that track all of the physical memory on the
+system. On some systems, there is a single array called
+<tt>mem_map</tt>. On some systems, however, the situation
+is more complicated. <a name="chp-15-ITERM-6999"></a>
+<a name="chp-15-ITERM-7000"></a>Nonuniform memory access (NUMA)
+systems and those with widely discontiguous physical memory may have
+more than one memory map array, so code that is meant to be portable
+should avoid direct access to the array whenever possible.
+Fortunately, it is usually quite easy to just work with
+<tt>struct page</tt> pointers without worrying about where
+they come from.</p>
+
+<p class="docText">Some functions and macros are defined for translating between
+<tt>struct page</tt> pointers and virtual addresses:</p>
+
+<a name="chp-15-ITERM-7001"></a><a name="chp-15-ITERM-7002"></a><a name="chp-15-ITERM-7003"></a><a name="chp-15-ITERM-7004"></a><a name="chp-15-ITERM-7005"></a><a name="chp-15-ITERM-7006"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct page *virt_to_page(void *kaddr);</span></span><a name="chp-15-ITERM-7001"></a>
+<a name="chp-15-ITERM-7002"></a></span></dt></p>
+<dd>
+<p class="docList">This macro, defined in <i>&lt;asm/page.h&gt;</i>, takes
+a kernel logical address and returns its associated <tt>struct
+page</tt> pointer. Since it requires a logical address, it does
+not work with memory from <span class="docEmphasis">vmalloc</span> or high
+memory.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct page *pfn_to_page(int pfn);</span></span><a name="chp-15-ITERM-7003"></a>
+<a name="chp-15-ITERM-7004"></a></span></dt></P>
+<dd>
+<p class="docList">Returns the <tt>struct page</tt> pointer for the given page
+frame number. If necessary, it checks a page frame number for
+validity with <span class="docEmphasis">pfn_valid</span> before passing it to
+<span class="docEmphasis">pfn_to_page</span>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *page_address(struct page *page);</span></span></span></dt></p>
+<dd>
+<p class="docList">Returns the kernel virtual address of this page, if such an address
+exists. For high memory, that address exists only if the page has
+been mapped. This function is defined in
+<i>&lt;linux/mm.h&gt;</i>. In most situations, you want
+to use a version of <span class="docEmphasis">kmap</span> rather than
+<span class="docEmphasis">page_address</span>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">#include &lt;linux/highmem.h&gt;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *kmap(struct page *page);</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void kunmap(struct page *page);</span></span></span></dt></P>
+<dd>
+<p class="docList"><span class="docEmphasis">kmap</span><a name="chp-15-ITERM-7005"></a>
+<a name="chp-15-ITERM-7006"></a>
+returns a kernel virtual address for any page in the system. For
+low-memory pages, it just returns the logical address of the page;
+for high-memory pages, <span class="docEmphasis">kmap</span> creates a special
+mapping in a dedicated part of the kernel address space. Mappings
+created with <span class="docEmphasis">kmap</span> should always be freed with
+<span class="docEmphasis">kunmap</span>; a limited number of such mappings is
+available, so it is better not to hold on to them for too long.
+<span class="docEmphasis">kmap</span> calls maintain a counter, so if two or more
+functions both call <span class="docEmphasis">kmap</span> on the same page, the
+right thing happens. Note also that <span class="docEmphasis">kmap</span> can
+sleep if no mappings are available.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">#include &lt;linux/highmem.h&gt;</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">#include &lt;asm/kmap_types.h&gt;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *kmap_atomic(struct page *page, enum km_type type);</span></span></span></dt></P>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void kunmap_atomic(void *addr, enum km_type type);</span></span></span></dt></P>
+<dd>
+<p class="docList"><span class="docEmphasis">kmap_atomic</span> is a high-performance form of
+<span class="docEmphasis">kmap</span>. Each architecture maintains a small list
+of slots (dedicated page table entries) for atomic kmaps; a caller of
+<span class="docEmphasis">kmap_atomic</span> must tell the system which of those
+slots to use in the <tt>type</tt> argument. The only slots
+that make sense for drivers are <tt>KM_USER0</tt> and
+<tt>KM_USER1</tt> (for code running directly from a call
+from user space), and <tt>KM_IRQ0</tt> and
+<tt>KM_IRQ1</tt> (for interrupt handlers). Note that atomic
+kmaps must be handled atomically; your code cannot sleep while
+holding one. Note also that nothing in the kernel keeps two functions
+from trying to use the same slot and interfering with each other
+(although there is a unique set of slots for each CPU). In practice,
+contention for atomic kmap slots seems to not be a problem.</p>
+</dd>
+</dl>
+
+<p class="docText">We see some uses of these <a name="chp-15-ITERM-7007"></a> <a name="chp-15-ITERM-7008"></a> <a name="chp-15-ITERM-7009"></a>functions when we get into the example
+code, later in this chapter and in subsequent chapters.</p>
+
+
+<a name="chp-15-sect-1.5"></a>
+<H4 class="docSection2Title">15.1.5. Page Tables</h4>
+
+<p class="docText">On any
+<a name="chp-15-ITERM-7010"></a>
+<a name="chp-15-ITERM-7011"></a>
+<a name="chp-15-ITERM-7012"></a>
+<a name="chp-15-ITERM-7013"></a>modern system,
+the processor must have a mechanism for translating virtual addresses
+into its corresponding physical addresses. This mechanism is called a
+<I>page table</i>; it is essentially a multilevel
+tree-structured array containing virtual-to-physical mappings and a
+few associated flags. The Linux kernel maintains a set of page tables
+even on architectures that do not use such tables directly.</p>
+
+<p class="docText">A number of operations commonly performed by device drivers can
+involve manipulating page tables. Fortunately for the driver author,
+the 2.6 kernel has eliminated any need to work with page tables
+directly. As a result, we do not describe them in any detail; curious
+readers may want to have a look at <span class="docEmphasis">Understanding The Linux
+Kernel</span> by Daniel P. Bovet and Marco Cesati
+(O'Reilly) for the full story.</p>
+
+
+<a name="chp-15-sect-1.6"></a>
+<h4 class="docSection2Title">15.1.6. Virtual Memory Areas</h4>
+
+<p class="docText">The <a name="chp-15-ITERM-7014"></a>virtual memory area (VMA) is
+<a name="chp-15-ITERM-7015"></a>
+<a name="chp-15-ITERM-7016"></a>
+<a name="chp-15-ITERM-7017"></a> <a name="chp-15-ITERM-7018"></a>the
+kernel data structure used to manage distinct regions of a
+process's address space. A VMA represents a
+homogeneous region in the virtual memory of a process: a contiguous
+range of virtual addresses that have the same permission flags and
+are backed up by the same object (a file, say, or swap space). It
+corresponds loosely to the concept of a
+"segment," although it is better
+described as "a memory object with its own
+properties." The memory map of a process is made up
+of (at least) the following areas:</p>
+
+<ul><li><p class="docList">An area for the program's executable code (often
+called text)</p></li><li><p class="docList"><a name="chp-15-ITERM-7019"></a>Multiple areas
+for data, including initialized data (that which has an explicitly
+assigned value at the beginning of execution), uninitialized data
+(BSS),<sup class="docFootnote"><a class="docLink" href="chp-15-sect-1.shtml#chp-15-FNOTE-3">[3]</a></sup> and the program stack</p><blockquote><p class="docFootnote"><sup><a name="chp-15-FNOTE-3">[3]</a></sup> The name <i>BSS</I> is a
+historical relic from an old assembly operator meaning
+"block started by symbol." The BSS
+segment of executable files isn't stored on disk,
+and the kernel maps the zero page to the BSS address range.</p></blockquote></LI><LI><p class="docList">One area for each active memory mapping</p></li></ul>
+<p class="docText">The memory areas of a process can be seen by looking in
+<I>/proc/</i><span class="docEmphasis">&lt;pid/maps&gt;</span> (in
+which <span class="docEmphasis">pid</span>, of course, is replaced by a process
+ID). <I>/proc/self</I> is a special case of
+<I>/proc/</i><span class="docEmphasis">pid</span>, because it
+always refers to the current process. As an example, here are a
+couple of memory maps (to which we have added short comments in
+italics):</p>
+
+<pre># <b>cat /proc/1/maps </b>   <i> look at init</I>
+08048000-0804e000 r-xp 00000000 03:01 64652      /sbin/init  <I> text</I>
+0804e000-0804f000 rw-p 00006000 03:01 64652      /sbin/init  <i> data</I>
+0804f000-08053000 rwxp 00000000 00:00 0          <I> zero-mapped BSS</i>
+40000000-40015000 r-xp 00000000 03:01 96278      /lib/ld-2.3.2.so  <i> text</i>
+40015000-40016000 rw-p 00014000 03:01 96278      /lib/ld-2.3.2.so  <i> data</I>
+40016000-40017000 rw-p 00000000 00:00 0          <i> BSS for ld.so</i>
+42000000-4212e000 r-xp 00000000 03:01 80290      /lib/tls/libc-2.3.2.so  <I> text</i>
+4212e000-42131000 rw-p 0012e000 03:01 80290      /lib/tls/libc-2.3.2.so  <i> data</I>
+42131000-42133000 rw-p 00000000 00:00 0          <i> BSS for libc</I>
+bffff000-c0000000 rwxp 00000000 00:00 0          <i> Stack segment</i>
+ffffe000-fffff000 ---p 00000000 00:00 0          <i> vsyscall page</i>
+
+# rsh wolf cat /proc/self/maps  #### x86-64 (trimmed)
+00400000-00405000 r-xp 00000000 03:01 1596291     /bin/cat    <i> text</i>
+00504000-00505000 rw-p 00004000 03:01 1596291     /bin/cat    <i> data</i>
+00505000-00526000 rwxp 00505000 00:00 0                       <i> bss</i>
+3252200000-3252214000 r-xp 00000000 03:01 1237890 /lib64/ld-2.3.3.so
+3252300000-3252301000 r--p 00100000 03:01 1237890 /lib64/ld-2.3.3.so
+3252301000-3252302000 rw-p 00101000 03:01 1237890 /lib64/ld-2.3.3.so
+7fbfffe000-7fc0000000 rw-p 7fbfffe000 00:00 0                 <i> stack</i>
+ffffffffff600000-ffffffffffe00000 ---p 00000000 00:00 0       <i> vsyscall</I></pre><br>
+
+
+<p class="docText">The fields in each line are:</P>
+
+<pre><tt><I>start</i></tt>-<tt><i>end perm offset major</i></tt>:<tt><I>minor inode image</i></tt></pre><BR>
+
+
+<p class="docText">Each field in <I>/proc/*/maps</I><a name="chp-15-ITERM-7020"></a> (except the
+image name) corresponds to a field in <tt>struct</tt>
+<tt>vm_area_struct</tt>:</p>
+
+<dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">start</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">end</span></span></span></dt></P>
+<dd>
+<p class="docList">The beginning and ending virtual addresses for this memory area.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">perm</span></span></span></dt></p>
+<dd>
+<p class="docList">A bit mask with the memory area's read, write, and
+execute permissions. This field describes what the process is allowed
+to do with pages belonging to the area. The last character in the
+field is either <tt>p</tt> for
+"private" or <tt>s</tt>
+for "shared."</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">offset</span></span></span></dt></P>
+<dd>
+<p class="docList">Where the memory area begins in the file that it is mapped to. An
+offset of <tt>0</tt> means that the beginning of the memory
+area corresponds to the beginning of the file.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">major</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">minor</span></span></span></dt></p>
+<dd>
+<p class="docList">The major and minor numbers of the device holding the file that has
+been mapped. Confusingly, for device mappings, the major and minor
+numbers refer to the disk partition holding the device special file
+that was opened by the user, and not the device itself.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">inode</span></span></span></dt></p>
+<dd>
+<p class="docList">The inode number of the mapped file.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">image</span></span></span></dt></p>
+<dd>
+<p class="docList">The name of the file (usually an executable image) that has been
+mapped.</p>
+</dd>
+</dl>
+
+<a name="chp-15-sect-1.6.1"></a>
+<h5 class="docSection3Title">15.1.6.1 The vm_area_struct structure</h5>
+
+<p class="docText"><a name="chp-15-ITERM-7021"></a>
+<a name="chp-15-ITERM-7022"></a><a name="chp-15-ITERM-7023"></a>When a user-space process calls
+<span class="docEmphasis">mmap</span> to map device memory into its address
+space, the system responds by creating a new VMA to represent that
+mapping. A driver that supports <span class="docEmphasis">mmap</span> (and, thus,
+that implements the <span class="docEmphasis">mmap</span> method) needs to help
+that process by completing the initialization of that VMA. The driver
+writer should, therefore, have at least a minimal understanding of
+VMAs in order to support <span class="docEmphasis">mmap</span>.</p>
+
+<p class="docText">Let's look at the most important fields in
+<tt>struct</tt> <tt>vm_area_struct</tt> (defined
+in <i>&lt;linux/mm.h&gt;</i>). These fields may be used
+by device drivers in their
+<span class="docEmphasis">mmap</span><a name="chp-15-ITERM-7024"></a> implementation.
+Note that the kernel maintains lists and trees of VMAs to optimize
+area lookup, and several fields of <tt>vm_area_struct</tt>
+are used to maintain this organization. Therefore, VMAs
+can't be created at will by a driver, or the
+structures break. The main fields of VMAs are as follows (note the
+similarity between these fields and the <I>/proc</i>
+output we just saw):</P>
+
+<a name="chp-15-ITERM-7025"></a><a name="chp-15-ITERM-7026"></a><a name="chp-15-ITERM-7027"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long vm_start;</span></span></span></dt></p>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long vm_end;</span></span></span></dt></p>
+<dd>
+<p class="docList">The virtual address range covered by this VMA. These fields are the
+first two fields shown in <I>/proc/*/maps</I>.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct file *vm_file;</span></span></span></dt></p>
+<dd>
+<p class="docList">A pointer to the <tt>struct file</tt> structure associated
+with this area (if any).</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long vm_pgoff;</span></span></span></dt></P>
+<dd>
+<p class="docList">The offset of the area in the file, in pages. When a file or device
+is mapped, this is the file position of the first page mapped in this
+area.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long vm_flags;</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-7025"></a>
+<a name="chp-15-ITERM-7026"></a><a name="chp-15-ITERM-7027"></a>A set of flags describing this area. The
+flags of the most interest to device driver writers are
+<tt>VM_IO</tt> and <tt>VM_RESERVED</tt>.
+<tt>VM_IO</tt> marks a VMA as being a memory-mapped I/O
+region. Among other things, the <tt>VM_IO</tt> flag
+prevents the region from being included in process core dumps.
+<tt>VM_RESERVED</tt> tells the memory management system not
+to attempt to swap out this VMA; it should be set in most device
+mappings.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct vm_operations_struct *vm_ops;</span></span></span></dt></P>
+<dd>
+<p class="docList">A set of functions that the kernel may invoke to operate on this
+memory area. Its presence indicates that the memory area is a kernel
+"object," like the
+<tt>struct</tt> <tt>file</tt> we have been using
+throughout the book.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *vm_private_data;</span></span></span></dt></p>
+<dd>
+<p class="docList">A field that may be used by the driver to store its own information.</p>
+</dd>
+</dl>
+
+<p class="docText"><a name="chp-15-ITERM-7028"></a>
+<a name="chp-15-ITERM-7029"></a>Like
+<tt>struct vm_area_struct</tt>, the
+<tt>vm_operations_struct</tt> is defined in
+<I>&lt;linux/mm.h&gt;</i>; it includes the operations
+listed below. These operations are the only ones needed to handle the
+process's memory needs, and they are listed in the
+order they are declared. Later in this chapter, some of these
+functions are implemented.</P>
+
+<a name="chp-15-ITERM-7030"></a><a name="chp-15-ITERM-7031"></a><a name="chp-15-ITERM-7032"></a><a name="chp-15-ITERM-7033"></a><a name="chp-15-ITERM-7034"></a><a name="chp-15-ITERM-7035"></a><a name="chp-15-ITERM-7036"></a><a name="chp-15-ITERM-7037"></a><a name="chp-15-ITERM-7038"></a><a name="chp-15-ITERM-7039"></a><a name="chp-15-ITERM-7040"></a><a name="chp-15-ITERM-7041"></a><a name="chp-15-ITERM-7042"></a><a name="chp-15-ITERM-7043"></a><a name="chp-15-ITERM-7044"></a><a name="chp-15-ITERM-7045"></a><a name="chp-15-ITERM-7046"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void (*open)(struct vm_area_struct *vma);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-7030"></a>
+<a name="chp-15-ITERM-7031"></a>
+<a name="chp-15-ITERM-7032"></a>The
+<span class="docEmphasis">open</span> method is called by the kernel to allow the
+subsystem implementing the VMA to initialize the area. This method is
+invoked any time a new reference to the VMA is made (when a process
+forks, for example). The one exception happens when the VMA is first
+created by <span class="docEmphasis">mmap</span>; in this case, the
+driver's <span class="docEmphasis">mmap</span> method is called
+instead.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void (*close)(struct vm_area_struct *vma);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-7033"></a>
+<a name="chp-15-ITERM-7034"></a>
+<a name="chp-15-ITERM-7035"></a>When
+an area is destroyed, the kernel calls its <span class="docEmphasis">close</span>
+operation. Note that there's no usage count
+associated with VMAs; the area is opened and closed exactly once by
+each process that uses it.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">struct page *(*nopage)(struct vm_area_struct *vma, unsigned long address, int</span></span> </span></dt></p>
+<dt><span class="docPubcolor">                       <span class="docPubcolor"><span class="docMonofont">*type);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-15-ITERM-7036"></a>
+<a name="chp-15-ITERM-7037"></a>
+<a name="chp-15-ITERM-7038"></a>When
+a process tries to access a page that belongs to a valid VMA, but
+that is currently not in memory, the <span class="docEmphasis">nopage</span>
+method is called (if it is defined) for the related area. The method
+returns the <tt>struct page</tt> pointer for the physical
+page after, perhaps, having read it in from secondary storage. If the
+<span class="docEmphasis">nopage</span> method isn't defined for
+the area, an empty page is allocated by the kernel.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int (*populate)(struct vm_area_struct *vm, unsigned long address, unsigned</span></span> </span></dt></p>
+<dt><span class="docPubcolor">  <span class="docPubcolor"><span class="docMonofont">long len, pgprot_t prot, unsigned long pgoff, int nonblock);</span></span></span></dt></P>
+<dd>
+<p class="docList">This method allows the kernel to
+"prefault" pages into memory before
+they are accessed by user space.
+There<a name="chp-15-ITERM-7039"></a> is <a name="chp-15-ITERM-7040"></a> <a name="chp-15-ITERM-7041"></a> <a name="chp-15-ITERM-7042"></a> <a name="chp-15-ITERM-7043"></a>generally no need
+for drivers to implement the
+<span class="docEmphasis">populate</span><a name="chp-15-ITERM-7044"></a>
+<a name="chp-15-ITERM-7045"></a>
+<a name="chp-15-ITERM-7046"></a>
+method.</p>
+</dd>
+</dl>
+
+
+
+<a name="chp-15-sect-1.7"></a>
+<H4 class="docSection2Title">15.1.7. The Process Memory Map</H4>
+
+<p class="docText">The final piece of the
+memory<a name="chp-15-ITERM-7047"></a>
+<a name="chp-15-ITERM-7048"></a>
+<a name="chp-15-ITERM-7049"></a>
+<a name="chp-15-ITERM-7050"></a> management puzzle is the process
+memory map structure, which holds all of the other data structures
+together. Each process in the system (with the exception of a few
+kernel-space helper threads) has a <tt>struct</tt>
+<tt>mm_struct</tt> (defined in
+<I>&lt;linux/sched.h&gt;</i>) that contains the
+process's list of virtual memory areas, page tables,
+and various other bits of memory management housekeeping information,
+along with a semaphore (<tt>mmap_sem</tt>) and a spinlock
+(<tt>page_table_lock</tt>). The pointer to this structure
+is found in the task structure; in the rare cases where a driver
+needs to access it, the usual way is to use
+<tt>current-&gt;mm</tt>. Note that the memory management
+structure can be shared between processes; the Linux implementation
+of threads works in this way, for example.</p>
+
+<p class="docText"><a name="chp-15-ITERM-7051"></a><a name="chp-15-ITERM-7052"></a>That
+concludes our overview of Linux memory management data structures.
+With that out of the way, we can now proceed to the implementation of
+the <span class="docEmphasis">mmap</span> system call.</p>
+
+
+
+<ul></UL></TD></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-15.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-15-sect-2.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

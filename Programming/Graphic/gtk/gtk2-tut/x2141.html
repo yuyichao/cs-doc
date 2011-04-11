@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>一个构件的剖析</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="编写你自己的构件"
+HREF="c2132.html"><LINK
+REL="PREVIOUS"
+TITLE="编写你自己的构件"
+HREF="c2132.html"><LINK
+REL="NEXT"
+TITLE="创建一个复合构件"
+HREF="x2152.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c2132.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>编写你自己的构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2152.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-THEANATOMYOFAWIDGET">一个构件的剖析</H1
+><P
+>要想创建一个新的构件，最重要的是要对 GTK 对象的工作原理有所了解。这一节只是一个简述，详见参考手册。</P
+><P
+>GTK 构件具有面向对象的特性。然而，它是用标准的 C 实现的。这极大的改善了在当前 C++ 编译器上使用的可移植性和稳定性；但是，这也意味着写构件的人必须注意一些实现的细节。一个构件类的所有实例(比如所有的按钮构件)的共有信息存储在<I
+CLASS="EMPHASIS"
+>类结构</I
+>里，类的信号信息只以该结构存储了一份(充当 C 中的虚函数)。为了支持继承，类结构的第一个域必须是它的父类结构的一个拷贝。GtkButton 的类结构声明如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct _GtkButtonClass
+{
+  GtkContainerClass parent_class;
+
+  void (* pressed)  (GtkButton *button);
+  void (* released) (GtkButton *button);
+  void (* clicked)  (GtkButton *button);
+  void (* enter)    (GtkButton *button);
+  void (* leave)    (GtkButton *button);
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>当将一个按钮视为容器时(例如，当调整它的大小时)，它的类结构被转换为 GtkContainerClass，并且相应的域用于处理信号。</P
+><P
+>每一个构件也有一个结构，它是创建每个实例的基础。该结构有为每个构件的实例存储不同信息的域。我们把该结构称为<I
+CLASS="EMPHASIS"
+>对象结构</I
+>。如下是按钮类：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct _GtkButton
+{
+  GtkContainer container;
+
+  GtkWidget *child;
+
+  guint in_button : 1;
+  guint button_down : 1;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>请注意，它同类结构相似，第一个域是父类的对象结构，因此该结构在需要时可以转换为父类的对象结构。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c2132.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2152.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>编写你自己的构件</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2132.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>创建一个复合构件</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

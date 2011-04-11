@@ -1,0 +1,439 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+<title>Bran的内核开发指南：全局描述表(GDT)</title>
+<style>
+<!--
+td{font-family:arial}
+TD{FONT-SIZE:9pt;LINE-HEIGHT:18px;}
+.f{line-height:120%;font-size:100%;width:32em;padding-left:15px;word-break:break-all;word-wrap:break-word;}
+body {
+    background-color: #F0F0F0
+}
+
+-->
+</style>
+</head>
+
+<body style="background-color: #FFFFFF">
+
+<div class="Section1">
+	<h2><font face="Tahoma">全局描述表(GDT)</font></h2>
+	<p><font face="Tahoma">386的各种保护措施的一个重要组成部分是
+	全局描述表(Global Descriptor Table)，也就是 GDT。GDT为内存的特定部份定义基本访问权限。我们能使用GDT的一个入口来建立一种程序段异常处理机制：让内核能终止一个正在执行非法操作的程序。大部分
+	现代操作系统使用叫做“内存分页”的内存管理模式来实现这一点：这可以更灵活而且弹性更高。GDT同时还能定义内存中的某个区域是可被执行的，还是数据。GDT也能
+	定义任务状态分段(TSSes)。TSS被用在基于硬件的多任务处理系统[<font size="2">译者注：如SMP,对称多处理器系统</font>]中，我们
+	就不在这里讨论了。但请记住，TSS并不是实现多任务处理的唯一方法。
+	</font>
+	</p>
+	<p><font face="Tahoma">你会发现GRUB已经为你安装了一个GDT，但是如果我们覆盖了GRUB使用的那部分内存，GDT将会失效，
+	并且会产生被称为“三键错误”[<font size="2">译者注：triple 
+	fault，三键即热启动的那个三个键</font>]。简而言之，
+	发生错误后，计算机会重启。解决这个问题的方法是在一段我们知道
+	地址并且可以访问的内存上建立我们自己的GDT。这包括构造
+	新的GDT,
+	告诉处理器它在内存中的地址，最后用我们
+	新的入口数据加载CPU的CS、DS、ES、FS 和GS寄存器。CS寄存器就是代码段。它将
+	告诉CPU进入GDT的偏移量。这将获得执行当前代码的权限。DS寄存器是相似的功能，但它不是针对代码，而是针对数据段，它定义的是当前数据的权限。ES、FS、和GS寄存器只不过是DS寄存器
+	的替代品，对我们并不重要。</font></p>
+	<p><font face="Tahoma">GDT本身就是一连串的64字长的入口。这些入口定义了允许操作的内存区域从哪里开始，哪里结束，同时定义了每个入口的权限。一个通常的规则是GDT的第一个入口，入口0，就是我们知道的NULL描述符。任何寄存器都不能被设置为0，否则将发生一般性保护错误(General 
+	Protection fault)，这是CPU的一项保护特征。一般性保护错误和其它的一些异常将在下一章<a href="isrs.htm">中断服务例程(ISR)</a>中进行详细说明。</font></p>
+	<p><font face="Tahoma">每一个GDT入口同时也定义处理器正在运行的当前片段是系统程序在占用(Ring 
+	0)还是应用程序在占用(Ring 
+	3)。当然还有其他类型，但是那些并不重要。当今主要的操作系统只使用Ring 
+	0和Ring 3。有一条基本规则：任何试图访问系统或Ring 0数据的应用程序都将会引起异常。这种保护措施用于保护内核免遭应用程序的破坏
+	。在GDT作用范围内，Ring等级告诉CPU它是否被允许执行特定的指令。某些指令的权限很高，意味着它只能在较高的Ring等级上运行。这样的例子有cli和sti指令。它们分别禁用和启用中断。如果一个应用程序被允许使用汇编指令cli或sti，那么它就可以
+	有效地使内核停止运行。你将在后面的章节学到更多的中断。 </font>
+	</p>
+	<p><font face="Tahoma">每个GDT入口的通道和粒度可以这样被定义：</font></p>
+	<table class="MsoNormalTable" cols="25" cellPadding="0" border="0" id="table1">
+		<tr>
+			<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt" vAlign="top">
+			<table class="MsoNormalTable" cellPadding="0" border="0" id="table2">
+				<tr>
+					<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt">
+					<table class="MsoNormalTable" cellPadding="0" border="0" id="table3">
+						<tr>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 18.75pt; PADDING-TOP: 0.75pt" width="25">
+							<p style="TEXT-ALIGN: center" align="center">
+							<font face="Tahoma">7</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 18.75pt; PADDING-TOP: 0.75pt" width="25">
+							<p><font face="Tahoma">6</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 18.75pt; PADDING-TOP: 0.75pt" width="25">
+							<p style="TEXT-ALIGN: right" align="right">
+							<font face="Tahoma">5</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 18.75pt; PADDING-TOP: 0.75pt" width="25">
+							<p style="TEXT-ALIGN: center" align="center">
+							<font face="Tahoma">4</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 37.5pt; PADDING-TOP: 0.75pt" width="50">
+							<p><font face="Tahoma">3</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 37.5pt; PADDING-TOP: 0.75pt" width="50">
+							<p style="TEXT-ALIGN: right" align="right">
+							<font face="Tahoma">0</font></td>
+						</tr>
+					</table>
+					<p>　</td>
+				</tr>
+				<tr>
+					<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt">
+					<table class="MsoNormalTable" style="border: 1pt outset gray" cols="25" cellPadding="0" border="1" id="table4">
+						<tr>
+							<td style="width: 18.75pt; border: 1pt inset gray; padding: 0.75pt" width="25">
+							<p><font face="Tahoma">P 
+							</font> 
+							</td>
+							<td style="width: 37.5pt; border: 1pt inset gray; padding: 0.75pt" width="50">
+							<p><font face="Tahoma">DPL 
+							</font> 
+							</td>
+							<td style="width: 18.75pt; border: 1pt inset gray; padding: 0.75pt" width="25">
+							<p><font face="Tahoma">DT 
+							</font> 
+							</td>
+							<td style="width: 75pt; border: 1pt inset gray; padding: 0.75pt" width="100">
+							<p><font face="Tahoma">Type 
+							</font> 
+							</td>
+						</tr>
+					</table>
+					<p>　</td>
+				</tr>
+				<tr>
+					<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt">
+					<p><font face="Tahoma">P - 这是当前的段吗？(1 = Yes)<br>
+					DPL - 哪个Ring等级(0 to 3<span class="GramE">)<br>
+					DT - 描述符类型<br>
+					Type - 什么类型？</font></td>
+				</tr>
+			</table>
+			<p>　</td>
+			<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt" vAlign="top">
+			<table class="MsoNormalTable" cols="20" cellPadding="0" border="0" id="table5">
+				<tr>
+					<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 15pt; PADDING-TOP: 0.75pt" width="20">
+					<p>　</td>
+				</tr>
+			</table>
+			<p>　</td>
+			<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt" vAlign="top">
+			<table class="MsoNormalTable" cols="25" cellPadding="0" border="0" id="table6">
+				<tr>
+					<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt">
+					<table class="MsoNormalTable" cellPadding="0" border="0" id="table7">
+						<tr>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 18.75pt; PADDING-TOP: 0.75pt" width="25">
+							<p style="TEXT-ALIGN: center" align="center">
+							<font face="Tahoma">7</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 18.75pt; PADDING-TOP: 0.75pt" width="25">
+							<p style="TEXT-ALIGN: center" align="center">
+							<font face="Tahoma">6</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 18.75pt; PADDING-TOP: 0.75pt" width="25">
+							<p style="TEXT-ALIGN: center" align="center">
+							<font face="Tahoma">5</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 26.25pt; PADDING-TOP: 0.75pt" width="35">
+							<p style="TEXT-ALIGN: center" align="center">
+							<font face="Tahoma">4</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 37.5pt; PADDING-TOP: 0.75pt" width="50">
+							<p><font face="Tahoma">3</font></td>
+							<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 37.5pt; PADDING-TOP: 0.75pt" width="50">
+							<p style="TEXT-ALIGN: right" align="right">
+							<font face="Tahoma">0</font></td>
+						</tr>
+					</table>
+					<p>　</td>
+				</tr>
+				<tr>
+					<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt">
+					<table class="MsoNormalTable" style="border: 1pt outset gray" cols="25" cellPadding="0" border="1" id="table8">
+						<tr>
+							<td style="width: 18.75pt; border: 1pt inset gray; padding: 0.75pt" width="25">
+							<p><font face="Tahoma">G 
+							</font> 
+							</td>
+							<td style="width: 18.75pt; border: 1pt inset gray; padding: 0.75pt" width="25">
+							<p><font face="Tahoma">D 
+							</font> 
+							</td>
+							<td style="width: 18.75pt; border: 1pt inset gray; padding: 0.75pt" width="25">
+							<p><font face="Tahoma">0 
+							</font> 
+							</td>
+							<td style="width: 18.75pt; border: 1pt inset gray; padding: 0.75pt" width="25">
+							<p><font face="Tahoma">A 
+							</font> 
+							</td>
+							<td style="width: 75pt; border: 1pt inset gray; padding: 0.75pt" width="100">
+							<p>
+							<font face="Tahoma">Seg 
+							Len. 19:16 </font> </td>
+						</tr>
+					</table>
+					<p>　</td>
+				</tr>
+				<tr>
+					<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt">
+					<p><font face="Tahoma">G - 粒度(0 = 
+					1byte, 1 = 4kbyte)<br>
+					D - 操作数大小(0 = 16bit, 1 = 32-bit)<br>
+					0 - 永远是0<br>
+					A - 系统可见(总被设置为0) </font> </td>
+				</tr>
+			</table>
+			<p>　</td>
+		</tr>
+	</table>
+	<p><font face="Tahoma">在这本内核指南里，我们只用3个入口来创建一个GDT。为什么是3个？我们需要在一开始有一个“哑元”(dummy)描述符来为作为处理器的内存保护功能的NULL段。
+	我们需要为代码段(Code Segment)和数据段(Data Segment)寄存器各准备一个入口。我们用汇编操作符lgdt来告诉CPU新的GDT在哪里。<span class="GramE">需要给'lgdt'一个指向特殊的48-bit结构的指针
+	。因为GDT的限制，这个特殊的48-bit结构由16-bits(同样，当我们使用一个在GDT中不存在的段时，内核需要它来产生一般性保护错误)和32-bits(存储GDT自身的地址)构成。</span></font></p>
+	<span class="GramE">
+	<p><font face="Tahoma">我们可以用一个3入口的简单数组来定义GDT. 对于这个特殊的GDT指针，我们只需要申明一个。
+	我们把它叫做gp。创建一个新文件gdt.c。按指南前部分提到的方法在build.bat中添加内容，以便让GCC来执行编译工作。我再一次提醒你：为了创建内核，你需要把gdt.o添加到LD连接器的文件列表里。下面是gdt.c前半部分的源码，请仔细分析:
+	</font>
+	</p>
+	<table border="1" width="100%" id="table10" style="border-collapse: collapse">
+		<tr>
+			<td><font face="Tahoma"><font size="2" color="#800000">#include &lt; system.h &gt;<br>
+			&nbsp;<br>
+			/* 定义一个GDT入口. 我们称之为包装,因为<br>
+			* 他阻止编译器做他认为最好的事：</font><span class="GramE"><font size="2" color="#800000">用包</font></span><font size="2" color="#800000">装的方法阻止<br>
+			* 编译器进行所谓的“优化” */<br>
+			struct gdt_entry<br>
+			{<br>
+&nbsp;&nbsp;&nbsp; unsigned short limit_low;<br>
+&nbsp;&nbsp;&nbsp; unsigned short base_low;<br>
+&nbsp;&nbsp;&nbsp; unsigned char base_middle;<br>
+&nbsp;&nbsp;&nbsp; unsigned char access;<br>
+&nbsp;&nbsp;&nbsp; unsigned char granularity;<br>
+&nbsp;&nbsp;&nbsp; unsigned char base_high;<br>
+			} __attribute__((packed));<br>
+			&nbsp;<br>
+			/* 包括如下界限的特殊指针: GDT开始的最大字节, 负1.<br>
+			* 同样，这需要被包装 */<br>
+			struct gdt_ptr<br>
+			{<br>
+&nbsp;&nbsp;&nbsp; unsigned short limit;<br>
+&nbsp;&nbsp;&nbsp; unsigned int base;<br>
+			} __attribute__((packed));<br>
+			&nbsp;<br>
+			/* 这是GDT, 3个入口, 最后是特殊的GDT指针*/<br>
+			struct gdt_entry gdt[3];<br>
+			struct gdt_ptr gp;<br>
+			&nbsp;<br>
+			/* 这是 start.asm的一个方法. 我们用这个方法适当的重载<br>
+			* 新的段寄存器 */<br>
+			extern void gdt_flush();</font></font></td>
+		</tr>
+		<tr>
+			<td><font face="Tahoma"><b>
+			<font size="2">用</font><span lang="EN-US" style="COLOR: black"><font size="2">'gdt.c'管理GDT</font></b></font></td>
+		</tr>
+	</table>
+	<p><font face="Tahoma">你会注意到我们对一个并不存在的函数gdt_flush()加了一条申明.
+	gdt_flush()函数使用一个特殊的指针来告诉CPU新的GDT的位置，正如在上面你所看到的。我们需要重新加载新的段寄存器，并且最后跳转到新的代码段。研究下面代码，然后把它添加到start.asm中stublet后的那个无穷循环后。</font></p>
+	<table border="1" width="100%" id="table11" style="border-collapse: collapse">
+		<tr>
+			<td><font size="2" color="#800000" face="Tahoma">; 这会建立一个新的段寄存器. 我们需要做<br>
+			; 一些特别的命令来设置CS. 我们要做的就称为<br>
+			; far jump. 一个跳转像偏移量一样包括一个段.<br>
+			; 这里用'extern void gdt_flush();'来申明<br>
+			global _gdt_flush ; 允许C程序连接<br>
+			extern _gp ; 表明'_gp'在另一个文件里<br>
+			_gdt_flush:<br>
+			lgdt [_gp] ; 用这个特殊的指针'_gp'载如GDT<br>
+			mov ax, 0x10 ; 0x10 is the offset in the GDT to our data segment<br>
+			mov ds, ax<br>
+			mov es, ax<br>
+			mov fs, ax<br>
+			mov gs, ax<br>
+			mov ss, ax<br>
+			jmp 0x08:flush2 ; 0x08 is the offset to our code segment: Far jump!<br>
+			flush2:<br>
+			ret &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 回到C程序!</font></td>
+		</tr>
+		<tr>
+			<td><font face="Tahoma"><span lang="en-us"><font size="2"><b>把</b></font></span><span lang="EN-US" style="COLOR: black"><b><font size="2">这些内容添加到start.asm中</font></b></font></td>
+		</tr>
+	</table>
+	<p><font face="Tahoma">仅仅在内存中为GDT保留空间是不够的。我们需要向GDT入口里写入值，设置“gp”GDT指针，然后调用函数gdt_flush()来更新。下面要介绍的是一个特殊的函数gdt_set_entry()，它使用简单好用的参数来进行所有移位(shift)，以将合适的值填充进GDT入口。你必须在system.h中添加这两个函数的原型(我们至少需要gdt_install)，以便我们能在main.c中使用它们。
+	请仔细分析下面这些代码，它们是gdt.c的后半部分。</font></p>
+	<table border="1" width="100%" id="table12" style="border-collapse: collapse">
+		<tr>
+			<td><font face="Tahoma"><font size="2" color="#800000">/* 在全局描述表(GDT)中建立一个描述符*/<br>
+			void gdt_set_gate(int num, unsigned long base, unsigned long limit, 
+			unsigned char access, unsigned char gran)<br>
+			{<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">/* 设定描述符的</font><span class="GramE"><font size="2" color="#800000">基地址</font></span><font size="2" color="#800000">*/<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt[num].base_low = (base &amp; 0xFFFF);<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt[num].base_middle = (base &gt;&gt; 16) &amp; 0xFF;<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt[num].base_high = (base &gt;&gt; 24) &amp; 0xFF;<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000"><br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">/* 设定描述符的界限 */<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt[num].limit_low = (limit &amp; 0xFFFF);<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt[num].granularity = ((limit &gt;&gt; 16) &amp; 0x0F);<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000"><br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">/* 最后，设定粒度和访问标识*/<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt[num].granularity |= (gran &amp; 0xF0);<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt[num].access = access;<br>
+			}<br>
+			&nbsp;<br>
+			/* 这里需要被主函数调用。这里要建立特殊的GDT<br>
+			* 指针, 在GDT里建立最开始的3个入口, 然后<br>
+			* 为了告诉处理器新的GDT在哪并且更新新的段寄 <br>
+			* 存器，我们需要在汇编文件里调用gdt_flush()*/<br>
+			void gdt_install()<br>
+			{<br>
+			&nbsp;&nbsp;&nbsp;
+			/* 设立GDT指针和范围*/<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gp.limit = (sizeof(struct gdt_entry) * 3) - 1;<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gp.base = &amp;gdt;<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000"><br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">/* NULL描述符 */<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt_set_gate(0, 0, 0, 0, 0);<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000"><br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">/* 第二个入口就是我们的代码段(Code Segment)。基地址<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">* 是0, 大小是4GBytes, 粒度为4KByte，<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">* 使用32-bit操作码，是一个代码段描述符。<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">* 请检查本章前面提到的那个表格，以确保每个<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">* 变量的意思正确。*/<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000"><br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">/*第三个入口 是我们的数据段(Data Segment)。它完全和
+			代码段(Code Segment)<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">* 相同, 但是这个入口的访问标识说明这是一个数据段 */<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000"><br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">/* 把旧的GDT删除，安装新的更新! */<br>
+			</font>
+	<span class="GramE">
+			<font size="2" color="#800000">&nbsp;&nbsp;&nbsp; </font></span>
+			<font size="2" color="#800000">gdt_flush();<br>
+			}</font></font></td>
+		</tr>
+		<tr>
+			<td><font face="Tahoma">把这些添加到gdt.c。它从事的是一些和GDT相关的肮脏工作！不要忘记在system.h中设置函数原型！</font></td>
+		</tr>
+	</table>
+	<p><font face="Tahoma">既然GDT加载器基本构架已准备就绪并且我们已经把它编译连接进了内核，我们需要调用gdt_install()以让它工作。打开main.c，然后再main()函数的最开头添加“gdt_install();”。正如你在本章中所学到的，GDT需要在最开始就被初始化。它是十分重要的。你现在可以编译连接并将内核弄到软盘里来测试了。你不会在屏幕上看到任何变化，因为这是一个内在的变化。接下来，开始学下一章
+	中断描述符表(IDT)吧！</font></p>
+	<table class="MsoNormalTable" style="width: 100%" cols="150" cellPadding="0" width="100%" border="0" id="table9">
+		<tr>
+			<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 112.5pt; PADDING-TOP: 0.75pt" width="150">
+			<p>
+			<font face="Tahoma">
+			<a style="color: gray; text-decoration: underline; text-underline: single" href="printing.htm">
+			<font size="3">&lt;&lt; 打印到屏幕</font></a><font size="3"> </font> 
+			</font> </td>
+			<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; PADDING-TOP: 0.75pt">
+			<p style="TEXT-ALIGN: center" align="center">
+			
+			<font face="Tahoma">
+			
+			<a style="color: gray; text-decoration: underline; text-underline: single" href="mailto:friesenb@gmail.com">
+			<font size="3">联系 Brandon F.</font></a><font size="3"> </font> 
+			</font> </td>
+			<td style="PADDING-RIGHT: 0.75pt; PADDING-LEFT: 0.75pt; PADDING-BOTTOM: 0.75pt; WIDTH: 112.5pt; PADDING-TOP: 0.75pt" width="150">
+			<p style="TEXT-ALIGN: right" align="right">
+			
+			<font face="Tahoma">
+			
+			<a style="color: gray; text-decoration: underline; text-underline: single" href="idt.htm">
+			<font size="3">中断描述符表(IDT) &gt;&gt;</font></a><font size="3"> </font> 
+			</font> </td>
+		</tr>
+	</table>
+</div>
+
+</body>
+
+</html>

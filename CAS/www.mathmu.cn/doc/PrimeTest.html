@@ -1,0 +1,857 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>素数判定 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>素数判定
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="PrimeTest.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="PrimeTest.html#sec1">Fermat检测</a>
+  </dt>
+  <dt>
+    <a href="PrimeTest.html#sec2">Euler检测</a>
+  </dt>
+  <dt>
+    <a href="PrimeTest.html#sec3">Lehmer <img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">型检测</a>
+  </dt>
+  <dt>
+    <a href="PrimeTest.html#sec4">Lucas 伪素数检测与<img src="latex/latex2png-PrimeTest_253529068_-2.gif" alt="$N+1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">型检测</a>
+  </dt>
+  <dt>
+    <a href="PrimeTest.html#sec5">概率性的检测方法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="PrimeTest.html#sec6">Solovay-Strassen检测</a>
+      </dt>
+      <dt>
+	<a href="PrimeTest.html#sec7">Rabin-Miller检测</a>
+      </dt>
+      <dt>
+	<a href="PrimeTest.html#sec8">Baillie-PSW检测</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p><span class="index" title="素数判定">素数判定</span>(the Recognition of Primes)是一个数论中十分基本,却又趣味盎然的问题.判定一个整数是否是素数,最为朴素的想法是直接利用素数的定义,用小的素数去一一试除,如果能整除的话,那就能确定无疑为合数了.统计表明,大约有76%的奇数有小于100的素因子,可见这种最平凡的方法有时十分有效.</p>
+
+<p>相比整数的因子分解，素数判定一直以来被认为是较为容易的问题。2002年三位印度计算机科学家Agrawal，Kayal，Saxena<span class="cite"><a class="cite" href="PrimeTest.html#ref-1" name="cite-1">[1]</a></span>找到了素数判定的多项式算法（被称为AKS算法），时间复杂度为<img src="latex/latex2png-PrimeTest_174609173_-5.gif" alt="$O(\ln^{12} N)$" class="latex-inline" style="vertical-align: -5px" width="69" height="20">。AKS算法在理论上有重要的意义，不过实践中还要更多地考虑效率问题。实践中的素数检测方法大致分为两类，一类是确定性的，例如Lehmer <img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">检测，Lucas <img src="latex/latex2png-PrimeTest_253529068_-2.gif" alt="$N+1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">检测，椭圆曲线素性证明(ECPP)等等，当输出结果为“素数”时，能够保证被检测数一定为素数；另一类是概率性的，如Rabin-Miller检测，Baillie-PSW检测等等，当输出结果为“素数”时，仅以一定的高概率保证被检测数的素性。不过概率性检测一般要比确定性检测快得多。</p>
+
+<p>APRCL方法将Fermat类型的想法运用到分圆域中,最先由Adleman,Pomerance,Rumely<span class="cite"><a class="cite" href="PrimeTest.html#ref-2" name="cite-2">[2]</a></span>提出,后经Cohen,Lenstra<span class="cite"><a class="cite" href="PrimeTest.html#ref-3" name="cite-3">[3]</a></span>的改进，时间复杂度为“近似”多项式的<img src="latex/latex2png-PrimeTest_119871923_-5.gif" alt="$O((\ln N)^{c\ln\ln\ln N})$" class="latex-inline" style="vertical-align: -5px" width="129" height="19">，其中<img src="latex/latex2png-PrimeTest_41776146_0.gif" alt="$c$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">为一个常数。椭圆曲线素数证明最早由Goldwasser,Kilian<span class="cite"><a class="cite" href="PrimeTest.html#ref-4" name="cite-4">[4]</a></span>提出，后经Atikin，Morain<span class="cite"><a class="cite" href="PrimeTest.html#ref-5" name="cite-5">[5]</a></span>改进和实现，平均时间复杂度达到了<img src="latex/latex2png-PrimeTest_237599955_-5.gif" alt="$O(\ln^6 N)$" class="latex-inline" style="vertical-align: -5px" width="63" height="20">。这两种方法已经成为目前实践上最快的确定性检测方法，并在密码学等领域有重要的应用。鉴于我们的目的，不能用太多篇幅来介绍这两种方法，详细可参阅文献<span class="cite"><a class="cite" href="PrimeTest.html#ref-6" name="cite-6">[6]</a></span>.</p>
+
+<p>有些素数判定方法严格来说应当是<span class="index" title="合性检测">合性检测</span>(Compositeness Test),这类方法总可以有效地把素数判定出来,而有可能把一个合数判定为素数.也就是说,此类方法判定一个数为合数总是准确无误的,而“漏网的”,即无法判定的合数往往称为伪素数(Pseudoprimes).</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Fermat检测</h2>
+
+<p class="first">几乎所有素数检测的想法之基石均为著名的<span class="index" title="Fermat小定理">Fermat小定理</span>,即若<img src="latex/latex2png-PrimeTest_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为素数,<img src="latex/latex2png-PrimeTest_218488786_-5.gif" alt="$(a,p)=1$" class="latex-inline" style="vertical-align: -5px" width="66" height="18">,则<img src="latex/latex2png-PrimeTest_131391302_.gif" alt="$$a^{p-1}\equiv1\pmod{p}.$$" class="latex-display" width="580" height="20"></p>
+
+<p>由此我们得到最简单的检测算法-Fermat合性检测。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name="al:fermat"></a></span><span class="theorem-name">(Fermat小定理作为合性检测)</span>
+任取整数<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">，如果<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">且<img src="latex/latex2png-PrimeTest_116269522_-5.gif" alt="$a^{N-1}\not\equiv1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="140" height="19">，则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数，否则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">可能为素数。
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义1<a name="de:pseudo:fermat"></a></span><span class="theorem-name">(Fermat伪素数)</span>
+满足<img src="latex/latex2png-PrimeTest_257251518_-5.gif" alt="$a^{N-1}\equiv1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="140" height="19">的合数<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">称为一个(对于基<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">)的Fermat伪素数.
+
+
+</div>
+
+<p>在<img src="latex/latex2png-PrimeTest_19647831_-1.gif" alt="$25\times10^9$" class="latex-inline" style="vertical-align: -1px" width="59" height="15">以下,有21853个对于基<img src="latex/latex2png-PrimeTest_50039788_0.gif" alt="$a=2$" class="latex-inline" style="vertical-align: 0px" width="39" height="11">的Fermat伪素数<span class="cite"><a class="cite" href="PrimeTest.html#ref-7" name="cite-7">[7]</a></span>,如果对其再进行基为<img src="latex/latex2png-PrimeTest_49974252_-1.gif" alt="$a=3$" class="latex-inline" style="vertical-align: -1px" width="39" height="12">的检测的话,伪素数将还剩下4709个,对于<img src="latex/latex2png-PrimeTest_168169194_-4.gif" alt="$a=2,3,5$" class="latex-inline" style="vertical-align: -4px" width="70" height="15">有2552个,<img src="latex/latex2png-PrimeTest_92899065_-4.gif" alt="$a=2,3,5,7$" class="latex-inline" style="vertical-align: -4px" width="86" height="16">有1770个.</p>
+
+<p>运用Fermat检测的关键是如何快速计算<img src="latex/latex2png-PrimeTest_29485635_0.gif" alt="$a^{d} \mod N$" class="latex-inline" style="vertical-align: 0px" width="80" height="14">.求幂运算采取二进算法<a class="ref-th-external" href="NumberTheory.html#al:r2l">1</a>,<a class="ref-th-external" href="NumberTheory.html#al:l2r">2</a>,可以使用Fermat检测的算法复杂度降到平均<img src="latex/latex2png-PrimeTest_86345898_-5.gif" alt="$1.5\log N\cdot M(N)$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">(其中<img src="latex/latex2png-PrimeTest_49580998_-5.gif" alt="$M(N)$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">表示乘法运算的复杂度),已经为多项式阶的算法了. 使用Montgomery约化算法<a class="ref-th-external" href="NumberTheory.html#al:monredc">3</a>可以更进一步地提高速度。</p>
+
+<p>Camichael数是看起来比Fermat伪素数条件更“苛刻”的一类数.</p>
+
+<div class="definition">
+<span class="theorem-header">定义2<a name="de:CamichaelNumber"></a></span><span class="theorem-name">(Camichael数)</span>
+如果合数<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">,对任意满足<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">的整数<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">都有<img src="latex/latex2png-PrimeTest_257251518_-5.gif" alt="$a^{N-1}\equiv1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="140" height="19">,则称<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为Camichael数.
+
+
+</div>
+
+<p>也就是说,Camichael数都将会是Fermat检测的“漏网之鱼”.最小的Camichael数的例子是<img src="latex/latex2png-PrimeTest_73829214_-1.gif" alt="$561=3\cdot 11\cdot 17$" class="latex-inline" style="vertical-align: -1px" width="112" height="13">.在<img src="latex/latex2png-PrimeTest_19647831_-1.gif" alt="$25\times10^9$" class="latex-inline" style="vertical-align: -1px" width="59" height="15">以下一共有2163个Camichael数.(它比对基<img src="latex/latex2png-PrimeTest_92899065_-4.gif" alt="$a=2,3,5,7$" class="latex-inline" style="vertical-align: -4px" width="86" height="16">的Fermat伪素数还要来得多的原因是,如果恰巧<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">有2,3,5,7的因子,<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">便可以是Camichael数而非Fermat伪素数)</p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Euler检测</h2>
+
+<p class="first">Euler检测基于Euler的二次剩余定理,即若<img src="latex/latex2png-PrimeTest_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为奇素数,<img src="latex/latex2png-PrimeTest_218488786_-5.gif" alt="$(a,p)=1$" class="latex-inline" style="vertical-align: -5px" width="66" height="18">,则<img src="latex/latex2png-PrimeTest_240192468_.gif" alt="$$a^{(p-1)/2}\equiv\legendre{a}{p}\pmod{p}.$$" class="latex-display" width="580" height="40">其中<img src="latex/latex2png-PrimeTest_109381887_-9.gif" alt="$\legendre{a}{p}$" class="latex-inline" style="vertical-align: -9px" width="18" height="23">是Legendre符号.
+<div class="algorithm">
+<span class="theorem-header">算法2<a name="al:EulerTest"></a></span><span class="theorem-name">(Euler判则作为合性检测)</span></p>
+
+<p>设<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为奇数,任取整数<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">，满足<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">：</p>
+
+<ol>
+<li>如果<img src="latex/latex2png-PrimeTest_218239724_-5.gif" alt="$a^{(N-1)/2}\not\equiv\pm1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="177" height="20">,则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数.</li>
+
+<li>如果<img src="latex/latex2png-PrimeTest_175019950_-5.gif" alt="$a^{(N-1)/2}\equiv\pm1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="177" height="20">且<img src="latex/latex2png-PrimeTest_188178465_-6.gif" alt="$a^{(N-1)/2}\not\equiv\legendre{a}{N}\pmod{N}$" class="latex-inline" style="vertical-align: -6px" width="183" height="21">,则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数.</li>
+
+<li>如果<img src="latex/latex2png-PrimeTest_9289386_-6.gif" alt="$a^{(N-1)/2}\equiv\legendre{a}{N}\pmod{N}$" class="latex-inline" style="vertical-align: -6px" width="183" height="21">,则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">可能为素数。</li>
+</ol>
+
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义3<a name="de:pseudo:euler"></a></span><span class="theorem-name">(Euler伪素数)</span>
+如果合数<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">,<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">,满足<img src="latex/latex2png-PrimeTest_9289386_-6.gif" alt="$a^{(N-1)/2}\equiv\legendre{a}{N}\pmod{N}$" class="latex-inline" style="vertical-align: -6px" width="183" height="21">,则称<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为(对于基<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的)Euler伪素数.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义4<a name="de:pseudo:strong"></a></span><span class="theorem-name">(强伪素数)</span>
+设<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">奇合数,<img src="latex/latex2png-PrimeTest_156077536_0.gif" alt="$N-1=d\cdot 2^s$" class="latex-inline" style="vertical-align: 0px" width="101" height="12">,<img src="latex/latex2png-PrimeTest_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">为奇数.<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">被称为(对于基<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的)强伪素数,如果<img src="latex/latex2png-PrimeTest_119978590_.gif" alt="$$a^d\equiv 1 \pmod{N}$$" class="latex-display" width="580" height="20">或者对于某一个<img src="latex/latex2png-PrimeTest_4962457_-5.gif" alt="$r(0\le r\le s-1)$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">有 <img src="latex/latex2png-PrimeTest_63661142_.gif" alt="$$a^{d\cdot 2^r}\equiv -1 \pmod{N}.$$" class="latex-display" width="580" height="21">
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注1<a name="re:strong"></a></span><span class="theorem-name"></span>
+强伪素数的定义可以这样看出：若<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数,则
+<img src="latex/latex2png-PrimeTest_94101965_.gif" alt="
+\begin{align*}
+  a^{N-1}-1&=(a^d-1)(a^d+1)(a^{2d}+1)(a^{4d}+1)\cdots(a^{2^{s-1}d}+1)\\
+     &\equiv 0\pmod{N}.
+\end{align*}
+" class="latex-display" width="580" height="54">
+
+
+</div>
+
+<p>对于Euler伪素数和强伪素数均不会出现类似Fermat伪素数的情况,也就是说,只要测试的基<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">足够多,最终总可以将和数和素数分辩开来.<img src="latex/latex2png-PrimeTest_19647831_-1.gif" alt="$25\times10^9$" class="latex-inline" style="vertical-align: -1px" width="59" height="15">以下只有13个同时为对基2,3,5的强伪素数.</p>
+
+<div class="remark">
+<span class="proof-header">注2<a name=""></a></span><span class="theorem-name"></span>
+<span class="cite"><a class="cite" href="PrimeTest.html#ref-7" name="cite-7">[7]</a></span>证明了,Euler伪素数必定是强伪素数.
+
+
+</div>
+
+
+<h2><a name="sec3" id="sec3"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Lehmer <img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">型检测</h2>
+
+<p class="first">有时候<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的素性很难判定,而<img src="latex/latex2png-PrimeTest_209942182_-1.gif" alt="$N\pm1$" class="latex-inline" style="vertical-align: -1px" width="42" height="13">的分解却很容易得到.这一节的方法便是依赖于<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">的素因子分解.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name="th:FermatConverse"></a></span><span class="theorem-name">(Fermat小定理逆定理, Lehmer)</span>
+设有素因子分解<img src="latex/latex2png-PrimeTest_230974538_-4.gif" alt="$N-1=q_1^{\beta_1}\cdots q_n^{\beta_n}$" class="latex-inline" style="vertical-align: -4px" width="136" height="20">.如果对<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">有<img src="latex/latex2png-PrimeTest_156484669_.gif" alt="$$a^{(N-1)/q_j}\not\equiv1 \pmod{N},\qquad \forall j=1,2,\ldots,N,$$" class="latex-display" width="580" height="21">且<img src="latex/latex2png-PrimeTest_35704691_.gif" alt="
+\begin{equation*}
+\tag{1}
+a^{N-1}\equiv1 \pmod{N} .
+\end{equation*}
+" class="latex-display" name="eqref-1" width="580" height="20">则<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+从简化剩余系的乘法群<img src="latex/latex2png-PrimeTest_209751834_-5.gif" alt="$M_N=(\mathbb{Z}/N\mathbb{Z})^*$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">角度来看,条件保证了<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">为<img src="latex/latex2png-PrimeTest_213879788_-2.gif" alt="$M_N$" class="latex-inline" style="vertical-align: -2px" width="28" height="14">的一个<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">阶元素,而<img src="latex/latex2png-PrimeTest_4646425_-5.gif" alt="$|M_N|=\varphi(N)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">(<img src="latex/latex2png-PrimeTest_205919535_-4.gif" alt="$\varphi$" class="latex-inline" style="vertical-align: -4px" width="10" height="12">为Euler函数),从而有<img src="latex/latex2png-PrimeTest_143293907_-5.gif" alt="$\varphi(N)\ge N-1$" class="latex-inline" style="vertical-align: -5px" width="103" height="18">,这就保证了<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注3<a name=""></a></span><span class="theorem-name"></span>
+这里不要<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">的条件,是因为其已经被包括在式<a class="ref-eq" href="PrimeTest.html#eqref-1"  title="公式(1)">(1)</a>之中了.
+
+
+</div>
+
+<p>寻找<img src="latex/latex2png-PrimeTest_213879788_-2.gif" alt="$M_N$" class="latex-inline" style="vertical-align: -2px" width="28" height="14">的生成元(甚至只寻找模<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个二次剩余)都是非常困难的事情,目前还没有有效的确定性的方法.一个现实的问题是如果<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为伪素数,如何才能快速的找到Lehmer <img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">检测中符合条件的<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">,即<img src="latex/latex2png-PrimeTest_213879788_-2.gif" alt="$M_N$" class="latex-inline" style="vertical-align: -2px" width="28" height="14">的一个生成元呢？有一些步骤可以采用：</p>
+
+<ol>
+<li>排除所有<img src="latex/latex2png-PrimeTest_58301461_-6.gif" alt="$\legendre{a}{N}=1$" class="latex-inline" style="vertical-align: -6px" width="54" height="20">的<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">,这就排除了一半可能的<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">!</li>
+<li>从较小的<img src="latex/latex2png-PrimeTest_255095828_-5.gif" alt="$q_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">开始检测,因为<img src="latex/latex2png-PrimeTest_255095828_-5.gif" alt="$q_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">越小,失败的可能性越大.</li>
+</ol>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name="th:multibase-n-1"></a></span><span class="theorem-name">(Selfridge的多基推广)</span>
+如果<img src="latex/latex2png-PrimeTest_257970586_-5.gif" alt="$\forall q_j$" class="latex-inline" style="vertical-align: -5px" width="22" height="17">,<img src="latex/latex2png-PrimeTest_10955743_-5.gif" alt="$\exists a_j$" class="latex-inline" style="vertical-align: -5px" width="23" height="17">使得<img src="latex/latex2png-PrimeTest_73670290_.gif" alt="$$a_j^{(N-1)/{q_j}}\not\equiv1 \pmod{N} $$" class="latex-display" width="580" height="26">且<img src="latex/latex2png-PrimeTest_143540457_.gif" alt="$$a_j^{N-1}\equiv1 \pmod{N} .$$" class="latex-display" width="580" height="23">则<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-PrimeTest_13339628_-5.gif" alt="$a_j$" class="latex-inline" style="vertical-align: -5px" width="15" height="13">模<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的阶为<img src="latex/latex2png-PrimeTest_264997868_-5.gif" alt="$r_j$" class="latex-inline" style="vertical-align: -5px" width="13" height="13">,则以上两式表明<img src="latex/latex2png-PrimeTest_244329247_-9.gif" alt="$r_j\nmid\frac{N-1}{q_j}$" class="latex-inline" style="vertical-align: -9px" width="59" height="24">且<img src="latex/latex2png-PrimeTest_20675938_-5.gif" alt="$r_j\mid N-1$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,从而<img src="latex/latex2png-PrimeTest_209953415_-8.gif" alt="$q_j^{\beta_j}\mid r_j\Rightarrow N\mid \varphi(N) \Rightarrow \varphi(N)=N-1$" class="latex-inline" style="vertical-align: -8px" width="274" height="25">.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注4<a name=""></a></span><span class="theorem-name"></span>
+这个方法对<img src="latex/latex2png-PrimeTest_213879788_-2.gif" alt="$M_N$" class="latex-inline" style="vertical-align: -2px" width="28" height="14">的生成元很大的时候非常有用,因为我们不必找出一个“共同”的<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">来.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理3<a name="th:pepin"></a></span><span class="theorem-name">(Pepin定理)</span>
+设<img src="latex/latex2png-PrimeTest_266566713_-2.gif" alt="$F_n=2^{2^{n}}+1$" class="latex-inline" style="vertical-align: -2px" width="93" height="17">为Fermat素数(<img src="latex/latex2png-PrimeTest_50558622_-3.gif" alt="$n\ge1$" class="latex-inline" style="vertical-align: -3px" width="39" height="14">).则<img src="latex/latex2png-PrimeTest_205026324_-2.gif" alt="$F_n$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">为素数当且仅当<img src="latex/latex2png-PrimeTest_239501222_.gif" alt="$$3^{2^{2^{n-1}}}\equiv-1 \pmod{F_n} $$" class="latex-display" width="580" height="26">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+用定理<a class="ref-th" href="PrimeTest.html#th:FermatConverse">1</a>即可,只需注意到3必为<img src="latex/latex2png-PrimeTest_123648722_-1.gif" alt="$12n\pm 5$" class="latex-inline" style="vertical-align: -1px" width="54" height="12">型素数的二次非剩余.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注5<a name=""></a></span><span class="theorem-name"></span>
+使用这个方法,在1963年<span class="cite"><a class="cite" href="PrimeTest.html#ref-8" name="cite-8">[8]</a></span>证明了<img src="latex/latex2png-PrimeTest_77044950_-2.gif" alt="$F_{14}$" class="latex-inline" style="vertical-align: -2px" width="24" height="14">(有4933个十进制位)是合数，尽管但现在为止还不知道其任何一个因子。
+
+
+</div>
+
+<p>下面的定理让我们可以拥有不必完全分解<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">的便利.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理4<a name="th:RelaxedFermatConverse"></a></span><span class="theorem-name">(Lehmer定理的放宽版本)</span>
+设<img src="latex/latex2png-PrimeTest_228025054_-1.gif" alt="$N-1=RF$" class="latex-inline" style="vertical-align: -1px" width="91" height="13">,<img src="latex/latex2png-PrimeTest_218489186_-5.gif" alt="$(R,F)=1$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">且<img src="latex/latex2png-PrimeTest_167218156_-1.gif" alt="$R<F$" class="latex-inline" style="vertical-align: -1px" width="47" height="13">,有素因子分解<img src="latex/latex2png-PrimeTest_188836079_-18.gif" alt="$F=\prod\limits_{j=1}^n q_j^{\beta_j}$" class="latex-inline" style="vertical-align: -18px" width="82" height="39">.若有<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">使得<img src="latex/latex2png-PrimeTest_18689907_.gif" alt="$$a^{(N-1)/q_j}\not\equiv1 \pmod{N},\qquad \forall j=1,2,\ldots,n$$" class="latex-display" width="580" height="21">且<img src="latex/latex2png-PrimeTest_7067493_.gif" alt="$$a^{N-1}\equiv1 \pmod{N}.$$" class="latex-display" width="580" height="20">则<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-PrimeTest_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为素数,<img src="latex/latex2png-PrimeTest_240321051_-5.gif" alt="$p\mid N$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">,设<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">模<img src="latex/latex2png-PrimeTest_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的阶是<img src="latex/latex2png-PrimeTest_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,则由条件有<img src="latex/latex2png-PrimeTest_209355424_-5.gif" alt="$d\mid N-1$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,但<img src="latex/latex2png-PrimeTest_222757640_-9.gif" alt="$d\nmid \frac{N-1}{q_j}$" class="latex-inline" style="vertical-align: -9px" width="53" height="24">.从而<img src="latex/latex2png-PrimeTest_149200879_-4.gif" alt="$\forall j$" class="latex-inline" style="vertical-align: -4px" width="16" height="16">,<img src="latex/latex2png-PrimeTest_200256087_-15.gif" alt="$d\mid \prod\limits_{i=1}^n q_i$" class="latex-inline" style="vertical-align: -15px" width="59" height="36">,但<img src="latex/latex2png-PrimeTest_46537795_-18.gif" alt="$d\nmid R\cdot q_j^{\beta_j-1}\prod\limits_{i\ne j}q_i^{\beta_i}$" class="latex-inline" style="vertical-align: -18px" width="132" height="35">.故有<img src="latex/latex2png-PrimeTest_3232662_.gif" alt="$$q_j^{\beta_j}\mid d\Rightarrow F\mid d\Rightarrow F\mid p-1 \Rightarrow F\le \sqrt{N}.$$" class="latex-display" width="580" height="25">矛盾！
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理5<a name="th:proth"></a></span><span class="theorem-name">(Proth定理)</span>
+设<img src="latex/latex2png-PrimeTest_18709860_-2.gif" alt="$N=h\cdot2^n+1$" class="latex-inline" style="vertical-align: -2px" width="103" height="14">,其中<img src="latex/latex2png-PrimeTest_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">为奇数,<img src="latex/latex2png-PrimeTest_170030730_-1.gif" alt="$2^n>h$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">.如果存在<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">使得<img src="latex/latex2png-PrimeTest_115066953_.gif" alt="$$a^{(N-1)/2}\equiv-1 \pmod{N} .$$" class="latex-display" width="580" height="21">则<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+在定理<a class="ref-th" href="PrimeTest.html#th:RelaxedFermatConverse">4</a>中令<img src="latex/latex2png-PrimeTest_136869532_0.gif" alt="$F=2^n$" class="latex-inline" style="vertical-align: 0px" width="51" height="12">即得.
+<span class="proof-end">□</span>
+
+</div>
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Lucas 伪素数检测与<img src="latex/latex2png-PrimeTest_253529068_-2.gif" alt="$N+1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">型检测</h2>
+
+<p class="first">如果<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">也是很难分解的,这里的方法就将分解的困难转移到<img src="latex/latex2png-PrimeTest_253529068_-2.gif" alt="$N+1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">上去.想法是与<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">型检测是类似的, 不过要将Fermat小定理从<img src="latex/latex2png-PrimeTest_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">上到二次域的代数整数环上去，替代那里的<img src="latex/latex2png-PrimeTest_176335906_0.gif" alt="$a^{N-1}-1$" class="latex-inline" style="vertical-align: 0px" width="66" height="14">的则是所谓Lucas序列<img src="latex/latex2png-PrimeTest_241831770_-4.gif" alt="$U_{N+1}$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">.</p>
+
+<p>设<img src="latex/latex2png-PrimeTest_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为无平方整数，记<img src="latex/latex2png-PrimeTest_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">为二次域<img src="latex/latex2png-PrimeTest_171749413_-5.gif" alt="$\mathbb{Q}(\sqrt{D})$" class="latex-inline" style="vertical-align: -5px" width="52" height="20">的代数整数环，我们熟知(参见<span class="cite"><a class="cite" href="PrimeTest.html#ref-9" name="cite-9">[9]</a></span>，P139)当<img src="latex/latex2png-PrimeTest_198140221_-5.gif" alt="$D\equiv2,3\pmod{4}$" class="latex-inline" style="vertical-align: -5px" width="125" height="18">时，<img src="latex/latex2png-PrimeTest_188772605_.gif" alt="$$O=\{m+n\sqrt{D}\mid m,n\in\mathbb{Z}\},$$" class="latex-display" width="580" height="21">而当<img src="latex/latex2png-PrimeTest_215425227_-5.gif" alt="$D\equiv1\pmod{4}$" class="latex-inline" style="vertical-align: -5px" width="109" height="18">时，<img src="latex/latex2png-PrimeTest_35938281_.gif" alt="$$O=\Big\{\frac{m+n\sqrt{D}}{2}\,\Big\vert\, m,n\in\mathbb{Z},m\equiv n\pmod{2}\Big\}.$$" class="latex-display" width="580" height="38"></p>
+
+<p>在<img src="latex/latex2png-PrimeTest_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">中可以很容易地讨论同余的概念，称<img src="latex/latex2png-PrimeTest_85556594_-5.gif" alt="$a\equiv b\pmod{M}$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">，若<img src="latex/latex2png-PrimeTest_66292716_0.gif" alt="$a-b$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">属于<img src="latex/latex2png-PrimeTest_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">在<img src="latex/latex2png-PrimeTest_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">中生成的理想。记<img src="latex/latex2png-PrimeTest_63201777_0.gif" alt="$\bar a$" class="latex-inline" style="vertical-align: 0px" width="8" height="10">为<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">在<img src="latex/latex2png-PrimeTest_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">中的共轭，即<img src="latex/latex2png-PrimeTest_153227373_-2.gif" alt="$\overline{r+s\sqrt{D}}=r-s\sqrt{D}$" class="latex-inline" style="vertical-align: -2px" width="151" height="20">，则在<img src="latex/latex2png-PrimeTest_43086866_-1.gif" alt="$O$" class="latex-inline" style="vertical-align: -1px" width="11" height="13">中我们有如下Fermat小定理的类比。</p>
+
+<div class="theorem">
+<span class="theorem-header">定理6<a name="th:quafermat"></a></span><span class="theorem-name">(二次域中的Fermat小定理)</span>
+设<img src="latex/latex2png-PrimeTest_128869374_-1.gif" alt="$a\in O$" class="latex-inline" style="vertical-align: -1px" width="41" height="13">，<img src="latex/latex2png-PrimeTest_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为奇素数，<img src="latex/latex2png-PrimeTest_242177211_-5.gif" alt="$p\nmid D$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">，则有
+<img src="latex/latex2png-PrimeTest_65761650_.gif" alt="
+\begin{equation*}
+  a^p\equiv
+  \begin{cases}
+    a&\text{若}\displaystyle\legendre{D}{p}=1\\\noalign{\smallskip}
+    \bar{a}&\text{若}\displaystyle\legendre{D}{p}=-1
+  \end{cases}
+  \pmod{p}
+\end{equation*}
+" class="latex-display" width="580" height="85">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-PrimeTest_191321266_-2.gif" alt="$2a=r+s\sqrt{D}$" class="latex-inline" style="vertical-align: -2px" width="104" height="17">, <img src="latex/latex2png-PrimeTest_181852832_-4.gif" alt="$r,s\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -4px" width="53" height="16">，则由<img src="latex/latex2png-PrimeTest_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">上的Fermat小定理，二项展开及Euler二次剩余定理得
+<img src="latex/latex2png-PrimeTest_15185982_.gif" alt="
+\begin{align*}
+  2a^p&\equiv(2a)^p\equiv(r+s\sqrt{D})^p\equiv r^p+(s\sqrt{D})^p \\
+  &\equiv r+sD^{\frac{p-1}{2}}\sqrt{D} \\
+  &\equiv r+s\legendre{D}{p}\sqrt{D}\pmod{p}
+\end{align*}
+" class="latex-display" width="580" height="101">
+从而得到所要结论。
+<span class="proof-end">□</span>
+
+</div>
+
+<p>定理<a class="ref-th" href="PrimeTest.html#th:quafermat">6</a>中的乘幂不容易计算，为了有效地利用定理<a class="ref-th" href="PrimeTest.html#th:quafermat">6</a>的结论，我们引入Lucas序列的概念，Lucas序列实际上是一类简单的二阶递推序列。</p>
+
+<div class="definition">
+<span class="theorem-header">定义5<a name="de:LucasSeq"></a></span><span class="theorem-name">(Lucas序列)</span>
+设<img src="latex/latex2png-PrimeTest_141392448_-4.gif" alt="$P ,Q\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -4px" width="63" height="16">，特征方程<img src="latex/latex2png-PrimeTest_27255448_-4.gif" alt="$\lambda^2-P\lambda+Q=0$" class="latex-inline" style="vertical-align: -4px" width="123" height="18">的两根为<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">，<img src="latex/latex2png-PrimeTest_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">.则<img src="latex/latex2png-PrimeTest_153252882_0.gif" alt="$P $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">，<img src="latex/latex2png-PrimeTest_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="11" height="16">对应的Lucas序列定义为<img src="latex/latex2png-PrimeTest_100143401_.gif" alt="$$U_n=\frac{a^n-b^n}{a-b},\qquad V_n=a^n+b^n.$$" class="latex-display" width="580" height="35">
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注6<a name=""></a></span><span class="theorem-name"></span>
+由特征方程对应的递推关系,知道<img src="latex/latex2png-PrimeTest_130926807_-5.gif" alt="$\{U_n\},\{V_n\}$" class="latex-inline" style="vertical-align: -5px" width="77" height="18">均为<img src="latex/latex2png-PrimeTest_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">中的序列.
+
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理1<a name="le:lucas"></a></span><span class="theorem-name"></span>
+记号同定义<a class="ref-th" href="PrimeTest.html#de:LucasSeq">5</a>，设整数<img src="latex/latex2png-PrimeTest_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">满足<img src="latex/latex2png-PrimeTest_47560318_-5.gif" alt="$(QD,M)=1$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">，则<img src="latex/latex2png-PrimeTest_66129906_-4.gif" alt="$a,b,a-b$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">均模<img src="latex/latex2png-PrimeTest_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">可逆。并且<img src="latex/latex2png-PrimeTest_135196469_-5.gif" alt="$U_k\equiv0\pmod{M}$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">当且仅当<img src="latex/latex2png-PrimeTest_51506133_-5.gif" alt="$(ab^{-1})^k\equiv1\pmod{M}$" class="latex-inline" style="vertical-align: -5px" width="158" height="19">。
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由<img src="latex/latex2png-PrimeTest_49946286_-5.gif" alt="$(Q,M)=1$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">知<img src="latex/latex2png-PrimeTest_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="11" height="16">模<img src="latex/latex2png-PrimeTest_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">可逆，而<img src="latex/latex2png-PrimeTest_237204537_-4.gif" alt="$ab=Q$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">，知<img src="latex/latex2png-PrimeTest_70644127_-5.gif" alt="$ab\cdot Q^{-1}\equiv1\pmod{M}$" class="latex-inline" style="vertical-align: -5px" width="163" height="19">，从而<img src="latex/latex2png-PrimeTest_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">均模<img src="latex/latex2png-PrimeTest_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">可逆。又<img src="latex/latex2png-PrimeTest_126188520_-2.gif" alt="$a-b=\sqrt{D}$" class="latex-inline" style="vertical-align: -2px" width="87" height="17">，而<img src="latex/latex2png-PrimeTest_73339417_-5.gif" alt="$D^{\varphi(N)}\equiv1\pmod{M}$" class="latex-inline" style="vertical-align: -5px" width="150" height="20">，可知<img src="latex/latex2png-PrimeTest_98886526_-5.gif" alt="$(a-b)^{2\varphi(N)}\equiv1\pmod{M}$" class="latex-inline" style="vertical-align: -5px" width="191" height="20">，从而<img src="latex/latex2png-PrimeTest_66292716_0.gif" alt="$a-b$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">也模<img src="latex/latex2png-PrimeTest_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">可逆。
+
+<p>由于<img src="latex/latex2png-PrimeTest_66292716_0.gif" alt="$a-b$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">模<img src="latex/latex2png-PrimeTest_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">可逆，<img src="latex/latex2png-PrimeTest_5464195_-5.gif" alt="$U_k\equiv(a-b)^{-1}(a^k-b^k)\pmod{M}$" class="latex-inline" style="vertical-align: -5px" width="247" height="19">，从而<img src="latex/latex2png-PrimeTest_161938284_.gif" alt="$$U_k\equiv0\pmod{M}\Longleftrightarrow a^k\equiv b^k\pmod{M}\Longleftrightarrow (ab^{-1})^k\equiv1\pmod{M}.$$" class="latex-display" width="580" height="20">
+引理得证。
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理7<a name="th:lucasfermat"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-PrimeTest_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为素数，满足<img src="latex/latex2png-PrimeTest_9508478_-5.gif" alt="$(2QD,q)=1$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">，记<img src="latex/latex2png-PrimeTest_212834082_-9.gif" alt="$\varepsilon=\legendre{D}{p}$" class="latex-inline" style="vertical-align: -9px" width="54" height="24">，则有<img src="latex/latex2png-PrimeTest_135215339_-5.gif" alt="$U_{p-\varepsilon}\equiv0\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">。
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+若<img src="latex/latex2png-PrimeTest_58298645_-9.gif" alt="$\legendre{D}{N}=1$" class="latex-inline" style="vertical-align: -9px" width="54" height="24">，则由定理<a class="ref-th" href="PrimeTest.html#th:quafermat">6</a>可知<img src="latex/latex2png-PrimeTest_91866202_-5.gif" alt="$a^{p-1}\equiv b^{p-1}\equiv1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="182" height="19">，从而<img src="latex/latex2png-PrimeTest_206946171_-5.gif" alt="$(ab^{-1})^{p-1}\equiv1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="165" height="19">，由引理<a class="ref-th" href="PrimeTest.html#le:lucas">1</a>知<img src="latex/latex2png-PrimeTest_150231679_-5.gif" alt="$U_{p-1}\equiv0\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="130" height="18">。
+
+<p>若<img src="latex/latex2png-PrimeTest_137568687_-6.gif" alt="$\legendre{D}{N}=-1$" class="latex-inline" style="vertical-align: -6px" width="67" height="21">，则由定理<a class="ref-th" href="PrimeTest.html#th:quafermat">6</a>可知<img src="latex/latex2png-PrimeTest_259889486_-5.gif" alt="$a^{p+1}\equiv a\bar a\equiv ab\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="175" height="19">，同理<img src="latex/latex2png-PrimeTest_42902078_-5.gif" alt="$b^{p+1}\equiv ba\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="134" height="19">，从而<img src="latex/latex2png-PrimeTest_204849019_-5.gif" alt="$(ab^{-1})^{p+1}\equiv1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="165" height="19">，由引理<a class="ref-th" href="PrimeTest.html#le:lucas">1</a>知<img src="latex/latex2png-PrimeTest_148134527_-5.gif" alt="$U_{p+1}\equiv0\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">，这就完成了证明。
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>由上面的定理我们自然地得到Lucas伪素数的概念。</p>
+
+<div class="definition">
+<span class="theorem-header">定义6<a name=""></a></span><span class="theorem-name">(Lucas伪素数)</span>
+设<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为奇合数，若存在Lucas序列<img src="latex/latex2png-PrimeTest_65399395_-5.gif" alt="$\{U_n\}$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">使得<img src="latex/latex2png-PrimeTest_19970107_-6.gif" alt="$\varepsilon=\legendre{D}{N}\ne0$" class="latex-inline" style="vertical-align: -6px" width="87" height="21">且<img src="latex/latex2png-PrimeTest_128923877_-5.gif" alt="$U_{N-\varepsilon}\equiv0\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">，则称<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为Lucas伪素数。
+
+
+</div>
+
+<p>正如我们在Fermat检测和Euler检测中看到的，一个伪素数概念对应着一个合性检测算法，由此我们立即可以到得到Lucas伪素数检测算法。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法3<a name="al:lpsp"></a></span><span class="theorem-name">(Lucas伪素数检测)</span>
+选取Lucas序列参数<img src="latex/latex2png-PrimeTest_216828908_-4.gif" alt="$P,Q$" class="latex-inline" style="vertical-align: -4px" width="31" height="16">，使得<img src="latex/latex2png-PrimeTest_19970107_-6.gif" alt="$\varepsilon=\legendre{D}{N}\ne0$" class="latex-inline" style="vertical-align: -6px" width="87" height="21">。若<img src="latex/latex2png-PrimeTest_179688754_-5.gif" alt="$U_{N-\varepsilon}\not\equiv0\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数，否则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">可能为素数。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注7<a name=""></a></span><span class="theorem-name"></span>
+由于来源的不同，我们可以期望一个数同时为Lucas伪素数和Fermat伪素数（或强伪素数）的可能情形不大，这样的观察也被用于Baillie-PSW检测算法<a class="ref-th" href="PrimeTest.html#al:psw">6</a>中。
+
+
+</div>
+
+
+<p>我们已经得到了Lucas伪素数合性检测，和<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">型检测类似，我们还能够进行素性的确证。在这里，替代<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">的分解的是<img src="latex/latex2png-PrimeTest_253529068_-2.gif" alt="$N+1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">的分解，我们可以看到下面的定理与定理<a class="ref-th" href="PrimeTest.html#th:FermatConverse">1</a>是多么的“形似”。</p>
+
+<div class="theorem">
+<span class="theorem-header">定理8<a name="th:lucas"></a></span><span class="theorem-name">(Lucas检测)</span>
+设有素因子分解<img src="latex/latex2png-PrimeTest_255940408_-18.gif" alt="$N+1=\prod\limits_{j=1}^nq_j^{\beta_j}$" class="latex-inline" style="vertical-align: -18px" width="113" height="39">，若有Lucas序列<img src="latex/latex2png-PrimeTest_65399395_-5.gif" alt="$\{U_n\}$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">，使<img src="latex/latex2png-PrimeTest_258926979_-5.gif" alt="$(2QD,N)=1$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">，满足<img src="latex/latex2png-PrimeTest_258676315_.gif" alt="$$(U_{(N+1)/q_j},N)=1,\qquad \forall j=1,2,\ldots,n$$" class="latex-display" width="580" height="19">且<img src="latex/latex2png-PrimeTest_150150719_.gif" alt="$$U_{N+1}\equiv0\pmod{N},$$" class="latex-display" width="580" height="18">则<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-PrimeTest_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的一个素因子，设<img src="latex/latex2png-PrimeTest_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">为最小的正整数使得<img src="latex/latex2png-PrimeTest_56749013_-5.gif" alt="$(ab^{-1})^k\equiv1\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="148" height="19">。由条件知<img src="latex/latex2png-PrimeTest_248797823_-5.gif" alt="$U_{N+1}\equiv0\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="134" height="18">，<img src="latex/latex2png-PrimeTest_218076255_-7.gif" alt="$U_{(N+1)/q_j}\not\equiv0\pmod{p}$" class="latex-inline" style="vertical-align: -7px" width="164" height="20">，从而根据引理<a class="ref-th" href="PrimeTest.html#le:lucas">1</a>知<img src="latex/latex2png-PrimeTest_210993824_-5.gif" alt="$k\mid N+1$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">，<img src="latex/latex2png-PrimeTest_59387258_-5.gif" alt="$k\nmid (N+1)/q_j,\ \forall j$" class="latex-inline" style="vertical-align: -5px" width="131" height="18">，从而<img src="latex/latex2png-PrimeTest_14907033_-2.gif" alt="$k=N+1$" class="latex-inline" style="vertical-align: -2px" width="74" height="14">。但根据<img src="latex/latex2png-PrimeTest_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的最小性，由定理<a class="ref-th" href="PrimeTest.html#th:lucasfermat">7</a>必有<img src="latex/latex2png-PrimeTest_241991008_-5.gif" alt="$k\mid q+1$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">或<img src="latex/latex2png-PrimeTest_244088160_-5.gif" alt="$k\mid q-1$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">。从而<img src="latex/latex2png-PrimeTest_220230676_-4.gif" alt="$q=N$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">，<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数。
+<span class="proof-end">□</span>
+
+</div>
+
+<p>与<img src="latex/latex2png-PrimeTest_251431916_0.gif" alt="$N-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">型检测完全类似还可以得到以下结果.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理9<a name="th:RelaxedLucas"></a></span><span class="theorem-name">(Lucas检测的放宽版本)</span>
+设<img src="latex/latex2png-PrimeTest_228025056_-2.gif" alt="$N+1=RF$" class="latex-inline" style="vertical-align: -2px" width="91" height="14">,<img src="latex/latex2png-PrimeTest_218489186_-5.gif" alt="$(R,F)=1$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">且<img src="latex/latex2png-PrimeTest_167218156_-1.gif" alt="$R<F$" class="latex-inline" style="vertical-align: -1px" width="47" height="13">,有素因子分解<img src="latex/latex2png-PrimeTest_188836079_-18.gif" alt="$F=\prod\limits_{j=1}^n q_j^{\beta_j}$" class="latex-inline" style="vertical-align: -18px" width="82" height="39">.若有<img src="latex/latex2png-PrimeTest_115731043_-5.gif" alt="$\{U_k\}$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">为Lucas序列,<img src="latex/latex2png-PrimeTest_258926979_-5.gif" alt="$(2QD,N)=1$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">,满足<img src="latex/latex2png-PrimeTest_163625204_.gif" alt="$$(U_{(N+1)/q_j},N)=1,\qquad \forall j=1,\ldots,n$$" class="latex-display" width="580" height="19">且<img src="latex/latex2png-PrimeTest_148053567_.gif" alt="$$U_{N+1}\equiv0\pmod{N}.$$" class="latex-display" width="580" height="18">则<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注8<a name=""></a></span><span class="theorem-name"></span>
+Lucas检测的一个优势在于Lucas序列可以通过递推快速地计算.设
+<img src="latex/latex2png-PrimeTest_104885627_.gif" alt="
+\begin{equation*}A_k=
+\begin{bmatrix}
+  U_{k+1}&V_{k+1}\\
+  U_k & V_k
+\end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="50">
+则有
+<img src="latex/latex2png-PrimeTest_154947865_.gif" alt="
+\begin{equation*}A_k=
+  \begin{bmatrix}
+    P & -Q\\
+    1 & 0\\
+  \end{bmatrix}A_{k-1}=\cdots=
+  \begin{bmatrix}
+    P & -Q\\
+    1 & 0\\
+  \end{bmatrix}^kA_0.
+\end{equation*}" class="latex-display" width="580" height="55">
+可以使用快速求幂的方法在<img src="latex/latex2png-PrimeTest_247095782_-4.gif" alt="$\log k$" class="latex-inline" style="vertical-align: -4px" width="33" height="16">步中完成序列的计算.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注9<a name=""></a></span><span class="theorem-name"></span>
+上述基于<img src="latex/latex2png-PrimeTest_253529068_-2.gif" alt="$N+1$" class="latex-inline" style="vertical-align: -2px" width="42" height="14">分解的算法对Mersenne素数<img src="latex/latex2png-PrimeTest_151221898_0.gif" alt="$2^n-1$" class="latex-inline" style="vertical-align: 0px" width="45" height="11">尤其简单,因此也被著名的<a href="http://www.mersenne.org/" class="external">GIMPS</a>(Great Internet Mersenne Prime Search)所采用.目前为止已知的最大的Mersenne素数是GIMPS计划在2008年8月23日找到的第45个Mersenne素数,共有12978189个十进制位. 有趣的是，2008年9月6日找到的第46个Mersenne素数要比第45个来的小.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理10<a name="th:LucasMersenne"></a></span><span class="theorem-name">(对Mersenne素数的Lucas-Lehmer检测)</span>
+设<img src="latex/latex2png-PrimeTest_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为奇数,<img src="latex/latex2png-PrimeTest_67532454_-3.gif" alt="$v_0=4$" class="latex-inline" style="vertical-align: -3px" width="46" height="14">,<img src="latex/latex2png-PrimeTest_112301900_-5.gif" alt="$v_k=v_{k-1}^2-2$" class="latex-inline" style="vertical-align: -5px" width="100" height="19">.则<img src="latex/latex2png-PrimeTest_194424346_-2.gif" alt="$M_n=2^n-1$" class="latex-inline" style="vertical-align: -2px" width="92" height="14">为素数当且仅当<img src="latex/latex2png-PrimeTest_33285275_.gif" alt="$$v_{n-2}\equiv0\pmod{M_n}.$$" class="latex-display" width="580" height="18">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+证明主要部分来源于定理<a class="ref-th" href="PrimeTest.html#th:lucas">8</a>,然而仍有一些技术上的区别,这里就不赘述了.完整的可见Lehmer在1930的证明<span class="cite"><a class="cite" href="PrimeTest.html#ref-10" name="cite-10">[10]</a></span>.另外J.W.Bruce在1993年给出了一个短至2页&quot;trival&quot;版证明<span class="cite"><a class="cite" href="PrimeTest.html#ref-11" name="cite-11">[11]</a></span>.
+<span class="proof-end">□</span>
+
+</div>
+
+
+
+<h2><a name="sec5" id="sec5"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>概率性的检测方法</h2>
+
+<p class="first">更加富有趣味的是素性的概率性检测方法,Knuth这样评价道概率性的算法<span class="cite"><a class="cite" href="PrimeTest.html#ref-12" name="cite-12">[12]</a></span>：“与其说算法重复地猜测错,倒不如说由于硬件的失灵或宇宙射线的原因,我们的计算机在它的计算中丢了一位.”概率性的算法使我们对传统的可靠性产生疑问：我们是否真的需要“素性”的严格确证？概率性算法最早由Solovay,Strassen<span class="cite"><a class="cite" href="PrimeTest.html#ref-13" name="cite-13">[13]</a></span>于1974年提出,Rabin-Miller的改进方法为Mathematica软件所采用. Baillie-PSW检测则综合了各种概率性检测方法，目前为止仍没有找到失败的反例，并且已经验证检测对于<img src="latex/latex2png-PrimeTest_78243957_-1.gif" alt="$10^{15}$" class="latex-inline" style="vertical-align: -1px" width="28" height="15">以下的整数均是正确的。</p>
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Solovay-Strassen检测</h3>
+<div class="algorithm">
+<span class="theorem-header">算法4<a name="al:solovay"></a></span><span class="theorem-name">(Solovay-Strassen检测)</span>
+
+<ol>
+<li>随机生成满足<img src="latex/latex2png-PrimeTest_161978364_-3.gif" alt="$1\le a\le N$" class="latex-inline" style="vertical-align: -3px" width="75" height="15">的整数<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">;</li>
+<li>若<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">且<img src="latex/latex2png-PrimeTest_141019781_-6.gif" alt="$\jacobi{a}{N}\equiv a^{(N-1)/2}$" class="latex-inline" style="vertical-align: -6px" width="108" height="21">,则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数,否则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">可能为合数.</li>
+</ol>
+
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理11<a name="th:solovay"></a></span><span class="theorem-name"></span>
+算法<a class="ref-th" href="PrimeTest.html#al:solovay">4</a>重复执行<img src="latex/latex2png-PrimeTest_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次,给出错误的概率为0(当<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为素数时)或<img src="latex/latex2png-PrimeTest_25664405_0.gif" alt="$2^{-k}$" class="latex-inline" style="vertical-align: 0px" width="25" height="14">(当<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数时)
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+只需证明当<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数,<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">时,<img src="latex/latex2png-PrimeTest_265503254_-6.gif" alt="$\jacobi{a}{N}\equiv a^{(N-1)/2}\pmod{N}$" class="latex-inline" style="vertical-align: -6px" width="181" height="21">的概率不超过<img src="latex/latex2png-PrimeTest_111494267_-6.gif" alt="$\frac{1}{2}$" class="latex-inline" style="vertical-align: -6px" width="7" height="21">即可.设<img src="latex/latex2png-PrimeTest_45202715_.gif" alt="$$G=\left\{a+N\mathbb{Z}\bigm|a\in\mathbb{Z},(a,N)=1,a^{(N-1)/2}\equiv\jacobi{a}{N}\pmod{N}\right\}.$$" class="latex-display" width="580" height="40">则<img src="latex/latex2png-PrimeTest_213879139_-2.gif" alt="$G<M_N$" class="latex-inline" style="vertical-align: -2px" width="62" height="14">,因此只需证明<img src="latex/latex2png-PrimeTest_211204943_-4.gif" alt="$G\ne M_N$" class="latex-inline" style="vertical-align: -4px" width="62" height="16">即可.
+
+<p>如果<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">能分解为两个互素的非平凡因子<img src="latex/latex2png-PrimeTest_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">,<img src="latex/latex2png-PrimeTest_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">,我们证明必有<img src="latex/latex2png-PrimeTest_148611055_-1.gif" alt="$\forall a$" class="latex-inline" style="vertical-align: -1px" width="17" height="13">满足<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">都有<img src="latex/latex2png-PrimeTest_27368193_-6.gif" alt="$a^{(N-1)/2}\equiv1\equiv\jacobi{a}{N}\pmod{N}$" class="latex-inline" style="vertical-align: -6px" width="213" height="21">(由Jacobi符号的性质便知这是不可能的).若不然,由中国剩余定理找到<img src="latex/latex2png-PrimeTest_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">满足<img src="latex/latex2png-PrimeTest_238452939_-5.gif" alt="$b\equiv1\pmod{r}$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">且<img src="latex/latex2png-PrimeTest_87653746_-5.gif" alt="$b\equiv a\pmod{s}$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">.则有<img src="latex/latex2png-PrimeTest_86027372_-5.gif" alt="$b^{(N-1)/2}\equiv 1\pmod{r}$" class="latex-inline" style="vertical-align: -5px" width="155" height="20">且<img src="latex/latex2png-PrimeTest_102477607_-5.gif" alt="$b^{(N-1)/2}\equiv -1\pmod{s}$" class="latex-inline" style="vertical-align: -5px" width="168" height="20">,而这与<img src="latex/latex2png-PrimeTest_175019949_-5.gif" alt="$b^{(N-1)/2}\equiv\pm1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="175" height="20">是矛盾的！</p>
+
+<p>如果<img src="latex/latex2png-PrimeTest_31492444_-4.gif" alt="$N=p^e$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">为素数幂,则<img src="latex/latex2png-PrimeTest_148611055_-1.gif" alt="$\forall a$" class="latex-inline" style="vertical-align: -1px" width="17" height="13">满足<img src="latex/latex2png-PrimeTest_218488787_-5.gif" alt="$(a,N)=1$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">都有<img src="latex/latex2png-PrimeTest_131574624_-5.gif" alt="$a^{p^e-1}\equiv1\pmod{p^e}$" class="latex-inline" style="vertical-align: -5px" width="142" height="20">,再由Euler定理知道<img src="latex/latex2png-PrimeTest_252930035_-5.gif" alt="$p^{e-1}(p-1)\mid p^e-1$" class="latex-inline" style="vertical-align: -5px" width="140" height="19">.而这也是不可能的.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+
+<h3><a name="sec7" id="sec7"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Rabin-Miller检测</h3>
+
+<p class="first">Solovay-Strassen检测利用了Euler伪素数“并不多”的性质，使用随机给出的基<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">多次重复进而给出高成功率的素性检测结果。同样的想法也可以施用于强伪素数与Lucas伪素数，后者便是著名的Rabin-Miller检测，后者则被运用到Baillie-PSW检测中。</p>
+
+<p>Rabin-Miller检测可以看成我们在注<a class="ref-th" href="PrimeTest.html#re:strong">1</a>中的想法的一个具体化.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法5<a name="al:rabin"></a></span><span class="theorem-name">(Rabin-Miller强伪素数检测)</span>
+设<img src="latex/latex2png-PrimeTest_156077536_0.gif" alt="$N-1=d\cdot 2^s$" class="latex-inline" style="vertical-align: 0px" width="101" height="12">,
+
+<ol>
+<li>随机生成满足<img src="latex/latex2png-PrimeTest_161978364_-3.gif" alt="$1\le a\le N$" class="latex-inline" style="vertical-align: -3px" width="75" height="15">的整数<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">;</li>
+<li>顺次计算<img src="latex/latex2png-PrimeTest_249443025_.gif" alt="$$a^d,a^{2d},a^{4d},\ldots,a^{2^s\cdot d}.$$" class="latex-display" width="580" height="20">若计算到第<img src="latex/latex2png-PrimeTest_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">步时有
+
+<ol>
+<li><img src="latex/latex2png-PrimeTest_117666836_0.gif" alt="$k=1$" class="latex-inline" style="vertical-align: 0px" width="38" height="12">且<img src="latex/latex2png-PrimeTest_163536693_-5.gif" alt="$a^d\equiv1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="118" height="19">,输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">可能为素数;</li>
+<li><img src="latex/latex2png-PrimeTest_118715412_-1.gif" alt="$k>1$" class="latex-inline" style="vertical-align: -1px" width="38" height="13">且<img src="latex/latex2png-PrimeTest_95939025_-5.gif" alt="$a^{2^{k-1}\cdot d}\equiv-1\pmod{N}$" class="latex-inline" style="vertical-align: -5px" width="164" height="22">,输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">可能为素数；</li>
+<li><img src="latex/latex2png-PrimeTest_120419348_-1.gif" alt="$k>s$" class="latex-inline" style="vertical-align: -1px" width="38" height="13">,输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数.</li>
+</ol></li>
+</ol>
+
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注10<a name=""></a></span><span class="theorem-name"></span>
+Rabin<span class="cite"><a class="cite" href="PrimeTest.html#ref-14" name="cite-14">[14]</a></span>证明了算法<a class="ref-th" href="PrimeTest.html#al:rabin">5</a>重复<img src="latex/latex2png-PrimeTest_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">遍,给出正确判断的概率<img src="latex/latex2png-PrimeTest_67679413_-1.gif" alt="$>1-4^{-k}$" class="latex-inline" style="vertical-align: -1px" width="70" height="15">.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注11<a name=""></a></span><span class="theorem-name"></span>
+使用单个基<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的Rabin-Miller检测可能会遗漏许多基<img src="latex/latex2png-PrimeTest_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">下的强伪素数，因此实践中的确需要使用多基的Rabin-Miller测试。例如使用前7个素数组成的多基Rabin-Miller测试，可以保证算法在<img src="latex/latex2png-PrimeTest_53113948_-1.gif" alt="$341550071728321\approx3.4\times10^{14}$" class="latex-inline" style="vertical-align: -1px" width="217" height="15">以下均是有效的，而且这个数在用前8个素数为基的Rabin-Miller测试下没有改进。
+
+
+</div>
+
+
+<h3><a name="sec8" id="sec8"></a>
+<a href="PrimeTest.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Baillie-PSW检测</h3>
+
+<p class="first">只是使用多基的Rabin-Miller测试可能得不到好的效率。Baillie<span class="cite"><a class="cite" href="PrimeTest.html#ref-15" name="cite-15">[15]</a></span>将基为2的Rabin-Miller检测与Lucas伪素数检测结合起来，得到更为有效的素数检测方法。Pomerance, Selfridge, Wagstaff在<span class="cite"><a class="cite" href="PrimeTest.html#ref-7" name="cite-7">[7]</a></span>中对<img src="latex/latex2png-PrimeTest_19648431_-1.gif" alt="$<25\times10^9$" class="latex-inline" style="vertical-align: -1px" width="75" height="15">的数进行了验证算法的正确性。尽管Pomerance<span class="cite"><a class="cite" href="PrimeTest.html#ref-16" name="cite-16">[16]</a></span>指出对于充分大的<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">，必定有Baillie-PSW检测的反例，并且以30美元悬赏找出一个算法失败的反例（后来增加到620美元），不过反例至今没有找到，并且有经验估计认为第一个反例如果被找到的话，至少得有10000个十进位长度<span class="cite"><a class="cite" href="PrimeTest.html#ref-17" name="cite-17">[17]</a></span>。</p>
+
+<p>下面我们正式给出Baillie-PSW检测。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法6<a name="al:psw"></a></span><span class="theorem-name">(Baillie-PSW检测)</span>
+
+<ol>
+<li>使用小素数试除<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">，若能整除，输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数。</li>
+<li>使用基为2的Rabin-Miller强伪素数检测<a class="ref-th" href="PrimeTest.html#al:rabin">5</a>，若<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">非强伪素数，输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数。</li>
+<li>选择以下两种方法之一确定Lucas序列的参数<img src="latex/latex2png-PrimeTest_153252882_0.gif" alt="$P $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">，<img src="latex/latex2png-PrimeTest_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="11" height="16">：
+
+<ul>
+<li>(Selfridge建议)取<img src="latex/latex2png-PrimeTest_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-PrimeTest_252432945_-4.gif" alt="$5,-7,9,-11,13,\ldots$" class="latex-inline" style="vertical-align: -4px" width="139" height="16">中使得<img src="latex/latex2png-PrimeTest_137568687_-6.gif" alt="$\legendre{D}{N}=-1$" class="latex-inline" style="vertical-align: -6px" width="67" height="21">的第一个数，选择<img src="latex/latex2png-PrimeTest_201100268_0.gif" alt="$P=1$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">，<img src="latex/latex2png-PrimeTest_194351781_-6.gif" alt="$Q=\frac{1-D}{4}$" class="latex-inline" style="vertical-align: -6px" width="65" height="21">；</li>
+<li>(Baillie建议)取<img src="latex/latex2png-PrimeTest_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-PrimeTest_234793595_-4.gif" alt="$5,9,13,17,21,\ldots$" class="latex-inline" style="vertical-align: -4px" width="121" height="16">中使得<img src="latex/latex2png-PrimeTest_137568687_-6.gif" alt="$\legendre{D}{N}=-1$" class="latex-inline" style="vertical-align: -6px" width="67" height="21">的第一个数，选择<img src="latex/latex2png-PrimeTest_153252882_0.gif" alt="$P $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-PrimeTest_98860047_-2.gif" alt="$>\sqrt{D}$" class="latex-inline" style="vertical-align: -2px" width="45" height="17">的最小奇数，<img src="latex/latex2png-PrimeTest_105727655_-6.gif" alt="$Q=\frac{P^2-D}{4}$" class="latex-inline" style="vertical-align: -6px" width="75" height="24">。</li>
+</ul></li>
+<li>使用<img src="latex/latex2png-PrimeTest_153252882_0.gif" alt="$P $" class="latex-inline" style="vertical-align: 0px" width="13" height="12">，<img src="latex/latex2png-PrimeTest_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="11" height="16">为参数的Lucas伪素数检测算法<a class="ref-th" href="PrimeTest.html#al:lpsp">3</a>，若<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">非Lucas伪素数，输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">为合数，否则输出<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">可能为合数。用算法<a class="ref-th-external" href="NumberTheory.html#al:sqrtest">5</a>检测<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">是否为完全平方数。</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注12<a name=""></a></span><span class="theorem-name"></span>
+由于<img src="latex/latex2png-PrimeTest_6892190_-4.gif" alt="$D=P^2-4Q^2$" class="latex-inline" style="vertical-align: -4px" width="104" height="18">，只需尝试模4余1的数。Selfridge建议方法中不使用<img src="latex/latex2png-PrimeTest_117797906_-1.gif" alt="$-3$" class="latex-inline" style="vertical-align: -1px" width="20" height="12">是因为当<img src="latex/latex2png-PrimeTest_357434_-1.gif" alt="$D=-3$" class="latex-inline" style="vertical-align: -1px" width="57" height="13">时有<img src="latex/latex2png-PrimeTest_84113062_-4.gif" alt="$P=Q=1$" class="latex-inline" style="vertical-align: -4px" width="77" height="16">，将会产生以<img src="latex/latex2png-PrimeTest_195630857_-5.gif" alt="$\{1,1,0,-1,-1,0\}$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">为循环节的周期Lucas序列，这将使得每个奇合数变成关于<img src="latex/latex2png-PrimeTest_216828908_-4.gif" alt="$P,Q$" class="latex-inline" style="vertical-align: -4px" width="31" height="16">的Lucas伪素数，并非我们所想要的。
+
+
+</div>
+
+
+<div class="remark">
+<span class="proof-header">注13<a name=""></a></span><span class="theorem-name"></span>
+若第三步中尝试过程中计算出前若干个<img src="latex/latex2png-PrimeTest_103090420_-6.gif" alt="$\legendre{D}{N}$" class="latex-inline" style="vertical-align: -6px" width="22" height="21">均为1，则<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">很可能为完全平方数，此时可用算法<a class="ref-th-external" href="NumberTheory.html#al:sqrtest">5</a>对<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">进行平方检测以防止额外的计算，若<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">不是平方数则继续寻找<img src="latex/latex2png-PrimeTest_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的过程。另外尝试过程中若计算得<img src="latex/latex2png-PrimeTest_58364181_-6.gif" alt="$\legendre{D}{N}=0$" class="latex-inline" style="vertical-align: -6px" width="55" height="21">，则意味着<img src="latex/latex2png-PrimeTest_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">必为合数，可直接终止计算。
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注14<a name=""></a></span><span class="theorem-name"></span>
+<span class="cite"><a class="cite" href="PrimeTest.html#ref-15" name="cite-15">[15]</a></span>证明了，在第三步中，两种方法取到合适的<img src="latex/latex2png-PrimeTest_42365970_0.gif" alt="$D$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的平均尝试次数<img src="latex/latex2png-PrimeTest_133461010_-1.gif" alt="$<2$" class="latex-inline" style="vertical-align: -1px" width="25" height="12">。
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="PrimeTest.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Manindra Agrawal and Neeraj Kayal and Nitin Saxena, </span><span class="ref-title">PRIMES is in P, </span><span class="ref-journal">Annals of Mathematics </span><span class="ref-volume">160 </span><span class="ref-year">(2004), </span><span class="ref-number">no.2, </span><span class="ref-pages">781 – 793. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Adleman, Leonard M. and Pomerance, Carl and Rumely, Robert S., </span><span class="ref-title">On Distinguishing Prime Numbers from Composite Numbers, </span><span class="ref-journal">The Annals of Mathematics </span><span class="ref-volume">117 </span><span class="ref-year">(1983), </span><span class="ref-number">no.1, </span><span class="ref-pages">173--206. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-3" name="ref-3">[3]</a><span class="ref-author">Cohen, H. and Lenstra, H. W., Jr., </span><span class="ref-title">Primality Testing and Jacobi Sums, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">42 </span><span class="ref-year">(1984), </span><span class="ref-number">no.165, </span><span class="ref-pages">297--330. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-4" name="ref-4">[4]</a><span class="ref-author">S. Goldwasser and J. Kilian, </span><span class="ref-title">Almost all primes can be quickly certified, </span><span class="ref-booktitle">Proceedings of the eighteenth annual ACM symposium on Theory of computing, </span><span class="ref-year">1986, </span><span class="ref-pages">316 - 329. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-5" name="ref-5">[5]</a><span class="ref-author">A. O. L. Atkin and F. Morain, </span><span class="ref-title">Elliptic curves and primality proving, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">61 </span><span class="ref-year">(1993), </span><span class="ref-pages">29 - 68. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-6" name="ref-6">[6]</a><span class="ref-author">Henri Cohen, </span><span class="ref-title">A Course in Computational Algebraic Number Theory, </span><span class="ref-publisher">Springer Verlag, </span><span class="ref-year">1993. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-7" name="ref-7">[7]</a><span class="ref-author">Pomerance, Carl and Selfridge, J. L. and Wagstaff, Samuel S., Jr., </span><span class="ref-title">The Pseudoprimes to $25 \cdot 10^9$, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">35 </span><span class="ref-year">(1980), </span><span class="ref-number">no.151, </span><span class="ref-pages">1003--1026. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-8" name="ref-8">[8]</a><span class="ref-author">J. L. Selfridge and A. Hurwitz, </span><span class="ref-title">Fermat numbers and Mersenne numbers, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">18 </span><span class="ref-year">(1964), </span><span class="ref-pages">146-148. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-9" name="ref-9">[9]</a><span class="ref-author">聂灵沼，丁石孙, </span><span class="ref-title-chs">代数学引论, </span><span class="ref-publisher">高等教育出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2000. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-10" name="ref-10">[10]</a><span class="ref-author">Lehmer, D. H., </span><span class="ref-title">An Extended Theory of Lucas' Functions, </span><span class="ref-journal">The Annals of Mathematics </span><span class="ref-volume">31 </span><span class="ref-year">(1930), </span><span class="ref-number">no.3, </span><span class="ref-pages">419--448. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-11" name="ref-11">[11]</a><span class="ref-author">Bruce, J. W., </span><span class="ref-title">A Really Trivial Proof of the Lucas-Lehmer Test, </span><span class="ref-journal">The American Mathematical Monthly </span><span class="ref-volume">100 </span><span class="ref-year">(1993), </span><span class="ref-number">no.4, </span><span class="ref-pages">370--371. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-12" name="ref-12">[12]</a><span class="ref-author">Donald E. Knuth, </span><span class="ref-title">The art of computer programming, volume 2 (3rd ed.): seminumerical algorithms, </span><span class="ref-publisher">Addison-Wesley Longman Publishing Co., Inc., </span><span class="ref-address">Boston, MA, USA, </span><span class="ref-year">1997. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-13" name="ref-13">[13]</a><span class="ref-author">R. Solovay and V. Strassen, </span><span class="ref-title">A Fast Monte-Carlo Test for Primality, </span><span class="ref-journal">SIAM Journal on Computing </span><span class="ref-volume">6 </span><span class="ref-year">(1977), </span><span class="ref-number">no.1, </span><span class="ref-pages">84-85. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-14" name="ref-14">[14]</a><span class="ref-author">Michael O. Rabin, </span><span class="ref-title">Probabilistic algorithm for testing primality, </span><span class="ref-journal">Journal of Number Theory </span><span class="ref-volume">12 </span><span class="ref-year">(1980), </span><span class="ref-number">no.1, </span><span class="ref-pages">128-138. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-15" name="ref-15">[15]</a><span class="ref-author">Robert Baillie and Samuel S. Wagstaff, Jr., </span><span class="ref-title">Lucas Pseudoprimes, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">35 </span><span class="ref-year">(1980), </span><span class="ref-number">no.152, </span><span class="ref-pages">1391 - 1417. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-16" name="ref-16">[16]</a><span class="ref-author">Pomerance, Carl, </span><span class="ref-title">Are There Counterexamples to the Baillie-PSW Primality Test?, </span><span class="ref-year">1984, </span><span class="ref-note">http://www.pseudoprime.com/dopo.pdf. </span></p>
+<p class="ref"><a class="ref" href="PrimeTest.html#cite-17" name="ref-17">[17]</a><span class="ref-author">Martin, M., </span><span class="ref-title">Re: Baillie-PSW - Which variant is correct?, </span><span class="ref-year">2004, </span><span class="ref-note">http://groups.google.com/group/sci.crypt/msg/48ec324b9fc9f866. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

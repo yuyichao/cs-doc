@@ -1,0 +1,63 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>1.4.&#160;安全问题-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch01.html" title="第&#160;1&#160;章&#160;第一章 设备驱动简介">
+<link rel="prev" href="ch01s03.html" title="1.3.&#160;设备和模块的分类">
+<link rel="next" href="ch01s05.html" title="1.5.&#160;版本编号">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">1.4.&#160;安全问题</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch01s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;1&#160;章&#160;第一章 设备驱动简介</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch01s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="SecurityIssues.sect1"></a>1.4.&#160;安全问题</h2></div></div></div>
+<p>安全是当今重要性不断增长的关注点. 我们将讨论安全相关的问题, 在它们在本书中出现时. 有几个通用的概念, 却值得现在提一下.</p>
+<p>系统中任何安全检查都由内核代码强加上去. 如果内核有安全漏洞, 系统作为一个整体就有漏洞. 在官方的内核发布里, 只有一个有授权的用户可以加载模块; 系统调用 init_module 检查调用进程是否是有权加载模块到内核里. 因此, 当运行一个官方内核时, 只有超级用户<sup>[<a name="id407079" href="ch01s04.html#ftn.id407079">1</a>]</sup>或者一个成功获得特权的入侵者, 才可以利用特权代码的能力.</p>
+<p>在可能时, 驱动编写者应当避免将安全策略编到他们的代码中. 安全是一个策略问题, 最好在内核高层来处理, 在系统管理员的控制下. 但是, 常有例外.</p>
+<p>作为一个设备驱动编写者, 你应当知道在什么情形下, 某些类型的设备存取可能反面地影响系统作为一个整体, 并且应当提供足够地控制. 例如, 会影响全局资源的设备操作( 例如设置一条中断线 ), 可能会损坏硬件( 例如, 加载固件 ), 或者它可能会影响其他用户( 例如设置一个磁带驱动的缺省的块大小 ), 常常是只对有足够授权的用户, 并且这种检查必须由驱动自身进行.</p>
+<p>驱动编写者也必须要小心, 当然, 来避免引入安全 bug. C 编程语言使得易于犯下几类的错误. 例如, 许多现今的安全问题是由于缓冲区覆盖引起, 它是由于程序员忘记检查有多少数据写入缓冲区, 数据在缓冲区结尾之外结束, 因此覆盖了无关的数据. 这样的错误可能会危及整个系统的安全, 必须避免. 幸运的是, 在设备驱动上下文中避免这样的错误经常是相对容易的, 这里对用户的接口经过精细定义并被高度地控制.</p>
+<p>一些其他的通用的安全观念也值得牢记. 任何从用户进程接收的输入应当以极大的怀疑态度来对待; 除非你能核实它, 否则不要信任它. 小心对待未初始化的内存; 从内核获取的任何内存应当清零或者在其对用户进程或设备可用之前进行初始化. 否则, 可能发生信息泄漏( 数据, 密码的暴露等等 ). 如果你的设备解析发送给它的数据, 要确保用户不能发送任何能危及系统的东西. 最后, 考虑一下设备操作的可能后果; 如果有特定的操作( 例如, 加载一个适配卡的固件或者格式化一个磁盘 ), 能影响到系统的, 这些操作应该完全确定地要限制在授权的用户中.</p>
+<p>也要小心, 当从第三方接收软件时, 特别是与内核有关: 因为每个人都可以接触到源码, 每个人都可以分拆和重组东西. 尽管你能够信任在你的发布中的预编译的内核, 你应当避免运行一个由不能信任的朋友编译的内核 -- 如果你不能作为 root 运行预编译的二进制文件, 那么你最好不要运行一个预编译的内核. 例如, 一个经过了恶意修改的内核可能会允许任何人加载模块, 这样就通过 init_module 开启了一个不想要的后门.</p>
+<p>注意, Linux 内核可以编译成不支持任何属于模块的东西, 因此关闭了任何模块相关的安全漏洞. 在这种情况下, 当然, 所有需要的驱动必须直接建立到内核自身内部. 在 2.2 和以后的内核, 也可以在系统启动之后, 通过 capability 机制来禁止内核模块的加载.</p>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id407079" href="ch01s04.html#id407079">1</a>] </sup>从技术上讲, 只有具有 CAP_SYS_MODULE 权利的人才可以进行这个操作. 我们第 6 章讨论 capabilities .</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch01s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch01.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch01s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">1.3.&#160;设备和模块的分类&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;1.5.&#160;版本编号</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

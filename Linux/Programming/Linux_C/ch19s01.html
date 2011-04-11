@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1. 函数调用</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch19.html" title="第 19 章 汇编与C之间的关系" /><link rel="prev" href="ch19.html" title="第 19 章 汇编与C之间的关系" /><link rel="next" href="ch19s02.html" title="2. main函数和启动例程" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">1. 函数调用</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch19.html">上一页</a> </td><th width="60%" align="center">第 19 章 汇编与C之间的关系</th><td width="20%" align="right"> <a accesskey="n" href="ch19s02.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2774377"></a>1. 函数调用</h2></div></div></div><p>我们用下面的代码来研究函数调用的过程。</p><div class="example"><a id="id2774388"></a><p class="title"><b>例 19.1. 研究函数的调用过程</b></p><div class="example-contents"><pre class="programlisting">int bar(int c, int d)
+{
+	int e = c + d;
+	return e;
+}
+
+int foo(int a, int b)
+{
+	return bar(a, b);
+}
+
+int main(void)
+{
+	foo(2, 3);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>如果在编译时加上<code class="literal">-g</code>选项（在<a class="xref" href="ch10.html#gdb">第 10 章 <i>gdb</i></a>讲过<code class="literal">-g</code>选项），那么用<code class="literal">objdump</code>反汇编时可以把C代码和汇编代码穿插起来显示，这样C代码和汇编代码的对应关系看得更清楚。反汇编的结果很长，以下只列出我们关心的部分。</p><pre class="screen">$ gcc main.c -g
+$ objdump -dS a.out 
+...
+08048394 &lt;bar&gt;:
+int bar(int c, int d)
+{
+ 8048394:	55                   	push   %ebp
+ 8048395:	89 e5                	mov    %esp,%ebp
+ 8048397:	83 ec 10             	sub    $0x10,%esp
+	int e = c + d;
+ 804839a:	8b 55 0c             	mov    0xc(%ebp),%edx
+ 804839d:	8b 45 08             	mov    0x8(%ebp),%eax
+ 80483a0:	01 d0                	add    %edx,%eax
+ 80483a2:	89 45 fc             	mov    %eax,-0x4(%ebp)
+	return e;
+ 80483a5:	8b 45 fc             	mov    -0x4(%ebp),%eax
+}
+ 80483a8:	c9                   	leave  
+ 80483a9:	c3                   	ret    
+
+080483aa &lt;foo&gt;:
+
+int foo(int a, int b)
+{
+ 80483aa:	55                   	push   %ebp
+ 80483ab:	89 e5                	mov    %esp,%ebp
+ 80483ad:	83 ec 08             	sub    $0x8,%esp
+	return bar(a, b);
+ 80483b0:	8b 45 0c             	mov    0xc(%ebp),%eax
+ 80483b3:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 80483b7:	8b 45 08             	mov    0x8(%ebp),%eax
+ 80483ba:	89 04 24             	mov    %eax,(%esp)
+ 80483bd:	e8 d2 ff ff ff       	call   8048394 &lt;bar&gt;
+}
+ 80483c2:	c9                   	leave  
+ 80483c3:	c3                   	ret    
+
+080483c4 &lt;main&gt;:
+
+int main(void)
+{
+ 80483c4:	8d 4c 24 04          	lea    0x4(%esp),%ecx
+ 80483c8:	83 e4 f0             	and    $0xfffffff0,%esp
+ 80483cb:	ff 71 fc             	pushl  -0x4(%ecx)
+ 80483ce:	55                   	push   %ebp
+ 80483cf:	89 e5                	mov    %esp,%ebp
+ 80483d1:	51                   	push   %ecx
+ 80483d2:	83 ec 08             	sub    $0x8,%esp
+	foo(2, 3);
+ 80483d5:	c7 44 24 04 03 00 00 	movl   $0x3,0x4(%esp)
+ 80483dc:	00 
+ 80483dd:	c7 04 24 02 00 00 00 	movl   $0x2,(%esp)
+ 80483e4:	e8 c1 ff ff ff       	call   80483aa &lt;foo&gt;
+	return 0;
+ 80483e9:	b8 00 00 00 00       	mov    $0x0,%eax
+}
+ 80483ee:	83 c4 08             	add    $0x8,%esp
+ 80483f1:	59                   	pop    %ecx
+ 80483f2:	5d                   	pop    %ebp
+ 80483f3:	8d 61 fc             	lea    -0x4(%ecx),%esp
+ 80483f6:	c3                   	ret   
+...</pre><p>要查看编译后的汇编代码，其实还有一种办法是<code class="literal">gcc -S main.c</code>，这样只生成汇编代码<code class="literal">main.s</code>，而不生成二进制的目标文件。</p><p>整个程序的执行过程是<code class="literal">main</code>调用<code class="literal">foo</code>，<code class="literal">foo</code>调用<code class="literal">bar</code>，我们用<code class="literal">gdb</code>跟踪程序的执行，直到<code class="literal">bar</code>函数中的<code class="literal">int e = c + d;</code>语句执行完毕准备返回时，这时在<code class="literal">gdb</code>中打印函数栈帧。</p><pre class="screen">(gdb) start
+...
+main () at main.c:14
+14		foo(2, 3);
+(gdb) s
+foo (a=2, b=3) at main.c:9
+9		return bar(a, b);
+(gdb) s
+bar (c=2, d=3) at main.c:3
+3		int e = c + d;
+(gdb) disassemble 
+Dump of assembler code for function bar:
+0x08048394 &lt;bar+0&gt;:	push   %ebp
+0x08048395 &lt;bar+1&gt;:	mov    %esp,%ebp
+0x08048397 &lt;bar+3&gt;:	sub    $0x10,%esp
+0x0804839a &lt;bar+6&gt;:	mov    0xc(%ebp),%edx
+0x0804839d &lt;bar+9&gt;:	mov    0x8(%ebp),%eax
+0x080483a0 &lt;bar+12&gt;:	add    %edx,%eax
+0x080483a2 &lt;bar+14&gt;:	mov    %eax,-0x4(%ebp)
+0x080483a5 &lt;bar+17&gt;:	mov    -0x4(%ebp),%eax
+0x080483a8 &lt;bar+20&gt;:	leave  
+0x080483a9 &lt;bar+21&gt;:	ret    
+End of assembler dump.
+(gdb) si
+0x0804839d	3		int e = c + d;
+(gdb) si
+0x080483a0	3		int e = c + d;
+(gdb) si
+0x080483a2	3		int e = c + d;
+(gdb) si
+4		return e;
+(gdb) si
+5	}
+(gdb) bt
+#0  bar (c=2, d=3) at main.c:5
+#1  0x080483c2 in foo (a=2, b=3) at main.c:9
+#2  0x080483e9 in main () at main.c:14
+(gdb) info registers 
+eax            0x5	5
+ecx            0xbff1c440	-1074674624
+edx            0x3	3
+ebx            0xb7fe6ff4	-1208061964
+esp            0xbff1c3f4	0xbff1c3f4
+ebp            0xbff1c404	0xbff1c404
+esi            0x8048410	134513680
+edi            0x80482e0	134513376
+eip            0x80483a8	0x80483a8 &lt;bar+20&gt;
+eflags         0x200206	[ PF IF ID ]
+cs             0x73	115
+ss             0x7b	123
+ds             0x7b	123
+es             0x7b	123
+fs             0x0	0
+gs             0x33	51
+(gdb) x/20 $esp
+0xbff1c3f4:	0x00000000	0xbff1c6f7	0xb7efbdae	0x00000005
+0xbff1c404:	0xbff1c414	0x080483c2	0x00000002	0x00000003
+0xbff1c414:	0xbff1c428	0x080483e9	0x00000002	0x00000003
+0xbff1c424:	0xbff1c440	0xbff1c498	0xb7ea3685	0x08048410
+0xbff1c434:	0x080482e0	0xbff1c498	0xb7ea3685	0x00000001
+(gdb)</pre><p>这里又用到几个新的<code class="literal">gdb</code>命令。<code class="literal">disassemble</code>可以反汇编当前函数或者指定的函数，单独用<code class="literal">disassemble</code>命令是反汇编当前函数，如果<code class="literal">disassemble</code>命令后面跟函数名或地址则反汇编指定的函数。以前我们讲过<code class="literal">step</code>命令可以一行代码一行代码地单步调试，而这里用到的<code class="literal">si</code>命令可以一条指令一条指令地单步调试。<code class="literal">info registers</code>可以显示所有寄存器的当前值。在<code class="literal">gdb</code>中表示寄存器名时前面要加个<code class="literal">$</code>，例如<code class="literal">p $esp</code>可以打印<code class="literal">esp</code>寄存器的值，在上例中<code class="literal">esp</code>寄存器的值是0xbff1c3f4，所以<code class="literal">x/20 $esp</code>命令查看内存中从0xbff1c3f4地址开始的20个32位数。在执行程序时，操作系统为进程分配一块栈空间来保存函数栈帧，<code class="literal">esp</code>寄存器总是指向栈顶，在x86平台上这个栈是从高地址向低地址增长的，我们知道每次调用一个函数都要分配一个栈帧来保存参数和局部变量，现在我们详细分析这些数据在栈空间的布局，根据<code class="literal">gdb</code>的输出结果图示如下<sup>[<a id="id2775282" href="#ftn.id2775282" class="footnote">29</a>]</sup>：</p><div class="figure"><a id="id2775294"></a><p class="title"><b>图 19.1. 函数栈帧</b></p><div class="figure-contents"><div><img src="images/asmc.stackframe.png" alt="函数栈帧" /></div></div></div><br class="figure-break" /><p>图中每个小方格表示4个字节的内存单元，例如<code class="literal">b: 3</code>这个小方格占的内存地址是0xbf822d20~0xbf822d23，我把地址写在每个小方格的下边界线上，是为了强调该地址是内存单元的起始地址。我们从<code class="literal">main</code>函数的这里开始看起：</p><pre class="screen">	foo(2, 3);
+ 80483d5:	c7 44 24 04 03 00 00 	movl   $0x3,0x4(%esp)
+ 80483dc:	00 
+ 80483dd:	c7 04 24 02 00 00 00 	movl   $0x2,(%esp)
+ 80483e4:	e8 c1 ff ff ff       	call   80483aa &lt;foo&gt;
+	return 0;
+ 80483e9:	b8 00 00 00 00       	mov    $0x0,%eax</pre><p>要调用函数<code class="literal">foo</code>先要把参数准备好，第二个参数保存在<code class="literal">esp+4</code>指向的内存位置，第一个参数保存在<code class="literal">esp</code>指向的内存位置，可见参数是从右向左依次压栈的。然后执行<code class="literal">call</code>指令，这个指令有两个作用：</p><div class="orderedlist"><ol type="1"><li><p><code class="literal">foo</code>函数调用完之后要返回到<code class="literal">call</code>的下一条指令继续执行，所以把<code class="literal">call</code>的下一条指令的地址0x80483e9压栈，同时把<code class="literal">esp</code>的值减4，<code class="literal">esp</code>的值现在是0xbf822d18。</p></li><li><p>修改程序计数器<code class="literal">eip</code>，跳转到<code class="literal">foo</code>函数的开头执行。</p></li></ol></div><p>现在看<code class="literal">foo</code>函数的汇编代码：</p><pre class="screen">int foo(int a, int b)
+{
+ 80483aa:	55                   	push   %ebp
+ 80483ab:	89 e5                	mov    %esp,%ebp
+ 80483ad:	83 ec 08             	sub    $0x8,%esp</pre><p><code class="literal">push %ebp</code>指令把<code class="literal">ebp</code>寄存器的值压栈，同时把<code class="literal">esp</code>的值减4。<code class="literal">esp</code>的值现在是0xbf822d14，下一条指令把这个值传送给<code class="literal">ebp</code>寄存器。这两条指令合起来是把原来<code class="literal">ebp</code>的值保存在栈上，然后又给<code class="literal">ebp</code>赋了新值。在每个函数的栈帧中，<code class="literal">ebp</code>指向栈底，而<code class="literal">esp</code>指向栈顶，在函数执行过程中<code class="literal">esp</code>随着压栈和出栈操作随时变化，而<code class="literal">ebp</code>是不动的，函数的参数和局部变量都是通过<code class="literal">ebp</code>的值加上一个偏移量来访问，例如<code class="literal">foo</code>函数的参数<code class="literal">a</code>和<code class="literal">b</code>分别通过<code class="literal">ebp+8</code>和<code class="literal">ebp+12</code>来访问。所以下面的指令把参数<code class="literal">a</code>和<code class="literal">b</code>再次压栈，为调用<code class="literal">bar</code>函数做准备，然后把返回地址压栈，调用<code class="literal">bar</code>函数：</p><pre class="screen">	return bar(a, b);
+ 80483b0:	8b 45 0c             	mov    0xc(%ebp),%eax
+ 80483b3:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 80483b7:	8b 45 08             	mov    0x8(%ebp),%eax
+ 80483ba:	89 04 24             	mov    %eax,(%esp)
+ 80483bd:	e8 d2 ff ff ff       	call   8048394 &lt;bar&gt;</pre><p>现在看<code class="literal">bar</code>函数的指令：</p><pre class="screen">int bar(int c, int d)
+{
+ 8048394:	55                   	push   %ebp
+ 8048395:	89 e5                	mov    %esp,%ebp
+ 8048397:	83 ec 10             	sub    $0x10,%esp
+	int e = c + d;
+ 804839a:	8b 55 0c             	mov    0xc(%ebp),%edx
+ 804839d:	8b 45 08             	mov    0x8(%ebp),%eax
+ 80483a0:	01 d0                	add    %edx,%eax
+ 80483a2:	89 45 fc             	mov    %eax,-0x4(%ebp)</pre><p>这次又把<code class="literal">foo</code>函数的<code class="literal">ebp</code>压栈保存，然后给<code class="literal">ebp</code>赋了新值，指向<code class="literal">bar</code>函数栈帧的栈底，通过<code class="literal">ebp+8</code>和<code class="literal">ebp+12</code>分别可以访问参数<code class="literal">c</code>和<code class="literal">d</code>。<code class="literal">bar</code>函数还有一个局部变量<code class="literal">e</code>，可以通过<code class="literal">ebp-4</code>来访问。所以后面几条指令的意思是把参数<code class="literal">c</code>和<code class="literal">d</code>取出来存在寄存器中做加法，计算结果保存在<code class="literal">eax</code>寄存器中，再把<code class="literal">eax</code>寄存器存回局部变量<code class="literal">e</code>的内存单元。</p><p>在<code class="literal">gdb</code>中可以用<code class="literal">bt</code>命令和<code class="literal">frame</code>命令查看每层栈帧上的参数和局部变量，现在可以解释它的工作原理了：如果我当前在<code class="literal">bar</code>函数中，我可以通过<code class="literal">ebp</code>找到<code class="literal">bar</code>函数的参数和局部变量，也可以找到<code class="literal">foo</code>函数的<code class="literal">ebp</code>保存在栈上的值，有了<code class="literal">foo</code>函数的<code class="literal">ebp</code>，又可以找到它的参数和局部变量，也可以找到<code class="literal">main</code>函数的<code class="literal">ebp</code>保存在栈上的值，因此各层函数栈帧通过保存在栈上的<code class="literal">ebp</code>的值串起来了。</p><p>现在看<code class="literal">bar</code>函数的返回指令：</p><pre class="screen">	return e;
+ 80483a5:	8b 45 fc             	mov    -0x4(%ebp),%eax
+}
+ 80483a8:	c9                   	leave  
+ 80483a9:	c3                   	ret</pre><p><code class="literal">bar</code>函数有一个<code class="literal">int</code>型的返回值，这个返回值是通过<code class="literal">eax</code>寄存器传递的，所以首先把<code class="literal">e</code>的值读到<code class="literal">eax</code>寄存器中。然后执行<code class="literal">leave</code>指令，这个指令是函数开头的<code class="literal">push %ebp</code>和<code class="literal">mov %esp,%ebp</code>的逆操作：</p><div class="orderedlist"><ol type="1"><li><p>把<code class="literal">ebp</code>的值赋给<code class="literal">esp</code>，现在<code class="literal">esp</code>的值是0xbf822d04。</p></li><li><p>现在<code class="literal">esp</code>所指向的栈顶保存着<code class="literal">foo</code>函数栈帧的<code class="literal">ebp</code>，把这个值恢复给<code class="literal">ebp</code>，同时<code class="literal">esp</code>增加4，<code class="literal">esp</code>的值变成0xbf822d08。</p></li></ol></div><p>最后是<code class="literal">ret</code>指令，它是<code class="literal">call</code>指令的逆操作：</p><div class="orderedlist"><ol type="1"><li><p>现在<code class="literal">esp</code>所指向的栈顶保存着返回地址，把这个值恢复给<code class="literal">eip</code>，同时<code class="literal">esp</code>增加4，<code class="literal">esp</code>的值变成0xbf822d0c。</p></li><li><p>修改了程序计数器<code class="literal">eip</code>，因此跳转到返回地址0x80483c2继续执行。</p></li></ol></div><p>地址0x80483c2处是<code class="literal">foo</code>函数的返回指令：</p><pre class="screen"> 80483c2:	c9                   	leave  
+ 80483c3:	c3                   	ret</pre><p>重复同样的过程，又返回到了<code class="literal">main</code>函数。注意函数调用和返回过程中的这些规则：</p><div class="orderedlist"><ol type="1"><li><p>参数压栈传递，并且是从右向左依次压栈。</p></li><li><p><code class="literal">ebp</code>总是指向当前栈帧的栈底。</p></li><li><p>返回值通过<code class="literal">eax</code>寄存器传递。</p></li></ol></div><p>这些规则并不是体系结构所强加的，<code class="literal">ebp</code>寄存器并不是必须这么用，函数的参数和返回值也不是必须这么传，只是操作系统和编译器选择了以这样的方式实现C代码中的函数调用，这称为Calling Convention<a id="id2776053" class="indexterm"></a>，Calling Convention是操作系统二进制接口规范（ABI，Application Binary Interface）<a id="id2776062" class="indexterm"></a>的一部分。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2776074"></a>习题</h3></div></div></div><p>1、在<a class="xref" href="ch03s02.html#func.ourfirstfunc">第 2 节 “自定义函数”</a>讲过，Old Style C风格的函数声明可以不指定参数个数和类型，这样编译器不会对函数调用做检查，那么如果调用时的参数类型不对或者参数个数不对会怎么样呢？比如把本节的例子改成这样：</p><pre class="programlisting">int foo();
+int bar();
+
+int main(void)
+{
+	foo(2, 3, 4);
+	return 0;
+}
+
+int foo(int a, int b)
+{
+	return bar(a);
+}
+
+int bar(int c, int d)
+{
+	int e = c + d;
+	return e;
+}</pre><p><code class="literal">main</code>函数调用<code class="literal">foo</code>时多传了一个参数，那么参数<code class="literal">a</code>和<code class="literal">b</code>分别取什么值？多的参数怎么办？<code class="literal">foo</code>调用<code class="literal">bar</code>时少传了一个参数，那么参数<code class="literal">d</code>的值从哪里取得？请读者利用反汇编和<code class="literal">gdb</code>自己分析一下。我们再看一个参数类型不符的例子：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	void foo();
+	char c = 60;
+	foo(c);
+	return 0;
+}
+
+void foo(double d)
+{
+	printf("%f\n", d);
+}</pre><p>打印结果是多少？如果把声明<code class="literal">void foo();</code>改成<code class="literal">void foo(double);</code>，打印结果又是多少？</p></div><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2775282" href="#id2775282" class="para">29</a>] </sup>Linux内核为每个新进程指定的栈空间的起始地址都会有些不同，所以每次运行这个程序得到的地址都不一样，但通常都是0xbf??????这样一个地址。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch19.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch19.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch19s02.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">第 19 章 汇编与C之间的关系 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 2. <code class="literal">main</code>函数和启动例程</td></tr></table></div></body></html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html public "-//W3C//DTD HTML 4.01 Transitional//EN"     "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>Emacs Fill</title>
+<META http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="main.css" media="screen">
+<style>
+      .comment {
+        color: #b22222;
+        background-color: #ffffff;
+      } /* font-lock-comment-face */
+</style>
+</HEAD>
+
+<body>
+
+<h1>Emacs Fill 详解</h1>
+
+<p>Emacs 具有非常智能的文本编辑能力。它可以自动对文字断行，并且在断开
+的行首都加入一些 prefix(前缀)。
+
+<p>你编辑 C 程序多行注释的时候，你想要编辑器能够自动缩进到合适的位置并
+且插入一个 "*"，就像这样？
+
+<pre style="">
+
+	/* seed the random number generator
+	 * first try the random file /dev/random
+	 * if there isn't such a file in the system
+	 * use current time to seed the RNG.
+	 */
+</pre>
+
+<p>在你写新闻组的文章的时候，你又想让编辑器使你的文档出现这样漂亮的缩
+进：
+
+<pre>
+1. I seed the random number generator first try the random file
+   /dev/random if there isn't such a file in the system use current
+   time to seed the RNG.
+
+2. I need more powerful randomized binary search tree algorithm to
+   store my wavefront elements.
+</pre>
+
+
+<p>这些 * 和 行首留出的空白就叫做 prefix。每当使用 fill-paragraph 等操
+作或者启动了 auto-fill-mode 的时候，文字在断行时，Emacs 可能会在断开的
+每行前面加入 prefix(前缀)。这大大方便了编辑类似程序注释这一类文字。
+
+
+<h3>设置 fill-column</h3>
+
+<p>fill-column就是说到多少列的时候断行。你可以使用
+
+<pre>
+C-u 70 C-x f
+</pre>
+
+这样的命令把 fill-column 设置为 70. 也可以把光标移动到你想要断行的位置，
+然后按
+
+<pre>
+C-u C-x f
+</pre>
+
+<p>断开的行可能会被自动加上一个前缀(prefix)。设置prefix的方式主要有两
+种，手动设置和 adaptive prefix 自动设置。
+
+<h3>手动设置 prefix</h3>
+<p>如果把光标放在段落首后面一个位置，使用
+<pre>
+C-x . (set-fill-prefix)
+</pre>
+就可以把段落头到光标处的那段字符作为 prefix.
+
+<h3>Adaptive Filling</h3>
+
+<p>但是没有手动设置 prefix 的时候，Emacs 也可以自动识别段落首的一些字
+符作为 prefix。这就叫做 Adaptive Filling。
+
+<h4>提取候选前缀</h4>
+<p>Emacs 使用变量 adaptive-fill-regexp 来提取前缀。这个变量是一个正则
+表达式。它会把fill区域开头的能够匹配的部分作为候选的前缀。很多 major
+mode 会自动帮你设置好这个变量，所以你通常不用操心。
+
+<p>但是某些时候，你可能希望能够自己操纵这一切。我们下面就来看一个具体
+的例子。假设如果你要达到这种效果，在同一个文本文件里：
+
+<ol>
+<li>有一些段落每行由3个 * 开头，这可以被作为一小节的标题以及简短的说明。
+比如：
+
+<pre>
+*** Section "Files". The location
+    of the RGB database. Note, this
+    is the name of the file minus
+    the extension (like ".txt" or
+    ".db"). 
+</pre>
+
+
+<li>有一些段落每行由一个 * 号开头，这叫做“强调”。像这样：
+<pre>
+* There is normally no need to
+* change the default. Multiple
+* FontPath entries are allowed
+* (they are concatenated together)
+* By default, Red Hat 6.0 and later
+* now use a font server independent
+* of the X server to render fonts.
+</pre>
+
+<li>有一些段落由数字编号 1. 2. 3. 开头，以后的每一行要求缩进到标号之后。
+所有的数字后面的点号要对齐。
+
+<pre>
+1. I seed the random number generator first try the random file
+   /dev/random if there isn't such a file in the system use current
+   time to seed the RNG.
+
+2. I need more powerful randomized binary search tree algorithm to
+   store my wavefront elements.
+</pre>
+
+
+</ol>
+
+<p>这些 "*** ", "* ", "1. ", "2. ", "&nbsp;&nbsp;&nbsp;" 就叫做前缀。
+为了识别这些前缀，我们把 adaptive-fill-regexp 设置为：
+
+<pre>
+(setq adaptive-fill-regexp "[ \t]+\\|[ \t]*\\([0-9]+\\.\\|\\*+\\)[ \t]*")
+</pre>
+
+<p>这表示前缀可以全是空白字符。或者开头可以有一些空白，接着数字加点
+或者一个以上的 *，接着一些空白。那么 Emacs 发现开头有这样的字样时，就
+会把这个字符串作为一个“候选前缀”。
+
+<h4>候选前缀的选择</h4>
+<p>我们已经轻松提取了可能作为前缀的部分，但是一个候选前缀是否被使用，
+还有很多因素。Emacs 的策略是非常聪明的。我们下面来看看 Emacs 是怎样为
+用户着想的。
+<ol class=arabic>
+<li>多行文字的前缀 &mdash; 使用第二行的前缀</li>
+
+<p>首先，我们经常有这样一种想法：如果我两行开头都有符合候选前缀条件的
+符号，编辑器应该把第二行的那个候选作为前缀。如果我们输入一些文字:
+
+<pre>
+1. I seed the random number generator 
+   first try the random file   
+/dev/random if there isn't such a file in the system use current time to seed the RNG.
+</pre>
+
+我们第一行输入了一个前缀 "1. "，第二行我们故意退了几格，使得 "1. " 这
+种数字标号突出在段落之外。但是其它的文字我们可以先不用管。那么第一行找
+到的候选前缀就是 "1. "(1,一个点，一个空格)，第二行的候选前缀是"&nbsp;&nbsp;&nbsp;"(3个
+空格)。
+
+<p>写完一段时，我们按 M-q，这段话就自动采用了第二行的前缀(3个空格)作为 
+prefix。变成这个样子：
+
+<pre>
+1. I seed the random number generator first try the random file
+   /dev/random if there isn't such a file in the system use current
+   time to seed the RNG.
+</pre>
+
+如果我们后来不满意。想把第二行开始的那些行多缩进一些，而且把
+fill-column 减小一些。我们可以设置 fill-column，然后在第二行开头再加一
+些空格，按 M-q。就成了这样：
+
+<pre>
+1. I seed the random number generator
+      first try the random file
+      /dev/random if there isn't such
+      a file in the system use
+      current time to seed the RNG.
+</pre>
+
+想一下你如果不用 Emacs，如何把上面那段文字变成现在这样！
+
+<li>单行文字的前缀选择</li>
+<p>那么如果我们只输入了一行字就要求把这行的前缀作为所有断开的行的前缀
+呢？比如，我们输入一行，开头以 * 开始。我们希望它在fill的时候断开的行
+都以 * 开头。
+
+<p>这是通过设置 adaptive-fill-first-line-regexp 这个变量实现的。这个变
+量是一个正则表达式。如果它能够匹配我们用 adaptive-fill-regexp 提取出来的
+前缀，那么这个前缀就被采用。
+
+
+<pre>
+(setq adaptive-fill-first-line-regexp "^\\* *$")
+</pre>
+
+<p>注意我们没有使用简单的 "\\* *"，而是使用了行首和行尾的匹配符号，因
+为我们只希望 "* " 这样的符号作为单行重复前缀，出现在每行的开头，而不希
+望 "***" 成为每行的开头。 adaptive-fill-regexp 提取出来的候选前缀被作
+为了 adaptive-fill-first-line-regexp 的输入行，它有行首和行尾。
+
+
+<p>我们这是在告诉 Emacs，单行文字如果由一个 * 开头，那么断行后每一行都
+以 * 作为 prefix。
+
+<p>如果我们输入一行(麻烦你拖动一下:P) ：
+
+<pre>
+* There is normally no need to change the default. Multiple FontPath entries are allowed (they are concatenated together) By default, Red Hat 6.0 and later now use a font server independent of the X server to render fonts.
+</pre>
+
+按 M-q，它就变成了:
+
+<pre>
+* There is normally no need to change the default. Multiple FontPath
+* entries are allowed (they are concatenated together) By default, Red
+* Hat 6.0 and later now use a font server independent of the X server
+* to render fonts.
+</pre>
+
+
+<p>如果adaptive-fill-first-line-regexp 不能匹配从单行取出的前缀，Emacs
+会把这个前缀转成同样长度的空格作为前缀，这正是我们想要的结果。比如我们
+输入：
+
+<pre>
+*** Section "Files". The location of the RGB database. Note, this    is the name of the file minus    the extension (like ".txt" or    ".db"). 
+</pre>
+
+由于 "^\\* *$" 不能匹配提取出来的候选前缀 "*** "，所以 Emacs 把跟它同
+样长度的4个空格作为了前缀。这样 fill 之后变成了:
+
+<pre>
+*** Section "Files". The location of the RGB database. Note, this is
+    the name of the file minus the extension (like ".txt" or ".db").
+</pre>
+
+这正是我们希望的样子。
+
+<li>另外一些条件</li>
+
+<p>前面两种情况有一个前提条件，就是候选前缀不能是用来决定段落开头的字
+符，否则不采用。这很好理解：如果采用这个前缀，我们自动断行的时候插入的
+字符会把一段话分成好几段话，那么文档的逻辑结构就被破坏了，这是不合理的。
+
+<p>另外，编辑程序的时候，前缀的选择还跟当前的注释符号有关。这个问题超
+出了本文的范围。
+
+</ol>
+
+<h3>总结</h3>
+这个规则看起来挺复杂，不过我们可以用算法描述的方式简单的描述出来：
+
+<pre style="background: oldlace">
+1. 使用 adaptive-fill-regexp 把每行开头部分能够匹配的字符提取出来，作
+   为“候选前缀”。
+
+2. 如果文字有两行以上，把第二行的候选前缀插入到断开的所有行开头。
+
+3. 如果文字只有一行，看看 adaptive-fill-first-line-regexp 能不能匹配这
+   行的候选前缀。如果能匹配，使用这个前缀。否则，把这个前缀转成同样长
+   度的空格，把这些空格作为前缀。
+</pre>
+
+
+<hr>
+<a href="emacs.html" target="_parent">返回</a>
+</body>
+</html>

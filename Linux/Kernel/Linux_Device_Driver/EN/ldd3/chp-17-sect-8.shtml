@@ -1,0 +1,454 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>17.8. Receive Interrupt Mitigation</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-17-sect-7.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-17-sect-9.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-17-sect-8"></a>
+<h3 class="docSection1Title">17.8. Receive Interrupt Mitigation</H3>
+
+<p class="docText">When a network
+<a name="chp-17-ITERM-7746"></a> <a name="chp-17-ITERM-7747"></a>driver is written as we have
+described above, the processor is interrupted for every packet
+received by your interface. In many cases, that is the desired mode
+of operation, and it is not a problem. High-bandwidth interfaces,
+however, can receive thousands of packets per second. With that sort
+of interrupt load, the overall performance of the system can suffer.</p>
+
+<p class="docText">As a way of improving the performance of Linux on high-end systems,
+the networking subsystem developers have created an alternative
+interface (called NAPI)<sup class="docFootnote"><a class="docLink" href="chp-17-sect-8.shtml#chp-17-FNOTE-1">[1]</a></sup> based on polling.
+"Polling" can be a dirty word among
+driver developers, who often see polling techniques as inelegant and
+inefficient. Polling is inefficient, however, only if the interface
+is polled when there is no work to do. When the system has a
+high-speed interface handling heavy traffic, there is
+<span class="docEmphasis">always</span> more packets to process. There is no need
+to interrupt the processor in such situations; it is enough that the
+new packets be collected from the interface every so often.</p><blockquote><p class="docFootnote"><sup><a name="chp-17-FNOTE-1">[1]</a></sup> NAPI stands for
+"new API"; the networking hackers
+are better at creating interfaces than naming them.</P></blockquote>
+
+<p class="docText">Stopping receive interrupts can take a substantial amount of load off
+the processor. NAPI-compliant drivers can also be told not to feed
+packets into the kernel if those packets are just dropped in the
+networking code due to congestion, which can also help performance
+when that help is needed most. For various reasons, NAPI drivers are
+also less likely to reorder packets.</p>
+
+<p class="docText">Not all devices can operate in the NAPI mode, however. A NAPI-capable
+interface must be able to store several packets (either on the card
+itself, or in an in-memory DMA ring). The interface should be capable
+of disabling interrupts for received packets, while continuing to
+interrupt for successful transmissions and other events. There are
+other subtle issues that can make writing a NAPI-compliant driver
+harder; see
+<I>Documentation/networking/NAPI_HOWTO.txt</i> in the
+kernel source tree for the details.</p>
+
+<p class="docText">Relatively few drivers implement the NAPI interface. If you are
+writing a driver for an interface that may generate a huge number of
+interrupts, however, taking the time to implement NAPI may well prove
+worthwhile.</p>
+
+<p class="docText">The <span class="docEmphasis">snull</span> driver, when loaded with the
+<tt>use_napi</tt> parameter set to a nonzero value,
+operates in the NAPI mode. At initialization time, we have to set up
+a couple of extra <tt>struct net_device</tt> fields:</p>
+
+<pre>if (use_napi) {
+    dev-&gt;poll        = snull_poll;
+    dev-&gt;weight      = 2;
+}</pre><br>
+
+
+<p class="docText">The <tt>poll</tt> field must be set to your
+driver's polling function; we look at
+<span class="docEmphasis">snull_poll</span> shortly. The
+<tt>weight</tt> field describes the relative importance of
+the interface: how much traffic should be accepted from the interface
+when resources are tight. There are no strict rules for how the
+<tt>weight</tt> parameter should be set; by convention, 10
+MBps Ethernet interfaces set <tt>weight</tt> to
+<tt>16</tt>, while faster interfaces use
+<tt>64</tt>. You should not set <tt>weight</tt>
+to a value greater than the number of packets your interface can
+store. In <span class="docEmphasis">snull</span>, we set the
+<tt>weight</tt> to two as a way of demonstrating deferred
+packet reception.</p>
+
+<p class="docText">The next step in the creation of a NAPI-compliant driver is to change
+the interrupt handler. When your interface (which should start with
+receive interrupts enabled) signals that a packet has arrived, the
+interrupt handler should <span class="docEmphasis">not</span> process that
+packet. Instead, it should disable further receive interrupts and
+tell the kernel that it is time to start polling the interface. In
+the <span class="docEmphasis">snull</span>
+"interrupt" handler, the code that
+responds to packet reception interrupts has been changed to the
+following:</p>
+
+<pre>if (statusword &amp; SNULL_RX_INTR) {
+    snull_rx_ints(dev, 0);  /* Disable further interrupts */
+    netif_rx_schedule(dev);
+}</pre><br>
+
+
+<p class="docText">When the interface tells us that a packet is available, the interrupt
+handler leaves it in the interface; all that needs to happen at this
+point is a call to <span class="docEmphasis">netif_rx_schedule</span>, which
+causes our <span class="docEmphasis">poll</span> method to be called at some
+future point.</p>
+
+<p class="docText">The <span class="docEmphasis">poll</span> method has this prototype:</p>
+
+<pre>int (*poll)(struct net_device *dev, int *budget);</pre><br>
+
+
+<p class="docText">The <span class="docEmphasis">snull</span> implementation of the
+<span class="docEmphasis">poll</span> method looks like this:</p>
+
+<pre>static int snull_poll(struct net_device *dev, int *budget)
+{
+    int npackets = 0, quota = min(dev-&gt;quota, *budget);
+    struct sk_buff *skb;
+    struct snull_priv *priv = netdev_priv(dev);
+    struct snull_packet *pkt;
+    
+    while (npackets &lt; quota &amp;&amp; priv-&gt;rx_queue) {
+        pkt = snull_dequeue_buf(dev);
+        skb = dev_alloc_skb(pkt-&gt;datalen + 2);
+        if (! skb) {
+            if (printk_ratelimit(  ))
+                printk(KERN_NOTICE "snull: packet dropped\n");
+            priv-&gt;stats.rx_dropped++;
+            snull_release_buffer(pkt);
+            continue;
+        }
+        memcpy(skb_put(skb, pkt-&gt;datalen), pkt-&gt;data, pkt-&gt;datalen);
+        skb-&gt;dev = dev;
+        skb-&gt;protocol = eth_type_trans(skb, dev);
+        skb-&gt;ip_summed = CHECKSUM_UNNECESSARY; /* don't check it */
+        netif_receive_skb(skb);
+        
+            /* Maintain stats */
+        npackets++;
+        priv-&gt;stats.rx_packets++;
+        priv-&gt;stats.rx_bytes += pkt-&gt;datalen;
+        snull_release_buffer(pkt);
+    }
+    /* If we processed all packets, we're done; tell the kernel and reenable ints */
+    *budget -= npackets;
+    dev-&gt;quota -= npackets;
+    if (! priv-&gt;rx_queue) {
+        netif_rx_complete(dev);
+        snull_rx_ints(dev, 1);
+        return 0;
+    }
+    /* We couldn't process everything. */
+    return 1;
+}</pre><br>
+
+
+<p class="docText">The central part of the function is concerned with the creation of an
+skb holding the packet; this code is the same as what we saw in
+<span class="docEmphasis">snull_rx</span> before. A number of things are
+different, however:</P>
+
+<ul><LI><p class="docList">The <tt>budget</tt> parameter provides a maximum number of
+packets that we are allowed to pass into the kernel. Within the
+device structure, the <tt>quota</tt> field gives another
+maximum; the <span class="docEmphasis">poll</span> method must respect the lower
+of the two limits. It should also decrement both
+<tt>dev-&gt;quota</tt> and <tt>*budget</tt> by
+the number of packets actually received. The
+<tt>budget</tt> value is a maximum number of packets that
+the current CPU can receive from all interfaces, while
+<tt>quota</tt> is a per-interface value that usually starts
+out as the <tt>weight</tt> assigned to the interface at
+initialization time.</P></li><li><p class="docList">Packets should be fed to the kernel with
+<span class="docEmphasis">netif_receive_skb</span>, rather than
+<span class="docEmphasis">netif_rx</span>.</p></LI><li><p class="docList">If the <span class="docEmphasis">poll</span> method is able to process all of the
+available packets within the limits given to it, it should re-enable
+receive interrupts, call <span class="docEmphasis">netif_rx_complete</span> to
+turn off polling, and return <tt>0</tt>. A return value of
+<tt>1</tt> indicates that there are packets remaining to be
+processed.</P></LI></UL>
+<p class="docText">The networking subsystem guarantees that any given
+device's <span class="docEmphasis">poll</span> method will not
+be called concurrently on more than one processor. Calls to
+<span class="docEmphasis">poll</span> can still happen concurrently with calls to
+your other device methods, however.</p>
+
+
+<ul></ul></td></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-17-sect-7.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-17-sect-9.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

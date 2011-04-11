@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1. 汇编程序的Hello world</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch28.html" title="第 28 章 文件与I/O" /><link rel="prev" href="ch28.html" title="第 28 章 文件与I/O" /><link rel="next" href="ch28s02.html" title="2. C标准I/O库函数与Unbuffered I/O函数" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">1. 汇编程序的Hello world</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch28.html">上一页</a> </td><th width="60%" align="center">第 28 章 文件与I/O</th><td width="20%" align="right"> <a accesskey="n" href="ch28s02.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2850246"></a>1. 汇编程序的Hello world</h2></div></div></div><p>之前我们学习了如何用C标准I/O库读写文件，本章详细讲解这些I/O操作是怎么实现的。所有I/O操作最终都是在内核中做的，以前我们用的C标准I/O库函数最终也是通过系统调用把I/O操作从用户空间传给内核，然后让内核去做I/O操作，本章和下一章会介绍内核中I/O子系统的工作原理。首先看一个打印Hello world的汇编程序，了解I/O操作是怎样通过系统调用传给内核的。</p><div class="example"><a id="id2850272"></a><p class="title"><b>例 28.1. 汇编程序的Hello world</b></p><div class="example-contents"><pre class="programlisting">.data					# section declaration
+
+msg:
+	.ascii	"Hello, world!\n"	# our dear string
+	len = . - msg			# length of our dear string
+
+.text					# section declaration
+
+			# we must export the entry point to the ELF linker or
+    .global _start	# loader. They conventionally recognize _start as their
+			# entry point. Use ld -e foo to override the default.
+
+_start:
+
+# write our string to stdout
+
+	movl	$len,%edx	# third argument: message length
+	movl	$msg,%ecx	# second argument: pointer to message to write
+	movl	$1,%ebx		# first argument: file handle (stdout)
+	movl	$4,%eax		# system call number (sys_write)
+	int	$0x80		# call kernel
+
+# and exit
+
+	movl	$0,%ebx		# first argument: exit code
+	movl	$1,%eax		# system call number (sys_exit)
+	int	$0x80		# call kernel</pre></div></div><br class="example-break" /><p>像以前一样，汇编、链接、运行：</p><pre class="screen">$ as -o hello.o hello.s
+$ ld -o hello hello.o
+$ ./hello
+Hello, world!</pre><p>这段汇编相当于以下C代码：</p><pre class="programlisting">#include &lt;unistd.h&gt;
+
+char msg[14] = "Hello, world!\n";
+#define len 14
+
+int main(void)
+{
+	write(1, msg, len);
+	_exit(0);
+}</pre><p><code class="literal">.data</code>段有一个标号<code class="literal">msg</code>，代表字符串<code class="literal">"Hello, world!\n"</code>的首地址，相当于C程序的一个全局变量。注意在C语言中字符串的末尾隐含有一个<code class="literal">'\0'</code>，而汇编指示<code class="literal">.ascii</code>定义的字符串末尾没有隐含的<code class="literal">'\0'</code>。汇编程序中的<code class="literal">len</code>代表一个常量，它的值由当前地址减去符号<code class="literal">msg</code>所代表的地址得到，换句话说就是字符串<code class="literal">"Hello, world!\n"</code>的长度。现在解释一下这行代码中的“<span class="quote">.</span>”，汇编器总是从前到后把汇编代码转换成目标文件，在这个过程中维护一个地址计数器，当处理到每个段的开头时把地址计数器置成0，然后每处理一条汇编指示或指令就把地址计数器增加相应的字节数，在汇编程序中用“<span class="quote">.</span>”可以取出当前地址计数器的值，该值是一个常量。</p><p>在<code class="literal">_start</code>中调了两个系统调用，第一个是<code class="literal">write</code>系统调用，第二个是以前讲过的<code class="literal">_exit</code>系统调用。在调<code class="literal">write</code>系统调用时，<code class="literal">eax</code>寄存器保存着<code class="literal">write</code>的系统调用号4，<code class="literal">ebx</code>、<code class="literal">ecx</code>、<code class="literal">edx</code>寄存器分别保存着<code class="literal">write</code>系统调用需要的三个参数。<code class="literal">ebx</code>保存着文件描述符，进程中每个打开的文件都用一个编号来标识，称为文件描述符，文件描述符1表示标准输出，对应于C标准I/O库的<code class="literal">stdout</code>。<code class="literal">ecx</code>保存着输出缓冲区的首地址。<code class="literal">edx</code>保存着输出的字节数。<code class="literal">write</code>系统调用把从<code class="literal">msg</code>开始的<code class="literal">len</code>个字节写到标准输出。</p><p>C代码中的<code class="literal">write</code>函数是系统调用的包装函数，其内部实现就是把传进来的三个参数分别赋给<code class="literal">ebx</code>、<code class="literal">ecx</code>、<code class="literal">edx</code>寄存器，然后执行<code class="literal">movl $4,%eax</code>和<code class="literal">int $0x80</code>两条指令。这个函数不可能完全用C代码来写，因为任何C代码都不会编译生成<code class="literal">int</code>指令，所以这个函数有可能是完全用汇编写的，也可能是用C内联汇编写的，甚至可能是一个宏定义（省了参数入栈出栈的步骤）。<code class="literal">_exit</code>函数也是如此，我们讲过这些系统调用的包装函数位于Man Page的第2个Section。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch28.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch28.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch28s02.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">第 28 章 文件与I/O </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 2. C标准I/O库函数与Unbuffered I/O函数</td></tr></table></div></body></html>

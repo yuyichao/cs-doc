@@ -1,0 +1,359 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>标尺 Rulers</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="对话框 Dialogs"
+HREF="x924.html"><LINK
+REL="NEXT"
+TITLE="状态栏 Statusbars"
+HREF="x982.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x924.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x982.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-RULERS">标尺 Rulers</H1
+><P
+>标尺构件(Ruler widgets)一般用于在给定窗口中指示鼠标指针的位置。一个窗口可以有一个横跨整个窗口宽度的水平标尺和一个占据整个窗口高度的垂直标尺。标尺上有一个小三角形的指示器标出鼠标指针相对于标尺的精确位置。</P
+><P
+>首先，必须创建标尺。水平和垂直标尺用下面的函数创建：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_hruler_new( void );    /* 水平标尺 */
+
+GtkWidget *gtk_vruler_new( void );    /* 垂直标尺 */</PRE
+></TD
+></TR
+></TABLE
+><P
+>一旦创建了标尺，我们就能指定它的度量单位。标尺的度量单位可以是 <TT
+CLASS="LITERAL"
+>GTK_PIXELS</TT
+>，<TT
+CLASS="LITERAL"
+>GTK_INCHES</TT
+>或<TT
+CLASS="LITERAL"
+>GTK_CENTIMETERS</TT
+>。可以用下面的函数设置：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_ruler_set_metric( GtkRuler      *ruler,
+                           GtkMetricType  metric );</PRE
+></TD
+></TR
+></TABLE
+><P
+>默认的度量单位是<TT
+CLASS="LITERAL"
+>GTK_PIXELS</TT
+>。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gtk_ruler_set_metric( GTK_RULER(ruler), GTK_PIXELS );</PRE
+></TD
+></TR
+></TABLE
+><P
+>标尺构件的另一个重要属性是怎样标志刻度单位以及位置指示器一开始应该放在哪里。可以用下面的函数设置：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_ruler_set_range( GtkRuler *ruler,
+                          gdouble   lower,
+                          gdouble   upper,
+                          gdouble   position,
+                          gdouble   max_size );</PRE
+></TD
+></TR
+></TABLE
+><P
+>其中lower和upper参数定义标尺的范围，max_size是要显示的最大可能数值。Position定义了标尺的指针指示器的初始位置。</P
+><P
+>下面这句使垂直标尺能跨越800像素宽的窗口。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gtk_ruler_set_range( GTK_RULER(vruler), 0, 800, 0, 800);</PRE
+></TD
+></TR
+></TABLE
+><P
+>标尺上显示标志会从0到800，每100个像素一个数字。如果我们想让标尺的范围为从7到16，可以使用下面的代码：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gtk_ruler_set_range( GTK_RULER(vruler), 7, 16, 0, 20);</PRE
+></TD
+></TR
+></TABLE
+><P
+>标尺上的指示器是一个小三角形的标记，指示鼠标指针相对于标尺的位置。如果标尺是用于跟踪鼠标器指针的，应该将motion_notify_event信号连接到标尺的motion_notify_event方法(method)。要跟踪鼠标在整个窗口区域你的移动，应该这样做：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#define EVENT_METHOD(i, x) GTK_WIDGET_GET_CLASS(i)-&#62;x
+
+    g_signal_connect_swapped (G_OBJECT (area), "motion_notify_event",
+           G_CALLBACK (EVENT_METHOD (ruler, motion_notify_event)),
+           G_OBJECT (ruler));</PRE
+></TD
+></TR
+></TABLE
+><P
+>下列示例创建一个绘图区(drawing area)，上面加一个水平标尺，左边加一个垂直标尺。绘图区的大小是600像素宽×400像素高。水平标尺范围是从7到13，每100像素加一个刻度；垂直标尺范围从0到400，每100像素加一个刻度。绘图区和标尺的定位是用一个组装表(table)实现的。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/rulers.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+
+#define EVENT_METHOD(i, x) GTK_WIDGET_GET_CLASS(i)-&#62;x
+
+#define XSIZE  600
+#define YSIZE  400
+
+/* 当点击"close"按钮时，退出应用程序 */
+gint close_application( GtkWidget *widget,
+                        GdkEvent  *event,
+                        gpointer   data )
+{
+    gtk_main_quit ();
+    return FALSE;
+}
+
+/* 主函数 */
+int main( int   argc,
+          char *argv[] ) {
+    GtkWidget *window, *table, *area, *hrule, *vrule;
+
+    /* 初始化，创建主窗口 */
+    gtk_init (&#38;argc, &#38;argv);
+
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    g_signal_connect (G_OBJECT (window), "delete_event",
+                      G_CALLBACK (close_application), NULL);
+    gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+
+    /* 创建一个组装表，绘图区和标尺放在里面 */
+    table = gtk_table_new (3, 2, FALSE);
+    gtk_container_add (GTK_CONTAINER (window), table);
+
+    area = gtk_drawing_area_new ();
+    gtk_widget_set_size_request (GTK_WIDGET (area), XSIZE, YSIZE);
+    gtk_table_attach (GTK_TABLE (table), area, 1, 2, 1, 2,
+                      GTK_EXPAND|GTK_FILL, GTK_FILL, 0, 0);
+    gtk_widget_set_events (area, GDK_POINTER_MOTION_MASK |
+                                 GDK_POINTER_MOTION_HINT_MASK);
+
+    /* 水平标尺放在顶部。鼠标移动穿过绘图区时，一个
+     * motion_notify_event 被传递给标尺的相应的事件处理函数 */
+    hrule = gtk_hruler_new ();
+    gtk_ruler_set_metric (GTK_RULER (hrule), GTK_PIXELS);
+    gtk_ruler_set_range (GTK_RULER (hrule), 7, 13, 0, 20);
+    g_signal_connect_swapped (G_OBJECT (area), "motion_notify_event",
+                              G_CALLBACK (EVENT_METHOD (hrule, motion_notify_event)),
+                              hrule);
+    gtk_table_attach (GTK_TABLE (table), hrule, 1, 2, 0, 1,
+                      GTK_EXPAND|GTK_SHRINK|GTK_FILL, GTK_FILL, 0, 0);
+    
+    /* 垂直标尺放在左边。当鼠标移动穿过绘图区时，一个
+     * motion_notify_event 被传递到标尺相应的事件处理函数中 */
+    vrule = gtk_vruler_new ();
+    gtk_ruler_set_metric (GTK_RULER (vrule), GTK_PIXELS);
+    gtk_ruler_set_range (GTK_RULER (vrule), 0, YSIZE, 10, YSIZE );
+    g_signal_connect_swapped (G_OBJECT (area), "motion_notify_event",
+                              G_CALLBACK (EVENT_METHOD (vrule, motion_notify_event)),
+                              vrule);
+    gtk_table_attach (GTK_TABLE (table), vrule, 0, 1, 1, 2,
+                      GTK_FILL, GTK_EXPAND|GTK_SHRINK|GTK_FILL, 0, 0);
+
+    /* 现在显示所有的构件 */
+    gtk_widget_show (area);
+    gtk_widget_show (hrule);
+    gtk_widget_show (vrule);
+    gtk_widget_show (table);
+    gtk_widget_show (window);
+    gtk_main (); 
+
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x924.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x982.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>对话框 Dialogs</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>状态栏 Statusbars</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

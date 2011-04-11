@@ -1,0 +1,96 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>4.4.&#160;使用观察来调试-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch04.html" title="第&#160;4&#160;章&#160;调试技术">
+<link rel="prev" href="ch04s03.html" title="4.3.&#160;用查询来调试">
+<link rel="next" href="ch04s05.html" title="4.5.&#160;调试系统故障">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">4.4.&#160;使用观察来调试</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch04s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;4&#160;章&#160;调试技术</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch04s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="DebuggingbyWatching.sect"></a>4.4.&#160;使用观察来调试</h2></div></div></div>
+<p>有时小问题可以通过观察用户空间的应用程序的行为来追踪. 监视程序也有助于建立对驱动正确工作的信心. 例如, 我们能够对 scull 感到有信心, 在看了它的读实现如何响应不同数量数据的读请求之后.</p>
+<p>有几个方法来监视用户空间程序运行. 你可以运行一个调试器来单步过它的函数, 增加打印语句, 或者在 strace 下运行程序. 这里, 我们将讨论最后一个技术, 当真正目的是检查内核代码时它是最有趣的.</p>
+<p>strace 命令时一个有力工具, 显示所有的用户空间程序发出的系统调用.  它不仅显示调用, 还以符号形式显示调用的参数和返回值. 当一个系统调用失败, 错误的符号值(例如, ENOMEM)和对应的字串(Out of memory) 都显示. strace 有很多命令行选项; 其中最有用的是 -t 来显示每个调用执行的时间, -T 来显示调用中花费的时间, -e 来限制被跟踪调用的类型, 以及-o 来重定向输出到一个文件. 缺省地, strace 打印调用信息到 stderr.</p>
+<p>strace 从内核自身获取信息. 这意味着可以跟踪一个程序, 不管它是否带有调试支持编译(对 gcc 是 -g 选项)以及不管它是否 strip 过. 你也可以连接追踪到一个运行中的进程, 类似于一个调试器的方式连接到一个运行中的进程并控制它.</p>
+<p>跟踪信息常用来支持发给应用程序开发者的故障报告, 但是对内核程序员也是很有价值的. 我们已经看到驱动代码运行如何响应系统调用; strace 允许我们检查每个调用的输入和输出数据的一致性.</p>
+<p>例如, 下面的屏幕输出显示(大部分)运行命令 strace ls /dev &gt; /dev/scull0 的最后的行:</p>
+<pre class="screen">
+open("/dev", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY) = 3
+fstat64(3, {st_mode=S_IFDIR|0755, st_size=24576, ...}) = 0
+
+fcntl64(3, F_SETFD, FD_CLOEXEC)  = 0  
+getdents64(3, /* 141 entries */, 4096)  = 4088  
+[...]  
+getdents64(3, /* 0 entries */, 4096)  = 0  
+close(3)  = 0  
+[...]  
+
+fstat64(1, {st_mode=S_IFCHR|0664, st_rdev=makedev(254, 0), ...}) = 0
+write(1, "MAKEDEV\nadmmidi0\nadmmidi1\nadmmid"..., 4096) = 4000
+write(1, "b\nptywc\nptywd\nptywe\nptywf\nptyx0\n"..., 96) = 96
+write(1, "b\nptyxc\nptyxd\nptyxe\nptyxf\nptyy0\n"..., 4096) = 3904
+write(1, "s17\nvcs18\nvcs19\nvcs2\nvcs20\nvcs21"..., 192) = 192
+write(1, "\nvcs47\nvcs48\nvcs49\nvcs5\nvcs50\nvc"..., 673) = 673
+close(1) = 0
+exit_group(0) = ?
+</pre>
+<p>从第一个 write 调用看, 明显地, 在 ls 结束查看目标目录后, 它试图写 4KB. 奇怪地(对ls), 只有 4000 字节写入, 并且操作被重复. 但是, 我们知道 scull 中的写实现一次写一个单个量子, 因此我们本来就期望部分写. 几步之后, 所有东西清空, 程序成功退出.</p>
+<p>作为另一个例子, 让我们读取 scull 设备(使用 wc 命令):</p>
+<pre class="screen">
+[...]
+open("/dev/scull0", O_RDONLY|O_LARGEFILE) = 3
+fstat64(3, {st_mode=S_IFCHR|0664, st_rdev=makedev(254, 0), ...}) = 0
+read(3, "MAKEDEV\nadmmidi0\nadmmidi1\nadmmid"..., 16384) = 4000
+read(3, "b\nptywc\nptywd\nptywe\nptywf\nptyx0\n"..., 16384) = 4000
+read(3, "s17\nvcs18\nvcs19\nvcs2\nvcs20\nvcs21"..., 16384) = 865
+read(3, "", 16384) = 0
+fstat64(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 1), ...}) = 0
+write(1, "8865 /dev/scull0\n", 17) = 17
+close(3) = 0
+exit_group(0) = ?
+</pre>
+<p>如同期望的, read 一次只能获取 4000 字节, 但是数据总量等同于前个例子写入的. 注意在这个例子里读取是如何组织的, 同前面跟踪的相反. wc 为快速读被优化过, 因此绕过了标准库, 试图一个系统调用读取更多数据. 你可从跟踪的读的行里看到 wc 是如何试图一次读取 16 KB.</p>
+<p>Linux 专家能够从 strace 的输出中发现更多有用信息. 如果你不想看到所有的符号, 你可使用 efile 标志来限制你自己仅查看文件方法是如何工作的.</p>
+<p>就个人而言, 我们发现 strace 对于查明系统调用的运行时错误是非常有用. 常常是应用程序或演示程序中的 perror 调用不足够详细, 并且能够确切说出哪个系统调用的哪个参数触发了错误是非常有帮助的.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch04s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch04.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch04s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">4.3.&#160;用查询来调试&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;4.5.&#160;调试系统故障</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,178 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>2.7.&#160;初始化和关停-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="prev" href="ch02s06.html" title="2.6.&#160;预备知识">
+<link rel="next" href="ch02s08.html" title="2.8.&#160;模块参数">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">2.7.&#160;初始化和关停</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch02s06.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;2&#160;章&#160;建立和运行模块</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s08.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="InitializationandShutdown.sect1"></a>2.7.&#160;初始化和关停</h2></div></div></div>
+<p> 如已提到的, 模块初始化函数注册模块提供的任何功能. 这些功能, 我们指的是新功能, 可以由应用程序存取的或者一整个驱动或者一个新软件抽象. 实际的初始化函数定义常常如: </p>
+<pre class="programlisting">
+static int __init initialization_function(void)
+{
+
+ /* Initialization code here */
+}
+module_init(initialization_function);
+</pre>
+<p> 初始化函数应当声明成静态的, 因为它们不会在特定文件之外可见; 没有硬性规定这个, 然而, 因为没有函数能输出给内核其他部分, 除非明确请求. 声明中的 __init 标志可能看起来有点怪; 它是一个给内核的暗示, 给定的函数只是在初始化使用. 模块加载者在模块加载后会丢掉这个初始化函数, 使它的内存可做其他用途. 一个类似的标签 (__initdata) 给只在初始化时用的数据. 使用 __init 和 __initdata 是可选的, 但是它带来的麻烦是值得的. 只是要确认不要用在那些在初始化完成后还使用的函数(或者数据结构)上. 你可能还会遇到 __devinit 和 __devinitdata 在内核源码里; 这些只在内核没有配置支持 hotplug 设备时转换成 __init 和 _initdata. 我们会在 14 章谈论 hotplug 支持.  </p>
+<p> 使用 moudle_init 是强制的. 这个宏定义增加了特别的段到模块目标代码中, 表明在哪里找到模块的初始化函数. 没有这个定义, 你的初始化函数不会被调用.</p>
+<p> 模块可以注册许多的不同设施, 包括不同类型的设备, 文件系统, 加密转换, 以及更多. 对每一个设施, 有一个特定的内核函数来完成这个注册. 传给内核注册函数的参数常常是一些数据结构的指针, 描述新设施以及要注册的新设施的名子. 数据结构常常包含模块函数指针, 模块中的函数就是这样被调用的.  </p>
+<p> 能够注册的项目远远超出第 1 章中提到的设备类型列表. 它们包括, 其他的, 串口, 多样设备, sysfs 入口, /proc 文件, 执行域, 链路规程. 这些可注册项的大部分都支持不直接和硬件相关的函数, 但是处于"软件抽象"区域里. 这些项可以注册, 是因为它们以各种方式(例如象 /proc 文件和链路规程)集成在驱动的功能中.  
+</p>
+<p> 对某些驱动有其他的设施可以注册作为补充, 但它们的使用太特别, 所以不值得讨论它们. 它们使用堆叠技术, 在"内核符号表"一节中讲过. 如果你想深入探求, 你可以在内核源码里查找 EXPORT_SYMBOL , 找到由不同驱动提供的入口点. 大部分注册函数以 register_ 做前缀, 因此找到它们的另外一个方法是在内核源码里查找 register_ .  </p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheCleanupFunction.sect2"></a>2.7.1.&#160;清理函数</h3></div></div></div>
+<p> 每个非试验性的模块也要求有一个清理函数, 它注销接口, 在模块被去除之前返回所有资源给系统. 这个函数定义为:</p>
+<pre class="programlisting">
+static void __exit cleanup_function(void)
+{
+ /* Cleanup code here */
+}
+
+module_exit(cleanup_function);
+</pre>
+<p> 清理函数没有返回值, 因此它被声明为 void. __exit 修饰符标识这个代码是只用于模块卸载( 通过使编译器把它放在特殊的 ELF 段). 如果你的模块直接建立在内核里, 或者如果你的内核配置成不允许模块卸载, 标识为 __exit 的函数被简单地丢弃. 因为这个原因, 一个标识 __exit 的函数只在模块卸载或者系统停止时调用; 任何别的使用是错的. 再一次, moudle_exit 声明对于使得内核能够找到你的清理函数是必要的.</p>
+<p> 如果你的模块没有定义一个清理函数, 内核不会允许它被卸载.  
+</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ErrorHandlingDuringInitialization.sect2"></a>2.7.2.&#160;初始化中的错误处理</h3></div></div></div>
+<p> 你必须记住一件事, 在注册内核设施时, 注册可能失败. 即便最简单的动作常常需要内存分配, 分配的内存可能不可用. 因此模块代码必须一直检查返回值, 并且确认要求的操作实际上已经成功.  </p>
+<p> 如果在你注册工具时发生任何错误, 首先第一的事情是决定模块是否能够无论如何继续初始化它自己. 常常, 在一个注册失败后模块可以继续操作, 如果需要可以功能降级. 在任何可能的时候, 你的模块应当尽力向前, 并提供事情失败后具备的能力.</p>
+<p> 如果证实你的模块在一个特别类型的失败后完全不能加载, 你必须取消任何在失败前注册的动作. 内核不保留已经注册的设施的每模块注册, 因此如果初始化在某个点失败, 模块必须能自己退回所有东西. 如果你无法注销你获取的东西, 内核就被置于一个不稳定状态; 它包含了不存在的代码的内部指针. 这种情况下, 经常地, 唯一的方法就是重启系统. 在初始化错误发生时, 你确实要小心地将事情做正确. </p>
+<p> 错误恢复有时用 goto 语句处理是最好的. 我们通常不愿使用 goto, 但是在我们的观念里, 这是一个它有用的地方. 在错误情形下小心使用 goto 可以去掉大量的复杂, 过度对齐的, "结构形" 的逻辑. 因此, 在内核里, goto 是处理错误经常用到, 如这里显示的.  </p>
+<p> 下面例子代码( 使用设施注册和注销函数)在初始化在任何点失败时做得正确: </p>
+<pre class="programlisting">
+int __init my_init_function(void)
+{
+        int err;
+        /* registration takes a pointer and a name */
+        err = register_this(ptr1, "skull");
+        if (err)
+                goto fail_this;
+        err = register_that(ptr2, "skull");
+        if (err)
+                goto fail_that;
+        err = register_those(ptr3, "skull");
+        if (err)
+                goto fail_those;
+        return 0; /* success */
+fail_those:
+        unregister_that(ptr2, "skull");
+fail_that:
+        unregister_this(ptr1, "skull");
+fail_this:
+        return err; /* propagate the error */
+
+}
+</pre>
+<p> 这段代码试图注册 3 个(虚构的)设施. goto 语句在失败情况下使用, 在事情变坏之前只对之前已经成功注册的设施进行注销.  </p>
+<p> 另一个选项, 不需要繁多的 goto 语句, 是跟踪已经成功注册的, 并且在任何出错情况下调用你的模块的清理函数. 清理函数只回卷那些已经成功完成的步骤. 然而这种选择, 需要更多代码和更多 CPU 时间, 因此在快速途径下, 你仍然依赖于 goto 作为最好的错误恢复工具.  </p>
+<p> my_init_function 的返回值, err, 是一个错误码. 在 Linux 内核里, 错误码是负数, 属于定义于 &lt;linux/errno.h&gt; 的集合. 如果你需要产生你自己的错误码代替你从其他函数得到的返回值, 你应当包含 &lt;linux/errno.h&gt; 以便使用符号式的返回值, 例如 -ENODEV, -ENOMEM, 等等. 返回适当的错误码总是一个好做法, 因为用户程序能够把它们转变为有意义的字串, 使用 perror 或者类似的方法.</p>
+<p> 显然, 模块清理函数必须撤销任何由初始化函数进行的注册, 并且惯例(但常常不是要求的)是按照注册时相反的顺序注销设施.  </p>
+<pre class="programlisting">
+void __exit my_cleanup_function(void) 
+{
+ unregister_those(ptr3, "skull");
+ unregister_that(ptr2, "skull");
+ unregister_this(ptr1, "skull");
+ return;
+
+} 
+</pre>
+<p> 如果你的初始化和清理比处理几项复杂, goto 方法可能变得难于管理, 因为所有的清理代码必须在初始化函数里重复, 包括几个混合的标号. 有时, 因此, 一种不同的代码排布证明更成功.  </p>
+<p> 使代码重复最小和所有东西流线化, 你应当做的是无论何时发生错误都从初始化里调用清理函数. 清理函数接着必须在撤销它的注册前检查每一项的状态. 以最简单的形式, 代码看起来象这样: </p>
+<pre class="programlisting">
+struct something *item1;
+struct somethingelse *item2;
+int stuff_ok;
+
+void my_cleanup(void)
+{
+        if (item1)
+                release_thing(item1);
+        if (item2)
+                release_thing2(item2);
+        if (stuff_ok)
+                unregister_stuff();
+        return;
+}
+
+int __init my_init(void)
+{
+        int err = -ENOMEM;
+
+        item1 = allocate_thing(arguments);
+        item2 = allocate_thing2(arguments2);
+        if (!item2 || !item2)
+                goto fail;
+
+        err = register_stuff(item1, item2);
+        if (!err)
+                stuff_ok = 1;
+        else
+                goto fail;
+        return 0; /* success */
+
+fail:
+        my_cleanup();
+        return err;
+}
+</pre>
+<p> 如这段代码所示, 你也许需要, 也许不要外部的标志来标识初始化步骤的成功, 要依赖你调用的注册/分配函数的语义. 不管要不要标志, 这种初始化会变得包含大量的项, 常常比之前展示的技术要好. 注意, 但是, 清理函数当由非退出代码调用时不能标志为 __exit, 如同前面的例子.  
+</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ModuleLoadingRaces.sect2"></a>2.7.3.&#160;模块加载竞争</h3></div></div></div>
+<p> 到目前, 我们的讨论已来到一个模块加载的重要方面: 竞争情况. 如果你在如何编写你的初始化函数上不小心, 你可能造成威胁到整个系统的稳定的情形. 我们将在本书稍后讨论竞争情况; 现在, 快速提几点就足够了: </p>
+<p> 首先时你应该一直记住, 内核的某些别的部分会在注册完成之后马上使用任何你注册的设施. 这是完全可能的, 换句话说, 内核将调用进你的模块, 在你的初始化函数仍然在运行时. 所以你的代码必须准备好被调用, 一旦它完成了它的第一个注册. 不要注册任何设施, 直到所有的需要支持那个设施的你的内部初始化已经完成.  </p>
+<p> 你也必须考虑到如果你的初始化函数决定失败会发生什么, 但是内核的一部分已经在使用你的模块已注册的设施. 如果这种情况对你的模块是可能的, 你应当认真考虑根本不要使初始化失败. 毕竟, 模块已清楚地成功输出一些有用的东西. 如果初始化必须失败, 必须小心地处理任何可能的在内核别处发生的操作, 直到这些操作已完成.  
+</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch02s06.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch02.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s08.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">2.6.&#160;预备知识&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.8.&#160;模块参数</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

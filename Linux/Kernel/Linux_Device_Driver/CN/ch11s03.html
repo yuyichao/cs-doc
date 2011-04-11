@@ -1,0 +1,62 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>11.3.&#160;接口特定的类型-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch11.html" title="第&#160;11&#160;章&#160;内核中的数据类型">
+<link rel="prev" href="ch11s02.html" title="11.2.&#160;安排一个明确大小给数据项">
+<link rel="next" href="ch11s04.html" title="11.4.&#160;其他移植性问题">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">11.3.&#160;接口特定的类型</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch11s02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;11&#160;章&#160;内核中的数据类型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch11s04.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="InterfaceSpecificTypes.sect"></a>11.3.&#160;接口特定的类型</h2></div></div></div>
+<p>内核中一些通常使用的数据类型有它们自己的 typedef 语句, 因此阻止了任何移植性问题. 例如, 一个进程标识符 ( pid ) 常常是 pid_t 而不是 int. 使用 pid_t 屏蔽了任何在实际数据类型上的不同. 我们使用接口特定的表达式来指一个类型, 由一个库定义的, 以便于提供一个接口给一个特定的数据结构.</p>
+<p>注意, 在近期, 已经相对少定义新的接口特定类型. 使用 typedef 语句已经有许多内核开发者不喜欢, 它们宁愿看到代码中直接使用的真实类型信息, 不是藏在一个用户定义的类型后面. 很多老的接口特定的类型在内核中保留, 但是, 并且它们不会很快消失.</p>
+<p>甚至当没有定义接口特定的类型, 以和内核其他部分保持一致的方式使用正确的数据类型是一直重要的. 一个嘀哒计数, 例如, 一直是 unsigned long, 独立于它实际的大小, 因此 unsigned long 类型应当在使用 jiffy 时一直使用. 本节我们集中于 _t 类型的使用.</p>
+<p>很多 _t 类型在 &lt;linux/types.h&gt; 中定义, 但是列出来是很少有用. 当你需要一个特定类型, 你会在你需要调用的函数的原型中发现它, 或者在你使用的数据结构中.</p>
+<p>无论何时你的驱动使用需要这样"定制"类型的函数并且你不遵照惯例, 编译器发出一个警告; 如果你使用 -Wall 编译器标志并且小心去除所有的警告, 你能有信心你的代码是可移植的.</p>
+<p>_t 数据项的主要问题是当你需要打印它们时, 常常不容易选择正确的 printk 或 printf 格式, 你在一个体系上出现的警告会在另一个上重新出现. 例如, 你如何打印一个 size_t, 它在一些平台上是 unsigned long 而在其他某个上面是 unsigned int?</p>
+<p>无论何时你需要打印某个接口特定的数据, 最好的方法是转换它的值为最大的可能类型(常常是 long 或者 unsigned long ) 并且接着打印它通过对应的格式. 这种调整不会产生错误或者警告, 因为格式匹配类型, 并且你不会丢失数据位, 因为这个转换或者是一个空操作或者是数据项向更大数据类型的扩展.</p>
+<p>实际上, 我们在谈论的数据项不会常常要打印的, 因此这个问题只适用于调试信息. 常常, 代码只需要存储和比较接口特定的类型, 加上传递它们作为给库或者内核函数的参数.</p>
+<p>尽管 _t 类型是大部分情况的正确解决方法, 有时正确的类型不存取. 这发生在某些还未被清理的老接口.</p>
+<p>我们在内核头文件中发现的一个模糊之处是用在 I/O 函数的数据类型, 它松散地定义( 看第 9 章"平台相关性" 一节 ). 松散的类型在那里主要是因为历史原因, 但是在写代码时它可能产生问题. 例如, 交换给函数如 outb 的参数可能会有麻烦; 如果有一个 port_t 类型, 编译器会发现这个类型.</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch11s02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch11.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch11s04.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">11.2.&#160;安排一个明确大小给数据项&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;11.4.&#160;其他移植性问题</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

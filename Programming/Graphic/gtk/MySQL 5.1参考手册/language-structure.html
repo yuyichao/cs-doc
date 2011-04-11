@@ -1,0 +1,784 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 9. Language Structure</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="client-side-scripts.html" title="Chapter 8. Client and Utility Programs"><link rel="next" href="charset.html" title="Chapter 10. Character Set Support">
+<style>
+<!--
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+span.quote
+	{}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="language-structure"></a>
+	第9章：语言结构</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="language-structure.html#literals">
+			9.1. 文字值</a></span></dt><dd><dl><dt><span class="section"><a href="language-structure.html#string-syntax">
+				9.1.1. 字符串</a></span></dt><dt><span class="section"><a href="language-structure.html#number-syntax">
+				9.1.2. 数值</a></span></dt><dt><span class="section"><a href="language-structure.html#hexadecimal-values">
+				9.1.3. 十六进制值</a></span></dt><dt><span class="section"><a href="language-structure.html#boolean-values">
+				9.1.4. 布尔值</a></span></dt><dt><span class="section"><a href="language-structure.html#bit-field-values">
+				9.1.5. 位字段值</a></span></dt><dt><span class="section"><a href="language-structure.html#null-values">9.1.6. 
+				NULL值</a></span></dt></dl></dd><dt><span class="section"><a href="language-structure.html#legal-names">
+			9.2. 数据库、表、索引、列和别名</a></span></dt><dd><dl><dt><span class="section"><a href="language-structure.html#identifier-qualifiers">
+				9.2.1. 识别符限制条件</a></span></dt><dt><span class="section"><a href="language-structure.html#name-case-sensitivity">
+				9.2.2. 识别符大小写敏感性</a></span></dt></dl></dd><dt><span class="section"><a href="language-structure.html#variables">
+			9.3. 用户变量</a></span></dt><dt><span class="section"><a href="language-structure.html#system-variables">
+			9.4. 系统变量</a></span></dt><dd><dl><dt><span class="section"><a href="language-structure.html#structured-system-variables">
+				9.4.1. 结构式系统变量</a></span></dt></dl></dd><dt><span class="section"><a href="language-structure.html#comments">
+			9.5. 注释语法</a></span></dt><dt><span class="section"><a href="language-structure.html#reserved-words">
+			9.6. MySQL中保留字的处理</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div>
+		<p>
+		本章讨论了使用<span>MySQL</span>编写<span>SQL</span>语句的下面元素时所使用的规则：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>字符串和数字等文字值</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>识别符，例如表和列名</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>用户和系统变量</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>注释</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>保留字</p>
+		<h2 class="title"><a name="literals"></a>
+		9.1.&nbsp;文字值</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="language-structure.html#string-syntax">
+			9.1.1. 字符串</a></span></dt><dt><span class="section"><a href="language-structure.html#number-syntax">
+			9.1.2. 数值</a></span></dt><dt><span class="section"><a href="language-structure.html#hexadecimal-values">
+			9.1.3. 十六进制值</a></span></dt><dt><span class="section"><a href="language-structure.html#boolean-values">
+			9.1.4. 布尔值</a></span></dt><dt><span class="section"><a href="language-structure.html#bit-field-values">
+			9.1.5. 位字段值</a></span></dt><dt><span class="section"><a href="language-structure.html#null-values">9.1.6. 
+			NULL值</a></span></dt></dl></div><a class="indexterm" name="id2831732"></a><a class="indexterm" name="id2831742"></a><a class="indexterm" name="id2831753"></a><a class="indexterm" name="id2831759"></a><a class="indexterm" name="id2831766"></a>
+		<p>
+		该节描述了如何在<span>MySQL</span>中写文字值。包括字符串、数值、十六进制值、布尔值和<span>NULL</span>。本节还包括在<span>MySQL</span>中处理这些基本类型时会遇到的各种细微差别和“影印版”。</p>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="string-syntax"></a>
+			9.1.1.&nbsp;字符串</h3></div></div></div>
+			<p>
+			字符串指用单引号<span>(</span>‘<span>&#39;</span>’<span>)</span>或双引号<span>(</span>‘<span>&quot;</span>’<span>)</span>引起来的字符序列。例如：</p>
+			<pre><span>&#39;a string&#39;</span></pre>
+			<pre><span>&quot;another string&quot;</span></pre>
+			<p>
+			如果<span>SQL</span>服务器模式启用了<span>NSI_QUOTES</span>，可以只用单引号引用字符串。用双引号引用的字符串被解释为一个识别符。</p>
+			<p>
+			字符串可以有一个可选字符集引介词和<span>COLLATE</span>子句：</p>
+			<pre><span>[_</span><span><i><span>charset_name</span></i></span><span>]&#39;</span><span><i><span>string</span></i></span><span>&#39; [COLLATE </span><span><i><span>collation_name</span></i></span><span>]</span></pre>
+			<p>
+			例如：</p>
+			<pre><span>SELECT _latin1&#39;</span><span><i><span>string</span></i></span><span>&#39;;</span></pre>
+			<pre><span>SELECT _latin1&#39;</span><span><i><span>string</span></i></span><span>&#39; COLLATE latin1_danish_ci;</span></pre>
+			<p>
+			关于这些字符串语法形式的详细信息，参见<a href="charset.html#charset-literal" title="10.3.7. Character String Literal Character Set and Collation">10.3.7节，“字符串文字字符集和校对”</a>。</p>
+			<p>
+			在字符串中，某些序列具有特殊含义。这些序列均用反斜线<span>(</span>‘<span>\</span>’<span>)</span>开始，即所谓的<em><span>转义字符</span></em>。<span>MySQL</span>识别下面的转义序列：</p>
+			<table border="1" cellpadding="0" id="table1">
+				<tr>
+					<td>
+					<p>
+					<span>\0</span><span>
+					</span></td>
+					<td>
+					<p><span>ASCII 0(</span><span>NUL</span><span>)</span>字符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\&#39;</span><span>
+					</span></td>
+					<td>
+					<p>单引号<span>(</span>‘<span>&#39;</span>’<span>)</span>。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\&quot;</span><span>
+					</span></td>
+					<td>
+					<p>双引号<span>(</span>‘<span>&quot;</span>’<span>)</span>。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\b</span><span>
+					</span></td>
+					<td>
+					<p>退格符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\n</span><span>
+					</span></td>
+					<td>
+					<p>换行符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\r</span><span>
+					</span></td>
+					<td>
+					<p>回车符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\t</span><span>
+					</span></td>
+					<td>
+					<p><span>tab</span>字符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\Z</span><span>
+					</span></td>
+					<td>
+					<p><span>ASCII 26(</span>控制（<span>Ctrl</span>）<span>-Z)</span>。该字符可以编码为‘<span>\Z</span>’，以允许你解决在<span>Windows</span>中<span>ASCII 
+					26</span>代表文件结尾这一问题。<span>(</span>如果你试图使用<span>mysql
+					<i>db_name</i> &lt; <i>file_name</i></span>，<span>ASCII 
+					26</span>会带来问题）<span>。</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\\</span><span>
+					</span></td>
+					<td>
+					<p>反斜线<span>(</span>‘<span>\</span>’<span>)</span>字符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\%</span><span>
+					</span></td>
+					<td>
+					<p>‘<span>%</span>’字符。参见表后面的注解。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\_</span><span>
+					</span></td>
+					<td>
+					<p>‘<span>_</span>’字符。参见表后面的注解。</td>
+				</tr>
+			</table>
+			<p>
+			这些序列对大小写敏感。例如，‘<span>\b</span>’解释为退格，但‘<span>\B</span>’解释为‘<span>B</span>’。</p>
+			<p>
+			‘<span>\%</span>’和‘<span>\_</span>’序列用于搜索可能会解释为通配符的模式匹配环境中的‘<span>%</span>’和‘<span>_</span>’文字实例。参见<a href="functions.html#string-comparison-functions" title="12.3.1. String Comparison Functions">12.3.1节，“字符串比较函数”</a>。请注意如果你在其它环境中使用‘<span>\%</span>’或‘<span>\_</span>’，它们返回字符串‘<span>\%</span>’和‘<span>\_</span>’，而不是‘<span>%</span>’和‘<span>_</span>’。</p>
+			<p>
+			在其它转义序列中，反斜线被忽略。也就是说，转义字符解释为仿佛没有转义。</p>
+			<p>
+			有几种方式可以在字符串中包括引号：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在字符串内用‘<span>&#39;</span>’引用的‘<span>&#39;</span>’可以写成‘<span>&#39;&#39;</span>’。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在字符串内用‘<span>&quot;</span>’引用的‘<span>&quot;</span>’可以写成‘<span>&quot;&quot;</span>’。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>可以在引号前加转义字符<span>(</span>‘<span>\</span>’<span>)</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在字符串内用‘<span>&quot;</span>’引用的‘<span>&#39;</span>’不需要特殊处理，不需要用双字符或转义。同样，在字符串内用‘<span>&#39;</span>’引用的‘<span>&quot;</span>’也不需要特殊处理。</p>
+			<p>下面的<span>SELECT</span>语句显示了引用和转义如何工作：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT &#39;hello&#39;, &#39;&quot;hello&quot;&#39;, &#39;&quot;&quot;hello&quot;&quot;&#39;, &#39;hel&#39;&#39;lo&#39;, &#39;\&#39;hello&#39;;</span></b></span></pre>
+			<pre><span>+-------+---------+-----------+--------+--------+</span></pre>
+			<pre><span>| hello | &quot;hello&quot; | &quot;&quot;hello&quot;&quot; | hel&#39;lo | &#39;hello |</span></pre>
+			<pre><span>+-------+---------+-----------+--------+--------+</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT &quot;hello&quot;, &quot;&#39;hello&#39;&quot;, &quot;&#39;&#39;hello&#39;&#39;&quot;, &quot;hel&quot;&quot;lo&quot;, &quot;\&quot;hello&quot;;</span></b></span></pre>
+			<pre><span>+-------+---------+-----------+--------+--------+</span></pre>
+			<pre><span>| hello | &#39;hello&#39; | &#39;&#39;hello&#39;&#39; | hel&quot;lo | &quot;hello |</span></pre>
+			<pre><span>+-------+---------+-----------+--------+--------+</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT &#39;This\nIs\nFour\nLines&#39;;</span></b></span></pre>
+			<pre><span>+--------------------+</span></pre>
+			<pre><span>| This</span></pre>
+			<pre><span>Is</span></pre>
+			<pre><span>Four</span></pre>
+			<pre><span>Lines |</span></pre>
+			<pre><span>+--------------------+</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT &#39;disappearing\ backslash&#39;;</span></b></span></pre>
+			<pre><span>+------------------------+</span></pre>
+			<pre><span>| disappearing backslash |</span></pre>
+			<pre><span>+------------------------+</span></pre>
+			<p>
+			如果你想要在字符串列内插入二进制数据<span>(</span>例如<span>BLOB</span><span>)</span>，必须通过转义序列表示下面的字符：</p>
+			<table border="1" cellpadding="0" id="table2">
+				<tr>
+					<td>
+					<p>
+					<span>NUL</span></td>
+					<td>
+					<p>
+					<span>NUL</span>字节<span>(ASCII 
+					0)</span>。用‘<span><span>\0</span><span>’</span></span>表示该字符<span>(</span>反斜线后面跟一个<span>ASCII</span>‘<span>0</span>’字符<span>)</span>。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>\</span></td>
+					<td>
+					<p>反斜线<span>(ASCII 92)</span>。用‘<span>\\</span>’表示该字符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;</span></td>
+					<td>
+					<p>单引号<span>(ASCII 39)</span>。用‘<span>\&#39;</span>’表示该字符。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&quot;</span></td>
+					<td>
+					<p>双引号<span>(ASCII 34)</span>。用‘<span>\&quot;</span>’表示该字符。</td>
+				</tr>
+			</table>
+			<p>当编写应用程序时，在包含这些特殊字符的字符串用于发送到<span>MySQL</span>服务器的<span>SQL</span>语句中的数据值之前，必须对它们正确进行转义。可以用两种方法来完成：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>用转义特殊字符的函数处理字符串。例如，在<span>C</span>程序中，可以使用<span>mysql_real_escape_string()</span><span> 
+			C API</span>函数来转义字符。参见<a href="apis.html#mysql-real-escape-string" title="25.2.3.52. mysql_real_escape_string()">25.2.3.52节，“mysql_real_escape_string()”</a>。<span>Perl 
+			DBI</span>接口提供一个<span>quote</span>方法来将特殊字符转换为正确的转义序列。参见<a href="apis.html#perl" title="25.4. MySQL Perl API">25.4节，“MySQL Perl API”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>显式转义特殊字符，许多<span>MySQL API</span>提供了占位符功能，允许你在查询字符串中插入特殊标记，然后当你发出查询时将数据值同它们绑定起来。在这种情况下，<span>API</span>关注转义值中的特殊字符。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="number-syntax"></a>
+			9.1.2.&nbsp;数值</h3></div></div></div><a class="indexterm" name="id2832750"></a><a class="indexterm" name="id2832757"></a><a class="indexterm" name="id2832767"></a><a class="indexterm" name="id2832774"></a><a class="indexterm" name="id2832780"></a><a class="indexterm" name="id2832787"></a><a class="indexterm" name="id2832796"></a>
+			<p>
+			整数用一系列阿拉伯数字表示。浮点数使用‘<span>.</span>’作为十进制间隔符。两种类型的数值均可以在前面加一个‘<span>-</span>’来表示负值。</p>
+			<p>
+			合法整数的例子：</p>
+			<pre><span>1221</span></pre>
+			<pre><span>0</span></pre>
+			<pre><span>-32</span></pre>
+			<p>
+			合法浮点数的例子：</p>
+			<pre><span>294.42</span></pre>
+			<pre><span>-32032.6809e+10</span></pre>
+			<pre><span>148.00</span></pre>
+			<p>整数可以用在浮点环境中；它被解释为与浮点数等效。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="hexadecimal-values"></a>
+			9.1.3.&nbsp;十六进制值</h3></div></div></div><a class="indexterm" name="id2832853"></a></div><div class="section"><div class="titlepage"><div><div>
+			<p>
+			<span>MySQL</span>支持十六进制值。在数字上下文中，十六进制数如同整数<span>(64</span>位精度<span>)</span>。在字符串上下文，如同二进制字符串，每对十六进制数字被转换为一个字符：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT x&#39;4D7953514C&#39;</span><span>；</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; &#39;MySQL&#39;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT 0xa+0</span><span>；</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 10</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT 0x5061756c</span><span>；</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; &#39;Paul&#39;</span></pre>
+			<p>
+			十六进制值的默认类型是字符串。如果想要确保该值作为数字处理，可以使用<span>CAST(...AS 
+			UNSIGNED)</span>：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT 0x41</span><span>，<span>CAST(0x41 AS UNSIGNED)</span>；</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; &#39;A&#39;</span>，<span>65</span></pre>
+			<p>
+			<span>0x</span>语法基于<span>ODBC</span>。十六进制字符串通常用于<span>ODBC</span>以便为<span>BLOB</span>列提供值。<span><span>x</span><span>’</span><span>hexstring</span><span>’</span></span>语法基于标准<span>SQL</span>。</p>
+			<p>
+			可以用<span>HEX()</span>函数将一个字符串或数字转换为十六进制格式的字符串：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT HEX(&#39;cat&#39;)</span><span>；</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; &#39;636174&#39;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT 0x636174</span><span>；</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; &#39;cat&#39;</span></pre>
+			<h3 class="title"><a name="boolean-values"></a>
+			9.1.4.&nbsp;布尔值</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<p>
+			常量<span>TRUE</span>等于<span>1</span>，常量<span>FALSE</span>等于<span>0</span>。常量名可以写成大写或小写。</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT TRUE</span><span>，<span>true</span>，<span>FALSE</span>，<span>false</span>；</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt; 1</span>，<span>1</span>，<span>0</span>，<span>0</span></pre>
+			<h3 class="title"><a name="bit-field-values"></a>
+			9.1.5.&nbsp;位字段值</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			<p>
+			可以使用<span>b&#39;<i>value</i>&#39;</span>符号写位字段值。<span><i><span>value</span></i></span>是一个用<span>0</span>和<span>1</span>写成的二进制值。</p>
+			<p>
+			位字段符号可以方便指定分配给<span>BIT</span>列的值：</p>
+			<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE t (b BIT(8));</span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>INSERT INTO t SET b = b&#39;11111111&#39;;</span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>INSERT INTO t SET b = b&#39;1010&#39;;</span></b></span></pre>
+			<pre><span>+------+----------+----------+----------+</span></pre>
+			<pre><span>| b+0&nbsp; | BIN(b+0) | OCT(b+0) | HEX(b+0) |</span></pre>
+			<pre><span>+------+----------+----------+----------+</span></pre>
+			<pre><span>|&nbsp; 255 | 11111111 | 377&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | FF&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>|&nbsp;&nbsp; 10 | 1010&nbsp;&nbsp;&nbsp;&nbsp; | 12&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+------+----------+----------+----------+</span></pre>
+			<h3 class="title"><a name="null-values"></a>9.1.6. NULL值</h3></div></div></div><a class="indexterm" name="id2833075"></a>
+			<p>
+			<span>NULL</span>值表示“没有<span class="quote">数据</span>”。<span>NULL</span>可以写成大写或小写。</p>
+			<p>
+			请注意<span>NULL</span>值不同于数字类型的<span>0</span>或字符串类型的空字符串。参见<a href="problems.html#problems-with-null" title="A.5.3. Problems with NULL Values">A.5.3节，“与NULL值有关的问题<code class="literal"></code>”</a>。</p>
+			<p>对于用<span>LOAD 
+			DATA INFILE</span>或<span>SELECT 
+			...INTO OUTFILE</span>执行的文本文件导入或导出操作，<span>NULL</span>用序列<span>\N</span>表示。参见<a href="sql-syntax.html#load-data" title="13.2.5. LOAD DATA INFILE Syntax">13.2.5节，“LOAD 
+		DATA INFILE语法”</a>。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="legal-names"></a>
+		9.2.&nbsp;数据库、表、索引、列和别名</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="language-structure.html#identifier-qualifiers">
+			9.2.1. 识别符限制条件</a></span></dt><dt><span class="section"><a href="language-structure.html#name-case-sensitivity">
+			9.2.2. 识别符大小写敏感性</a></span></dt></dl></div><a class="indexterm" name="id2833154"></a><a class="indexterm" name="id2833161"></a><a class="indexterm" name="id2833168"></a><a class="indexterm" name="id2833174"></a><a class="indexterm" name="id2833184"></a><a class="indexterm" name="id2833194"></a><a class="indexterm" name="id2833205"></a><a class="indexterm" name="id2833215"></a>
+		<p>
+		数据库、表、索引、列和别名是识别符。该节描述了在<span>MySQL</span>中识别符的允许的语法。</p>
+		<p>
+		下面的表描述了每类识别符的最大长度和允许的字符。</p>
+		<table border="1" cellpadding="0" id="table3">
+			<tr>
+				<td>
+				<p><strong><span>识别符</span></strong></td>
+				<td>
+				<p><strong><span>最大长度<span>(</span>字节<span>)</span></span></strong></td>
+				<td>
+				<p><strong><span>允许的字符</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>数据库</td>
+				<td>
+				<p><span>64</span></td>
+				<td>
+				<p>目录名允许的任何字符，不包括‘<span style="font-size:
+  10.0pt; ">/</span>’、‘<span>\</span>’或者‘<span>。</span>’</td>
+			</tr>
+			<tr>
+				<td>
+				<p>表</td>
+				<td>
+				<p><span>64</span></td>
+				<td>
+				<p>文件名允许的任何字符，不包括‘<span style="font-size:
+  10.0pt; ">/</span>’、‘<span>\</span>’或者‘<span>。</span>’</td>
+			</tr>
+			<tr>
+				<td>
+				<p>列</td>
+				<td>
+				<p><span>64</span></td>
+				<td>
+				<p>所有字符</td>
+			</tr>
+			<tr>
+				<td>
+				<p>索引</td>
+				<td>
+				<p><span>64</span></td>
+				<td>
+				<p>所有字符</td>
+			</tr>
+			<tr>
+				<td>
+				<p>别名</td>
+				<td>
+				<p><span>255</span></td>
+				<td>
+				<p>所有字符</td>
+			</tr>
+		</table>
+		<p>
+		除了表内注明的限制，识别符不可以包含<span>ASCII 0</span>或值为<span>255</span>的字节。数据库、表和列名不应以空格结尾。在识别符中可以使用引号识别符，尽管应尽可能避免这样使用。</p>
+		<p>
+		识别符用<span>Unicode(UTF8)</span>保存。在<span>.frm</span>文件中保存的表定义的识别符和在<span>mysql</span>数据库中的授权表保存的识别符也用<span>Unicode(UTF8)</span>保存。在<span>MySQL 
+		5.1</span>中授权表<span>(</span>和其它表<span>)</span>的字符串列的大小等于字符个数；这说明<span>(</span>不象以前版本的<span>MySQL)</span>你可以在这些列保存的值中使用多字节字符而不需要降低字符个数。</p>
+		<p>
+		识别符可以引起来也可以不引起来。如果识别符是一个保留字或包含特殊字符，无论何时使用，<em><span>必须</span></em>将它引起来。关于保留字的列表参见<a href="language-structure.html#reserved-words" title="9.6. Treatment of Reserved Words in MySQL">9.6节，“MySQL中保留字的处理”</a>。特殊字符指那些当前字符集、‘<span>_</span>’和‘<span>$</span>’之外的文字数字字符集。</p>
+		<p>
+		识别符的引用符是反勾号<span>(</span>‘<span>`</span>’<span>)</span>：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM `select` WHERE `select`.id &gt; 100;</span></b></span></pre>
+		<p>
+		如果<span>SQL</span>服务器模式包括<span>ANSI_QUOTES</span>模式选项，还可以用双引号将识别符引起来：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE &quot;test&quot; (col INT);</span></b></span></pre>
+		<pre><span>ERROR 1064: You have an error in your SQL syntax. (...)</span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SET sql_mode=&#39;ANSI_QUOTES&#39;;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE &quot;test&quot; (col INT);</span></b></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<p>
+		参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+		<p>
+		<i>如果<em><span>你引用识别符</span></em></i>，可以在识别符内包括识别符引用符。如果识别符内包括的字符与引用识别符的字符相同，则需要用双字符。下面的语句创建一个名为<span>a`b</span>包含列<span>c&quot;d</span>的表：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE `a``b` (`c&quot;d` INT)</span><span>；</span></b></span></pre>
+		<p>
+		建议不要使用<span><i><span>X</span></i><span>e<i>X</i></span></span>模式的名，例如<span>1e</span>或<span>2e2</span>，因为类似<span>1e+1</span>的表达式比较模糊。根据上下文，它可以解释为表达式<span>1e 
+		+ 1</span>或数字<span>1e+1</span>。</p>
+		<p>
+		使用<span>MD5</span>产生表名时应仔细，因为它可能产生不合法的表名，如上所述。</p>
+		<a class="indexterm" name="id2833406"></a><a class="indexterm" name="id2833419"></a><a class="indexterm" name="id2833428"></a><a class="indexterm" name="id2833437"></a><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="identifier-qualifiers"></a>
+			9.2.1.&nbsp;识别符限制条件</h3></div></div></div>
+			<p>
+			<span>MySQL</span>允许使用由单个识别符或多个识别符组成的名字。多部分名各组件之间应以句点<span>(</span>‘<span>.</span>’<span>)</span>间隔开。多部分名的开头部分作为限定词，后面的识别符被解释。</p>
+			<p>
+			在<span>MySQL</span>中可以引用下面形式的列：</p>
+			<table border="1" cellpadding="0" id="table4">
+				<tr>
+					<td>
+					<p><strong><span>
+					列参考</span></strong></td>
+					<td>
+					<p><strong><span>含义</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span><i>
+					<span>col_name</span></i></span></td>
+					<td>
+					<p>列<span><i><span>col_name</span></i></span>，查询中使用的表包含有此名字的列。</td>
+				</tr>
+				<tr>
+					<td>
+					<p><span><i>
+					<span>
+					tbl_name.col_name</span></i></span></td>
+					<td>
+					<p>默认数据库中的表<span><i><span>tbl_name</span></i></span>的列<span><i><span>col_name</span></i></span>。</td>
+				</tr>
+				<tr>
+					<td>
+					<p><span><i>
+					<span>
+					db_name.tbl_name.col_name</span></i></span></td>
+					<td>
+					<p>数据库<span><i><span>db_name</span></i></span>中的表<span><i><span>tbl_name</span></i></span>的列<span><i><span>col_name</span></i></span>。</td>
+				</tr>
+			</table>
+			<p>
+			<span>&nbsp;</span></p>
+			<p>
+			如果多部分名的组件需要引用，应分别将它们引起来而不要将整个名引起来。例如，<span>`my-tables`.`my-column`</span><span>
+			</span>有效，而<span>`my-tables.my-column`</span>无效。</p>
+			<p>
+			不需要在语句中为列指定<span><i><span>tbl_name</span></i></span>或<span><i><span>db_name.tbl_name</span></i></span>前缀，除非列会很模糊。假定表<span>t1</span>和<span>t2</span>各包含一个列<span>c</span>，你使用<span>SELECT</span>语句在<span>t1</span>和<span>t2</span>中搜索<span>c</span>。在这种情况下，<span>c</span>很模糊，因为它在语句中使用的表内不唯一。你必须用表名<span>t1.c</span>或<span>t2.c</span>限定它，表示指哪个表。同样，要想用同一语句搜索数据库<span>db1</span>中的表<span>t</span>和数据库<span>db2</span>中的表<span>t</span>，你必须将那些表中的列指为<span>db1.t.col_name</span>和<span>db2.t.col_name</span>。</p>
+			<p>
+			限定名中句点后面的字必须为一个识别符，因此不需要将它引起来，即使是一个保留字。</p>
+			<p>语法<span><i><span>.tbl_name</span></i></span>表示当前数据库中的<span><i><span>tbl_name</span></i></span>。该语法与<span>ODBC</span>兼容，因为某些<span>ODBC</span>程序在表名前面加前缀‘<span>.</span>’字符。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="name-case-sensitivity"></a>
+			9.2.2.&nbsp;识别符大小写敏感性</h3></div></div></div><a class="indexterm" name="id2833870"></a><a class="indexterm" name="id2833880"></a><a class="indexterm" name="id2833890"></a><a class="indexterm" name="id2833901"></a><a class="indexterm" name="id2833911"></a><a class="indexterm" name="id2833921"></a><a class="indexterm" name="id2833932"></a><a class="indexterm" name="id2833942"></a>
+			<p>
+			在<span>MySQL</span>中，数据库对应数据目录中的目录。数据库中的每个表至少对应数据库目录中的一个文件<span>(</span>也可能是多个，取决于存储引擎<span>)</span>。因此，所使用操作系统的大小写敏感性决定了数据库名和表名的大小写敏感性。这说明在大多数<span>Unix</span>中数据库名和表名对大小写敏感，而在<span>Windows</span>中对大小写不敏感。一个显著的例外情况是<span>Mac 
+			OS X</span>，它基于<span>Unix</span>但使用默认文件系统类型<span>(HFS+)</span>，对大小写不敏感。然而，<span>Mac 
+			OS X</span>也支持<span>UFS</span>卷，该卷对大小写敏感，就像<span>Unix</span>一样。参见<a href="introduction.html#extensions-to-ansi" title="1.8.4. MySQL Extensions to Standard SQL">1.8.4节，“MySQL对标准SQL的扩展”</a>。</p>
+			<p>
+			<strong><span>注释：</span></strong>尽管在某些平台中数据库名和表名对大小写不敏感，不应在同一查询中使用不同的大小写来引用给定的数据库或表。下面的查询不会工作，因为它同时引用了表<span>my_tables</span>和<span>as
+			</span>
+			<span>MY_tables</span>：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM my_table WHERE MY_TABLE.col=1;</span></b></span></pre>
+			<p>
+			列、索引、存储子程序和触发器名在任何平台上对大小写不敏感，列的别名也不敏感。</p>
+			<p>
+			默认情况，表别名在<span>Unix</span>中对大小写敏感，但在<span>Windows</span>或<span>Mac 
+			OS X</span>中对大小写不敏感。下面的查询在<span>Unix</span>中不会工作，因为它同时引用了别名<span>a</span>和<span>A</span>：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT <i>col_name</i> FROM <i>tbl_name</i> AS a</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>WHERE a.<i>col_name</i> = 1 OR A.<i>col_name</i> = 2;</span></b></span></pre>
+			<p>
+			然而，该查询在<span>Windows</span>中是可以的。要想避免出现差别，最好采用一致的转换，例如总是用小写创建并引用数据库名和表名。在大多数移植和使用中建议使用该转换。</p>
+			<p>
+			在<span>MySQL</span>中如何在硬盘上保存和使用表名和数据库名由<span>lower_case_tables_name</span>系统变量确定，可以在启动<strong><span>mysqld</span></strong>时设置。<span>lower_case_tables_name</span>可以采用下面的任一值：</p>
+			<table border="1" cellpadding="0" id="table5">
+				<tr>
+					<td>
+					<p><strong><span>值</span></strong></td>
+					<td>
+					<p><strong><span>含义</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>0</span></td>
+					<td>
+					<p>使用<span>CREATE 
+					TABLE</span>或<span>CREATE 
+					DATABASE</span>语句指定的大写和小写在硬盘上保存表名和数据库名。名称比较对大小写敏感。在<span>Unix</span>系统中的默认设置即如此。请注意如果在大小写不敏感的文件系统上用<span>--lower-case-table-names=0</span>强制设为<span>0</span>，并且使用不同的大小写访问<span>MyISAM</span>表名，会导致索引破坏。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>1</span></td>
+					<td>
+					<p>表名在硬盘上以小写保存，名称比较对大小写敏感。<span>MySQL</span>将所有表名转换为小写以便存储和查找。该行为也适合数据库名和表的别名。该值为<span>Windows</span>和<span>Mac 
+					OS X</span>系统中的默认值。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>2</span></td>
+					<td>
+					<p>表名和数据库名在硬盘上使用<span>CREATE 
+					TABLE</span>或<span>CREATE 
+					DATABASE</span>语句指定的大小写进行保存，但<span>MySQL</span>将它们转换为小写以便查找。名称比较对大小写敏感。<strong><span>注</span><span>释：</span></strong><em><span>只</span></em>在对大小写不敏感的文件系统上适用<span>!
+					</span>
+					<span>InnoDB</span>表名以小写保存，例如<span>lower_case_tables_name=1</span>。</td>
+				</tr>
+			</table>
+			<p>
+			在<span>Windows</span>和<span>Mac OS X</span>中，<span>lower_case_tables_name</span>的
+			默认值是<span>1</span>。</p>
+			<p>
+			如果只在一个平台上使用<span>MySQL</span>，通常不需要更改<span>lower_case_tables_name</span>变量。然而，如果你想要在对大小写敏感不同的文件系统的平台之间转移表，会遇到困难。例如，在<span>Unix</span>中，<span>my_tables</span>和<span>MY_tables</span>是两个不同的表，但在<span>Windows</span>中，这两个表名相同。要想避免由于数据库或表名的大小写造成的数据转移问题，可使用两个选项：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在任何系统中可以使用<span>lower_case_tables_name=1</span>。使用该选项的不利之处是当使用<span>SHOW 
+			TABLES</span>或<span>SHOW 
+			DATABASES</span>时，看不出名字原来是用大写还是小写。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在<span>Unix</span>中使用<span>lower_case_tables_name=0</span>，在<span>Windows</span>中使用<span>lower_case_tables_name=2</span>。这样了可以保留数据库名和表名的大小写。不利之处是必须确保在<span>Windows</span>中查询总是用正确大小写引用数据库名和表名。如果将查询转移到<span>Unix</span>中，由于在<span>Unix</span>中大小写很重要，如果大小写不正确，它们不工作。</p>
+			<p>
+			<strong><span>例外</span></strong>：如果你正使用<span>InnoDB</span>表，在任何平台上均应将<span>lower_case_tables_name</span>设置为<span>1</span>，以强制将名转换为小写。</p>
+			<p>请注意在<span>Unix</span>中将<span>lower_case_tables_name</span>设置为<span>1</span>之前，重启<strong><span>mysqld</span></strong>之前，必须先将旧的数据库名和表名转换为小写。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="variables"></a>
+		9.3.&nbsp;用户变量</h2></div></div></div><a class="indexterm" name="id2834328"></a><a class="indexterm" name="id2834339"></a><a class="indexterm" name="id2834345"></a>
+		<p>
+		可以先在用户变量中保存值然后在以后引用它；这样可以将值从一个语句传递到另一个语句。<em><span>用户变量与连接有关</span></em>。也就是说，一个客户端定义的变量不能被其它客户端看到或使用。当客户端退出时，该客户端连接的所有变量将自动释放。</p>
+		<p>
+		用户变量的形式为<span>@<i>var_name</i></span>，其中变量名<span><i><span>var_name</span></i></span>可以由当前字符集的文字数字字符、‘<span>.</span>’、‘<span>_</span>’和‘<span>$</span>’组成。
+		默认字符集是<span>cp1252 
+		(Latin1)</span>。可以用<strong><span>mysqld</span></strong>的<span>--default-character-set</span>选项更改字符集。参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。用户变量名对大小写不敏感。</p>
+		<p>
+		设置用户变量的一个途径是执行<span>SET</span>语句：</p>
+		<pre><span>SET @</span><span><i><span>var_name</span></i></span><span> = </span><span><i><span>expr</span></i></span><span> [, @</span><span><i><span>var_name</span></i></span><span> = </span><span><i><span>expr</span></i></span><span>] ...</span></pre>
+		<p>
+		对于<span>SET</span>，可以使用<span>=</span>或<span>:=</span>作为分配符。分配给每个变量的<span><i><span>expr</span></i></span>可以为整数、实数、字符串或者<span>NULL</span>值。</p>
+		<p>也可以用语句代替<span>SET</span>来为用户变量分配一个值。在这种情况下，分配符必须为<span>:=</span>而不能用<span>=</span>，因为在非<span>SET</span>语句中<span>=</span>被视为一个比较
+		操作符：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SET @t1=0, @t2=0, @t3=0;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT @t1:=(@t2:=1)+@t3:=4,@t1,@t2,@t3;</span></b></span></pre>
+		<pre><span>+----------------------+------+------+------+</span></pre>
+		<pre><span>| @t1:=(@t2:=1)+@t3:=4 | @t1&nbsp; | @t2&nbsp; | @t3&nbsp; |</span></pre>
+		<pre><span>+----------------------+------+------+------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;5 |&nbsp;&nbsp;&nbsp; 5 |&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp; 4 |</span></pre>
+		<pre><span>+----------------------+------+------+------+</span></pre>
+		<p>
+		用户变量可以用于表达式中。目前不包括明显需要文字值的上下文中，例如<span>SELECT</span>语句的<span>LIMIT</span>子句，或者<span>LOAD 
+		DATA</span>语句的<span>IGNORE 
+		number LINES</span>子句。</p>
+		<p>
+		如果使用没有初始化的变量，其值是<span>NULL</span>。</p>
+		<p>
+		如果用户变量分配了一个字符串值，其字符集和校对规则与该字符串的相同。用户变量的可压缩性（<span>coercibility</span>）是隐含的。<span>(</span>即为表列值的相同的可压缩性（<span>coercibility</span>）。</p>
+		<p>
+		<strong><span>注释：</span></strong>在<span>SELECT</span>语句中，表达式发送到客户端后才进行计算。这说明在<span>HAVING</span>、<span>GROUP 
+		BY</span>或者<span>ORDER 
+		BY</span>子句中，不能使用包含<span>SELECT</span>列表中所设的变量的表达式。例如，下面的语句不能按期望工作：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT (@aa:=id) AS a</span><span>，<span>(@aa+3) AS b </span>从<i><span>tbl_name</span></i><span> HAVING b=5</span>；</span></b></span></pre>
+		<p>
+		<span>
+		HAVING</span>子句中引用了<span>SELECT</span>列表中的表达式的别名，使用<span>@aa</span>。不能按期望工作：<span>@aa</span>不包含当前行的值，而是前面所选的行的<span>id</span>值。</p>
+		<p>
+		一般原则是不要在语句的一个部分为用户变量分配一个值而在同一语句的其它部分使用该变量。可能会得到期望的结果，但不能保证。</p>
+		<p>
+		设置变量并在同一语句中使用它的另一个问题是变量的默认结果的类型取决于语句前面的变量类型。下面的例子说明了该点：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SET @a=&#39;test&#39;;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT @a,(@a:=20) FROM <i>tbl_name</i>;</span></b></span></pre>
+		<p>
+		对于该 
+		<span>SELECT</span>语句，<span>MySQL</span>向客户端报告第<span>1</span>列是一个字符串，并且将<span>@a</span>的所有访问转换为字符串，即使<span>@a</span>在第<span>2</span>行中设置为一个数字。执行完<span>SELECT</span>语句后，<span>@a</span>被视为下一语句的一个数字。</p>
+		<p>
+		要想避免这种问题，要么不在同一个语句中设置并使用相同的变量，要么在使用前将变量设置为<span><span>0</span><span>、<span>0.0</span></span></span>或者<span>&#39;&#39;</span>以定义其类型。</p>
+		<p>未分配的变量有一个值<span>NULL</span>，类型为字符串。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="system-variables"></a>
+		9.4.&nbsp;系统变量</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="language-structure.html#structured-system-variables">
+			9.4.1. 结构式系统变量</a></span></dt></dl></div><a class="indexterm" name="id2834713"></a><a class="indexterm" name="id2834723"></a><a class="indexterm" name="id2834730"></a>
+		<p>
+		<span>MySQL</span>可以访问许多系统和连接变量。当服务器运行时许多变量可以动态更改。这样通常允许你修改服务器操作而不需要停止并重启服务器。</p>
+		<p>
+		<strong><span>mysqld</span></strong>服务器维护两种变量。全局变量影响服务器整体操作。会话变量影响具体客户端连接的操作。</p>
+		<p>
+		当服务器启动时，它将所有全局变量初始化为默认值。这些默认值可以在选项文件中或在命令行中指定的选项进行更改。服务器启动后，通过连接服务器并执行<span>SET 
+		GLOBAL <i>var_name</i></span>语句，可以动态更改这些全局变量。要想更改全局变量，必须具有<span>SUPER</span>权限。</p>
+		<p>
+		服务器还为每个连接的客户端维护一系列会话变量。在连接时使用相应全局变量的当前值对客户端的会话变量进行初始化。对于动态会话变量，客户端可以通过<span>SET 
+		SESSION <i>var_name</i></span>语句更改它们。设置会话变量不需要特殊权限，但客户端只能更改自己的会话变量，而不能更改其它客户端的会话变量。</p>
+		<p>
+		对于全局变量的更改可以被访问该全局变量的任何客户端看见。然而，它只影响更改后连接的客户的从该全局变量初始化的相应会话变量。不影响目前已经连接的客户端的会话变量<span>(</span>即使客户端执行<span>SET 
+		GLOBAL</span>语句也不影响<span>)</span>。</p>
+		<p>
+		可以使用几种语法形式来设置或检索全局或会话变量。下面的例子使用了<span>s</span><span>ort_buffer_size</span><span>as</span>作为示例变量名。</p>
+		<p>
+		要想设置一个<span>GLOBAL</span>变量的值，使用下面的语法：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SET GLOBAL sort_buffer_size=<i>value</i>;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SET @@global.sort_buffer_size=<i>value</i>;</span></b></span></pre>
+		<p>
+		要想设置一个<span>SESSION</span>变量的值，使用下面的语法：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SET SESSION sort_buffer_size=<i>value</i>;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SET @@session.sort_buffer_size=<i>value</i>;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SET sort_buffer_size=<i>value</i>;</span></b></span></pre>
+		<p>
+		<span>
+		LOCAL</span>是<span>SESSION</span>的同义词。</p>
+		<p>
+		如果设置变量时不指定<span>GLOBAL</span>、<span>SESSION</span>或者<span>LOCAL</span>，默认使用<span>SESSION</span>。参见<a href="sql-syntax.html#set-option" title="13.5.3. SET Syntax">13.5.3节，“SET语法”</a>。</p>
+		<p>
+		要想检索一个<span>GLOBAL</span>变量的值，使用下面的语法：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT @@global.sort_buffer_size;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW GLOBAL VARIABLES like &#39;sort_buffer_size&#39;;</span></b></span></pre>
+		<p>
+		要想检索一个<span>SESSION</span>变量的值，使用下面的语法：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT @@sort_buffer_size;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT @@session.sort_buffer_size;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW SESSION VARIABLES like &#39;sort_buffer_size&#39;;</span></b></span></pre>
+		<p>
+		这里，<span>LOCAL</span>也是<span>SESSION</span>的同义词。</p>
+		<p>
+		当你用<span>SELECT 
+		@@<i>var_name</i></span>搜索一个变量时<span>(</span>也就是说，不指定<span>global.</span>、<span>session.</span>或者<span>local.</span><span>)</span>，<span>MySQL</span>返回<span>SESSION</span>值（如果存在），否则返回<span>GLOBAL</span>值。</p>
+		<p>对于<span>SHOW 
+		VARIABLES</span>，如果不指定<span><span>GLOBAL</span><span>、<span>SESSION</span></span></span>或者<span>LOCAL</span>，<span>MySQL</span>返回<span>SESSION</span>值。</p>
+		<p>
+		当设置<span>GLOBAL</span>变量需要<span>GLOBAL</span>关键字但检索时不需要它们的原因是防止将来出现问题。如果我们移除一个与某个<span>GLOBAL</span>变量具有相同名字的<span>SESSION</span>变量，具有<span>SUPER</span>权限的客户可能会意外地更改<span>GLOBAL</span>变量而不是它自己的连接的<span>SESSION</span>变量。如果我们添加一个与某个<span>GLOBAL</span>变量具有相同名字的<span>SESSION</span>变量，想更改<span>GLOBAL</span>变量的客户可能会发现只有自己的<span>SESSION</span>变量被更改了。</p>
+		<p>关于系统启动选项和系统变量的详细信息参见<a href="database-administration.html#server-options" title="5.3.1. mysqld Command-Line Options">5.3.1节，“<span><strong class="command">mysqld</strong></span>命令行选项”</a>和<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。在<a href="database-administration.html#dynamic-system-variables" title="5.3.3.1. Dynamic System Variables">5.3.3.1节，“动态系统变量”</a>中列出了可以在运行时设置的变量。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="structured-system-variables"></a>
+			9.4.1.&nbsp;结构式系统变量</h3></div></div></div>
+			<p>
+			结构式变量在两个方面不同于常规系统变量：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>其值是一个含组件的结构，可以指定服务器参数，一般紧密相关。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>可能是给定类型的结构式变量的几个实例。每个实例有一个不同的名，指向服务器维护的不同的资源。</p>
+			<p>
+			<span>MySQL 5.1</span>支持结构式变量类型，可以指定监控键值缓存操作的参数。键值缓存结构式变量有以下组件：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>key_buffer_size</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>key_cache_block_size</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>key_cache_division_limit</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>key_cache_age_threshold</span></p>
+			<p>
+			该节描述了引用结构式变量的语法。在语法的例子中使用了键值缓存变量，但关于键值缓存如何操作的具体详情在其它章节中，如 <a href="optimization.html#myisam-key-cache" title="7.4.6. The MyISAM Key Cache">
+			7.4.6节，“MyISAM键高速缓冲”</a>。</p>
+			<p>要引用结构式变量实例的组件，可以使用<span>instance_name.component_name</span>格式的复合名。例如：</p>
+			<pre><span>hot_cache.key_buffer_size</span></pre>
+			<pre><span>hot_cache.key_cache_block_size</span></pre>
+			<pre><span>cold_cache.key_cache_block_size</span></pre>
+			<p>
+			对于每个结构式系统变量，总是预定义名为<span>default</span>的一个实例。如果不使用任何实例名引用结构式变量的一个组件，<span>default</span>实例被使用。这样，<span>default.key_buffer_size</span>和<span>key_buffer_size</span><span>both</span>均指向同一系统变量。</p>
+			<p>
+			结构式变量实例和组件的命名规则为：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			对于给定类型的结构式变量，每个实例必须有一个在该类变量中唯一的一个名。但是，在不同类型的结构式变量中实例名不需要唯一。例如，每个结构式变量有一个实例<span>default</span>，因此在不同的变量类型中<span>default</span>不是唯一的。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>每个结构式变量类型的组件名在所有系统变量名中必须是唯一的。如果不是这样<span>(</span>也就是说，如果两个不同类型的结构式变量能够共享组件成员名<span>)</span>，将不清楚使用哪个默认结构式变量来用作没有使用实例名限定的成员名。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果结构式变量实例名作为未引起来的识别符不合法，将它用反勾号引起来作为识别符。例如，<span>hot-cache</span>不合法，但<span>`hot-cache`</span><span>
+			</span>合法。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			<span>global</span><span>、<span>session</span></span></span>和<span>local</span>不是合法实例名。这样可以避免与引用非结构式系统变量的符号的冲突，例如<span>@@global.<i>var_name</i></span>。</p>
+			<p>
+			目前，这前两个规则不可能违背，因为唯一的结构式变量类型是键值缓存。在将来创建其它类型的结构式变量，这些规则将有重要的意义。</p>
+			<p>
+			一个例外是，可以在可能出现简单变量名的上下文中使用复合名引用结构式变量组件。例如，可以使用一个命令行选项未某个结构式变量分配一个值：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysqld --hot_cache.key_buffer_size=64K</span></b></span></pre>
+			<p>
+			在选项文件中，使用：</p>
+			<pre><span>[mysqld]</span></pre>
+			<pre><span>hot_cache.key_buffer_size=64K</span></pre>
+			<p>
+			如果用该选项启动服务器，除了默认大小为<span>8MB</span>的默认键值缓存，还创建一个名为<span>hot_cache</span>的键值缓存，大小为<span>64KB</span>。</p>
+			<p>假定你这样启动服务器：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysqld --key_buffer_size=256K \</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span>--extra_cache.key_buffer_size=128K \</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span>--extra_cache.key_cache_block_size=2048</span></b></span></pre>
+			<p>
+			在这种情况下，服务器将默认键值缓存的大小设定为<span>256KB</span>。<span>(</span>也可以写成<span>--default.key_buffer_size=256K</span>）<span>。
+			</span>并且，服务器创建一个名为<span>extra_cache</span>的第<span>2</span>个键值缓存，大小为<span>128KB</span>，缓存表索引块的块缓存区的大小设置为<span>2048</span>字节。</p>
+			<p>在下面的例子中，用<span>3</span>个不同的键值缓存（大小比例为<span>3:1:1</span>）启动服务器：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysqld --key_buffer_size=6M \</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;</span><span><b><span>--hot_cache.key_buffer_size=2M \</span></b></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><b><span>--cold_cache.key_buffer_size=2M</span></b></span></pre>
+			<p>也可以在运行时设置和检索结构式变量值。例如，要想将名为<span>hot_cache</span>的一个键值缓存的大小设置为<span>10MB</span>，使用下面任何一个语句：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SET GLOBAL hot_cache.key_buffer_size = 10*1024*1024;</span></b></span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SET @@global.hot_cache.key_buffer_size = 10*1024*1024;</span></b></span></pre>
+			<p>要想检索缓存大小，执行：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT @@global.hot_cache.key_buffer_size;</span></b></span></pre>
+			<p>但是，下面的语句不工作。变量不解释为一个复合名，而是解释为<span>LIKE</span>模式匹配操作的简单字符串：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SHOW GLOBAL VARIABLES LIKE &#39;hot_cache.key_buffer_size&#39;;</span></b></span></pre>
+			<p>这是一个在可能出现简单的变量名时使用结构式变量名的例子。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="comments"></a>
+		9.5.&nbsp;注释语法</h2></div></div></div><a class="indexterm" name="id2835505"></a><a class="indexterm" name="id2835514"></a>
+		<p>
+		<span>MySQL</span>服务器支持<span>3</span>种注释风格：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>从‘<span>#</span>’字符从行尾。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>从‘<span>--
+		</span>’序列到行尾。请注意‘<span>--
+		</span>’<span>(</span>双破折号<span>)</span>注释风格要求第<span>2</span>个破折号后面至少跟一个空格符<span>(</span>例如空格、<span>tab</span>、换行符等等<span>)</span>。该语法与标准<span>SQL</span>注释语法稍有不同，后者将在<a href="introduction.html#ansi-diff-comments" title="1.8.5.7. '--' as the Start of a Comment">1.8.5.7, 
+		“‘--’作为注释起始标记”</a>中讨论。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>从<span>/*</span>序列到后面的<span>*/</span>序列。结束序列不一定在同一行中，因此该语法允许注释跨越多行。</p>
+		<p>下面的例子显示了<span>3</span>种风格的注释：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT 1+1;&nbsp;&nbsp;&nbsp;&nbsp; # This comment continues to the end of line</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT 1+1;&nbsp;&nbsp;&nbsp;&nbsp; -- This comment continues to the end of line</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT 1 /* this is an in-line comment */ + 1;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT 1+</span></b></span></pre>
+		<pre><span>/*</span></pre>
+		<pre><span>this is a</span></pre>
+		<pre><span>multiple-line comment</span></pre>
+		<pre><span>*/</span></pre>
+		<pre><span>1;</span></pre>
+		<p>上述的注释语法适用于<strong><span  style="font-family:
+宋体">mysqld</span></strong>服务器如何分析<span>SQL</span>语句。发送到服务器之前，<strong><span>mysql</span><span>客户</span></strong>程序也执行部分语句解析。<span>(</span>例如，它通过解析来确定在多语句行中的语句边界）<span>。</span></p>
+		<p>在<span>MySQL 5.1</span>中，<strong><span>mysql</span></strong>解析<span>/* 
+		...*/</span>注释的唯一局限性是结合该风格的注释定界符使用的叹号标记了有条件执行的<span>SQL</span>语句部分。适用于交互式运行<strong><span>mysql</span></strong>和将命令放入一个文件中，并以批处理模式使用<strong><span>mysql</span></strong>来处理<strong><span>mysql 
+		&lt; </span></strong><span><b><i>
+		<span>file_name</span></i></b></span>的文件。详细信息和例子参见<a href="introduction.html#extensions-to-ansi" title="1.8.4. MySQL Extensions to Standard SQL">1.8.4节，“MySQL对标准SQL的扩展”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="reserved-words"></a>
+		9.6.&nbsp;MySQL中保留字的处理</h2></div></div></div><a class="indexterm" name="id2835682"></a><a class="indexterm" name="id2835689"></a>
+		<p>
+		尝试使用一个识别符，例如使用嵌入式<span>MySQL</span>数据类型或函数名作为表名或列名，例如<span>TIMESTAMP</span>或<span>GROUP</span>，会造成一个常见问题。允许你这样操作<span>(</span>例如，<span>ABS</span>可以作为一个列名<span>)</span>。但是，默认情况下，在数调用中在函数名和后面的‘<span>(</span>’字符之间不允许有空格。该要求使函数调用与列名引用不同。</p>
+		<p>
+		该行为的不利结果是在某些上下文中省略一个空格会使识别符解释为函数名。例如，该语句合法：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE abs (val INT)</span><span>；</span></b></span></pre>
+		<p>但省略<span>abs</span>后面的空格会造成语法错误，因为省略后该语句好像要调用<span>ABS()</span>函数：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE abs(val INT);</span></b></span></pre>
+		<p>
+		如果<span>SQL</span>服务器模式包括<span>IGNORE_SPACE</span>模式值，服务器允许函数调用时在函数名和后面的‘<span>(</span>’字符之间有空格。这样使函数名被视为保留字。结果是，与函数名相同的识别符必须按照<a href="language-structure.html#legal-names" title="9.2. Database, Table, Index, Column, and Alias Names">9.2节，“数据库、表、索引、列和别名”</a>中所描述的引起来。<span>SQL</span>服务器模式按照<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>中所描述的进行控制。</p>
+		<p>
+		限定名中句点后面的字必须为一个识别符，因此不需要将它引起来，即使它是一个保留字。</p>
+		<p>在<span>MySQL</span>中，下表中的字显式被保留。其中大多数字进制被标准<span>SQL</span>用作列名和<span>/</span>或表名<span>(</span>例如，<span>GROUP</span><span>)</span>。少数被保留了，因为<span>MySQL</span>需要它们，<span>(</span>目前<span>)</span>使用<strong><span>yacc</span></strong>解析程序。保留字被引起来后可以用作识别符。</p>
+		<div class="informaltable"><table border="1"><colgroup><col><col></colgroup><tbody><tr><td>ADD</td><td>ALL</td><td>ALTER</td></tr><tr><td>ANALYZE</td><td>AND</td><td>AS</td></tr><tr><td>ASC</td><td>ASENSITIVE</td><td>BEFORE</td></tr><tr><td>BETWEEN</td><td>BIGINT</td><td>BINARY</td></tr><tr><td>BLOB</td><td>BOTH</td><td>BY</td></tr><tr><td>CALL</td><td>CASCADE</td><td>CASE</td></tr><tr><td>CHANGE</td><td>CHAR</td><td>CHARACTER</td></tr><tr><td>CHECK</td><td>COLLATE</td><td>COLUMN</td></tr><tr><td>CONDITION</td><td>CONNECTION</td><td>CONSTRAINT</td></tr><tr><td>CONTINUE</td><td>CONVERT</td><td>CREATE</td></tr><tr><td>CROSS</td><td>CURRENT_DATE</td><td>CURRENT_TIME</td></tr><tr><td>CURRENT_TIMESTAMP</td><td>CURRENT_USER</td><td>CURSOR</td></tr><tr><td>DATABASE</td><td>DATABASES</td><td>DAY_HOUR</td></tr><tr><td>DAY_MICROSECOND</td><td>DAY_MINUTE</td><td>DAY_SECOND</td></tr><tr><td>DEC</td><td>DECIMAL</td><td>DECLARE</td></tr><tr><td>DEFAULT</td><td>DELAYED</td><td>DELETE</td></tr><tr><td>DESC</td><td>DESCRIBE</td><td>DETERMINISTIC</td></tr><tr><td>DISTINCT</td><td>DISTINCTROW</td><td>DIV</td></tr><tr><td>DOUBLE</td><td>DROP</td><td>DUAL</td></tr><tr><td>EACH</td><td>ELSE</td><td>ELSEIF</td></tr><tr><td>ENCLOSED</td><td>ESCAPED</td><td>EXISTS</td></tr><tr><td>EXIT</td><td>EXPLAIN</td><td>FALSE</td></tr><tr><td>FETCH</td><td>FLOAT</td><td>FLOAT4</td></tr><tr><td>FLOAT8</td><td>FOR</td><td>FORCE</td></tr><tr><td>FOREIGN</td><td>FROM</td><td>FULLTEXT</td></tr><tr><td>GOTO</td><td>GRANT</td><td>GROUP</td></tr><tr><td>HAVING</td><td>HIGH_PRIORITY</td><td>HOUR_MICROSECOND</td></tr><tr><td>HOUR_MINUTE</td><td>HOUR_SECOND</td><td>IF</td></tr><tr><td>IGNORE</td><td>IN</td><td>INDEX</td></tr><tr><td>INFILE</td><td>INNER</td><td>INOUT</td></tr><tr><td>INSENSITIVE</td><td>INSERT</td><td>INT</td></tr><tr><td>INT1</td><td>INT2</td><td>INT3</td></tr><tr><td>INT4</td><td>INT8</td><td>INTEGER</td></tr><tr><td>INTERVAL</td><td>INTO</td><td>IS</td></tr><tr><td>ITERATE</td><td>JOIN</td><td>KEY</td></tr><tr><td>KEYS</td><td>KILL</td><td>LABEL</td></tr><tr><td>LEADING</td><td>LEAVE</td><td>LEFT</td></tr><tr><td>LIKE</td><td>LIMIT</td><td>LINEAR</td></tr><tr><td>LINES</td><td>LOAD</td><td>LOCALTIME</td></tr><tr><td>LOCALTIMESTAMP</td><td>LOCK</td><td>LONG</td></tr><tr><td>LONGBLOB</td><td>LONGTEXT</td><td>LOOP</td></tr><tr><td>LOW_PRIORITY</td><td>MATCH</td><td>MEDIUMBLOB</td></tr><tr><td>MEDIUMINT</td><td>MEDIUMTEXT</td><td>MIDDLEINT</td></tr><tr><td>MINUTE_MICROSECOND</td><td>MINUTE_SECOND</td><td>MOD</td></tr><tr><td>MODIFIES</td><td>NATURAL</td><td>NOT</td></tr><tr><td>NO_WRITE_TO_BINLOG</td><td>NULL</td><td>NUMERIC</td></tr><tr><td>ON</td><td>OPTIMIZE</td><td>OPTION</td></tr><tr><td>OPTIONALLY</td><td>OR</td><td>ORDER</td></tr><tr><td>OUT</td><td>OUTER</td><td>OUTFILE</td></tr><tr><td>PRECISION</td><td>PRIMARY</td><td>PROCEDURE</td></tr><tr><td>PURGE</td><td>RAID0</td><td>RANGE</td></tr><tr><td>READ</td><td>READS</td><td>REAL</td></tr><tr><td>REFERENCES</td><td>REGEXP</td><td>RELEASE</td></tr><tr><td>RENAME</td><td>REPEAT</td><td>REPLACE</td></tr><tr><td>REQUIRE</td><td>RESTRICT</td><td>RETURN</td></tr><tr><td>REVOKE</td><td>RIGHT</td><td>RLIKE</td></tr><tr><td>SCHEMA</td><td>SCHEMAS</td><td>SECOND_MICROSECOND</td></tr><tr><td>SELECT</td><td>SENSITIVE</td><td>SEPARATOR</td></tr><tr><td>SET</td><td>SHOW</td><td>SMALLINT</td></tr><tr><td>SPATIAL</td><td>SPECIFIC</td><td>SQL</td></tr><tr><td>SQLEXCEPTION</td><td>SQLSTATE</td><td>SQLWARNING</td></tr><tr><td>SQL_BIG_RESULT</td><td>SQL_CALC_FOUND_ROWS</td><td>SQL_SMALL_RESULT</td></tr><tr><td>SSL</td><td>STARTING</td><td>STRAIGHT_JOIN</td></tr><tr><td>TABLE</td><td>TERMINATED</td><td>THEN</td></tr><tr><td>TINYBLOB</td><td>TINYINT</td><td>TINYTEXT</td></tr><tr><td>TO</td><td>TRAILING</td><td>TRIGGER</td></tr><tr><td>TRUE</td><td>UNDO</td><td>UNION</td></tr><tr><td>UNIQUE</td><td>UNLOCK</td><td>UNSIGNED</td></tr><tr><td>UPDATE</td><td>USAGE</td><td>USE</td></tr><tr><td>USING</td><td>UTC_DATE</td><td>UTC_TIME</td></tr><tr><td>UTC_TIMESTAMP</td><td>VALUES</td><td>VARBINARY</td></tr><tr><td>VARCHAR</td><td>VARCHARACTER</td><td>VARYING</td></tr><tr><td>WHEN</td><td>WHERE</td><td>WHILE</td></tr><tr><td>WITH</td><td>WRITE</td><td>X509</td></tr><tr><td>XOR</td><td>YEAR_MONTH</td><td>ZEROFILL</td></tr></tbody></table></div>
+		<p><span>MySQL</span>允许部分关键字用做未引起来的识别符，因为许多人以前曾使用过它们。下面列出了一些例子：</p>
+		<div class="itemizedlist">
+			<ul type="disc">
+				<li>
+				<p>
+          ACTION
+        </p></li><li><p>
+          BIT
+        </p></li><li><p>
+          DATE
+        </p></li><li><p>
+          ENUM
+        </p></li><li><p>
+          NO
+        </p></li><li><p>
+          TEXT
+        </p></li><li><p>
+          TIME
+        </p></li><li><p>
+          TIMESTAMP
+        </p></li></ul></div></div></div><div><hr>
+	<p>
+	这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com.</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div>
+</body></html>

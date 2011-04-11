@@ -1,0 +1,144 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>14.2.&#160;低级 sysfs 操作-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch14.html" title="第&#160;14&#160;章&#160;Linux 设备模型">
+<link rel="prev" href="ch14.html" title="第&#160;14&#160;章&#160;Linux 设备模型">
+<link rel="next" href="ch14s03.html" title="14.3.&#160;热插拔事件产生">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">14.2.&#160;低级 sysfs 操作</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch14.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;14&#160;章&#160;Linux 设备模型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch14s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="LowLevelSysfsOperations.sect"></a>14.2.&#160;低级 sysfs 操作</h2></div></div></div>
+<p>kobject 是在 sysfs 虚拟文件系统之后的机制. 对每个在 sysfs 中发现的目录, 有一个 kobject 潜伏在内核某处. 每个感兴趣的 kobject 也输出一个或多个属性, 它出现在 kobject 的 sysfs 目录, 作为包含内核产生的信息的文件. 本节检查 kobject 和 sysfs 如何在低层交互.</p>
+<p>使用 sysfs 的代码应当包含 &lt;linux/sysfs.h&gt;.</p>
+<p>使一个 kobject 在 sysfs 出现仅仅是调用 kobject_add 的事情. 我们已经见到这个函数作为添加一个 kobject 到一个 kset 的方式; 在 sysfs 中创建入口也是它的工作的一部分. 有一些事情值得知道, 关于 sysfs 入口如何创建:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>kobjects 的 sysfs 入口一直为目录, 因此一个对 kobject_add 的调用导致在sysfs 中创建一个目录. 常常地, 这个目录包含一个或多个属性; 我们稍后见到属性如何指定.</p></li>
+<li><p>分配给 kobject 的名字( 用 kobject_set_name ) 是给 sysfs 目录使用的名字. 因此, 出现在 sysfs 层次的相同部分的 kobjects 必须有独特的名字. 分配给 kobjects 的名字也应当是合理的文件名字: 它们不能包含斜线字符, 并且空白的使用强烈不推荐.</p></li>
+<li><p>sysfs 入口位于对应 kobject 的 parent 指针的目录中. 如果 parent 是 NULL 当 kobject_add 被调用时, 它被设置为嵌在新 kobject 的 kset 中的 kobject; 因此, sysfs 层级常常匹配使用 kset 创建的内部层次. 如果 parent 和 kset 都是 NULL, sysfs 目录在顶级被创建, 这几乎当然不是你所要的.</p></li>
+</ul></div>
+<p>使用我们至今所描述的, 我们可以使用一个 kobject 来在 sysfs 中创建一个空目录. 常常地, 你想做比这更有趣的事情, 因此是时间看属性的实现.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="DefaultAttributes.sect"></a>14.2.1.&#160;缺省属性</h3></div></div></div>
+<p>当被创建时, 每个 kobject 被给定一套缺省属性. 这些属性通过 kobj_type 结构来指定. 这个结构, 记住, 看来如此:</p>
+<pre class="programlisting">
+struct kobj_type {
+ void (*release)(struct kobject *);
+ struct sysfs_ops *sysfs_ops;
+ struct attribute **default_attrs; 
+}; 
+</pre>
+<p>default_attr 成员列举了对每个这样类型的 kobject 被创建的属性, 并且 sysfs_ops 提供方法来实现这些属性. 我们从 default_attrs 开始, 它指向一个指向属性结构的指针数组:</p>
+<pre class="programlisting">
+struct attribute {
+ char *name;
+ struct module *owner;
+ mode_t mode; 
+}; 
+</pre>
+<p>在这个结构中, name 是属性的名字( 如同它出现在 kobject 的 sysfs 目录中), owner 是一个指向模块的指针(如果有一个), 模块负责这个属性的实现, 并且 mode 是应用到这个属性的保护位. mode 常常是 S_IRUGO 对于只读属性; 如果这个属性是可写的, 你可以扔出 S_IWUSR 来只给 root 写权限( modes 的宏定义在 &lt;linux/stat.h&gt; 中). default_attrs 列表中的最后一个入口必须用 0 填充.</p>
+<p>default_attr 数组说明这些属性是什么, 但是没有告诉 sysfs 如何真正实现这些属性. 这个任务落到 kobj_type-&gt;sysfs_ops 成员, 它指向一个结构, 定义为:</p>
+<pre class="programlisting">
+struct sysfs_ops {
+ ssize_t (*show)(struct kobject *kobj, struct attribute *attr, char *buffer);
+ ssize_t (*store)(struct kobject *kobj, struct attribute *attr, const char *buffer, size_t size);
+};
+</pre>
+<p>无论何时一个属性从用户空间读取, show 方法被用一个指向 kobject 的指针和适当的属性结构来调用. 这个方法应当将给定属性值编码进缓冲, 要确定没有覆盖它( 它是 PAGE_SIZE 字节), 并且返回实际的被返回数据的长度. sysfs 的惯例表明每个属性应当包含一个单个的, 人可读的值; 如果你有许多消息返回, 你可要考虑将它分为多个属性.</p>
+<p>同样的 show 方法用在所有的和给定 kobject 关联的属性. 传递到函数的 attr 指针可用来决定需要哪个属性. 一些 show 方法包含对属性名字的一系列测试. 其他的实现将属性结构嵌入另一个结构, 来包含需要返回属性值的信息; 在这种情况下, container_of 可能用在 show 方法中来获得一个指向嵌入结构的指针.</p>
+<p>store 方法类似; 它应当将存在缓冲的数据编码( size 包含数据的长度, 这不能超过 PAGE_SIZE ), 存储和以任何有意义的的方式响应新数据, 并且返回实际编码的字节数. store 方法只在属性的许可允许写才被调用. 当编写一个 store 方法时, 不要忘记你在接收来自用户空间的任意信息; 你应当在采取对应动作之前非常小心地验证它. 如果到数据不匹配期望, 返回一个负的错误值, 而不是可能地做一些不想要的和无法恢复的事情. 如果你的设备输出一个自销毁的属性, 你应当要求一个特定的字符串写到那里来引发这个功能; 一个偶然的, 随机写应当只产生一个错误.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="NondefaultAttributes.sect"></a>14.2.2.&#160;非缺省属性</h3></div></div></div>
+<p>在许多情况中, kobject 类型的 default_attrs 成员描述所有的 kobject 会拥有的属性. 但是那不是一个设计中的限制; 属性随意可以添加到和删除自 kojects. 如果你想添加一个新属性到一个 kobject 的 sysfs 目录, 简单地填充一个属性结构并且传递它到:</p>
+<pre class="programlisting">
+int sysfs_create_file(struct kobject *kobj, struct attribute *attr);
+</pre>
+<p>如果所有都进行顺利, 文件被使用在属性结构中给定的名字创建, 并且返回值是 0; 否则, 返回通常的负错误码.</p>
+<p>注意, 相同的 show() 和 store() 函数被调用来实现对新属性的操作. 在你添加一个新的, 非缺省属性到 kobject, 你应当任何必要的步骤来确保这些函数知道如何实现这个属性.</p>
+<p>为去除一个属性, 调用:</p>
+<pre class="programlisting">
+int sysfs_remove_file(struct kobject *kobj, struct attribute *attr); 
+</pre>
+<p>在调用后, 这个属性不再出现在 kobject 的 sysfs 入口. 要小心, 但是, 一个用户空间进程可能有一个打开的那个属性的文件描述符, 并且在这个属性已经被去除后 show 和 store 调用仍然可能.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="BinaryAttributes.sect"></a>14.2.3.&#160;二进制属性</h3></div></div></div>
+<p>sysfs 惯例调用所有属性来包含一个单个的人可读文本格式的值. 就是说, 只是偶然地很少需要来创建能够处理大量二进制数据的属性. 这个需要真正地只出现在必须传递数据, 不可动地, 在用户空间和设备. 例如, 上载固件到设备需要这个特性. 当这样一个设备在系统中遇到, 一个用户程序可以被启动( 通过热插拔机制); 这个程序接着传递固件代码到内核通过一个二进制 sysfs 属性, 如同在"内核固件接口"一节中所示.</p>
+<p>二进制属性使用一个 bin+attribute 结构来描述:</p>
+<pre class="programlisting">
+struct bin_attribute {
+struct attribute attr;
+size_t size;
+ssize_t (*read)(struct kobject *kobj, char *buffer, loff_t pos, size_t size);
+ssize_t (*write)(struct kobject *kobj, char *buffer, loff_t pos, size_t size);
+};
+</pre>
+<p>这里, attr 是一个属性结构, 给出名字, 拥有者, 和这个二进制属性的权限, 并且 size 是这个二进制属性的最大大小(或者 0 , 如果没有最大值). read 和 write 方法类似于正常的字符驱动对应物; 它们一次加载可被多次调用, 每次调用最大一页数据. 对于 sysfs 没有办法来指示最后一个写操作, 因此实现二进制属性的代码必须能够以其他方式决定数据的结束.</p>
+<p>二进制属性必须明确创建; 它们不能建立为缺省属性. 为创建一个二进制属性, 调用:</p>
+<pre class="programlisting">
+int sysfs_create_bin_file(struct kobject *kobj, struct bin_attribute *attr);
+</pre>
+<p>去除二进制属性可用:</p>
+<pre class="programlisting">
+int sysfs_remove_bin_file(struct kobject *kobj, struct bin_attribute *attr);
+</pre>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="SymbolicLinks.sect"></a>14.2.4.&#160;符号连接</h3></div></div></div>
+<p>sysfs 文件系统有通常的树结构, 反映它代表的 kobjects 的层次组织. 但是内核中对象间的关系常常比那个更加复杂. 例如, 一个 sysfs 子树 (/sys/devices )代表所有的系统已知的设备, 而其他的子树( 在 /sys/bus 之下 )表示设备驱动. 这些树, 但是, 不代表驱动和它们所管理的设备间的关系. 展示这些附加关系需要额外的指针, 指针在 sysfs 中通过符号连接实现.</p>
+<p>创建一个符号连接在 sysfs 是容易的:</p>
+<pre class="programlisting">
+int sysfs_create_link(struct kobject *kobj, struct kobject *target, char *name);
+</pre>
+<p>这个函数创建一个连接(称为 name)指向目标的 sysfs 入口作为一个 kobj 的属性. 它是一个相对连接, 因此它不管 sysfs 在任何特殊的系统中安装在哪里都可用.</p>
+<p>这个连接甚至当目标被从系统中移走也持续. 如果你在创建对其他 kobjects 的符号连接, 你应当可能有一个方法知道对这个 kobjects 的改变, 或者某种保证目标 kobjects 不会消失. 结果( 在 sysfs 中的死的符号连接 )不是特别严重, 但是它们不代表最好的编程风格并且可能导致在用户空间的混乱.</p>
+<p>去除符号连接可使用:</p>
+<pre class="programlisting">
+void sysfs_remove_link(struct kobject *kobj, char *name); 
+</pre>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch14.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch14.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch14s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;14&#160;章&#160;Linux 设备模型&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;14.3.&#160;热插拔事件产生</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

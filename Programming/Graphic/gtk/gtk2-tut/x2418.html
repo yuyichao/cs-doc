@@ -1,0 +1,446 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>绘图区构件和绘图</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="涂鸦板，一个简单的绘图程序"
+HREF="c2370.html"><LINK
+REL="PREVIOUS"
+TITLE="事件处理"
+HREF="x2379.html"><LINK
+REL="NEXT"
+TITLE="添加XInput支持"
+HREF="x2473.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2379.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>涂鸦板，一个简单的绘图程序</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2473.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-THEDRAWINGAREAWIDGET">绘图区构件和绘图</H1
+><P
+>现在，我们开始向屏幕绘图。我们使用的构件是绘图区构件。一个绘图区构件本质上是一个 X 窗口，没有其它的东西。它是一个空白的画布，我们可以在其上绘制需要的东西。一个绘图区构件用如下函数创建：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget* gtk_drawing_area_new        (void);</PRE
+></TD
+></TR
+></TABLE
+><P
+>用如下函数设置构件的默认大小：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void       gtk_drawing_area_size       (GtkDrawingArea      *darea,
+					gint                 width,
+					gint                 height);</PRE
+></TD
+></TR
+></TABLE
+><P
+>当调用函数<TT
+CLASS="LITERAL"
+>gtk_widget_set_size_request()</TT
+>或用户手动调整包含绘图区的窗口的大小时，默认大小可以无效，这对所有的构件都是一样的。</P
+><P
+>当我们创建绘图区构件时应该注意，我们<I
+CLASS="EMPHASIS"
+>完全</I
+>负责绘制其上的内容。如果我们的窗口被遮住后暴露出来，我们得到一个暴露事件，我们必须重绘先前被遮住的部分。</P
+><P
+>为了能正确的重绘，我们必须记住绘制在屏幕上的内容。另外，这显然很麻烦，如果窗口的一部分被清除了，我们需一步步的重绘。解决的办法是使用一个<I
+CLASS="EMPHASIS"
+>后端位图</I
+>。我们用向图像中绘制来代替直接向屏幕绘制，当图像改变或图像的一部分需要显示，我们复制相应的部分到屏幕上。</P
+><P
+>用如下函数创建后端位图：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GdkPixmap* gdk_pixmap_new               (GdkWindow  *window,
+					 gint        width,
+					 gint        height,
+					 gint        depth);</PRE
+></TD
+></TR
+></TABLE
+><P
+><TT
+CLASS="LITERAL"
+>window</TT
+>参数设置一个 GDK 窗口，位图继承该窗口的所有属性。<TT
+CLASS="LITERAL"
+>width</TT
+>和<TT
+CLASS="LITERAL"
+>height</TT
+>设置位图的大小。<TT
+CLASS="LITERAL"
+>depth</TT
+>设置<I
+CLASS="EMPHASIS"
+>颜色深度</I
+>，那是每个象素的二进制位数，如果depth设为<TT
+CLASS="LITERAL"
+>-1</TT
+>，它会自动匹配窗口的颜色深度。</P
+><P
+>我们在事件"configure_event"的处理函数中创建位图。这个事件会在我们改变窗口大小时产生，包括窗口创建时。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>/* 绘制区的后端位图 */
+static GdkPixmap *pixmap = NULL;
+
+/* 创建一个适当大小的后端位图 */
+static gint
+configure_event (GtkWidget *widget, GdkEventConfigure *event)
+{
+  if (pixmap)
+    gdk_pixmap_unref(pixmap);
+
+  pixmap = gdk_pixmap_new(widget-&#62;window,
+			  widget-&#62;allocation.width,
+			  widget-&#62;allocation.height,
+			  -1);
+  gdk_draw_rectangle (pixmap,
+		      widget-&#62;style-&#62;white_gc,
+		      TRUE,
+		      0, 0,
+		      widget-&#62;allocation.width,
+		      widget-&#62;allocation.height);
+
+  return TRUE;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>调用函数<TT
+CLASS="LITERAL"
+>gdk_draw_rectangle()</TT
+>清除位图，并初始化为白色。后面我们会详细讲解。</P
+><P
+>我们的暴露事件处理函数只是简单复制相应部分的位图到屏幕上(用暴露事件的event-&#62;area来确定重绘区域)：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>/* 从后端位图重新绘制屏幕 */
+static gint
+expose_event (GtkWidget *widget, GdkEventExpose *event)
+{
+  gdk_draw_pixmap(widget-&#62;window,
+		  widget-&#62;style-&#62;fg_gc[GTK_WIDGET_STATE (widget)],
+		  pixmap,
+		  event-&#62;area.x, event-&#62;area.y,
+		  event-&#62;area.x, event-&#62;area.y,
+		  event-&#62;area.width, event-&#62;area.height);
+
+  return FALSE;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>现在我们来看如何保持屏幕跟随位图的更新，如何在位图上绘制我们需要的东西？ GTK 的GDK库中有许多函数用于在<I
+CLASS="EMPHASIS"
+>可绘区域</I
+>绘图。可绘区域可以是窗口、位图或黑白图。在上面我们已经见到了两个，<TT
+CLASS="LITERAL"
+>gdk_draw_rectangle()</TT
+>和<TT
+CLASS="LITERAL"
+>gdk_draw_pixmap()</TT
+>。这些函数的完全列表如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gdk_draw_line ()
+gdk_draw_rectangle ()
+gdk_draw_arc ()
+gdk_draw_polygon ()
+gdk_draw_string ()
+gdk_draw_text ()
+gdk_draw_pixmap ()
+gdk_draw_bitmap ()
+gdk_draw_image ()
+gdk_draw_points ()
+gdk_draw_segments ()</PRE
+></TD
+></TR
+></TABLE
+><P
+>详见参考文档或头文件<TT
+CLASS="LITERAL"
+>&#60;gdk/gdk.h&#62;</TT
+>。这些函数的头两个参数都相同。第一个参数是可绘区域。第二个参数是<I
+CLASS="EMPHASIS"
+>图像关联</I
+> (GC)。 </P
+><P
+>一个图像关联封装一些信息，如前景色、背景色和线宽。GDK有一组函数用于创建和修改图像关联，但为了方便，我们仅使用预定义的图像关联。每个构件有一个相关联的风格。(可以在 gtkrc 文件中修改，详见 GTK 的 rc 文件)其中，存储了许多图像关联。一些访问这些图像 关联的示例如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>widget-&#62;style-&#62;white_gc
+widget-&#62;style-&#62;black_gc
+widget-&#62;style-&#62;fg_gc[GTK_STATE_NORMAL]
+widget-&#62;style-&#62;bg_gc[GTK_WIDGET_STATE(widget)]</PRE
+></TD
+></TR
+></TABLE
+><P
+>域值<TT
+CLASS="LITERAL"
+>fg_gc</TT
+>、<TT
+CLASS="LITERAL"
+>bg_gc</TT
+>、<TT
+CLASS="LITERAL"
+>dark_gc</TT
+>和<TT
+CLASS="LITERAL"
+>light_gc</TT
+>索引取值靠一个<TT
+CLASS="LITERAL"
+>GtkStateType</TT
+>类型的参数，该类型可以取如下值：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GTK_STATE_NORMAL,
+GTK_STATE_ACTIVE,
+GTK_STATE_PRELIGHT,
+GTK_STATE_SELECTED,
+GTK_STATE_INSENSITIVE</PRE
+></TD
+></TR
+></TABLE
+><P
+>例如，<TT
+CLASS="LITERAL"
+>GTK_STATE_SELECTED</TT
+>默认的前景色是白色，默认的背景色是暗蓝色。</P
+><P
+>我们的函数<TT
+CLASS="LITERAL"
+>draw_brush()</TT
+>做实际的屏幕绘制工作。函数如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>/* 在屏幕上绘制一个矩形 */
+static void
+draw_brush (GtkWidget *widget, gdouble x, gdouble y)
+{
+  GdkRectangle update_rect;
+
+  update_rect.x = x - 5;
+  update_rect.y = y - 5;
+  update_rect.width = 10;
+  update_rect.height = 10;
+  gdk_draw_rectangle (pixmap,
+		      widget-&#62;style-&#62;black_gc,
+		      TRUE,
+		      update_rect.x, update_rect.y,
+		      update_rect.width, update_rect.height);
+  gtk_widget_draw (widget, &#38;update_rect);
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>在位图上绘制了矩形之后，我们调用如下函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void       gtk_widget_draw                (GtkWidget           *widget,
+					   GdkRectangle        *area);</PRE
+></TD
+></TR
+></TABLE
+><P
+>它会通知X参数<TT
+CLASS="LITERAL"
+>area</TT
+>给定的区域需要更新。 X 会最终会产生一个暴露事件(混合区域需要多次调用函数<TT
+CLASS="LITERAL"
+>gtk_widget_draw()</TT
+>)，然后会调用暴露事件处理函数，复制相应的部分到屏幕上。</P
+><P
+>现在我们已经有了一个较完整的绘图程序，只差主窗口部分了。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2379.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2473.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>事件处理</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2370.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>添加XInput支持</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

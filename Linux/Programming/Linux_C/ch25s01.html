@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1. 字符串操作函数</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch25.html" title="第 25 章 C标准库" /><link rel="prev" href="ch25.html" title="第 25 章 C标准库" /><link rel="next" href="ch25s02.html" title="2. 标准I/O库函数" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">1. 字符串操作函数</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch25.html">上一页</a> </td><th width="60%" align="center">第 25 章 C标准库</th><td width="20%" align="right"> <a accesskey="n" href="ch25s02.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2827571"></a>1. 字符串操作函数</h2></div></div></div><p>程序按功能划分可分为数值运算、符号处理和I/O操作三类，符号处理程序占相当大的比例，符号处理程序无处不在，编译器、浏览器、Office套件等程序的主要功能都是符号处理。无论多复杂的符号处理都是由各种基本的字符串操作组成的，本节介绍如何用C语言的库函数做字符串初始化、取长度、拷贝、连接、比较、搜索等基本操作。</p><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2827594"></a>1.1. 初始化字符串</h3></div></div></div><pre class="programlisting">#include &lt;string.h&gt;
+
+void *memset(void *s, int c, size_t n);
+返回值：s指向哪，返回的指针就指向哪</pre><p><code class="literal">memset</code>函数把<code class="literal">s</code>所指的内存地址开始的<code class="literal">n</code>个字节都填充为<code class="literal">c</code>的值。通常<code class="literal">c</code>的值为0，把一块内存区清零。例如定义<code class="literal">char buf[10];</code>，如果它是全局变量或静态变量，则自动初始化为0（位于<code class="literal">.bss</code>段），如果它是函数的局部变量，则初值不确定，可以用<code class="literal">memset(buf, 0, 10)</code>清零，由<code class="literal">malloc</code>分配的内存初值也是不确定的，也可以用<code class="literal">memset</code>清零。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2827671"></a>1.2. 取字符串的长度</h3></div></div></div><pre class="programlisting">#include &lt;string.h&gt;
+
+size_t strlen(const char *s);
+返回值：字符串的长度</pre><p><code class="literal">strlen</code>函数返回<code class="literal">s</code>所指的字符串的长度。该函数从<code class="literal">s</code>所指的第一个字符开始找<code class="literal">'\0'</code>字符，一旦找到就返回，返回的长度不包括<code class="literal">'\0'</code>字符在内。例如定义<code class="literal">char buf[] = "hello";</code>，则<code class="literal">strlen(buf)</code>的值是5，但要注意，如果定义<code class="literal">char buf[5] = "hello";</code>，则调用<code class="literal">strlen(buf)</code>是危险的，会造成数组访问越界。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2827741"></a>1.3. 拷贝字符串</h3></div></div></div><p>在<a class="xref" href="ch24s01.html#interface.prereq">第 1 节 “本章的预备知识”</a>中介绍了<code class="literal">strcpy</code>和<code class="literal">strncpy</code>函数，拷贝以<code class="literal">'\0'</code>结尾的字符串，<code class="literal">strncpy</code>还带一个参数指定最多拷贝多少个字节，此外，<code class="literal">strncpy</code>并不保证缓冲区以<code class="literal">'\0'</code>结尾。现在介绍<code class="literal">memcpy</code>和<code class="literal">memmove</code>函数。</p><pre class="programlisting">#include &lt;string.h&gt;
+
+void *memcpy(void *dest, const void *src, size_t n);
+void *memmove(void *dest, const void *src, size_t n);
+返回值：dest指向哪，返回的指针就指向哪</pre><p><code class="literal">memcpy</code>函数从<code class="literal">src</code>所指的内存地址拷贝<code class="literal">n</code>个字节到<code class="literal">dest</code>所指的内存地址，和<code class="literal">strncpy</code>不同，<code class="literal">memcpy</code>并不是遇到<code class="literal">'\0'</code>就结束，而是一定会拷贝完<code class="literal">n</code>个字节。这里的命名规律是，以<code class="literal">str</code>开头的函数处理以<code class="literal">'\0'</code>结尾的字符串，而以<code class="literal">mem</code>开头的函数则不关心<code class="literal">'\0'</code>字符，或者说这些函数并不把参数当字符串看待，因此参数的指针类型是<code class="literal">void *</code>而非<code class="literal">char *</code>。</p><p><code class="literal">memmove</code>也是从<code class="literal">src</code>所指的内存地址拷贝<code class="literal">n</code>个字节到<code class="literal">dest</code>所指的内存地址，虽然叫move但其实也是拷贝而非移动。但是和<code class="literal">memcpy</code>有一点不同，<code class="literal">memcpy</code>的两个参数<code class="literal">src</code>和<code class="literal">dest</code>所指的内存区间如果重叠则无法保证正确拷贝，而<code class="literal">memmove</code>却可以正确拷贝。假设定义了一个数组<code class="literal">char buf[20] = "hello world\n";</code>，如果想把其中的字符串往后移动一个字节（变成<code class="literal">"hhello world\n"</code>），调用<code class="literal">memcpy(buf + 1, buf, 13)</code>是无法保证正确拷贝的：</p><div class="example"><a id="id2827982"></a><p class="title"><b>例 25.1. 错误的memcpy调用</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+int main(void)
+{
+	char buf[20] = "hello world\n";
+	memcpy(buf + 1, buf, 13);
+	printf(buf);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>在我的机器上运行的结果是<code class="literal">hhhllooworrd</code>。如果把代码中的<code class="literal">memcpy</code>改成<code class="literal">memmove</code>则可以保证正确拷贝。<code class="literal">memmove</code>可以这样实现：</p><pre class="programlisting">void *memmove(void *dest, const void *src, size_t n)
+{
+	char temp[n];
+	int i;
+	char *d = dest;
+	const char *s = src;
+
+	for (i = 0; i &lt; n; i++)
+		temp[i] = s[i];
+	for (i = 0; i &lt; n; i++)
+		d[i] = temp[i];
+
+	return dest;
+}</pre><p>借助于一个临时缓冲区<code class="literal">temp</code>，即使<code class="literal">src</code>和<code class="literal">dest</code>所指的内存区间有重叠也能正确拷贝。思考一下，如果不借助于临时缓冲区能不能正确处理重叠内存区间的拷贝？</p><p>用<code class="literal">memcpy</code>如果得到的结果是<code class="literal">hhhhhhhhhhhhhh</code>倒不奇怪，可为什么会得到<code class="literal">hhhllooworrd</code>这个奇怪的结果呢？根据这个结果猜测的一种可能的实现是：</p><pre class="programlisting">void *memcpy(void *dest, const void *src, size_t n)
+{
+	char *d = dest;
+	const char *s = src;
+	int *di;
+	const int *si;
+	int r = n % 4;
+	while (r--)
+		*d++ = *s++;
+	di = (int *)d;
+	si = (const int *)s;
+	n /= 4;
+	while (n--)
+		*di++ = *si++;
+
+	return dest;
+}</pre><p>在32位的x86平台上，每次拷贝1个字节需要一条指令，每次拷贝4个字节也只需要一条指令，<code class="literal">memcpy</code>函数的实现尽可能4个字节4个字节地拷贝，因而得到上述结果。</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">C99的<code class="literal">restrict</code>关键字</h3><p>我们来看一个跟<code class="literal">memcpy</code>/<code class="literal">memmove</code>类似的问题。下面的函数将两个数组中对应的元素相加，结果保存在第三个数组中。</p><pre class="programlisting">void vector_add(const double *x, const double *y, double *result)
+{  
+	int i;  
+	for (i = 0; i &lt; 64; ++i)  
+		result[i] = x[i] + y[i];  
+}</pre><p>如果这个函数要在多处理器的计算机上执行，编译器可以做这样的优化：把这一个循环拆成两个循环，一个处理器计算i值从0到31的循环，另一个处理器计算i值从32到63的循环，这样两个处理器可以同时工作，使计算时间缩短一半。但是这样的编译优化能保证得出正确结果吗？假如<code class="literal">result</code>和<code class="literal">x</code>所指的内存区间是重叠的，<code class="literal">result[0]</code>其实是<code class="literal">x[1]</code>，<code class="literal">result[i]</code>其实是<code class="literal">x[i+1]</code>，这两个处理器就不能各干各的事情了，因为第二个处理器的工作依赖于第一个处理器的最终计算结果，这种情况下编译优化的结果是错的。这样看来编译器是不敢随便做优化了，那么多处理器提供的并行性就无法利用，岂不可惜？为此，C99引入<code class="literal">restrict</code>关键字，如果程序员把上面的函数声明为<code class="literal">void vector_add(const double *restrict x, const double *restrict y, double *restrict result)</code>，就是告诉编译器可以放心地对这个函数做优化，程序员自己会保证这些指针所指的内存区间互不重叠。</p><p>由于<code class="literal">restrict</code>是C99引入的新关键字，目前Linux的Man Page还没有更新，所以都没有<code class="literal">restrict</code>关键字，本书的函数原型都取自Man Page，所以也都没有<code class="literal">restrict</code>关键字。但在C99标准中库函数的原型都在必要的地方加了<code class="literal">restrict</code>关键字，在C99中<code class="literal">memcpy</code>的原型是<code class="literal">void *memcpy(void * restrict s1, const void * restrict s2, size_t n);</code>，就是告诉调用者，这个函数的实现可能会做些优化，编译器也可能会做些优化，传进来的指针不允许指向重叠的内存区间，否则结果可能是错的，而<code class="literal">memmove</code>的原型是<code class="literal">void *memmove(void *s1, const void *s2, size_t n);</code>，没有<code class="literal">restrict</code>关键字，说明传给这个函数的指针允许指向重叠的内存区间。在<code class="literal">restrict</code>关键字出现之前都是用自然语言描述哪些函数的参数不允许指向重叠的内存区间，例如在C89标准的库函数一章开头提到，本章描述的所有函数，除非特别说明，都不应该接收两个指针参数指向重叠的内存区间，例如调用<code class="literal">sprintf</code>时传进来的格式化字符串和结果字符串的首地址相同，诸如此类的调用都是非法的。本书也遵循这一惯例，除非像<code class="literal">memmove</code>这样特别说明之外，都表示“<span class="quote">不允许</span>”。</p><p>关于<code class="literal">restrict</code>关键字更详细的解释可以参考<a class="xref" href="bi01.html#bibli.restrict" title="The New C: It All Began with FORTRAN（http://www.ddj.com/cpp/184401313）">[<abbr class="abbrev">BeganFORTRAN</abbr>]</a>。</p></div><p>字符串的拷贝也可以用<code class="literal">strdup(3)</code>函数，这个函数不属于C标准库，是POSIX标准中定义的，POSIX标准定义了UNIX系统的各种接口，包含C标准库的所有函数和很多其它的系统函数，在<a class="xref" href="ch28s02.html#io.twoioflavors">第 2 节 “C标准I/O库函数与Unbuffered I/O函数”</a>将详细介绍POSIX标准。</p><pre class="programlisting">#include &lt;string.h&gt;
+
+char *strdup(const char *s);
+返回值：指向新分配的字符串</pre><p>这个函数调用<code class="literal">malloc</code>动态分配内存，把字符串<code class="literal">s</code>拷贝到新分配的内存中然后返回。用这个函数省去了事先为新字符串分配内存的麻烦，但是用完之后要记得调用<code class="literal">free</code>释放新字符串的内存。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2828376"></a>1.4. 连接字符串</h3></div></div></div><pre class="programlisting">#include &lt;string.h&gt;
+
+char *strcat(char *dest, const char *src);
+char *strncat(char *dest, const char *src, size_t n);
+返回值：dest指向哪，返回的指针就指向哪</pre><p><code class="literal">strcat</code>把<code class="literal">src</code>所指的字符串连接到<code class="literal">dest</code>所指的字符串后面，例如：</p><pre class="programlisting">char d[10] = "foo";
+char s[10] = "bar";
+strcat(d, s);
+printf("%s %s\n", d, s);</pre><p>调用<code class="literal">strcat</code>函数后，缓冲区<code class="literal">s</code>的内容没变，缓冲区<code class="literal">d</code>中保存着字符串<code class="literal">"foobar"</code>，注意原来<code class="literal">"foo"</code>后面的<code class="literal">'\0'</code>被连接上来的字符串<code class="literal">"bar"</code>覆盖掉了，<code class="literal">"bar"</code>后面的<code class="literal">'\0'</code>仍保留。</p><p><code class="literal">strcat</code>和<code class="literal">strcpy</code>有同样的问题，调用者必须确保<code class="literal">dest</code>缓冲区足够大，否则会导致缓冲区溢出错误。<code class="literal">strncat</code>函数通过参数<code class="literal">n</code>指定一个长度，就可以避免缓冲区溢出错误。注意这个参数<code class="literal">n</code>的含义和<code class="literal">strncpy</code>的参数<code class="literal">n</code>不同，它并不是缓冲区<code class="literal">dest</code>的长度，而是表示最多从<code class="literal">src</code>缓冲区中取<code class="literal">n</code>个字符（不包括结尾的<code class="literal">'\0'</code>）连接到<code class="literal">dest</code>后面。如果<code class="literal">src</code>中前<code class="literal">n</code>个字符没有出现<code class="literal">'\0'</code>，则取前<code class="literal">n</code>个字符再加一个<code class="literal">'\0'</code>连接到<code class="literal">dest</code>后面，所以<code class="literal">strncat</code>总是保证<code class="literal">dest</code>缓冲区以<code class="literal">'\0'</code>结尾，这一点又和<code class="literal">strncpy</code>不同，<code class="literal">strncpy</code>并不保证<code class="literal">dest</code>缓冲区以<code class="literal">'\0'</code>结尾。所以，提供给<code class="literal">strncat</code>函数的<code class="literal">dest</code>缓冲区的大小至少应该是<code class="literal">strlen(dest)+n+1</code>个字节，才能保证不溢出。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2828656"></a>1.5. 比较字符串</h3></div></div></div><pre class="programlisting">#include &lt;string.h&gt;
+
+int memcmp(const void *s1, const void *s2, size_t n);
+int strcmp(const char *s1, const char *s2);
+int strncmp(const char *s1, const char *s2, size_t n);
+返回值：负值表示s1小于s2，0表示s1等于s2，正值表示s1大于s2</pre><p><code class="literal">memcmp</code>从前到后逐个比较缓冲区<code class="literal">s1</code>和<code class="literal">s2</code>的前<code class="literal">n</code>个字节（不管里面有没有<code class="literal">'\0'</code>），如果<code class="literal">s1</code>和<code class="literal">s2</code>的前<code class="literal">n</code>个字节全都一样就返回0，如果遇到不一样的字节，<code class="literal">s1</code>的字节比<code class="literal">s2</code>小就返回负值，<code class="literal">s1</code>的字节比<code class="literal">s2</code>大就返回正值。</p><p><code class="literal">strcmp</code>把<code class="literal">s1</code>和<code class="literal">s2</code>当字符串比较，在其中一个字符串中遇到<code class="literal">'\0'</code>时结束，按照上面的比较准则，<code class="literal">"ABC"</code>比<code class="literal">"abc"</code>小，<code class="literal">"ABCD"</code>比<code class="literal">"ABC"</code>大，<code class="literal">"123A9"</code>比<code class="literal">"123B2"</code>小。</p><p><code class="literal">strncmp</code>的比较结束条件是：要么在其中一个字符串中遇到<code class="literal">'\0'</code>结束（类似于<code class="literal">strcmp</code>），要么比较完<code class="literal">n</code>个字符结束（类似于<code class="literal">memcmp</code>）。例如，<code class="literal">strncmp("ABCD", "ABC", 3)</code>的返回值是0，<code class="literal">strncmp("ABCD", "ABC", 4)</code>的返回值是正值。</p><pre class="programlisting">#include &lt;strings.h&gt;
+
+int strcasecmp(const char *s1, const char *s2);
+int strncasecmp(const char *s1, const char *s2, size_t n);
+返回值：负值表示s1小于s2，0表示s1等于s2，正值表示s1大于s2</pre><p>这两个函数和<code class="literal">strcmp</code>/<code class="literal">strncmp</code>类似，但在比较过程中忽略大小写，大写字母A和小写字母a认为是相等的。这两个函数不属于C标准库，是POSIX标准中定义的。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2828881"></a>1.6. 搜索字符串</h3></div></div></div><pre class="programlisting">#include &lt;string.h&gt;
+
+char *strchr(const char *s, int c);
+char *strrchr(const char *s, int c);
+返回值：如果找到字符c，返回字符串s中指向字符c的指针，如果找不到就返回NULL</pre><p><code class="literal">strchr</code>在字符串<code class="literal">s</code>中从前到后查找字符<code class="literal">c</code>，找到字符<code class="literal">c</code>第一次出现的位置时就返回，返回值指向这个位置，如果找不到字符<code class="literal">c</code>就返回<code class="literal">NULL</code>。<code class="literal">strrchr</code>和<code class="literal">strchr</code>类似，但是从右向左找字符<code class="literal">c</code>，找到字符<code class="literal">c</code>第一次出现的位置就返回，函数名中间多了一个字母r可以理解为Right-to-left。</p><pre class="programlisting">#include &lt;string.h&gt;
+
+char *strstr(const char *haystack, const char *needle);
+返回值：如果找到子串，返回值指向子串的开头，如果找不到就返回NULL</pre><p><code class="literal">strstr</code>在一个长字符串中从前到后找一个子串（Substring）<a id="id2828974" class="indexterm"></a>，找到子串第一次出现的位置就返回，返回值指向子串的开头，如果找不到就返回NULL。这两个参数名很形象，在干草堆<code class="literal">haystack</code>中找一根针<code class="literal">needle</code>，按中文的说法叫大海捞针，显然<code class="literal">haystack</code>是长字符串，<code class="literal">needle</code>是要找的子串。</p><p>搜索子串有一个显而易见的算法，可以用两层的循环，外层循环把<code class="literal">haystack</code>中的每一个字符的位置依次假定为子串的开头，内层循环从这个位置开始逐个比较<code class="literal">haystack</code>和<code class="literal">needle</code>的每个字符是否相同。想想这个算法最多需要做多少次比较？其实有比这个算法高效得多的算法，有兴趣的读者可以参考<a class="xref" href="bi01.html#bibli.algorithm" title="Introduction to Algorithms">[<abbr class="abbrev">算法导论</abbr>]</a>。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2829046"></a>1.7. 分割字符串</h3></div></div></div><p>很多文件格式或协议格式中会规定一些分隔符或者叫界定符（Delimiter）<a id="id2829054" class="indexterm"></a>，例如<code class="literal">/etc/passwd</code>文件中保存着系统的帐号信息：</p><pre class="screen">$ cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/bin/sh
+bin:x:2:2:bin:/bin:/bin/sh
+...</pre><p>每条记录占一行，也就是说记录之间的分隔符是换行符，每条记录又由若干个字段组成，这些字段包括用户名、密码、用户id、组id、个人信息、主目录、登录Shell，字段之间的分隔符是:号。解析这样的字符串需要根据分隔符把字符串分割成几段，C标准库提供的<code class="literal">strtok</code>函数可以很方便地完成分割字符串的操作。tok是Token的缩写，分割出来的每一段字符串称为一个Token。</p><pre class="programlisting">#include &lt;string.h&gt;
+
+char *strtok(char *str, const char *delim);
+char *strtok_r(char *str, const char *delim, char **saveptr);
+返回值：返回指向下一个Token的指针，如果没有下一个Token了就返回NULL</pre><p>参数<code class="literal">str</code>是待分割的字符串，<code class="literal">delim</code>是分隔符，可以指定一个或多个分隔符，<code class="literal">strtok</code>遇到其中任何一个分隔符就会分割字符串。看下面的例子。</p><div class="example"><a id="id2829130"></a><p class="title"><b>例 25.2. strtok</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+int main(void)
+{
+	char str[] = "root:x::0:root:/root:/bin/bash:";
+	char *token;
+
+	token = strtok(str, ":");
+	printf("%s\n", token);
+	while ( (token = strtok(NULL, ":")) != NULL)
+		printf("%s\n", token);
+	
+	return 0;
+}</pre></div></div><br class="example-break" /><pre class="screen">$ ./a.out 
+root
+x
+0
+root
+/root
+/bin/bash</pre><p>结合这个例子，<code class="literal">strtok</code>的行为可以这样理解：冒号是分隔符，把<code class="literal">"root:x::0:root:/root:/bin/bash:"</code>这个字符串分隔成<code class="literal">"root"</code>、<code class="literal">"x"</code>、<code class="literal">""</code>、<code class="literal">"0"</code>、<code class="literal">"root"</code>、<code class="literal">"/root"</code>、<code class="literal">"/bin/bash"</code>、<code class="literal">""</code>等几个Token，但空字符串的Token被忽略。第一次调用要把字符串首地址传给<code class="literal">strtok</code>的第一个参数，以后每次调用第一个参数只要传<code class="literal">NULL</code>就可以了，<code class="literal">strtok</code>函数自己会记住上次处理到字符串的什么位置（显然这是通过<code class="literal">strtok</code>函数中的一个静态指针变量记住的）。</p><p>用<code class="literal">gdb</code>跟踪这个程序，会发现<code class="literal">str</code>字符串被<code class="literal">strtok</code>不断修改，每次调用<code class="literal">strtok</code>把<code class="literal">str</code>中的一个分隔符改成<code class="literal">'\0'</code>，分割出一个小字符串，并返回这个小字符串的首地址。</p><pre class="screen">(gdb) start
+Breakpoint 1 at 0x8048415: file main.c, line 5.
+Starting program: /home/akaedu/a.out 
+main () at main.c:5
+5	{
+(gdb) n
+6		char str[] = "root:x::0:root:/root:/bin/bash:";
+(gdb) 
+9		token = strtok(str, ":");
+(gdb) display str
+1: str = "root:x::0:root:/root:/bin/bash:"
+(gdb) n
+10		printf("%s\n", token);
+1: str = "root\000x::0:root:/root:/bin/bash:"
+(gdb) 
+root
+11		while ( (token = strtok(NULL, ":")) != NULL)
+1: str = "root\000x::0:root:/root:/bin/bash:"
+(gdb) 
+12			printf("%s\n", token);
+1: str = "root\000x\000:0:root:/root:/bin/bash:"
+(gdb) 
+x
+11		while ( (token = strtok(NULL, ":")) != NULL)
+1: str = "root\000x\000:0:root:/root:/bin/bash:"</pre><p>刚才提到在<code class="literal">strtok</code>函数中应该有一个静态指针变量记住上次处理到字符串中的什么位置，所以不需要每次调用时都把字符串中的当前处理位置传给<code class="literal">strtok</code>，但是在函数中使用静态变量是不好的，以后会讲到这样的函数是不可重入的。<code class="literal">strtok_r</code>函数则不存在这个问题，它的内部没有静态变量，调用者需要自己分配一个指针变量来维护字符串中的当前处理位置，每次调用时把这个指针变量的地址传给<code class="literal">strtok_r</code>的第三个参数，告诉<code class="literal">strtok_r</code>从哪里开始处理，<code class="literal">strtok_r</code>返回时再把新的处理位置写回到这个指针变量中（这是一个Value-result参数）。<code class="literal">strtok_r</code>末尾的r就表示可重入（Reentrant），这个函数不属于C标准库，是在POSIX标准中定义的。关于<code class="literal">strtok_r</code>的用法Man Page上有一个很好的例子：</p><div class="example"><a id="id2829363"></a><p class="title"><b>例 25.3. strtok_r</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+int main(int argc, char *argv[])
+{
+	char *str1, *str2, *token, *subtoken;
+	char *saveptr1, *saveptr2;
+	int j;
+
+	if (argc != 4) {
+		fprintf(stderr, "Usage: %s string delim subdelim\n",
+			argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	for (j = 1, str1 = argv[1]; ; j++, str1 = NULL) {
+		token = strtok_r(str1, argv[2], &amp;saveptr1);
+		if (token == NULL)
+			break;
+		printf("%d: %s\n", j, token);
+
+		for (str2 = token; ; str2 = NULL) {
+			subtoken = strtok_r(str2, argv[3], &amp;saveptr2);
+			if (subtoken == NULL)
+				break;
+			printf(" --&gt; %s\n", subtoken);
+		}
+	}
+
+	exit(EXIT_SUCCESS);
+}</pre></div></div><br class="example-break" /><pre class="screen">$ ./a.out 'a/bbb///cc;xxx:yyy:' ':;' '/'
+1: a/bbb///cc
+ --&gt; a
+ --&gt; bbb
+ --&gt; cc
+2: xxx
+ --&gt; xxx
+3: yyy
+ --&gt; yyy</pre><p><code class="literal">a/bbb///cc;xxx:yyy:</code>这个字符串有两级分隔符，一级分隔符是:号或;号，把这个字符串分割成<code class="literal">a/bbb///cc</code>、<code class="literal">xxx</code>、<code class="literal">yyy</code>三个子串，二级分隔符是/，只有第一个子串中有二级分隔符，它被进一步分割成<code class="literal">a</code>、<code class="literal">bbb</code>、<code class="literal">cc</code>三个子串。由于<code class="literal">strtok_r</code>不使用静态变量，而是要求调用者自己保存字符串的当前处理位置，所以这个例子可以在按一级分隔符分割整个字符串的过程中穿插着用二级分隔符分割其中的每个子串。建议读者用<code class="literal">gdb</code>的<code class="literal">display</code>命令跟踪<code class="literal">argv[1]</code>、<code class="literal">saveptr1</code>和<code class="literal">saveptr2</code>，以理解<code class="literal">strtok_r</code>函数的工作方式。</p><p>Man Page的<span class="emphasis"><em>BUGS</em></span>部分指出了用<code class="literal">strtok</code>和<code class="literal">strtok_r</code>函数需要注意的问题：</p><div class="itemizedlist"><ul type="disc"><li><p>这两个函数要改写字符串以达到分割的效果</p></li><li><p>这两个函数不能用于常量字符串，因为试图改写<code class="literal">.rodata</code>段会产生段错误</p></li><li><p>在做了分割之后，字符串中的分隔符就被<code class="literal">'\0'</code>覆盖了</p></li><li><p><code class="literal">strtok</code>函数使用了静态变量，它不是线程安全的，必要时应该用可重入的<code class="literal">strtok_r</code>函数，以后再详细介绍“<span class="quote">可重入</span>”和“<span class="quote">线程安全</span>”这两个概念</p></li></ul></div><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2829560"></a>习题</h4></div></div></div><p>1、出于练习的目的，<code class="literal">strtok</code>和<code class="literal">strtok_r</code>函数非常值得自己动手实现一遍，在这个过程中不仅可以更深刻地理解这两个函数的工作原理，也为以后理解“<span class="quote">可重入</span>”和“<span class="quote">线程安全</span>”这两个重要概念打下基础。</p><p>2、解析URL中的路径和查询字符串。动态网页的URL末尾通常带有查询，例如：</p><div class="literallayout"><p>http://www.google.cn/search?complete=1&amp;hl=zh-CN&amp;ie=GB2312&amp;q=linux&amp;meta=<br />
+http://www.baidu.com/s?wd=linux&amp;cl=3</p></div><p>比如上面第一个例子，<code class="literal">http://www.google.cn/search</code>是路径部分，?号后面的<code class="literal">complete=1&amp;hl=zh-CN&amp;ie=GB2312&amp;q=linux&amp;meta=</code>是查询字符串，由五个“<span class="quote">key=value</span>”形式的键值对（Key-value Pair）<a id="id2829629" class="indexterm"></a>组成，以&amp;隔开，有些键对应的值可能是空字符串，比如这个例子中的键<code class="literal">meta</code>。</p><p>现在要求实现一个函数，传入一个带查询字符串的URL，首先检查输入格式的合法性，然后对URL进行切分，将路径部分和各键值对分别传出，请仔细设计函数接口以便传出这些字符串。如果函数中有动态分配内存的操作，还要另外实现一个释放内存的函数。完成之后，为自己设计的函数写一个Man Page。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch25.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch25.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch25s02.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">第 25 章 C标准库 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 2. 标准I/O库函数</td></tr></table></div></body></html>

@@ -1,0 +1,760 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>高精度运算 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>高精度运算
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="Arithmetic.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="Arithmetic.html#sec1">整数</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="Arithmetic.html#sec2">整数表示</a>
+      </dt>
+      <dt>
+	<a href="Arithmetic.html#sec3">进制转换</a>
+      </dt>
+      <dt>
+	<a href="Arithmetic.html#sec4">四则运算</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="Arithmetic.html#sec5">快速乘法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="Arithmetic.html#sec6">一般原理</a>
+      </dt>
+      <dt>
+	<a href="Arithmetic.html#sec7">Karatsuba乘法</a>
+      </dt>
+      <dt>
+	<a href="Arithmetic.html#sec8">Toom-Cook乘法</a>
+      </dt>
+      <dt>
+	<a href="Arithmetic.html#sec9">FFT乘法</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p>我们所熟知的科学计算一般就是指数值计算,数值计算是计算数学的一个主要部分,它研究用计算机求解各种数学问题的数值计算方法及其理论与软件实现<span class="cite"><a class="cite" href="Arithmetic.html#ref-1" name="cite-1">[1]</a></span>,关于数值计算的研究在计算机被发明之前就已经有了相当的基础,它涉及到的内容包括函数的数值逼近,数值微分与数值积分,非线性方程数值解,数值线性代数,常微分方程与偏微分方程数值解等.数值计算中处理的对象并不仅仅是数值,还包括由数值构成的简单数据结构,例如一般的多项式,无穷级数,矩阵等,数值计算处理问题的一般方法是通过数学推导将问题化归到这些数学对象的运算上.</p>
+
+<p>作为应用数学,数值计算的主要目标是解决来自于生产实践的工程学问题.与此同时,数学工作者做数学研究本身也是一种生产实践,数学研究过程中同样会产生许多问题,与工程学问题不同,这些问题往往只能用抽象的符号来表达,仅用数值计算的方法是不易解决的,对于这类问题解决方案的研究逐渐形成了应用数学的一个新的分支,为了与数值计算相区别,常常称之为符号计算.类似的,我们可以给符号计算下一个简单的定义:符号计算是一门研究用计算机求解各种数学问题的符号计算方法及其理论与软件实现的科学,它是数学(家)的计算数学.符号计算中处理的数据和结果都是符号,这种符号可以是字母,公式,也可以是数.与数值计算不同的是,数是作为一种符号出现在符号计算中的,这就要求关于数的运算应该是绝对精确的,我们接下来就要讨论关于数的高精度运算.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>整数</h2>
+
+<p class="first">在基于硬件的整数指令中,计算机能够处理的整数是有界的,在目前典型的计算机中整数的溢出界都不超过<img src="latex/latex2png-Arithmetic_160930709_0.gif" alt="$2^{64}$" class="latex-inline" style="vertical-align: 0px" width="21" height="14">,而符号计算中常常需要处理更大的整数,例如阶乘,斐波拉契数列这样简单的数论函数计算,另一个不平凡的例子是所谓的中间表示膨胀<span class="cite"><a class="cite" href="Arithmetic.html#ref-2" name="cite-2">[2]</a></span>,例如采用Euclid算法计算两个整系数多项式的最大公约数时,即使输入的两个多项式和输出的最大公约数多项式都具有较小的系数,计算过程中的中间结果仍然很可能出现非常大的系数.设
+<img src="latex/latex2png-Arithmetic_152905899_.gif" alt="
+\begin{align*}
+  F&=7x^7+2x^6-3x^5-3x^3+x+5,\\
+G&=9x^5-3x^4-4x^2+7x+7,
+\end{align*}
+" class="latex-display" width="580" height="50">
+在计算过程中将有理数化为整数,我们将得到如下的多项式序列
+<img src="latex/latex2png-Arithmetic_176996183_.gif" alt="
+\begin{align*}
+&1890x^4-4572x^3-6930x^2-846x+4527,\\
+&294168996x^3+257191200x^2-20614662x-142937946,\\
+&-103685278369841305200x^2-32576054233115610000x\\
+&+122463167842311670000,\\
+&2956790833503849546789342057565207098291763520000x\\
+&+555325261806247996966034784074025291687620160000,\\
+&1092074685733031219201041602791259862659169966184593803518\\
+&602418777140682884334769647063543607737698426880000000000,
+\end{align*}
+" class="latex-display" width="580" height="235">
+最后的那个整数达到了118位.除此之外,高精度浮点数的表示和运算也是直接依赖于高精度整数的.</p>
+
+<h3><a name="sec2" id="sec2"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>整数表示</h3>
+
+<p class="first">为了简单起见,在下面的讨论中,如果没有明确指出,我们所说的整数都是正整数.关于高精度整数的表示方法,一个简单的想法是选定进制<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">,用整数的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制表示(向量)来表示整数,为了更好的理解这一点,首先对整数的进制表示作一个严格的定义.
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-Arithmetic_69612134_-4.gif" alt="$B\in\mathbb{N}_+$" class="latex-inline" style="vertical-align: -4px" width="55" height="16">,<img src="latex/latex2png-Arithmetic_255106194_-3.gif" alt="$B\ge 2$" class="latex-inline" style="vertical-align: -3px" width="44" height="15">,称记号<img src="latex/latex2png-Arithmetic_72376010_-5.gif" alt="$(a_n\ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">为<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制整数,如果<img src="latex/latex2png-Arithmetic_141843080_.gif" alt="$$a_k\in\{0,1,\ldots,B-1\},a_n\ne 0,0\le k\le n.$$" class="latex-display" width="580" height="18"> <img src="latex/latex2png-Arithmetic_72376010_-5.gif" alt="$(a_n\ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">具有的整数值由如下规则确定:</p>
+
+<ol>
+<li><img src="latex/latex2png-Arithmetic_246306115_-5.gif" alt="$(a_0)_B = a_0$" class="latex-inline" style="vertical-align: -5px" width="77" height="18">;</li>
+<li><img src="latex/latex2png-Arithmetic_63958880_-5.gif" alt="$(a_n\ldots a_1a_0)_B = B\cdot(a_n\ldots a_1)_B+a_0$" class="latex-inline" style="vertical-align: -5px" width="265" height="18">.</li>
+</ol>
+
+<p>即<img src="latex/latex2png-Arithmetic_61290672_.gif" alt="$$(a_n\ldots a_1a_0)_B=\sum_{k=0}^na_k\cdot B^k.$$" class="latex-display" width="580" height="46"></p>
+
+
+</div>
+事实上,给定进制<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">后,整数的进制表示可以看成由有限集<img src="latex/latex2png-Arithmetic_113659559_-5.gif" alt="$\{0,1,\ldots,B-1\}$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">的直和之并形成的无穷维向量空间(类似于一维多项式空间)到整数集的同构.也就是说,每个整数都可以唯一地表示成一个<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制整数,这就是进制转换的基础,具体的计算公式见下面的定理.
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name"></span>
+给定整数<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,存在非负整数<img src="latex/latex2png-Arithmetic_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">使得<img src="latex/latex2png-Arithmetic_248323275_-3.gif" alt="$B^m \le n < B^{m+1}$" class="latex-inline" style="vertical-align: -3px" width="122" height="17">,并且存在唯一的<img src="latex/latex2png-Arithmetic_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制整数满足<img src="latex/latex2png-Arithmetic_189259329_-5.gif" alt="$(a_m \ldots a_1a_0)_B=n$" class="latex-inline" style="vertical-align: -5px" width="134" height="18">,其中<img src="latex/latex2png-Arithmetic_69774059_.gif" alt="$$a_k=[{n\over B^k}]\bmod B,\quad k=0,1,\ldots,m.$$" class="latex-display" width="580" height="31">
+
+
+</div>
+从计算机科学的角度来看,整数的进制表示包含着数据结构的思想,它将高精度整数所包含的信息用一列较小的单元来共同存储和表示.在现有的符号计算软件中,高精度整数典型的存储格式<span class="cite"><a class="cite" href="Arithmetic.html#ref-3" name="cite-3">[3]</a></span>
+如下:
+<img src="latex/latex2png-Arithmetic_61350277_.gif" alt="
+\begin{center}
+\begin{tabular}{|c|p{8em}|}
+\hline
+$\pm e$ & \hfil $d$ \hfil\\
+\hline
+\end{tabular}
+\end{center}
+" class="latex-display" width="580" height="27">
+其中<img src="latex/latex2png-Arithmetic_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">就是整数的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制表示(向量),<img src="latex/latex2png-Arithmetic_41907218_0.gif" alt="$e$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">是<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制表示的位数,即这个整数在<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制下是多少位数.进制<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">在软件设计之初就要确定下来,高精度整数四则运算的时间随着整数的位数增加而增加,所以在不超过机器精度整数溢出界的范围内,应该选取尽量大的基数<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">,以便充分利用基于硬件的整数指令.在现有的软件中,常常取<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为10或2的方幂,前者不必在输入输出时进行进制转换,适用于对输入输出速度要求特别高的场合;后者用于计算时有着天然的优势,在后面将会看到,当进制<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为2的方幂时,很容易通过移位完成一部分乘除法运算.
+
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>进制转换</h3>
+
+<p class="first">高精度整数输入输出时,常常需要做进制转换,即给定正整数<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制表示<img src="latex/latex2png-Arithmetic_263443700_-5.gif" alt="$n=(a_s \ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="128" height="18">,需要得到<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">在<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">进制下的表示.计算方法有如下两种:</p>
+
+<ul>
+<li>在<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制下除以<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">.设<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">进制表示为<img src="latex/latex2png-Arithmetic_138471400_-5.gif" alt="$(b_t \ldots b_1b_0)_{B'}$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,根据进制表示的定义,在<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制下依次计算出<img src="latex/latex2png-Arithmetic_26011593_.gif" alt="$$b_0=n\bmod B',b_1=[{n\over B'}]\mod B',\ldots.$$" class="latex-display" width="580" height="31"></li>
+<li>在<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">进制下乘以<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">.设<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">进制整数<img src="latex/latex2png-Arithmetic_201165804_-1.gif" alt="$x=0$" class="latex-inline" style="vertical-align: -1px" width="40" height="12">,利用Horner法则,在<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">进制下依次计算<img src="latex/latex2png-Arithmetic_257865092_-2.gif" alt="$x=Bx+a_k$" class="latex-inline" style="vertical-align: -2px" width="91" height="14">,<img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">从<img src="latex/latex2png-Arithmetic_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">到0.最后得到<img src="latex/latex2png-Arithmetic_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">即为<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">在<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">进制下的表示.</li>
+</ul>
+
+<p>当转换极长的数时,最方便的是由转换数字块开始,这些数字块可以用单精度技术来处理,而后用简单的多精度技术把这些块组合在一起<span class="cite"><a class="cite" href="Arithmetic.html#ref-3" name="cite-3">[3]</a></span>
+.以第一种方法为例,反复地用<img src="latex/latex2png-Arithmetic_220689466_0.gif" alt="$B'^m$" class="latex-inline" style="vertical-align: 0px" width="29" height="13">除它,于是得到<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的<img src="latex/latex2png-Arithmetic_220689466_0.gif" alt="$B'^m$" class="latex-inline" style="vertical-align: 0px" width="29" height="13">进制表示,然后对于<img src="latex/latex2png-Arithmetic_220689466_0.gif" alt="$B'^m$" class="latex-inline" style="vertical-align: 0px" width="29" height="13">进制表示的每一位通过单精度操作给出<img src="latex/latex2png-Arithmetic_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">位<img src="latex/latex2png-Arithmetic_139031570_0.gif" alt="$B'$" class="latex-inline" style="vertical-align: 0px" width="17" height="13">进制数字.</p>
+
+
+<h3><a name="sec4" id="sec4"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>四则运算</h3>
+
+<p class="first">本章的开头时曾经强调过,数是作为一种符号出现在符号计算中的,这就要求关于数的运算应该是绝对精确的.在机器精度的范围内,现有的计算机可以轻松的完成整数的四则运算,这主要得益于计算机设计师们的工作.而接下来要讨论的高精度整数四则运算,其基本原理其实和基于硬件的整数指令是一致的,事实上,这就是阿拉伯计数法的发明者们很早就发展出的一整套借助纸笔进行的四则运算理论,我们从小就开始学习熟练地利用它们来操作整数.需要特别指出的是,这里将要提到的加减乘除与作为群运算的加减乘除是不同的,因为加减乘除作为群运算是一个抽象的二元映射,而我们现在要做的其实是基于这些群运算和上一节中进制表示所做的&quot;表面&quot;工作,说得具体一些,就是输入两个数的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制表示,输出群运算结果的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制表示,关键点集中在求出<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制表示上.</p>
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>整数加法</h4>
+
+<p class="first">首先来看高精度整数的加法,为了简单起见,假定相加的两个数的位数相同,如果位数不同首先通过添零补齐.注意,这样的假定不会影响算法的效率.
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(整数加法)</span></p>
+
+<p>输入:整数<img src="latex/latex2png-Arithmetic_72038177_-5.gif" alt="$a=(a_s\ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,<img src="latex/latex2png-Arithmetic_55195393_-5.gif" alt="$b=(b_s\ldots b_1b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的和<img src="latex/latex2png-Arithmetic_164469508_-5.gif" alt="$a+b=(c_{s+1}c_s\ldots c_1c_0)_B$" class="latex-inline" style="vertical-align: -5px" width="180" height="18">.</p>
+
+<p>定义辅助序列<img src="latex/latex2png-Arithmetic_45785827_.gif" alt="$$d_k=[{a+b\over B^k}]-[{a\over B^k}]-[{b\over B^k}],\quad 0\le k\le s.$$" class="latex-display" width="580" height="35">
+按递推公式依次求出<img src="latex/latex2png-Arithmetic_146464925_-5.gif" alt="$c_k,d_k(0\le k\le s)$" class="latex-inline" style="vertical-align: -5px" width="121" height="18"></p>
+
+<ol>
+<li><img src="latex/latex2png-Arithmetic_2594911_-5.gif" alt="$c_k=(a_k+b_k+d_k)\bmod B$" class="latex-inline" style="vertical-align: -5px" width="194" height="18"></li>
+<li><img src="latex/latex2png-Arithmetic_192547656_-6.gif" alt="$d_{k+1}=[{a_k+b_k+d_k\over B}]$" class="latex-inline" style="vertical-align: -6px" width="129" height="21"></li>
+</ol>
+
+
+</div>
+容易看出,这里定义的辅助序列<img src="latex/latex2png-Arithmetic_37057556_-2.gif" alt="$d_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">其实就是加到第<img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">位的进位,由于不用输出各位上的进位,算法实际实现时可以只用一个变量来存储<img src="latex/latex2png-Arithmetic_37057556_-2.gif" alt="$d_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">.尽管我们对这种笔式加法早已烂熟于胸,但是算法的有效性还是严格地证明一下比较好.
+<div class="proof">
+<span class="proof-header">证明</span>
+根据进制表示和<img src="latex/latex2png-Arithmetic_37057556_-2.gif" alt="$d_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">的定义,我们有
+<img src="latex/latex2png-Arithmetic_200968294_.gif" alt="
+\begin{align*}
+  a_k+b_k+d_k&=([{a\over B^k}]-B[{a\over B^{k+1}}])+([{b\over B^k}]-B[{b\over B^{k+1}}])\\
+  &+([{a+b\over B^k}]-[{a\over B^k}]-[{b\over B^k}])\\
+  &=[{a+b\over B^k}]-B[{a\over B^{k+1}}]-B[{b\over B^{k+1}}],
+\end{align*}
+" class="latex-display" width="580" height="116">
+由此推出
+<img src="latex/latex2png-Arithmetic_188660059_.gif" alt="
+\begin{align*}
+  (a_k+b_k+d_k)\bmod B&=[{a+b\over B^k}]\mod B=c_k,\\
+  [{a_k+b_k+d_k\over B}]&=[{a+b\over B^{k+1}}]-[{a\over B^{k+1}}]-[{b\over B^{k+1}}]=d_{k+1}.
+\end{align*}
+" class="latex-display" width="580" height="75">
+证毕.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>现在我们将这个算法改写成适合于编程的更加紧凑的形式.
+<div class="algorithm">
+<span class="theorem-header">算法2<a name=""></a></span><span class="theorem-name">(整数加法)</span></p>
+
+<p>输入:两个<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位整数<img src="latex/latex2png-Arithmetic_167613289_-5.gif" alt="$u=(u_{n-1}\cdots u_1u_0)_B$" class="latex-inline" style="vertical-align: -5px" width="148" height="18">,<img src="latex/latex2png-Arithmetic_166498905_-5.gif" alt="$v=(v_{n-1}\cdots v_1v_0)_B$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_267357164_-4.gif" alt="$u,v$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">的和<img src="latex/latex2png-Arithmetic_172511562_-5.gif" alt="$w=(w_nw_{n-1}\cdots w_1w_0)_B$" class="latex-inline" style="vertical-align: -5px" width="179" height="18">,<img src="latex/latex2png-Arithmetic_100501849_-2.gif" alt="$w_n=0$" class="latex-inline" style="vertical-align: -2px" width="51" height="13">或<img src="latex/latex2png-Arithmetic_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">.</p>
+
+<ol>
+<li>令<img src="latex/latex2png-Arithmetic_964618_-4.gif" alt="$j\leftarrow 0,k\leftarrow 0$" class="latex-inline" style="vertical-align: -4px" width="93" height="16">.</li>
+<li>令<img src="latex/latex2png-Arithmetic_144258196_-5.gif" alt="$w_j\leftarrow (u_j+v_j+k)\bmod B$" class="latex-inline" style="vertical-align: -5px" width="193" height="18">,<img src="latex/latex2png-Arithmetic_183209903_-5.gif" alt="$k\leftarrow (u_j+v_j+k\ge B)$" class="latex-inline" style="vertical-align: -5px" width="163" height="18">.</li>
+<li><img src="latex/latex2png-Arithmetic_136058149_-4.gif" alt="$j\leftarrow j+1$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">.若<img src="latex/latex2png-Arithmetic_101217300_-4.gif" alt="$j<n$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">,转到<img src="latex/latex2png-Arithmetic_41186322_0.gif" alt="$2$" class="latex-inline" style="vertical-align: 0px" width="8" height="11">;否则令<img src="latex/latex2png-Arithmetic_156960572_-2.gif" alt="$w_n\leftarrow k$" class="latex-inline" style="vertical-align: -2px" width="56" height="14">,返回<img src="latex/latex2png-Arithmetic_43086866_0.gif" alt="$w$" class="latex-inline" style="vertical-align: 0px" width="12" height="8">.</li>
+</ol>
+
+
+</div>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>整数减法</h4>
+
+<p class="first">高精度整数减法的方法与加法完全类似,我们直接给出算法.
+<div class="algorithm">
+<span class="theorem-header">算法3<a name=""></a></span><span class="theorem-name">(整数减法)</span></p>
+
+<p>输入:整数<img src="latex/latex2png-Arithmetic_72038177_-5.gif" alt="$a=(a_s\ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,<img src="latex/latex2png-Arithmetic_55195393_-5.gif" alt="$b=(b_s\ldots b_1b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的差<img src="latex/latex2png-Arithmetic_35757553_-5.gif" alt="$a-b=(c_s\ldots c_1c_0)_B$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">.</p>
+
+<p>定义辅助序列<img src="latex/latex2png-Arithmetic_79339747_.gif" alt="$$d_k=[{a-b\over B^k}]-[{a\over B^k}]+[{b\over B^k}],\quad 0\le k\le s.$$" class="latex-display" width="580" height="35">
+按递推公式依次求出<img src="latex/latex2png-Arithmetic_146464925_-5.gif" alt="$c_k,d_k(0\le k\le s)$" class="latex-inline" style="vertical-align: -5px" width="121" height="18"></p>
+
+<ol>
+<li><img src="latex/latex2png-Arithmetic_2586719_-5.gif" alt="$c_k=(a_k-b_k+d_k)\bmod B$" class="latex-inline" style="vertical-align: -5px" width="194" height="18"></li>
+<li><img src="latex/latex2png-Arithmetic_192416584_-6.gif" alt="$d_{k+1}=[{a_k-b_k+d_k\over B}]$" class="latex-inline" style="vertical-align: -6px" width="130" height="21"></li>
+</ol>
+
+
+</div>
+辅助序列<img src="latex/latex2png-Arithmetic_37057556_-2.gif" alt="$d_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">对应于到第<img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">位的借位.
+
+<p>同样地,也可以将这个算法改写成适合于编程的更加紧凑的形式.
+<div class="algorithm">
+<span class="theorem-header">算法4<a name=""></a></span><span class="theorem-name">(整数减法)</span></p>
+
+<p>输入:两个<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位整数<img src="latex/latex2png-Arithmetic_167613289_-5.gif" alt="$u=(u_{n-1}\cdots u_1u_0)_B$" class="latex-inline" style="vertical-align: -5px" width="148" height="18">,<img src="latex/latex2png-Arithmetic_166498905_-5.gif" alt="$v=(v_{n-1}\cdots v_1v_0)_B$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">,<img src="latex/latex2png-Arithmetic_256941378_-3.gif" alt="$u\ge v$" class="latex-inline" style="vertical-align: -3px" width="40" height="14">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_267357164_-4.gif" alt="$u,v$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">的差<img src="latex/latex2png-Arithmetic_165384521_-5.gif" alt="$w=(w_{n-1}\cdots w_1w_0)_B$" class="latex-inline" style="vertical-align: -5px" width="158" height="18">.</p>
+
+<ol>
+<li>令<img src="latex/latex2png-Arithmetic_964618_-4.gif" alt="$j\leftarrow 0,k\leftarrow 0$" class="latex-inline" style="vertical-align: -4px" width="93" height="16">.</li>
+<li>令<img src="latex/latex2png-Arithmetic_144258164_-5.gif" alt="$w_j\leftarrow (u_j-v_j+k)\bmod B$" class="latex-inline" style="vertical-align: -5px" width="193" height="18">,<img src="latex/latex2png-Arithmetic_167398286_-5.gif" alt="$k\leftarrow -(u_j-v_j+k<0)$" class="latex-inline" style="vertical-align: -5px" width="171" height="18">.</li>
+<li><img src="latex/latex2png-Arithmetic_136058149_-4.gif" alt="$j\leftarrow j+1$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">.若<img src="latex/latex2png-Arithmetic_101217300_-4.gif" alt="$j<n$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">,转到2;否则返回<img src="latex/latex2png-Arithmetic_43086866_0.gif" alt="$w$" class="latex-inline" style="vertical-align: 0px" width="12" height="8">.</li>
+</ol>
+
+
+</div>
+如果高精度整数有求补操作,那么仿照机器精度整数补码表示的思想,还可以通过补码加法来做减法:用<img src="latex/latex2png-Arithmetic_202142740_0.gif" alt="$n^*$" class="latex-inline" style="vertical-align: 0px" width="16" height="12">来表示<img src="latex/latex2png-Arithmetic_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制数<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的补码,则<img src="latex/latex2png-Arithmetic_166751048_.gif" alt="$$n^*=(B^m-1)-n,\quad a-b=(a^*+b)^*.$$" class="latex-display" width="580" height="18">
+
+<p>高精度整数的加减法算法实际上就是对我们熟悉的十进制笔算加减法的精确化描述并推广到<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制记数系统后得到的,用<img src="latex/latex2png-Arithmetic_210465851_-5.gif" alt="$T(n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">表示用它们计算<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制整数和或差时所需要的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制个位数加减法的次数,可以证明<img src="latex/latex2png-Arithmetic_14533404_-5.gif" alt="$T(n)=O(n)$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">,这和必要的输入输出操作相比是都是线性级别的,因此有理由认为这就是理想的算法.尽管如此,在后面有关多项式模算术的讨论中我们将看到,作为多项式模算术的一个直接应用,利用有限域上的整数模算术可以把高精度整数加减法分解成在多个处理器上并行的独立任务,这样一来它就会比经典算法要快.</p>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>整数乘法</h4>
+
+<p class="first">接下来讨论一位数乘多位数的乘法,这里用到的方法和加减法仍然是相似的,同样可以直接给出算法.
+<div class="algorithm">
+<span class="theorem-header">算法5<a name=""></a></span><span class="theorem-name">(一位数乘多位数)</span></p>
+
+<p>输入:整数<img src="latex/latex2png-Arithmetic_72038177_-5.gif" alt="$a=(a_s\ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,<img src="latex/latex2png-Arithmetic_257454102_-5.gif" alt="$b_0=(b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_2258574_-4.gif" alt="$a,b_0$" class="latex-inline" style="vertical-align: -4px" width="29" height="16">的积<img src="latex/latex2png-Arithmetic_48208651_-5.gif" alt="$ab_0=(c_{s+1}\ldots c_1c_0)_B$" class="latex-inline" style="vertical-align: -5px" width="153" height="18">.</p>
+
+<p>定义辅助序列<img src="latex/latex2png-Arithmetic_99323641_.gif" alt="$$d_k=[{ab_0\over B^k}]-b_0[{a\over B^k}],\quad 0\le k\le s.$$" class="latex-display" width="580" height="35">
+按递推公式依次求出<img src="latex/latex2png-Arithmetic_146464925_-5.gif" alt="$c_k,d_k(0\le k\le s)$" class="latex-inline" style="vertical-align: -5px" width="121" height="18"></p>
+
+<ol>
+<li><img src="latex/latex2png-Arithmetic_59746987_-5.gif" alt="$c_k=(a_kb_0+d_k)\bmod B$" class="latex-inline" style="vertical-align: -5px" width="173" height="18"></li>
+<li><img src="latex/latex2png-Arithmetic_30778384_-6.gif" alt="$d_{k+1}=[{a_kb_0+d_k\over B}]$" class="latex-inline" style="vertical-align: -6px" width="119" height="21"></li>
+</ol>
+
+
+</div>
+对于多位数乘多位数的情形,如<img src="latex/latex2png-Arithmetic_55129857_-5.gif" alt="$b=(b_t\ldots b_1b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">,则<img src="latex/latex2png-Arithmetic_50348864_.gif" alt="$$ab=\sum_{k=0}^tab_kB^k,$$" class="latex-display" width="580" height="49">每一个<img src="latex/latex2png-Arithmetic_264932295_-2.gif" alt="$ab_k$" class="latex-inline" style="vertical-align: -2px" width="23" height="14">都是一位数乘多位数,而乘上<img src="latex/latex2png-Arithmetic_136672276_0.gif" alt="$B^k$" class="latex-inline" style="vertical-align: 0px" width="20" height="14">只需在右边添上<img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个0,或者说左移<img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">位,于是可以通过<img src="latex/latex2png-Arithmetic_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">次一位数乘多位数,<img src="latex/latex2png-Arithmetic_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">次加法和添零(移位)求出<img src="latex/latex2png-Arithmetic_130839570_0.gif" alt="$ab$" class="latex-inline" style="vertical-align: 0px" width="16" height="12">来.除此之外,在后面的&quot;快速乘法&quot;一节中将会看到,对于多位数乘多位数,我们还有更快的算法.
+
+<p>同样地,也可以将这个算法改写成适合于编程的更加紧凑的形式.
+<div class="algorithm">
+<span class="theorem-header">算法6<a name=""></a></span><span class="theorem-name">(整数乘法)</span></p>
+
+<p>输入:<img src="latex/latex2png-Arithmetic_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">位整数<img src="latex/latex2png-Arithmetic_193994511_-5.gif" alt="$u=(u_{m-1}\cdots u_0)_B$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">,<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位整数<img src="latex/latex2png-Arithmetic_74506753_-5.gif" alt="$v=(v_{n-1}\cdots v_0)_B$" class="latex-inline" style="vertical-align: -5px" width="128" height="18">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_267357164_-4.gif" alt="$u,v$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">的积<img src="latex/latex2png-Arithmetic_53878504_-5.gif" alt="$w=(w_{m+n-1}\cdots w_1w_0)_B$" class="latex-inline" style="vertical-align: -5px" width="180" height="18">.</p>
+
+<ol>
+<li>令<img src="latex/latex2png-Arithmetic_224014979_-4.gif" alt="$w_{m-1},\ldots,w_0\leftarrow 0$" class="latex-inline" style="vertical-align: -4px" width="132" height="15">,<img src="latex/latex2png-Arithmetic_155546760_-4.gif" alt="$j\leftarrow 0$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">.</li>
+<li>若<img src="latex/latex2png-Arithmetic_167610714_-5.gif" alt="$v_j=0$" class="latex-inline" style="vertical-align: -5px" width="45" height="16">,则<img src="latex/latex2png-Arithmetic_24329810_-5.gif" alt="$w_{j+m}\leftarrow 0$" class="latex-inline" style="vertical-align: -5px" width="75" height="16">,转到6.</li>
+<li>令<img src="latex/latex2png-Arithmetic_155546759_-1.gif" alt="$i\leftarrow 0$" class="latex-inline" style="vertical-align: -1px" width="40" height="13">,<img src="latex/latex2png-Arithmetic_155546761_-1.gif" alt="$k\leftarrow 0$" class="latex-inline" style="vertical-align: -1px" width="43" height="13">.</li>
+<li>令<img src="latex/latex2png-Arithmetic_31637795_-5.gif" alt="$t\leftarrow u_i\times v_j+w_{i+j}+k$" class="latex-inline" style="vertical-align: -5px" width="166" height="17">,<img src="latex/latex2png-Arithmetic_198232110_-5.gif" alt="$w_{i+j}\leftarrow t\bmod B$" class="latex-inline" style="vertical-align: -5px" width="120" height="17">,<img src="latex/latex2png-Arithmetic_83606112_-6.gif" alt="$k\leftarrow [\frac{t}{B}]$" class="latex-inline" style="vertical-align: -6px" width="57" height="21">.</li>
+<li><img src="latex/latex2png-Arithmetic_152835621_-2.gif" alt="$i\leftarrow i+1$" class="latex-inline" style="vertical-align: -2px" width="65" height="14">.若<img src="latex/latex2png-Arithmetic_84374548_-1.gif" alt="$i<m$" class="latex-inline" style="vertical-align: -1px" width="42" height="13">,转到4;否则令<img src="latex/latex2png-Arithmetic_23084626_-5.gif" alt="$w_{j+m}\leftarrow k$" class="latex-inline" style="vertical-align: -5px" width="76" height="17">.</li>
+<li><img src="latex/latex2png-Arithmetic_136058149_-4.gif" alt="$j\leftarrow j+1$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">.若<img src="latex/latex2png-Arithmetic_101217300_-4.gif" alt="$j<n$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">,转到2;否则返回<img src="latex/latex2png-Arithmetic_43086866_0.gif" alt="$w$" class="latex-inline" style="vertical-align: 0px" width="12" height="8">.</li>
+</ol>
+
+
+</div>
+<div class="remark">
+<span class="proof-header">注1<a name=""></a></span><span class="theorem-name"></span>
+如果<img src="latex/latex2png-Arithmetic_8321062_-4.gif" alt="$w_{m-1},\ldots,w_0$" class="latex-inline" style="vertical-align: -4px" width="96" height="12">不清零,将有<img src="latex/latex2png-Arithmetic_266484735_-5.gif" alt="$w=u\times v+(w_{m-1}\cdots w_0)_B$" class="latex-inline" style="vertical-align: -5px" width="201" height="18">.
+
+
+</div>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>商为一位数的除法</h4>
+
+<p class="first">在四则运算的笔算方法中,除法可能是最复杂的,因为除法需要试商,试商包含着猜测的成分,而不能形成有效的算法.机器精度整数除法也要试商,但得益于二进制表示,对它们而言商只有0,1两种情况,只需要比较大小就可以求出.为了有效地计算高精度整数的除法,我们需要将试商的过程算法化<span class="cite"><a class="cite" href="Arithmetic.html#ref-3" name="cite-3">[3]</a></span>,首先来看商为一位数的除法,即假定商<img src="latex/latex2png-Arithmetic_12323345_-6.gif" alt="$\left[\frac{a}{b}\right]$" class="latex-inline" style="vertical-align: -6px" width="19" height="20">满足<img src="latex/latex2png-Arithmetic_253033971_-6.gif" alt="$0\le\left[\frac{a}{b}\right]\le B-1$" class="latex-inline" style="vertical-align: -6px" width="118" height="20">,笔算除法的经验告诉我们,被除数和除数的最高几位数对试商是很重要的,我们常常凭借目测(口算)最高几位数就能基本上把商给确定下来.
+<div class="theorem">
+<span class="theorem-header">定理2<a name=""></a></span><span class="theorem-name"></span>
+设整数<img src="latex/latex2png-Arithmetic_114279466_-5.gif" alt="$a=(a_{s+1}a_s\ldots a_1a_0)_B,b=(b_s\ldots b_1b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="289" height="18">,则商<img src="latex/latex2png-Arithmetic_111162968_-6.gif" alt="$[{a\over b}]$" class="latex-inline" style="vertical-align: -6px" width="18" height="19">满足不等式
+<img src="latex/latex2png-Arithmetic_18313729_.gif" alt="$$\left[\frac{a_{s+1}B+a_s}{b_s+1}\right]\le\left[\frac{a}{b}\right]\le\min\left\{\left[\frac{a_{s+1}B+a_s}{b_s}\right],B-1\right\}.$$" class="latex-display" width="580" height="40"></p>
+
+
+</div>
+<div class="proof">
+<span class="proof-header">证明</span>
+首先<img src="latex/latex2png-Arithmetic_97456755_.gif" alt="$$\frac{a}{b}>\frac{a_{s+1}B^{s+1}+a_sB^s}{(b_s+1)B^s}=\frac{a_{s+1}B+a_s}{b_s+1},$$" class="latex-display" width="580" height="42">故<img src="latex/latex2png-Arithmetic_160317277_-11.gif" alt="$\left[\frac{a_{s+1}B+a_s}{b_s+1}\right] \le \left[\frac{a}{b}\right]$" class="latex-inline" style="vertical-align: -11px" width="123" height="30">,不等式的前半部分得证.
+
+<p>而由<img src="latex/latex2png-Arithmetic_122851724_.gif" alt="$$\left[\frac{a_{s+1}B+a_s}{b_s}\right] > \frac{a_{s+1}B+a_s}{b_s}-1$$" class="latex-display" width="580" height="40">可以得到
+<img src="./latex/latex2png-Arithmetic_92640136_.gif" alt="
+\begin{align*}
+  \left[\frac{a_{s+1}B+a_s}{b_s}\right]+1&\ge\frac{a_{s+1}B+a_s+1}{b_s}\\
+&=\frac{a_{s+1}B^{s+1}+(a_s+1)B^s}{b_sB^s}\\
+&>\frac{a}{b},
+\end{align*}
+" class="latex-display" width="580" height="122">
+故<img src="latex/latex2png-Arithmetic_17829693_-11.gif" alt="$\left[\frac{a}{b}\right]\le\left[\frac{a_{s+1}B+a_s}{b_s}\right]$" class="latex-inline" style="vertical-align: -11px" width="122" height="30">,证毕.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>记<img src="latex/latex2png-Arithmetic_267312749_.gif" alt="$$q = \min\left\{\left[\frac{a_{s+1}B+a_s}{b_s}\right],B-1\right\},$$" class="latex-display" width="580" height="40">则<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是商<img src="latex/latex2png-Arithmetic_57194042_-6.gif" alt="$\left[{a\over b}\right]$" class="latex-inline" style="vertical-align: -6px" width="19" height="20">一个很好的上界,下面将看到它已经很接近商的真值:<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">比商的真值至多大2.
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-Arithmetic_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">的最高位不小于<img src="latex/latex2png-Arithmetic_256636399_-6.gif" alt="$\left[\frac{B}{2}\right]$" class="latex-inline" style="vertical-align: -6px" width="23" height="21">,即<img src="latex/latex2png-Arithmetic_12399125_-6.gif" alt="$b_s\ge\left[\frac{B}{2}\right]$" class="latex-inline" style="vertical-align: -6px" width="62" height="21">,则<img src="latex/latex2png-Arithmetic_135799933_.gif" alt="$$q-2\le\left[\frac{a}{b}\right]\le q.$$" class="latex-display" width="580" height="31"></p>
+
+
+</div>
+<div class="proof">
+<span class="proof-header">证明</span>
+用反证法.假设<img src="latex/latex2png-Arithmetic_33797327_-6.gif" alt="$\left[\frac{a}{b}\right]<q-2$" class="latex-inline" style="vertical-align: -6px" width="80" height="20">,则<img src="latex/latex2png-Arithmetic_73515237_.gif" alt="$$\left[\frac{a}{b}\right]\le\left[\frac{a_{s+1}B+a_s}{b_s}\right]-3,\quad\left[\frac{a}{b}\right] \le B-4.$$" class="latex-display" width="580" height="40">
+因为<img src="latex/latex2png-Arithmetic_91853981_.gif" alt="$$\left[\frac{a}{b}\right]>\frac{a}{b}-1,\quad\frac{a_{s+1}B+a_s}{b_s}<\frac{a}{b-B^s},$$" class="latex-display" width="580" height="37">所以<img src="latex/latex2png-Arithmetic_114512808_-6.gif" alt="$\frac{a}{b}+2<\frac{a}{b-B^s}$" class="latex-inline" style="vertical-align: -6px" width="96" height="18">,推出<img src="latex/latex2png-Arithmetic_256379076_.gif" alt="$$\frac{a}{b}>2(\frac{b}{B^s}-1)\ge 2(b_s-1).$$" class="latex-display" width="580" height="35">因此<img src="latex/latex2png-Arithmetic_65774208_-6.gif" alt="$b_s \le \frac{B}{2}-1<\left[\frac{B}{2}\right]$" class="latex-inline" style="vertical-align: -6px" width="127" height="21">,与题设条件矛盾,证毕.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>上面只考虑了被除数的头两位与除数的首位,如果允许做更精细的考察,譬如说考虑被除数的头三位与除数的头两位,我们还可以进一步接近商的真值.
+<div class="theorem">
+<span class="theorem-header">定理4<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-Arithmetic_18952778_-5.gif" alt="$t=(a_{s+1}B+a_s)-qb_s$" class="latex-inline" style="vertical-align: -5px" width="165" height="18">,若<img src="latex/latex2png-Arithmetic_62198300_-4.gif" alt="$B\cdot t\ge qb_{s-1}-a_{s-1}$" class="latex-inline" style="vertical-align: -4px" width="144" height="16">,则<img src="latex/latex2png-Arithmetic_119022717_.gif" alt="$$q-1\le\left[\frac{a}{b}\right]\le q.$$" class="latex-display" width="580" height="31"></p>
+
+
+</div>
+<div class="proof">
+<span class="proof-header">证明</span>
+将<img src="latex/latex2png-Arithmetic_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">代入不等式中得<img src="latex/latex2png-Arithmetic_60809828_.gif" alt="$$B\cdot((a_{s+1}B+a_s)-qb_s)\ge qb_{s-1}-a_{s-1},$$" class="latex-display" width="580" height="18">化简得到
+<img src="./latex/latex2png-Arithmetic_81213426_.gif" alt="
+\begin{align*}
+a&\ge a_{s+1}B^2+a_sB+a_{s-1}\\
+&\ge q(b_sB+b_{s-1})\\
+&>q(b-B^{s-1})
+\end{align*}
+" class="latex-display" width="580" height="81">
+因为<img src="latex/latex2png-Arithmetic_153834582_-5.gif" alt="$q(b-B^{s-1})>qb-B^s\ge(q-1)b$" class="latex-inline" style="vertical-align: -5px" width="242" height="19">,所以<img src="latex/latex2png-Arithmetic_131767942_-6.gif" alt="${a\over b}>q-1$" class="latex-inline" style="vertical-align: -6px" width="67" height="18">,证毕.
+<span class="proof-end">□</span>
+
+</div>
+如果定理中的条件不满足,将<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">减一,这时我们总可以说<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">比商的真值至多大1.综合以上这些想法,现在可以写出商为一位数的除法的详细过程了.
+<div class="algorithm">
+<span class="theorem-header">算法7<a name=""></a></span><span class="theorem-name">(商为一位数的除法)</span>
+
+<p>输入:整数<img src="latex/latex2png-Arithmetic_44982360_-5.gif" alt="$a=(a_{s+1}\ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">,<img src="latex/latex2png-Arithmetic_55195393_-5.gif" alt="$b=(b_s\ldots b_1b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的商<img src="latex/latex2png-Arithmetic_111162968_-6.gif" alt="$[{a\over b}]$" class="latex-inline" style="vertical-align: -6px" width="18" height="19">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-Arithmetic_10995168_-6.gif" alt="$b_s<[{B\over 2}]$" class="latex-inline" style="vertical-align: -6px" width="59" height="21">,<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">同乘以<img src="latex/latex2png-Arithmetic_132071276_-11.gif" alt="$\left[\frac{B}{b_s+1}\right]$" class="latex-inline" style="vertical-align: -11px" width="42" height="30">.</li>
+<li>计算<img src="latex/latex2png-Arithmetic_265215597_.gif" alt="$$q = \min\left\{\left[\frac{a_{s+1}B+a_s}{b_s}\right],B-1\right\}.$$" class="latex-display" width="580" height="40"></li>
+<li>计算<img src="latex/latex2png-Arithmetic_18952778_-5.gif" alt="$t=(a_{s+1}B+a_s)-qb_s$" class="latex-inline" style="vertical-align: -5px" width="165" height="18">,如果<img src="latex/latex2png-Arithmetic_140006061_-4.gif" alt="$B\cdot t<qb_{s-1}-a_{s-1}$" class="latex-inline" style="vertical-align: -4px" width="144" height="16">,<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">减一.</li>
+<li>计算余数<img src="latex/latex2png-Arithmetic_30186738_-4.gif" alt="$r=a-qb$" class="latex-inline" style="vertical-align: -4px" width="74" height="16">,如果<img src="latex/latex2png-Arithmetic_254975250_-3.gif" alt="$r\ge 0$" class="latex-inline" style="vertical-align: -3px" width="38" height="14">,返回<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,否则返回<img src="latex/latex2png-Arithmetic_201552916_-4.gif" alt="$q-1$" class="latex-inline" style="vertical-align: -4px" width="35" height="15">.</li>
+</ol>
+
+
+</div>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>整数除法</h4>
+
+<p class="first">注意到<img src="latex/latex2png-Arithmetic_197242002_.gif" alt="$$r=a-qb=a\bmod b$$" class="latex-display" width="580" height="16">在算法的最后一步也同时被算出,以此为基础可以写出一般的商为多位数的除法算法.
+<div class="algorithm">
+<span class="theorem-header">算法8<a name=""></a></span><span class="theorem-name">(整数除法)</span></p>
+
+<p>输入:整数<img src="latex/latex2png-Arithmetic_72431393_-5.gif" alt="$a=(a_m\ldots a_1a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">,<img src="latex/latex2png-Arithmetic_55523073_-5.gif" alt="$b=(b_n\ldots b_1b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="122" height="18">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的商<img src="latex/latex2png-Arithmetic_140154300_-6.gif" alt="$[{a\over b}]=(q_{m-n}\ldots q_1q_0)_B$" class="latex-inline" style="vertical-align: -6px" width="157" height="19">.</p>
+
+<p>定义辅助序列<img src="latex/latex2png-Arithmetic_178767591_.gif" alt="$$r_k=[{a\over B^k}]\bmod b,\quad m-n+1\ge k\ge 0.$$" class="latex-display" width="580" height="31">
+按递推公式依次求出<img src="latex/latex2png-Arithmetic_115356164_-5.gif" alt="$q_k,r_k(m-n+1\ge k\ge 0)$" class="latex-inline" style="vertical-align: -5px" width="185" height="18"></p>
+
+<ol>
+<li><img src="latex/latex2png-Arithmetic_230400062_-6.gif" alt="$q_k=[{B\cdot r_{k+1}+a_k\over b}]$" class="latex-inline" style="vertical-align: -6px" width="116" height="22"></li>
+<li><img src="latex/latex2png-Arithmetic_171721560_-5.gif" alt="$r_k=(B\cdot r_{k+1}+a_k)\bmod b$" class="latex-inline" style="vertical-align: -5px" width="194" height="18"></li>
+</ol>
+
+
+</div>
+为了利用快速乘法,还可以利用牛顿迭代来计算整数除法,具体来说就是先利用数值计算中浮点数的牛顿迭代求出除数倒数具有一定精度的近似值,然后利用整数乘法将被除数乘上去,当除数的位数较多时,这种方法是很有效的.
+
+
+
+
+<h2><a name="sec5" id="sec5"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>快速乘法</h2>
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一般原理</h3>
+
+<p class="first">高精度整数是计算机代数系统的内置基本类型,四则运算的快慢对系统的性能好坏有着决定性的影响,目前最著名的高精度整数运算库是GNU的GMP<span class="cite"><a class="cite" href="Arithmetic.html#ref-4" name="cite-4">[4]</a></span>,许多著名的计算机代数系统都是基于GMP构建的.加法和减法的复杂度关于整数位数是线性的,考虑到输入输出的复杂度关于整数位数也是线性的,因此从算法上来看加减法已经达到了复杂度的下界.高精度除法总可以通过Newton迭代归结为高精度乘法,所以四则运算的主要问题集中在乘法上,设<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为乘数的位数,就目前已知的情况而言,不同乘法算法的复杂度可以从平凡的<img src="latex/latex2png-Arithmetic_21732654_-5.gif" alt="$O(n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">(普通乘法),<img src="latex/latex2png-Arithmetic_80747700_-5.gif" alt="$O(n^{\log_2{3}})$" class="latex-inline" style="vertical-align: -5px" width="67" height="19">(Karatsuba乘法),<img src="latex/latex2png-Arithmetic_80747684_-5.gif" alt="$O(n^{\log_3{5}})$" class="latex-inline" style="vertical-align: -5px" width="67" height="19">(Toom-3乘法),<img src="latex/latex2png-Arithmetic_126102451_-5.gif" alt="$O(n\log^*{n})$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">(复数域上的FFT)直到<img src="latex/latex2png-Arithmetic_147722742_-5.gif" alt="$O(n(\log{n})(\log{\log{n}}))$" class="latex-inline" style="vertical-align: -5px" width="152" height="18">(有限域上的FFT),最后一个已经相当接近线性复杂度了.复杂度较低的算法往往有较大的常数因子,例如当两个相乘数都很小时,普通乘法反而是最快的,实用中常常将这些不同的乘法算法结合起来使用,每次做乘法时都根据相乘两数的大小动态地选择具体采用哪一种算法,选择时用到的参数一般通过实验来确定.</p>
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>多项式点值表示</h4>
+
+<p class="first">在前面的利用一位数乘多位数来做整数乘法时,已经提到过整数乘法还有更快的算法.在介绍这些高级算法之前,先来分析一下,笔算乘法的算法是如此地直截了当,以至于如果单从整数的角度考虑,应该不可能有更快的算法了.我们现在换一个角度,把目光投向多项式.</p>
+
+<p>对于一个次数界为<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的多项式<img src="latex/latex2png-Arithmetic_258803346_.gif" alt="$$A(x)=\sum_{k=0}^{n-1}a_kx^k,$$" class="latex-display" width="580" height="49">其系数表示法就是一个由系数组成的向量<img src="latex/latex2png-Arithmetic_174240748_-5.gif" alt="$\mathbf{a}=(a_0,a_1,\ldots,a_{n-1})$" class="latex-inline" style="vertical-align: -5px" width="154" height="18">,这是我们习以为常的一种表示形式,并且是唯一的;而点值表示法<span class="cite"><a class="cite" href="Arithmetic.html#ref-5" name="cite-5">[5]</a></span>是多项式在<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个不同点处的点值对构成的集合<img src="latex/latex2png-Arithmetic_30128195_.gif" alt="$$\{(x_0,y_0),(x_1,y_1),\ldots,(x_{n-1},y_{n-1})\},$$" class="latex-display" width="580" height="18">其中<img src="latex/latex2png-Arithmetic_134020056_-5.gif" alt="$y_k=A(x_k),k=0,1,\ldots,n-1$" class="latex-inline" style="vertical-align: -5px" width="218" height="18">.一个多项式可以有很多种不同的点值表示,这是因为每一组<img src="latex/latex2png-Arithmetic_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">都决定着一种点值表示.系数表示与点值表示之间是可以相互转换的,系数表示到点值表示称为多项式多点求值,点值表示到系数表示称为多项式插值,关于这两个主题的高级讨论将留到与多项式相关的章节中,下面关于整数快速乘法的讨论只需要这几个概念就足够了.</p>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>整数乘法与多项式</h4>
+
+<p class="first">已知两个次数界为<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的多项式的系数表示分别为<img src="latex/latex2png-Arithmetic_34009600_.gif" alt="$$A(x)=\sum_{k=0}^{n-1}a_kx^k,\quad B(x)=\sum_{k=0}^{n-1}b_kx^k,$$" class="latex-display" width="580" height="49">设乘积的系数表示为<img src="latex/latex2png-Arithmetic_34086732_-16.gif" alt="$C(x)=\sum\limits_{k=0}^{2n-2}c_kx^k$" class="latex-inline" style="vertical-align: -16px" width="123" height="40">,那么<img src="latex/latex2png-Arithmetic_150127124_.gif" alt="$$c_k=\sum_{i+j=k}a_ib_j,$$" class="latex-display" width="580" height="40">这样计算乘积时总共需要<img src="latex/latex2png-Arithmetic_202667028_0.gif" alt="$n^2$" class="latex-inline" style="vertical-align: 0px" width="16" height="14">次系数乘法.现在我们首先取定<img src="latex/latex2png-Arithmetic_151221305_0.gif" alt="$2n-1$" class="latex-inline" style="vertical-align: 0px" width="46" height="11">个不同点<img src="latex/latex2png-Arithmetic_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">,然后利用多项式多点求值计算出<img src="latex/latex2png-Arithmetic_47483846_-5.gif" alt="$A(x)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">与<img src="latex/latex2png-Arithmetic_220951610_-5.gif" alt="$B(x)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">在这组点上的点值表示,如果<img src="latex/latex2png-Arithmetic_33378614_-5.gif" alt="$C(x)=A(x)\cdot B(x)$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,那么显然有<img src="latex/latex2png-Arithmetic_164982284_-5.gif" alt="$C(x_k)=A(x_k)\cdot B(x_k)$" class="latex-inline" style="vertical-align: -5px" width="162" height="18">,只需要<img src="latex/latex2png-Arithmetic_151221305_0.gif" alt="$2n-1$" class="latex-inline" style="vertical-align: 0px" width="46" height="11">次系数乘法就可以计算出乘积<img src="latex/latex2png-Arithmetic_47483846_-5.gif" alt="$C(x)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">的点值表示,再通过多项式插值就可以计算出其系数表示.从以上过程不难看出,利用多项式的点值表示做多项式乘法来得简洁明了,如果多项式的默认表示形式就是点值表示,那么连多项式多点求值和多项式插值这两个步骤也可以省去了,多项式乘法就和向量逐点相乘一样简单,从模方法这个更高的角度来看,多项式的点值表示对应于模取为一次多项式组<img src="latex/latex2png-Arithmetic_104167077_-2.gif" alt="$x-x_k$" class="latex-inline" style="vertical-align: -2px" width="46" height="10">的模表示,多项式多点求值和多项式插值则分别对应于中国剩余定理的逆定理与原定理.不幸的是,我们现在讨论的是整数快速乘法,而整数与多项式之间的联系依赖于整数的进制表示<img src="latex/latex2png-Arithmetic_63387824_.gif" alt="$$(a_n\ldots a_1a_0)_B=\sum_{k=0}^na_k\cdot B^k,$$" class="latex-display" width="580" height="46">这对应于多项式的系数表示(如果采用整数的模表示,我们也可以让整数对应于多项式的点值表示,不过现在我们不讨论它).这样一来,整数快速乘法就必须解决多项式系数表示与点值表示之间的转换问题,可以把它看成三个步骤:多项式多点求值,向量逐点相乘,多项式插值.</p>
+
+
+
+<h3><a name="sec7" id="sec7"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Karatsuba乘法</h3>
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一次多项式的乘法</h4>
+
+<p class="first">Karatsuba算法<span class="cite"><a class="cite" href="Arithmetic.html#ref-3" name="cite-3">[3]</a></span>是1962年发现的,它使用了一个惊人简单但十分有效的策略.首先研究一次多项式的乘法,设<img src="latex/latex2png-Arithmetic_75952114_.gif" alt="$$A(x)=a_1x+a_0,\quad B(x)=b_1x+b_0,$$" class="latex-display" width="580" height="18">选取插值点组为<img src="latex/latex2png-Arithmetic_189149301_-4.gif" alt="$x_0=-1,x_1=0,x_2=\infty$" class="latex-inline" style="vertical-align: -4px" width="178" height="15">,则<img src="latex/latex2png-Arithmetic_263145170_-5.gif" alt="$A(x),B(x)$" class="latex-inline" style="vertical-align: -5px" width="76" height="18">的点值表示分别为<img src="latex/latex2png-Arithmetic_43201372_-5.gif" alt="$\{(-1,a_0-a_1),(0,a_0),(\infty,a_1)\}$" class="latex-inline" style="vertical-align: -5px" width="221" height="18">,<img src="latex/latex2png-Arithmetic_57618455_-5.gif" alt="$\{(-1,b_0-b_1),(0,b_0),(\infty,b_1\}$" class="latex-inline" style="vertical-align: -5px" width="208" height="18">,如果<img src="latex/latex2png-Arithmetic_33378614_-5.gif" alt="$C(x)=A(x)\cdot B(x)$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,那么<img src="latex/latex2png-Arithmetic_257340345_-5.gif" alt="$C(-1)=(a_0-a_1)\cdot(b_0-b_1)$" class="latex-inline" style="vertical-align: -5px" width="207" height="18">,<img src="latex/latex2png-Arithmetic_184019039_-5.gif" alt="$C(0)=a_0\cdot b_0$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,<img src="latex/latex2png-Arithmetic_130637569_-5.gif" alt="$C(\infty)=a_1\cdot b_1$" class="latex-inline" style="vertical-align: -5px" width="105" height="18">,利用简单的多项式插值算法,譬如Lagrange插值公式,可以计算出<img src="latex/latex2png-Arithmetic_47483846_-5.gif" alt="$C(x)$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">的系数表示<img src="latex/latex2png-Arithmetic_164603328_.gif" alt="$$(c_0,c_1,c_2)=(C(0),C(0)+C(\infty)-C(-1),C(\infty)),$$" class="latex-display" width="580" height="18">即<img src="latex/latex2png-Arithmetic_84491965_.gif" alt="$$C(x)=a_1b_1x^2+(a_0b_0+a_1b_1-(a_0-a_1)(b_0-b_1))x+a_0b_0.$$" class="latex-display" width="580" height="20">在这个例子中,多项式多点求值与多项式插值都只用到系数加减法,这表明可以只用三次系数乘法完成一次多项式的乘法.前面这些推理都是多项式的点值表示理论的自然应用,俄罗斯数学家Karatsuba的贡献在于将它应用到了一般的多项式乘法和整数乘法,简单地说来是这样的,如果<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">都是<img src="latex/latex2png-Arithmetic_124285970_0.gif" alt="$2n$" class="latex-inline" style="vertical-align: 0px" width="18" height="11">位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制整数,那么在<img src="latex/latex2png-Arithmetic_136868884_0.gif" alt="$B^n$" class="latex-inline" style="vertical-align: 0px" width="21" height="12">进制下<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">都是两位数<img src="latex/latex2png-Arithmetic_61373894_.gif" alt="$$a=a_1B^n+a_0,\quad b=b_1B^n+b_0,$$" class="latex-display" width="580" height="16">其中<img src="latex/latex2png-Arithmetic_255776853_-5.gif" alt="$a_i,b_i(i=0,1)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">都是<img src="latex/latex2png-Arithmetic_136868884_0.gif" alt="$B^n$" class="latex-inline" style="vertical-align: 0px" width="21" height="12">进制下的个位数,也就是<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制下不超过<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位的数,记<img src="latex/latex2png-Arithmetic_210465851_-5.gif" alt="$T(n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">是递归地利用Karatsuba乘法将两个n位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制数相乘所需要的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制个位数乘法次数,那么有<img src="latex/latex2png-Arithmetic_176415563_-5.gif" alt="$T(2n)\le 3T(n)$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">,由此推出<img src="latex/latex2png-Arithmetic_121734995_-5.gif" alt="$T(n)=O(n^{\log_2{3}})\approx O(n^{1.59})$" class="latex-inline" style="vertical-align: -5px" width="208" height="19">.</p>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Karatsuba算法</h4>
+
+<p class="first">综合以上这些想法,现在可以写出Karatsuba乘法的详细过程了<span class="cite"><a class="cite" href="Arithmetic.html#ref-2" name="cite-2">[2]</a></span>.
+<div class="algorithm">
+<span class="theorem-header">算法9<a name=""></a></span><span class="theorem-name">(Karatsuba乘法)</span></p>
+
+<p>输入:<img src="latex/latex2png-Arithmetic_204174356_-2.gif" alt="$n_a$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">位整数<img src="latex/latex2png-Arithmetic_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">和<img src="latex/latex2png-Arithmetic_204239892_-2.gif" alt="$n_b$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">位整数<img src="latex/latex2png-Arithmetic_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的积<img src="latex/latex2png-Arithmetic_103638018_0.gif" alt="$c=a\cdot b$" class="latex-inline" style="vertical-align: 0px" width="57" height="12">.</p>
+
+<ol>
+<li>令<img src="latex/latex2png-Arithmetic_199372628_-5.gif" alt="$n=\max\{n_a,n_b\}$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,若<img src="latex/latex2png-Arithmetic_167998484_0.gif" alt="$n=1$" class="latex-inline" style="vertical-align: 0px" width="39" height="11">,利用普通乘法计算并返回<img src="latex/latex2png-Arithmetic_26975230_0.gif" alt="$a\cdot b$" class="latex-inline" style="vertical-align: 0px" width="28" height="12">;若<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为奇数,令<img src="latex/latex2png-Arithmetic_196446424_-6.gif" alt="$n=\frac{n+1}{2}$" class="latex-inline" style="vertical-align: -6px" width="60" height="21">,否则令<img src="latex/latex2png-Arithmetic_156940521_-6.gif" alt="$n=\frac{n}{2}$" class="latex-inline" style="vertical-align: -6px" width="43" height="18">.</li>
+<li>若<img src="latex/latex2png-Arithmetic_9357566_-3.gif" alt="$n_a\le n$" class="latex-inline" style="vertical-align: -3px" width="50" height="14">,令<img src="latex/latex2png-Arithmetic_53507859_-4.gif" alt="$a_1=0,a_0=a$" class="latex-inline" style="vertical-align: -4px" width="100" height="15">;否则令<img src="latex/latex2png-Arithmetic_84637329_-2.gif" alt="$a_1=a$" class="latex-inline" style="vertical-align: -2px" width="46" height="10">的高<img src="latex/latex2png-Arithmetic_202929822_-2.gif" alt="$n_a-n$" class="latex-inline" style="vertical-align: -2px" width="48" height="10">位,<img src="latex/latex2png-Arithmetic_67860113_-3.gif" alt="$a_0=a$" class="latex-inline" style="vertical-align: -3px" width="46" height="11">的低<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位.</li>
+<li>若<img src="latex/latex2png-Arithmetic_9357550_-3.gif" alt="$n_b\le n$" class="latex-inline" style="vertical-align: -3px" width="49" height="14">,令<img src="latex/latex2png-Arithmetic_70350612_-4.gif" alt="$b_1=0,b_0=b$" class="latex-inline" style="vertical-align: -4px" width="96" height="16">;否则令<img src="latex/latex2png-Arithmetic_84702866_-2.gif" alt="$b_1=b$" class="latex-inline" style="vertical-align: -2px" width="44" height="14">的高<img src="latex/latex2png-Arithmetic_219707038_-2.gif" alt="$n_b-n$" class="latex-inline" style="vertical-align: -2px" width="47" height="10">位,<img src="latex/latex2png-Arithmetic_67925650_-3.gif" alt="$b_0=b$" class="latex-inline" style="vertical-align: -3px" width="44" height="15">的低<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位.</li>
+<li>使用Karatsuba乘法计算<img src="latex/latex2png-Arithmetic_331557_-5.gif" alt="$c_0=a_0b_0,c_1=a_1b_1,c_2=(a_0-a_1)(b_0-b_1)$" class="latex-inline" style="vertical-align: -5px" width="313" height="18">,返回<img src="latex/latex2png-Arithmetic_113959938_.gif" alt="$$(c_1\cdot B^{\frac{n}{2}}+c_0+c_1-c_2)\cdot B^{\frac{n}{2}}+c_0.$$" class="latex-display" width="580" height="20"></li>
+</ol>
+
+
+</div>
+与普通乘法类似,在第4步中乘上<img src="latex/latex2png-Arithmetic_136672276_0.gif" alt="$B^k$" class="latex-inline" style="vertical-align: 0px" width="20" height="14">时只需要在右边添上<img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个0,或者说左移<img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">位.Karatsuba乘法实现起来并不困难,因此在算法理论中也常常被拿来用作分治算法或者二分法的例子.
+
+
+
+<h3><a name="sec8" id="sec8"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Toom-Cook乘法</h3>
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Toom-3乘法</h4>
+
+<p class="first">沿着Karatsuba的思路,考虑二次多项式的乘法,设<img src="latex/latex2png-Arithmetic_204389538_.gif" alt="$$A(x)=a_2x^2+a_1x+a_0,\quad B(x)=b_2x^2+b_1x+b_0,$$" class="latex-display" width="580" height="20">选取插值点组为<img src="latex/latex2png-Arithmetic_201176159_.gif" alt="$$x_0=-1,x_1=0,x_2=1,x_3=2,x_4=\infty,$$" class="latex-display" width="580" height="15">如果<img src="latex/latex2png-Arithmetic_33378614_-5.gif" alt="$C(x)=A(x)\cdot B(x)$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,类似地,利用简单的多项式插值算法,譬如Lagrange插值公式,可以计算出<img src="latex/latex2png-Arithmetic_223185257_-5.gif" alt="$C(x) $" class="latex-inline" style="vertical-align: -5px" width="32" height="18">的系数表示<img src="latex/latex2png-Arithmetic_152331490_-5.gif" alt="$(c_0,c_1,c_2,c_3,c_4)$" class="latex-inline" style="vertical-align: -5px" width="113" height="18">,其中
+<img src="latex/latex2png-Arithmetic_214243261_.gif" alt="
+\begin{align*}
+c_0&=C(0),\\
+c_1&=C(-1)+C(0)+C(1)+C(2)+C(\infty),\\
+c_2&=C(-1)+C(0)-C(1)-C(2)+C(\infty),\\
+c_3&=4C(-1)+C(0)+2C(1)+8C(2)+16C(\infty),\\
+c_4&=C(\infty).
+\end{align*}
+" class="latex-display" width="580" height="141">
+如果不计乘以较小常数的乘法和加减法,我们可以只用5次系数乘法完成二次多项式的乘法,以此为基础仿照Karatsuba乘法而得到的算法称为Toom-3乘法.记<img src="latex/latex2png-Arithmetic_210465851_-5.gif" alt="$T(n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">是递归地利用Toom-3乘法将两个n位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制数相乘所需要的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制个位数乘法次数,那么有<img src="latex/latex2png-Arithmetic_92019895_-5.gif" alt="$T(3n)\le 5T(n)$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">,由此推出<img src="latex/latex2png-Arithmetic_196966061_-5.gif" alt="$T(n)=O(n^{\log_3{5}})\approx O(n^{1.46})$" class="latex-inline" style="vertical-align: -5px" width="208" height="19">.</p>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Lagrange插值公式</h4>
+
+<p class="first">更一般地,考虑<img src="latex/latex2png-Arithmetic_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">次多项式的乘法,设<img src="latex/latex2png-Arithmetic_35033271_.gif" alt="$$A(x)=a_rx^r+\cdots+a_0,\quad B(x)=b_rx^r+\cdots+b_0,$$" class="latex-display" width="580" height="18">选取插值点组为<img src="latex/latex2png-Arithmetic_168996912_.gif" alt="$$x_0=-r,x_1=-(r-1),\ldots,x_r=0,x_{r+1}=1,\ldots,x_{2r}=r,$$" class="latex-display" width="580" height="18">如果<img src="latex/latex2png-Arithmetic_33378614_-5.gif" alt="$C(x)=A(x)\cdot B(x)$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,这一次我们实际地用一下Lagrange插值公式来计算出<img src="latex/latex2png-Arithmetic_223185257_-5.gif" alt="$C(x) $" class="latex-inline" style="vertical-align: -5px" width="32" height="18">的系数表示<img src="latex/latex2png-Arithmetic_194913138_-5.gif" alt="$(c_0,c_1,\ldots,c_{2r})$" class="latex-inline" style="vertical-align: -5px" width="105" height="18">.
+<div class="theorem">
+<span class="theorem-header">定理5<a name=""></a></span><span class="theorem-name">(Lagrange插值公式)</span>
+设<img src="latex/latex2png-Arithmetic_116719545_-16.gif" alt="$C(x)=\sum\limits_{k=0}^{n-1}c_kx^k$" class="latex-inline" style="vertical-align: -16px" width="116" height="40">,<img src="latex/latex2png-Arithmetic_199839889_-5.gif" alt="$x_i\neq x_j,0\le i\le j<n$" class="latex-inline" style="vertical-align: -5px" width="159" height="17">,则
+<img src="latex/latex2png-Arithmetic_250290571_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    c_0\\
+    c_1\\
+    \vdots\\
+    c_{n-1}
+  \end{bmatrix}
+=
+  \begin{bmatrix}
+    1 & x_0 & \cdots & x_0^{n-1}\\
+    1 & x_1 & \cdots & x_1^{n-1}\\
+    \vdots & \vdots & \ldots & \vdots\\
+    1 & x_{n-1} & \cdots & x_{n-1}^{n-1}
+  \end{bmatrix}
+^{-1}
+  \begin{bmatrix}
+    C(x_0)\\
+    C(x_1)\\
+    \vdots\\
+    C(x_{n-1})
+  \end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="113"></p>
+
+
+</div>
+Lagrange插值公式右端的矩阵是Vandermonde阵,其行列式为<img src="latex/latex2png-Arithmetic_23736522_.gif" alt="$$\prod_{0\le i\le j<n}(x_i-x_j)\neq 0.$$" class="latex-display" width="580" height="41">它告诉我们多项式的系数表示与点值表示之间存在着简单的线性关系.类似地,接下来推广Karatsuba乘法就可以得到Toom-r乘法,简单地说来是这样的,如果<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">都是<img src="latex/latex2png-Arithmetic_149451794_0.gif" alt="$rn$" class="latex-inline" style="vertical-align: 0px" width="18" height="8">位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制整数,那么在<img src="latex/latex2png-Arithmetic_136868884_0.gif" alt="$B^n$" class="latex-inline" style="vertical-align: 0px" width="21" height="12">进制下<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">都是<img src="latex/latex2png-Arithmetic_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">位数<img src="latex/latex2png-Arithmetic_45147311_.gif" alt="$$a=a_rB^{rn}+\cdots+a_0,\quad b=b_rB^{rn}+\cdots+b_0,$$" class="latex-display" width="580" height="16">其中<img src="latex/latex2png-Arithmetic_182306551_-5.gif" alt="$a_i,b_i(i=0,1,\ldots,r)$" class="latex-inline" style="vertical-align: -5px" width="142" height="18">都是<img src="latex/latex2png-Arithmetic_136868884_0.gif" alt="$B^n$" class="latex-inline" style="vertical-align: 0px" width="21" height="12">进制下的个位数,也就是<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制下不超过<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位的数,记<img src="latex/latex2png-Arithmetic_210465851_-5.gif" alt="$T(n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">是递归地利用Toom-r乘法将两个n位<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制数相乘所需要的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制个位数乘法次数,那么有<img src="latex/latex2png-Arithmetic_166669990_-5.gif" alt="$T(rn)\le (2r+1)T(n)$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">,由此推出<img src="latex/latex2png-Arithmetic_25447907_-5.gif" alt="$T(n)=O(n^{\log_{r+1}{2r+1}})$" class="latex-inline" style="vertical-align: -5px" width="163" height="19">.
+
+<p>这样得到的一系列快速乘法算法统称为Toom-Cook乘法<span class="cite"><a class="cite" href="Arithmetic.html#ref-3" name="cite-3">[3]</a></span>,其中Toom-2乘法与Karatsuba乘法大致相同,只是选取的插值点不一样而已.由于<img src="latex/latex2png-Arithmetic_6373711_.gif" alt="$$\lim_{r\rightarrow\infty}\log_{r+1}{2r+1}=1,$$" class="latex-display" width="580" height="23">所以使用Toom-Cook乘法进行<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位整数乘法所需要的<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">进制个位数乘法次数的下界趋近于<img src="latex/latex2png-Arithmetic_57969605_-5.gif" alt="$O(n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">,这是一个很好的结果.但是由于多项式多点求值和多项式插值所需要的线性级操作会随着<img src="latex/latex2png-Arithmetic_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">的增加而迅速增加,以至于一般说来仅仅当<img src="latex/latex2png-Arithmetic_83195552_-4.gif" alt="$r=2,3$" class="latex-inline" style="vertical-align: -4px" width="54" height="15">时,Toom-Cook乘法才是实用的.</p>
+
+
+
+<h3><a name="sec9" id="sec9"></a>
+<a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>FFT乘法</h3>
+
+<p class="first">快速傅立叶变换(FFT)<span class="cite"><a class="cite" href="Arithmetic.html#ref-6" name="cite-6">[6]</a></span>被认为是20世纪数值计算和算法领域最重要的成果之一,它常常被用于快速计算卷积,这对于信号处理等工程领域尤其重要.对于符号计算来讲,FFT实际上是多项式快速多点求值和快速插值算法一个高度优化的特例.不过,在这里我们只需要利用多项式乘法和向量卷积之间的相似性,就可以很好地利用FFT来加速多项式乘法和整数乘法.在上一节中,Toom-Cook乘法通过充分地利用分治与递归有效地减少了多项式多点求值和多项式插值操作的消耗;下面将要讨论的FFT乘法则是通过精心地挑选求值点,把系数表示与点值表示之间的转换所需的操作压缩为次线性级别,即<img src="latex/latex2png-Arithmetic_222788809_-5.gif" alt="$O(n\log{n})$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,其中<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">代表相乘的两个整数的位数.</p>
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>原根</h4>
+
+<p class="first">顾名思义,FFT是用来快速计算离散傅立叶变换(DFT)的方法,我们可以将DFT简单的理解成以单位复根作为求值点时多项式系数表示到点值表示之间的转换,关于它的原始定义及详细介绍可以在任何一本有关数值计算的教科书中找到.</p>
+
+<p>为了更好地理解DFT,首先来看一下什么是原根,这是一个代数数论的概念.
+<div class="definition">
+<span class="theorem-header">定义2<a name=""></a></span><span class="theorem-name">(原根)</span>
+设<img src="latex/latex2png-Arithmetic_69628518_-4.gif" alt="$n\in\mathbb{N}_+$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">,<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">是一个环,<img src="latex/latex2png-Arithmetic_116553980_-1.gif" alt="$\omega\in R$" class="latex-inline" style="vertical-align: -1px" width="44" height="13">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-Arithmetic_200342207_0.gif" alt="$\omega^n=1$" class="latex-inline" style="vertical-align: 0px" width="49" height="11">,则称<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位根.</li>
+<li>若<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位根,并且对于<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的每个素因子<img src="latex/latex2png-Arithmetic_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">,<img src="latex/latex2png-Arithmetic_154326449_0.gif" alt="$\omega^{n/p}-1$" class="latex-inline" style="vertical-align: 0px" width="61" height="15">不是<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的零因子,则称<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根.</li>
+</ol>
+
+
+</div>
+按照这个定义,任意素数的整数次幂单位复根都是复数域<img src="latex/latex2png-Arithmetic_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">的单位原根,例如<img src="latex/latex2png-Arithmetic_166729003_-1.gif" alt="$\omega=e^{{2\pi i\over 8}}\in R=\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="130" height="17">就是一个8次单位原根.除此之外,对于模整数环<img src="latex/latex2png-Arithmetic_145335380_-3.gif" alt="$\mathbb{Z}_{17}$" class="latex-inline" style="vertical-align: -3px" width="24" height="15">,<img src="latex/latex2png-Arithmetic_155213603_-3.gif" alt="$\overline{3}\in R=\mathbb{Z}_{17}$" class="latex-inline" style="vertical-align: -3px" width="87" height="17">是16次单位原根,与此同时,虽然<img src="latex/latex2png-Arithmetic_49950480_-3.gif" alt="$\overline{2}^{16}=\overline{1}\in R=\mathbb{Z}_{17}$" class="latex-inline" style="vertical-align: -3px" width="132" height="21">,但<img src="latex/latex2png-Arithmetic_224830314_0.gif" alt="$\overline{2}$" class="latex-inline" style="vertical-align: 0px" width="9" height="14">并不是<img src="latex/latex2png-Arithmetic_145335380_-3.gif" alt="$\mathbb{Z}_{17}$" class="latex-inline" style="vertical-align: -3px" width="24" height="15">的16次单位原根,因为<img src="latex/latex2png-Arithmetic_84065038_-1.gif" alt="$2^8-1\equiv 0\mod 17$" class="latex-inline" style="vertical-align: -1px" width="139" height="15">.如果<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是素数的整数次幂,那么当且仅当<img src="latex/latex2png-Arithmetic_201553565_-5.gif" alt="$n|q-1$" class="latex-inline" style="vertical-align: -5px" width="50" height="18">时有限域<img src="latex/latex2png-Arithmetic_68923955_-5.gif" alt="$\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">存在<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根.
+
+<p>从定义容易导出原根的一些特殊性质.
+<div class="theorem">
+<span class="theorem-header">定理6<a name=""></a></span><span class="theorem-name"></span>
+如果<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是环<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根,那么<img src="latex/latex2png-Arithmetic_219808537_-1.gif" alt="$\forall 1<k<n$" class="latex-inline" style="vertical-align: -1px" width="81" height="13">,<img src="latex/latex2png-Arithmetic_267451071_0.gif" alt="$\omega^k-1$" class="latex-inline" style="vertical-align: 0px" width="46" height="14">不是<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的零因子,并且<img src="latex/latex2png-Arithmetic_60637705_.gif" alt="$$\sum_{j=0}^{n-1}\omega^{jk}=0.$$" class="latex-display" width="580" height="51"></p>
+
+
+</div>
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>DFT</h4>
+
+<p class="first">另外一个需要用到的概念是循环卷积.
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name">(循环卷积)</span>
+设<img src="latex/latex2png-Arithmetic_161570836_-16.gif" alt="$f(x)=\sum\limits_{k=0}^{n-1}f_kx_k,g(x)=\sum\limits_{k=0}^{n-1}g_kx_k$" class="latex-inline" style="vertical-align: -16px" width="236" height="40">,则称<img src="latex/latex2png-Arithmetic_249397610_-16.gif" alt="$f(x)*g(x)=\sum\limits_{k=0}^{n-1}h_kx_k$" class="latex-inline" style="vertical-align: -16px" width="162" height="40">为<img src="latex/latex2png-Arithmetic_5486894_-5.gif" alt="$f(x),g(x)$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">的循环卷积,其中<img src="latex/latex2png-Arithmetic_156842695_-18.gif" alt="$h_k=\sum\limits_{i+j\equiv k\bmod n}f_ig_j$" class="latex-inline" style="vertical-align: -18px" width="150" height="31">.</p>
+
+
+</div>
+不难发现,循环卷积的定义跟多项式乘积的定义很相似,我们可以简单地把它理解成先扩充多项式次数再做多项式乘法的过程.设<img src="latex/latex2png-Arithmetic_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的多项式乘积<img src="latex/latex2png-Arithmetic_136410130_-4.gif" alt="$fg$" class="latex-inline" style="vertical-align: -4px" width="17" height="16">是<img src="latex/latex2png-Arithmetic_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">次多项式,则<img src="latex/latex2png-Arithmetic_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">和<img src="latex/latex2png-Arithmetic_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的次数可能小于<img src="latex/latex2png-Arithmetic_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">,如果在它们的最高次项之前添上系数为0的高次项并把它们看成<img src="latex/latex2png-Arithmetic_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">次多项式,这时候会发现<img src="latex/latex2png-Arithmetic_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的循环卷积<img src="latex/latex2png-Arithmetic_14775316_-4.gif" alt="$f*g$" class="latex-inline" style="vertical-align: -4px" width="33" height="16">恰好等于<img src="latex/latex2png-Arithmetic_136410130_-4.gif" alt="$fg$" class="latex-inline" style="vertical-align: -4px" width="17" height="16">,这就是循环卷积和普通多项式乘积之间的关系.
+
+<p>现在可以正式地给出DFT的定义了.
+<div class="definition">
+<span class="theorem-header">定义4<a name=""></a></span><span class="theorem-name">(离散傅立叶变换)</span>
+设<img src="latex/latex2png-Arithmetic_120913801_-16.gif" alt="$f(x)=\sum\limits_{k=0}^{n-1}f_kx_k$" class="latex-inline" style="vertical-align: -16px" width="114" height="40">,<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是环<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根,则称<img src="latex/latex2png-Arithmetic_230805723_.gif" alt="$$DFT_{\omega}(f)=(f(1),f(\omega),\ldots,f(\omega^{n-1})$$" class="latex-display" width="580" height="20">为<img src="latex/latex2png-Arithmetic_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的离散傅立叶变换.</p>
+
+
+</div>
+
+<p>在下面的定理我们将会发现,原根的良好性质保证了DFT的逆变换和DFT具有相同的结构.
+<div class="theorem">
+<span class="theorem-header">定理7<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是环<img src="latex/latex2png-Arithmetic_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根,用<img src="latex/latex2png-Arithmetic_241511338_-5.gif" alt="$(DFT_\omega)^{-1}$" class="latex-inline" style="vertical-align: -5px" width="74" height="19">表示<img src="latex/latex2png-Arithmetic_105440995_-2.gif" alt="$DFT_\omega$" class="latex-inline" style="vertical-align: -2px" width="45" height="14">的逆变换,那么<img src="latex/latex2png-Arithmetic_132330468_.gif" alt="$$(DFT_\omega)^{-1}=\frac{1}{n}DFT_{\omega^{-1}}.$$" class="latex-display" width="580" height="34"></p>
+
+
+</div>
+<div class="proof">
+<span class="proof-header">证明</span>
+<img src="latex/latex2png-Arithmetic_105440995_-2.gif" alt="$DFT_\omega$" class="latex-inline" style="vertical-align: -2px" width="45" height="14">是<img src="latex/latex2png-Arithmetic_131566572_-1.gif" alt="$R^n$" class="latex-inline" style="vertical-align: -1px" width="21" height="13">上的线性变换，它在自然基下的矩阵表示为<img src="latex/latex2png-Arithmetic_186055739_-5.gif" alt="$\vec{y}=V_n(\omega)\vec{a}$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">，即
+<img src="latex/latex2png-Arithmetic_12541693_.gif" alt="
+\begin{align*}
+\begin{bmatrix}
+y_0\\
+y_1\\
+y_2\\
+\vdots\\
+y_{n-1}
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 1 & \cdots & 1\\
+1 & \omega & \cdots & \omega^{n-1}\\
+1 & \omega^2 & \cdots & \omega^{2n-2}\\
+\vdots & \vdots & & \vdots\\
+1 & \omega^{n-1} & \cdots & \omega^{(n-1)^2}
+\end{bmatrix}
+\begin{bmatrix}
+a_0\\
+a_1\\
+a_2\\
+\vdots\\
+a_{n-1}
+\end{bmatrix},
+\end{align*}
+" class="latex-display" width="580" height="129">
+其中<img src="latex/latex2png-Arithmetic_250893517_-5.gif" alt="$V_n(\omega)$" class="latex-inline" style="vertical-align: -5px" width="41" height="18">为<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶范德蒙(Vandermonde)方阵.<img src="latex/latex2png-Arithmetic_250893517_-5.gif" alt="$V_n(\omega)$" class="latex-inline" style="vertical-align: -5px" width="41" height="18">的<img src="latex/latex2png-Arithmetic_72063701_-5.gif" alt="$(i, j)$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">位元素是<img src="latex/latex2png-Arithmetic_164591864_0.gif" alt="$\omega^{ij}$" class="latex-inline" style="vertical-align: 0px" width="22" height="14">，<img src="latex/latex2png-Arithmetic_106864971_-5.gif" alt="$V_n(\omega)\cdot V_n(\omega^{-1})$" class="latex-inline" style="vertical-align: -5px" width="114" height="19">的<img src="latex/latex2png-Arithmetic_72063701_-5.gif" alt="$(i, j)$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">位元素为
+<img src="latex/latex2png-Arithmetic_129926595_.gif" alt="
+\begin{align*}
+u_{ij}&=\sum_{0\le k<n}\omega^{ik}(\omega^{-1})^{kj}\\
+&=\sum_{0\le k<n}(\omega^{i-j})^k\\
+&=n\delta_{ij}.
+\end{align*}
+" class="latex-display" width="580" height="120">
+因此<img src="latex/latex2png-Arithmetic_120702742_-5.gif" alt="$V_n(\omega)\cdot V_n(\omega^{-1})=n(\delta_{ij})=nI_n$" class="latex-inline" style="vertical-align: -5px" width="226" height="19">,即<img src="latex/latex2png-Arithmetic_20351084_-6.gif" alt="$(V_n(\omega))^{-1}=\frac{1}{n}V_n(\omega^{-1})$" class="latex-inline" style="vertical-align: -6px" width="166" height="21">,亦即<img src="latex/latex2png-Arithmetic_171264618_-6.gif" alt="$(DFT_\omega)^{-1}=\frac{1}{n}DFT_{\omega^{-1}}$" class="latex-inline" style="vertical-align: -6px" width="170" height="21">.
+<span class="proof-end">□</span>
+
+</div>
+这样一来,系数表示和点值表示之间的正逆转换可以用相同的办法去处理,也就是说可以采用统一的方法来计算单位原根处的多点求值和插值,这是适当地选取插值点带来的好处之一,现在<img src="latex/latex2png-Arithmetic_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">和<img src="latex/latex2png-Arithmetic_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的循环卷积可以表示成<img src="latex/latex2png-Arithmetic_78573671_.gif" alt="$$f*g={1\over n}DFT_{\omega^{-1}}(DFT_\omega(f)\cdot DFT_\omega(g)),$$" class="latex-display" width="580" height="34">其中<img src="latex/latex2png-Arithmetic_255953231_3.gif" alt="$\cdot$" class="latex-inline" style="vertical-align: 3px" width="2" height="2">表示一维向量之间逐点相乘.
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>FFT算法</h4>
+
+<p class="first">如果采用普通的多项式多点求值方法,譬如说Horner法则,计算<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶DFT大约需要<img src="latex/latex2png-Arithmetic_202667028_0.gif" alt="$n^2$" class="latex-inline" style="vertical-align: 0px" width="16" height="14">次系数乘法,为了寻找更快的方法,需要对DFT的结构进行仔细分析.先来看向量<img src="latex/latex2png-Arithmetic_161730643_-5.gif" alt="$DFT_\omega(f)$" class="latex-inline" style="vertical-align: -5px" width="68" height="18">的第<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$j$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">个分量<img src="latex/latex2png-Arithmetic_121377828_-16.gif" alt="$f(\omega^j)=\sum\limits_{k=0}^{n-1}f_k\omega^{jk}$" class="latex-inline" style="vertical-align: -16px" width="130" height="40">,因为<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根,所以<img src="latex/latex2png-Arithmetic_146766072_0.gif" alt="$\omega^{jk}$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">至多只有<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个不同的值<img src="latex/latex2png-Arithmetic_18712338_-4.gif" alt="$\omega^0,\omega^1,\ldots,\omega^{n-1}$" class="latex-inline" style="vertical-align: -4px" width="116" height="18">,特别地,如果<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$j$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">是<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的因子,那么<img src="latex/latex2png-Arithmetic_256802723_0.gif" alt="$\omega^j$" class="latex-inline" style="vertical-align: 0px" width="17" height="14">是<img src="latex/latex2png-Arithmetic_234061875_-9.gif" alt="${n\over j}$" class="latex-inline" style="vertical-align: -9px" width="9" height="21">次单位根,因此<img src="latex/latex2png-Arithmetic_266241835_-5.gif" alt="$(\omega^j)^k$" class="latex-inline" style="vertical-align: -5px" width="36" height="19">至多只有<img src="latex/latex2png-Arithmetic_234061875_-9.gif" alt="${n\over j}$" class="latex-inline" style="vertical-align: -9px" width="9" height="21">个不同的值,如果我们已经知道了哪些<img src="latex/latex2png-Arithmetic_146766072_0.gif" alt="$\omega^{jk}$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">具有相同的值,就可以像合并同类项一样将对应于相同的<img src="latex/latex2png-Arithmetic_146766072_0.gif" alt="$\omega^{jk}$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">的系数<img src="latex/latex2png-Arithmetic_70611988_-4.gif" alt="$f_k$" class="latex-inline" style="vertical-align: -4px" width="14" height="16">先加在一起,然后再和<img src="latex/latex2png-Arithmetic_146766072_0.gif" alt="$\omega^{jk}$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">相乘,这样就可以有效地减少乘法的次数,跟计算<img src="latex/latex2png-Arithmetic_248346254_-2.gif" alt="$ab+ac$" class="latex-inline" style="vertical-align: -2px" width="52" height="14">时转而计算<img src="latex/latex2png-Arithmetic_249273293_-5.gif" alt="$a(b+c)$" class="latex-inline" style="vertical-align: -5px" width="55" height="18">是一个道理.设<img src="latex/latex2png-Arithmetic_89243771_-3.gif" alt="$0\le k_1<k_2<n$" class="latex-inline" style="vertical-align: -3px" width="117" height="15">,那么<img src="latex/latex2png-Arithmetic_134174894_.gif" alt="$$\omega^{jk_1}=\omega^{jk_2}\Leftrightarrow jk_1\equiv jk_2\mod n,$$" class="latex-display" width="580" height="19">即<img src="latex/latex2png-Arithmetic_177735292_-5.gif" alt="$n|j(k_1-k_2)$" class="latex-inline" style="vertical-align: -5px" width="86" height="18">,一般地,<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是素数的整数次幂,不妨设<img src="latex/latex2png-Arithmetic_30968164_-4.gif" alt="$n=p^m$" class="latex-inline" style="vertical-align: -4px" width="52" height="15">,其中<img src="latex/latex2png-Arithmetic_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为素数,设<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$j$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的素因子分解中<img src="latex/latex2png-Arithmetic_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的幂次为<img src="latex/latex2png-Arithmetic_83397574_-1.gif" alt="$m'<m$" class="latex-inline" style="vertical-align: -1px" width="55" height="14">,那么应该有<img src="latex/latex2png-Arithmetic_250093394_-5.gif" alt="$p^{m-m'}|k_1-k_2$" class="latex-inline" style="vertical-align: -5px" width="105" height="21">,这可以当作合并<img src="latex/latex2png-Arithmetic_146766072_0.gif" alt="$\omega^{jk}$" class="latex-inline" style="vertical-align: 0px" width="24" height="14">的系数时的依据.广义的快速傅立叶变换可以处理<img src="latex/latex2png-Arithmetic_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">为任意素数的情形,我们这里接下来要讨论的的FFT则特指基<img src="latex/latex2png-Arithmetic_201618452_-4.gif" alt="$p=2$" class="latex-inline" style="vertical-align: -4px" width="39" height="15">的快速傅立叶变换.</p>
+
+<p>为了高效地多点求值,FFT方法运用了分治策略,设<img src="latex/latex2png-Arithmetic_136803996_0.gif" alt="$n=2^m$" class="latex-inline" style="vertical-align: 0px" width="52" height="11">次多项式<img src="latex/latex2png-Arithmetic_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的系数表示向量为<img src="latex/latex2png-Arithmetic_207643346_-5.gif" alt="$f=(f_0,f_1,\ldots,f_{n-1})$" class="latex-inline" style="vertical-align: -5px" width="152" height="18">,将它依下标的奇偶性分成两组得到
+<img src="latex/latex2png-Arithmetic_268188705_.gif" alt="
+\begin{align*}
+f^{[0]}&=(f_0,f_2,\ldots,f_{n-2}),\\
+f^{[1]}&=(f_1,f_3,\ldots,f_{n-1}),
+\end{align*}
+" class="latex-display" width="580" height="52">
+那么向量<img src="latex/latex2png-Arithmetic_161730643_-5.gif" alt="$DFT_\omega(f)$" class="latex-inline" style="vertical-align: -5px" width="68" height="18">的第<img src="latex/latex2png-Arithmetic_42234898_0.gif" alt="$j$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">个分量<img src="latex/latex2png-Arithmetic_158342211_.gif" alt="$$f(\omega^j)=\sum_{k=0}^{n-1}f_k\omega^{jk}=\sum_{k=0}^{n/2-1}f_{2k}(\omega^{2j})^k+\omega^j\sum_{k=0}^{n/2-1}f_{2k+1}(\omega^{2j})^k,$$" class="latex-display" width="580" height="52">注意到<img src="latex/latex2png-Arithmetic_123601761_-4.gif" alt="$\omega^{j+n/2}=-\omega^j,\omega^{j+n}=\omega^j$" class="latex-inline" style="vertical-align: -4px" width="186" height="19">,因此可以改写成
+<img src="latex/latex2png-Arithmetic_97953719_.gif" alt="
+\begin{align*}
+DFT_\omega(f)[j]=DFT_{\omega^2}(f^{[0]})[j]+\omega^jDFT_{\omega^2}(f^{[1]})[j],\\
+DFT_\omega(f)[j+n/2]=DFT_{\omega^2}(f^{[0]})[j]-\omega^jDFT_{\omega^2}(f^{[1]})[j],
+\end{align*}
+" class="latex-display" width="580" height="52">
+其中<img src="latex/latex2png-Arithmetic_259722408_-5.gif" alt="$0\le j<n/2$" class="latex-inline" style="vertical-align: -5px" width="86" height="18">.如果从多项式的角度来看,这其实就是<img src="latex/latex2png-Arithmetic_76847656_-5.gif" alt="$f(x)=f^{[0]}(x^2)+xf^{[ 1]}(x^2)$" class="latex-inline" style="vertical-align: -5px" width="191" height="20">.</p>
+
+<p>经过以上的分析,现在可以写出FFT的详细过程了.
+<div class="algorithm">
+<span class="theorem-header">算法10<a name=""></a></span><span class="theorem-name">(FFT)</span></p>
+
+<p>输入:<img src="latex/latex2png-Arithmetic_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">次多项式的系数表示向量<img src="latex/latex2png-Arithmetic_207643346_-5.gif" alt="$f=(f_0,f_1,\ldots,f_{n-1})$" class="latex-inline" style="vertical-align: -5px" width="152" height="18">,<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根<img src="latex/latex2png-Arithmetic_258113443_-2.gif" alt="$\omega_n$" class="latex-inline" style="vertical-align: -2px" width="18" height="10">,其中<img src="latex/latex2png-Arithmetic_136803996_0.gif" alt="$n=2^m$" class="latex-inline" style="vertical-align: 0px" width="52" height="11">.</p>
+
+<p>输出:<img src="latex/latex2png-Arithmetic_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的离散傅立叶变换<img src="latex/latex2png-Arithmetic_170220950_-5.gif" alt="$DFT_{\omega_n}(f)$" class="latex-inline" style="vertical-align: -5px" width="76" height="18">.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">等于1,返回<img src="latex/latex2png-Arithmetic_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">.</li>
+<li>令<img src="latex/latex2png-Arithmetic_255385789_-5.gif" alt="$f^{[0]}=(f_0,f_2,\ldots,f_{n-2})$" class="latex-inline" style="vertical-align: -5px" width="167" height="20">,<img src="latex/latex2png-Arithmetic_9819651_-5.gif" alt="$f^{[ 1]}=(f_1,f_3,\ldots,f_{n-1})$" class="latex-inline" style="vertical-align: -5px" width="167" height="20">,<img src="latex/latex2png-Arithmetic_221085603_0.gif" alt="$\omega=1$" class="latex-inline" style="vertical-align: 0px" width="40" height="11">.</li>
+<li>计算<img src="latex/latex2png-Arithmetic_247932405_-6.gif" alt="$y^{[0]}=DFT_{\omega_n^2}(f^{[0]})$" class="latex-inline" style="vertical-align: -6px" width="136" height="21">,<img src="latex/latex2png-Arithmetic_202840236_-6.gif" alt="$y^{[ 1]}=DFT_{\omega_n^2}(f^{[ 1]})$" class="latex-inline" style="vertical-align: -6px" width="136" height="21">.</li>
+<li><img src="latex/latex2png-Arithmetic_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">从0到<img src="latex/latex2png-Arithmetic_84113051_-5.gif" alt="$n/2-1$" class="latex-inline" style="vertical-align: -5px" width="54" height="18">,顺次计算<img src="latex/latex2png-Arithmetic_53755724_-5.gif" alt="$t=\omega y_k^{[ 1]}$" class="latex-inline" style="vertical-align: -5px" width="62" height="23">,<img src="latex/latex2png-Arithmetic_255476783_-5.gif" alt="$y_k=y_k^{[0]}+t$" class="latex-inline" style="vertical-align: -5px" width="87" height="23">,<img src="latex/latex2png-Arithmetic_155762168_-6.gif" alt="$y_{k+n/2}=y_k^{[0]}-t$" class="latex-inline" style="vertical-align: -6px" width="119" height="24">,<img src="latex/latex2png-Arithmetic_109423281_-2.gif" alt="$\omega=\omega\omega_n$" class="latex-inline" style="vertical-align: -2px" width="62" height="10">.</li>
+<li>返回<img src="latex/latex2png-Arithmetic_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">.</li>
+</ol>
+
+
+</div>
+设<img src="latex/latex2png-Arithmetic_210465851_-5.gif" alt="$T(n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">是利用FFT进行多点求值时所需要的系数乘法的次数,那么<img src="latex/latex2png-Arithmetic_42931885_-5.gif" alt="$T(n)=O(n\log{n})$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">,如果环R为复数域,那么利用FFT进行整数乘法时需要考虑浮点运算的截断误差和截断位数,这种乘法算法的复杂度为<img src="latex/latex2png-Arithmetic_126102451_-5.gif" alt="$O(n\log^*{n})$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">,其中<img src="latex/latex2png-Arithmetic_144059409_-5.gif" alt="$\log^*{n}=(\log{n})(\log{\log{n}})\cdots$" class="latex-inline" style="vertical-align: -5px" width="203" height="18">.采用FFT计算DFT比直接按照定义计算要快得多,它成功的主要原因是利用了单位原根<img src="latex/latex2png-Arithmetic_248799715_0.gif" alt="$\omega$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的特殊性质和分治策略.快速傅立叶变换在信号处理,多媒体数据压缩等领域被广泛使用,人们对基本算法进行了许多改进以获得更高的速度和适应于特定的硬件<span class="cite"><a class="cite" href="Arithmetic.html#ref-6" name="cite-6">[6]</a></span>.
+
+
+<h4><a href="Arithmetic.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>有限域上的FFT</h4>
+
+<p class="first">如果<img src="latex/latex2png-Arithmetic_91204487_-1.gif" alt="$R=\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="47" height="13">,即使<img src="latex/latex2png-Arithmetic_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">很大,也很容易求出<img src="latex/latex2png-Arithmetic_136803996_0.gif" alt="$n=2^m$" class="latex-inline" style="vertical-align: 0px" width="52" height="11">次单位原根.但是对于有限域,前面已经提到过,如果<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是素数的整数次幂,那么当且仅当<img src="latex/latex2png-Arithmetic_201553565_-5.gif" alt="$n|q-1$" class="latex-inline" style="vertical-align: -5px" width="50" height="18">时有限域<img src="latex/latex2png-Arithmetic_68923955_-5.gif" alt="$\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">才存在<img src="latex/latex2png-Arithmetic_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次单位原根,当<img src="latex/latex2png-Arithmetic_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">很大时,并非总能轻易地找到这样的素数<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">.尽管如此,相比于复数域而言,使用有限域上的原根做FFT不会涉及到浮点操作,因此也不用考虑中间精度的问题,正因为这样,在利用FFT计算整系数多项式的乘积或者计算高精度整数乘法时,我们还是希望使用有限域.注意到有限域<img src="latex/latex2png-Arithmetic_16916561_-5.gif" alt="$F_q=\mathbb{Z}/q\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">上的算术都是以<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">为模的,因此利用<img src="latex/latex2png-Arithmetic_205222932_-5.gif" alt="$F_q$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">上的FFT求出的点值向量的各项系数都不应该超过<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,否则最后无法将结果还原到<img src="latex/latex2png-Arithmetic_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">中<span class="cite"><a class="cite" href="Arithmetic.html#ref-6" name="cite-6">[6]</a></span>.</p>
+
+<p>设<img src="latex/latex2png-Arithmetic_217136151_-5.gif" alt="$a=(a_s\ldots a_0)_B$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">,<img src="latex/latex2png-Arithmetic_233917479_-5.gif" alt="$b=(b_s\ldots b_0)_B$" class="latex-inline" style="vertical-align: -5px" width="105" height="18">,那么<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">分别对应于多项式<img src="latex/latex2png-Arithmetic_81433938_.gif" alt="$$a(B)=\sum_{k=0}^sa_kB^k,\quad b(B)=\sum_{k=0}^sb_kB^k,$$" class="latex-display" width="580" height="46">
+<img src="latex/latex2png-Arithmetic_67341292_-4.gif" alt="$a,b$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">的乘积<img src="latex/latex2png-Arithmetic_41776146_0.gif" alt="$c$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">对应于多项式<img src="latex/latex2png-Arithmetic_12467881_-16.gif" alt="$C(B)=\sum\limits_{k=0}^{2s}c_kB^k$" class="latex-inline" style="vertical-align: -16px" width="123" height="40">,其中<img src="latex/latex2png-Arithmetic_208557538_.gif" alt="$$c_k=\sum_{i+j=k}a_ib_j<\sum_{i+j=k}B^2\le(s+1)\cdot B^2,\quad 0\le k\le 2s.$$" class="latex-display" width="580" height="40">在典型的计算机代数系统中,机器精度整数的溢出界<img src="latex/latex2png-Arithmetic_163566741_0.gif" alt="$B=2^{64}$" class="latex-inline" style="vertical-align: 0px" width="57" height="14">,整数位数<img src="latex/latex2png-Arithmetic_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">的界也取为<img src="latex/latex2png-Arithmetic_160930709_0.gif" alt="$2^{64}$" class="latex-inline" style="vertical-align: 0px" width="21" height="14">,那么根据<img src="latex/latex2png-Arithmetic_205222932_-5.gif" alt="$F_q$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">的限制应该有<img src="latex/latex2png-Arithmetic_79152893_-5.gif" alt="$q>(s+1)B^2\approx 2^{192}$" class="latex-inline" style="vertical-align: -5px" width="150" height="19">.这样大的素数<img src="latex/latex2png-Arithmetic_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">以及有限域<img src="latex/latex2png-Arithmetic_205222932_-5.gif" alt="$F_q$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">是不容易使用的,为了解决这个问题,可以借用模方法中的技术,选取三个机器精度的素数<img src="latex/latex2png-Arithmetic_48598967_-4.gif" alt="$2^{63}\le q_0,q_1,q_2<2^{64}$" class="latex-inline" style="vertical-align: -4px" width="147" height="18">,分别在<img src="latex/latex2png-Arithmetic_211156903_-5.gif" alt="$F_{q_i}$" class="latex-inline" style="vertical-align: -5px" width="20" height="17">中计算出模乘积<img src="latex/latex2png-Arithmetic_172860212_-4.gif" alt="$a\cdot b\bmod q_i$" class="latex-inline" style="vertical-align: -4px" width="81" height="16">,然后利用中国剩余定理计算出<img src="latex/latex2png-Arithmetic_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">中的乘积<img src="latex/latex2png-Arithmetic_26975230_0.gif" alt="$a\cdot b$" class="latex-inline" style="vertical-align: 0px" width="28" height="12">.</p>
+
+<p>考虑到中国剩余定理的计算,利用有限域上的FFT进行整数乘法的复杂度为<img src="latex/latex2png-Arithmetic_147722742_-5.gif" alt="$O(n(\log{n})(\log{\log{n}}))$" class="latex-inline" style="vertical-align: -5px" width="152" height="18">.</p>
+
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="Arithmetic.html#cite-1" name="ref-1">[1]</a><span class="ref-author">李庆扬，王能超，易大义, </span><span class="ref-title-chs">数值分析, </span><span class="ref-publisher">清华大学出版社, </span><span class="ref-year">2001. </span></p>
+<p class="ref"><a class="ref" href="Arithmetic.html#cite-2" name="ref-2">[2]</a><span class="ref-author">王东明，夏壁灿, </span><span class="ref-title-chs">计算机代数, </span><span class="ref-publisher">清华大学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2004. </span></p>
+<p class="ref"><a class="ref" href="Arithmetic.html#cite-3" name="ref-3">[3]</a><span class="ref-author">Donald E. Knuth, </span><span class="ref-title">The art of computer programming, volume 2 (3rd ed.): seminumerical algorithms, </span><span class="ref-publisher">Addison-Wesley Longman Publishing Co., Inc., </span><span class="ref-address">Boston, MA, USA, </span><span class="ref-year">1997. </span></p>
+<p class="ref"><a class="ref" href="Arithmetic.html#cite-4" name="ref-4">[4]</a><span class="ref-title">The GNU MP Bignum Library, </span><span class="ref-note">http://gmplib.org/. </span></p>
+<p class="ref"><a class="ref" href="Arithmetic.html#cite-5" name="ref-5">[5]</a><span class="ref-author">潘金贵等译，H. Corman, </span><span class="ref-title-chs">算法导论, </span><span class="ref-publisher">机械工业出版社, </span><span class="ref-year">2006. </span></p>
+<p class="ref"><a class="ref" href="Arithmetic.html#cite-6" name="ref-6">[6]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年03月18日 17:16:41
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

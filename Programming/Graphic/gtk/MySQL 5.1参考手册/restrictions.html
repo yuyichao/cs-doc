@@ -1,0 +1,226 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Appendix I. Feature Restrictions</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="limits.html" title="Appendix H. Limits in MySQL"><link rel="next" href="gpl-license.html" title="Appendix J. GNU General Public License">
+<style>
+<!--
+span.quote
+	{}
+-->
+</style>
+</head><body><div class="appendix"><div class="titlepage"><div><div><h2 class="title"><a name="restrictions"></a>
+	附录I：特性限制</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="restrictions.html#routine-restrictions">
+			I.1. 对存储子程序和触发程序的限制</a></span></dt><dt><span class="section"><a href="restrictions.html#cursor-restrictions">
+			I.2. 对服务器端光标的限制</a></span></dt><dt><span class="section"><a href="restrictions.html#subquery-restrictions">
+			I.3. 对子查询的限制</a></span></dt><dt><span class="section"><a href="restrictions.html#view-restrictions">
+			I.4. 对视图的限制</a></span></dt><dt><span class="section"><a href="restrictions.html#xa-restrictions">
+			I.5. 对XA事务的限制</a></span></dt></dl></div>
+	<p>在本附录中，介绍了使用诸如子查询或视图等<span>MySQL</span>特性时存在的限制。</p>
+	<div class="section">
+		<div class="titlepage">
+			<div>
+				<div>
+					<h2 class="title">
+					<a name="routine-restrictions"></a>
+		I.1.&nbsp;对存储子程序和触发程序的限制</h2></div></div></div><a class="indexterm" name="id3104266"></a><a class="indexterm" name="id3104273"></a><a class="indexterm" name="id3104283"></a><a class="indexterm" name="id3104290"></a>
+		<p>这里介绍的某些限制适用于所有的存储子程序，即存储程序和存储函数。某些限制仅适用于存储函数而不是存储程序。</p>
+		<p>对存储函数的的所有限制也适用于触发程序。</p>
+		<p><strong><span>注释：</span></strong>如果<span>SQL</span>语句，如<span><span>SELECT 
+		... INTO</span>语句包含</span>具有相同名称的<span>对列的引用</span>以及声明的局部变量，<span>MySQL</span>会将引用解释为变量的名称。这是一种非标准的行为，优先顺序通常是列名、然后是<span>SQL</span>变量和参数。请参见<a href="stored-procedures.html#select-into-statement" title="20.2.9.3. SELECT ... INTO Statement">20.2.9.3节，“SELECT 
+		... INTO语句”</a>。</p>
+		<p>存储子程序不能包含任意<span>SQL</span>语句。在存储子程序中，禁止使用下述语句：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>CHECK TABLES</span><span>
+		</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>LOCK TABLES</span><span>,
+		<span>UNLOCK TABLES</span> </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>LOAD DATA</span><span>,
+		<span>LOAD TABLE</span> </span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>SQL</span>预处理语句（<span>PREPARE</span>、<span>EXECUTE</span>、<span>DEALLOCATE 
+		PREPARE</span>）。隐含意义：不能在存储子程序中使用动态<span>SQL</span>语句（其中，能够以字符串形式构造动态语句，然后执行它们）。从<span>MySQL 
+		5.0.13<span>开始，对于存储程序放宽了该限制，但该限制仍适用于存储函数和触发程序。</span></span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>OPTIMIZE 
+		TABLE</span><span> </span></p>
+		<p>对于存储函数（而不是存储程序），禁止下述额外语句：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>执行显式或隐式提交或回滚操作的语句。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>返回结果集的语句。包括没有<span>INFO</span>子句的<span><span>SELECT</span>语句，以及<span>SHOW</span>语句。能够用<span>SELECT 
+		… INTO</span>，或使用光标和<span>FETCH</span>语句处理结果集的函数。</span></p>
+		<p>
+		<span>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>FLUSH</span></span>语句。注意，尽管能够在存储程序中使用<span><span>FLUSH</span>，但不能从存储函数或触发程序调用这类存储程序。</span></p>
+		<p>
+		注意，尽管某些限制在正常情况下适用于存储函数和触发程序，不适用于存储程序，如果它们是从存储函数或触发程序中调用的，这些限制也适用于存储程序。</p>
+		<p>使用存储子程序会导致复制问题。关于这方面的进一步讨论，请参见<a href="stored-procedures.html#stored-procedure-logging">20</a><a href="stored-procedures.html#stored-procedure-logging" title="20.4. Binary Logging of Stored Routines and Triggers">.4节，“存储子程序和触发程序的二进制日志功能”</a>。</p>
+		<p><span><span>INFORMATION_SCHEMA</span>尚不包含<span>PARAMETERS</span>表，因此，对于需要在运行时获取子程序参数信息的应用程序来说，必须采用相应的规避错误，如解析<span>SHOW 
+		CREATE</span>语句的输出。</span></p>
+		<p>没有存储子程序调试工具。</p>
+		<p>存储子程序使用了具体化的光标，而不是固有光标（在服务器端生成结果集并对结果集进行高速缓冲处理，然后在客户端获取结果集时按行返回）。</p>
+		<p><span>不能提前处理<span>CALL</span>语句。无论是对服务器端预处理语句还是<span>SQL</span>预处理语句，均成立。</span></p>
+		<p>
+		为了防止服务器线程间的交互问题，当客户端发出语句时，服务器将使用可用的、用于语句执行的子程序和触发程序快照。也就是说，服务器将计算出可在语句执行期间使用的存储程序、函数和触发程序的列表，加载它们，然后进入语句执行。这意味着，在语句执行的同时，它不会看到其他线程对子程序所作的变更。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="cursor-restrictions"></a>
+		I.2.&nbsp;对服务器端光标的限制</h2></div></div></div><a class="indexterm" name="id3104557"></a><a class="indexterm" name="id3104564"></a>
+		<p>从<span>MySQL 5.0.2<span>开始，通过</span><span>mysql_stmt_attr_set()</span> 
+		C API</span>函数实现了服务器端光标。服务器端光标允许在服务器端生成结果集，但不会将其传输到客户端，除非客户端请求这些行。例如，如果客户端执行了查询，但仅对第<span>1</span>行感兴趣，那么不会传输剩余的行。</p>
+		<p>光标是只读的，不能使用光标来更新行。</p>
+		<p><span>未实施<span>UPDATE WHERE CURRENT 
+		OF</span></span>和<span><span>DELETE 
+		WHERE CURRENT OF</span>，这是因为不支持可更新的光标。</span></p>
+		<p>光标是不可保持的（提交后不再保持打开）。</p>
+		<p>光标是不敏感的。</p>
+		<p>光标是不可滚动的。</p>
+		<p>光标是未命名的。语句处理程序起着光标<span>ID</span>的作用。</p>
+		<p>对于每条预处理语句，仅能打开<span>1</span>个光标。如果需要多个光标，必须处理多条语句。</p>
+		<p>如果在预处理模式下不支持语句，不能在生成结果集的语句上使用光标。包括<span>CHECK 
+		TABLES</span>、<span>HANDLER 
+		READ</span>和<span>SHOW 
+		BINLOG EVENTS</span>语句。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="subquery-restrictions"></a>
+		I.3.&nbsp;对子查询的限制</h2></div></div></div><a class="indexterm" name="id3104659"></a><a class="indexterm" name="id3104666"></a>
+		<p>随后将更正的一致缺陷：如果将<span>NULL</span>值与使用<span>ALL</span>、<span>ANY</span>或<span>SOME</span>的子查询进行比较，而且子查询返回空结果，比较操作将对<span>NULL</span>的非标准结果进行评估，而不是<span>TRUE</span>或<span>FALSE</span>。</p>
+		<p>子查询的外部语句可以是<span>SELECT</span>、<span>INSERT</span>、<span>UPDATE</span>、<span>DELETE</span>、<span>SET</span>或<span><span>DO</span>中的任何一个。</span></p>
+		<p>仅部分支持行比较操作：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于<span><i><span>expr</span></i><span> 
+		IN (<i>subquery</i>)</span></span>，<span><i><span>expr</span></i></span>可以是<span><i><span>n</span></i></span><span>-tuple</span>（通过行构造程序语法指定），而且子查询能返回<span><i><span>n</span></i></span><span>-tuples</span>个行。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于<span><i><span>expr</span></i><span>
+		<i>op</i> {ALL|ANY|SOME} (<i>subquery</i>)</span></span>，<span><i><span>expr</span></i></span>必须是标度值，子查询必须是列子查询，不能返回多列行。</p>
+		<p>换句话讲，对于返回<span><i><span>n</span></i></span><span>-tuples</span>行的子查询，支持：</p>
+		<pre><span>(<span><i>val_1</i></span>, ..., <span><i>val_n</i></span>) IN (<span><i>subquery</i></span>)</span></pre>
+		<p>但不支持：</p>
+		<pre><span>(<span><i>val_1</i></span>, ..., <span><i>val_n</i></span>) <span><i>op</i></span> {ALL|ANY|SOME} (<span><i>subquery</i></span>)</span></pre>
+		<p>支持针对<span>IN</span>的行比较，但不支持针对其他的行比较，原因在于，<span>IN</span>实施是通过将其重新编写为“<span>=</span>”比较和<span>AND</span>操作的序列完成的。该方法不能用于<span>ALL</span>、<span>ANY</span>或<span>SOME</span>。</p>
+		<p>未良好优化行构造程序。下面的两个表达式是等效的，但只有第<span>2</span>个表达式能被优化：</p>
+		<pre><span>(col1, col2, ...) = (val1, val2, ...)</span></pre>
+		<pre><span>col1 = val1 AND col2 = val2 AND ...</span></pre>
+		<p>对于<span>IN</span>的子查询优化不如对“<span>=</span>”的优化那样有效。</p>
+		<p>对于不良<span>IN</span>性能的一种典型情况是，当子查询返回少量行，但外部查询返回将与子查询结果相比较的大量行。</p>
+		<p><span><span>FROM</span>子句中的子查询不能与子查询</span>有关系。在评估外部查询之前，将对它们进行具体化处理（执行以生成结果集），因此，不能按照外部查询的行对它们进行评估。</p>
+		<p>一般而言，不能更改表，并从子查询内的相同表进行选择。例如，该限制适用于具有下述形式的语句：</p>
+		<pre><span>DELETE FROM t WHERE ... (SELECT ... FROM t ...);</span></pre>
+		<pre><span>UPDATE t ... WHERE col = (SELECT ... FROM t ...);</span></pre>
+		<pre><span>{INSERT|REPLACE} INTO t (SELECT ... FROM t ...);</span></pre>
+		<p>例外：如果为<span>FROM</span>子句中更改的表使用子查询，前述禁令将不再适用。例如：</p>
+		<pre><span>UPDATE t ... WHERE col = (SELECT (SELECT ... FROM t...) AS _t ...);</span></pre>
+		<p>禁令在此不适用，这是因为<span>FROM</span>中的子查询已被具体化为临时表，因此“<span>t</span>”中的相关行已在满足“<span>t</span>”条件的情况下、在更新时被选中。</p>
+		<p>与子查询相比，针对联合的优化程序更成熟，因此，在很多情况下，如果将其改写为<span>join</span>（联合），使用子查询的语句能够更有效地执行。</p>
+		<p>但下述情形例外：<span><span>IN</span>子查询可被改写</span>为<span><span>SELECT 
+		DISTINCT</span>联合。例如：</span></p>
+		<pre><span>SELECT col FROM t1 WHERE id_col IN (SELECT id_col2 FROM t2 WHERE <span><i>condition</i></span>);</span></pre>
+		<p>可将该语句改写为：</p>
+		<pre><span>SELECT DISTINCT col FROM t1, t2 WHERE t1.id_col = t2.id_col AND <span><i>condition</i></span>;</span></pre>
+		<p>但在该情况下，联合需要额外的<span><span>DISTINCT</span>操作，而且与子查询相比，效率并不高。</span></p>
+		<p>可能的未来优化：<span>MySQL</span>不改写针对子查询评估的联合顺序。在某些情况下，如果<span>MySQL</span>将其改写为联合，能够更有效地执行子查询。这样，优化程序就能在更多的执行方案间进行选择。例如，它能决定是否首先读取某一表或其他。</p>
+		<p>例如：</p>
+		<pre><span>SELECT a FROM outer_table AS ot</span></pre>
+		<pre><span>WHERE a IN (SELECT a FROM inner_table AS it WHERE ot.b = it.b);</span></pre>
+		<p>对于该查询，<span>MySQL</span>总会首先扫描<span><span>outer_table</span>，如然后针对每一行在<span>inner_table</span>上执行子查询。</span>如果<span><span>outer_table</span>有很多行而<span>inner_table</span></span>只有少量行，查询的执行速度或许要慢于本应有的速度。</p>
+		<p>前述查询可改写为：</p>
+		<pre><span>SELECT a FROM outer_table AS ot, inner_table AS it</span></pre>
+		<pre><span>WHERE ot.a = it.a AND ot.b = it.b;</span></pre>
+		<p>在该情况下，我们能扫描小的表（<span><span>inner_table</span>）并查询<span>outer_table</span>中的行，如果在<span>“ot.a,ot.b”</span>上有索引，速度会更快。</span></p>
+		<p>
+		可能的未来优化：对外部查询的每一行评估关联的子查询。更好的方法是，如果外部行的值与之前的行相比没有变化，不对子查询进行再次评估，而是使用以前的结果。</p>
+		<p>可能的未来优化：通过将结果具体化到临时表，而且该表不使用索引，对<span>FROM</span>子句中的子查询进行评估。在查询中与其他表进行比较时，尽管可能是有用的，但不允许使用索引。</p>
+		<p>可能的未来优化：如果<span><span>FROM</span>子句中的子查询类似于可施加<span>MERGE</span>算法的视图，改写查询并采用<span>MERGE</span>算法，以便能够使用索引。下述语句包含这类子查询：</span></p>
+		<pre><span>SELECT * FROM (SELECT * FROM t1 WHERE t1.t1_col) AS _t1, t2 WHERE t2.t2_col;</span></pre>
+		<p>该语句可被改写为联合，如下所示：</p>
+		<pre><span>SELECT * FROM t1, t2 WHERE t1.t1_col AND t2.t2_col;</span></pre>
+		<p>这类改写具有两个优点：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>避免使用那些不能使用索引的临时表。在改写的查询中，优化程序可在<span>t1</span>上使用索引。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>优化程序在选择不同的执行计划方面具有更大的自由。例如，将查询改写为联合，那么就允许优化程序首先使用<span>t1</span>或<span>t2</span>。</p>
+		<p>可能的未来优化：对于没有关联子查询的<span>IN</span>、<span>= 
+		ANY</span>、<span>&lt;&gt; ANY</span>、<span>= 
+		ALL</span>、以及<span><span>&lt;&gt; ALL</span>，为结果使用<span>“</span>内存中<span>”</span>哈希处理，或对较大的结果使用具有索引的临时表。例如：</span></p>
+		<pre><span>SELECT a FROM big_table AS bt</span></pre>
+		<pre><span>WHERE non_key_field IN (SELECT non_key_field FROM <span><i>table</i></span> WHERE <span><i>condition</i></span>)</span></pre>
+		<p>在该情况下，可创建临时表：</p>
+		<pre><span>CREATE TABLE t (key (non_key_field))</span></pre>
+		<pre><span>(SELECT non_key_field FROM <span><i>table</i></span> WHERE <span><i>condition</i></span>)</span></pre>
+		<p>然后，对<span><span>big_table</span>中的每一行，根据<span>bt.non_key_field</span>，在<span>“t”</span>中进行键查找。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="view-restrictions"></a>
+		I.4.&nbsp;对视图的限制</h2></div></div></div><a class="indexterm" name="id3105240"></a><a class="indexterm" name="id3105246"></a>
+		<p>视图处理功能概念未优化：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>不能在视图上创建索引。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于使用<span>MERGE</span>算法处理的视图，可以使用索引。但是，对于使用临时表算法处理的视图，不能在其基表上利用索引提供的优点（尽管能够在临时表的生成过程中使用索引）。</p>
+		<p>在视图的<span>FROM</span>子句中不能使用子查询。未来该限制将被放宽。</p>
+		<p>存在一个一般原则，不能更改某一表并在子查询的相同表内进行选择。请参见<a href="restrictions.html#subquery-restrictions" title="I.3. Restrictions on Subqueries">I.3节，“对子查询的限制”</a>。</p>
+		<p>如果从表选择了视图并接着从视图进行了选择，同样的原理也适用，如果在子查询中从表选择了视图并使用<span>MERGE</span>算法评估了视图，也同样。例如：</p>
+		<pre><span>CREATE VIEW v1 AS</span></pre>
+		<pre><span>SELECT * FROM t2 WHERE EXISTS (SELECT 1 FROM t1 WHERE t1.a = t2.a);</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>UPDATE t1, v2 SET t1.a = 1 WHERE t1.b = v2.b;</span></pre>
+		<p>
+		如果视图是使用临时表评估的，可从视图子查询中的表进行选择，并仍能更改外部查询中的表。在该情况下，视图将被具体化，因此，你实际上不能从子查询的表中进行选择并“同时”更改它（这是你打算强制<span>MySQL</span>使用临时表算法的另一原因，其方法是在视图定义中指定<span><span>ALGORITHM 
+		= TEMPTABLE</span>关键字</span>）。</p>
+		<p>可以使用<span>DROP TABLE</span>或<span><span>ALTER 
+		TABLE</span>来舍弃或更改视图定义中使用的表（它会是视图失效），而且舍弃或更改操作不会导致告警。</span>但在以后使用视图时会出错。</p>
+		<p>视图定义是通过特定语句“冻结”的：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果<span>PREPARE</span>预处理的语句引用了视图，以后每次执行语句时看到的视图内容与预处理视图时的内容相同。即使在语句预处理完成之后、在执行语句之前更改了视图定义，情况也同样。例如：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE VIEW v AS SELECT 1;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>PREPARE s FROM &#39;SELECT * FROM v&#39;;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>ALTER VIEW v AS SELECT 2;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>EXECUTE s;</span></pre>
+		<p><span>
+		<span>EXECUTE</span>语句返回的结果是<span>1</span>，而不是<span>2</span>。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		如果存储子程序中的语句引用了视图，语句所见到的视图内容与首次执行语句时的相同。这意味着，如果语句是以循环方式执行的，进一步的语句迭代见到的视图内容是相同的，即使在循环过程中更改了视图定义也同样。例如：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE VIEW v AS SELECT 1;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>delimiter //</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE PROCEDURE p ()</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>BEGIN</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;DECLARE i INT DEFAULT 0;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;WHILE i &lt; 5 DO</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;SELECT * FROM v;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;SET i = i + 1;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;ALTER VIEW v AS SELECT 2;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;END WHILE;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>END;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>//</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>delimiter ;</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CALL p();</span></pre>
+		<p>如果调用了程序<span>p()</span>，每次通过循环时<span>SELECT</span>返回<span>1</span>，即使在循环内更改了视图定义也同样。</p>
+		<p>关于视图的可更新性，对于视图，其总体目标是，如果任何视图从理论上讲是可更新的，在实际上也应是可更新的。这包括在其定义中有<span>UNION</span>的视图。目前，并非所有理论上可更新的视图均能被更新。最初的视图实施有意采用该方式，为的是尽快地在<span>MySQL</span>中获得有用的可更新视图。很多理论上可更新的视图现已能更新，但限制依然存在：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>其子查询位于<span>WHERE</span>子句之外任何位置的可更新视图。对于某些其子查询位于<span>SELECT</span>列表中的视图，也是可更新的。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>不能使用<span><span>UPDATE</span>来更新定义为<span>Join</span>的视图的<span>1</span>个以上的基表。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>不能使用<span><span>DELETE</span>来更新定义为<span>Join</span>的视图。</span></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="xa-restrictions"></a>
+		I.5.&nbsp;对XA事务的限制</h2></div></div></div>
+		<p><span>XA</span>事务支持限于<span>InnoDB</span>存储引擎。</p>
+		<p><span>MySQL XA</span>实施是针对外部<span>XA</span>的，其中，<span>MySQL</span>服务器作为资源管理器，而客户端程序作为事务管理器。未实施“<span class="quote">内部<span>XA</span></span>”。这样，就允许<span>MySQL</span>服务器内的单独存储引擎作为<span>RM</span>（资源管理器），而服务器本身作为<span>TM</span>（事务管理器）。处理包含<span>1</span>个以上存储引擎的<span>XA</span>事务时，需要内部<span>XA</span>。内部<span>XA</span>的实施是不完整的，这是因为，它要求存储引擎在表处理程序层面上支持两阶段提交，目前仅对<span>InnoDB</span>实现了该特性。</p>
+		<p>对于<span>XA START</span>，不支持<span>JOIN</span>和<span><span>RESUME</span>子句。</span></p>
+		<p>对于<span><span>XA END</span>，不支持<span>SUSPEND 
+		[FOR MIGRATE]</span>子句。</span></p>
+		<p>在全局事务内，对于每个<span>XA</span>事务，<span>xid</span>值的<span>bqual</span>部分应是不同的，该要求是对当前<span>MySQL 
+		XA</span>实施的限制。它不是<span>XA</span>规范的组成部分。</p>
+		<p>如果<span>XA</span>事务达到<span><span>PREPARED</span>状态而且</span><span>MySQL</span>服务器宕机，当服务器重启后，能够继续处理事务。就像原本应当的那样。但是，如果客户端连接中止而服务器继续运行，服务器将回滚任何未完成的<span>XA</span>事务，即使该事务已达到<span><span>PREPARED</span>状态也同样。它应能提交或回滚<span>PREPARED</span></span><span> 
+		XA</span>事务，但在不更改二进制日志机制的情况下不能这样。</div></div><div><hr>
+	<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div>
+</body></html>

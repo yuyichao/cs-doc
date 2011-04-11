@@ -1,0 +1,643 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>工具栏 Toolbar</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="容器构件 Container Widgets"
+HREF="c1289.html"><LINK
+REL="PREVIOUS"
+TITLE="按钮盒 Button Boxes"
+HREF="x1453.html"><LINK
+REL="NEXT"
+TITLE="笔记本 Notebooks"
+HREF="x1513.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1453.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>容器构件 Container Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1513.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-TOOLBAR">工具栏 Toolbar</H1
+><P
+>工具栏(Toolbars)常用来将一些构件分组，这样能够简化定制它们的外观和布局。典型情况下工具栏由带图标和标签以及工具提示的按钮组成，不过，其它构件也可以放在工具栏里面。最后，各工具栏组件可以水平或垂直排列，还可以显示图标或标签，或者两者都显示。</P
+><P
+>用下面的函数创建一个工具栏（可能有些人已经猜到了）：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_toolbar_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>创建工具栏以后，可以向其中追加、前插和插入工具栏项（这里意指简单文本字符串）或元素（这里意指任何构件类型）。要想描述一个工具栏上的对象，需要一个标签文本、一个工具提示文本、一个私有工具提示文本、一个图标和一个回调函数。例如，要前插或追加一个按钮，应该使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_toolbar_append_item( GtkToolbar    *toolbar,
+                                    const char    *text,
+                                    const char    *tooltip_text,
+                                    const char    *tooltip_private_text,
+                                    GtkWidget     *icon,
+                                    GtkSignalFunc  callback,
+                                    gpointer       user_data );
+
+GtkWidget *gtk_toolbar_prepend_item( GtkToolbar    *toolbar,
+                                     const char    *text,
+                                     const char    *tooltip_text,
+                                     const char    *tooltip_private_text,
+                                     GtkWidget     *icon,
+                                     GtkSignalFunc  callback,
+                                     gpointer       user_data );</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果要使用 gtk_toolbar_insert_item()，除上面函数中要指定的参数以外，还要指定插入对象的位置，形式如下：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_toolbar_insert_item( GtkToolbar    *toolbar,
+                                    const char    *text,
+                                    const char    *tooltip_text,
+                                    const char    *tooltip_private_text,
+                                    GtkWidget     *icon,
+                                    GtkSignalFunc  callback,
+                                    gpointer       user_data,
+                                    gint           position );</PRE
+></TD
+></TR
+></TABLE
+><P
+>要简单地在工具栏项之间添加空白区域，可以使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_toolbar_append_space( GtkToolbar *toolbar );
+
+void gtk_toolbar_prepend_space( GtkToolbar *toolbar );
+
+void gtk_toolbar_insert_space( GtkToolbar *toolbar,
+                               gint        position );</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果需要，工具栏的放置方向和它的式样可以在运行时用下面的函数设置：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_toolbar_set_orientation( GtkToolbar     *toolbar,
+                                  GtkOrientation  orientation );
+
+void gtk_toolbar_set_style( GtkToolbar      *toolbar,
+                            GtkToolbarStyle  style );
+
+void gtk_toolbar_set_tooltips( GtkToolbar *toolbar,
+                               gint        enable );</PRE
+></TD
+></TR
+></TABLE
+><P
+>上面的<TT
+CLASS="LITERAL"
+>orientation</TT
+>参数取<TT
+CLASS="LITERAL"
+>GTK_ORIENTATION_HORIZONTAL</TT
+>或<TT
+CLASS="LITERAL"
+>GTK_ORIENTATION_VERTICAL</TT
+>。<TT
+CLASS="LITERAL"
+>style</TT
+>参数用于设置工具栏项的外观，可以取<TT
+CLASS="LITERAL"
+>GTK_TOOLBAR_ICONS</TT
+>，<TT
+CLASS="LITERAL"
+>GTK_TOOLBAR_TEXT</TT
+>或<TT
+CLASS="LITERAL"
+>GTK_TOOLBAR_BOTH</TT
+>。</P
+><P
+>要想了解工具栏还能做什么，看一看下面的程序(在代码之间我们插入了一些解释)：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &#60;gtk/gtk.h&#62;
+
+/* 这个函数连接到Close按钮或者从窗口管理器关闭窗口的事件上 */
+gint delete_event (GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+  gtk_main_quit ();
+  return FALSE;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>上面的代码和其它的 GTK 应用程序差别不大，有一点不同的是：我们包含了一个漂亮的 XPM 图片，用作所有按钮的图标。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget* close_button; /* 这个按钮将引发一个信号以
+                          * 关闭应用程序 */
+GtkWidget* tooltips_button; /* 启用/禁用工具提示 */
+GtkWidget* text_button,
+         * icon_button,
+         * both_button; /* 切换工具栏风格的单选按钮 */
+GtkWidget* entry; /* 一个文本输入构件，用于演示任何构件都可以组装到
+                   * 工具栏里 */</PRE
+></TD
+></TR
+></TABLE
+><P
+>事实上，不是上面所有的构件都是必须的，我把它们放在一起，是为了让事情更清晰。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>/* 很简单...当按钮进行状态切换时，我们检查哪一个按钮是活动的，依此设置工具栏的式样
+ * 注意，工具栏是作为用户数据传递到回调函数的！ */
+void radio_event (GtkWidget *widget, gpointer data)
+{
+  if (GTK_TOGGLE_BUTTON (text_button)-&#62;active) 
+    gtk_toolbar_set_style (GTK_TOOLBAR (data), GTK_TOOLBAR_TEXT);
+  else if (GTK_TOGGLE_BUTTON (icon_button)-&#62;active)
+    gtk_toolbar_set_style (GTK_TOOLBAR (data), GTK_TOOLBAR_ICONS);
+  else if (GTK_TOGGLE_BUTTON (both_button)-&#62;active)
+    gtk_toolbar_set_style (GTK_TOOLBAR (data), GTK_TOOLBAR_BOTH);
+}
+
+/* 更简单，检查给定开关按钮的状态，依此启用或禁用工具提示 */
+void toggle_event (GtkWidget *widget, gpointer data)
+{
+  gtk_toolbar_set_tooltips (GTK_TOOLBAR (data),
+                            GTK_TOGGLE_BUTTON (widget)-&#62;active );
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>上面只是当工具栏上的一个按钮被按下时要调用的两个回调函数。你应该已经熟悉了这些东西，如果你已经使用过开关按钮（以及单选按钮）。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>int main (int argc, char *argv[])
+{
+  /* 下面是主窗口（一个对话框）和一个把柄盒(handlebox) */
+  GtkWidget* dialog;
+  GtkWidget* handlebox;
+
+  /* 好了,我们需要一个工具栏,一个带掩码(mask)的图标（所有的按钮共用一个掩码）以及
+   * 一个放图标的图标构件（但我们会为每个按钮创建一个分割构件） */
+  GtkWidget * toolbar;
+  GtkWidget * iconw;
+
+  /* 这个在所有的 GTK 程序中都被调用。 */
+  gtk_init (&#38;argc, &#38;argv);
+  
+  /* 用给定的标题和尺寸创建一个新窗口 */
+  dialog = gtk_dialog_new ();
+  gtk_window_set_title (GTK_WINDOW (dialog), "GTKToolbar Tutorial");
+  gtk_widget_set_size_request (GTK_WIDGET (dialog), 600, 300);
+  GTK_WINDOW (dialog)-&#62;allow_shrink = TRUE;
+
+  /* 在关闭窗口时退出 */
+  g_signal_connect (G_OBJECT (dialog), "delete_event",
+                    G_CALLBACK (delete_event), NULL);
+
+  /* 需要实例化窗口,因为我们要在它的内容中为工具栏设置图片 */
+  gtk_widget_realize (dialog);
+
+  /* 我们将工具栏放在一个手柄构件(handle box)上，
+   * 这样它可以从主窗口上移开 */
+  handlebox = gtk_handle_box_new ();
+  gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)-&#62;vbox),
+                      handlebox, FALSE, FALSE, 5);</PRE
+></TD
+></TR
+></TABLE
+><P
+>上面的代码和任何其它Gtk应用程序都差不多。它们进行 GTK 初始化，创建主窗口等。唯一需要解释的是：一个手柄盒(a handle box)。手柄盒只是一个可以在其中组装构件的盒子。它和普通盒子的区别在于它能从一个父窗口移开(事实上，手柄盒保留在父窗口上，但是它缩小为一个非常小的矩形，同时它的所有内容重新放在一个新的可自由移动的浮动窗口上)。拥有一个可浮动工具栏给人感觉非常好，所以这两种构件经常同时使用。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  /* 工具栏设置为水平的，同时带有图标和文本
+   * 在每个项之间有5像素的间距，
+   * 并且，我们也将它放在手柄盒上 */
+  toolbar = gtk_toolbar_new ();
+  gtk_toolbar_set_orientation (GTK_TOOLBAR (toolbar), GTK_ORIENTATION_HORIZONTAL);
+  gtk_toolbar_set_style (GTK_TOOLBAR (toolbar), GTK_TOOLBAR_BOTH);
+  gtk_container_set_border_width (GTK_CONTAINER (toolbar), 5);
+  gtk_toolbar_set_space_size (GTK_TOOLBAR (toolbar), 5);
+  gtk_container_add (GTK_CONTAINER (handlebox), toolbar);</PRE
+></TD
+></TR
+></TABLE
+><P
+>上面的代码初始化工具栏构件。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  /* 工具栏上第一项是&#60;close&#62;按钮 */
+  iconw = gtk_image_new_from_file ("gtk.xpm"); /* 图标构件 */
+  close_button = 
+    gtk_toolbar_append_item (GTK_TOOLBAR (toolbar), /* 工具栏 */
+                             "Close",               /* 按钮标签 */
+                             "Closes this app",     /* 按钮的工具提示 */
+                             "Private",             /* 工具提示的私有信息 */
+                             iconw,                 /* 图标构件 */
+                             GTK_SIGNAL_FUNC (delete_event), /* 一个信号 */
+                             NULL);
+  gtk_toolbar_append_space (GTK_TOOLBAR (toolbar)); /* 工具栏项后的空白 */</PRE
+></TD
+></TR
+></TABLE
+><P
+>在上面的代码中，可以看到最简单的情况：在工具栏上增加一个按钮。在追加一个新的工具栏项前，必须构造一个图片(image)构件用作该项的图标，这个步骤我们要对每一个工具栏项重复一次。在工具栏项之间还要增加间隔空间，这样后面的工具栏项就不会一个接一个紧挨着。可以看到，gtk_toolbar_append_item()返回一个指向新创建的按钮构件的指针，所以我们可以用正常的方式使用它。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  /* 现在，我们创建单选按钮组... */
+  iconw = gtk_image_new_from_file ("gtk.xpm");
+  icon_button = gtk_toolbar_append_element (
+                    GTK_TOOLBAR (toolbar),
+                    GTK_TOOLBAR_CHILD_RADIOBUTTON, /* 元素类型 */
+                    NULL,                          /* 指向构件的指针 */
+                    "Icon",                        /* 标签 */
+                    "Only icons in toolbar",       /* 工具提示 */
+                    "Private",                     /* 工具提示的私有字符串 */
+                    iconw,                         /* 图标 */
+                    GTK_SIGNAL_FUNC (radio_event), /* 信号 */
+                    toolbar);                      /* 信号传递的数据 */
+  gtk_toolbar_append_space (GTK_TOOLBAR (toolbar));</PRE
+></TD
+></TR
+></TABLE
+><P
+>这里我们开始创建一个单选按钮组。用 gtk_toolbar_append_element 就行了。事实上，使用这个函数，我们能够添加简单的工具栏项或空白间隔（类型为<TT
+CLASS="LITERAL"
+>GTK_TOOLBAR_CHILD_SPACE</TT
+>或<TT
+CLASS="LITERAL"
+>GTK_TOOLBAR_CHILD_BUTTON</TT
+>）。在上面的示例中，我们先创建了一个单选按钮组。要为这个组创建其它单选按钮，需要一个指向前一个按钮的指针，这样按钮的清单可以很容易组织起来（看在本文档前面部分的<A
+HREF="x607.html"
+>单选按钮</A
+>节）。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  /* 后面的单选按钮引用前面创建的 */
+  iconw = gtk_image_new_from_file ("gtk.xpm");
+  text_button = 
+    gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
+                                GTK_TOOLBAR_CHILD_RADIOBUTTON,
+                                icon_button,
+                                "Text",
+                                "Only texts in toolbar",
+                                "Private",
+                                iconw,
+                                GTK_SIGNAL_FUNC (radio_event),
+                                toolbar);
+  gtk_toolbar_append_space (GTK_TOOLBAR (toolbar));
+                                          
+  iconw = gtk_image_new_from_file ("gtk.xpm");
+  both_button = 
+    gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
+                                GTK_TOOLBAR_CHILD_RADIOBUTTON,
+                                text_button,
+                                "Both",
+                                "Icons and text in toolbar",
+                                "Private",
+                                iconw,
+                                GTK_SIGNAL_FUNC (radio_event),
+                                toolbar);
+  gtk_toolbar_append_space (GTK_TOOLBAR (toolbar));
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (both_button), TRUE);</PRE
+></TD
+></TR
+></TABLE
+><P
+>最后，我们必须手工设置其中一个按钮的状态(否则它们全部处于活动状态，并阻止我们在它们之间做出选择)。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  /* 下面只是一个简单的开关按钮 */
+  iconw = gtk_image_new_from_file ("gtk.xpm");
+  tooltips_button = 
+    gtk_toolbar_append_element (GTK_TOOLBAR (toolbar),
+                                GTK_TOOLBAR_CHILD_TOGGLEBUTTON,
+                                NULL,
+                                "Tooltips",
+                                "Toolbar with or without tips",
+                                "Private",
+                                iconw,
+                                GTK_SIGNAL_FUNC (toggle_event),
+                                toolbar);
+  gtk_toolbar_append_space (GTK_TOOLBAR (toolbar));
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (tooltips_button), TRUE);</PRE
+></TD
+></TR
+></TABLE
+><P
+>开关按钮的创建方法就很明显了（如果你已经知道怎么创建单选按钮了）。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  /* 要将一个构件组装到工具栏上，只需创建它，然后将它追
+   * 加到工具栏上，同时设置合适的工具提示 */
+  entry = gtk_entry_new ();
+  gtk_toolbar_append_widget (GTK_TOOLBAR (toolbar), 
+                             entry, 
+                             "This is just an entry", 
+                             "Private");
+
+  /* 因为它不是工具栏自己创建的，所以我们还需要显示它 */
+  gtk_widget_show (entry);</PRE
+></TD
+></TR
+></TABLE
+><P
+>可以看到，将任何构件添加到工具栏上都是非常简单的。唯一要记住的是，这个构件必须手工显示(与此相反，工具栏自己创建的工具栏项随工具栏一起显示)。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  /* 好了，现在可以显示所有的东西了 */
+  gtk_widget_show (toolbar);
+  gtk_widget_show (handlebox);
+  gtk_widget_show (dialog);
+
+  /* 进入主循环，等待用户的操作 */
+  gtk_main ();
+  
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>这样，我们就到了工具栏教程的末尾。当然，还需要一个漂亮的XPM图标。下面就是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>/* XPM */
+static char * gtk_xpm[] = {
+"32 39 5 1",
+".      c none",
+"+      c black",
+"@      c #3070E0",
+"#      c #F05050",
+"$      c #35E035",
+"................+...............",
+"..............+++++.............",
+"............+++++@@++...........",
+"..........+++++@@@@@@++.........",
+"........++++@@@@@@@@@@++........",
+"......++++@@++++++++@@@++.......",
+".....+++@@@+++++++++++@@@++.....",
+"...+++@@@@+++@@@@@@++++@@@@+....",
+"..+++@@@@+++@@@@@@@@+++@@@@@++..",
+".++@@@@@@+++@@@@@@@@@@@@@@@@@@++",
+".+#+@@@@@@++@@@@+++@@@@@@@@@@@@+",
+".+##++@@@@+++@@@+++++@@@@@@@@$@.",
+".+###++@@@@+++@@@+++@@@@@++$$$@.",
+".+####+++@@@+++++++@@@@@+@$$$$@.",
+".+#####+++@@@@+++@@@@++@$$$$$$+.",
+".+######++++@@@@@@@++@$$$$$$$$+.",
+".+#######+##+@@@@+++$$$$$$@@$$+.",
+".+###+++##+##+@@++@$$$$$$++$$$+.",
+".+###++++##+##+@@$$$$$$$@+@$$@+.",
+".+###++++++#+++@$$@+@$$@++$$$@+.",
+".+####+++++++#++$$@+@$$++$$$$+..",
+".++####++++++#++$$@+@$++@$$$$+..",
+".+#####+++++##++$$++@+++$$$$$+..",
+".++####+++##+#++$$+++++@$$$$$+..",
+".++####+++####++$$++++++@$$$@+..",
+".+#####++#####++$$+++@++++@$@+..",
+".+#####++#####++$$++@$$@+++$@@..",
+".++####++#####++$$++$$$$$+@$@++.",
+".++####++#####++$$++$$$$$$$$+++.",
+".+++####+#####++$$++$$$$$$$@+++.",
+"..+++#########+@$$+@$$$$$$+++...",
+"...+++########+@$$$$$$$$@+++....",
+".....+++######+@$$$$$$$+++......",
+"......+++#####+@$$$$$@++........",
+".......+++####+@$$$$+++.........",
+".........++###+$$$@++...........",
+"..........++##+$@+++............",
+"...........+++++++..............",
+".............++++..............."};</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1453.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1513.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>按钮盒 Button Boxes</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1289.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>笔记本 Notebooks</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

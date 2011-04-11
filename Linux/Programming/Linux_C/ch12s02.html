@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 堆栈</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch12.html" title="第 12 章 栈与队列" /><link rel="prev" href="ch12s01.html" title="1. 数据结构的概念" /><link rel="next" href="ch12s03.html" title="3. 深度优先搜索" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 堆栈</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch12s01.html">上一页</a> </td><th width="60%" align="center">第 12 章 栈与队列</th><td width="20%" align="right"> <a accesskey="n" href="ch12s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2749855"></a>2. 堆栈</h2></div></div></div><p>在<a class="xref" href="ch05s03.html#func2.recursion">第 3 节 “递归”</a>中我们已经对堆栈这种数据结构有了初步认识。堆栈是一组元素的集合，类似于数组，不同之处在于，数组可以按下标随机访问，这次访问<code class="literal">a[5]</code>下次可以访问<code class="literal">a[1]</code>，但是堆栈的访问规则被限制为Push和Pop两种操作，Push（入栈或压栈）<a id="id2749888" class="indexterm"></a>向栈顶添加元素，Pop（出栈或弹出）<a id="id2749896" class="indexterm"></a>则取出当前栈顶的元素，也就是说，只能访问栈顶元素而不能访问栈中其它元素。如果所有元素的类型相同，堆栈的存储也可以用数组来实现，访问操作可以通过函数接口提供。看以下的示例程序。</p><div class="example"><a id="id2749908"></a><p class="title"><b>例 12.1. 用堆栈实现倒序打印</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+char stack[512];
+int top = 0;
+
+void push(char c)
+{
+	stack[top++] = c;
+}
+
+char pop(void)
+{
+	return stack[--top];
+}
+
+int is_empty(void)
+{
+	return top == 0;
+}
+
+int main(void)
+{
+	push('a');
+	push('b');
+	push('c');
+	
+	while(!is_empty())
+		putchar(pop());
+	putchar('\n');
+
+	return 0;
+}</pre></div></div><br class="example-break" /><p>运行结果是<code class="literal">cba</code>。运行过程图示如下：</p><div class="figure"><a id="id2749936"></a><p class="title"><b>图 12.1. 用堆栈实现倒序打印</b></p><div class="figure-contents"><div><img src="images/stackqueue.stack.png" alt="用堆栈实现倒序打印" /></div></div></div><br class="figure-break" /><p>数组<code class="literal">stack</code>是堆栈的存储空间，变量<code class="literal">top</code>总是保存数组中栈顶的下一个元素的下标，我们说“<span class="quote"><code class="literal">top</code>总是指向栈顶的下一个元素</span>”，或者把<code class="literal">top</code>叫做栈顶指针（Pointer）<a id="id2749979" class="indexterm"></a>。在<a class="xref" href="ch11s02.html#sortsearch.insertion">第 2 节 “插入排序”</a>中介绍了Loop Invariant的概念，可以用它检验循环的正确性，这里的“<span class="quote"><code class="literal">top</code>总是指向栈顶的下一个元素</span>”其实也是一种Invariant，Push和Pop操作总是维持这个条件不变，这种Invariant描述的对象是一个数据结构而不是一个循环，在DbC中称为Class Invariant<a id="id2750005" class="indexterm"></a>。Pop操作的语义是取出栈顶元素，但上例的实现其实并没有清除原来的栈顶元素，只是把<code class="literal">top</code>指针移动了一下，原来的栈顶元素仍然存在那里，这就足够了，因为此后通过Push和Pop操作不可能再访问到已经取出的元素，下次Push操作就会覆盖它。<code class="literal">putchar</code>函数的作用是把一个字符打印到屏幕上，和<code class="literal">printf</code>的<code class="literal">%c</code>作用相同。布尔函数<code class="literal">is_empty</code>的作用是防止Pop操作访问越界。这里我们预留了足够大的栈空间（512个元素），其实严格来说Push操作之前也应该检查栈是否满了。</p><p>在<code class="literal">main</code>函数中，入栈的顺序是<code class="literal">'a'</code>、<code class="literal">'b'</code>、<code class="literal">'c'</code>，而出栈打印的顺序却是<code class="literal">'c'</code>、<code class="literal">'b'</code>、<code class="literal">'a'</code>，最后入栈的<code class="literal">'c'</code>最早出来，因此堆栈这种数据结构的特点可以概括为LIFO（Last In First Out，后进先出）<a id="id2750103" class="indexterm"></a>。我们也可以写一个递归函数做倒序打印，利用函数调用的栈帧实现后进先出：</p><div class="example"><a id="id2750113"></a><p class="title"><b>例 12.2. 用递归实现倒序打印</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+#define LEN 3
+
+char buf[LEN]={'a', 'b', 'c'};
+
+void print_backward(int pos)
+{
+     if(pos == LEN)
+	  return;
+     print_backward(pos+1);
+     putchar(buf[pos]);
+}
+
+int main(void)
+{
+     print_backward(0);
+     putchar('\n');
+     
+     return 0;
+}</pre></div></div><br class="example-break" /><p>也许你会说，又是堆栈又是递归的，倒序打印一个数组犯得着这么大动干戈吗？写一个简单的循环不就行了：</p><pre class="programlisting">for (i = LEN-1; i &gt;= 0; i--)
+	putchar(buf[i]);</pre><p>对于数组来说确实没必要搞这么复杂，因为数组既可以从前向后访问也可以从后向前访问，甚至可以随机访问，但有些数据结构的访问并没有这么自由，下一节你就会看到这样的数据结构。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch12s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch12.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch12s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 数据结构的概念 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 深度优先搜索</td></tr></table></div></body></html>

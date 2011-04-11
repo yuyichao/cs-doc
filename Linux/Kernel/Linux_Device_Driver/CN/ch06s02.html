@@ -1,0 +1,429 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>6.2.&#160;阻塞 I/O-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch06.html" title="第&#160;6&#160;章&#160;高级字符驱动操作">
+<link rel="prev" href="ch06.html" title="第&#160;6&#160;章&#160;高级字符驱动操作">
+<link rel="next" href="ch06s03.html" title="6.3.&#160;poll 和 select">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">6.2.&#160;阻塞 I/O</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch06.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;6&#160;章&#160;高级字符驱动操作</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch06s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="BlockingIO.sect1"></a>6.2.&#160;阻塞 I/O</h2></div></div></div>
+<p>回顾第 3 章, 我们看到如何实现 read 和 write 方法. 在此, 但是, 我们跳过了一个重要的问题:一个驱动当它无法立刻满足请求应当如何响应? 一个对 read 的调用可能当没有数据时到来, 而以后会期待更多的数据. 或者一个进程可能试图写, 但是你的设备没有准备好接受数据, 因为你的输出缓冲满了. 调用进程往往不关心这种问题; 程序员只希望调用 read 或 write 并且使调用返回, 在必要的工作已完成后. 这样, 在这样的情形中, 你的驱动应当(缺省地)阻塞进程, 使它进入睡眠直到请求可继续. </p>
+<p>本节展示如何使一个进程睡眠并且之后再次唤醒它. 如常, 但是, 我们必须首先解释几个概念.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="IntroductiontoSleeping.sect2"></a>6.2.1.&#160;睡眠的介绍</h3></div></div></div>
+<p>对于一个进程"睡眠"意味着什么? 当一个进程被置为睡眠, 它被标识为处于一个特殊的状态并且从调度器的运行队列中去除. 直到发生某些事情改变了那个状态, 这个进程将不被在任何 CPU 上调度, 并且, 因此, 将不会运行. 一个睡着的进程已被搁置到系统的一边, 等待以后发生事件.</p>
+<p>对于一个 Linux 驱动使一个进程睡眠是一个容易做的事情. 但是, 有几个规则必须记住以安全的方式编码睡眠.</p>
+<p>这些规则的第一个是: 当你运行在原子上下文时不能睡眠. 我们在第 5 章介绍过原子操作; 一个原子上下文只是一个状态, 这里多个步骤必须在没有任何类型的并发存取的情况下进行. 这意味着, 对于睡眠, 是你的驱动在持有一个自旋锁, seqlock, 或者 RCU 锁时不能睡眠. 如果你已关闭中断你也不能睡眠. 在持有一个旗标时睡眠是合法的, 但是你应当仔细查看这样做的任何代码. 如果代码在持有一个旗标时睡眠, 任何其他的等待这个旗标的线程也睡眠. 因此发生在持有旗标时的任何睡眠应当短暂, 并且你应当说服自己, 由于持有这个旗标, 你不能阻塞这个将最终唤醒你的进程.</p>
+<p>另一件要记住的事情是, 当你醒来, 你从不知道你的进程离开 CPU 多长时间或者同时已经发生了什么改变. 你也常常不知道是否另一个进程已经睡眠等待同一个事件; 那个进程可能在你之前醒来并且获取了你在等待的资源. 结果是你不能关于你醒后的系统状态做任何的假设, 并且你必须检查来确保你在等待的条件是, 确实, 真的.</p>
+<p>一个另外的相关的点, 当然, 是你的进程不能睡眠除非确信其他人, 在某处的, 将唤醒它. 做唤醒工作的代码必须也能够找到你的进程来做它的工作. 确保一个唤醒发生, 是深入考虑你的代码和对于每次睡眠, 确切知道什么系列的事件将结束那次睡眠. 使你的进程可能被找到, 真正地, 通过一个称为等待队列的数据结构实现的. 一个等待队列就是它听起来的样子:一个进程列表, 都等待一个特定的事件.</p>
+<p>在 Linux 中, 一个等待队列由一个"等待队列头"来管理, 一个 wait_queue_head_t 类型的结构, 定义在&lt;linux/wait.h&gt;中. 一个等待队列头可被定义和初始化, 使用:</p>
+<pre class="programlisting">
+DECLARE_WAIT_QUEUE_HEAD(name); 
+</pre>
+<p>或者动态地, 如下:</p>
+<pre class="programlisting">
+wait_queue_head_t my_queue;
+init_waitqueue_head(&amp;my_queue);
+</pre>
+<p>我们将很快返回到等待队列结构, 但是我们知道了足够多的来首先看看睡眠和唤醒.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="SimpleSleeping.sect2"></a>6.2.2.&#160;简单睡眠</h3></div></div></div>
+<p>当一个进程睡眠, 它这样做以期望某些条件在以后会成真. 如我们之前注意到的, 任何睡眠的进程必须在它再次醒来时检查来确保它在等待的条件真正为真. Linux 内核中睡眠的最简单方式是一个宏定义, 称为 wait_event(有几个变体); 它结合了处理睡眠的细节和进程在等待的条件的检查. wait_event 的形式是:</p>
+<pre class="programlisting">
+wait_event(queue, condition)
+wait_event_interruptible(queue, condition)
+wait_event_timeout(queue, condition, timeout)
+wait_event_interruptible_timeout(queue, condition, timeout)
+</pre>
+<p>在所有上面的形式中, queue 是要用的等待队列头. 注意它是"通过值"传递的. 条件是一个被这个宏在睡眠前后所求值的任意的布尔表达式; 直到条件求值为真值, 进程继续睡眠. 注意条件可能被任意次地求值, 因此它不应当有任何边界效应.</p>
+<p>如果你使用 wait_event, 你的进程被置为不可中断地睡眠, 如同我们之前已经提到的, 它常常不是你所要的. 首选的选择是 wait_event_interruptible, 它可能被信号中断. 这个版本返回一个你应当检查的整数值; 一个非零值意味着你的睡眠被某些信号打断, 并且你的驱动可能应当返回 -ERESTARTSYS. 最后的版本(wait_event_timeout 和 wait_event_interruptible_timeout)等待一段有限的时间; 在这个时间期间(以嘀哒数表达的, 我们将在第 7 章讨论)超时后, 这个宏返回一个 0 值而不管条件是如何求值的.</p>
+<p>图片的另一半, 当然, 是唤醒. 一些其他的执行线程(一个不同的进程, 或者一个中断处理, 也许)必须为你进行唤醒, 因为你的进程, 当然, 是在睡眠. 基本的唤醒睡眠进程的函数称为 wake_up. 它有几个形式(但是我们现在只看其中 2 个):</p>
+<pre class="programlisting">
+void wake_up(wait_queue_head_t *queue);
+void wake_up_interruptible(wait_queue_head_t *queue);
+</pre>
+<p>wake_up 唤醒所有的在给定队列上等待的进程(尽管这个情形比那个要复杂一些, 如同我们之后将见到的). 其他的形式(wake_up_interruptible)限制它自己到处理一个可中断的睡眠. 通常, 这 2 个是不用区分的(如果你使用可中断的睡眠); 实际上, 惯例是使用 wake_up 如果你在使用 wait_event , wake_up_interruptible 如果你在使用 wait_event_interruptible.</p>
+<p>我们现在知道足够多来看一个简单的睡眠和唤醒的例子. 在这个例子代码中, 你可找到一个称为 sleepy 的模块. 它实现一个有简单行为的设备:任何试图从这个设备读取的进程都被置为睡眠. 无论何时一个进程写这个设备, 所有的睡眠进程被唤醒. 这个行为由下面的 read 和 write 方法实现:</p>
+<pre class="programlisting">
+static DECLARE_WAIT_QUEUE_HEAD(wq);
+static int flag = 0;
+
+ssize_t sleepy_read (struct file *filp, char __user *buf, size_t count, loff_t *pos)
+{
+        printk(KERN_DEBUG "process %i (%s) going to sleep\n",
+               current-&gt;pid, current-&gt;comm);
+        wait_event_interruptible(wq, flag != 0);
+        flag = 0;
+        printk(KERN_DEBUG "awoken %i (%s)\n", current-&gt;pid, current-&gt;comm);
+        return 0; /* EOF */
+}
+ssize_t sleepy_write (struct file *filp, const char __user *buf, size_t count, loff_t *pos)
+{
+        printk(KERN_DEBUG "process %i (%s) awakening the readers...\n",
+               current-&gt;pid, current-&gt;comm);
+        flag = 1;
+        wake_up_interruptible(&amp;wq);
+        return count; /* succeed, to avoid retrial */
+
+}
+</pre>
+<p>注意这个例子里 flag 变量的使用. 因为 wait_event_interruptible 检查一个必须变为真的条件, 我们使用 flag 来创建那个条件.</p>
+<p>有趣的是考虑当 sleepy_write 被调用时如果有 2 个进程在等待会发生什么. 因为 sleepy_read 重置 flag 为 0 一旦它醒来, 你可能认为醒来的第 2 个进程会立刻回到睡眠. 在一个单处理器系统, 这几乎一直是发生的事情. 但是重要的是要理解为什么你不能依赖这个行为. wake_up_interruptible 调用将使 2 个睡眠进程醒来. 完全可能它们都注意到 flag 是非零, 在另一个有机会重置它之前. 对于这个小模块, 这个竞争条件是不重要的. 在一个真实的驱动中, 这种竞争可能导致少见的难于查找的崩溃. 如果正确的操作要求只能有一个进程看到这个非零值, 它将必须以原子的方式被测试. 我们将见到一个真正的驱动如何处理这样的情况. 但首先我们必须开始另一个主题.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="BlockingandNonblockingOperations.sect2"></a>6.2.3.&#160;阻塞和非阻塞操作 </h3></div></div></div>
+<p>在我们看全功能的 read 和 write 方法的实现之前, 我们触及的最后一点是决定何时使进程睡眠. 有时实现正确的 unix 语义要求一个操作不阻塞, 即便它不能完全地进行下去.</p>
+<p>有时还有调用进程通知你他不想阻塞, 不管它的 I/O 是否继续. 明确的非阻塞 I/O 由 filp-&gt;f_flags 中的 O_NONBLOCK 标志来指示. 这个标志定义于 &lt;linux/fcntl.h&gt;, 被 &lt;linux/fs.h&gt;自动包含. 这个标志得名自"打开-非阻塞", 因为它可在打开时指定(并且起初只能在那里指定). 如果你浏览源码, 你会发现一些对一个 O_NDELAY 标志的引用; 这是一个替代 O_NONBLOCK 的名子, 为兼容 System V 代码而被接受的. 这个标志缺省地被清除, 因为一个等待数据的进程的正常行为仅仅是睡眠. 在一个阻塞操作的情况下, 这是缺省地, 下列的行为应当实现来符合标准语法:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>如果一个进程调用 read 但是没有数据可用(尚未), 这个进程必须阻塞. 这个进程在有数据达到时被立刻唤醒, 并且那个数据被返回给调用者, 即便小于在给方法的 count 参数中请求的数量.</p></li>
+<li><p>如果一个进程调用 write 并且在缓冲中没有空间, 这个进程必须阻塞, 并且它必须在一个与用作 read 的不同的等待队列中. 当一些数据被写入硬件设备, 并且在输出缓冲中的空间变空闲, 这个进程被唤醒并且写调用成功, 尽管数据可能只被部分写入如果在缓冲只没有空间给被请求的 count 字节.</p></li>
+</ul></div>
+<p>这 2 句都假定有输入和输出缓冲; 实际上, 几乎每个设备驱动都有. 要求有输入缓冲是为了避免丢失到达的数据, 当无人在读时. 相反, 数据在写时不能丢失, 因为如果系统调用不能接收数据字节, 它们保留在用户空间缓冲. 即便如此, 输出缓冲几乎一直有用, 对于从硬件挤出更多的性能.</p>
+<p>在驱动中实现输出缓冲所获得的性能来自减少了上下文切换和用户级/内核级切换的次数. 没有一个输出缓冲(假定一个慢速设备), 每次系统调用接收这样一个或几个字符, 并且当一个进程在 write 中睡眠, 另一个进程运行(那是一次上下文切换). 当第一个进程被唤醒, 它恢复(另一次上下文切换), 写返回(内核/用户转换), 并且这个进程重新发出系统调用来写入更多的数据(用户/内核转换); 这个调用阻塞并且循环继续. 增加一个输出缓冲可允许驱动在每个写调用中接收大的数据块, 性能上有相应的提高. 如果这个缓冲足够大, 写调用在第一次尝试就成功 -- 被缓冲的数据之后将被推到设备 -- 不必控制需要返回用户空间来第二次或者第三次写调用. 选择一个合适的值给输出缓冲显然是设备特定的.</p>
+<p>我们不使用一个输入缓冲在 scull中, 因为数据当发出 read 时已经可用. 类似的, 不用输出缓冲, 因为数据被简单地拷贝到和设备关联的内存区. 本质上, 这个设备是一个缓冲, 因此额外缓冲的实现可能是多余的. 我们将在第 10 章见到缓冲的使用.</p>
+<p>如果指定 O_NONBLOCK,  read 和 write 的行为是不同的. 在这个情况下, 这个调用简单地返回 -EAGAIN(("try it agin")如果一个进程当没有数据可用时调用 read , 或者如果当缓冲中没有空间时它调用 write .</p>
+<p>如你可能期望的, 非阻塞操作立刻返回, 允许这个应用程序轮询数据. 应用程序当使用 stdio 函数处理非阻塞文件中, 必须小心, 因为它们容易搞错一个的非阻塞返回为 EOF. 它们始终必须检查 errno.</p>
+<p>自然地, O_NONBLOCK 也在 open 方法中有意义. 这个发生在当这个调用真正阻塞长时间时; 例如, 当打开(为读存取)一个 没有写者的(尚无)FIFO, 或者存取一个磁盘文件使用一个悬挂锁. 常常地, 打开一个设备或者成功或者失败, 没有必要等待外部的事件. 有时, 但是, 打开这个设备需要一个长的初始化, 并且你可能选择在你的 open 方法中支持 O_NONBLOCK , 通过立刻返回 -EAGAIN,如果这个标志被设置. 在开始这个设备的初始化进程之后. 这个驱动可能还实现一个阻塞 open 来支持存取策略, 通过类似于文件锁的方式. 我们将见到这样一个实现在"阻塞 open 作为对 EBUSY 的替代"一节, 在本章后面.</p>
+<p>一些驱动可能还实现特别的语义给 O_NONBLOCK; 例如, 一个磁带设备的 open 常常阻塞直到插入一个磁带. 如果这个磁带驱动器使用 O_NONBLOCK 打开, 这个 open 立刻成功, 不管是否介质在或不在.</p>
+<p>只有 read, write, 和 open 文件操作受到非阻塞标志影响.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ABlockingIOExample.sect2"></a>6.2.4.&#160;一个阻塞 I/O 的例子</h3></div></div></div>
+<p>最后, 我们看一个实现了阻塞 I/O 的真实驱动方法的例子. 这个例子来自 scullpipe 驱动; 它是 scull 的一个特殊形式, 实现了一个象管道的设备.</p>
+<p>在驱动中, 一个阻塞在读调用上的进程被唤醒, 当数据到达时; 常常地硬件发出一个中断来指示这样一个事件, 并且驱动唤醒等待的进程作为处理这个中断的一部分. scullpipe 驱动不同, 以至于它可运行而不需要任何特殊的硬件或者一个中断处理. 我们选择来使用另一个进程来产生数据并唤醒读进程; 类似地, 读进程被用来唤醒正在等待缓冲空间可用的写者进程.</p>
+<p>这个设备驱动使用一个设备结构, 它包含 2 个等待队列和一个缓冲. 缓冲大小是以常用的方法可配置的(在编译时间, 加载时间, 或者运行时间).</p>
+<pre class="programlisting">
+struct scull_pipe
+{
+        wait_queue_head_t inq, outq; /* read and write queues */
+        char *buffer, *end; /* begin of buf, end of buf */
+        int buffersize; /* used in pointer arithmetic */
+        char *rp, *wp; /* where to read, where to write */
+        int nreaders, nwriters; /* number of openings for r/w */
+        struct fasync_struct *async_queue; /* asynchronous readers */
+        struct semaphore sem;  /* mutual exclusion semaphore */
+        struct cdev cdev;  /* Char device structure */
+};
+</pre>
+<p>读实现既管理阻塞也管理非阻塞输入, 看来如此:</p>
+<pre class="programlisting">
+static ssize_t scull_p_read (struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+        struct scull_pipe *dev = filp-&gt;private_data;
+        if (down_interruptible(&amp;dev-&gt;sem))
+                return -ERESTARTSYS;
+
+        while (dev-&gt;rp == dev-&gt;wp)
+        { /* nothing to read */
+                up(&amp;dev-&gt;sem); /* release the lock */
+                if (filp-&gt;f_flags &amp; O_NONBLOCK)
+
+                        return -EAGAIN;
+                PDEBUG("\"%s\" reading: going to sleep\n", current-&gt;comm);
+                if (wait_event_interruptible(dev-&gt;inq, (dev-&gt;rp != dev-&gt;wp)))
+                        return -ERESTARTSYS; /* signal: tell the fs layer to handle it */ /* otherwise loop, but first reacquire the lock */
+                if (down_interruptible(&amp;dev-&gt;sem))
+                        return -ERESTARTSYS;
+        }
+        /* ok, data is there, return something */
+
+        if (dev-&gt;wp &gt; dev-&gt;rp)
+                count = min(count, (size_t)(dev-&gt;wp - dev-&gt;rp));
+        else /* the write pointer has wrapped, return data up to dev-&gt;end */
+                count = min(count, (size_t)(dev-&gt;end - dev-&gt;rp));
+        if (copy_to_user(buf, dev-&gt;rp, count))
+        {
+                up (&amp;dev-&gt;sem);
+                return -EFAULT;
+        }
+        dev-&gt;rp += count;
+        if (dev-&gt;rp == dev-&gt;end)
+
+                dev-&gt;rp = dev-&gt;buffer; /* wrapped */
+        up (&amp;dev-&gt;sem);
+
+        /* finally, awake any writers and return */
+        wake_up_interruptible(&amp;dev-&gt;outq);
+        PDEBUG("\"%s\" did read %li bytes\n",current-&gt;comm, (long)count);
+        return count;
+}
+</pre>
+<p>如同你可见的, 我们在代码中留有一些 PDEBUG 语句. 当你编译这个驱动, 你可使能消息机制来易于跟随不同进程间的交互.</p>
+<p>让我们仔细看看 scull_p_read 如何处理对数据的等待. 这个 while 循环在持有设备旗标下测试这个缓冲. 如果有数据在那里, 我们知道我们可立刻返回给用户, 不必睡眠, 因此整个循环被跳过. 相反, 如果这个缓冲是空的, 我们必须睡眠. 但是在我们可做这个之前, 我们必须丢掉设备旗标; 如果我们要持有它而睡眠, 就不会有写者有机会唤醒我们. 一旦这个确保被丢掉, 我们做一个快速检查来看是否用户已请求非阻塞 I/O, 并且如果是这样就返回. 否则, 是时间调用 wait_event_interruptible.</p>
+<p>一旦我们过了这个调用, 某些东东已经唤醒了我们, 但是我们不知道是什么. 一个可能是进程接收到了一个信号. 包含 wait_event_interruptible 调用的这个 if 语句检查这种情况. 这个语句保证了正确的和被期望的对信号的反应, 它可能负责唤醒这个进程(因为我们处于一个可中断的睡眠). 如果一个信号已经到达并且它没有被这个进程阻塞, 正确的做法是让内核的上层处理这个事件. 到此, 这个驱动返回 -ERESTARTSYS 到调用者; 这个值被虚拟文件系统(VFS)在内部使用, 它或者重启系统调用或者返回 -EINTR 给用户空间. 我们使用相同类型的检查来处理信号, 给每个读和写实现.</p>
+<p>但是, 即便没有一个信号, 我们还是不确切知道有数据在那里为获取. 其他人也可能已经在等待数据, 并且它们可能赢得竞争并且首先得到数据. 因此我们必须再次获取设备旗标; 只有这时我们才可以测试读缓冲(在 while 循环中)并且真正知道我们可以返回缓冲中的数据给用户. 全部这个代码的最终结果是, 当我们从 while 循环中退出时, 我们知道旗标被获得并且缓冲中有数据我们可以用.</p>
+<p>仅仅为了完整, 我们要注意, scull_p_read 可以在另一个地方睡眠, 在我们获得设备旗标之后: 对 copy_to_user 的调用. 如果 scull 当在内核和用户空间之间拷贝数据时睡眠, 它在持有设备旗标中睡眠. 在这种情况下持有旗标是合理的因为它不能死锁系统(我们知道内核将进行拷贝到用户空间并且在不加锁进程中的同一个旗标下唤醒我们), 并且因为重要的是设备内存数组在驱动睡眠时不改变.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AdvancedSleeping.sect2"></a>6.2.5.&#160;高级睡眠</h3></div></div></div>
+<p>许多驱动能够满足它们的睡眠要求, 使用至今我们已涉及到的函数. 但是, 有时需要深入理解 Linux 等待队列机制如何工作. 复杂的加锁或者性能需要可强制一个驱动来使用低层函数来影响一个睡眠. 在本节, 我们在低层看而理解在一个进程睡眠时发生了什么.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Howaprocesssleeps.sect3"></a>6.2.5.1.&#160;一个进程如何睡眠</h4></div></div></div>
+<p>如果我们深入 &lt;linux/wait.h&gt;, 你见到在 wait_queue_head_t 类型后面的数据结构是非常简单的; 它包含一个自旋锁和一个链表. 这个链表是一个等待队列入口, 它被声明做 wait_queue_t. 这个结构包含关于睡眠进程的信息和它想怎样被唤醒.</p>
+<p>使一个进程睡眠的第一步常常是分配和初始化一个 wait_queue_t 结构, 随后将其添加到正确的等待队列. 当所有东西都就位了, 负责唤醒工作的人就可以找到正确的进程.</p>
+<p>下一步是设置进程的状态来标志它为睡眠. 在 &lt;linux/sched.h&gt; 中定义有几个任务状态. TASK_RUNNING 意思是进程能够运行, 尽管不必在任何特定的时刻在处理器上运行. 有 2 个状态指示一个进程是在睡眠: TASK_INTERRUPTIBLE 和 TASK_UNTINTERRUPTIBLE; 当然, 它们对应 2 类的睡眠. 其他的状态正常地和驱动编写者无关.</p>
+<p>在 2.6 内核, 对于驱动代码通常不需要直接操作进程状态. 但是, 如果你需要这样做, 使用的代码是:</p>
+<pre class="programlisting">
+void set_current_state(int new_state); 
+</pre>
+<p>在老的代码中, 你常常见到如此的东西:</p>
+<pre class="programlisting">
+current-&gt;state = TASK_INTERRUPTIBLE; 
+</pre>
+<p>但是象这样直接改变 current 是不鼓励的; 当数据结构改变时这样的代码会轻易地失效. 但是, 上面的代码确实展示了自己改变一个进程的当前状态不能使其睡眠. 通过改变 current 状态, 你已改变了调度器对待进程的方式, 但是你还未让出处理器.</p>
+<p>放弃处理器是最后一步, 但是要首先做一件事: 你必须先检查你在睡眠的条件. 做这个检查失败会引入一个竞争条件; 如果在你忙于上面的这个过程并且有其他的线程刚刚试图唤醒你, 如果这个条件变为真会发生什么? 你可能错过唤醒并且睡眠超过你预想的时间. 因此, 在睡眠的代码下面, 典型地你会见到下面的代码:</p>
+<pre class="programlisting">
+if (!condition)
+    schedule();
+</pre>
+<p>通过在设置了进程状态后检查我们的条件, 我们涵盖了所有的可能的事件进展. 如果我们在等待的条件已经在设置进程状态之前到来, 我们在这个检查中注意到并且不真正地睡眠. 如果之后发生了唤醒, 进程被置为可运行的不管是否我们已真正进入睡眠.</p>
+<p>调用 schedule , 当然, 是引用调度器和让出 CPU 的方式. 无论何时你调用这个函数, 你是在告诉内核来考虑应当运行哪个进程并且转换控制到那个进程, 如果必要. 因此你从不知道在 schedule 返回到你的代码会是多长时间.</p>
+<p>在 if 测试和可能的调用 schedule (并从其返回)之后, 有些清理工作要做. 因为这个代码不再想睡眠, 它必须保证任务状态被重置为 TASK_RUNNING. 如果代码只是从 schedule 返回, 这一步是不必要的; 那个函数不会返回直到进程处于可运行态. 如果由于不再需要睡眠而对 schedule 的调用被跳过, 进程状态将不正确. 还有必要从等待队列中去除这个进程, 否则它可能被多次唤醒.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Manualsleeps.sect3"></a>6.2.5.2.&#160;手动睡眠</h4></div></div></div>
+<p>在 Linux 内核的之前的版本, 正式的睡眠要求程序员手动处理所有上面的步骤. 它是一个繁琐的过程, 包含相当多的易出错的样板式的代码. 程序员如果愿意还是可能用那种方式手动睡眠; &lt;linux/sched.h&gt; 包含了所有需要的定义, 以及围绕例子的内核源码. 但是, 有一个更容易的方式.</p>
+<p>第一步是创建和初始化一个等待队列. 这常常由这个宏定义完成:</p>
+<pre class="programlisting">
+DEFINE_WAIT(my_wait); 
+</pre>
+<p>其中, name 是等待队列入口项的名子. 你可用 2 步来做:</p>
+<pre class="programlisting">
+wait_queue_t my_wait;
+init_wait(&amp;my_wait);
+</pre>
+<p>但是常常更容易的做法是放一个 DEFINE_WAIT 行在循环的顶部, 来实现你的睡眠.</p>
+<p>下一步是添加你的等待队列入口到队列, 并且设置进程状态. 2 个任务都由这个函数处理:</p>
+<pre class="programlisting">
+void prepare_to_wait(wait_queue_head_t *queue, wait_queue_t *wait, int state); 
+</pre>
+<p>这里, queue 和 wait 分别地是等待队列头和进程入口. state 是进程的新状态; 它应当或者是 TASK_INTERRUPTIBLE(给可中断的睡眠, 这常常是你所要的)或者 TASK_UNINTERRUPTIBLE(给不可中断睡眠).</p>
+<p>在调用 prepare_to_wait 之后, 进程可调用 schedule -- 在它已检查确认它仍然需要等待之后. 一旦 schedule 返回, 就到了清理时间. 这个任务, 也, 被一个特殊的函数处理:</p>
+<pre class="programlisting">
+void finish_wait(wait_queue_head_t *queue, wait_queue_t *wait); 
+</pre>
+<p>之后, 你的代码可测试它的状态并且看是否它需要再次等待.</p>
+<p>我们早该需要一个例子了. 之前我们看了 给 scullpipe 的 read 方法, 它使用 wait_event. 同一个驱动中的 write 方法使用 prepare_to_wait 和 finish_wait 来实现它的等待. 正常地, 你不会在一个驱动中象这样混用各种方法, 但是我们这样作是为了能够展示 2 种处理睡眠的方式.</p>
+<p>为完整起见, 首先, 我们看 write 方法本身:</p>
+<pre class="programlisting">
+/* How much space is free? */
+static int spacefree(struct scull_pipe *dev)
+{
+
+        if (dev-&gt;rp == dev-&gt;wp)
+                return dev-&gt;buffersize - 1;
+        return ((dev-&gt;rp + dev-&gt;buffersize - dev-&gt;wp) % dev-&gt;buffersize) - 1;
+}
+
+static ssize_t scull_p_write(struct file *filp, const char __user *buf, size_t count,
+                             loff_t *f_pos)
+{
+
+        struct scull_pipe *dev = filp-&gt;private_data;
+        int result;
+        if (down_interruptible(&amp;dev-&gt;sem))
+                return -ERESTARTSYS;
+
+        /* Make sure there's space to write */
+        result = scull_getwritespace(dev, filp);
+        if (result)
+                return result; /* scull_getwritespace called up(&amp;dev-&gt;sem) */
+        /* ok, space is there, accept something */
+        count = min(count, (size_t)spacefree(dev));
+        if (dev-&gt;wp &gt;= dev-&gt;rp)
+                count = min(count, (size_t)(dev-&gt;end - dev-&gt;wp)); /* to end-of-buf */
+        else /* the write pointer has wrapped, fill up to rp-1 */
+                count = min(count, (size_t)(dev-&gt;rp - dev-&gt;wp - 1));
+        PDEBUG("Going to accept %li bytes to %p from %p\n", (long)count, dev-&gt;wp, buf);
+        if (copy_from_user(dev-&gt;wp, buf, count))
+        {
+                up (&amp;dev-&gt;sem);
+                return -EFAULT;
+        }
+        dev-&gt;wp += count;
+        if (dev-&gt;wp == dev-&gt;end)
+                dev-&gt;wp = dev-&gt;buffer; /* wrapped */
+        up(&amp;dev-&gt;sem);
+
+        /* finally, awake any reader */
+        wake_up_interruptible(&amp;dev-&gt;inq); /* blocked in read() and select() */
+
+        /* and signal asynchronous readers, explained late in chapter 5 */
+        if (dev-&gt;async_queue)
+                kill_fasync(&amp;dev-&gt;async_queue, SIGIO, POLL_IN);
+        PDEBUG("\"%s\" did write %li bytes\n",current-&gt;comm, (long)count);
+        return count;
+}
+</pre>
+<p>这个代码看来和 read 方法类似, 除了我们已经将睡眠代码放到了一个单独的函数, 称为 scull_getwritespace. 它的工作是确保在缓冲中有空间给新的数据, 睡眠直到有空间可用. 一旦空间在, scull_p_write 可简单地拷贝用户的数据到那里, 调整指针, 并且唤醒可能已经在等待读取数据的进程.</p>
+<p>处理实际的睡眠的代码是:</p>
+<pre class="programlisting">
+/* Wait for space for writing; caller must hold device semaphore. On
+ * error the semaphore will be released before returning. */
+static int scull_getwritespace(struct scull_pipe *dev, struct file *filp)
+{
+
+        while (spacefree(dev) == 0)
+        { /* full */
+                DEFINE_WAIT(wait);
+
+                up(&amp;dev-&gt;sem);
+                if (filp-&gt;f_flags &amp; O_NONBLOCK)
+                        return -EAGAIN;
+
+                PDEBUG("\"%s\" writing: going to sleep\n",current-&gt;comm);
+                prepare_to_wait(&amp;dev-&gt;outq, &amp;wait, TASK_INTERRUPTIBLE);
+                if (spacefree(dev) == 0)
+                        schedule();
+                finish_wait(&amp;dev-&gt;outq, &amp;wait);
+                if (signal_pending(current))
+
+                        return -ERESTARTSYS; /* signal: tell the fs layer to handle it */
+                if (down_interruptible(&amp;dev-&gt;sem))
+                        return -ERESTARTSYS;
+        }
+        return 0;
+
+}
+</pre>
+<p>再次注意 while 循环. 如果有空间可用而不必睡眠, 这个函数简单地返回. 否则, 它必须丢掉设备旗标并且等待. 这个代码使用 DEFINE_WAIT 来设置一个等待队列入口并且 prepare_to_wait 来准备好实际的睡眠. 接着是对缓冲的必要的检查; 我们必须处理的情况是在我们已经进入 while 循环后以及在我们将自己放入等待队列之前 (并且丢弃了旗标), 缓冲中有空间可用了. 没有这个检查, 如果读进程能够在那时完全清空缓冲, 我们可能错过我们能得到的唯一的唤醒并且永远睡眠. 在说服我们自己必须睡眠之后, 我们调用 schedule. </p>
+<p>值得再看看这个情况: 当睡眠发生在 if 语句测试和调用 schedule 之间, 会发生什么? 在这个情况里, 都好. 这个唤醒重置了进程状态为 TASK_RUNNING 并且 schedule 返回 -- 尽管不必马上. 只要这个测试发生在进程放置自己到等待队列和改变它的状态之后, 事情都会顺利.</p>
+<p>为了结束, 我们调用 finish_wait. 对 signal_pending 的调用告诉我们是否我们被一个信号唤醒; 如果是, 我们需要返回到用户并且使它们稍后再试. 否则, 我们请求旗标, 并且再次照常测试空闲空间.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Exclusivewaits.sect3"></a>6.2.5.3.&#160;互斥等待</h4></div></div></div>
+<p>我们已经见到当一个进程调用 wake_up 在等待队列上, 所有的在这个队列上等待的进程被置为可运行的. 在许多情况下, 这是正确的做法. 但是, 在别的情况下, 可能提前知道只有一个被唤醒的进程将成功获得需要的资源, 并且其余的将简单地再次睡眠. 每个这样的进程, 但是, 必须获得处理器, 竞争资源(和任何的管理用的锁), 并且明确地回到睡眠. 如果在等待队列中的进程数目大, 这个"惊群"行为可能严重降低系统的性能.</p>
+<p>为应对实际世界中的惊群问题, 内核开发者增加了一个"互斥等待"选项到内核中. 一个互斥等待的行为非常象一个正常的睡眠, 有 2 个重要的不同:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>当一个等待队列入口有 WQ_FLAG_EXCLUSEVE 标志置位, 它被添加到等待队列的尾部. 没有这个标志的入口项, 相反, 添加到开始.</p></li>
+<li><p>当 wake_up 被在一个等待队列上调用, 它在唤醒第一个有 WQ_FLAG_EXCLUSIVE 标志的进程后停止.</p></li>
+</ul></div>
+<p>最后的结果是进行互斥等待的进程被一次唤醒一个, 以顺序的方式, 并且没有引起惊群问题. 但内核仍然每次唤醒所有的非互斥等待者.</p>
+<p>在驱动中采用互斥等待是要考虑的, 如果满足 2 个条件: 你希望对资源的有效竞争, 并且唤醒一个进程就足够来完全消耗资源当资源可用时. 互斥等待对 Apacheweb 服务器工作地很好, 例如; 当一个新连接进入, 确实地系统中的一个 Apache 进程应当被唤醒来处理它. 我们在 scullpipe 驱动中不使用互斥等待, 但是; 很少见到竞争数据的读者(或者竞争缓冲空间的写者), 并且我们无法知道一个读者, 一旦被唤醒, 将消耗所有的可用数据. 
+</p>
+<p>使一个进程进入可中断的等待, 是调用 prepare_to_wait_exclusive 的简单事情:</p>
+<pre class="programlisting">
+void prepare_to_wait_exclusive(wait_queue_head_t *queue, wait_queue_t *wait, int state); 
+</pre>
+<p>这个调用, 当用来代替 prepare_to_wait, 设置"互斥"标志在等待队列入口项并且添加这个进程到等待队列的尾部. 注意没有办法使用 wait_event 和它的变体来进行互斥等待.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Thedetailsofwakingup.sect3"></a>6.2.5.4.&#160;唤醒的细节</h4></div></div></div>
+<p>我们已展现的唤醒进程的样子比内核中真正发生的要简单. 当进程被唤醒时产生的真正动作是被位于等待队列入口项的一个函数控制的. 缺省的唤醒函数<sup>[<a name="id436200" href="ch06s02.html#ftn.id436200">22</a>]</sup>设置进程为可运行的状态, 并且可能地进行一个上下文切换到有更高优先级进程. 设备驱动应当从不需要提供一个不同的唤醒函数; 如果你例外, 关于如何做的信息见 &lt;linux/wait.h&gt; </p>
+<p>我们尚未看到所有的 wake_up 变体. 大部分驱动编写者从不需要其他的, 但是, 为完整起见, 这里是整个集合:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>wake_up(wait_queue_head_t *queue);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>wake_up_interruptible(wait_queue_head_t *queue);</span></span></dt>
+<dd><p>wake_up 唤醒队列中的每个不是在互斥等待中的进程, 并且就只一个互斥等待者, 如果它存在. wake_up_interruptible 同样, 除了它跳过处于不可中断睡眠的进程. 这些函数, 在返回之前, 使一个或多个进程被唤醒来被调度(尽管如果它们被从一个原子上下文调用, 这就不会发生).</p></dd>
+<dt><span class="term"><span>wake_up_nr(wait_queue_head_t *queue, int nr);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>wake_up_interruptible_nr(wait_queue_head_t *queue, int nr);</span></span></dt>
+<dd><p>这些函数类似 wake_up, 除了它们能够唤醒多达 nr 个互斥等待者, 而不只是一个. 注意传递 0 被解释为请求所有的互斥等待者都被唤醒, 而不是一个没有.</p></dd>
+<dt><span class="term"><span>wake_up_all(wait_queue_head_t *queue);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>wake_up_interruptible_all(wait_queue_head_t *queue);</span></span></dt>
+<dd><p>这种 wake_up 唤醒所有的进程, 不管它们是否进行互斥等待(尽管可中断的类型仍然跳过在做不可中断等待的进程)</p></dd>
+<dt><span class="term"><span>wake_up_interruptible_sync(wait_queue_head_t *queue);</span></span></dt>
+<dd><p>正常地, 一个被唤醒的进程可能抢占当前进程, 并且在 wake_up 返回之前被调度到处理器. 换句话说, 调用 wake_up 可能不是原子的. 如果调用 wake_up 的进程运行在原子上下文(它可能持有一个自旋锁, 例如, 或者是一个中断处理), 这个重调度不会发生. 正常地, 那个保护是足够的. 但是, 如果你需要明确要求不要被调度出处理器在那时, 你可以使用 wake_up_interruptible 的"同步"变体. 这个函数最常用在当调用者要无论如何重新调度, 并且它会更有效的来首先简单地完成剩下的任何小的工作.</p></dd>
+</dl></div>
+<p>如果上面的全部内容在第一次阅读时没有完全清楚, 不必担心. 很少请求会需要调用 wake_up_interruptible 之外的.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Ancienthistorysleepon.sect3"></a>6.2.5.5.&#160;以前的历史: sleep_on</h4></div></div></div>
+<p>如果你花些时间深入内核源码, 你可能遇到我们到目前忽略讨论的 2 个函数:</p>
+<pre class="programlisting">
+void sleep_on(wait_queue_head_t *queue);
+void interruptible_sleep_on(wait_queue_head_t *queue);
+</pre>
+<p>如你可能期望的, 这些函数无条件地使当前进程睡眠在给定队列尚. 这些函数强烈不推荐, 但是, 并且你应当从不使用它们. 如果你想想它则问题是明显的: sleep_on 没提供方法来避免竞争条件. 常常有一个窗口在当你的代码决定它必须睡眠时和当 sleep_on 真正影响到睡眠时. 在那个窗口期间到达的唤醒被错过. 因此, 调用 sleep_on 的代码从不是完全安全的.</p>
+<p>当前计划对 sleep_on 和 它的变体的调用(有多个我们尚未展示的超时的类型)在不太远的将来从内核中去掉.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TestingtheScullpipeDriver.sect2"></a>6.2.6.&#160;测试 scullpipe 驱动</h3></div></div></div>
+<p>我们已经见到了 scullpipe 驱动如何实现阻塞 I/O. 如果你想试一试, 这个驱动的源码可在剩下的本书例子中找到. 阻塞 I/O 的动作可通过打开 2 个窗口见到. 第一个可运行一个命令诸如 cat /dev/scullpipe. 如果你接着, 在另一个窗口拷贝文件到 /dev/scullpipe, 你可见到文件的内容出现在第一个窗口.</p>
+<p>测试非阻塞的动作是技巧性的, 因为可用于 shell 的传统的程序不做非阻塞操作. misc-progs 源码目录包含下面简单的程序, 称为 nbtest, 来测试非阻塞操作. 所有它做的是拷贝它的输入到它的输出, 使用非阻塞 I/O 和在重试间延时. 延时时间在命令行被传递被缺省是 1 秒.</p>
+<pre class="programlisting">
+int main(int argc, char **argv)
+{
+
+        int delay = 1, n, m = 0;
+        if (argc &gt; 1)
+                delay=atoi(argv[1]);
+        fcntl(0, F_SETFL, fcntl(0,F_GETFL) | O_NONBLOCK); /* stdin */
+        fcntl(1, F_SETFL, fcntl(1,F_GETFL) | O_NONBLOCK); /* stdout */
+
+        while (1) {
+                n = read(0, buffer, 4096);
+                if (n &gt;= 0)
+                        m = write(1, buffer, n);
+                if ((n &lt; 0 || m &lt; 0) &amp;&amp; (errno != EAGAIN))
+                        break;
+                sleep(delay);
+        }
+        perror(n &lt; 0 ? "stdin" : "stdout");
+        exit(1);
+}
+</pre>
+<p>如果你在一个进程跟踪工具, 如 strace 下运行这个程序, 你可见到每个操作的成功或者失败, 依赖是否当进行操作时有数据可用.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id436200" href="ch06s02.html#id436200">22</a>] </sup>它有一个想象的名子 default_wake_function.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch06.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch06.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch06s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;6&#160;章&#160;高级字符驱动操作&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;6.3.&#160;poll 和 select</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

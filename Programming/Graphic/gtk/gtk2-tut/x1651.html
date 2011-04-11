@@ -1,0 +1,268 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>套件示例</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="菜单构件"
+HREF="c1562.html"><LINK
+REL="PREVIOUS"
+TITLE="使用套件"
+HREF="x1648.html"><LINK
+REL="NEXT"
+TITLE="无文档构件"
+HREF="c1656.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1648.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>菜单构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c1656.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-ITEMFACTORYEXAMPLE">套件示例</H1
+><P
+>这里是一个使用 GTK 套件的示例。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+#include &#60;strings.h&#62;
+
+/* 必须的基本回调 */
+static void print_hello( GtkWidget *w,
+                         gpointer   data )
+{
+  g_message ("Hello, World!\n");
+}
+
+/* 这是用来生成新菜单的 GtkItemFactoryEntry 结构。
+   第一项：菜单路径。下划线后的字母指出菜单打开时
+           的快捷键。
+   第二项：这个条目的快捷键
+   第三项：回调函数。
+   第四项：回调动作。这个改变被调用的函数的参数。默认是0.
+   第五项：项类型，用来定义它是哪种项，
+           这里是可能的值：
+
+           NULL               -&#62; "&#60;Item&#62;"
+           ""                 -&#62; "&#60;Item&#62;"
+           "&#60;Title&#62;"          -&#62; 创建一个标题(title)项
+           "&#60;Item&#62;"           -&#62; 创建一个简单(simple)项
+           "&#60;CheckItem&#62;"      -&#62; 创建一个检查(check)项
+           "&#60;ToggleItem&#62;"     -&#62; 创建一个开关(toggle)项
+           "&#60;RadioItem&#62;"      -&#62; 创建一个选择(radio)项
+           &#60;path&#62;             -&#62; 选择项连接到的路径
+           "&#60;Separator&#62;"      -&#62; 创建一个分隔线(separator)
+           "&#60;Branch&#62;"         -&#62; 创建一个包含子项的项（可选）
+           "&#60;LastBranch&#62;"     -&#62; 创建一个右对齐的分枝(branch)
+*/
+
+static GtkItemFactoryEntry menu_items[] = {
+  { "/_File",         NULL,         NULL, 0, "&#60;Branch&#62;" },
+  { "/File/_New",     "&#60;control&#62;N", print_hello, 0, NULL },
+  { "/File/_Open",    "&#60;control&#62;O", print_hello, 0, NULL },
+  { "/File/_Save",    "&#60;control&#62;S", print_hello, 0, NULL },
+  { "/File/Save _As", NULL,         NULL, 0, NULL },
+  { "/File/sep1",     NULL,         NULL, 0, "&#60;Separator&#62;" },
+  { "/File/Quit",     "&#60;control&#62;Q", gtk_main_quit, 0, NULL },
+  { "/_Options",      NULL,         NULL, 0, "&#60;Branch&#62;" },
+  { "/Options/Test",  NULL,         NULL, 0, NULL },
+  { "/_Help",         NULL,         NULL, 0, "&#60;LastBranch&#62;" },
+  { "/_Help/About",   NULL,         NULL, 0, NULL },
+};
+
+
+void get_main_menu( GtkWidget  *window,
+                    GtkWidget **menubar )
+{
+  GtkItemFactory *item_factory;
+  GtkAccelGroup *accel_group;
+  gint nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
+
+  accel_group = gtk_accel_group_new ();
+
+  /* 这个函数初始化套件。
+     参数1：菜单类型 - 可以是GTK_TYPE_MENU_BAR, GTK_TYPE_MENU,
+            或GTK_TYPE_OPTION_MENU。
+     参数2：菜单路径。
+     参数3：指向一个gtk_accel_group的指针。套件在生成菜单时设置
+            好加速表(accelerator table)。
+  */
+
+  item_factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "&#60;main&#62;", 
+				       accel_group);
+
+  /* 这个函数生成菜单项。把数组里项的数量，数组自身，和菜单项的任
+     意回调数据依次传递给套件。 */
+  gtk_item_factory_create_items (item_factory, nmenu_items, menu_items, NULL);
+
+  /* 把新的加速组绑定到窗口。 */
+  gtk_window_add_accel_group (GTK_WINDOW (window), accel_group);
+
+  if (menubar)
+    /* 最后，返回套件已经创建的菜单栏。 */ 
+    *menubar = gtk_item_factory_get_widget (item_factory, "&#60;main&#62;");
+}
+
+int main( int argc,
+          char *argv[] )
+{
+  GtkWidget *window;
+  GtkWidget *main_vbox;
+  GtkWidget *menubar;
+  
+  gtk_init (&#38;argc, &#38;argv);
+  
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  g_signal_connect (G_OBJECT (window), "destroy", 
+		    G_CALLBACK (gtk_main_quit), 
+		    NULL);
+  gtk_window_set_title (GTK_WINDOW (window), "Item Factory");
+  gtk_widget_set_size_request (GTK_WIDGET (window), 300, 200);
+  
+  main_vbox = gtk_vbox_new (FALSE, 1);
+  gtk_container_set_border_width (GTK_CONTAINER (main_vbox), 1);
+  gtk_container_add (GTK_CONTAINER (window), main_vbox);
+  gtk_widget_show (main_vbox);
+  
+  get_main_menu (window, &#38;menubar);
+  gtk_box_pack_start (GTK_BOX (main_vbox), menubar, FALSE, TRUE, 0);
+  gtk_widget_show (menubar);
+  
+  gtk_widget_show (window);
+
+  gtk_main ();
+  
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>目前，这里只有这个示例。以后会增加一个说明和许多'o'评论。 </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1648.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c1656.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>使用套件</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1562.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>无文档构件</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

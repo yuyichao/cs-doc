@@ -1,0 +1,1311 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 18. Partitioning</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1">
+<link rel="start" href="index.html" title="MySQL 5.1 Reference Manual">
+<link rel="up" href="index.html" title="MySQL 5.1 Reference Manual">
+<link rel="prev" href="ndbcluster.html" title="Chapter 17. MySQL Cluster">
+<link rel="next" href="spatial-extensions-in-mysql.html" title="Chapter 19. Spatial Extensions in MySQL">
+<style>
+<!--
+span.quote
+	{}
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="partitioning"></a>
+	第18章：分区</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="partitioning.html#partitioning-overview">18.1. 
+			MySQL中的分区概述</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-types">
+			18.2. 分区类型</a></span></dt><dd><dl><dt><span class="section"><a href="partitioning.html#partitioning-range">18.2.1. 
+				RANGE分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-list">18.2.2. 
+				LIST分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-hash">18.2.3. 
+				HASH分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-key">18.2.4. 
+				KEY分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-subpartitions">
+				18.2.5. 子分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-handling-nulls">
+				18.2.6. MySQL分区处理NULL值的方式<code class="literal"></code></a></span></dt></dl></dd><dt><span class="section"><a href="partitioning.html#partitioning-management">
+			18.3. 分区管理</a></span></dt><dd><dl><dt><span class="section"><a href="partitioning.html#partitioning-management-range-list">
+				18.3.1. RANGE和LIST分区的管理</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-management-hash-key">
+				18.3.2. HASH和KEY分区的管理<code class="literal"></code></a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-maintenance">
+				18.3.3. 分区维护</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-info">
+				18.3.4. 获取关于分区的信息</a></span></dt></dl></dd></dl></div><a class="indexterm" name="id2976039"></a><a class="indexterm" name="id2976046"></a>
+	<p>本章讨论MySQL 5.1.中实现的分区。关于分区和分区概念的介绍可以在<a href="partitioning.html#partitioning-overview" title="18.1. Overview of Partitioning in MySQL">18.1节，“MySQL中的分区概述”</a>中找到。<span>MySQL 5.1 </span>支持哪几种类型的分区，在<a href="partitioning.html#partitioning-types" title="18.2. Partition Types">18.2节，“分区类型”</a><span> </span>中讨论。关于子分区在<a href="partitioning.html#partitioning-subpartitions" title="18.2.5. Subpartitioning">18.2.5节，“子分区”</a><span> </span>中讨论。现有分区表中分区的增加、删除和修改的方法在<a href="partitioning.html#partitioning-management" title="18.3. Partition Management">18.3节，“分区管理”</a><span> </span>中介绍。 和分区表一同使用的表维护命令在<a href="partitioning.html#partitioning-maintenance" title="18.3.3. Maintenance of Partitions">18.3.3节，“分区维护”</a><span> </span>中介绍。 </p>
+	<p><strong><span>请注意</span></strong>：<span>MySQL 
+	5.1</span>中的分区实现仍然很新（<span>pre-alpha</span>品质），此时还不是可生产的（<span>not 
+	production-ready</span>）。 同样，许多也适用于本章：在这里描述的一些功能还没有实际上实现<span>(</span>分区维护和重新分区命令），其他的可能还没有完全如所描述的那样实现<span>(</span>例如<span>,
+	</span>用于分区的数据目录（<span><span>DATA 
+	DIRECTORY</span>）和索引目录（<span>INDEX DIRECTORY</span>）选项受到</span>B<span><a target="_top"  href="http://bugs.mysql.com/13520">ug 
+	#13520</a>) </span>不利的影响<span>). </span>
+	我们已经设法在本章中标出这些差异。在提出缺陷报告前，我们鼓励参考下面的一些资源：</p>
+	<div class="itemizedlist"><ul type="disc"><li><p>
+        <a href="http://forums.mysql.com/list.php?106" target="_top">MySQL
+        分区</a><a href="http://forums.mysql.com/list.php?106">论坛</a>
+      </p><p>
+        <span>这是一个为对<span>MySQL</span>分区技术感兴趣或用<span>MySQL</span>分区技术做试验提供的官方讨论论坛。来自<span>MySQL
+		</span>的开发者和其他的人，会在上面发表和更新有关的材料。它由分区开发和文献团队的成员负责监控。</span>
+      </p></li><li><p>
+        <a href="http://tinyurl.com/9wy6h" target="_top">分区缺陷报告</a>
+      </p><p>
+        <span>
+		已经归档在缺陷系统中的、所有分区缺陷的一个列表，而无论这些缺陷的年限、严重性或当前的状态如何。根据许多规则可以对这些缺陷进行筛选，或者可以从<span><a target="_top"  href="http://bugs.mysql.com/">MySQL缺陷系统<span>主页</span></a></span>开始，然后查找你特别感兴趣的缺陷。</span></p></li><li><p>
+        <a href="http://mikaelronstrom.blogspot.com/" target="_top">Mikael
+        Ronström's Blog</a>
+      </p><p>
+        <span >
+		MySQL</span><span>分区体系结构和领先的开发者<span>Mikael 
+		Ronström </span>经常在这里贴关于他研究<span>MySQL </span>分区和<span>MySQL</span>簇的文章。</span>
+      </p></li><li><p>
+        <a href="http://www.planetmysql.org/" target="_top">PlanetMySQL</a>
+      </p><p>
+        <span>一个<span>MySQL
+		</span>新闻网站，它以汇集<span>MySQL</span>相关的网誌为特点，那些使用我的<span>MySQL</span>的人应该对此有兴趣。我们鼓励查看那些研究<span>MySQL</span>分区的人的网誌链接，或者把你自己的网誌加到这些新闻报道中。</span></p></li></ul></div>
+	<p><span>MySQL 5.1</span>的二进制版本目前还不可用；但是，可以从<span>BitKeeper</span>知识库中获得源码。要激活分区，需要使用<span><span>--with-</span>分区选项编译服务器。关于建立</span><span>MySQL
+	</span>的更多信息，请参见<a href="installing.html#installing-source" title="2.8. MySQL Installation Using a Source Distribution">2.8节，“使用源码分发版安装MySQL”</a>。如果在编译一个激活分区的<span>MySQL 5.1</span>创建中碰到问题，可以在<span>MySQL</span>分区论坛中查找解决办法，如果在论坛中已经贴出的文章中没有找到问题的解决办法，可以在上面寻找帮助。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="partitioning-overview"></a>18.1. MySQL中的分区概述</h2></div></div></div><a class="indexterm" name="id2976259"></a>
+		<p>本节提供了关于<span>MySQL 5.1.</span>分区在概念上的概述。 </p>
+		<p><span>SQL</span>标准在数据存储的物理方面没有提供太多的指南。<span>SQL</span>语言的使用独立于它所使用的任何数据结构或图表、表、行或列下的介质。但是，大部分高级数据库管理系统已经开发了一些根据文件系统、硬件或者这两者来确定将要用于存储特定数据块物理位置的方法。在<span>MySQL</span>中<span>，InnoDB</span><span>存储引擎长期支持表空间的概念，并且</span><span>MySQL</span>服务器甚至在分区引入之前，就能配置为存储不同的数据库使用不同的物理路径<span>(</span>关于如何配置的解释，请参见<a href="optimization.html#symbolic-links" title="7.6.1. Using Symbolic Links">7.6.1节，“使用符号链接”</a><span>)</span>。 </p>
+		<p><em><span>分区</span></em>又把这个概念推进了一步，它允许根据可以设置为任意大小的规则，跨文件系统分配单个表的多个部分。实际上，表的不同部分在不同的位置被存储为单独的表。用户所选择的、实现数据分割的规则被称为<em><span>分区函数</span></em><span>，</span>这在<span>MySQL</span>中它可以是模数，或者是简单的匹配一个连续的数值区间或数值列表，或者是一个内部<span>HASH</span>函数，或一个线性<span>HASH</span>函数。函数根据用户指定的分区类型来选择，把用户提供的表达式的值作为参数。该表达式可以是一个整数列值，或一个作用在一个或多个列值上并返回一个整数的函数。这个表达式的值传递给分区函数，分区函数返回一个表示那个特定记录应该保存在哪个分区的序号。这个函数不能是常数，也不能是任意数。它不能包含任何查询，但是实际上可以使用<span>MySQL
+		</span>中任何可用的<span>SQL</span>表达式，只要该表达式返回一个小于<span><span>MAXVALUE</span>（最大可能的正整数）</span>的正数值。分区函数的例子可以在本章后面关于分区类型的讨论中找到<span> 
+		(</span>请参见<a href="partitioning.html#partitioning-types" title="18.2. Partition Types">18.2节，“分区类型”</a><span> )，</span>也可在<a href="sql-syntax.html#create-table" title="13.1.5. CREATE TABLE Syntax">13.1.5节，“CREATE 
+		TABLE语法”</a>的分区语法描述中找到。 </p>
+		<p>当二进制码变成可用时（也就是说，<span>5.1 <span>
+		-max</span> </span>二进制码将通过<span>--with-partition</span><span>
+		</span>建立），分区支持就将包含在<span>MySQL 5.1</span>的<span>-max</span><span>
+		</span>版本中。如果<span>MySQL</span>二进制码是使用分区支持建立的，那么激活它不需要任何其他的东西<span> 
+		(</span>例如，在<span>my.cnf</span><span>
+		</span>文件中，不需要特殊的条目<span>)</span>。可以通过使用<span><span>SHOW 
+		VARIABLES</span>命令来确定</span><span>MySQL</span>是否支持分区，例如：</p>
+		<pre><span>mysql&gt; <span><b>SHOW VARIABLES LIKE &#39;%partition%&#39;;</b></span></span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>+-----------------------+-------+</span></pre>
+		<pre><span>| Variable_name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Value |</span></pre>
+		<pre><span>+-----------------------+-------+</span></pre>
+		<pre><span>| have_partition_engine | YES&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-----------------------+-------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<p>在如上列出的一个正确的<span>SHOW 
+		VARIABLES</span><span> </span>命令所产生的输出中，如果没有看到变量<span><span>have_partition_engine</span>的值为<span>YES</span>，那么</span><span>MySQL</span>的版本就不支持分区。（注意：在显示任何有关分区支持信息的命令<span><span>SHOW 
+		ENGINES</span>的输出中，不会给出任何信息；必须使用<span>SHOW VARIABLES</span>命令来做出这个判断）</span>。</p>
+		<p>对于创建了分区的表，可以使用你的<span>MySQL </span>服务器所支持的任何存储引擎；<span>MySQL
+		</span>分区引擎在一个单独的层中运行，并且可以和任何这样的层进行相互作用。在<span>MySQL 5.1</span>版中，同一个分区表的所有分区必须使用同一个存储引擎；例如，不能对一个分区使用<span><span>MyISAM</span>，而对另一个使用<span>InnoDB</span>。但是，这并不妨碍在同一个</span><span> 
+		MySQL </span>服务器中，甚至在同一个数据库中，对于不同的分区表使用不同的存储引擎。 </p>
+		<p>要为某个分区表配置一个专门的存储引擎，必须且只能使用<span>[STORAGE] 
+		ENGINE</span><span> </span>选项，这如同为非分区表配置存储引擎一样。但是，必须记住<span><span>[STORAGE] 
+		ENGINE</span>（和其他的表选项）必须列在用</span>在<span><span>CREATE 
+		TABLE</span>语句中的其他任何分区选项之前。下面的例子给出了怎样创建一个通过<span>HASH</span>分成<span>6</span>个分区、使用<span>InnoDB</span>存储引擎的表：</span></p>
+		<pre><span>CREATE TABLE ti (id INT, amount DECIMAL(7,2), tr_date DATE)</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; ENGINE=INNODB</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY HASH(MONTH(tr_date))</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; PARTITIONS 6;</span></pre>
+		<p>（注释：每个<span>PARTITION</span><span>
+		</span>子句可以包含一个 <span>[STORAGE] 
+		ENGINE</span><span> </span>选项，但是在<span>MySQL 
+		5.1</span>版本中，这没有作用）<span>。 </span></p>
+		<p>创建分区的临时表也是可能的；但是，这种表的生命周期只有当前<span>MySQL </span>
+		的会话的时间那么长。对于非分区的临时表，这也是一样的。 </p>
+		<p><strong><span>注释</span></strong><span>：</span>分区适用于一个表的所有数据和索引；不能只对数据分区而不对索引分区，反之亦然，同时也不能只对表的一部分进行分区。</p>
+		<p>可以通过使用用来创建分区表的<span><span>CREATE 
+		TABLE</span>语句的</span><span>PARTITION</span>子句的<span><span>DATA 
+		DIRECTORY</span>（数据路径）</span>和<span><span>INDEX 
+		DIRECTORY</span>（索引路径）选项，为每个分区的数据和索引指定特定的路径。此外，<span>MAX_ROWS</span></span>和<span><span>MIN_ROWS</span>选项可以用来设定最大和最小的行数，它们可以各自保存在每个分区里。关于这些选项的更多信息，请参见</span><a href="partitioning.html#partitioning-management" title="18.3. Partition Management">18.3节，“分区管理”</a>。<strong><span>注释</span></strong><span>：</span>这个特殊的功能由于<span><a href="http://bugs.mysql.com/13250"><span>Bu</span></a><a target="_top"  href="http://bugs.mysql.com/13250">g 
+		#13250</a></span>的原因，目前还不能实用。在第一个<span>5.1</span>二进制版本投入使用时，我们应该已经把这个问题解决了。</p>
+		<p>分区的一些优点包括： </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>与单个磁盘或文件系统分区相比，可以存储更多的数据。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		对于那些已经失去保存意义的数据，通常可以通过删除与那些数据有关的分区，很容易地删除那些数据。相反地，在某些情况下，添加新数据的过程又可以通过为那些新数据专门增加一个新的分区，来很方便地实现。</p>
+		<p>通常和分区有关的其他优点包括下面列出的这些。<span>MySQL </span>
+		分区中的这些功能目前还没有实现，但是在我们的优先级列表中，具有高的优先级；我们希望在<span>5.1</span>的生产版本中，能包括这些功能。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>一些查询可以得到极大的优化，这主要是借助于满足一个给定<span>WHERE</span><span>
+		</span>
+		语句的数据可以只保存在一个或多个分区内，这样在查找时就不用查找其他剩余的分区。因为分区可以在创建了分区表后进行修改，所以在第一次配置分区方案时还不曾这么做时，可以重新组织数据，来提高那些常用查询的效率。 
+		</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>涉及到例如<span>SUM()</span><span>
+		</span>和 <span><span>COUNT()</span>这样</span>聚合函数的查询，可以很容易地进行并行处理。这种查询的一个简单例子如 
+		“<span><span>SELECT salesperson_id, 
+		COUNT(orders) as order_total FROM sales GROUP BY salesperson_id</span>；<span>”</span>。通过<span>“</span>并行<span>”</span>，</span> 
+		这意味着该查询可以在每个分区上同时进行，最终结果只需通过总计所有分区得到的结果。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>通过跨多个磁盘来分散数据查询，来获得更大的查询吞吐量。 </p>
+		<p>要经常检查本页和本章，因为它将随<span>MySQL 5.1</span>后续的分区进展而更新。 <a class="indexterm" name="id2976347"></a><a class="indexterm" name="id2976354"></a></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="partitioning-types"></a>
+		18.2.&nbsp;分区类型</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="partitioning.html#partitioning-range">18.2.1. 
+			RANGE分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-list">18.2.2. 
+			LIST分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-hash">18.2.3. 
+			HASH分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-key">18.2.4. 
+			KEY分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-subpartitions">
+			18.2.5. 子分区</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-handling-nulls">
+			18.2.6. MySQL分区处理NULL值的方式<code class="literal"></code></a></span></dt></dl></div><a class="indexterm" name="id2976701"></a>
+		<p>本节讨论在<span>MySQL 5.1</span>中可用的分区类型。这些类型包括： </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><b><span>RANGE</span></b></span><strong><span>
+		</span><span>分区</span></strong><span>：</span>基于属于一个给定连续区间的列值，把多行分配给分区。参见<a href="partitioning.html#partitioning-range" title="18.2.1. RANGE Partitioning">18.2.1节，“RANGE分区”</a>。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><b><span>LIST</span></b></span><strong><span>
+		</span><span>分区</span></strong><span>：</span>类似于按<span>RANGE</span>分区，区别在于<span>LIST</span>分区是基于列值匹配一个离散值集合中的某个值来进行选择。参见<a href="partitioning.html#partitioning-list" title="18.2.2. LIST Partitioning">18.2.2节，“<font face="Times New Roman">LIST</font>分区”</a>。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><b><span>HASH</span>分区</b></span><span>：</span>基于用户定义的表达式的返回值来进行选择的分区，该表达式使用将要插入到表中的这些行的列值进行计算。这个函数可以包含<span>MySQL
+		</span>中有效的、产生非负整数值的任何表达式。参见<a href="partitioning.html#partitioning-hash" title="18.2.3. HASH Partitioning">18.2.3节，“HASH分区”</a>。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><b><span>KEY</span></b></span><strong><span>
+		</span><span>分区</span></strong>：类似于按<span>HASH</span>分区，区别在于<span>KEY</span>分区只支持计算一列或多列，且<span>MySQL
+		</span>服务器提供其自身的哈希函数。必须有一列或多列包含整数值。参见<a href="partitioning.html#partitioning-key" title="18.2.4. KEY Partitioning">18.2.4节，“KEY分区”</a>。 </p>
+		<p>无论使用何种类型的分区，分区总是在创建时就自动的顺序编号，且从<span>0</span>开始记录，记住这一点非常重要。当有一新行插入到一个分区表中时，就是使用这些分区编号来识别正确的分区。例如，如果你的表使用<span>4</span>个分区，那么这些分区就编号为<span>0</span><span>,
+		<span>1</span>, <span>2</span>,
+		</span>和<span><span>3</span>。对于<span>RANGE</span>和<span>LIST</span></span>分区类型，确认每个分区编号都定义了一个分区，很有必要。对<span><span>HASH</span>分区，使用的用户函数必须返回一个大于<span>0</span>的整数值。对于<span>KEY</span>分区，这个问题通过</span><span>MySQL</span>服务器内部使用的
+		哈希函数自动进行处理。 
+		</p>
+		<p>分区的名字基本上遵循其他<span>MySQL </span>
+		标识符应当遵循的原则，例如用于表和数据库名字的标识符。但是应当注意，分区的名字是不区分大小写的。例如，下面的<span><span>CREATE 
+		TABLE</span>语句将会产生如下的错误：</span> </p>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t2 (val INT)</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>PARTITION BY LIST(val)(</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION mypart VALUES IN (1,3,5),</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION MyPart VALUES IN (2,4,6)</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>);</b></span></span></pre>
+		<pre>错误<span>1488 (HY000): </span>表的所有分区必须有唯一的名字。</pre>
+		<p>这是因为<span>MySQL</span>认为分区名字<span><span>mypart</span>和<span>MyPart</span>没有区别。</span>
+		</p>
+		<p><strong><span>注释</span></strong><span>：</span>在下面的章节中，我们没有必要提供可以用来创建每种分区类型语法的所有可能形式，这些信息可以在<a href="sql-syntax.html#create-table" title="13.1.5. CREATE TABLE Syntax">13.1.5节，“CREATE 
+		TABLE语法”</a><span> </span>中找到。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-range"></a>18.2.1. RANGE分区</h3></div></div></div><a class="indexterm" name="id2976951"></a><a class="indexterm" name="id2976958"></a>
+			<p>按照<span>RANGE</span>分区的表是通过如下一种方式进行分区的，每个分区包含那些分区表达式的值位于一个给定的连续区间内的行。这些区间要连续且不能相互重叠，使用<span><span>VALUES 
+			LESS THAN</span>操作符来进行定义。在下面的几个例子中，假定你创建了一个如下的一个表，该表保存有<span>20</span>家音像店的职员记录，这<span>20</span>家音像店的编号从<span>1</span>到<span>20</span>。</span></p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT NOT NULL</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>根据你的需要，这个表可以有多种方式来按照区间进行分区。一种方式是使用<span>store_id</span><span>
+			</span>列。例如，你可能决定通过添加一个<span><span>PARTITION 
+			BY RANGE</span>子句把这个表</span>分割成<span>4</span>个区间，如下所示<span>:
+			</span></p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT NOT NULL</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY RANGE (store_id) (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (6),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (11),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN (16),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p3 VALUES LESS THAN (21)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>按照这种分区方案，在商店<span>1</span>到<span>5</span>工作的雇员相对应的所有行被保存在分区<span>P0</span>中，商店<span>6</span>到<span>10</span>的雇员保存在<span>P1</span>中，依次类推。注意，每个分区都是按顺序进行定义，从最低到最高。这是<span>PARTITION 
+			BY RANGE</span><span> </span>语法的要求；在这点上，它类似于<span>C</span>或<span>Java</span>中的“<span>switch 
+			... case</span>”语句。 </p>
+			<p>对于包含数据<span><span>(72, 
+			&#39;Michael&#39;, &#39;Widenius&#39;, &#39;1998-06-25&#39;, NULL, 13)</span>的一个新行，可以很容易地确定它将插入到<span>p2</span>分区中，但是如果增加了一个编号为第<span>21</span>的商店，将会发生什么呢？在这种方案下，由于没有规则把<span>store_id</span>大于<span>20</span>的商店包含在内，服务器将不知道把该行保存在何处，将会导致错误。</span> 
+			要避免这种错误，可以通过在<span><span>CREATE 
+			TABLE</span>语句中</span>使用一个“<span class="quote"><span>catchall</span></span>”
+			<span><span>VALUES LESS THAN</span>子</span>句，该子句提供给所有大于明确指定的最高值的值：</p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT NOT NULL</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY RANGE (store_id) (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (6),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (11),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN (16),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p3 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>)</span>；</pre>
+			<p><span>MAXVALUE</span><span>
+			</span>表示最大的可能的整数值。现在，<span>store_id</span><span>
+			</span>列值大于或等于<span>16</span>（定义了的最高值）的所有行都将保存在分区<span><span>p3</span>中。在将来的某个时候，</span>当商店数已经增长到<span>25, 
+			30, </span>或更多 ，可以使用<span><span>ALTER 
+			TABLE</span>语句</span>为商店<span>21-25, 26-30,</span>等等增加新的分区
+			（关于如何实现的详细信息参见<a href="partitioning.html#partitioning-management" title="18.3. Partition Management">18.3节，“分区管理”</a><span> )</span>。</p>
+			<p>在几乎一样的结构中，你还可以基于雇员的工作代码来分割表，也就是说，基于<span>job_code</span><span>
+			</span>列值的连续区间。例如——假定<span>2</span>位数字的工作代码用来表示普通（店内的）工人，三个数字代码表示办公室和支持人员，四个数字代码表示管理层，你可以使用下面的语句创建该分区表：</p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT NOT NULL</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY RANGE (job_code) (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (100),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (1000),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN (10000)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>在这个例子中<span>, </span>店内工人相关的所有行将保存在分区<span>p0</span>中，办公室和支持人员相关的所有行保存在分区<span>p1</span>中，管理层相关的所有行保存在分区<span>p2</span>中。 
+			</p>
+			<p>在<span>VALUES LESS THAN</span><span>
+			</span>子句中使用一个表达式也是可能的。这里最值得注意的限制是<span>MySQL </span>
+			必须能够计算表达式的返回值作为<span>LESS 
+			THAN</span><span> (<span>&lt;</span>)</span>比较的一部分；因此，表达式的值不能为<span>NULL</span><span>
+			</span>。由于这个原因，雇员表的<span>hired</span><span>,
+			<span>separated</span>,
+			<span>job_code</span>,</span>和<span><span>store_id</span>列已经被定义为非空（<span>NOT 
+			NULL</span>）。</span> </p>
+			<p>除了可以根据商店编号分割表数据外，你还可以使用一个基于两个<span>DATE</span><span>
+			</span>（日期）中的一个的表达式来分割表数据。例如，假定你想基于每个雇员离开公司的年份来分割表，也就是说，<span><span>YEAR(separated)</span>的值。实现这种分区模式的<span>CREATE 
+			TABLE</span></span><span> </span>语句的一个例子如下所示：</p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY RANGE (YEAR(separated)) (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1991),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (1996),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN (2001),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p3 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>在这个方案中，在<span>1991</span>年前雇佣的所有雇员的记录保存在分区<span><span>p0</span>中，<span>1991</span>年到<span>1995</span>年期间</span>雇佣的所有雇员的记录保存在分区<span><span>p1</span>中，</span>
+			<span><span>1996</span>年到<span>2000</span>年期间</span>雇佣的所有雇员的记录保存在分区<span><span>p2</span>中，<span>2000</span>年后雇佣的所有工人的信息保存在<span>p3</span>中。</span>
+			</p>
+			<p><span>RANGE</span>分区在如下场合特别有用：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当需要删除“旧的”数据时。如果你使用上面最近的那个例子给出的分区方案，你只需简单地使用 “<span><span>ALTER 
+			TABLE employees DROP PARTITION p0</span>；<span>”</span>来删除所有在<span>1991</span>年前就已经停止工作的雇员相对应的所有行。</span><span>(</span>更多信息请参见<a href="sql-syntax.html#alter-table" title="13.1.2. ALTER TABLE Syntax">13.1.2节，“ALTER 
+			TABLE语法”</a><span> </span>和
+            <a href="partitioning.html#partitioning-management" title="18.3. Partition Management">
+			18.3节，“分区管理”</a><span>）。</span>对于有大量行的表，这比运行一个如“<span><span>DELETE 
+			FROM employees WHERE YEAR(separated) &lt;= 1990</span>；</span>”这样的一个<span>DELETE</span>查询要有效得多。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>想要使用一个包含有日期或时间值，或包含有从一些其他级数开始增长的值的列。 </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>经常运行直接依赖于用于分割表的列的查询。例如，当执行一个如“<span><span>SELECT 
+			COUNT(*) FROM employees WHERE YEAR(separated) = 2000 GROUP BY 
+			store_id</span>；</span>”这样的查询时，<span>MySQL</span>可以很迅速地确定只有分区<span><span>p2</span>需要扫描，这是因为余下的分区不可能包含有符合该<span>WHERE</span>子句的任何记录。<b>注释</b>：这种优化还没有在</span><span>MySQL 
+			5.1</span>源程序中启用，但是，有关工作正在进行中。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-list"></a>18.2.2. LIST分区</h3></div></div></div><a class="indexterm" name="id2977380"></a><a class="indexterm" name="id2977387"></a>
+			<p><span>MySQL</span>中的<span>LIST</span>分区在很多方面类似于<span>RANGE</span>分区。和按照<span>RANGE</span>分区一样，每个分区必须明确定义。它们的主要区别在于，<span>LIST</span>分区中每个分区的定义和选择是基于某列的值从属于一个值列表集中的一个值，而<span>RANGE</span>分区是从属于一个连续区间值的集合。<span>LIST</span>分区通过使用“<span><span>PARTITION 
+			BY LIST(<i>expr</i>)”</span>来实现，其中<span>“<i>expr”</i></span></span><span>
+			</span>是某列值或一个基于某个列值、并返回一个整数值的表达式，然后通过“<span>VALUES 
+			IN (<i>value_list</i>)</span>”的方式来定义每个分区，其中“<span><i><span>value_list</span></i></span>”是一个通过逗号分隔的整数列表。</p>
+			<p><strong><span>注释</span></strong><span>：</span>在<span>MySQL 
+			5.1</span>中，当使用<span>LIST</span>分区时，有可能只能匹配整数列表。 </p>
+			<p>不像按照<span>RANGE</span>定义分区的情形，<span>LIST</span>分区不必声明任何特定的顺序。关于<span>LIST</span>分区更详细的语法信息，请参考<a href="sql-syntax.html#create-table" title="13.1.5. CREATE TABLE Syntax">13.1.5节，“CREATE 
+		TABLE语法”</a><span> </span>。 </p>
+			<p>对于下面给出的例子，我们假定将要被分区的表的基本定义是通过下面的“<span>CREATE 
+			TABLE</span>”语句提供的：</p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp; &nbsp;fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>（这和<a href="partitioning.html#partitioning-range" title="18.2.1. RANGE Partitioning">18.2.1节，“RANGE分区”</a><span> </span>
+			中的例子中使用的是同一个表）<span>。&nbsp; </span></p>
+			<p>假定有<span>20</span>个音像店，分布在<span>4</span>个有经销权的地区，如下表所示： 
+			</p>
+			<table border="1" cellpadding="0" id="table1">
+				<tr>
+					<td>
+					<p><strong><span>
+					地区</span></strong></td>
+					<td>
+					<p><strong><span>
+					商店<span>ID </span>号</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>北区</td>
+					<td>
+					<p><span>3, 5, 6, 9, 17</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>东区</td>
+					<td>
+					<p><span>1, 2, 10, 11, 19, 20</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>西区</td>
+					<td>
+					<p><span>4, 12, 13, 14, 18</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>中心区</td>
+					<td>
+					<p><span>7, 8, 15, 16</span></td>
+				</tr>
+			</table>
+			<p>要按照属于同一个地区商店的行保存在同一个分区中的方式来分割表，可以使用下面的“<span><span>CREATE 
+			TABLE”</span>语句：</span></p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY LIST(store_id)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION pNorth VALUES IN (3,5,6,9,17),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION pEast VALUES IN (1,2,10,11,19,20),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION pWest VALUES IN (4,12,13,14,18),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION pCentral VALUES IN (7,8,15,16)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>
+			这使得在表中增加或删除指定地区的雇员记录变得容易起来。例如，假定西区的所有音像店都卖给了其他公司。那么与在西区音像店工作雇员相关的所有记录（行）可以使用查询“<span><span>ALTER 
+			TABLE employees DROP PARTITION pWest</span>；</span>”来进行删除，它与具有同样作用的<span>DELETE</span><span>
+			</span>（删除）查询“<span>DELETE</span><span> 
+			query <span>DELETE FROM employees WHERE 
+			store_id IN (4,12,13,14,18)</span></span><span>；</span>”比起来，要有效得多。 
+			</p>
+			<p><strong><span>要点</span></strong>：如果试图插入列值（或分区表达式的返回值）不在分区值列表中的一行时，那么“<span><span>INSERT”</span>查询将失败并报错。例如，假定<span>LIST</span>分区的采用上面的方案，下面的查询将失败：</span>
+			</p>
+			<pre><span>INSERT INTO employees VALUES </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;(224, &#39;Linus&#39;, &#39;Torvalds&#39;, &#39;2002-05-01&#39;, &#39;2004-10-12&#39;, 42, 21);</span></pre>
+			<p>这是因为“<span><span>store_id”</span>列值<span>21</span>不能在用于定义分区<span>pNorth</span></span><span>,
+			<span>pEast</span>,
+			<span>pWest</span>,</span>或<span><span>pCentral</span>的值列表中找到。要重点注意的是，<span>LIST</span>分区没有类似如<span>“VALUES 
+			LESS THAN MAXVALUE”</span>这样的包含其他值在内的定义。将要匹配的任何值都必须在值列表中找到。</span>
+			</p>
+			<p><span>LIST</span>分区除了能和<span><span>RANGE</span>分区结合起来生成一个复合的子分区，与<span>HASH</span>和<span>KEY</span>分区结合起来生成复合的子分区也是可能的。</span> 
+			关于这方面的讨论，请参考<a href="partitioning.html#partitioning-subpartitions" title="18.2.5. Subpartitioning">18.2.5节，“子分区”</a>。 </div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-hash"></a>18.2.3. HASH分区</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="partitioning.html#partitioning-linear-hash">18.2.3.1. 
+			LINEAR HASH分区</a></span></dt></dl></div><a class="indexterm" name="id2977713"></a><a class="indexterm" name="id2977720"></a>
+			<p><span>HASH</span>分区主要用来确保数据在预先确定数目的分区中平均分布。在<span>RANGE</span>和<span>LIST</span>分区中，必须明确指定一个给定的列值或列值集合应该保存在哪个分区中；而在<span>HASH</span>分区中，<span>MySQL
+			</span>自动完成这些工作，你所要做的只是基于将要被哈希的列值指定一个列值或表达式，以及指定被分区的表将要被分割成的分区数量。 
+			</p>
+			<p>要使用<span>HASH</span>分区来分割一个表，要在<span>CREATE 
+			TABLE</span><span> </span>语句上添加一个“<span>PARTITION 
+			BY HASH (<i>expr</i>)</span>”子句，其中“<span><i><span>expr</span></i></span>”是一个返回一个整数的表达式。它可以仅仅是字段类型为<span>MySQL
+			</span>整型的一列的名字。此外，你很可能需要在后面再添加一个“<span>PARTITIONS
+			<i>num</i></span>”子句，其中<span><i><span>num</span></i></span><span>
+			</span>是一个非负的整数，它表示表将要被分割成分区的数量。 </p>
+			<p>例如，下面的语句创建了一个使用基于“<span><span>store_id”</span>列进行
+			哈希处理的表，该表被分成了<span>4</span>个分区：</span></p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT,</span></pre>
+			<pre><span>&nbsp;&nbsp; &nbsp;store_id INT</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY HASH(store_id)</span></pre>
+			<pre><span>PARTITIONS 4</span>；</pre>
+			<p>如果没有包括一个<span><span>PARTITIONS</span>子句，那么分区的数量将默认为<span>1</span>。</span>
+			<strong><span>例外：</span></strong> 对于<span><span>NDB 
+			Cluster</span>（簇）</span>表，默认的分区数量将与<span>簇数据节点的数量相同，这种修正可能是考虑任何<span>MAX_ROWS</span></span><span>
+			</span>设置，以便确保所有的行都能合适地插入到分区中。（参见<a href="ndbcluster.html">第17章：</a><a href="ndbcluster.html" title="Chapter 17. MySQL Cluster"><i>MySQL簇</i></a>）<span>。 
+			</span></p>
+			<p>如果在关键字“<span><span>PARTITIONS”</span>后面没有加上分区的数量，将会出现语法错误。</span>
+			</p>
+			<p>“<span><i><span>expr</span></i></span>”还可以是一个返回一个整数的<span>SQL</span>表达式。例如，也许你想基于雇用雇员的年份来进行分区。这可以通过下面的语句来实现： 
+			</p>
+			<pre><span>CREATE TABLE employees (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; job_code INT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; store_id INT</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY HASH(YEAR(hired))</span></pre>
+			<pre><span>PARTITIONS 4</span>；</pre>
+			<p>“<span><i><span>expr</span></i></span>”还可以是<span>MySQL
+			</span>
+			中有效的任何函数或其他表达式，只要它们返回一个既非常数、也非随机数的整数。（换句话说，它既是变化的但又是确定的）。但是应当记住，每当插入或更新（或者可能删除）一行，这个表达式都要计算一次；这意味着非常复杂的表达式可能会引起性能问题，尤其是在执行同时影响大量行的运算（例如批量插入）的时候。 
+			</p>
+			<p>
+			最有效率的哈希函数是只对单个表列进行计算，并且它的值随列值进行一致地增大或减小，因为这考虑了在分区范围上的“修剪”。也就是说，表达式值和它所基于的列的值变化越接近，<span>MySQL</span>就可以越有效地使用该表达式来进行<span>HASH</span>分区。 
+			</p>
+			<p>例如，“date_col” 是一个DATE（日期）类型的列，那么表达式TO_DAYS(date_col)就可以说是随列“date_col”值的变化而发生直接的变化，因为列“date_col”值的每个变化，表达式的值也将发生与之一致的变化。而表达式YEAR(date_col)的变化就没有表达式TO_DAYS(date_col)那么直接，因为不是列“date_col”每次可能的改变都能使表达式YEAR(date_col)发生同等的改变。即便如此，表达式YEAR(date_col)也还是一个用于
+			哈希函数的、好的候选表达式，因为它随列date_col的一部分发生直接变化，并且列date_col的变化不可能引起表达式YEAR(date_col)不成比例的变化。</p>
+			<p>作为对照，假定有一个类型为整型（<span>INT</span>）的、列名为“int_col”的列。现在考虑表达式“POW(5-int_col,3) 
+			+ 6”。这对于哈希函数就是一个不好的选择，因为“int_col”值的变化并不能保证表达式产生成比例的变化。列 
+			“int_col”的值发生一个给定数目的变化，可能会引起表达式的值产生一个很大不同的变化。例如，把列“int_col”的值从5变为6，表达式的值将产生“－1”的改变，但是把列“int_col”的值从6变为7时，表达式的值将产生“－7”的变化。</p>
+			<p>换句话说，如果列值与表达式值之比的曲线图越接近由等式“<span><span>y=<i>n</i>x</span>（其中<span>n</span>为非零的常数）描绘出的直线，则该表达式越适合于
+			哈希。这是因为，表达式的非线性越严重，分区中数据产生非均衡分布的趋势也将越严重。</span></p>
+			<p>理论上讲，对于涉及到多列的表达式，“修剪（<span>pruning</span>）”也是可能的，但是要确定哪些适于
+			哈希是非常困难和耗时的。基于这个原因，实际上不推荐使用涉及到多列的哈希表达式。 
+			</p>
+			<p>当使用了“<span><span>PARTITION BY 
+			HASH”</span>时，</span><span>MySQL</span>将基于用户函数结果的模数来确定使用哪个编号的分区。换句话，对于一个表达式“<span><i><span>expr</span></i></span>”，将要保存记录的分区编号为<span>N
+			</span>，其中“<span><i><span>N</span></i><span> 
+			= MOD(<i>expr</i>, <i>num</i>)”</span>。例如，假定表<span>t1</span></span><span>
+			</span>定义如下，它有<span>4</span>个分区： </p>
+			<pre><span>CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY HASH( YEAR(col3) )</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITIONS 4</span>；</pre>
+			<p>如果插入一个<span>col3</span>列<span>值为<span>&#39;2005-09-15&#39;</span>的记录到表<span>t1</span>中，那么保存该条记录的分区确定如下：</span>
+			</p>
+			<pre><span>MOD(YEAR(&#39;2005-09-01&#39;),4)</span></pre>
+			<pre><span>=&nbsp; MOD(2005,4)</span></pre>
+			<pre><span>=&nbsp; 1</span></pre>
+			<p><span>MySQL 5.1 </span>还支持一个被称为“<em><span>linear 
+			hashing</span><span>（线性哈希功能）</span></em>”的变量，它使用一个更加复杂的算法来确定新行插入到已经分区了的表中的位置。关于这种算法的描述，请参见<a href="partitioning.html#partitioning-linear-hash" title="18.2.3.1. LINEAR HASH Partitioning">18.2.3.1节，“LINEAR 
+		HASH分区”</a><span> </span>。 </p>
+			<p>每当插入或更新一条记录，用户函数都要计算一次。当删除记录时，用户函数也可能要进行计算，这取决于所处的环境。 </p>
+			<p><strong><span>注释</span></strong><span>：</span>如果将要分区的表有一个唯一的键，那么用来作为<span>HASH</span>用户函数的自变数或者主键的<span><i><span>column_list</span></i></span>的自变数的任意列都必须是那个键的一部分。</p>
+			<div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="partitioning-linear-hash"></a>18.2.3.1. LINEAR 
+				HASH分区</h4></div></div></div><a class="indexterm" name="id2978199"></a><a class="indexterm" name="id2978206"></a>
+				<p><span>MySQL</span>还支持线性哈希功能，它与常规哈希的区别在于，线性哈希功能使用的一个线性的<span>2</span>的幂（<span>powers-of-two</span>）运算法则，而常规
+				哈希使用的是求哈希函数值的模数。</p>
+				<p>线性哈希分区和常规哈希分区在语法上的唯一区别在于，在“<span>PARTITION 
+				BY”</span><span> </span>子句中添加“<span>LINEAR</span>”关键字，如下面所示：</p>
+				<pre><span>CREATE TABLE employees (</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; id INT NOT NULL,</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(30),</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; hired DATE NOT NULL DEFAULT &#39;1970-01-01&#39;,</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; separated DATE NOT NULL DEFAULT &#39;9999-12-31&#39;,</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; job_code INT,</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; store_id INT</span></pre>
+				<pre><span>)</span></pre>
+				<pre><span>PARTITION BY LINEAR HASH(YEAR(hired))</span></pre>
+				<pre><span>PARTITIONS 4</span>；</pre>
+				<p>假设一个表达式<span><i><span>expr</span></i></span><span>,
+				</span>当使用线性哈希功能时，记录将要保存到的分区是<span><i><span>num</span></i></span><span>
+				</span>个分区中的分区<span>N</span>，其中<span>N</span>是根据下面的算法得到： 
+				</p>
+				<p>
+				<span>1.<span>&nbsp;&nbsp;&nbsp;
+				</span></span>找到下一个大于<span><i><span>num</span></i></span><span>.</span>的、<span>2</span>的幂，我们把这个值称为<span><i><span>V</span></i></span><span>
+				</span>，它可以通过下面的公式得到： </p>
+				<pre><span>2.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span><i><span>V</span></i></span><span> = POWER(2, CEILING(LOG(2, <span><i>num</i></span>)))</span></pre>
+				<p>（例如，假定<span>num</span>是<span>13</span>。那么<span><span>LOG(2,13)</span>就是</span><span>3.7004397181411</span>。 
+				<span><span>
+				CEILING(3.7004397181411)</span>就是<span>4</span>，则<i><span>V</span></i></span><span> 
+				= <span>POWER(2,4)</span>, </span>即等于<span>16</span>）<span>。 
+				</span></p>
+				<p>
+				<span>3.<span>&nbsp;&nbsp;&nbsp;
+				</span></span>设置 <span><i>
+				<span>N</span></i></span><span> =
+				<span><i>F</i></span>(<span><i>column_list</i></span>) 
+				&amp; (<span><i>V</i></span> - 1). </span>
+				</p>
+				<p>
+				<span>4.<span>&nbsp;&nbsp;&nbsp;
+				</span></span>当 <span><i>
+				<span>N</span></i></span><span> &gt;=
+				<span><i>num</i></span>: </span></p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>设置 <span><i>
+				<span>V</span></i></span><span> = CEIL(<span><i>V</i></span> 
+				/ 2) </span></p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>设置 <span><i>
+				<span>N</span></i></span><span> =
+				<span><i>N</i></span> &amp; (<span><i>V</i></span> 
+				- 1) </span></p>
+				<p>例如，假设表<span>t1</span>，使用线性哈希分区且有<span>4</span>个分区，是通过下面的语句创建的：</p>
+				<pre><span>CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE)</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY LINEAR HASH( YEAR(col3) )</span></pre>
+				<pre><span>&nbsp;&nbsp;&nbsp; PARTITIONS 6;</span></pre>
+				<p>现在假设要插入两行记录到表<span>t1</span>中，其中一条记录<span><span>col3</span>列值为<span>&#39;2003-04-14&#39;</span>，另一条记录<span>col3</span>列值为<span>&#39;1998-10-19&#39;</span>。第一条记录将要保存到的分区确定如下：</span></p>
+				<pre><span><i><span>V</span></i></span><span> = POWER(2, CEILING(LOG(2,7))) = 8</span></pre>
+				<pre><span><i><span>N</span></i></span><span> = YEAR(&#39;2003-04-14&#39;) &amp; (8 - 1)</span></pre>
+				<pre><span>&nbsp;&nbsp; = 2003 &amp; 7</span></pre>
+				<pre><span>&nbsp;&nbsp; = 3</span></pre>
+				<pre><span>&nbsp;</span></pre>
+				<pre><span>(<em><span>3 &gt;= 6 </span></em></span><em><span>为假（<span>FALSE</span>）<span>: </span>记录将被保存到<span>#3</span>号分区中</span></em><span>)</span></pre>
+				<p>第二条记录将要保存到的分区序号计算如下： </p>
+				<pre><span><i><span>V</span></i></span><span> = 8</span></pre>
+				<pre><span><i><span>N</span></i></span><span> = YEAR(&#39;1998-10-19&#39;) &amp; (8-1)</span></pre>
+				<pre><span>&nbsp; = 1998 &amp; 7</span></pre>
+				<pre><span>&nbsp; = 6</span></pre>
+				<pre><span>&nbsp;</span></pre>
+				<pre><span>(<em><span>6 &gt;= 4 </span></em></span><em><span>为真（<span>TRUE</span>）<span>: </span>还需要附加的步骤</span></em><span>)</span></pre>
+				<pre><span>&nbsp;</span></pre>
+				<pre><span><i><span>N</span></i></span><span> = 6 &amp; CEILING(5 / 2)</span></pre>
+				<pre><span>&nbsp; = 6 &amp; 3</span></pre>
+				<pre><span>&nbsp; = 2</span></pre>
+				<pre><span>&nbsp;</span></pre>
+				<pre><span>(<em><span>2 &gt;= 4 </span></em></span><em><span>为假（<span>FALSE</span>）<span>: </span>记录将被保存到<span>#2</span>分区中</span></em><span>)</span></pre>
+				<p>按照线性哈希分区的优点在于增加、删除、合并和拆分分区将变得更加快捷，有利于处理含有极其大量（<span>1000</span>吉）数据的表。它的缺点在于，与使用常规<span>HASH</span>分区得到的数据分布相比，各个分区间数据的分布不大可能均衡。</div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-key"></a>18.2.4. KEY分区</h3></div></div></div><a class="indexterm" name="id2978498"></a><a class="indexterm" name="id2978505"></a>
+			<p>按照<span>KEY</span>进行分区类似于按照<span>HASH</span>分区，除了<span>HASH</span>分区使用的用户定义的表达式，而<span>KEY</span>分区的
+			哈希函数是由<span>MySQL
+			</span>服务器提供。<span>MySQL </span>簇（<span>Cluster</span>）使用函数<span><span>MD5()</span>来实现<span>KEY</span>分区；对于使用其他存储引擎的表，服务器使用其自己内部的
+			哈希函数，这些函数是基于与<span>PASSWORD()</span>一样的运算法则。</span>
+			</p>
+			<p>“<span><span>CREATE TABLE ... 
+			PARTITION BY KEY”</span>的语法规则类似于创建一个通过<span>HASH</span>分区的表的规则。它们唯一的区别在于使用的关键字是<span>KEY</span>而不是<span>HASH</span>，并且<span>KEY</span>分区只采用一个或多个列名的一个列表。</span>
+			</p>
+			<p>通过线性<span>KEY</span>分割一个表也是可能的。下面是一个简单的例子： </p>
+			<pre><span>CREATE TABLE tk (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; col1 INT NOT NULL,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; col2 CHAR(5),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; col3 DATE</span></pre>
+			<pre><span>) </span></pre>
+			<pre><span>PARTITION BY LINEAR KEY (col1)</span></pre>
+			<pre><span>PARTITIONS 3;</span></pre>
+			<p>在<span>KEY</span>分区中使用关键字<span><span>LINEAR</span>和在<span>HASH</span>分区中使用具有同样的作用，分区的编号是通过</span><span>2</span>的幂（<span>powers-of-two</span>）算法得到，而不是通过模数算法。关于该算法及其蕴涵式的描述请参考 <a href="partitioning.html#partitioning-linear-hash" title="18.2.3.1. LINEAR HASH Partitioning">
+			18.2.3.1节，“LINEAR 
+		HASH分区”</a><span> </span>。 </div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-subpartitions"></a>
+			18.2.5.&nbsp;子分区</h3></div></div></div><a class="indexterm" name="id2978611"></a><a class="indexterm" name="id2978618"></a>
+			<p>子分区是分区表中每个分区的再次分割。例如，考虑下面的<span>CREATE 
+			TABLE</span><span> </span>语句： </p>
+			<pre><span>CREATE TABLE ts (id INT, purchased DATE)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY RANGE(YEAR(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; SUBPARTITION BY HASH(TO_DAYS(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; SUBPARTITIONS 2</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1990),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (2000),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; )</span>；</pre>
+			<p>表<span>ts</span><span>
+			</span>有<span>3</span>个<span><span>RANGE</span>分区。这<span>3</span>个分区中的每一个分区</span>——<span>p0</span><span>,
+			<span>p1</span>, </span>和 
+			 
+			<span>p2</span><span>
+			</span>——又被进一步分成了<span>2</span>个子分区。实际上，整个表被分成了<span><span>3 
+			* 2 = 6</span>个分区。但是，由于<span>PARTITION BY RANGE</span>子句的作用，这些分区的头<span>2</span>个只保存<span>“purchased”</span>列中值小于<span>1990</span>的那些记录。</span>
+			</p>
+			<p>在<span>MySQL 5.1</span>中，对于已经通过<span>RANGE</span>或<span>LIST</span>分区了的表再进行子分区是可能的。子分区既可以使用<span>HASH</span>希分区，也可以使用<span>KEY</span>分区。这也被称为复合分区（<em><span>composite 
+			partitioning</span></em>）。 </p>
+			<p>为了对个别的子分区指定选项，使用<span>SUBPARTITION</span><span>
+			</span>子句来明确定义子分区也是可能的。例如，创建在前面例子中给出的同一个表的、一个更加详细的方式如下： </p>
+			<pre><span>CREATE TABLE ts (id INT, purchased DATE)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY RANGE(YEAR(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; SUBPARTITION BY HASH(TO_DAYS(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1990)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s0,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s1</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (2000)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s2,</span></pre>
+			<pre><span>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s3</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s4,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s5</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; );</span></pre>
+			<p>几点要注意的语法项： </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>每个分区必须有相同数量的子分区。 </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果在一个分区表上的任何分区上使用<span>SUBPARTITION</span><span>
+			</span>来明确定义任何子分区，那么就必须定义所有的子分区。换句话说，下面的语句将执行失败： </p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE TABLE ts (id INT, purchased DATE)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;PARTITION BY RANGE(YEAR(purchased))</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION BY HASH(TO_DAYS(purchased))</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PARTITION p0 VALUES LESS THAN (1990)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s0,</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s1</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;),</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PARTITION p1 VALUES LESS THAN (2000),</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PARTITION p2 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s2,</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s3</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;)</span>；</pre>
+			<p>即便这个语句包含了一个<span><span>SUBPARTITIONS 
+			2</span>子句，但是它仍然会执行失败。</span> </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>每个<span>SUBPARTITION</span><span>
+			</span>子句必须包括<span> (</span>至少<span>)</span>子分区的一个名字。否则，你可能要对该子分区设置任何你所需要的选项，或者允许该子分区对那些选项采用其默认的设置。 
+			</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在每个分区内，子分区的名字必须是唯一的，但是在整个表中，没有必要保持唯一。例如，下面的<span>CREATE 
+			TABLE</span><span> </span>语句是有效的： </p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE TABLE ts (id INT, purchased DATE)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;PARTITION BY RANGE(YEAR(purchased))</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION BY HASH(TO_DAYS(purchased))</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PARTITION p0 VALUES LESS THAN (1990)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s0,</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s1</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;),</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PARTITION p1 VALUES LESS THAN (2000)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s0,</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s1</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;),</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PARTITION p2 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s0,</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SUBPARTITION s1</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;)</span>；</pre>
+			<p>子分区可以用于特别大的表，在多个磁盘间分配数据和索引。假设有<span>6</span>个磁盘，分别为<span><span>/disk0</span>，</span>
+			<span><span>/disk1</span>，</span>
+			<span><span>/disk2</span>等。现在考虑下面的例子：</span>
+			</p>
+			<pre><span>CREATE TABLE ts (id INT, purchased DATE)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY RANGE(YEAR(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; SUBPARTITION BY HASH(TO_DAYS(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1990)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s0 </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk0/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk0/idx&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s1 </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk1/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk1/idx&#39;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (2000)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s0 </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk2/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk2/idx&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s1 </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk3/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk3/idx&#39;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s0 </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk4/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk4/idx&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s1 </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk5/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk5/idx&#39;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; )</span>；</pre>
+			<p>在这个例子中，每个<span>RANGE</span>分区的数据和索引都使用一个单独的磁盘。还可能有许多其他的变化；下面是另外一个可能的例子： 
+			</p>
+			<pre><span>CREATE TABLE ts (id INT, purchased DATE)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY RANGE(YEAR(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; SUBPARTITION BY HASH(TO_DAYS(purchased))</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1990)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s0a </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk0&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk1&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s0b </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk2&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk3&#39;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (2000)</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s1a </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk4/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk4/idx&#39;,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s1b </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DATA DIRECTORY = &#39;/disk5/data&#39; </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INDEX DIRECTORY = &#39;/disk5/idx&#39;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s2a,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBPARTITION s2b</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; )</span>；</pre>
+			<p>在这个例子中，存储的分配如下： </p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>购买日期在<span>1990</span>年前的记录占了大量的存储空间，所以把它分为了四个部分进行存储，组成<span><span>p0</span>分区的</span>两个子分区（<span>s0a</span><span>
+			</span>和<span>s0b</span>）的数据和索引都分别用一个单独的磁盘进行存储。换句话说：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>子分区<span>s0a</span><span>
+			</span>的数据保存在磁盘<span><span>/disk0</span>中。</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>子分区<span>s0a</span><span>
+			</span>的索引保存在磁盘<span><span>/disk1</span>中。</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>子分区<span>s0b</span><span>
+			</span>的数据保存在磁盘<span><span>/disk2</span>中。</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>子分区<span>s0b</span><span>
+			</span>的索引保存在磁盘<span><span>/disk3</span>中。</span>
+			</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>保存购买日期从<span>1990</span>年到<span>1999</span>年间的记录（分区<span>p1</span>）不需要保存购买日期在<span>1990</span>年之前的记录那么大的存储空间。这些记录分在<span>2</span>个磁盘（<span>/disk4</span>和<span>/disk5</span>）上保存，而不是<span>4</span>个磁盘： 
+			</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>属于分区<span>p1</span>的第一个子分区（<span>s1a</span>）的数据和索引保存在磁盘<span><span>/disk4</span>上</span> 
+			— 其中数据保存在路径<span><span>/disk4/data</span>下，索引保存在<span>/disk4/idx</span>下。</span></p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>属于分区<span>p1</span>的第二个子分区（<span>s1b</span>）的数据和索引保存在磁盘<span><span>/disk5</span>上</span> 
+			— 其中数据保存在路径<span><span>/disk5/data</span>下，索引保存在<span>/disk5/idx</span>下。</span>
+			</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>保存购买日期从<span>2000</span>年到现在的记录（分区<span>p2</span>）不需要前面两个<span>RANGE</span>分区那么大的空间。当前，在默认的位置能够足够保存所有这些记录。 
+			</p>
+			<p>将来，如果从<span>2000</span>年开始后十年购买的数量已经达到了默认的位置不能够提供足够的保存空间时，相应的记录（行）可以通过使用“<span>ALTER 
+			TABLE ... REORGANIZE PARTITION</span>”语句移动到其他的位置。关于如何实现的说明，请参见<a href="partitioning.html#partitioning-management" title="18.3. Partition Management">18.3节，“分区管理”</a><span> </span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-handling-nulls"></a>
+			18.2.6.&nbsp;MySQL分区处理NULL值的方式<code class="literal"></code></h3></div></div></div>
+			<p><span>MySQL </span>中的分区在禁止空值（<span>NULL</span>）上没有进行处理，无论它是一个列值还是一个用户定义表达式的值。一般而言，在这种情况下<span>MySQL
+			</span>把<span>NULL</span>视为<span>0</span>。如果你希望回避这种做法，你应该在设计表时不允许空值；最可能的方法是，通过声明列“<span>NOT 
+			NULL</span>”来实现这一点。 </p>
+			<p>在本节中，我们提供了一些例子，来说明当决定一个行应该保存到哪个分区时，<span>MySQL </span>
+			是如何处理<span>NULL</span>值的。</p>
+			<p>如果插入一行到按照<span>RANGE</span>或<span>LIST</span>分区的表，该行用来确定分区的列值为<span>NULL</span>，分区将把该<span>NULL</span>值视为<span>0</span>。例如，考虑下面的两个表，表的创建和插入记录如下： 
+			</p>
+			<pre><span>mysql&gt; <span><b>CREATE TABLE tnlist (</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>id INT,</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>name VARCHAR(5)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>PARTITION BY LIST(id) (</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p1 VALUES IN (0),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p2 VALUES IN (1)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>);</b></span></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.09 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>CREATE TABLE tnrange (</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>id INT,</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>name VARCHAR(5)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>PARTITION BY RANGE(id) (</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p1 VALUES LESS THAN (1),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p2 VALUES LESS THAN MAXVALUE</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>);</b></span></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.09 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO tnlist VALUES (NULL, &#39;bob&#39;);</b></span></span></pre>
+			<pre><span>Query OK, 1 row affected (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO tnrange VALUES (NULL, &#39;jim&#39;);</b></span></span></pre>
+			<pre><span>Query OK, 1 row affected (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tnlist;</b></span></span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>| id&nbsp;&nbsp; | name |</span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>| NULL | bob&nbsp; |</span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>1 row in set (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tnrange;</b></span></span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>| id&nbsp;&nbsp; | name |</span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>| NULL | jim&nbsp; |</span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>1 row in set (0.00 sec)</span></pre>
+			<p>在两个表中，<span>id</span>列没有声明为“<span>NOT 
+			NULL</span>”，这意味着它们允许<span>Null</span>值。可以通过删除这些分区，然后重新运行<span>SELECT</span><span>
+			</span>语句，来验证这些行被保存在每个表的<span>p1</span>分区中： </p>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE tnlist DROP PARTITION p1;</b></span></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.16 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE tnrange DROP PARTITION p1;</b></span></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.16 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tnlist;</b></span></span></pre>
+			<pre><span>Empty set (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tnrange;</b></span></span></pre>
+			<pre><span>Empty set (0.00 sec)</span></pre>
+			<p>在按<span>HASH</span>和<span>KEY</span>分区的情况下，任何产生<span>NULL</span>值的表达式都视同好像它的返回值为<span>0</span>。我们可以通过先创建一个按<span>HASH</span>分区的表，然后插入一个包含有适当值的记录，再检查对文件系统的作用，来验证这一点。假定有使用下面的语句在测试数据库中创建了一个表<span><span>tnhash</span>：</span>
+			</p>
+			<pre><span>CREATE TABLE tnhash (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; name VARCHAR(5)</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY HASH(id)</span></pre>
+			<pre><span>PARTITIONS 2</span>；</pre>
+			<p>假如<span>Linux </span>上的<span>MySQL </span>的一个<span>RPM</span>安装，这个语句在目录<span><span>/var/lib/mysql/test</span>下</span>创建了两个<span><span>.MYD</span>文件，这两个文件可以在<b><span>bash</span></b></span><span> 
+			shell</span>中查看，结果如下：</p>
+			<pre><span>/var/lib/mysql/test&gt; <span><b>ls *.MYD -l</b></span></span></pre>
+			<pre><span>-rw-rw----&nbsp; 1 mysql mysql 0 2005-11-04 18:41 tnhash_p0.MYD</span></pre>
+			<pre><span>-rw-rw----&nbsp; 1 mysql mysql 0 2005-11-04 18:41 tnhash_p1.MYD</span></pre>
+			<p>注意：每个文件的大小为<span>0</span>字节。现在在表<span>tnhash</span><span>
+			</span>中插入一行<span>id</span>列值为<span>NULL</span>的行，然后验证该行已经被插入： 
+			</p>
+			<pre><span>mysql&gt; <span><b>INSERT INTO tnhash VALUES (NULL, &#39;sam&#39;);</b></span></span></pre>
+			<pre><span>Query OK, 1 row affected (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tnhash;</b></span></span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>| id&nbsp;&nbsp; | name |</span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>| NULL | sam&nbsp; |</span></pre>
+			<pre><span>+------+------+</span></pre>
+			<pre><span>1 row in set (0.01 sec)</span></pre>
+			<p>回想一下，对于任意的整数<span>N,<span>NULL 
+			MOD <i>N</i></span> </span>的值总是等于<span><span>NULL</span>。这个结果在确定正确的分区方面被认为是<span>0</span>。回到系统<span>shell(</span>仍然假定</span><strong><span>bash</span><span>用于这个目的</span></strong><span>)</span><span>
+			</span>，通过再次列出数据文件，可以看出值被成功地插入到第一个分区（默认名称为<span>p0</span>）中： 
+			</p>
+			<pre><span>var/lib/mysql/test&gt; <span><b>ls *.MYD -l</b></span></span></pre>
+			<pre><span>-rw-rw----&nbsp; 1 mysql mysql 20 2005-11-04 18:44 tnhash_p0.MYD</span></pre>
+			<pre><span>-rw-rw----&nbsp; 1 mysql mysql&nbsp; 0 2005-11-04 18:41 tnhash_p1.MYD</span></pre>
+			<p>可以看出<span><span>INSERT</span>语句只修改了文件<span>tnhash_p0.MYD</span>，它在磁盘上的尺寸增加了，而没有影响其他的文件。</span>
+			</p>
+			<p>假定有下面的一个表： </p>
+			<pre><span>CREATE TABLE tndate (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; dt DATE</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY RANGE( YEAR(dt) ) (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1990),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (2000),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN MAXVALUE</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>像其他的<span>MySQL</span>函数一样，<span><span>YEAR(NULL)</span>返回<span>NULL</span>值。一个<span>dt</span>列值为<span>NULL</span>的行，其分区表达式的计算结果被视为<span>0</span>，该行被插入到分区<span>p0</span>中。</span> </div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="partitioning-management"></a>
+		18.3.&nbsp;分区管理</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="partitioning.html#partitioning-management-range-list">
+			18.3.1. RANGE和LIST分区的管理</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-management-hash-key">
+			18.3.2. HASH和KEY分区的管理<code class="literal"></code></a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-maintenance">
+			18.3.3. 分区维护</a></span></dt><dt><span class="section"><a href="partitioning.html#partitioning-info">
+			18.3.4. 获取关于分区的信息</a></span></dt></dl></div><a class="indexterm" name="id2979543"></a><a class="indexterm" name="id2979550"></a><a class="indexterm" name="id2979557"></a><a class="indexterm" name="id2979564"></a><a class="indexterm" name="id2979571"></a>
+		<p><span>MySQL 5.1 </span>
+		提供了许多修改分区表的方式。添加、删除、重新定义、合并或拆分已经存在的分区是可能的。所有这些操作都可以通过使用<span>ALTER 
+		TABLE</span><span> </span>命令的分区扩展来实现<span>(</span>关于语法的定义，请参见<a href="sql-syntax.html#alter-table" title="13.1.2. ALTER TABLE Syntax">13.1.2节，“ALTER 
+		TABLE语法”</a><span> )</span>。也有获得分区表和分区信息的方式。在本节，我们讨论下面这些主题： 
+		</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>按<span><span>RANGE</span>或<span>LIST</span>分区的表的分区管理的有关信息，请参见</span><a href="partitioning.html#partitioning-management-range-list" title="18.3.1. Management of RANGE and LIST Partitions">18.3.1节，“RANGE和LIST分区的管理”</a>。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>关于<span><span>HASH</span>和<span>KEY</span>分区管理的讨论，请参见</span><a href="partitioning.html#partitioning-management-hash-key" title="18.3.2. Management of HASH and KEY Partitions">18.3.2节，“HASH和KEY分区的管理<code class="literal"></code>”</a>。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MySQL 5.1</span>中提供的、获得关于分区表和分区信息的机制的讨论，请参见<a href="partitioning.html#partitioning-info" title="18.3.4. Obtaining Information About Partitions">18.3.4节，“获取关于分区的信息”</a><span> </span>。 </p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>关于执行分区维护操作的讨论，请参见<a href="partitioning.html#partitioning-maintenance" title="18.3.3. Maintenance of Partitions">18.3.3节，“分区维护”</a>。 </p>
+		<p><span>注释：在</span><span>MySQL 5.1</span>中，一个分区表的所有分区都必须有子分区同样的名字，并且一旦表已经创建，再改变子分区是不可能的。 
+		</p>
+		<p><strong><span>要点：</span></strong>当前，从<span>5.1</span>系列起建立的<span>MySQL
+		</span>服务器就把“<span><span>ALTER TABLE 
+		... PARTITION BY ...”</span>作为有效的语法，但是这个语句目前还不起作用。我们期望</span><span>MySQL 
+		5.1</span>达到生产状态时，能够按照下面的描述实现该语句的功能。 </p>
+		<p>要改变一个表的分区模式，只需要使用带有一个“<span><i><span>partition_options</span></i></span>”子句的<span>ALTER 
+		TABLE</span><span> </span>的命令。这个子句和与创建一个分区表的<span>CREATE 
+		TABLE</span>命令一同使用的子句有相同的语法，并且总是以关键字<span>PARTITION 
+		BY</span><span> </span>开头。例如，假设有一个使用下面<span>CREATE 
+		TABLE</span>语句建立的按照<span>RANGE</span>分区的表：</p>
+		<pre><span>CREATE TABLE trb3 (id INT, name VARCHAR(50), purchased DATE)</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; PARTITION BY RANGE(YEAR(purchased))</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; (</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1990),</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (1995),</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;PARTITION p2 VALUES LESS THAN (2000),</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARTITION p3 VALUES LESS THAN (2005)</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; )</span>；</pre>
+		<p>现在，要把这个表按照使用<span>id</span>列值作为键的基础，通过<span>KEY</span>分区把它重新分成两个分区，可以使用下面的语句： 
+		</p>
+		<pre><span>ALTER TABLE trb3 PARTITION BY KEY(id) PARTITIONS 2</span>；</pre>
+		<p>这和先删除这个表、然后使用“<span><span>CREATE 
+		TABLE trb3 PARTITION BY KEY(id) PARTITIONS 2</span>；</span>”重新创建这个表具有同样的效果。 
+		</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-management-range-list"></a>
+			18.3.1.&nbsp;RANGE和LIST分区的管理</h3></div></div></div><a class="indexterm" name="id2979775"></a><a class="indexterm" name="id2979782"></a><a class="indexterm" name="id2979789"></a><a class="indexterm" name="id2979796"></a>
+			<p>关于如何添加和删除分区的处理，<span>RANGE</span>和<span>LIST</span>分区非常相似。基于这个原因，我们在本节讨论这两种分区的管理。关于<span>HASH</span>和<span>KEY</span>分区管理的信息，请参见<a href="partitioning.html#partitioning-management-hash-key" title="18.3.2. Management of HASH and KEY Partitions">18.3.2节，“HASH和KEY分区的管理<code class="literal"></code>”</a>。删除一个<span><span>RANGE</span>或<span>LIST</span>分区比增加一个分区要更加简单易懂，所以我们先讨论前者。</span></p>
+			<p>从一个按照<span>RANGE</span>或<span>LIST</span>分区的表中删除一个分区，可以使用带一个<span>DROP 
+			PARTITION</span>子句的<span>ALTER 
+			TABLE</span>命令来实现。这里有一个非常基本的例子，假设已经使用下面的<span><span>CREATE 
+			TABLE</span>和<span>INSERT</span>语句创建了一个按照<span>RANGE</span>分区的表，并且已经插入了<span>10</span>条记录：</span></p>
+			<pre><span>mysql&gt; <span><b>CREATE TABLE tr (id INT, name VARCHAR(50), purchased DATE)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION BY RANGE(YEAR(purchased))</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p0 VALUES LESS THAN (1990),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p1 VALUES LESS THAN (1995),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p2 VALUES LESS THAN (2000),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>PARTITION p3 VALUES LESS THAN (2005)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>);</b></span></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.01 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO tr VALUES</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(1, &#39;desk organiser&#39;, &#39;2003-10-15&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(2, &#39;CD player&#39;, &#39;1993-11-05&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(3, &#39;TV set&#39;, &#39;1996-03-10&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(4, &#39;bookcase&#39;, &#39;1982-01-10&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(5, &#39;exercise bike&#39;, &#39;2004-05-09&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(6, &#39;sofa&#39;, &#39;1987-06-05&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(7, &#39;popcorn maker&#39;, &#39;2001-11-22&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(8, &#39;aquarium&#39;, &#39;1992-08-04&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(9, &#39;study desk&#39;, &#39;1984-09-16&#39;),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>(10, &#39;lava lamp&#39;, &#39;1998-12-25&#39;);</b></span></span></pre>
+			<pre><span>Query OK, 10 rows affected (0.01 sec)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></pre>
+			<p>可以通过使用下面的命令查看那些记录已经插入到了分区<span>p2</span>中： </p>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tr</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>WHERE purchased BETWEEN &#39;1995-01-01&#39; AND &#39;1999-12-31&#39;;</b></span></span></pre>
+			<pre><span>+------+-----------+------------+</span></pre>
+			<pre><span>| id&nbsp;&nbsp; | name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | purchased&nbsp; |</span></pre>
+			<pre><span>+------+-----------+------------+</span></pre>
+			<pre><span>|&nbsp;&nbsp;&nbsp; 3 | TV set&nbsp;&nbsp;&nbsp; | 1996-03-10 |</span></pre>
+			<pre><span>|&nbsp;&nbsp; 10 | lava lamp | 1998-12-25 |</span></pre>
+			<pre><span>+------+-----------+------------+</span></pre>
+			<pre><span>2 rows in set (0.00 sec)</span></pre>
+			<p>要删除名字为<span>p2</span>的分区，执行下面的命令： </p>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE tr DROP PARTITION p2;</b></span></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.03 sec)</span></pre>
+			<p>记住下面一点非常重要：<em><span>当删除了一个分区，也同时删除了该分区中所有的数据。</span></em>可以通过重新运行前面的<span>SELECT</span>查询来验证这一点： 
+			</p>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tr WHERE purchased</b></span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>BETWEEN &#39;1995-01-01&#39; AND &#39;1999-12-31&#39;;</b></span></span></pre>
+			<pre><span>Empty set (0.00 sec)</span></pre>
+			<p>如果希望从所有分区删除所有的数据，但是又保留表的定义和表的分区模式，使用<span><span>TRUNCATE 
+			TABLE</span>命令。</span><span>（</span>请参见<a href="sql-syntax.html#truncate" title="13.2.9. TRUNCATE Syntax">13.2.9节，“TRUNCATE语法”</a>）<span>。 
+			</span></p>
+			<p>如果希望改变表的分区而又不丢失数据，使用“<span><span>ALTER 
+			TABLE ... REORGANIZE PARTITION”</span>语句</span>。参见下面的内容，或者在<a href="sql-syntax.html#alter-table" title="13.1.2. ALTER TABLE Syntax">13.1.2节，“ALTER 
+		TABLE语法”</a><span> </span>中参考关于<span><span>REORGANIZE 
+			PARTITION</span>的信息。</span> </p>
+			<p>如果现在执行一个<span><span>SHOW CREATE 
+			TABLE</span>命令，可以观察到表的分区结构是如何被改变的：</span></p>
+			<pre><span>mysql&gt; <span><b>SHOW CREATE TABLE tr\G</b></span></span></pre>
+			<pre><span>*************************** 1. row ***************************</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Table: tr</span></pre>
+			<pre><span>Create Table: CREATE TABLE `tr` (</span></pre>
+			<pre><span>&nbsp; `id` int(11) default NULL,</span></pre>
+			<pre><span>&nbsp; `name` varchar(50) default NULL,</span></pre>
+			<pre><span>&nbsp; `purchased` date default NULL</span></pre>
+			<pre><span>) ENGINE=MyISAM DEFAULT CHARSET=latin1 </span></pre>
+			<pre><span>PARTITION BY RANGE (YEAR(purchased)) (</span></pre>
+			<pre><span>&nbsp; PARTITION p0 VALUES LESS THAN (1990) ENGINE = MyISAM, </span></pre>
+			<pre><span>&nbsp;&nbsp;PARTITION p1 VALUES LESS THAN (1995) ENGINE = MyISAM, </span></pre>
+			<pre><span>&nbsp;&nbsp;PARTITION p3 VALUES LESS THAN (2005) ENGINE = MyISAM</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>1 row in set (0.01 sec)</span></pre>
+			<p>如果插入购买日期列的值在<span>&#39;1995-01-01&#39;</span>和 
+			<span><span>&#39;2004-12-31&#39;</span>之间（含）的新行到已经修改后的表中时，这些行将被保存在分区<span>p3</span>中。可以通过下面的方式来验证这一点：</span></p>
+			<pre><span>mysql&gt; <span><b>INSERT INTO tr VALUES (11, &#39;pencil holder&#39;, &#39;1995-07-12&#39;);</b></span></span></pre>
+			<pre><span>Query OK, 1 row affected (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tr WHERE purchased</b></span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>BETWEEN &#39;1995-01-01&#39; AND &#39;2004-12-31&#39;;</b></span></span></pre>
+			<pre><span>+------+----------------+------------+</span></pre>
+			<pre><span>| id&nbsp;&nbsp; | name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | purchased&nbsp; |</span></pre>
+			<pre><span>+------+----------------+------------+</span></pre>
+			<pre><span>|&nbsp;&nbsp; 11 | pencil holder&nbsp; | 1995-07-12 |</span></pre>
+			<pre><span>|&nbsp;&nbsp;&nbsp; 1 | desk organiser | 2003-10-15 |</span></pre>
+			<pre><span>|&nbsp;&nbsp;&nbsp; 5 | exercise bike&nbsp; | 2004-05-09 |</span></pre>
+			<pre><span>|&nbsp;&nbsp;&nbsp; 7 | popcorn maker&nbsp; | 2001-11-22 |</span></pre>
+			<pre><span>+------+----------------+------------+</span></pre>
+			<pre><span>4 rows in set (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE tr DROP PARTITION p3;</b></span></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.03 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM tr WHERE purchased</b></span> </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>BETWEEN &#39;1995-01-01&#39; AND &#39;2004-12-31&#39;;</b></span></span></pre>
+			<pre><span>Empty set (0.00 sec)</span></pre>
+			<p>注意：由“<span><span>ALTER TABLE 
+			... DROP PARTITION”</span>语句引起的、从表中删除的行数并没有被服务器报告出来，就好像通过同等的<span>DELETE</span>查询操作一样。</span>
+			</p>
+			<p>删除<span>LIST</span>分区使用和删除<span>RANGE</span>分区完全相同的“<span><span>ALTER 
+			TABLE ... DROP PARTITION”</span>语法。但是，在对其后使用这个表的影响方面，还是有重大的区别：在这个表中，再也不能插入这么一些行，这些行的列值包含在定义已经删除了的分区的值列表中</span><span> 
+			(</span>有关示例，请参见<a href="partitioning.html#partitioning-list" title="18.2.2. LIST Partitioning">18.2.2节，“LIST分区”</a><span> </span>）<span>。 
+			</span></p>
+			<p>要增加一个新的<span>RANGE</span>或<span>LIST</span>分区到一个前面已经分区了的表，使用“<span><span>ALTER 
+			TABLE ... ADD PARTITION”</span>语句。对于使用<span>RANGE</span>分区的表，可以用这个语句添加新的区间到已有分区的序列的前面或后面。例如，假设有一个包含你所在组织的全体成员数据的分区表，该表的定义如下：</span></p>
+			<pre><span>CREATE TABLE members (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT, </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;fname VARCHAR(25),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; lname VARCHAR(25), </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;dob DATE</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY RANGE(YEAR(dob)) (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1970),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES LESS THAN (1980),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p2 VALUES LESS THAN (1990)</span></pre>
+			<pre><span>);</span></pre>
+			<p>进一步假设成员的最小年纪是<span>16</span>岁。随着日历接近<span>2005</span>年年底，你会认识到不久将要接纳<span>1990</span>年（以及以后年份）出生的成员。可以按照下面的方式，修改成员表来容纳出生在<span>1990</span>－<span>1999</span>年之间的成员：</p>
+			<pre><span>ALTER TABLE ADD PARTITION (PARTITION p3 VALUES LESS THAN (2000));</span></pre>
+			<p><strong><span>要点：</span><span>对于通过<span>RANGE</span>分区的表，只可以使用</span></strong><span><span>ADD 
+			PARTITION</span>添加新的分区到分区列表的高端。设法通过这种方式在现有分区的前面或之间增加一个新的分区，将会导致下面的一个错误：</span></p>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE members ADD PARTITION (PARTITION p3 VALUES LESS THAN (1960));</b></span></span></pre>
+			<pre>错误<span>1463 (HY000): </span>对每个分区，<span>VALUES LESS THAN </span>值必须严格增长</pre>
+			<p>采用一个类似的方式，可以增加新的分区到已经通过<span>LIST</span>分区的表。例如，假定有如下定义的一个表：</p>
+			<pre><span>CREATE TABLE tt (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT, </span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;data INT</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY LIST(data) (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES IN (5, 10, 15),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES IN (6, 12, 18)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>可以通过下面的方法添加一个新的分区，用来保存拥有数据列值<span>7</span>，<span>14</span>和<span>21</span>的行：</p>
+			<pre><span>ALTER TABLE tt ADD PARTITION (PARTITION p2 VALUES IN (7, 14, 21))</span>；</pre>
+			<p>注意：不能添加这样一个新的<span>LIST</span>分区，该分区包含有已经包含在现有分区值列表中的任意值。如果试图这样做，将会导致错误：</p>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE tt ADD PARTITION (PARTITION np VALUES IN (4, 8, 12));</b></span></span></pre>
+			<pre>错误<span>1465 (HY000): </span>在<span>LIST</span>分区中，同一个常数的多次定义</pre>
+			<p>因为带有数据列值<span>12</span>的任何行都已经分配给了分区<span>p1</span>，所以不能在表<span>tt</span>上再创建一个其值列表包括<span>12</span>的新分区。为了实现这一点，可以先删除分区<span>p1</span>，添加分区<span>np</span>，然后使用修正后的定义添加一个新的分区<span>p1</span>。但是，正如我们前面讨论过的，这将导致保存在分区<span>p1</span>中的所有数据丢失——而这往往并不是你所真正想要做的。另外一种解决方法可能是，建立一个带有新分区的表的副本，然后使用“<span>CREATE 
+			TABLE ... SELECT ...</span>”把数据拷贝到该新表中，然后删除旧表，重新命名新表，但是，当需要处理大量的数据时，这可能是非常耗时的。在需要高可用性的场合，这也可能是不可行的。 
+			</p>
+			<p>幸运地是，<span>MySQL </span>
+			的分区实现提供了在不丢失数据的条件下重新定义分区的方式。让我们首先看两个涉及到<span>RANGE</span>分区的简单例子。回想一下现在定义如下的成员表： 
+			</p>
+			<pre><span>mysql&gt; <span><b>SHOW CREATE TABLE members\G</b></span></span></pre>
+			<pre><span>*************************** 1. row ***************************</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Table: members</span></pre>
+			<pre><span>Create Table: CREATE TABLE `members` (</span></pre>
+			<pre><span>&nbsp; `id` int(11) default NULL,</span></pre>
+			<pre><span>&nbsp; `fname` varchar(25) default NULL,</span></pre>
+			<pre><span>&nbsp; `lname` varchar(25) default NULL,</span></pre>
+			<pre><span>&nbsp; `dob` date default NULL</span></pre>
+			<pre><span>) ENGINE=MyISAM DEFAULT CHARSET=latin1 </span></pre>
+			<pre><span>PARTITION BY RANGE (YEAR(dob)) (</span></pre>
+			<pre><span>&nbsp; PARTITION p0 VALUES LESS THAN (1970) ENGINE = MyISAM, </span></pre>
+			<pre><span>&nbsp;&nbsp;PARTITION p1 VALUES LESS THAN (1980) ENGINE = MyISAM, </span></pre>
+			<pre><span>&nbsp;&nbsp;PARTITION p2 VALUES LESS THAN (1990) ENGINE = MyISAM.</span></pre>
+			<pre><span>&nbsp; PARTITION p3 VALUES LESS THAN (2000) ENGINE = MyISAM</span></pre>
+			<pre><span>)</span></pre>
+			<p>假定想要把表示出生在<span>1960</span>年前成员的所有行移入到一个分开的分区中。正如我们前面看到的，不能通过使用“<span>ALTER 
+			TABLE ... ADD PARTITION</span>”来实现这一点。但是，要实现这一点，可以使用<span><span>ALTER 
+			TABLE</span>上的</span>另外一个与分区有关的扩展，具体实现如下： </p>
+			<pre><span>ALTER TABLE members REORGANIZE PARTITION p0 INTO (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION s0 VALUES LESS THAN (1960),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION s1 VALUES LESS THAN (1970)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>实际上，这个命令把分区<span>p0</span>分成了两个新的分区<span>s0</span>和<span>s1</span>。同时，它还根据包含在两个“<span>PARTITION 
+			... VALUES ...</span>”子句中的规则，把保存在分区<span>p0</span>中的数据移入到两个新的分区中，所以分区<span>s0</span>中只包含<span><span>YEAR(dob)</span>小于<span>1960</span>的那些行，<span>s1</span>中包含那些<span>YEAR(dob)</span>大于或等于<span>1960</span>但是小于<span>1970</span>的行。</span>
+			</p>
+			<p>一个<span><span>REORGANIZE 
+			PARTITION</span>语句也可以用来合并相邻的分区。可以使用如下的语句恢复成员表到它以前的分区：</span> </p>
+			<pre><span>ALTER TABLE members REORGANIZE PARTITION s0,s1 INTO (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p0 VALUES LESS THAN (1970)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>使用“<span>REORGANIZE 
+			PARTITION</span>”拆分或合并分区，没有数据丢失。在执行上面的语句中，<span>MySQL
+			</span>把保存在分区<span>s0</span>和<span>s1</span>中的所有数据都移到分区<span>p0</span>中。</p>
+			<p><span><span>“REORGANIZE 
+			PARTITION”</span>的基本语法是：</span></p>
+			<pre><span>ALTER TABLE <span><i>tbl_name</i></span> REORGANIZE PARTITION <span><i>partition_list</i></span> INTO (<span><i>partition_definitions</i></span>)</span>；</pre>
+			<p>其中，<span><i><span>tbl_name</span></i></span><span>
+			</span>是分区表的名称，<span><i><span>partition_list</span></i></span><span>
+			</span>是通过逗号分开的、一个或多个将要被改变的现有分区的列表。<span><i><span>partition_definitions</span></i></span><span>
+			</span>是一个是通过逗号分开的、新分区定义的列表，它遵循与用在“<span><span>CREATE 
+			TABLE”</span>中的<i><span>partition_definitions</span></i></span><span>
+			</span>相同的规则<span> (</span>请参见<a href="sql-syntax.html#create-table" title="13.1.5. CREATE TABLE Syntax">13.1.5节，“CREATE 
+		TABLE语法”</a><span>)</span>。应当注意到，在把多少个分区合并到一个分区或把一个分区拆分成多少个分区方面，没有限制。例如，可以重新组织成员表的四个分区成两个分区，具体实现如下：</p>
+			<pre><span>ALTER TABLE members REORGANIZE PARTITION p0,p1,p2,p3 INTO (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION m0 VALUES LESS THAN (1980),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION m1 VALUES LESS THAN (2000)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>同样，对于按<span>LIST</span>分区的表，也可以使用<span><span>REORGANIZE 
+			PARTITION</span>。让我们回到那个问题，即增加一个新的分区到已经按照<span>LIST</span>分区的表<span>tt</span>中，但是因为该新分区有一个值已经存在于现有分区的值列表中，添加新的分区失败。我们可以通过先</span>添加只包含非冲突值的分区，然后重新组织该新分区和现有的那个分区，以便保存在现有的那个分区中的值现在移到了新的分区中，来处理这个问题：</p>
+			<pre><span>ALTER TABLE tt ADD PARTITION (PARTITION np VALUES IN (4, 8));</span></pre>
+			<pre><span>ALTER TABLE tt REORGANIZE PARTITION p1,np INTO (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION p1 VALUES IN (6, 18),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; PARTITION np VALUES in (4, 8, 12)</span></pre>
+			<pre><span>)</span>；</pre>
+			<p>当使用“<span>ALTER TABLE ... 
+			REORGANIZE PARTITION</span>”来对已经按照<span>RANGE</span>和<span>LIST</span>分区表进行重新分区时，下面是一些要记住的关键点：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>用来确定新分区模式的<span>PARTITION</span>子句使用与用在<span>CREATE 
+			TABLE</span>中确定分区模式的<span>PARTITION</span>子句相同的规则。</span></p>
+			<p>最重要的是，应该记住：新分区模式不能有任何重叠的区间（适用于按照<span>RANGE</span>分区的表）或值集合（适用于重新组织按照<span>LIST</span>分区的表）。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span><i><span>
+			partition_definitions</span></i></span><span> </span>
+			列表中分区的合集应该与在<span><i><span>partition_list</span></i></span><span>
+			</span>中命名分区的合集占有相同的区间或值集合。 </p>
+			<p>例如，在本节中用作例子的成员表中，分区<span>p1</span>和<span>p2</span>总共覆盖了<span>1980</span>到<span>1999</span>的这些年。因此，对这两个分区的重新组织都应该覆盖相同范围的年份。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于按照<span>RANGE</span>分区的表，只能重新组织相邻的分区；不能跳过<span>RANGE</span>分区。 
+			</p>
+			<p>例如，不能使用以“<span>ALTER 
+			TABLE members REORGANIZE PARTITION p0,p2 INTO ...</span>”开头的语句，来重新组织本节中用作例子的成员表。因为，<span><span>p0</span>覆盖了<span>1970</span>年以前的年份，而<span>p2</span>覆盖了从<span>1990</span>到<span>1999</span>（包括<span>1990</span>和<span>1999</span>）之间的年份，因而这两个分区不是相邻的分区。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>不能使用<span><span>REORGANIZE 
+			PARTITION</span>来改变表的分区类型；也就是说，例如，不能把<span>RANGE</span>分区变为<span>HASH</span>分区，反之亦然。也不能使用该命令来改变分区表达式或列。如果想在不删除和重建表的条件下实现这两个任务，可以使用<span>“ALTER 
+			TABLE ... PARTITION BY ...</span></span><span>.</span>”，例如： 
+			</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>ALTER TABLE members </span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;PARTITION BY HASH(YEAR(dob))</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;PARTITIONS 8</span>；</pre>
+			<p><strong>
+			<span>注释</span></strong><span>：</span>在<span>MySQL 
+			5.1</span>发布前的版本中，“<span><span>ALTER 
+			TABLE ... PARTITION BY ...”</span>还没有实现。作为替代，要么使用先删除表，然后使用想要的分区重建表，或者<span>——</span>如果需要保留已经存储在表中的数据<span>——</span>可以使用<span>“CREATE 
+			TABLE ... SELECT ...”</span>来创建新的表，然后从旧表中把数据拷贝到新表中，再删除旧表，如有必要，最后重新命名新表。</span> </div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-management-hash-key"></a>
+			18.3.2.&nbsp;HASH和KEY分区的管理<code class="literal"></code></h3></div></div></div><a class="indexterm" name="id2980842"></a><a class="indexterm" name="id2980849"></a><a class="indexterm" name="id2980856"></a><a class="indexterm" name="id2980864"></a>
+			<p>在改变分区设置方面，按照<span>HASH</span>分区或<span>KEY</span>分区的表彼此非常相似，但是它们又与按照<span>RANGE</span>或<span>LIST</span>分区的表在很多方面有差别。所以，本节只讨论按照<span>HASH</span>或<span>KEY</span>分区表的修改。关于添加和删除按照<span>RANGE</span>或<span>LIST</span>进行分区的表的分区的讨论，参见<a href="partitioning.html#partitioning-management-range-list" title="18.3.1. Management of RANGE and LIST Partitions">18.3.1节，“RANGE和LIST分区的管理”</a>。 </p>
+			<p>不能使用与从按照<span>RANGE</span>或<span>LIST</span>分区的表中删除分区相同的方式，来从<span>HASH</span>或<span>KEY</span>分区的表中删除分区。但是，可以使用“<span>ALTER 
+			TABLE ... COALESCE PARTITION</span>”命令来合并<span>HASH</span>或<span>KEY</span>分区。例如，假定有一个包含顾客信息数据的表，它被分成了<span>12</span>个分区。该顾客表的定义如下：</p>
+			<pre><span>CREATE TABLE clients (</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; id INT,</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; fname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp; &nbsp;&nbsp;lname VARCHAR(30),</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; signed DATE</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>PARTITION BY HASH( MONTH(signed) )</span></pre>
+			<pre><span>PARTITIONS 12</span>；</pre>
+			<p>要减少分区的数量从<span>12</span>到<span>6</span>，执行下面的<span><span>ALTER 
+			TABLE</span>命令：</span> </p>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE clients COALESCE PARTITION 6</b></span></span><span><b>；</b></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.02 sec)</span></pre>
+			<p><span>对于按照<span>HASH</span>，<span>KEY</span>，<span>LINEAR 
+			HASH</span>，或<span>LINEAR KEY</span>分区的表， <span>
+			COALESCE</span>能起到同样的作用。下面是一个类似于前面例子的另外一个例子，它们的区别只是在于表是按照<span>LINEAR 
+			KEY</span></span><span> </span>进行分区：</p>
+			<pre><span>mysql&gt; <span><b>CREATE TABLE clients_lk (</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>id INT,</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>fname VARCHAR(30),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>lname VARCHAR(30),</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>signed DATE</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>PARTITION BY LINEAR KEY(signed)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>PARTITIONS 12</b></span></span><span><b>；</b></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.03 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE clients_lk COALESCE PARTITION 6</b></span></span><span><b>；</b></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.06 sec)</span></pre>
+			<pre><span>Records: 0&nbsp; Duplicates: 0&nbsp; Warnings: 0</span></pre>
+			<p><span><span>COALESCE</span>不能用来增加分区的数量，如果你尝试这么做，结果会出现类似于下面的错误：</span>
+			</p>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE clients COALESCE PARTITION 18;</b></span></span></pre>
+			<pre>错误<span>1478 (HY000): </span>不能移动所有分区，使用<span>DROP TABLE</span>代替</pre>
+			<p>要增加顾客表的分区数量从<span>12</span>到<span>18</span>，使用“<span><span>ALTER 
+			TABLE ... ADD PARTITION”,</span>具体如下：</span> </p>
+			<pre><span>ALTER TABLE clients ADD PARTITION PARTITIONS 18</span>；</pre>
+			<p><strong><span>注释</span></strong><span>：</span>“<span><span>ALTER 
+			TABLE ... REORGANIZE PARTITION”</span>不能用于按照<span>HASH</span>或<span>HASH</span>分区的表。</span> </div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-maintenance"></a>
+			18.3.3.&nbsp;分区维护</h3></div></div></div><a class="indexterm" name="id2981097"></a><a class="indexterm" name="id2981104"></a><a class="indexterm" name="id2981111"></a><a class="indexterm" name="id2981118"></a>
+			<p><strong><span>注释</span></strong><span>：</span>实际上，本节讨论的命令还没有在<span>MySQL 
+			5.1</span>中实现， 在这里提出的目的，是为了在<span>5.1</span>版投产前的开发周期期间，引出来自用户测试该软件的反馈意见。<span>(</span>换句话说，就是“请不要反馈这样的缺陷，说这些命令不起作用”）<span>。</span>随着<span>MySQL5.1</span>版开发的继续，这些信息很有可能发生变化。随着分区功能的实现和提高，我们将更新本节的内容。 
+			</p>
+			<p><span>MySQL 5.1</span>中可以执行许多分区维护的任务。对于分区表，<span>MySQL</span>不支持命令<span><span>CHECK 
+			TABLE</span>，<span>OPTIMIZE TABLE</span>，<span>ANALYZE 
+			TABLE</span>，或<span>REPAIR TABLE</span>。作为替代，可以使用<span>ALTER 
+			TABLE</span></span><span> </span>
+			的许多扩展来在一个或多个分区上直接地执行这些操作，如下面列出的那样：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><strong><span>重建分区</span></strong><span>:
+			</span>这和先删除保存在分区中的所有记录，然后重新插入它们，具有同样的效果。它可用于整理分区碎片。 </p>
+			<p>示例： </p>
+			<pre><span>ALTER TABLE t1 REBUILD PARTITION (p0, p1)</span>；</pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><strong><span>优化分区：</span></strong>如果从分区中删除了大量的行，或者对一个带有可变长度的行（也就是说，有<span><span>VARCHAR</span>，<span>BLOB</span>，或<span>TEXT</span>类型的列</span>）作了许多修改，可以使用“<span><span>ALTER 
+			TABLE ... OPTIMIZE PARTITION”</span>来收回没有使用的空间，并整理分区数据文件的</span>碎片。 
+			</p>
+			<p>示例：</p>
+			<pre><span>ALTER TABLE t1 OPTIMIZE PARTITION (p0, p1)</span>；</pre>
+			<p>在一个给定的分区表上使用“<span><span>OPTIMIZE 
+			PARTITION”</span>等同于在那个分区上运行<span>CHECK PARTITION</span>，<span>ANALYZE 
+			PARTITION</span>，和<span>REPAIR PARTITION</span>。</span>
+			</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><strong><span>分析分区：</span></strong>读取并保存分区的键分布。</p>
+			<p>示例：</p>
+			<pre><span>ALTER TABLE t1 ANALYZE PARTITION (p3)</span>；</pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>修补分区：</span> 修补被破坏的分区。 
+			</p>
+			<p>示例：</p>
+			<pre><span>ALTER TABLE t1 REPAIR PARTITION (p0,p1);</span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><strong><span>检查分区：</span></strong> 
+			可以使用几乎与对非分区表使用<span>CHECK 
+			TABLE</span><span> </span>相同的方式检查分区。</p>
+			<p>示例： </p>
+			<pre><span>ALTER TABLE trb3 CHECK PARTITION (p1)</span>；</pre>
+			<p>这个命令可以告诉你表<span>t1</span>的分区<span>p1</span>中的数据或索引是否已经被破坏。如果发生了这种情况，使用“<span><span>ALTER 
+			TABLE ... REPAIR PARTITION”</span>来修补该分区。</span> </p>
+			<p>还可以使用<strong><span>mysqlcheck</span></strong>或<strong><span>myisamchk</span></strong><span>
+			</span>应用程序，在对表进行分区时所产生的、单独的<span><span>MYI</span>文件上</span>进行操作，来完成这些任务。请参见<a href="client-side-scripts.html#mysqlcheck" title="8.7. mysqlcheck — A Table Maintenance and Repair Program">8.7节，“mysqlcheck：表维护和维修程序”</a>。（在<span>pre-alpha</span>编码中，这个功能已经可以使用）。 </div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="partitioning-info"></a>
+			18.3.4.&nbsp;获取关于分区的信息</h3></div></div></div><a class="indexterm" name="id2981391"></a><a class="indexterm" name="id2981398"></a>
+			<p>本节讨论获取关于现有分区的信息。这个功能仍然处于计划阶段，所以现阶段在这里描述的，实际上是我们想要在<span>MySQL 
+			5.1</span>中实现的一个概观。 </p>
+			<p>如在本章中别处讨论的一样，在<span><span>SHOW 
+			CREATE TABLE</span>的输出中包含了用于创建分区表的<span>PARTITION BY</span>子句。例如：</span></p>
+			<pre><span>mysql&gt; <span><b>SHOW CREATE TABLE trb3\G</b></span></span></pre>
+			<pre><span>*************************** 1. row ***************************</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;Table: trb3</span></pre>
+			<pre><span>Create Table: CREATE TABLE `trb3` (</span></pre>
+			<pre><span>&nbsp; `id` int(11) default NULL,</span></pre>
+			<pre><span>&nbsp; `name` varchar(50) default NULL,</span></pre>
+			<pre><span>&nbsp; `purchased` date default NULL</span></pre>
+			<pre><span>) ENGINE=MyISAM DEFAULT CHARSET=latin1 </span></pre>
+			<pre><span>PARTITION BY RANGE (YEAR(purchased)) (</span></pre>
+			<pre><span>&nbsp; PARTITION p0 VALUES LESS THAN (1990) ENGINE = MyISAM, </span></pre>
+			<pre><span>&nbsp;&nbsp;PARTITION p1 VALUES LESS THAN (1995) ENGINE = MyISAM, </span></pre>
+			<pre><span>&nbsp;&nbsp;PARTITION p2 VALUES LESS THAN (2000) ENGINE = MyISAM, </span></pre>
+			<pre><span>&nbsp;&nbsp;PARTITION p3 VALUES LESS THAN (2005) ENGINE = MyISAM</span></pre>
+			<pre><span>)</span></pre>
+			<pre><span>1 row in set (0.00 sec)</span></pre>
+			<p><strong><span>注释：</span></strong>当前，对于按<span>HASH</span>或<span>KEY</span>分区的表，<span><span>PARTITIONS</span>子句并不显示。</span><span> 
+			(<a target="_top"  href="http://bugs.mysql.com/14327">Bug 
+			#14327</a>) </span></p>
+			<p><span><span>SHOW TABLE STATUS</span>用于分区表，它的输出与用于非分区表的输出相同，除了引擎（<span>Engine</span>）列总是包含<span>&#39;PARTITION&#39;</span>值。</span><span>(</span>关于这个命令的更多信息，参见<a href="sql-syntax.html#show-table-status" title="13.5.4.18. SHOW TABLE STATUS Syntax">13.5.4.18节，“SHOW 
+		TABLE STATUS语法”</a>）<span>。</span>要获取单个分区的状态信息，我们计划实现一个<span><span>SHOW 
+			PARTITION STATUS</span>命令</span><span>（</span>请参见下面<span>)</span>。 
+			</p>
+			<p>计划用于分区表的、两个附加的<span><span>SHOW</span>命令是：</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>SHOW 
+			PARTITIONS</span><span> </span></p>
+			<p>这个命令预期其功能类似于<span><span>SHOW 
+			TABLES</span>和<span>SHOW DATABASES</span>，除了该命令将列出的是分区而不是表或数据库。这个命令的输出可能包含单个称为<span>Partitions_in_<i>tbl_name</i></span></span><span>
+			</span>的列，其中<span><i><span>tbl_name</span></i></span><span>
+			</span>是分区表的名字。对于<span><span>SHOW 
+			TABLES</span>命令而言，如果一旦选择了一个数据库，随后该数据库将作为<span>SHOW TABLES</span>命令的默认数据库。但是由于<span>SHOW 
+			PARTITIONS</span>命令不可能用这样的方式来<span>“</span>选择<span>”</span>一个表，它很可能需要使用<span>FROM</span>子句，以便</span><span>MySQL</span>知道要显示的是哪个表的分区信息。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>SHOW 
+			PARTITION STATUS</span><span> </span></p>
+			<p>这个命令将提供关于一个或多个分区的详细状态信息。它的输出很可能包含有与<span>SHOW 
+			TABLE STATUS</span><span> </span>
+			的输出相同或类似的列，此外，还包括显示用于分区的数据和索引路径的附加列。这个命令可能支持<span><span>LIKE</span>和<span>FROM</span>子句，这样使得通过名字获得关于一个给定分区的信息，或者获得关于属于指定表或数据库的分区的信息，成为可能。</span></p>
+			<p>扩展<span>INFORMATION_SCHEMA</span><span>
+			</span>
+			数据库的计划也在进行中，以便提供关于分区表和分区的信息。这个计划当前还处一个在非常早的阶段；随着补充的信息变得可用，以及任何新的、与分区有关的<span><span>INFORMATION_SCHEMA</span>扩展得以实现，我们将更新手册相关部分的内容。</span></div></div></div><div><hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。
+    </p></div>
+</body></html>

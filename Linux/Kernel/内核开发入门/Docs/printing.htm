@@ -1,0 +1,482 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>
+			Bran的内核开发指南：屏幕显示
+		</title>
+		</head>
+
+	<body>
+		<h2><font face="Tahoma">屏幕显示</font></h2>
+		<p>
+			<font face="Tahoma">现在我们将试着在屏幕上显示点东西。为此，我们需要一种管理屏幕滚动的方法。同时，能在屏幕上显示不同的颜色也是一件美妙的事情。
+			幸运的是，VGA显卡使这很容易实现：为了在显示器上显示内容，显卡给定了一个内存块，我们只需向内存中写入字符和属性对。
+			VGA控制器会自动地把更新的内容画到屏幕上。滚动屏幕是由我们的内核软件来维护的。从技术上说，这是我们的第一个驱动程序，现在我们就开始编写。
+		 
+			</font>
+		</p>
+		<p>
+			<font face="Tahoma">如上面所提到的，字符缓存只是在我们地址空间中的一块内存。这块缓存在0xB8000的物理内存位置上。
+			缓存的类型为“short”，这意味着缓存中的每一项内容都是由16位组成的，而不是我们通常认为的8位。
+			缓存中的每一个16位元素，都可以被分为“高8位”和“低8位”。低8位代表需要显示的字符。高8位通常定义了这个字符的前景色和背景色。
+		 
+			</font>
+		</p>
+		
+		<table>
+			<tr>
+				<td>
+					<table cols="50,50,50,50,100,100">
+						<tr>
+							<td width="50" align="left">
+								<font face="Tahoma">15
+							</font>
+							</td>
+							<td width="50" align="right">
+								<font face="Tahoma">12
+							</font>
+							</td>
+							<td width="50" align="left">
+								<font face="Tahoma">11
+							</font>
+							</td>
+							<td width="50" align="right">
+								<font face="Tahoma">8
+							</font>
+							</td>
+							<td width="100" align="left">
+								<font face="Tahoma">7
+							</font>
+							</td>
+							<td width="100" align="right">
+								<font face="Tahoma">0
+							</font>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<table cols="100, 100, 200" border="1" bordercolor="#808080">
+						<tr>
+							<td width="100" align="center">
+								<font face="Tahoma">背景色
+							</font>
+							</td>
+							<td width="100" align="center">
+								<font face="Tahoma">前景色
+							</font>
+							</td>
+							<td width="200" align="center">
+								<font face="Tahoma">字符
+							</font>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		
+		<p>
+			<font face="Tahoma">16位中的高8位被称为“属性位”，低8位被称为“字符位”。正如你在上面的表格中看到的，每一个16位元素中，属性位又被分为2个4位的块：一个代表背景色，另一个代表前景色。
+			现在因为只用4位来表示颜色的原因，最多只可能有16种不同的颜色可供选择，（使用公式：(位数 ^ 2) - 4^2 = 16 ）。以下是16种颜色表。
+		 
+			</font>
+		</p>
+
+		<table cols="50, 200, 50, 200">
+			<tr>
+				<th align="left" width="50"><font face="Tahoma">值</font></th>
+				<th align="left" width="200"><font face="Tahoma">颜色</font></th>
+				<th align="left" width="50"><font face="Tahoma">值</font></th>
+				<th align="left" width="200"><font face="Tahoma">颜色</font></th>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">0
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="black">黑</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">8
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#444444">深灰</font>
+				</font>
+				</td>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">1
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#0000FF">蓝</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">9
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#3399FF">淡蓝</font>
+				</font>
+				</td>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">2
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#00FF00">绿</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">10
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#99FF66">淡绿</font>
+				</font>
+				</td>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">3
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#00FFFF">青绿</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">11
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#CCFFFF">淡青绿</font>
+				</font>
+				</td>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">4
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#FF0000">红</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">12
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#FF6600">淡红</font>
+				</font>
+				</td>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">5
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#CC0099">品红</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">13
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#FF66FF">淡品红</font>
+				</font>
+				</td>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">6
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#663300">棕</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">14
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#CC6600">淡棕</font>
+				</font>
+				</td>
+			</tr>
+			<tr>
+				<td width="50">
+					<font face="Tahoma">7
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="#CCCCCC">淡灰</font>
+				</font>
+				</td>
+				<td width="50">
+					<font face="Tahoma">15
+				</font>
+				</td>
+				<td width="200">
+					<font face="Tahoma">
+					<font color="black">白</font>
+				</font>
+				</td>
+			</tr>
+
+		</table>
+		
+		<p>
+			<font face="Tahoma">最后，为了能处理内存中特定的索引内容，我们需要使用有一个公式。
+			字符型的内存是一个简单的“线性”（或平坦）的内存区域，但是显示控制器使它看起来像一个80x25的16位矩阵。
+			在内存中，文字的每一行都是相等的；前后相互连接。
+			因此我们试着把屏幕变为平行的线。完成这个过程的最好方法是用公式：</font></p>
+		<table border="1" width="100%" id="table1" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" face="Tahoma" size="2">index = (y_value * width_of_screen) + x_value;</font></td>
+			</tr>
+		</table>
+		<p>
+			<font face="Tahoma">如果我们要控制(3,4)位置上的字符，使用这个公式，就得到 4 * 80 + 3 = 323。
+			也就是说，在屏幕(3,4)位置上操作，就等同于如下操作：</font></p>
+		<table border="1" width="100%" id="table2" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" face="Tahoma" size="2">unsigned short *where = (unsigned short *)0xB8000 + 323;<br>
+			*where = character | (attribute << 8);
+		</font></td>
+			</tr>
+		</table>
+
+		<p>
+			<font face="Tahoma">以下内容是'scrn.c'文件，这个文件中包含了我们处理屏幕显示时要用到的函数。
+			我们include了'system.h'文件，这样我们就能使用outportb，memcpy，memset，memsets和strlen了。
+			我们使用的滚动屏幕功能是十分有趣的：
+			我们从第1行开始操作字符缓存（而不是第0行），然后把它复制到第0行上去，实际上就是把整个屏幕向上移动了一行。最后，我们用一行带有属性的空格写满最后一行。
+			这个文件中的putch函数可能是最复杂的一个了，同样也是最大的一个。
+			因为它需要处理换行（"\n"），回车（"\r"）和退格（"\b"）。
+			如果你想要的话，你可以接着处理警告字符（"\a" - ASCII 7），
+			处理时应该会发出一声短beep。
+			如果你需要的话，我已经编写了settextcolor函数来设置字符的颜色。 </font>
+		</p>
+		<table border="1" width="100%" id="table3" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" size="2" face="Tahoma">#include &lt system.h &gt<br>
+				<br>
+				/* 这些内容定义了我们的文字指针，背景和前景颜色（属性），和xy坐标。 */<br>
+				unsigned short *textmemptr;<br>
+				int attrib = 0x0F;<br>
+				int csr_x = 0, csr_y = 0;<br>
+				<br>
+				/* 滚动屏幕 */<br>
+				void scroll(void)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; unsigned blank, temp;<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 把空格定义为空白字符...我们也要设置他的背景颜色 */<br>
+&nbsp;&nbsp;&nbsp; blank = 0x20 | (attrib << 8);<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /*&nbsp; 25行是结尾，也就是说，我们要把它滚动上去 */<br>
+&nbsp;&nbsp;&nbsp; if(csr_y >= 25)<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* 把当前的字符块向上移动一行 */<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; temp = csr_y - 25 + 1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; memcpy (textmemptr, textmemptr + temp * 80, (25 - temp) * 80 * 2);<br>
+				<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* 最后，我们把最后一行设置为我们定义的空白字符。 */<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; memsetw (textmemptr + (25 - temp) * 80, blank, 80);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_y = 25 - 1;<br>
+&nbsp;&nbsp;&nbsp; }<br>
+				}<br>
+				<br>
+				/* 更新硬件光标： 在输入的字符之后的那一行上显示一个闪烁。 */<br>
+				void move_csr(void)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; unsigned temp;<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 在线性的内存块中找到索引的公式。表示为：<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; Index = [(y * width) + x] */<br>
+&nbsp;&nbsp;&nbsp; temp = csr_y * 80 + csr_x;<br>
+				<br>
+					/* 向VGA控制器的CRT控制寄存器发送14和15标志。<br>
+					*&nbsp; 他们是索引字符的高位和低位，这个字符显示在硬件光标的闪烁处。<br>
+					*&nbsp; 想知道更多细节，你可以查看VGA规范的编程文档。一个相当好的文档在<br>
+					*&nbsp; http://www.brackeen.com/home/vga */<br>
+&nbsp;&nbsp;&nbsp; outportb(0x3D4, 14);<br>
+&nbsp;&nbsp;&nbsp; outportb(0x3D5, temp >> 8);<br>
+&nbsp;&nbsp;&nbsp; outportb(0x3D4, 15);<br>
+&nbsp;&nbsp;&nbsp; outportb(0x3D5, temp);<br>
+				}<br>
+				<br>
+				/* 清空屏幕 */<br>
+				void cls()<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; unsigned blank;<br>
+&nbsp;&nbsp;&nbsp; int i;<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 同样的，我们需要一个用来做空白的'short'颜色 */<br>
+&nbsp;&nbsp;&nbsp; blank = 0x20 | (attrib << 8);<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 用带有空白颜色的空白画满整个屏幕 */<br>
+&nbsp;&nbsp;&nbsp; for(i = 0; i < 25; i++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; memsetw (textmemptr + i * 80, blank, 80);<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 更新我们的虚拟光标，然后移动物理光标 */<br>
+&nbsp;&nbsp;&nbsp; csr_x = 0;<br>
+&nbsp;&nbsp;&nbsp; csr_y = 0;<br>
+&nbsp;&nbsp;&nbsp; move_csr();<br>
+				}<br>
+				<br>
+				/* 在屏幕上显示单个字符 */<br>
+				void putch(unsigned char c)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; unsigned short *where;<br>
+&nbsp;&nbsp;&nbsp; unsigned att = attrib << 8;<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 处理退格时，把光标向前一动一格 */<br>
+&nbsp;&nbsp;&nbsp; if(c == 0x08)<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(csr_x != 0) csr_x--;<br>
+&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp; /* 处理一个跳格时，增加光标的x值，但只移动到可以被8整除的位置上。 */<br>
+&nbsp;&nbsp;&nbsp; else if(c == 0x09)<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_x = (csr_x + 8) & ~(8 - 1);<br>
+&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp; /* 处理一个回车, 直接把光标放回到最前面 */<br>
+&nbsp;&nbsp;&nbsp; else if(c == '\r')<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_x = 0;<br>
+&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp; /* 我们用DOS和BIOS的方法来处理新换行：我们把CR看作和换行一同出现。<br>
+&nbsp;&nbsp;&nbsp; * 我们把x放到最前面，然后增加y值 */<br>
+&nbsp;&nbsp;&nbsp; else if(c == '\n')<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_x = 0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_y++;<br>
+&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp; /* 任何比空格大的字符都是可以被打印出来的，包括空格本身。<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; 用来从线性的内存快中找出索引的公式表示为：<br>
+&nbsp;&nbsp;&nbsp; *&nbsp; Index = [(y * width) + x] */<br>
+&nbsp;&nbsp;&nbsp; else if(c >= ' ')<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where = textmemptr + (csr_y * 80 + csr_x);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *where = c | att;	/* 字符 AND 属性: 颜色 */<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_x++;<br>
+&nbsp;&nbsp;&nbsp; }<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 如果光标到达了屏幕宽度的边缘，我们就插入另一行 */<br>
+&nbsp;&nbsp;&nbsp; if(csr_x >= 80)<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_x = 0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; csr_y++;<br>
+&nbsp;&nbsp;&nbsp; }<br>
+				<br>
+&nbsp;&nbsp;&nbsp; /* 如果需要的话，滚动屏幕，并移动光标 */<br>
+&nbsp;&nbsp;&nbsp; scroll();<br>
+&nbsp;&nbsp;&nbsp; move_csr();<br>
+				}<br>
+				<br>
+				/* 使用以上的方法，输出一个字符串 */<br>
+				void puts(unsigned char *text)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; int i;<br>
+				<br>
+&nbsp;&nbsp;&nbsp; for (i = 0; i < strlen(text); i++)<br>
+&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; putch(text[i]);<br>
+&nbsp;&nbsp;&nbsp; }<br>
+				}<br>
+				<br>
+				/* 设置我们要用的前景色和背景色 */<br>
+				void settextcolor(unsigned char forecolor, unsigned char backcolor)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; /* 上面的4位是背景色，下面的4位是前景色 */<br>
+&nbsp;&nbsp;&nbsp; attrib = (backcolor << 4) | (forecolor & 0x0F)<br>
+				}<br>
+				<br>
+				/* 设置我们的字符模式VGA指针，然后清空屏幕，以备后用 */<br>
+				void init_video(void)<br>
+				{<br>
+&nbsp;&nbsp;&nbsp; textmemptr = (unsigned short *)0xB8000;<br>
+&nbsp;&nbsp;&nbsp; cls();<br>
+				}</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">屏幕显示: 'scrn.c'</font></b></td>
+			</tr>
+		</table>
+		
+		<p>
+		    <font face="Tahoma">接下去，我们可以把这个文件编译进我们的内核。因此，你需要编辑
+		    'build.bat' ，可以在里面增加一条新的gcc编译命令。复制'main.c'那一行的内容，并在它的下面粘贴一下。在这一行里，把'main'改成'scrn'就行了。
+			同样，别忘记在LD命令时增加一个'scrn.o'文件。在main使用这些函数之前，需要在'system.h'文件里，增加putch, puts, cls, init_video, 和 settextcolor的函数声明。
+			因为这些是函数声明，别忘记加上'extern'关键字和分号。 </font>
+		</p>
+		<table border="1" width="100%" id="table4" style="border-collapse: collapse">
+			<tr>
+				<td><font size="2" color="#800000" face="Tahoma">extern void cls();<br>
+				extern void putch(unsigned char c);<br>
+				extern void puts(unsigned char *str);<br>
+				extern void settextcolor(unsigned char forecolor, unsigned char backcolor);<br>
+				extern void init_video();</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">把这些都加入到 'system.h'中，这样我们就能在'main.c'里面调用这些函数了。</font></b></td>
+			</tr>
+		</table>
+		
+		<p>
+			<font face="Tahoma">现在，我们就可以安心地在main函数里使用我们新的屏幕显示函数了。打开'main.c'增加一行init_video()，然后，向puts函数中传递一个字符串：puts("Hello World!"); 
+			最后，保存一下文件，双击 'build.bat'来编译你的内核，调试以下语法错误。
+			把生成的'kernel.bin'复制到GRUB磁盘上，如果一切都正常的话，你的内核将会在黑色的屏幕上显示一句白色的 'Hello World!' ！ 
+			</font>
+		</p>
+		<table cols="200, *, 200" width="100%">
+			<tr>
+				<td align="left" width="200">
+					<font face="Tahoma">
+					<a href="creatingmain.htm">&lt&lt C代码 和 main()</a>
+				</font>
+				</td>
+				<td align="center" width="*">
+					<font face="Tahoma">
+					<a href="mailto:friesenb@gmail.com">联系 Brandon F.</a>
+				</font>
+				</td>
+				<td align="right" width="200">
+					<font face="Tahoma"><a href="gdt.htm">全局描述表(GDT) &gt&gt</a>
+					</font>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

@@ -1,0 +1,400 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Chapter 14. The Linux Device Model</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-13-sect-6.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-14-sect-1.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><td valign="top"><a name="chp-14"></a>
+
+
+<H2 class="docChapterTitle">Chapter 14. The Linux Device Model</H2>
+
+
+<p class="docText">One of the stated goals for the 2.5 development cycle was the
+creation of a unified device model for the kernel. <a name="chp-14-ITERM-6593"></a> <a name="chp-14-ITERM-6594"></a> <a name="chp-14-ITERM-6595"></a> <a name="chp-14-ITERM-6596"></a>Previous kernels had no single
+data structure to which they could turn to obtain information about
+how the system is put together. Despite this lack of information,
+things worked well for some time. The demands of newer systems, with
+their more complicated topologies and need to support features such
+as power management, made it clear, however, that a general
+abstraction describing the structure of the system was needed.</p>
+
+<p class="docText">The 2.6 device model provides that abstraction. It is now used within
+the kernel to support a wide variety of tasks, including:</p>
+
+<a name="chp-14-ITERM-6597"></a><a name="chp-14-ITERM-6598"></a><a name="chp-14-ITERM-6599"></a><a name="chp-14-ITERM-6600"></a><a name="chp-14-ITERM-6601"></a><a name="chp-14-ITERM-6602"></a><a name="chp-14-ITERM-6603"></a><a name="chp-14-ITERM-6604"></a><a name="chp-14-ITERM-6605"></a><a name="chp-14-ITERM-6606"></a><a name="chp-14-ITERM-6607"></a><a name="chp-14-ITERM-6608"></a><dl class="docList"><dt><I><span class="docPubcolor">Power management and system shutdown </span></i></dt></p>
+<dd>
+<p class="docList">These require an<a name="chp-14-ITERM-6597"></a>
+<a name="chp-14-ITERM-6598"></a>
+<a name="chp-14-ITERM-6599"></a>
+<a name="chp-14-ITERM-6600"></a>
+understanding of the system's structure. For
+example, a USB host adaptor cannot be shut down before dealing with
+all of the devices connected to that adaptor. The device model
+enables a traversal of the system's hardware in the
+right order.</P>
+</dd>
+<dt><I><span class="docPubcolor">Communications with user space </span></i></dt></P>
+<dd>
+<p class="docList">The implementation of the<a name="chp-14-ITERM-6601"></a> <a name="chp-14-ITERM-6602"></a>
+sysfs virtual filesystem is tightly tied into the device model and
+exposes the structure represented by it. The provision of information
+about the system to user space and knobs for changing operating
+parameters is increasingly done through sysfs and, therefore, through
+the device model.</p>
+</dd>
+<dt><i><span class="docPubcolor">Hotpluggable devices </span></i></dt></p>
+<dd>
+<p class="docList">Computer
+hardware<a name="chp-14-ITERM-6603"></a>
+<a name="chp-14-ITERM-6604"></a>
+is increasingly dynamic; peripherals can come and go at the whim of
+the user. The hotplug mechanism used within the kernel to handle and
+(especially) communicate with user space about the plugging and
+unplugging of devices is managed through the device model.</p>
+</dd>
+<dt><i><span class="docPubcolor">Device classes </span></i></dt></p>
+<dd>
+<p class="docList">Many parts of the system
+have<a name="chp-14-ITERM-6605"></a>
+<a name="chp-14-ITERM-6606"></a>
+little interest in how devices are connected, but they need to know
+what kinds of devices are available. The device model includes a
+mechanism for assigning devices to <i>classes</I>,
+which describe those devices at a higher, functional level and allow
+them to be discovered from user space.</p>
+</dd>
+<dt><i><span class="docPubcolor">Object lifecycles </span></i></dt></p>
+<dd>
+<p class="docList">Many of the
+<a name="chp-14-ITERM-6607"></a>
+<a name="chp-14-ITERM-6608"></a>functions
+described above, including hotplug support and sysfs, complicate the
+creation and manipulation of objects created within the kernel. The
+implementation of the device model required the creation of a set of
+mechanisms for dealing with object lifecycles, their relationships to
+each other, and their representation in user space.</P>
+</dd>
+</dl>
+
+<p class="docText">The Linux device model is a complex data structure. For example,
+consider <a class="docLink" href="chp-14.shtml#chp-14">Chapter 14</a>, which
+shows (in simplified form) a tiny piece of the device model structure
+associated with a USB mouse. Down the center of the diagram, we see
+the part of the core "devices" tree
+that shows how the mouse is connected to the system. The
+"bus" tree tracks what is connected
+to each bus, while the subtree under
+"classes" concerns itself with the
+functions provided by the devices, regardless of how they are
+connected. The device model tree on even a simple system contains
+hundreds of nodes like those shown in the diagram; it is a difficult
+data structure to visualize as a whole.</p>
+
+<a name="chp-14-FIG-1"></a><P><center>
+<H5 class="docFigureTitle">Figure 14-1. A small piece of the device model</H5>
+<img border="0" alt=""  width="300" height="217" SRC="images/0596005903/figs/ldr3_1401.gif"></center></p><br>
+
+<p class="docText">For the most part, the Linux device model code takes care of all
+these considerations without imposing itself upon driver authors. It
+sits mostly in the background; direct interaction with the device
+model is generally handled by bus-level logic and various other
+kernel subsystems. As a result, many driver authors can ignore the
+device model entirely, and trust it to take care of itself.</p>
+
+<p class="docText">There are times, however, when an understanding of the device model
+is a good thing to have. There are times when the device model
+"leaks out" from behind the other
+layers; for example, the generic DMA code (which we encounter in
+<a class="docLink" href="chp-15.shtml#chp-15">Chapter 15</a>) works with
+<tt>struct device</tt>. You may want to use some of the
+capabilities provided by the device model, such as the reference
+counting and related features provided by kobjects. Communication
+with user space via sysfs is also a device model function; this
+chapter explains how that communication works.</p>
+
+<p class="docText">We start, however, with a bottom-up presentation of the device model.
+The complexity of the device model makes it hard to understand by
+starting with a high-level view. Our hope is that, by showing how the
+low-level device components work, we can prepare you for the
+challenge of grasping how those components are used to build the
+larger structure.</P>
+
+<p class="docText">For many readers, this chapter can be treated as advanced material
+that need not be read the first time through. Those who are
+interested in how the Linux device model works are encouraged to
+press ahead, however, <a name="chp-14-ITERM-6609"></a> <a name="chp-14-ITERM-6610"></a> <a name="chp-14-ITERM-6611"></a> <a name="chp-14-ITERM-6612"></a>as we get into the low-level details.</P>
+
+
+
+<UL></ul></TD></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-13-sect-6.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-14-sect-1.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,451 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 4. Using MySQL Programs</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="tutorial.html" title="Chapter 3. Tutorial"><link rel="next" href="database-administration.html" title="Chapter 5. Database Administration">
+<style>
+<!--
+span.quote
+	{}
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="using-mysql-programs"></a>
+	第4章：MySQL程序概述</h2></div></div></div><div class="toc"><p><b>目录</b></p><dl><dt><span class="section"><a href="using-mysql-programs.html#program-overview">
+		4.1. MySQL程序概述</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#invoking-programs">
+		4.2. 调用MySQL程序</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#program-options">
+		4.3. 指定程序选项</a></span></dt><dd><dl><dt><span class="section"><a href="using-mysql-programs.html#command-line-options">
+			4.3.1. 在命令行上使用选项</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#option-files">
+			4.3.2. 使用选项文件</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#environment-variable-options">
+			4.3.3. 用环境变量指定选项</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#program-variables">
+			4.3.4. 使用选项设置程序变量</a></span></dt></dl></dd></dl></div>
+	<p>本章简要概述了<span>MySQL AB</span>提供的命令行程序，并讨论了运行这些程序时如何指定选项。大多数程序具有其操作专用的选项，但指定选项的语法都近似。后面的几章更加详细地描述了各个程序，包括它们识别的选项。</p>
+	<p><span>MySQL AB</span>还提供了<span>3</span>个<span>GUI</span>客户程序供<span>MySQL</span>服务器使用：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>
+	<a target="_top"  href="http://dev.mysql.com/doc/administrator/en/">
+	MySQL<span>管理器</span></a></span>：该工具用于管理<span>MySQL</span>服务器、数据库、表以及用户。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>
+	<a target="_top"  href="http://dev.mysql.com/doc/query-browser/en/">
+	MySQL<span>查询浏览器</span></a></span>：该图形工具由<span>MySQL 
+	AB</span>提供，用于创建、执行以及优化对<span>MySQL</span>数据库的查询。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>
+	<a target="_top"  href="http://dev.mysql.com/doc/migration-toolkit/en/">
+	MySQL<span>移植工具包</span></a></span>：该工具可以帮助你将计划和数据从其它关系数据库管理系统移植到<span>MySQL</span>。</p>
+	<div class="section">
+		<div class="titlepage">
+			<div>
+				<div>
+					<h2 class="title">
+					<a name="program-overview"></a>
+		4.1.&nbsp;MySQL程序概述</h2></div></div></div>
+		<p><span>MySQL AB</span>提供了几种类型的程序：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MYSQL</span>服务器和服务器启动脚本：</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>mysqld</span></strong>是<span>MySQL</span>服务器</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>
+		mysqld_safe</span></strong>、<strong><span>mysql.server</span></strong>和<strong><span>mysqld_multi</span></strong>是服务器启动脚本</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>
+		mysql_install_db</span></strong>初始化数据目录和初始数据库</p>
+		<p>在<a href="database-administration.html">第5章：</a><a href="database-administration.html" title="Chapter 5. Database Administration"><i>数据库管理</i></a>中详细讨论了这些程序。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>访问服务器的客户程序：</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>mysql</span></strong>是一个命令行客户程序，用于交互式或以批处理模式执行<span>SQL</span>语句。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>mysqladmin</span></strong>是用于管理功能的客户程序。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>mysqlcheck</span></strong>执行表维护操作。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>mysqldump</span></strong>和<strong><span>mysqlhotcopy</span></strong>负责数据库备份。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>
+		mysqlimport</span></strong>导入数据文件。<span>&nbsp; </span></p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>mysqlshow</span></strong>显示信息数据库和表的相关信息。</p>
+		<p>在<a href="client-side-scripts.html" title="Chapter 8. Client and Utility Programs">第8章：<i>客户端和实用工具程序</i></a>中详细讨论了这些程序。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>独立于服务器操作的工具程序：</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>myisamchk</span></strong>执行表维护操作。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>myisampack</span></strong>产生压缩、只读的表。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>
+		mysqlbinlog</span></strong>是处理二进制日志文件的实用工具。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><strong><span>perror</span></strong>显示错误代码的含义。</p>
+		<p>在<a href="database-administration.html">第5章：</a><a href="database-administration.html" title="Chapter 5. Database Administration"><i>数据库管理</i></a>中详细讨论了<strong><span>myisamchk</span></strong>。在<a href="client-side-scripts.html" title="Chapter 8. Client and Utility Programs">第8章：<i>客户端和实用工具程序</i></a>中详细讨论了其它程序。</p>
+		<p>大多数<span>MySQL</span>分发包括上述的全部程序，只是不包含那些与平台相关的程序。<span>(</span>例如，在<span>Windows</span>中不使用服务器启动脚本）<span>。</span>不同的只是<span>RPM</span>分发更加具体化。可能一个<span>RPM</span>是服务器分发，另一个<span>RPM</span>是客户程序分发等等。如果你丢失了一个或多个程序，要想查阅关于分发类型和它们所包含内容的信息，参见<a href="installing.html" title="Chapter 2. Installing MySQL">第2章：安装MySQL</a>。也可能需要安装一些其它内容。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="invoking-programs"></a>
+		4.2.&nbsp;调用MySQL程序</h2></div></div></div>
+		<p>要想从命令行调用<span>MySQL</span>程序<span>(</span>即从<span>shell</span>或命令提示<span>)</span>，应输入程序名，并随后输入指导操作发的选项或其它参量。下面的命令显示了一些程序调用的例子。“<span>shell&gt;</span>”表示命令解释符提示；并不是输入的部分。你所看见的具体提示取决于命令解释符。典型提示符：<strong><span>sh</span></strong>或<strong><span>bash</span></strong>为<span>$</span>，<strong><span>csh</span></strong>或<strong><span>tcsh</span></strong>为<span>%</span>，<span>Windows
+		<strong><span>command.com</span></strong></span>或<strong><span>cmd.exe</span></strong>为<span>C:\&gt;</span>。</p>
+		<pre><span>shell&gt; </span><span><b><span>mysql test</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqladmin extended-status variables</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqlshow --help</span></b></span></pre>
+		<pre><span>shell&gt; </span><span><b><span>mysqldump --user=root personnel</span></b></span></pre>
+		<p>以破折号开始的参数为选项参量。它们通常指定程序与服务器的连接类型或影响其操作模式。关于选项语法的描述参见<a href="using-mysql-programs.html#program-options" title="4.3. Specifying Program Options">4.3节，“指定程序选项”</a>。</p>
+		<p>非选项参数<span>(</span>不以破折号开始的参量<span>)</span>可以为程序提供更详细的信息。例如，<strong><span>mysql</span></strong>程序将第一个非选项参量解释为数据库名，因此命令 
+		 
+		<span>
+		mysql test</span>表示你想要使用<span>test</span>数据库。</p>
+		<p>后面的章节描述了具体的程序，表示程序可以理解的选项，并描述了其它非选项参量的含义。</p>
+		<p>部分选项对部分程序是通用的。最常用的是指定连接参数的<span>--host</span>、<span>--user</span>和<span>--password</span>选项。它们指示<span>MySQL</span>服务器运行的主机和<span>MySQL</span>账户的用户名和
+		密码。所有<span>MySQL</span>客户程序可以理解这些选项；它们允许你指定连接哪个服务器，以及在该服务器上使用的
+		账户。</p>
+		<p>你也许会发现需要使用<span>MySQL</span>程序安装的<span>bin</span>目录的路径名来调用<span>MySQL</span>程序。如果你试图不在<span>bin</span>目录下运行<span>MySQL</span>程序，可能会遇到“<span class="quote">程序未找到</span>”错误。为了更方便地使用<span>MySQL</span>，可以将<span>bin</span>目录的路径名添加到<span>PATH</span>环境变量中。然后运行程序时只需要输入程序名，而不需要输入整个路径名。</p>
+		<p>关于设置<span>PATH</span>的指令的命令解释符请查阅相关文档。设置环境变量的语法与解释符有关。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="program-options"></a>
+		4.3.&nbsp;指定程序选项</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="using-mysql-programs.html#command-line-options">
+			4.3.1. 在命令行上使用选项</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#option-files">
+			4.3.2. 使用选项文件</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#environment-variable-options">
+			4.3.3. 用环境变量指定选项</a></span></dt><dt><span class="section"><a href="using-mysql-programs.html#program-variables">
+			4.3.4. 使用选项设置程序变量</a></span></dt></dl></div>
+		<p>可以用几种方式提供<span>MySQL</span>程序的选项：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在命令行中在程序名后面提供。这对于具体程序调用时使用的选项很普遍。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在程序启动时读取的选项文件中设置。这对于每次程序运行时使用的选项很普遍。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在环境变量中设置。这对每次程序运行时所使用的选项很有用，尽管实际上最常用选项文件。<span>(</span><a href="database-administration.html#multiple-unix-servers" title="5.12.2. Running Multiple Servers on Unix">5.12.2节，“在Unix中运行多个服务器”</a>中讨论了环境变量会很有帮助的一种情况。描述了使用这些变量来指定服务器和客户程序的<span>TCP/IP</span>端口号和<span>Unix</span>套接字文件的各种技术）<span>。</span></p>
+		<p><span>MySQL</span>程序首先检查环境变量，然后检查选项文件，然后检查命令行来确定给出了哪些选项。如果多次指定一个选项，最后出现的选项占先。这说明环境变量具有最低的优先级，命令行选项具有最高优先级。</p>
+		<p>可以在选项文件中指定程序选项的默认值来让<span>MySQL</span>程序处理各选项。不需要在每次运行程序时输入选项，但可以根据需要通过命令行选项来覆盖默认值。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="command-line-options"></a>
+			4.3.1.&nbsp;在命令行上使用选项</h3></div></div></div>
+			<p>在命令行中指定的程序选项遵从下述规则：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在命令名后面紧跟选项。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>选项参量以一个和两个破折号开始，取决于它具有短名还是长名。许多选项有两种形式。例如，<span>-?</span>和<span>--help</span>是指导<span>MySQL</span>程序显示帮助消息的选项的短名和长名。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>选项名对大小写敏感。<span>-v</span>和<span>-V</span>均有效，但具有不同的含义。<span>(</span>它们是<span>--verbose</span>和<span>--version</span>选项的短名）<span>。
+			</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>部分选项在选项名后面紧随选项值。例如，<span>-h 
+			localhost</span>或<span>--host=localhost</span>表示客户程序的<span>MySQL</span>服务器主机。选项值可以告诉程序<span>MySQL</span>服务器运行的主机名。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于带选项值的长选项，通过一个‘<span>=</span>’将选项名和值隔离开来。对于带选项值的短选项，选项值可以紧随选项字母后面，或者二者之间可以用一个空格隔开。<span>(</span><span>-hlocalhost</span>和<span>-h 
+			localhost</span>是等效的）<span>。</span>该规则的例外情况是指定<span>MySQL</span>密码的选项。该选项的形式可以为<span>--password=<i>pass_val</i></span>或<span>--password</span>。在后一种情况<span>(</span>未给出
+			密码值<span>)</span>，程序将提示输入密码。也可以给出密码选项，短形式为<span>-p<i>pass_val</i></span>或<span>-p</span>。然而，对于短形式，如果给出了
+			密码值，必须紧跟在选项后面，<em><span>中间不能插入空格</span></em>。这样要求的原因是如果选项后面有空格，程序没有办法来告知后面的参量是
+			密码值还是其它某种参量。因此，下面两个命令的含义完全不同：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>shell&gt; </span><span><b><span>mysql -ptest</span></b></span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>shell&gt; </span><span><b><span>mysql -p test</span></b></span></pre>
+			<p>第一个命令让<strong><span>mysql</span></strong>使用密码<span>test</span>，但没有指定默认数据库。第二个命令让<strong><span>mysql</span></strong>提示输入
+			密码并使用<span>test</span>作为默认数据库。</p>
+			<p>部分选项控制可以开关的行为。例如，<strong><span>mysql</span></strong>客户端支持<span>--column-names</span>选项，确定是否在查询结果开头显示一行栏目名。默认情况，该选项被启用。但是可能在某些情况下你想要禁用它，例如将<strong><span>mysql</span></strong>的输出发送到另一个只希望看到数据而不希望看到开始的标题行的程序中。</p>
+			<p>要想禁用列名，可以使用下面的形式来指定选项：</p>
+			<pre><span>--disable-column-names</span></pre>
+			<pre><span>--skip-column-names</span></pre>
+			<pre><span>--column-names=0</span></pre>
+			<p>
+			<span>--disable</span>和<span>--skip</span>前缀与<span>=0</span>后缀的效果相同：它们均关闭选项。</p>
+			<p>可以用下述方法“<span class="quote">启用</span>”选项：</p>
+			<pre><span>--column-names</span></pre>
+			<pre><span>--enable-column-names</span></pre>
+			<pre><span>--column-names=1</span></pre>
+			<p>如果选项有前缀<span>--loose</span>，如果程序未识别出选项不会提示错误退出，但是会发出一条警告：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql --loose-no-such-option</span></b></span></pre>
+			<pre><span>mysql: WARNING: unknown option &#39;--no-such-option&#39;</span></pre>
+			<p>当你从安装了多个<span>MySQL</span>的同一台机器上运行程序时，<span>--loose</span>前缀会很有用。当你在一个选项文件中列出选项时，该前缀会特别有用。有可能不能被程序的所有版本识别的选项可以冠以<span>--loose</span>前缀<span>(</span>或在选项文件中用<span>loose</span><span>)</span>。不能识别选项的程序版本将会发出一条警告并忽视该选项。</p>
+			<p>对<strong><span>mysql</span></strong>偶尔有用的另一个选项是<span>-e</span>或<span>--execute</span>选项，可用来将<span>SQL</span>语句传递给服务器。该语句必须用引号引起来<span>(</span>单引号或双引号<span>)</span>。<span>(</span>然而，如果想要在查询中将值引起来，则对于查询应使用双引号，查询中引用的值应使用单引号）<span>。</span>当使用该选项时，语句被执行，然后<strong><span>mysql</span></strong>立即退出命令外壳。</p>
+			<p>例如，你可以用下面的命令获得用户账户列表：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql -u root -p -e &quot;SELECT User, Host FROM User&quot; mysql</span></b></span></pre>
+			<pre><span>Enter password: </span><span><b><span>******</span></b></span></pre>
+			<pre><span>+------+-----------+</span></pre>
+			<pre><span>| User | Host&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+------+-----------+</span></pre>
+			<pre><span>|&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;| gigan&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>| root | gigan&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | localhost |</span></pre>
+			<pre><span>| jon&nbsp; | localhost |</span></pre>
+			<pre><span>| root | localhost |</span></pre>
+			<pre><span>+------+-----------+</span></pre>
+			<pre><span>shell&gt;</span></pre>
+			<p>请注意<span>mysql</span>数据库名作为一个独立的参量传递。然而，相同的查询可能已经使用<strong><span>mysql 
+			-u root -p -e &quot;SELECT User</span><span>，<span>Host 
+			FROM mysql.User&quot;</span></span></strong>从外壳中执行。</p>
+			<p>可以按这种方式传递多个<span>SQL</span>语句，用分号隔开：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql -u root -p --execute=&quot;SELECT Name FROM Country WHERE Name LIKE &#39;AU%&#39;;SELECT COUNT(*) FROM City&quot; world</span></b></span></pre>
+			<pre><span>Enter password: </span><span><b><span>******</span></b></span></pre>
+			<pre><span>+-----------+</span></pre>
+			<pre><span>| Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+-----------+</span></pre>
+			<pre><span>| Australia |</span></pre>
+			<pre><span>| Austria&nbsp;&nbsp; |</span></pre>
+			<pre><span>+-----------+</span></pre>
+			<pre><span>+----------+</span></pre>
+			<pre><span>| COUNT(*) |</span></pre>
+			<pre><span>+----------+</span></pre>
+			<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp; 4079 |</span></pre>
+			<pre><span>+----------+</span></pre>
+			<p>请注意长形式<span>(</span><span>--execute</span><span>)</span>后面必须紧跟一个等号<span>(</span><span>=</span><span>)</span>。</p>
+			<p>
+			<span>-e</span>选项也可以以类似方式用来将命令传递给<span>MySQL</span>簇的<strong><span>ndb_mgm</span></strong>管理客户端。相关例子参见<a href="ndbcluster.html#multi-shutdown-restart" title="17.3.6. Safe Shutdown and Restart">17.3.6节，“安全关闭和重启”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="option-files"></a>
+			4.3.2.&nbsp;使用选项文件</h3></div></div></div><a class="indexterm" name="id2741041"></a><a class="indexterm" name="id2741048"></a><a class="indexterm" name="id2741055"></a><a class="indexterm" name="id2741065"></a>
+			<p><span>MySQL</span>程序可以从选项文件<span>(</span>有时也称为配置文件<span>)</span>读取启动选项。选项文件提供了一种很方便的方式来指定常用的选项，因此不需要每次运行程序时从命令行输入。</p>
+			<p>下面的程序支持选项文件：<strong><span>myisamchk</span></strong>、<strong><span>myisampack</span></strong>、<strong><span>mysql</span></strong>、<strong><span>mysql.server</span></strong>、<strong><span>mysqladmin</span></strong>、<strong><span>mysqlbinlog</span></strong>、<strong><span>mysqlcc</span></strong>、<strong><span>mysqlcheck</span></strong>、<strong><span>mysqld_safe</span></strong>、<strong><span>mysqldump</span></strong>、<strong><span>mysqld</span></strong>、<strong><span>mysqlhotcopy</span></strong>、<strong><span>mysqlimport</span></strong>和<strong><span>mysqlshow</span></strong>。</p>
+			<p><strong><span>注释：</span></strong><span>MySQL</span>簇程序使用的选项文件参见<a href="ndbcluster.html#mysql-cluster-configuration" title="17.4. MySQL Cluster Configuration">17.4节，“MySQL簇的配置”</a>。</p>
+			<p>在<span>Windows</span>中，<span>MySQL</span>程序从以下文件读取启动选项：</p>
+			<table border="1" cellpadding="0" id="table1">
+				<tr>
+					<td>
+					<p><strong><span>
+					文件名</span></strong></td>
+					<td width="349">
+					<p><strong><span>目的</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p><span><i>
+					<span>WINDIR</span></i><span>\my.ini</span></span></td>
+					<td width="349">
+					<p>全局选项</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>C:\my.cnf</span></td>
+					<td width="349">
+					<p>全局选项</td>
+				</tr>
+				<tr>
+					<td>
+					<p><span><i>
+					<span>INSTALLDIR</span></i><span>\my.ini</span></span></td>
+					<td width="349">
+					<p>全局选项</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>
+					defaults-extra-file</span></td>
+					<td width="349">
+					<p>用<span>--defaults-extra-file=<i>path</i></span>指定的文件，如果有</td>
+				</tr>
+			</table>
+			<p><span><i>
+			<span>WINDIR</span></i></span>表示<span>Windows</span>目录的位置。通常为<span>C:\WINDOWS</span>或<span>C:\WINNT</span>。你可以使用下面的命令通过环境变量<span>WINDIR</span>的值确定其确切位置：</p>
+			<pre><span>C:\&gt; </span><span><b><span>echo %WINDIR%</span></b></span></pre>
+			<p><span><i>
+			<span>INSTALLDIR</span></i></span>表示<span>MySQL</span>的安装目录。一般为<span>C:\<i>PROGRAMDIR</i>\MySQL\MySQL 
+			5.1 Server</span>，其中<span><i><span>PROGRAMDIR</span></i></span>表示程序目录<span>(</span>通常为<span>Windows</span>英文版的<span>Program 
+			Files</span><span>)</span>，<span>MySQL 
+			5.1</span>的安装是根据安装和配置向导完成的。参见<a href="installing.html#mysql-config-wizard-file-location" title="2.3.5.14. The Location of the my.ini File">2.3.5.14节，“my.ini文件的位置”</a>。</p>
+			<p>在<span>Unix</span>中，<span>MySQL</span>程序从下面的文件读取启动选项：</p>
+			<table border="1" cellpadding="0" id="table2">
+				<tr>
+					<td>
+					<p><strong><span>
+					文件名</span></strong></td>
+					<td>
+					<p><strong><span>目的</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>/etc/my.cnf</span></td>
+					<td>
+					<p>全局选项</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>$MYSQL_HOME/my.cnf</span></td>
+					<td>
+					<p>服务器相关选项</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>
+					defaults-extra-file</span></td>
+					<td>
+					<p>用<span>--defaults-extra-file=<i>path</i></span>指定的文件，如果有</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>~/.my.cnf</span></td>
+					<td>
+					<p>用户相关选项</td>
+				</tr>
+			</table>
+			<p>
+			<span>MYSQL_HOME</span>是一个环境变量，包含服务器相关的<span>my.cnf</span>文件驻留的目录路径。</p>
+			<p>如果未设置<span>MYSQL_HOME</span>，并且<span><i><span>DATADIR</span></i></span>中有一个<span>my.cnf</span>文件，<span><i><span>BASEDIR</span></i></span>中没有<span>my.cnf</span>文件，<span>mysqld_safe</span>将<span>MYSQL_HOME</span>设置为<span><i><span>DATADIR</span></i></span>。否则，如果未设置<span>MYSQL_HOME</span>并且在<span><i><span>DATADIR</span></i></span>中没有<span>my.cnf</span>，则<span>mysqld_safe</span>将<span>MYSQL_HOME</span>设置为<span><i><span>BASEDIR</span></i></span>。</p>
+			<p>典型情况二进制安装的目录为<span>/usr/local/mysql/data</span>或源代码安装的目录为<span>/usr/local/var</span>。请注意这是配置时指定的数据目录的位置，而不是 
+			<strong><span>mysqld</span></strong>启动时用<span>--datadir</span>指定的。运行时使用<span>--datadir</span>对寻找选项文件的服务器没有效果，因为服务器在处理命令行参量之前寻找这些选项。</p>
+			<p><span>MySQL</span>按照上述顺序寻找选项文件，并读存在的选项文件。如果你想要使用的某个选项文件不存在，则用明文文本编辑器创建。如果存在多个选项文件，文件中指定的后读取的选项要优先文件中指定的先读取的选项。</p>
+			<p><strong><span>注释：</span></strong>在<span>Unix</span>平台上，<span>MySQL</span>忽略人人可写的配置文件。这是故意的，是一个安全措施。</p>
+			<p>任何可以在运行<span>MySQL</span>程序时在命令行给出的长选项也可以在选项文件中给出。要想列出程序的适用选项，用<span>--help</span>选项运行程序。</p>
+			<p>在选项文件中指定选项的语法类似于命令行语法，例外的是要忽略掉两个破折号。例如，命令行中的<span>--quick</span>或<span>--host=localhost</span>在选项文件中应指定为<span>quick</span>或<span>host=localhost</span>。要想在选项文件中指定<span>--loose-<i>opt_name</i></span>形式的选项，应写为<span>loose-<i>opt_name</i></span>。</p>
+			<p>选项文件中的空行被忽略掉。非空行可以采用下面任何形式：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>
+			<span>#</span><i><span>注释</span></i></span>，<span>；<i>注释</i></span></p>
+			<p>注释行以‘<span>#</span>’或‘<span>；</span>’开头。‘<span>#</span>’注释也可以从行的中部开始。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>[<i>group</i>]</span></p>
+			<p><span><i>
+			<span>group</span></i></span>是你想要设置选项的程序名或组名。在组行后面，任何<span><i><span>opt_name</span></i></span>或<span>set-variable</span>行适用于组名，直到选项文件结尾或给出其它组行。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span><i>
+			<span>opt_name</span></i></span></p>
+			<p>等价于命令行中的<span>--<i>opt_name</i></span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span><i>
+			<span>opt_name</span></i><span>=<i>value</i></span></span></p>
+			<p>等价于命令行中的<span>--<i>opt_name</i>=<i>value</i></span>。在选项文件中，‘<span>=</span>’字符附近可以有空格，而在命令行中是不允许的。你可以用单引号或双引号来引用值。如果值包含一个‘<span>#</span>’注释字符或空格时很有用。</p>
+			<p>选项名和值前后的空白将自动删除掉。你可以在选项值中使用转义序列‘<span>\b</span>’、‘<span>\t</span>’、‘<span>\n</span>’、‘<span>\r</span>’、‘<span>\\</span>’以及‘<span>\s</span>’来表示退格、<span>tab</span>、换行符、回车以及空格字符。</p>
+			<p>在<span>Windows</span>中，如果某个选项值表示一个路径名，应使用‘<span>/</span>’而不是‘<span>\</span>’作为路径名间隔符来指定值。如果使用‘<span>\</span>’，必须用双斜线‘<span>\\</span>’，因为‘<span>\</span>’在<span>MySQL</span>中为转义字符。</p>
+			<p>如果选项组名与程序名相同，则组内的选项专用于该程序。</p>
+			<p>所有客户程序<span>(</span>但<em><span>不能</span></em>被<strong><span>mysqld</span></strong><span>)</span>读取<span>[client]</span>选项组。这样允许你指定适用于所有客户端的选项。例如，<span>[client]</span>是用于指定连接服务器的
+			密码的理想的组。<span>(</span>但应确保该选项文件只能由你自己读写，以便其他人不能发现你的密码）<span>。</span>一定不要随意在<span>[client]</span>组内放置选项，除非它可以被你使用的所有客户程序识别。如果你试图运行程序，如果程序不理解选项则会显示一条错误消息后退出。</p>
+			<p>从<span>5.0</span>系列的<span>MySQL 5.0.4</span>开始，可以在选项文件中使用<span>!include</span>指令来包括具体文件和<span>!includedir</span>来搜索选项文件的具体目录。例如，要包括文件<span>/home/mydir/myopt.cnf</span>，可以使用：</p>
+			<pre><span>!include /home/me/myopt.cnf</span></pre>
+			<p>要搜索所有以<span>.cnf</span>结尾的文件的目录<span>/home/mydir</span>并作为选项文件读取，应使用：</p>
+			<pre><span>!includedir /home/mydir</span></pre>
+			<p>请注意这些选项与节有关。例如，假定你想要使用<span>my.cnf</span>中的某些内容，如下所示：</p>
+			<pre><span>[mysqld]</span></pre>
+			<pre><span>!include /home/mydir/myopt.cnf</span></pre>
+			<p>在这种情况下，只为该服务器处理文件<span>myopt.cnf</span>，并且<span>!include</span>指令将被客户应用程序忽略。然而，如果你使用下面的部分：</p>
+			<pre><span>[mysqldump]</span></pre>
+			<pre><span>!includedir /home/mydir/my-dump-option</span></pre>
+			<p>则只有<strong><span>mysqldump</span></strong>为以<span>.cnf</span>结尾的文件检查目录<span>/home/mydir/my-dump-option</span>，服务器或其它客户应用程序均不检查。</p>
+			<p><strong><span>注释：</span></strong>目前，在<span>Unix</span>操作系统中，所发现的使用<span>!includedir</span>指令包括的文件的文件名<em><span>必须</span></em>以<span>.cnf</span>为扩展名。在<span>Windows</span>中，该指令也为有<span>.ini</span>扩展名<span>(</span>包括<span>.cnf</span><span>)</span>的文件做检查。</p>
+			<p>如果你想要创建只由一个具体<strong><span>mysqld</span></strong>服务器发布系列读取的选项组，选项组可以用<span>[mysqld-5.0]</span>、<span>[mysqld-5.1]</span>等名称。下面的组表示<span>--new</span>选项只能用于<span>5.1.x
+			</span>版本的<span>MySQL</span>服务器：</p>
+			<pre><span>[mysqld-5.1]</span></pre>
+			<pre><span>new</span></pre>
+			<p>下面是一个典型的全局选项文件：</p>
+			<pre><span>[client]</span></pre>
+			<pre><span>port=3306</span></pre>
+			<pre><span>socket=/tmp/mysql.sock</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>[mysqld]</span></pre>
+			<pre><span>port=3306</span></pre>
+			<pre><span>socket=/tmp/mysql.sock</span></pre>
+			<pre><span>key_buffer_size=16M</span></pre>
+			<pre><span>max_allowed_packet=8M</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>[mysqldump]</span></pre>
+			<pre><span>quick</span></pre>
+			<p>在上述的选项文件中，设置<span>key_buffer_size</span>和<span>max_allowed_packet</span>变量的行使用了<span><i><span>var_name</span></i><span>=<i>value</i></span></span>语法。</p>
+			<p>下面是一个典型的用户选项文件：</p>
+			<pre><span>[client]</span></pre>
+			<pre><span># The following password will be sent to all standard MySQL clients</span></pre>
+			<pre><span>password=&quot;my_password&quot;</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>[mysql]</span></pre>
+			<pre><span>no-auto-rehash</span></pre>
+			<pre><span>connect_timeout=2</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>[mysqlhotcopy]</span></pre>
+			<pre><span>interactive-timeout</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<p>如果你有一个源代码分发，可以从<span>support-file</span>目录中找到名为<span>my-<i>xxxx</i>.cnf</span>的示例选项文件。如果你有一个二进制分发，在<span>MySQL</span>安装目录的<span>support-file</span>目录中查找。在<span>Windows</span>中，示例选项文件也可以位于<span>MySQL</span>的安装目录<span>(</span>如果你不知道在哪里，查阅本节前面或<a href="installing.html" title="Chapter 2. Installing MySQL">第2章：安装MySQL</a><span>)</span>。目前有小、中等、大以及非常大的系统的示例选项文件。要想练习这些文件，在<span>Windows</span>中复制到<span>C:\my.cnf</span>或在<span>Unix</span>中复制到根目录的<span>.my.cnf</span>。</p>
+			<p><strong><span>注释：</span></strong>在<span>Windows</span>中，可以不显示<span>.cnf</span>选项文件的扩展名。</p>
+			<p>所有支持选项文件的<span>MySQL</span>程序可以处理下面的命令行选项：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--no-defaults</span></p>
+			<p>不读取任何选项文件。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--print-defaults</span></p>
+			<p>打印从选项文件中获得的程序名和所有选项。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--defaults-file=<i>path_name</i></span></p>
+			<p>只使用给出的选项文件。<span><i><span>path_name</span></i></span>是文件的全路径名。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>--defaults-extra-file=<i>path_name</i></span></p>
+			<p>在全局选项文件后但在用户选项文件前读该选项文件。<span><i><span>path_name</span></i></span>是文件的全路径名。</p>
+			<p>为了正确工作，每个选项必须紧随命令行中的命令名后，例外情况是<span>--print-defaults</span>可以紧随<span>--defaults-file</span>或<span>--defaults-extra-file</span>。</p>
+			<p>在<span>shell</span>脚本中，可以使用<strong><span>my_print_defaults</span></strong>程序来分析选项文件。下面的例子显示了当要求显示<span>[client]</span>和<span>[mysql]</span>组内发现的选项时<strong><span>my_print_defaults</span></strong>产生的输出：</p>
+			<pre><span>shell&gt; </span><span><b><span>my_print_defaults client mysql</span></b></span></pre>
+			<pre><span>--port=3306</span></pre>
+			<pre><span>--socket=/tmp/mysql.sock</span></pre>
+			<pre><span>--no-auto-rehash</span></pre>
+			<p><strong><span>开发人员请注意</span></strong>：在<span>C</span>客户程序库中，只是通过处理命令行参量前面的所有匹配选项<span>(</span>即相应组内的选项<span>)</span>来处理选项文件。对于使用多次指定的最后的选项实例的程序，可以很好地工作。如果你有一个<span>C</span>或<span>C++</span>程序按这种方式处理多次指定的选项，但不读取选项文件，只需要添加两行来实现该功能。检查标准<span>MySQL</span>客户程序的源代码来看看如何做。</p>
+			<p>其它几个<span>MySQL</span>语言接口基于<span>C</span>客户库，它们中的一部分提供了访问选项文件的一种方式。包括<span>Perl</span>和<span>Python</span>。关于接口的详细信息参见相关文档。</p>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title">
+						<a name="environment-variable-options"></a>4.3.3.&nbsp;用环境变量指定选项</h3>
+					</div></div></div><a class="indexterm" name="id2742255"></a>
+			<p>要想用环境变量指定选项，使用适用注释处理器的语法来设置变量。例如，在<span>Windows</span>或<span>NetWare</span>中，可以设置<span>USER</span>变量来指定<span>MySQL</span>账户名。要想实现，使用语法：</p>
+			<pre><span>SET USER=</span><span><i><span>your_name</span></i></span></pre>
+			<p>在<span>Unix</span>中的语法取决于你的外壳。假定你想要使用<span>MYSQL_TCP_PORT</span>变量指定<span>TCP/IP</span>端口号。典型的语法为<span>(</span>例如<strong><span>sh</span></strong>、<span>bash</span>、<strong><span>zsh</span></strong>等等<span>)</span>：</p>
+			<pre><span>MYSQL_TCP_PORT=3306</span></pre>
+			<pre><span>export MYSQL_TCP_PORT</span></pre>
+			<p>第<span>1</span>个命令设置变量，<span>export</span>命令将变量导出到外壳环境，以便其值可供<span>MySQL</span>和其它进程访问。</p>
+			<p><strong><span>csh</span></strong>和<strong><span>tcsh</span></strong>有类似的问题。运行这些外壳时，使用<strong><span>setenv</span></strong>使外壳变量适用环境：</p>
+			<pre><span>setenv MYSQL_TCP_PORT 3306</span></pre>
+			<p>
+			可以在命令提示符下执行设置环境变量的命令，以便立即生效。这些设定值持续到你注销。要向让这些设定值在你每次登录时生效，将相应命令放入每次启动时命令解释符所读的启动文件中。在<span>Windows</span>中典型启动文件为<span>AUTOEXEC.BAT</span>，<strong><span>bash</span></strong>为<span>.bash_profile</span>，或者<strong><span>tcsh</span></strong>为<span>.tcshrc</span>。关于命令解释符的具体细节请查阅文档。</p>
+			<p><a href="environment-variables.html">附录</a><a href="environment-variables.html" title="Appendix F. Environment Variables">F：<i>环境变量</i></a><span>
+			</span>了列出影响<span>MySQL</span>程序操作的所有环境变量。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="program-variables"></a>
+			4.3.4.&nbsp;使用选项设置程序变量</h3></div></div></div><a class="indexterm" name="id2742389"></a><a class="indexterm" name="id2742399"></a>
+			<p>许多<span>MySQL</span>程序有一些内部变量可以在运行时设置。程序变量的设置与带有值的其它长选项相同。例如，<strong><span>mysql</span></strong>有一个<span>max_allowed_packet</span>变量，可以控制其通信缓冲区的最大长度。要想为<strong><span>mysql</span></strong>将<span>max_allowed_packet</span>变量的值设置为<span>16MB</span>，使用下面的任何一个命令：</p>
+			<pre><span>shell&gt; </span><span><b><span>mysql --max_allowed_packet=16777216</span></b></span></pre>
+			<pre><span>shell&gt; </span><span><b><span>mysql --max_allowed_packet=16M</span></b></span></pre>
+			<p>第<span>1</span>个命令以字节指定值。第<span>2</span>个命令以兆字节指定值。变量值可以有一个后缀<span>K</span>、<span>M</span>或者<span>G</span><span>(</span>可以为大写或小写<span>)</span>来表示千字节、兆字节或者十亿字节的单位。</p>
+			<p>在选项文件中，变量设定值没有引导破折号：</p>
+			<pre><span>[mysql]</span></pre>
+			<pre><span>max_allowed_packet=16777216</span></pre>
+			<p>或：</p>
+			<pre><span>[mysql]</span></pre>
+			<pre><span>max_allowed_packet=16M</span></pre>
+			<p>如果你喜欢，变量名的下划线可以为破折号。</p>
+			<p><strong><span>注释：</span></strong><span>MySQL 
+			5.1</span>仍然能识别旧的语法<span>--set-variable 
+			= <i>option</i>=<i>value</i></span>，但现在不赞成使用。</p>
+			<p>部分服务器变量可以在运行时设置。详情参见<a href="database-administration.html#dynamic-system-variables" title="5.3.3.1. Dynamic System Variables">5.3.3.1节，“动态系统变量”</a>。</div></div></div><div><hr>
+	<p><span>
+	这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com.</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</span></div>
+</body></html>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 传入参数与传出参数</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch24.html" title="第 24 章 函数接口" /><link rel="prev" href="ch24s01.html" title="1. 本章的预备知识" /><link rel="next" href="ch24s03.html" title="3. 两层指针的参数" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 传入参数与传出参数</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch24s01.html">上一页</a> </td><th width="60%" align="center">第 24 章 函数接口</th><td width="20%" align="right"> <a accesskey="n" href="ch24s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2820935"></a>2. 传入参数与传出参数</h2></div></div></div><p>如果函数接口有指针参数，既可以把指针所指向的数据传给函数使用（称为传入参数），也可以由函数填充指针所指的内存空间，传回给调用者使用（称为传出参数），例如<code class="literal">strcpy</code>的<code class="literal">src</code>参数是传入参数，<code class="literal">dest</code>参数是传出参数。有些函数的指针参数同时担当了这两种角色，如<code class="literal">select(2)</code>的<code class="literal">fd_set *</code>参数，既是传入参数又是传出参数，这称为Value-result<a id="id2820978" class="indexterm"></a>参数。</p><div class="table"><a id="id2820986"></a><p class="title"><b>表 24.1. 传入参数示例：<code class="literal">void func(const unit_t *p);</code></b></p><div class="table-contents"><table summary="传入参数示例：void func(const unit_t *p);" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>调用者</th><th>实现者</th></tr></thead><tbody><tr><td><div class="orderedlist"><ol type="1"><li><p>分配<code class="literal">p</code>所指的内存空间</p></li><li><p>在<code class="literal">p</code>所指的内存空间中保存数据</p></li><li><p>调用函数</p></li><li><p>由于有<code class="literal">const</code>限定符，调用者可以确信<code class="literal">p</code>所指的内存空间不会被改变</p></li></ol></div></td><td><div class="orderedlist"><ol type="1"><li><p>规定指针参数的类型<code class="literal">unit_t *</code></p></li><li><p>读取<code class="literal">p</code>所指的内存空间</p></li></ol></div></td></tr></tbody></table></div></div><br class="table-break" /><p>想一想，如果有函数接口<code class="literal">void func(const int p);</code>这里的<code class="literal">const</code>有意义吗？</p><div class="table"><a id="id2821114"></a><p class="title"><b>表 24.2. 传出参数示例：<code class="literal">void func(unit_t *p);</code></b></p><div class="table-contents"><table summary="传出参数示例：void func(unit_t *p);" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>调用者</th><th>实现者</th></tr></thead><tbody><tr><td><div class="orderedlist"><ol type="1"><li><p>分配<code class="literal">p</code>所指的内存空间</p></li><li><p>调用函数</p></li><li><p>读取<code class="literal">p</code>所指的内存空间</p></li></ol></div>
+</td><td><div class="orderedlist"><ol type="1"><li><p>规定指针参数的类型<code class="literal">unit_t *</code></p></li><li><p>在<code class="literal">p</code>所指的内存空间中保存数据</p></li></ol></div>
+</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><a id="id2821208"></a><p class="title"><b>表 24.3. Value-result参数示例：<code class="literal">void func(unit_t *p);</code></b></p><div class="table-contents"><table summary="Value-result参数示例：void func(unit_t *p);" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>调用者</th><th>实现者</th></tr></thead><tbody><tr><td><div class="orderedlist"><ol type="1"><li><p>分配p所指的内存空间</p></li><li><p>在<code class="literal">p</code>所指的内存空间保存数据</p></li><li><p>调用函数</p></li><li><p>读取<code class="literal">p</code>所指的内存空间</p></li></ol></div>
+</td><td><div class="orderedlist"><ol type="1"><li><p>规定指针参数的类型<code class="literal">unit_t *</code></p></li><li><p>读取<code class="literal">p</code>所指的内存空间</p></li><li><p>改写<code class="literal">p</code>所指的内存空间</p></li></ol></div>
+</td></tr></tbody></table></div></div><br class="table-break" /><p>由于传出参数和Value-result参数的函数接口完全相同，应该在文档中说明是哪种参数。</p><p>以下是一个传出参数的完整例子：</p><div class="example"><a id="id2821327"></a><p class="title"><b>例 24.2. 传出参数</b></p><div class="example-contents"><pre class="programlisting">/* populator.h */
+#ifndef POPULATOR_H
+#define POPULATOR_H
+
+typedef struct {
+     int number;
+     char msg[20];
+} unit_t;
+
+extern void set_unit(unit_t *);
+
+#endif</pre><pre class="programlisting">/* populator.c */
+#include &lt;string.h&gt;
+#include "populator.h"
+
+void set_unit(unit_t *p)
+{
+     if (p == NULL)
+          return; /* ignore NULL parameter */
+     p-&gt;number = 3;
+     strcpy(p-&gt;msg, "Hello World!");
+}</pre><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+#include "populator.h"
+
+int main(void)
+{
+     unit_t u;
+
+     set_unit(&amp;u);
+     printf("number: %d\nmsg: %s\n", u.number, u.msg);
+     return 0;
+}</pre></div></div><br class="example-break" /><p>很多系统函数对于指针参数是<code class="literal">NULL</code>的情况有特殊规定：如果传入参数是<code class="literal">NULL</code>表示取缺省值，例如<code class="literal">pthread_create(3)</code>的<code class="literal">pthread_attr_t *</code>参数，也可能表示不做特别处理，例如<code class="literal">free</code>的参数；如果传出参数是<code class="literal">NULL</code>表示调用者不需要传出值，例如<code class="literal">time(2)</code>的参数。这些特殊规定应该在文档中写清楚。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch24s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch24.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch24s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 本章的预备知识 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 两层指针的参数</td></tr></table></div></body></html>

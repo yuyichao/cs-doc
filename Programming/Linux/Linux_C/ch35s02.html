@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 线程控制</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch35.html" title="第 35 章 线程" /><link rel="prev" href="ch35s01.html" title="1. 线程的概念" /><link rel="next" href="ch35s03.html" title="3. 线程间同步" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 线程控制</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch35s01.html">上一页</a> </td><th width="60%" align="center">第 35 章 线程</th><td width="20%" align="right"> <a accesskey="n" href="ch35s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2895627"></a>2. 线程控制</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2895632"></a>2.1. 创建线程</h3></div></div></div><pre class="programlisting">#include &lt;pthread.h&gt;
+
+int pthread_create(pthread_t *restrict thread,
+	const pthread_attr_t *restrict attr,
+	void *(*start_routine)(void*), void *restrict arg);</pre><p>返回值：成功返回0，失败返回错误号。以前学过的系统函数都是成功返回0，失败返回-1，而错误号保存在全局变量<code class="literal">errno</code>中，而pthread库的函数都是通过返回值返回错误号，虽然每个线程也都有一个<code class="literal">errno</code>，但这是为了兼容其它函数接口而提供的，pthread库本身并不使用它，通过返回值返回错误码更加清晰。</p><p>在一个线程中调用pthread_create()创建新的线程后，当前线程从pthread_create()返回继续往下执行，而新的线程所执行的代码由我们传给<code class="literal">pthread_create</code>的函数指针<code class="literal">start_routine</code>决定。<code class="literal">start_routine</code>函数接收一个参数，是通过<code class="literal">pthread_create</code>的<code class="literal">arg</code>参数传递给它的，该参数的类型为<code class="literal">void *</code>，这个指针按什么类型解释由调用者自己定义。<code class="literal">start_routine</code>的返回值类型也是<code class="literal">void *</code>，这个指针的含义同样由调用者自己定义。<code class="literal">start_routine</code>返回时，这个线程就退出了，其它线程可以调用<code class="literal">pthread_join</code>得到<code class="literal">start_routine</code>的返回值，类似于父进程调用<code class="literal">wait(2)</code>得到子进程的退出状态，稍后详细介绍<code class="literal">pthread_join</code>。</p><p><code class="literal">pthread_create</code>成功返回后，新创建的线程的id被填写到<code class="literal">thread</code>参数所指向的内存单元。我们知道进程id的类型是<code class="literal">pid_t</code>，每个进程的id在整个系统中是唯一的，调用<code class="literal">getpid(2)</code>可以获得当前进程的id，是一个正整数值。线程id的类型是<code class="literal">thread_t</code>，它只在当前进程中保证是唯一的，在不同的系统中<code class="literal">thread_t</code>这个类型有不同的实现，它可能是一个整数值，也可能是一个结构体，也可能是一个地址，所以不能简单地当成整数用<code class="literal">printf</code>打印，调用<code class="literal">pthread_self(3)</code>可以获得当前线程的id。</p><p><code class="literal">attr</code>参数表示线程属性，本章不深入讨论线程属性，所有代码例子都传<code class="literal">NULL</code>给<code class="literal">attr</code>参数，表示线程属性取缺省值，感兴趣的读者可以参考<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>。首先看一个简单的例子：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;unistd.h&gt;
+
+pthread_t ntid;
+
+void printids(const char *s)
+{
+	pid_t      pid;
+	pthread_t  tid;
+
+	pid = getpid();
+	tid = pthread_self();
+	printf("%s pid %u tid %u (0x%x)\n", s, (unsigned int)pid,
+	       (unsigned int)tid, (unsigned int)tid);
+}
+
+void *thr_fn(void *arg)
+{
+	printids(arg);
+	return NULL;
+}
+
+int main(void)
+{
+	int err;
+
+	err = pthread_create(&amp;ntid, NULL, thr_fn, "new thread: ");
+	if (err != 0) {
+		fprintf(stderr, "can't create thread: %s\n", strerror(err));
+		exit(1);
+	}
+	printids("main thread:");
+	sleep(1);
+
+	return 0;
+}</pre><p>编译运行结果如下：</p><pre class="screen">$ gcc main.c -lpthread
+$ ./a.out
+main thread: pid 7398 tid 3084450496 (0xb7d8fac0)
+new thread:  pid 7398 tid 3084446608 (0xb7d8eb90)</pre><p>可知在Linux上，<code class="literal">thread_t</code>类型是一个地址值，属于同一进程的多个线程调用<code class="literal">getpid(2)</code>可以得到相同的进程号，而调用<code class="literal">pthread_self(3)</code>得到的线程号各不相同。</p><p>由于<code class="literal">pthread_create</code>的错误码不保存在<code class="literal">errno</code>中，因此不能直接用<code class="literal">perror(3)</code>打印错误信息，可以先用<code class="literal">strerror(3)</code>把错误码转换成错误信息再打印。</p><p>如果任意一个线程调用了<code class="literal">exit</code>或<code class="literal">_exit</code>，则整个进程的所有线程都终止，由于从<code class="literal">main</code>函数<code class="literal">return</code>也相当于调用<code class="literal">exit</code>，为了防止新创建的线程还没有得到执行就终止，我们在<code class="literal">main</code>函数<code class="literal">return</code>之前延时1秒，这只是一种权宜之计，即使主线程等待1秒，内核也不一定会调度新创建的线程执行，下一节我们会看到更好的办法。</p><p>思考题：主线程在一个全局变量<code class="literal">ntid</code>中保存了新创建的线程的id，如果新创建的线程不调用<code class="literal">pthread_self</code>而是直接打印这个<code class="literal">ntid</code>，能不能达到同样的效果？</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2896029"></a>2.2. 终止线程</h3></div></div></div><p>如果需要只终止某个线程而不终止整个进程，可以有三种方法：</p><div class="itemizedlist"><ul type="disc"><li><p>从线程函数<code class="literal">return</code>。这种方法对主线程不适用，从<code class="literal">main</code>函数<code class="literal">return</code>相当于调用<code class="literal">exit</code>。</p></li><li><p>一个线程可以调用<code class="literal">pthread_cancel</code>终止同一进程中的另一个线程。</p></li><li><p>线程可以调用<code class="literal">pthread_exit</code>终止自己。</p></li></ul></div><p>用<code class="literal">pthread_cancel</code>终止一个线程分同步和异步两种情况，比较复杂，本章不打算详细介绍，读者可以参考<a class="xref" href="bi01.html#bibli.apue" title="Advanced Programming in the UNIX Environment">[<abbr class="abbrev">APUE2e</abbr>]</a>。下面介绍<code class="literal">pthread_exit</code>的和<code class="literal">pthread_join</code>的用法。</p><pre class="programlisting">#include &lt;pthread.h&gt;
+
+void pthread_exit(void *value_ptr);</pre><p><code class="literal">value_ptr</code>是<code class="literal">void *</code>类型，和线程函数返回值的用法一样，其它线程可以调用<code class="literal">pthread_join</code>获得这个指针。</p><p>需要注意，<code class="literal">pthread_exit</code>或者<code class="literal">return</code>返回的指针所指向的内存单元必须是全局的或者是用<code class="literal">malloc</code>分配的，不能在线程函数的栈上分配，因为当其它线程得到这个返回指针时线程函数已经退出了。</p><pre class="programlisting">#include &lt;pthread.h&gt;
+
+int pthread_join(pthread_t thread, void **value_ptr);</pre><p>返回值：成功返回0，失败返回错误号</p><p>调用该函数的线程将挂起等待，直到id为<code class="literal">thread</code>的线程终止。<code class="literal">thread</code>线程以不同的方法终止，通过<code class="literal">pthread_join</code>得到的终止状态是不同的，总结如下：</p><div class="itemizedlist"><ul type="disc"><li><p>如果<code class="literal">thread</code>线程通过<code class="literal">return</code>返回，<code class="literal">value_ptr</code>所指向的单元里存放的是<code class="literal">thread</code>线程函数的返回值。</p></li><li><p>如果<code class="literal">thread</code>线程被别的线程调用<code class="literal">pthread_cancel</code>异常终止掉，<code class="literal">value_ptr</code>所指向的单元里存放的是常数<code class="literal">PTHREAD_CANCELED</code>。</p></li><li><p>如果<code class="literal">thread</code>线程是自己调用<code class="literal">pthread_exit</code>终止的，<code class="literal">value_ptr</code>所指向的单元存放的是传给<code class="literal">pthread_exit</code>的参数。</p></li></ul></div><p>如果对<code class="literal">thread</code>线程的终止状态不感兴趣，可以传<code class="literal">NULL</code>给<code class="literal">value_ptr</code>参数。</p><p>看下面的例子（省略了出错处理）：</p><pre class="programlisting">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;unistd.h&gt;
+
+void *thr_fn1(void *arg)
+{
+	printf("thread 1 returning\n");
+	return (void *)1;
+}
+
+void *thr_fn2(void *arg)
+{
+	printf("thread 2 exiting\n");
+	pthread_exit((void *)2);
+}
+
+void *thr_fn3(void *arg)
+{
+	while(1) {
+		printf("thread 3 writing\n");
+		sleep(1);
+	}
+}
+
+int main(void)
+{
+	pthread_t   tid;
+	void        *tret;
+
+	pthread_create(&amp;tid, NULL, thr_fn1, NULL);
+	pthread_join(tid, &amp;tret);
+	printf("thread 1 exit code %d\n", (int)tret);
+
+	pthread_create(&amp;tid, NULL, thr_fn2, NULL);
+	pthread_join(tid, &amp;tret);
+	printf("thread 2 exit code %d\n", (int)tret);
+
+	pthread_create(&amp;tid, NULL, thr_fn3, NULL);
+	sleep(3);
+	pthread_cancel(tid);
+	pthread_join(tid, &amp;tret);
+	printf("thread 3 exit code %d\n", (int)tret);
+
+	return 0;
+}</pre><p>运行结果是：</p><pre class="screen">$ ./a.out 
+thread 1 returning
+thread 1 exit code 1
+thread 2 exiting
+thread 2 exit code 2
+thread 3 writing
+thread 3 writing
+thread 3 writing
+thread 3 exit code -1</pre><p>可见在Linux的pthread库中常数<code class="literal">PTHREAD_CANCELED</code>的值是-1。可以在头文件<code class="literal">pthread.h</code>中找到它的定义：</p><pre class="programlisting">#define PTHREAD_CANCELED ((void *) -1)</pre><p>一般情况下，线程终止后，其终止状态一直保留到其它线程调用<code class="literal">pthread_join</code>获取它的状态为止。但是线程也可以被置为detach状态，这样的线程一旦终止就立刻回收它占用的所有资源，而不保留终止状态。不能对一个已经处于detach状态的线程调用<code class="literal">pthread_join</code>，这样的调用将返回<code class="literal">EINVAL</code>。对一个尚未detach的线程调用<code class="literal">pthread_join</code>或<code class="literal">pthread_detach</code>都可以把该线程置为detach状态，也就是说，不能对同一线程调用两次<code class="literal">pthread_join</code>，或者如果已经对一个线程调用了<code class="literal">pthread_detach</code>就不能再调用<code class="literal">pthread_join</code>了。</p><pre class="programlisting">#include &lt;pthread.h&gt;
+
+int pthread_detach(pthread_t tid);</pre><p>返回值：成功返回0，失败返回错误号。</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch35s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch35.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch35s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 线程的概念 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 线程间同步</td></tr></table></div></body></html>

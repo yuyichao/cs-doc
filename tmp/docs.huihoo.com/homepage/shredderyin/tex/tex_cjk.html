@@ -1,0 +1,67 @@
+<html>
+<head>
+<title>LaTeX + CJK 如何工作</title>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<LINK rel="stylesheet" href="tex.css" media="screen">
+</head>
+<body bgcolor="#FFF4FF">
+<H1>LaTeX + CJK 到底干了什么?</H1>
+<p>很多人被 LaTeX 的各种文件，字体搞的头昏脑胀(我就曾经是其中一个). 其实 LaTeX+CJK 处理汉字的过程很简单。是这样的：
+
+首先你编辑了一个文件 example.tex，里面有如下内容：
+<pre>
+\documentclass{article}
+\usepackage{CJK}
+\begin{CJK}{GBK}{song}
+\begin{document}
+您
+\end{CJK}
+\end{document}
+</pre>
+
+<OL>
+<LI>用户在命令行敲入 "latex example.tex". 一个跟 "tex" 一模一样只不过叫做 "latex"的程序启动了。它其实就是 TeX, LaTeX 和 TeX 其实是同一个程序。在有些系统下 latex 是一个脚本，里面只有几行字。比如我的 Linux 版本就是这样：
+
+<pre>
+#!/bin/sh
+test -f "`kpsewhich latex.fmt`" || fmtutil --byfmt latex
+exec tex -fmt=latex "$@"
+</pre>
+
+
+<LI>TeX 发现自己是用叫做 "latex" 的命令启动的。或者脚本里明显指明了需要"latex"格式，它就去读入一个宏包叫做 latex.fmt. 这个文件一般在 $TEXMF/web2c. 以后我们就进入了 LaTeX 的世界，看到了？LaTeX 只是 TeX 的一种特殊情况(一种“格式”)。所以如果你能明白 TeX, LaTeX 给你的很多条条框框你都可以不遵守。
+
+<LI>LaTeX 发现用户使用了 CJK 宏包，在 \begin{CJK}{GBK}{song} 时，CJK 宏包把从现在开始一直到 \end{CJK} 的内容里的中文都变成了一些奇怪的TeX命令。这些命令根据不同的汉字转换不同的字体。它发现“您”，它就会把字体设置为 gbksong51, 然后取里面的第115个字符。
+
+<p>为了达到这个目的，它把我们的汉字“您”变成了 "\C19/song/m/n/10/51 s", \C19/song/m/n/10/51 表示用 GBK 编码(C19) 的 song 体，粗细为 medium(m), 而不是 bold, 形状为upright(n), 而不是 italic, 大小是 10pt, 子集号码 51. 这个描述会被 C19song.fd 这个字体描述文件映射为gbksong51. 因为 C19song.fd 里有这样一行：
+
+<pre>
+\DeclareFontShape{C19}{song}{m}{n}{<-> CJK * gbksong}{}
+</pre>
+
+<p>所以 "\C19/song/m/n/10/51" 这个命令就会把字体设置为 "gbksong51 at 10pt"(TeX术语). 后面接着一个"s", "s" 的 ASCII 码是 115, 正好是 “您” 在这个子集中的索引号。
+
+<LI>LaTeX 继续处理文档的其它部分，就象处理其它任何英语文件一样……最后生成了 dvi 文件。
+
+<LI>用户用 dvips 生成 PostScript 文件。dvips 找到 config.ps 配置，读取里面的字体映射文件列表，列表里有一个文件叫做 cjk.map, 它就去读取 cjk.map. cjk.map 指出：gbksong51 这个字体的图像(glyph)应该从Type1字体文件 gbksong51.pfb 里得到…… dvips 把这些信息存到一张表里备用。
+
+<LI>dvips 开始读取 dvi 文件，发现里面要求使用 gbksong51 这个字体，并且输出一个 "s" 对应的字符。它就下载(download,PostScript术语) gbksong51.pfb 到生成的 PostScript 文件 example.ps, 然后在合适的位置放上对“您”索引: s. 现在你用一个文本编辑器，比如 VIM, 打开 example.ps 就可以看到里面有如下内容：
+<pre>
+%%BeginFont: <font color=red>SimSun51</font>
+%!FontType1-1.0: SimSun 2.10
+%%Creator: ttf2pfb, $Id: ttf2pfb.c,v 1.2 2002/07/27 12:58:58 wy Exp $
+%%CreationDate: Sun Jul 28 17:44:29 2002
+%%VMusage: 030000 030000
+...............
+%%Page: 1 1
+TeXDict begin 1 0 bop 639 523 a Fb<font color=red>(s)</font>1926 8991 y Fa(1)p
+eop end
+%%Trailer
+....
+</pre>
+
+<p>而你用 gsview 打开文件就看到了“您”。发现没有？"SimSun51" 就是插入Type1字体的开始处, 而"(s)" 就是说“输出字符串s”。这个字体里的"s"看起来就是“您”。而那个SimSun51，就是所谓的PostScript 字体名字。你的文档就是这样生成的。
+
+<p>从这个分析你可以看出，TeX 在本质上处理汉字是没有任何问题的，因为经过 CJK 的转化，汉字被转成了和英文字符一样的“盒子”。我们只要按照 TeX 的规则来处理这些盒子就可以实现与英文完全同样的功能。
+
+</OL>

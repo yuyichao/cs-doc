@@ -1,0 +1,28 @@
+现在的Linux在都默认支持ntfs分区，例子如 
+mount /dev/hda1 /mnt -o iocharset=utf8（C盘）； 
+mount /dev/hda5 /mnt -o iocharset=utf8（D盘）。 
+
+===================================================================================
+======================================================================================
+
+挂装ntfs分区. 
+
+步骤: 
+1.在/usr/src/linux-2.4.18-3/configs/目录下 找适合自己机器的内核配置文件.我用的kernel-2.4.18-x86_64.config,把它拷贝到/usr/src/linux-2.4.18-3/目录下,并更改名称为.config 
+命令:cp /usr/src/linux-2.4.18-3/configs/kernel-2.4.18-x86_64.config /usr/src/linux-2.4.18-3/.config 
+
+2.用自己喜欢的编辑器修改.config文件 
+(1) 去掉所有"=m"的项. 
+(2) 将#CONFIG_NTFS_FS is not set 改为 CONFIG_NTFS_FS=m 
+
+3.编译ntfs模块 
+在/usr/src/linux-2.4.18-3/目录下运行命令 
+make modules 
+4.安装 
+编译后得到文件ntfs.o,在/usr/src/linux-2.4.18-3/fs/ntfs目录下,将它复制到正确的目录下 
+cp /usr/src/linux-2.4.18-3/fs/ntfs/ntfs.o /lib/modules/2.4.18-3/kernel/fs 
+
+5.载入ntfs模块 
+#depmod 
+#modprobe ntfs 
+6.用 mount -t ntfs /dev/hdaX /mnt/XXX挂装.

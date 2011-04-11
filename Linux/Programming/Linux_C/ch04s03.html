@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 布尔代数</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch04.html" title="第 4 章 分支语句" /><link rel="prev" href="ch04s02.html" title="2. if/else语句" /><link rel="next" href="ch04s04.html" title="4. switch语句" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 布尔代数</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch04s02.html">上一页</a> </td><th width="60%" align="center">第 4 章 分支语句</th><td width="20%" align="right"> <a accesskey="n" href="ch04s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2718970"></a>3. 布尔代数</h2></div></div></div><p>在<a class="xref" href="ch04s01.html#cond.if">第 1 节 “if语句”</a>讲过，<code class="literal">a&lt;b&lt;c</code>不表示<code class="literal">b</code>既大于<code class="literal">a</code>又小于<code class="literal">c</code>，那么如果想表示这个含义该怎么写呢？可以这样：</p><pre class="programlisting">if (a &lt; b) {
+	if (b &lt; c) {
+		printf("b is between a and c.\n");
+	}
+}</pre><p>我们也可以用逻辑与（Logical AND）<a id="id2719020" class="indexterm"></a>运算符表示这两个条件同时成立。逻辑与运算符在C语言中写成两个&amp;号（Ampersand）<a id="id2719029" class="indexterm"></a>，上面的语句可以改写为：</p><pre class="programlisting">if (a &lt; b &amp;&amp; b &lt; c) {
+	printf("b is between a and c.\n");
+}</pre><p>对于<code class="literal">a &lt; b &amp;&amp; b &lt; c</code>这个控制表达式，要求“<span class="quote"><code class="literal">a &lt; b</code>的值非0</span>”和“<span class="quote"><code class="literal">b &lt; c</code>的值非0</span>”这两个条件同时成立整个表达式的值才为1，否则整个表达式的值为0。也就是只有两个条件都为真，它们做逻辑与运算的结果才为真，有一个条件为假，则逻辑与运算的结果为假，如下表所示：</p><div class="table"><a id="id2719074"></a><p class="title"><b>表 4.2. AND的真值表</b></p><div class="table-contents"><table summary="AND的真值表" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>A</th><th>B</th><th>A AND B</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td>1</td><td>0</td></tr><tr><td>1</td><td>0</td><td>0</td></tr><tr><td>1</td><td>1</td><td>1</td></tr></tbody></table></div></div><br class="table-break" /><p>这种表称为真值表（Truth Table）<a id="id2719136" class="indexterm"></a>。注意逻辑与运算的操作数以非0表示真以0表示假，而运算结果以1表示真以0表示假（类型是<code class="literal">int</code>），我们忽略这些细微的差别，在表中全部以1表示真以0表示假。C语言还提供了逻辑或（Logical OR）<a id="id2719154" class="indexterm"></a>运算符，写成两个|线（Pipe Sign）<a id="id2719161" class="indexterm"></a>，逻辑非（Logical NOT）<a id="id2719169" class="indexterm"></a>运算符，写成一个!号（Exclamation Mark）<a id="id2719177" class="indexterm"></a>，它们的真值表如下：</p><div class="table"><a id="id2719186"></a><p class="title"><b>表 4.3. OR的真值表</b></p><div class="table-contents"><table summary="OR的真值表" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>A</th><th>B</th><th>A OR B</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td>1</td><td>1</td></tr><tr><td>1</td><td>0</td><td>1</td></tr><tr><td>1</td><td>1</td><td>1</td></tr></tbody></table></div></div><br class="table-break" /><div class="table"><a id="id2719245"></a><p class="title"><b>表 4.4. NOT的真值表</b></p><div class="table-contents"><table summary="NOT的真值表" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>A</th><th>NOT A</th></tr></thead><tbody><tr><td>0</td><td>1</td></tr><tr><td>1</td><td>0</td></tr></tbody></table></div></div><br class="table-break" /><p>逻辑或表示两个条件只要有一个为真，它们做逻辑或运算的结果就为真，只有两个条件都为假，逻辑或运算的结果才为假。逻辑非的作用是对原来的逻辑值取反，原来是真的就是假，原来是假的就是真。逻辑非运算符只有一个操作数，称为单目运算符（Unary Operator）<a id="id2719295" class="indexterm"></a>，以前讲过的加减乘除、赋值、相等性、关系、逻辑与、逻辑或运算符都有两个操作数，称为双目运算符（Binary Operator）<a id="id2719306" class="indexterm"></a>。</p><p>关于逻辑运算的数学体系称为布尔代数（Boolean Algebra）<a id="id2719318" class="indexterm"></a>，以它的创始人布尔命名。在编程语言中表示真和假的数据类型叫做布尔类型，在C语言中通常用<code class="literal">int</code>型来表示，非0表示真，0表示假<sup>[<a id="id2719335" href="#ftn.id2719335" class="footnote">6</a>]</sup>。布尔逻辑是写程序的基本功之一，程序中的很多错误都可以归因于逻辑错误。以下是一些布尔代数的基本定理，为了简洁易读，真和假用1和0表示，AND用*号表示，OR用+号表示（从真值表可以看出AND和OR运算确实有点像乘法和加法运算），NOT用¬表示，变量<code class="literal">x</code>、<code class="literal">y</code>、<code class="literal">z</code>的值可能是0也可能是1。</p><div class="literallayout"><p>¬¬x=x<br />
+<br />
+x*0=0<br />
+x+1=1<br />
+<br />
+x*1=x<br />
+x+0=x<br />
+<br />
+x*x=x<br />
+x+x=x<br />
+<br />
+x*¬x=0<br />
+x+¬x=1<br />
+<br />
+x*y=y*x<br />
+x+y=y+x<br />
+<br />
+x*(y*z)=(x*y)*z<br />
+x+(y+z)=(x+y)+z<br />
+<br />
+x*(y+z)=x*y+x*z<br />
+x+y*z=(x+y)*(x+z)<br />
+<br />
+x+x*y=x<br />
+x*(x+y)=x<br />
+<br />
+x*y+x*¬y=x<br />
+(x+y)*(x+¬y)=x<br />
+<br />
+¬(x*y)=¬x+¬y<br />
+¬(x+y)=¬x*¬y<br />
+<br />
+x+¬x*y=x+y<br />
+x*(¬x+y)=x*y<br />
+<br />
+x*y+¬x*z+y*z=x*y+¬x*z<br />
+(x+y)*(¬x+z)*(y+z)=(x+y)*(¬x+z)</p></div><p>除了第1行之外，这些公式都是每两行一组的，每组的两个公式就像对联一样：把其中一个公式中的*换成+、+换成*、0换成1、1换成0，就变成了与它对称的另一个公式。这些定理都可以通过真值表证明，更多细节可参考有关数字逻辑的教材，例如<a class="xref" href="bi01.html#bibli.vhdl" title="Fundamentals of Digital Logic with VHDL Design">[<abbr class="abbrev">数字逻辑基础</abbr>]</a>。我们将在本节的练习题中强化训练对这些定理的理解。</p><p>目前为止介绍的这些运算符的优先级顺序是：!高于* / %，高于+ -，高于&gt; &lt; &gt;= &lt;=，高于== !=，高于&amp;&amp;，高于||，高于=。写一个控制表达式很可能同时用到这些运算符中的多个，如果记不清楚运算符的优先级一定要多套括号。我们将在<a class="xref" href="ch16s04.html#op.summary">第 4 节 “运算符总结”</a>总结C语言所有运算符的优先级和结合性。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2719432"></a>习题</h3></div></div></div><p>1、把代码段</p><pre class="programlisting">if (x &gt; 0 &amp;&amp; x &lt; 10);
+else
+	printf("x is out of range.\n");</pre><p>改写成下面这种形式：</p><pre class="programlisting">if (____ || ____)
+	printf("x is out of range.\n");</pre><p>____应该怎么填？</p><p>2、把代码段：</p><pre class="programlisting">if (x &gt; 0)
+	printf("Test OK!\n");
+else if (x &lt;= 0 &amp;&amp; y &gt; 0)
+	printf("Test OK!\n");
+else
+	printf("Test failed!\n");</pre><p>改写成下面这种形式：</p><pre class="programlisting">if (____ &amp;&amp; ____)
+	printf("Test failed!\n");
+else
+	printf("Test OK!\n");</pre><p>____应该怎么填？</p><p>3、有这样一段代码：</p><pre class="programlisting">if (x &gt; 1 &amp;&amp; y != 1) {
+	...
+} else if (x &lt; 1 &amp;&amp; y != 1) {
+	...
+} else {
+	...
+}</pre><p>要进入最后一个<code class="literal">else</code>，x和y需要满足条件____ || ____。这里应该怎么填？</p><p>4、以下哪一个if判断条件是多余的可以去掉？这里所谓的“<span class="quote">多余</span>”是指，某种情况下如果本来应该打印<code class="literal">Test OK!</code>，去掉这个多余条件后仍然打印<code class="literal">Test OK!</code>，如果本来应该打印<code class="literal">Test failed!</code>，去掉这个多余条件后仍然打印<code class="literal">Test failed!</code>。</p><pre class="programlisting">if (x&lt;3 &amp;&amp; y&gt;3)
+	printf("Test OK!\n");
+else if (x&gt;=3 &amp;&amp; y&gt;=3)
+	printf("Test OK!\n");
+else if (z&gt;3 &amp;&amp; x&gt;=3)
+	printf("Test OK!\n");
+else if (z&lt;=3 &amp;&amp; y&gt;=3)
+	printf("Test OK!\n");
+else
+	printf("Test failed!\n");</pre></div><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2719335" href="#id2719335" class="para">6</a>] </sup>C99也定义了专门的布尔类型<code class="literal">_Bool</code>，但目前没有被广泛使用。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch04s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch04.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch04s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. if/else语句 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. switch语句</td></tr></table></div></body></html>

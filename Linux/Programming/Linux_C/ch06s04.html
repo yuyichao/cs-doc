@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4. break和continue语句</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch06.html" title="第 6 章 循环语句" /><link rel="prev" href="ch06s03.html" title="3. for语句" /><link rel="next" href="ch06s05.html" title="5. 嵌套循环" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">4. break和continue语句</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s03.html">上一页</a> </td><th width="60%" align="center">第 6 章 循环语句</th><td width="20%" align="right"> <a accesskey="n" href="ch06s05.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2727201"></a>4. break和continue语句</h2></div></div></div><p>在<a class="xref" href="ch04s04.html#cond.switch">第 4 节 “switch语句”</a>中我们见到了<code class="literal">break</code>语句的一种用法，用来跳出<code class="literal">switch</code>语句块，这个语句也可以用来跳出循环体。<code class="literal">continue</code>语句也会终止当前循环，和<code class="literal">break</code>语句不同的是，<code class="literal">continue</code>语句终止当前循环后又回到循环体的开头准备执行下一次循环。对于<code class="literal">while</code>循环和<code class="literal">do/while</code>循环，执行<code class="literal">continue</code>语句之后测试控制表达式，如果值为真则继续执行下一次循环；对于<code class="literal">for</code>循环，执行<code class="literal">continue</code>语句之后首先计算控制表达式3，然后测试控制表达式2，如果值为真则继续执行下一次循环。例如下面的代码打印1到100之间的素数：</p><div class="example"><a id="id2727284"></a><p class="title"><b>例 6.1. 求1-100的素数</b></p><div class="example-contents"><pre class="programlisting">
+#include &lt;stdio.h&gt;
+
+int is_prime(int n)
+{
+	int i;
+	for (i = 2; i &lt; n; i++)
+		if (n % i == 0)
+			break;
+	if (i == n)
+		return 1;
+	else
+		return 0;
+}
+
+int main(void)
+{
+	int i;
+	for (i = 1; i &lt;= 100; i++) {
+		if (!is_prime(i))
+			continue;
+		printf("%d\n", i);
+	}
+	return 0;
+}</pre></div></div><br class="example-break" /><p><code class="literal">is_prime</code>函数从2到<code class="literal">n-1</code>依次检查有没有能被<code class="literal">n</code>整除的数，如果有就说明<code class="literal">n</code>不是素数，立刻跳出循环而不执行<code class="literal">i++</code>。因此，如果<code class="literal">n</code>不是素数，则循环结束后<code class="literal">i</code>一定小于<code class="literal">n</code>，如果<code class="literal">n</code>是素数，则循环结束后<code class="literal">i</code>一定等于<code class="literal">n</code>。注意检查临界条件：2应该是素数，如果<code class="literal">n</code>是2，则循环体一次也不执行，但<code class="literal">i</code>的初值就是2，也等于<code class="literal">n</code>，在程序中也判定为素数。其实没有必要从2一直检查到<code class="literal">n-1</code>，只要从2检查到⌊sqrt(n)⌋，如果全都不能整除就足以证明<code class="literal">n</code>是素数了，请读者想一想为什么。</p><p>在主程序中，从1到100依次检查每个数是不是素数，如果不是素数，并不直接跳出循环，而是<code class="literal">i++</code>后继续执行下一次循环，因此用<code class="literal">continue</code>语句。注意主程序的局部变量<code class="literal">i</code>和<code class="literal">is_prime</code>中的局部变量<code class="literal">i</code>是不同的两个变量，其实在调用<code class="literal">is_prime</code>函数时主程序的局部变量<code class="literal">i</code>和参数<code class="literal">n</code>的值相等。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2727458"></a>习题</h3></div></div></div><p>1、求素数这个程序只是为了说明<code class="literal">break</code>和<code class="literal">continue</code>的用法才这么写的，其实完全可以不用<code class="literal">break</code>和<code class="literal">continue</code>，请读者修改一下控制流程，去掉<code class="literal">break</code>和<code class="literal">continue</code>而保持功能不变。</p><p>2、上一节讲过怎样把<code class="literal">for</code>循环改写成等价的<code class="literal">while</code>循环，但也提到如果循环体中有<code class="literal">continue</code>语句这两种形式就不等价了，想一想为什么不等价了？</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s03.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch06.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch06s05.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">3. for语句 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 5. 嵌套循环</td></tr></table></div></body></html>

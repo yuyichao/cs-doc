@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 定义和声明</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch20.html" title="第 20 章 链接详解" /><link rel="prev" href="ch20s01.html" title="1. 多目标文件的链接" /><link rel="next" href="ch20s03.html" title="3. 静态库" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 定义和声明</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch20s01.html">上一页</a> </td><th width="60%" align="center">第 20 章 链接详解</th><td width="20%" align="right"> <a accesskey="n" href="ch20s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2787359"></a>2. 定义和声明</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2787367"></a>2.1. <code class="literal">extern</code>和<code class="literal">static</code>关键字</h3></div></div></div><p>在上一节我们把两个程序文件放在一起编译链接，<code class="literal">main.c</code>用到的函数<code class="literal">push</code>、<code class="literal">pop</code>和<code class="literal">is_empty</code>由<code class="literal">stack.c</code>提供，其实有一点小问题，我们用<code class="literal">-Wall</code>选项编译<code class="literal">main.c</code>可以看到：</p><pre class="screen">$ gcc -c main.c -Wall
+main.c: In function ‘main’:
+main.c:8: warning: implicit declaration of function ‘push’
+main.c:12: warning: implicit declaration of function ‘is_empty’
+main.c:13: warning: implicit declaration of function ‘pop’</pre><p>这个问题我们在<a class="xref" href="ch03s02.html#func.ourfirstfunc">第 2 节 “自定义函数”</a>讨论过，由于编译器在处理函数调用代码时没有找到函数原型，只好根据函数调用代码做隐式声明，把这三个函数声明为：</p><pre class="programlisting">int push(char);
+int pop(void);
+int is_empty(void);</pre><p>现在你应该比学<a class="xref" href="ch03s02.html#func.ourfirstfunc">第 2 节 “自定义函数”</a>的时候更容易理解这条规则了。为什么编译器在处理函数调用代码时需要有函数原型？因为必须知道参数的类型和个数以及返回值的类型才知道生成什么样的指令。为什么隐式声明靠不住呢？因为隐式声明是从函数调用代码推导而来的，而事实上函数定义的形参类型可能跟函数调用代码传的实参类型并不一致，如果函数定义带有可变参数（例如<code class="literal">printf</code>），那么从函数调用代码也看不出来这个函数带有可变参数，另外，从函数调用代码也看不出来返回值应该是什么类型，所以隐式声明只能规定返回值都是<code class="literal">int</code>型的。既然隐式声明靠不住，那编译器为什么不自己去找函数定义，而非要让我们在调用之前写函数原型呢？因为编译器往往不知道去哪里找函数定义，像上面的例子，我让编译器编译<code class="literal">main.c</code>，而这几个函数的定义却在<code class="literal">stack.c</code>里，编译器又怎么会知道呢？所以编译器只能通过隐式声明来猜测函数原型，这种猜测往往会出错，但在比较简单的情况下还算可用，比如上一节的例子这么编译过去了也能得到正确结果。</p><p>现在我们在<code class="literal">main.c</code>中声明这几个函数的原型：</p><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+
+extern void push(char);
+extern char pop(void);
+extern int is_empty(void);
+
+int main(void)
+{
+	push('a');
+	push('b');
+	push('c');
+	
+	while(!is_empty())
+		putchar(pop());
+	putchar('\n');
+
+	return 0;
+}</pre><p>这样编译器就不会报警告了。在这里<code class="literal">extern</code>关键字表示这个标识符具有External Linkage。External Linkage的定义在上一章讲过，但现在应该更容易理解了，<code class="literal">push</code>这个标识符具有External Linkage指的是：如果把<code class="literal">main.c</code>和<code class="literal">stack.c</code>链接在一起，如果<code class="literal">push</code>在<code class="literal">main.c</code>和<code class="literal">stack.c</code>中都有声明（在<code class="literal">stack.c</code>中的声明同时也是定义），那么这些声明指的是同一个函数，链接之后是同一个<code class="literal">GLOBAL</code>符号，代表同一个地址。函数声明中的<code class="literal">extern</code>也可以省略不写，不写<code class="literal">extern</code>的函数声明也表示这个函数具有External Linkage。</p><p>如果用<code class="literal">static</code>关键字修饰一个函数声明，则表示该标识符具有Internal Linkage，例如有以下两个程序文件：</p><pre class="programlisting">/* foo.c */
+static void foo(void) {}</pre><pre class="programlisting">/* main.c */
+void foo(void);
+int main(void) { foo(); return 0; }</pre><p>编译链接在一起会出错：</p><pre class="screen">$ gcc foo.c main.c
+/tmp/ccRC2Yjn.o: In function `main':
+main.c:(.text+0x12): undefined reference to `foo'
+collect2: ld returned 1 exit status</pre><p>虽然在<code class="literal">foo.c</code>中定义了函数<code class="literal">foo</code>，但这个函数只具有Internal Linkage，只有在<code class="literal">foo.c</code>中多次声明才表示同一个函数，而在<code class="literal">main.c</code>中声明就不表示它了。如果把<code class="literal">foo.c</code>编译成目标文件，函数名<code class="literal">foo</code>在其中是一个<code class="literal">LOCAL</code>的符号，不参与链接过程，所以在链接时，<code class="literal">main.c</code>中用到一个External Linkage的<code class="literal">foo</code>函数，链接器却找不到它的定义在哪儿，无法确定它的地址，也就无法做符号解析，只好报错。<span class="emphasis"><em>凡是被多次声明的变量或函数，必须有且只有一个声明是定义，如果有多个定义，或者一个定义都没有，链接器就无法完成链接。</em></span></p><p>以上讲了用<code class="literal">static</code>和<code class="literal">extern</code>修饰函数声明的情况。现在来看用它们修饰变量声明的情况。仍然用<code class="literal">stack.c</code>和<code class="literal">main.c</code>的例子，如果我想在<code class="literal">main.c</code>中直接访问<code class="literal">stack.c</code>中定义的变量<code class="literal">top</code>，则可以用<code class="literal">extern</code>声明它：</p><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+
+void push(char);
+char pop(void);
+int is_empty(void);
+extern int top;
+
+int main(void)
+{
+	push('a');
+	push('b');
+	push('c');
+	printf("%d\n", top);
+	
+	while(!is_empty())
+		putchar(pop());
+	putchar('\n');
+	printf("%d\n", top);
+
+	return 0;
+}</pre><p>变量<code class="literal">top</code>具有External Linkage，它的存储空间是在<code class="literal">stack.c</code>中分配的，所以<code class="literal">main.c</code>中的变量声明<code class="literal">extern int top;</code>不是变量定义，因为它不分配存储空间。以上函数和变量声明也可以写在<code class="literal">main</code>函数体里面，使所声明的标识符具有块作用域：</p><pre class="programlisting">int main(void)
+{
+	void push(char);
+	char pop(void);
+	int is_empty(void);
+	extern int top;
+
+	push('a');
+	push('b');
+	push('c');
+	printf("%d\n", top);
+	
+	while(!is_empty())
+		putchar(pop());
+	putchar('\n');
+	printf("%d\n", top);
+
+	return 0;
+}</pre><p>注意，变量声明和函数声明有一点不同，函数声明的<code class="literal">extern</code>可写可不写，而变量声明如果不写<code class="literal">extern</code>意思就完全变了，如果上面的例子不写<code class="literal">extern</code>就表示在<code class="literal">main</code>函数中定义一个局部变量<code class="literal">top</code>。另外要注意，<code class="literal">stack.c</code>中的定义是<code class="literal">int top = -1;</code>，而<code class="literal">main.c</code>中的声明不能加Initializer，如果上面的例子写成<code class="literal">extern int top = -1;</code>则编译器会报错。</p><p>在<code class="literal">main.c</code>中可以通过变量声明来访问<code class="literal">stack.c</code>中的变量<code class="literal">top</code>，但是从实现<code class="literal">stack.c</code>这个模块的角度来看，<code class="literal">top</code>这个变量是不希望被外界访问到的，变量<code class="literal">top</code>和<code class="literal">stack</code>都属于这个模块的内部状态，外界应该只允许通过<code class="literal">push</code>和<code class="literal">pop</code>函数来改变模块的内部状态，这样才能保证堆栈的LIFO特性，如果外界可以随机访问<code class="literal">stack</code>或者随便修改<code class="literal">top</code>，那么堆栈的状态就乱了。那怎么才能阻止外界访问<code class="literal">top</code>和<code class="literal">stack</code>呢？答案就是用<code class="literal">static</code>关键字把它们声明为Internal Linkage的：</p><pre class="programlisting">/* stack.c */
+static char stack[512];
+static int top = -1;
+
+void push(char c)
+{
+	stack[++top] = c;
+}
+
+char pop(void)
+{
+	return stack[top--];
+}
+
+int is_empty(void)
+{
+	return top == -1;
+}</pre><p>这样，即使在<code class="literal">main.c</code>中用<code class="literal">extern</code>声明也访问不到<code class="literal">stack.c</code>的变量<code class="literal">top</code>和<code class="literal">stack</code>。从而保护了<code class="literal">stack.c</code>模块的内部状态，这也是一种封装（Encapsulation）<a id="id2788019" class="indexterm"></a>的思想。</p><p>用<code class="literal">static</code>关键字声明具有Internal Linkage的函数也是出于这个目的。在一个模块中，有些函数是提供给外界使用的，也称为导出（Export）<a id="id2788039" class="indexterm"></a>给外界使用，这些函数声明为External Linkage的。有些函数只在模块内部使用而不希望被外界访问到，则声明为Internal Linkage的。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2788051"></a>2.2. 头文件</h3></div></div></div><p>我们继续前面关于<code class="literal">stack.c</code>和<code class="literal">main.c</code>的讨论。<code class="literal">stack.c</code>这个模块封装了<code class="literal">top</code>和<code class="literal">stack</code>两个变量，导出了<code class="literal">push</code>、<code class="literal">pop</code>、<code class="literal">is_empty</code>三个函数接口，已经设计得比较完善了。但是使用这个模块的每个程序文件都要写三个函数声明也是很麻烦的，假设又有一个<code class="literal">foo.c</code>也使用这个模块，<code class="literal">main.c</code>和<code class="literal">foo.c</code>中各自要写三个函数声明。重复的代码总是应该尽量避免的，以前我们通过各种办法把重复的代码提取出来，比如在<a class="xref" href="ch08s02.html#array.statistic">第 2 节 “数组应用实例：统计随机数”</a>讲过用宏定义避免硬编码的问题，这次有什么办法呢？答案就是可以自己写一个头文件<code class="literal">stack.h</code>：</p><pre class="programlisting">/* stack.h */
+#ifndef STACK_H
+#define STACK_H
+extern void push(char);
+extern char pop(void);
+extern int is_empty(void);
+#endif</pre><p>这样在<code class="literal">main.c</code>中只需包含这个头文件就可以了，而不需要写三个函数声明：</p><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+#include "stack.h"
+
+int main(void)
+{
+	push('a');
+	push('b');
+	push('c');
+	
+	while(!is_empty())
+		putchar(pop());
+	putchar('\n');
+
+	return 0;
+}</pre><p>首先说为什么<code class="literal">#include &lt;stdio.h&gt;</code>用角括号，而<code class="literal">#include "stack.h"</code>用引号。对于用角括号包含的头文件，<code class="literal">gcc</code>首先查找<code class="literal">-I</code>选项指定的目录，然后查找系统的头文件目录（通常是<code class="literal">/usr/include</code>，在我的系统上还包括<code class="literal">/usr/lib/gcc/i486-linux-gnu/4.3.2/include</code>）；而对于用引号包含的头文件，<code class="literal">gcc</code>首先查找包含头文件的<code class="literal">.c</code>文件所在的目录，然后查找<code class="literal">-I</code>选项指定的目录，然后查找系统的头文件目录。</p><p>假如三个代码文件都放在当前目录下：</p><pre class="screen">$ tree
+.
+|-- main.c
+|-- stack.c
+`-- stack.h
+
+0 directories, 3 files</pre><p>则可以用<code class="literal">gcc -c main.c</code>编译，<code class="literal">gcc</code>会自动在<code class="literal">main.c</code>所在的目录中找到<code class="literal">stack.h</code>。假如把<code class="literal">stack.h</code>移到一个子目录下：</p><pre class="screen">$ tree
+.
+|-- main.c
+`-- stack
+    |-- stack.c
+    `-- stack.h
+
+1 directory, 3 files</pre><p>则需要用<code class="literal">gcc -c main.c -Istack</code>编译。用<code class="literal">-I</code>选项告诉<code class="literal">gcc</code>头文件要到子目录<code class="literal">stack</code>里找。</p><p>在<code class="literal">#include</code>预处理指示中可以使用相对路径，例如把上面的代码改成<code class="literal">#include "stack/stack.h"</code>，那么编译时就不需要加<code class="literal">-Istack</code>选项了，因为<code class="literal">gcc</code>会自动在<code class="literal">main.c</code>所在的目录中查找，而头文件相对于<code class="literal">main.c</code>所在目录的相对路径正是<code class="literal">stack/stack.h</code>。</p><p>在<code class="literal">stack.h</code>中我们又看到两个新的预处理指示<code class="literal">#ifndef STACK_H</code>和<code class="literal">#endif</code>，意思是说，如果<code class="literal">STACK_H</code>这个宏没有定义过，那么从<code class="literal">#ifndef</code>到<code class="literal">#endif</code>之间的代码就包含在预处理的输出结果中，否则这一段代码就不出现在预处理的输出结果中。<code class="literal">stack.h</code>这个头文件的内容整个被<code class="literal">#ifndef</code>和<code class="literal">#endif</code>括起来了，如果在包含这个头文件时<code class="literal">STACK_H</code>这个宏已经定义过了，则相当于这个头文件里什么都没有，包含了一个空文件。这有什么用呢？假如<code class="literal">main.c</code>包含了两次<code class="literal">stack.h</code>：</p><pre class="programlisting">...
+#include "stack.h"
+#include "stack.h"
+
+int main(void)
+{
+...</pre><p>则第一次包含<code class="literal">stack.h</code>时并没有定义<code class="literal">STACK_H</code>这个宏，因此头文件的内容包含在预处理的输出结果中：</p><pre class="programlisting">...
+#define STACK_H
+extern void push(char);
+extern char pop(void);
+extern int is_empty(void);
+#include "stack.h"
+
+int main(void)
+{
+...</pre><p>其中已经定义了<code class="literal">STACK_H</code>这个宏，因此第二次再包含<code class="literal">stack.h</code>就相当于包含了一个空文件，这就避免了头文件的内容被重复包含。这种保护头文件的写法称为Header Guard<a id="id2788483" class="indexterm"></a>，以后我们每写一个头文件都要加上Header Guard，宏定义名就用头文件名的大写形式，这是规范的做法。</p><p>那为什么需要防止重复包含呢？谁会把一个头文件包含两次呢？像上面那么明显的错误没人会犯，但有时候重复包含的错误并不是那么明显的。比如：</p><pre class="programlisting">#include "stack.h"
+#include "foo.h"</pre><p>然而<code class="literal">foo.h</code>里又包含了<code class="literal">bar.h</code>，<code class="literal">bar.h</code>里又包含了<code class="literal">stack.h</code>。在规模较大的项目中头文件包含头文件的情况很常见，经常会包含四五层，这时候重复包含的问题就很难发现了。比如在我的系统头文件目录<code class="literal">/usr/include</code>中，<code class="literal">errno.h</code>包含了<code class="literal">bits/errno.h</code>，后者又包含了<code class="literal">linux/errno.h</code>，后者又包含了<code class="literal">asm/errno.h</code>，后者又包含了<code class="literal">asm-generic/errno.h</code>。</p><p>另外一个问题是，就算我是重复包含了头文件，那有什么危害么？像上面的三个函数声明，在程序中声明两次也没有问题，对于具有External Linkage的函数，声明任意多次也都代表同一个函数。重复包含头文件有以下问题：</p><div class="orderedlist"><ol type="1"><li><p>一是使预处理的速度变慢了，要处理很多本来不需要处理的头文件。</p></li><li><p>二是如果有<code class="literal">foo.h</code>包含<code class="literal">bar.h</code>，<code class="literal">bar.h</code>又包含<code class="literal">foo.h</code>的情况，预处理器就陷入死循环了（其实编译器都会规定一个包含层数的上限）。</p></li><li><p>三是头文件里有些代码不允许重复出现，虽然变量和函数允许多次声明（只要不是多次定义就行），但头文件里有些代码是不允许多次出现的，比如<code class="literal">typedef</code>类型定义和结构体Tag定义等，在一个程序文件中只允许出现一次。</p></li></ol></div><p>还有一个问题，既然要<code class="literal">#include</code>头文件，那我不如直接在<code class="literal">main.c</code>中<code class="literal">#include "stack.c"</code>得了。这样把<code class="literal">stack.c</code>和<code class="literal">main.c</code>合并为同一个程序文件，相当于又回到最初的<a class="xref" href="ch12s02.html#stackqueue.stackreverse">例 12.1 “用堆栈实现倒序打印”</a>了。当然这样也能编译通过，但是在一个规模较大的项目中不能这么做，假如又有一个<code class="literal">foo.c</code>也要使用<code class="literal">stack.c</code>这个模块怎么办呢？如果在<code class="literal">foo.c</code>里面也<code class="literal">#include "stack.c"</code>，就相当于<code class="literal">push</code>、<code class="literal">pop</code>、<code class="literal">is_empty</code>这三个函数在<code class="literal">main.c</code>和<code class="literal">foo.c</code>中都有定义，那么<code class="literal">main.c</code>和<code class="literal">foo.c</code>就不能链接在一起了。如果采用包含头文件的办法，那么这三个函数只在<code class="literal">stack.c</code>中定义了一次，最后可以把<code class="literal">main.c</code>、<code class="literal">stack.c</code>、<code class="literal">foo.c</code>链接在一起。如下图所示：</p><div class="figure"><a id="id2788776"></a><p class="title"><b>图 20.2. 为什么要包含头文件而不是<code class="literal">.c</code>文件</b></p><div class="figure-contents"><div><img src="images/link.includeh.png" alt="为什么要包含头文件而不是.c文件" /></div></div></div><br class="figure-break" /><p>同样道理，头文件中的变量和函数声明一定不能是定义。如果头文件中出现变量或函数定义，这个头文件又被多个<code class="literal">.c</code>文件包含，那么这些<code class="literal">.c</code>文件就不能链接在一起了。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2788815"></a>2.3. 定义和声明的详细规则</h3></div></div></div><p>以上两节关于定义和声明只介绍了最基本的规则，在写代码时掌握这些基本规则就够用了，但其实C语言关于定义和声明还有很多复杂的规则，在分析错误原因或者维护规模较大的项目时需要了解这些规则。本节的两个表格出自<a class="xref" href="bi01.html#bibli.standardc" title="Standard C: A Reference">[<abbr class="abbrev">Standard C</abbr>]</a>。</p><p>首先看关于函数声明的规则。</p><div class="table"><a id="id2788838"></a><p class="title"><b>表 20.1. Storage Class关键字对函数声明的作用</b></p><div class="table-contents"><table summary="Storage Class关键字对函数声明的作用" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>Storage Class</th><th>File Scope Declaration</th><th>Block Scope Declaration</th></tr></thead><tbody><tr><td>none</td><td><div class="literallayout"><p>previous linkage<br />
+can define</p></div></td><td><div class="literallayout"><p>previous linkage<br />
+cannot define</p></div></td></tr><tr><td>extern</td><td><div class="literallayout"><p>previous linkage<br />
+can define</p></div></td><td><div class="literallayout"><p>previous linkage<br />
+cannot define</p></div></td></tr><tr><td>static</td><td><div class="literallayout"><p>internal linkage<br />
+can define</p></div></td><td>N/A</td></tr></tbody></table></div></div><br class="table-break" /><p>以前我们说“<span class="quote"><code class="literal">extern</code>关键字表示这个标识符具有External Linkage</span>”其实是不准确的，准确地说应该是Previous Linkage。Previous Linkage的定义是：这次声明的标识符具有什么样的Linkage取决于前一次声明，这前一次声明具有相同的标识符名，而且必须是文件作用域的声明，如果在程序文件中找不到前一次声明（这次声明是第一次声明），那么这个标识符具有External Linkage。例如在一个程序文件中在文件作用域两次声明同一个函数：</p><pre class="programlisting">static int f(void); /* internal linkage */
+extern int f(void); /* previous linkage */</pre><p>则这里的<code class="literal">extern</code>修饰的标识符具有Interanl Linkage而不是External Linkage。从上表的前两行可以总结出我们先前所说的规则“<span class="quote">函数声明加不加<code class="literal">extern</code>关键字都一样</span>”。上表也说明了在文件作用域允许定义函数，在块作用域不允许定义函数，或者说函数定义不能嵌套。另外，在块作用域中不允许用<code class="literal">static</code>关键字声明函数。</p><p>关于变量声明的规则要复杂一些：</p><div class="table"><a id="id2788979"></a><p class="title"><b>表 20.2. Storage Class关键字对变量声明的作用</b></p><div class="table-contents"><table summary="Storage Class关键字对变量声明的作用" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>Storage Class</th><th>File Scope Declaration</th><th>Block Scope Declaration</th></tr></thead><tbody><tr><td>none</td><td><div class="literallayout"><p>external linkage<br />
+static duration<br />
+static initializer<br />
+tentative definition</p></div></td><td><div class="literallayout"><p>no linkage<br />
+automatic duration<br />
+dynamic initializer<br />
+definition</p></div></td></tr><tr><td>extern</td><td><div class="literallayout"><p>previous linkage<br />
+static duration<br />
+no initializer[*]<br />
+not a definition</p></div></td><td><div class="literallayout"><p>previous linkage<br />
+static duration<br />
+no initializer<br />
+not a definition</p></div></td></tr><tr><td>static</td><td><div class="literallayout"><p>internal linkage<br />
+static duration<br />
+static initializer<br />
+tentative definition</p></div></td><td><div class="literallayout"><p>no linkage<br />
+static duration<br />
+static initializer<br />
+definition</p></div></td></tr></tbody></table></div></div><br class="table-break" /><p>上表的每个单元格里分成四行，分别描述变量的链接属性、生存期，以及这种变量如何初始化，是否算变量定义。链接属性有External Linkage、Internal Linkage、No Linkage和Previous Linkage四种情况，生存期有Static Duration和Automatic Duration两种情况，请参考本章和上一章的定义。初始化有Static Initializer和Dynamic Initializer两种情况，前者表示Initializer中只能使用常量表达式，表达式的值必须在编译时就能确定，后者表示Initializer中可以使用任意的右值表达式，表达式的值可以在运行时计算。是否算变量定义有三种情况，Definition（算变量定义）、Not a Definition（不算变量定义）和Tentative Definition（暂定的变量定义）。什么叫“<span class="quote">暂定的变量定义</span>”呢？一个变量声明具有文件作用域，没有Storage Class关键字修饰，或者用<code class="literal">static</code>关键字修饰，那么如果它有Initializer则编译器认为它就是一个变量定义，如果它没有Initializer则编译器暂定它是变量定义，如果程序文件中有这个变量的明确定义就用明确定义，如果程序文件没有这个变量的明确定义，就用这个暂定的变量定义<sup>[<a id="id2789106" href="#ftn.id2789106" class="footnote">32</a>]</sup>，这种情况下变量以0初始化。在<a class="xref" href="bi01.html#bibli.c99" title="ISO/IEC 9899: Programming Languages － C">[<abbr class="abbrev">C99</abbr>]</a>中有一个例子：</p><pre class="programlisting">int i1 = 1; // definition, external linkage
+static int i2 = 2; // definition, internal linkage
+extern int i3 = 3; // definition, external linkage
+int i4; // tentative definition, external linkage
+static int i5; // tentative definition, internal linkage
+int i1; // valid tentative definition, refers to previous
+int i2; // 6.2.2 renders undefined, linkage disagreement
+int i3; // valid tentative definition, refers to previous
+int i4; // valid tentative definition, refers to previous
+int i5; // 6.2.2 renders undefined, linkage disagreement
+extern int i1; // refers to previous, whose linkage is external
+extern int i2; // refers to previous, whose linkage is internal
+extern int i3; // refers to previous, whose linkage is external
+extern int i4; // refers to previous, whose linkage is external
+extern int i5; // refers to previous, whose linkage is internal</pre><p>变量<code class="literal">i2</code>和<code class="literal">i5</code>第一次声明为Internal Linkage，第二次又声明为External Linkage，这是不允许的，编译器会报错。注意上表中标有<code class="literal">[*]</code>的单元格，对于文件作用域的<code class="literal">extern</code>变量声明，C99是允许带Initializer的，并且认为它是一个定义，但是<code class="literal">gcc</code>对于这种写法会报警告，为了兼容性应避免这种写法。</p></div><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2789106" href="#id2789106" class="para">32</a>] </sup>由于本书没有提及将不完全类型进行组合的问题，所以这条规则被我简化了，真正的规则还要复杂一些。读者可以参考C99中有关Incomplete Type和Composite Type的条款。Tentative Definition的完整定义在C99的6.9.2节条款2。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch20s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch20.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch20s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 多目标文件的链接 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 静态库</td></tr></table></div></body></html>

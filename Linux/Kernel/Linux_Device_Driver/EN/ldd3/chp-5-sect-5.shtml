@@ -1,0 +1,575 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>5.5. Spinlocks</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-5-sect-4.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-5-sect-6.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><TD valign="top"><a name="chp-5-sect-5"></a>
+<h3 class="docSection1Title">5.5. Spinlocks</h3>
+
+<p class="docText">Semaphores are a useful tool for mutual exclusion,<a name="chp-5-ITERM-5018"></a>
+but they are not the only such tool provided by the kernel. Instead,
+most locking is implemented with a mechanism called a
+<i>spinlock</i>. Unlike semaphores, spinlocks may be
+used in code that cannot sleep, such as interrupt handlers. When
+properly used, spinlocks offer higher performance than semaphores in
+general. They do, however, bring a different set of constraints on
+their use.</P>
+
+<p class="docText">Spinlocks are simple in concept. A spinlock is a mutual exclusion
+device that can have only two values:
+"locked" and
+"unlocked." It is usually
+implemented as a single bit in an integer value. Code wishing to take
+out a particular lock tests the relevant bit. If the lock is
+available, the "locked" bit is set
+and the code continues into the critical section. If, instead, the
+lock has been taken by somebody else, the code goes into a tight loop
+where it repeatedly checks the lock until it becomes available. This
+loop is the "spin" part of a
+spinlock.</P>
+
+<p class="docText">Of course, the real implementation of a spinlock is a bit more
+complex than the description above. The "test and
+set" operation must be done in an atomic manner so
+that only one thread can obtain the lock, even if several are
+spinning at any given time. Care must also be taken to avoid
+<a name="chp-5-ITERM-5019"></a>deadlocks
+on
+<I>hyperthreaded</i><a name="chp-5-ITERM-5020"></a>
+processors—chips that implement multiple, virtual CPUs sharing
+a single processor core and cache. So the actual spinlock
+implementation is different for every architecture that Linux
+supports. The core concept is the same on all systems, however, when
+there is contention for a spinlock, the processors that are waiting
+execute a tight loop and accomplish no useful work.</P>
+
+<p class="docText">Spinlocks are, by their nature, intended for use on multiprocessor
+systems, although a uniprocessor workstation running a preemptive
+kernel behaves like SMP, as far as concurrency is concerned. If a
+nonpreemptive uniprocessor system ever went into a spin on a lock, it
+would spin forever; no other thread would ever be able to obtain the
+CPU to release the lock. For this reason, spinlock operations on
+uniprocessor systems without preemption enabled are optimized to do
+nothing, with the exception of the ones that change the IRQ masking
+status. Because of preemption, even if you never expect your code to
+run on an SMP system, you still need to implement proper locking.</P>
+
+<a name="chp-5-sect-5.1"></a>
+<h4 class="docSection2Title">5.5.1. Introduction to the Spinlock API</h4>
+
+<p class="docText">The required include file for
+the<a name="chp-5-ITERM-5021"></a>
+<a name="chp-5-ITERM-5022"></a>
+spinlock <a name="chp-5-ITERM-5023"></a>primitives is
+<i>&lt;linux/spinlock.h&gt;</i>. An actual lock has the
+type <tt>spinlock_t</tt>. Like any other data structure, a
+spinlock must be initialized. This initialization may be done at
+compile time as follows:</P>
+
+<pre>spinlock_t my_lock = SPIN_LOCK_UNLOCKED;</pre><br>
+
+
+<p class="docText">or at runtime with:</p>
+
+<pre>void spin_lock_init(spinlock_t *lock);</pre><BR>
+
+
+<p class="docText">Before entering a critical section, your code must obtain the
+requisite lock with:</p>
+
+<pre>void spin_lock(spinlock_t *lock);</pre><br>
+
+
+<p class="docText">Note that all spinlock waits are, by their nature, uninterruptible.
+Once you call <span class="docEmphasis">spin_lock</span>, you will spin until the
+lock becomes available.</P>
+
+<p class="docText">To release a lock that you have obtained, pass it to:</p>
+
+<pre>void spin_unlock(spinlock_t *lock);</pre><BR>
+
+
+<p class="docText">There are many other spinlock functions, and we will look at them all
+shortly. But none of them depart from the core idea shown by the
+functions listed above. There is very little that one can do with a
+lock, other than lock and release it. However, there are a few rules
+about how you must work with spinlocks. We will take a moment to look
+at those before getting into the full spinlock interface.</p>
+
+
+<a name="chp-5-sect-5.2"></a>
+<h4 class="docSection2Title">5.5.2. Spinlocks and Atomic Context</h4>
+
+<p class="docText">Imagine for a moment that your<a name="chp-5-ITERM-5024"></a> driver acquires a spinlock and goes
+about its business within its critical section. Somewhere in the
+middle, your driver loses the processor. Perhaps it has called a
+function (<span class="docEmphasis">copy_from_user</span>, say) that puts the
+process to sleep. Or, perhaps, kernel preemption kicks in, and a
+higher-priority process pushes your code aside. Your code is now
+holding a lock that it will not release any time in the foreseeable
+future. If some other thread tries to obtain the same lock, it will,
+in the best case, wait (spinning in the processor) for a very long
+time. In the worst case, the system could deadlock entirely.</p>
+
+<p class="docText">Most readers would agree that this scenario is best avoided.
+Therefore, the core rule that applies to spinlocks is that any code
+must, while holding a spinlock, be atomic. It cannot sleep; in fact,
+it cannot relinquish the processor for any reason except to service
+interrupts (and sometimes not even then).</p>
+
+<p class="docText">The kernel preemption case is handled by the spinlock code itself.
+Any time kernel code holds a spinlock, preemption is disabled on the
+relevant processor. Even uniprocessor systems must disable preemption
+in this way to avoid race conditions. That is why proper locking is
+required even if you never expect your code to run on a
+multiprocessor machine.</p>
+
+<p class="docText">Avoiding sleep
+while<a name="chp-5-ITERM-5025"></a>
+holding a lock can be more difficult; many kernel functions can
+sleep, and this behavior is not always well documented. Copying data
+to or from user space is an obvious example: the required user-space
+page may need to be swapped in from the disk before the copy can
+proceed, and that operation clearly requires a sleep. Just about any
+operation that must allocate memory can sleep;
+<span class="docEmphasis">kmalloc</span> can decide to give up the processor, and
+wait for more memory to become available unless it is explicitly told
+not to. Sleeps can happen in surprising places; writing code that
+will execute under a spinlock requires paying attention to every
+function that you call.</p>
+
+<p class="docText">Here's another scenario: your driver is executing
+and has just taken out a lock that controls access to its device.
+While the lock is held, the device issues an interrupt, which causes
+your interrupt handler to run. The interrupt handler, before
+accessing the device, must also obtain the lock. Taking out a
+spinlock in an interrupt handler is a legitimate thing to do; that is
+one of the reasons that spinlock operations do not sleep. But what
+happens if the interrupt routine executes in the same processor as
+the code that took out the lock originally? While the interrupt
+handler is spinning, the noninterrupt code will not be able to run to
+release the lock. That processor will spin forever.</p>
+
+<p class="docText">Avoiding this trap requires disabling interrupts (on the local CPU
+only) while the spinlock is held. There are variants of the spinlock
+functions that will disable interrupts for you
+(we'll see them in the next section). However, a
+complete discussion of interrupts must wait until <a class="docLink" href="chp-10.shtml#chp-10">Chapter 10</a>.</p>
+
+<p class="docText">The last important rule for spinlock usage is that spinlocks must
+always be held for the minimum time possible. The longer you hold a
+lock, the longer another processor may have to spin waiting for you
+to release it, and the chance of it having to spin at all is greater.
+Long lock hold times also keep the current processor from scheduling,
+meaning that a higher priority process—which really should be
+able to get the CPU—may have to wait. The kernel developers put
+a great deal of effort into reducing kernel latency (the time a
+process may have to wait to be scheduled) in the 2.5 development
+series. A poorly written driver can wipe out all that progress just
+by holding a lock for too long. To avoid creating this sort of
+problem, make a point of keeping your lock-hold times short.</p>
+
+
+<a name="chp-5-sect-5.3"></a>
+<h4 class="docSection2Title">5.5.3. The Spinlock Functions</h4>
+
+<p class="docText">We have already seen two
+<a name="chp-5-ITERM-5026"></a>functions,
+<span class="docEmphasis">spin_lock</span> and <span class="docEmphasis">spin_unlock</span>,
+that manipulate spinlocks. There are several other functions,
+however, with similar names and purposes. We will now present the
+full set. This discussion will take us into ground we will not be
+able to cover properly for a few chapters yet; a complete
+understanding of the spinlock API requires an understanding of
+interrupt handling and related concepts.</p>
+
+<p class="docText">There are actually four functions that can lock a spinlock:</P>
+
+<pre>void spin_lock(spinlock_t *lock);
+void spin_lock_irqsave(spinlock_t *lock, unsigned long flags);
+void spin_lock_irq(spinlock_t *lock);
+void spin_lock_bh(spinlock_t *lock)</pre><br>
+
+
+<p class="docText">We have already seen how <span class="docEmphasis">spin_lock</span> works.
+<span class="docEmphasis">spin_lock_irqsave</span> disables interrupts (on the
+local processor only) before taking the spinlock; the previous
+interrupt state is stored in <tt>flags</tt>. If you are
+absolutely sure nothing else might have already disabled interrupts
+on your processor (or, in other words, you are sure that you should
+enable interrupts when you release your spinlock), you can use
+<span class="docEmphasis">spin_lock_irq</span> instead and not have to keep track
+of the flags. Finally, <span class="docEmphasis">spin_lock_bh</span> disables
+software interrupts before taking the lock, but leaves hardware
+interrupts enabled.</P>
+
+<p class="docText">If you have a spinlock that can be taken by code that runs in
+(hardware or software) interrupt context, you must use one of the
+forms of <span class="docEmphasis">spin_lock</span> that disables interrupts.
+Doing otherwise can deadlock the system, sooner or later. If you do
+not access your lock in a hardware interrupt handler, but you do via
+software interrupts (in code that runs out of a tasklet, for example,
+a topic covered in <a class="docLink" href="chp-7.shtml#chp-7">Chapter 7</a>),
+you can use <span class="docEmphasis">spin_lock_bh</span> to safely avoid
+deadlocks while still allowing hardware interrupts to be serviced.</P>
+
+<p class="docText">There are also four ways to<a name="chp-5-ITERM-5027"></a>
+<a name="chp-5-ITERM-5028"></a>
+release a spinlock; the one you use must correspond to the function
+you used to take the lock:</p>
+
+<pre>void spin_unlock(spinlock_t *lock);
+void spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags);
+void spin_unlock_irq(spinlock_t *lock);
+void spin_unlock_bh(spinlock_t *lock);</pre><br>
+
+
+<p class="docText">Each <span class="docEmphasis">spin_unlock</span> variant undoes the work
+performed by the corresponding <span class="docEmphasis">spin_lock</span>
+function. The <tt>flags</tt> argument passed to
+<span class="docEmphasis">spin_unlock_irqrestore</span> must be the same variable
+passed to <span class="docEmphasis">spin_lock_irqsave</span>. You must also call
+<span class="docEmphasis">spin_lock_irqsave</span> and
+<span class="docEmphasis">spin_unlock_irqrestore</span> in the same function;
+otherwise, your code may break on some architectures.</p>
+
+<p class="docText">There is also a set of nonblocking spinlock
+<a name="chp-5-ITERM-5029"></a>
+<a name="chp-5-ITERM-5030"></a>operations:</P>
+
+<pre>int spin_trylock(spinlock_t *lock);
+int spin_trylock_bh(spinlock_t *lock);</pre><br>
+
+
+<p class="docText">These functions return nonzero on success (the lock was obtained),
+<tt>0</tt> otherwise. There is no
+"try" version that disables
+interrupts.</P>
+
+
+<a name="chp-5-sect-5.4"></a>
+<H4 class="docSection2Title">5.5.4. Reader/Writer Spinlocks</H4>
+
+<p class="docText">The kernel provides a<a name="chp-5-ITERM-5031"></a> reader/writer form of spinlocks that
+is directly analogous to the reader/writer semaphores we saw earlier
+in this chapter. These locks allow any number of readers into a
+critical section simultaneously, but writers must have exclusive
+access. Reader/writer locks have a type of
+<tt>rwlock_t</tt>, defined in
+<i>&lt;linux/spinlock.h&gt;</i>. They can be declared
+and initialized in two ways:</p>
+
+<pre>rwlock_t my_rwlock = RW_LOCK_UNLOCKED; /* Static way */
+
+rwlock_t my_rwlock;
+rwlock_init(&amp;my_rwlock);  /* Dynamic way */</pre><br>
+
+
+<p class="docText">The list of functions available should look reasonably familiar by
+now. For readers, the following functions are available:</P>
+
+<pre>void read_lock(rwlock_t *lock);
+void read_lock_irqsave(rwlock_t *lock, unsigned long flags);
+void read_lock_irq(rwlock_t *lock);
+void read_lock_bh(rwlock_t *lock);
+
+void read_unlock(rwlock_t *lock);
+void read_unlock_irqrestore(rwlock_t *lock, unsigned long flags);
+void read_unlock_irq(rwlock_t *lock);
+void read_unlock_bh(rwlock_t *lock);</pre><BR>
+
+
+<p class="docText">Interestingly, there is no <span class="docEmphasis">read_trylock</span>.</P>
+
+<p class="docText">The functions for write access are similar:</p>
+
+<pre>void write_lock(rwlock_t *lock);
+void write_lock_irqsave(rwlock_t *lock, unsigned long flags);
+void write_lock_irq(rwlock_t *lock);
+void write_lock_bh(rwlock_t *lock);
+int write_trylock(rwlock_t *lock);
+
+void write_unlock(rwlock_t *lock);
+void write_unlock_irqrestore(rwlock_t *lock, unsigned long flags);
+void write_unlock_irq(rwlock_t *lock);
+void write_unlock_bh(rwlock_t *lock);</pre><BR>
+
+
+<p class="docText">Reader/writer locks can starve readers <a name="chp-5-ITERM-5032"></a>just as rwsems can. This behavior is
+rarely a problem; however, if there is enough lock contention to
+bring about starvation, performance is poor anyway.</P>
+
+
+
+<ul></ul></td></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-5-sect-4.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-5-sect-6.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

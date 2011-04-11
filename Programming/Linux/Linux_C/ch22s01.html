@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>1. 基本规则</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch22.html" title="第 22 章 Makefile基础" /><link rel="prev" href="ch22.html" title="第 22 章 Makefile基础" /><link rel="next" href="ch22s02.html" title="2. 隐含规则和模式规则" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">1. 基本规则</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch22.html">上一页</a> </td><th width="60%" align="center">第 22 章 Makefile基础</th><td width="20%" align="right"> <a accesskey="n" href="ch22s02.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2802840"></a>1. 基本规则</h2></div></div></div><p>除了Hello World这种极简单的程序之外，一般的程序都是由多个源文件编译链接而成的，这些源文件的处理步骤通常用Makefile来管理。Makefile起什么作用呢？我们先看一个例子，这个例子由<a class="xref" href="ch12s03.html#stackqueue.dfs">例 12.3 “用深度优先搜索解迷宫问题”</a>改写而成：</p><pre class="programlisting">/* main.c */
+#include &lt;stdio.h&gt;
+#include "main.h"
+#include "stack.h"
+#include "maze.h"
+
+struct point predecessor[MAX_ROW][MAX_COL] = {
+	{{-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}},
+	{{-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}},
+	{{-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}},
+	{{-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}},
+	{{-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}, {-1,-1}},
+};
+
+void visit(int row, int col, struct point pre)
+{
+	struct point visit_point = { row, col };
+	maze[row][col] = 2;
+	predecessor[row][col] = pre;
+	push(visit_point);
+}
+
+int main(void)
+{
+	struct point p = { 0, 0 };
+
+	maze[p.row][p.col] = 2;
+	push(p);	
+	
+	while (!is_empty()) {
+		p = pop();
+		if (p.row == MAX_ROW - 1  /* goal */
+		    &amp;&amp; p.col == MAX_COL - 1)
+			break;
+		if (p.col+1 &lt; MAX_COL     /* right */
+		    &amp;&amp; maze[p.row][p.col+1] == 0)
+			visit(p.row, p.col+1, p);
+		if (p.row+1 &lt; MAX_ROW     /* down */
+		    &amp;&amp; maze[p.row+1][p.col] == 0)
+			visit(p.row+1, p.col, p);
+		if (p.col-1 &gt;= 0          /* left */
+		    &amp;&amp; maze[p.row][p.col-1] == 0)
+			visit(p.row, p.col-1, p);
+		if (p.row-1 &gt;= 0          /* up */
+		    &amp;&amp; maze[p.row-1][p.col] == 0)
+			visit(p.row-1, p.col, p);
+		print_maze();
+	}
+	if (p.row == MAX_ROW - 1 &amp;&amp; p.col == MAX_COL - 1) {
+		printf("(%d, %d)\n", p.row, p.col);
+		while (predecessor[p.row][p.col].row != -1) {
+			p = predecessor[p.row][p.col];
+			printf("(%d, %d)\n", p.row, p.col);
+		}
+	} else
+		printf("No path!\n");
+
+	return 0;
+}</pre><p>我们把堆栈和迷宫的代码分别转移到模块<code class="literal">stack.c</code>和<code class="literal">maze.c</code>中，<code class="literal">main.c</code>包含它们提供的头文件<code class="literal">stack.h</code>和<code class="literal">maze.h</code>。</p><pre class="programlisting">/* main.h */
+#ifndef MAIN_H
+#define MAIN_H
+
+typedef struct point { int row, col; } item_t;
+
+#define MAX_ROW 5
+#define MAX_COL 5
+
+#endif</pre><p>在<code class="literal">main.h</code>中定义了一个类型和两个常量，<code class="literal">main.c</code>、<code class="literal">stack.c</code>和<code class="literal">maze.c</code>都要用到这些定义，都要包含这个头文件。</p><pre class="programlisting">/* stack.c */
+#include "stack.h"
+
+static item_t stack[512];
+static int top = 0;
+
+void push(item_t p)
+{
+	stack[top++] = p;
+}
+
+item_t pop(void)
+{
+	return stack[--top];
+}
+
+int is_empty(void)
+{
+	return top == 0;
+}</pre><pre class="programlisting">/* stack.h */
+#ifndef STACK_H
+#define STACK_H
+
+#include "main.h" /* provides definition for item_t */
+
+extern void push(item_t);
+extern item_t pop(void);
+extern int is_empty(void);
+
+#endif</pre><p><a class="xref" href="ch12s03.html#stackqueue.dfs">例 12.3 “用深度优先搜索解迷宫问题”</a>中的堆栈规定死了只能放<code class="literal">char</code>型数据，现在我们做进一步抽象，堆栈中放<code class="literal">item_t</code>类型的数据，<code class="literal">item_t</code>可以定义为任意类型，只要它能够通过函数的参数和返回值传递并且支持赋值操作就行。这也是一种避免硬编码的策略，<code class="literal">stack.c</code>中多次使用<code class="literal">item_t</code>类型，要改变它的定义只需改变<code class="literal">main.h</code>中的一行代码。</p><pre class="programlisting">/* maze.c */
+#include &lt;stdio.h&gt;
+#include "maze.h"
+
+int maze[MAX_ROW][MAX_COL] = {
+	0, 1, 0, 0, 0,
+	0, 1, 0, 1, 0,
+	0, 0, 0, 0, 0,
+	0, 1, 1, 1, 0,
+	0, 0, 0, 1, 0,
+};
+
+void print_maze(void)
+{
+	int i, j;
+	for (i = 0; i &lt; MAX_ROW; i++) {
+		for (j = 0; j &lt; MAX_COL; j++)
+			printf("%d ", maze[i][j]);
+		putchar('\n');
+	}
+	printf("*********\n");
+}</pre><pre class="programlisting">/* maze.h */
+#ifndef MAZE_H
+#define MAZE_H
+
+#include "main.h" /* provides defintion for MAX_ROW and MAX_COL */
+
+extern int maze[MAX_ROW][MAX_COL];
+void print_maze(void);
+
+#endif</pre><p><code class="literal">maze.c</code>中定义了一个<code class="literal">maze</code>数组和一个<code class="literal">print_maze</code>函数，需要在头文件<code class="literal">maze.h</code>中声明，以便提供给<code class="literal">main.c</code>使用，注意<code class="literal">print_maze</code>的声明可以不加<code class="literal">extern</code>，而<code class="literal">maze</code>的声明必须加<code class="literal">extern</code>。</p><p>这些源文件可以这样编译：</p><pre class="screen">$ gcc main.c stack.c maze.c -o main</pre><p>但这不是个好办法，如果编译之后又对<code class="literal">maze.c</code>做了修改，又要把所有源文件编译一遍，即使<code class="literal">main.c</code>、<code class="literal">stack.c</code>和那些头文件都没有修改也要跟着重新编译。一个大型的软件项目往往由上千个源文件组成，全部编译一遍需要几个小时，只改一个源文件就要求全部重新编译肯定是不合理的。</p><p>这样编译也许更好一些：</p><pre class="screen">$ gcc -c main.c
+$ gcc -c stack.c
+$ gcc -c maze.c
+$ gcc main.o stack.o maze.o -o main</pre><p>如果编译之后又对<code class="literal">maze.c</code>做了修改，要重新编译只需要做两步：</p><pre class="screen">$ gcc -c maze.c
+$ gcc main.o stack.o maze.o -o main</pre><p>这样又有一个问题，每次编译敲的命令都不一样，很容易出错，比如我修改了三个源文件，可能有一个忘了重新编译，结果编译完了修改没生效，运行时出了Bug还满世界找原因呢。更复杂的问题是，假如我改了<code class="literal">main.h</code>怎么办？所有包含<code class="literal">main.h</code>的源文件都需要重新编译，我得挨个找哪些源文件包含了<code class="literal">main.h</code>，有的还很不明显，例如<code class="literal">stack.c</code>包含了<code class="literal">stack.h</code>，而后者包含了<code class="literal">main.h</code>。可见手动处理这些问题非常容易出错，那有没有自动的解决办法呢？有，就是写一个<code class="literal">Makefile</code>文件和源代码放在同一个目录下：</p><pre class="programlisting">main: main.o stack.o maze.o
+	gcc main.o stack.o maze.o -o main
+
+main.o: main.c main.h stack.h maze.h
+	gcc -c main.c
+
+stack.o: stack.c stack.h main.h
+	gcc -c stack.c
+
+maze.o: maze.c maze.h main.h
+	gcc -c maze.c</pre><p>然后在这个目录下运行<code class="literal">make</code>编译：</p><pre class="screen">$ make
+gcc -c main.c
+gcc -c stack.c
+gcc -c maze.c
+gcc main.o stack.o maze.o -o main</pre><p><code class="literal">make</code>命令会自动读取当前目录下的<code class="literal">Makefile</code>文件<sup>[<a id="id2803212" href="#ftn.id2803212" class="footnote">33</a>]</sup>，完成相应的编译步骤。Makefile由一组规则（Rule）<a id="id2803294" class="indexterm"></a>组成，每条规则的格式是：</p><pre class="programlisting">target ... : prerequisites ... 
+	command1
+	command2
+	...
+</pre><p>例如：</p><pre class="programlisting">main: main.o stack.o maze.o
+	gcc main.o stack.o maze.o -o main</pre><p><code class="literal">main</code>是这条规则的目标（Target）<a id="id2803323" class="indexterm"></a>，<code class="literal">main.o</code>、<code class="literal">stack.o</code>和<code class="literal">maze.o</code>是这条规则的条件（Prerequisite）<a id="id2803348" class="indexterm"></a>。目标和条件之间的关系是：<span class="emphasis"><em>欲更新目标，必须首先更新它的所有条件；所有条件中只要有一个条件被更新了，目标也必须随之被更新</em></span>。所谓“<span class="quote">更新</span>”就是执行一遍规则中的命令列表，命令列表中的每条命令必须以一个Tab开头，注意不能是空格，Makefile的格式不像C语言的缩进那么随意，对于Makefile中的每个以Tab开头的命令，<code class="literal">make</code>会创建一个Shell进程去执行它。</p><p>对于上面这个例子，<code class="literal">make</code>执行如下步骤：</p><div class="orderedlist"><ol type="1"><li><p>尝试更新Makefile中第一条规则的目标<code class="literal">main</code>，第一条规则的目标称为缺省目标，只要缺省目标更新了就算完成任务了，其它工作都是为这个目的而做的。由于我们是第一次编译，<code class="literal">main</code>文件还没生成，显然需要更新，但规则说必须先更新了<code class="literal">main.o</code>、<code class="literal">stack.o</code>和<code class="literal">maze.o</code>这三个条件，然后才能更新<code class="literal">main</code>。</p></li><li><p>所以<code class="literal">make</code>会进一步查找以这三个条件为目标的规则，这些目标文件也没有生成，也需要更新，所以执行相应的命令（<code class="literal">gcc -c main.c</code>、<code class="literal">gcc -c stack.c</code>和<code class="literal">gcc -c maze.c</code>）更新它们。</p></li><li><p>最后执行<code class="literal">gcc main.o stack.o maze.o -o main</code>更新<code class="literal">main</code>。</p></li></ol></div><p>如果没有做任何改动，再次运行<code class="literal">make</code>：</p><pre class="screen">$ make
+make: `main' is up to date.</pre><p><code class="literal">make</code>会提示缺省目标已经是最新的了，不需要执行任何命令更新它。再做个实验，如果修改了<code class="literal">maze.h</code>（比如加个无关痛痒的空格）再运行<code class="literal">make</code>：</p><pre class="screen">$ make
+gcc -c main.c
+gcc -c maze.c
+gcc main.o stack.o maze.o -o main</pre><p><code class="literal">make</code>会自动选择那些受影响的源文件重新编译，不受影响的源文件则不重新编译，这是怎么做到的呢？</p><div class="orderedlist"><ol type="1"><li><p><code class="literal">make</code>仍然尝试更新缺省目标，首先检查目标<code class="literal">main</code>是否需要更新，这就要检查三个条件<code class="literal">main.o</code>、<code class="literal">stack.o</code>和<code class="literal">maze.o</code>是否需要更新。</p></li><li><p><code class="literal">make</code>会进一步查找以这三个条件为目标的规则，然后发现<code class="literal">main.o</code>和<code class="literal">maze.o</code>需要更新，因为它们都有一个条件是<code class="literal">maze.h</code>，而这个文件的修改时间比<code class="literal">main.o</code>和<code class="literal">maze.o</code>晚，所以执行相应的命令更新<code class="literal">main.o</code>和<code class="literal">maze.o</code>。</p></li><li><p>既然<code class="literal">main</code>的三个条件中有两个被更新过了，那么<code class="literal">main</code>也需要更新，所以执行命令<code class="literal">gcc main.o stack.o maze.o -o main</code>更新<code class="literal">main</code>。</p></li></ol></div><p>现在总结一下Makefile的规则，请读者结合上面的例子理解。如果一条规则的目标属于以下情况之一，就称为需要更新：</p><div class="itemizedlist"><ul type="disc"><li><p>目标没有生成。</p></li><li><p>某个条件需要更新。</p></li><li><p>某个条件的修改时间比目标晚。</p></li></ul></div><p>在一条规则被执行之前，规则的条件可能处于以下三种状态之一：</p><div class="itemizedlist"><ul type="disc"><li><p>需要更新。能够找到以该条件为目标的规则，并且该规则中目标需要更新。</p></li><li><p>不需要更新。能够找到以该条件为目标的规则，但是该规则中目标不需要更新；或者不能找到以该条件为目标的规则，并且该条件已经生成。</p></li><li><p>错误。不能找到以该条件为目标的规则，并且该条件没有生成。</p></li></ul></div><p>执行一条规则A的步骤如下：</p><div class="orderedlist"><ol type="1"><li><p>检查它的每个条件P：</p><div class="itemizedlist"><ul type="disc"><li><p>如果P需要更新，就执行以P为目标的规则B。之后，无论是否生成文件P，都认为P已被更新。</p></li><li><p>如果找不到规则B，并且文件P已存在，表示P不需要更新。</p></li><li><p>如果找不到规则B，并且文件P不存在，则报错退出。</p></li></ul></div></li><li><p>在检查完规则A的所有条件后，检查它的目标T，如果属于以下情况之一，就执行它的命令列表：</p><div class="itemizedlist"><ul type="disc"><li><p>文件T不存在。</p></li><li><p>文件T存在，但是某个条件的修改时间比它晚。</p></li><li><p>某个条件P已被更新（并不一定生成文件P）。</p></li></ul></div></li></ol></div><p>通常Makefile都会有一个<code class="literal">clean</code>规则，用于清除编译过程中产生的二进制文件，保留源文件：</p><pre class="programlisting">clean:
+	@echo "cleanning project"
+	-rm main *.o
+	@echo "clean completed"</pre><p>把这条规则添加到我们的Makefile末尾，然后执行这条规则：</p><pre class="screen">$ make clean 
+cleanning project
+rm main *.o
+clean completed</pre><p>如果在<code class="literal">make</code>的命令行中指定一个目标（例如<code class="literal">clean</code>），则更新这个目标，如果不指定目标则更新Makefile中第一条规则的目标（缺省目标）。</p><p>和前面介绍的规则不同，<code class="literal">clean</code>目标不依赖于任何条件，并且执行它的命令列表不会生成<code class="literal">clean</code>这个文件，刚才说过，只要执行了命令列表就算更新了目标，即使目标并没有生成也算。在这个例子还演示了命令前面加<code class="literal">@</code>和<code class="literal">-</code>字符的效果：如果<code class="literal">make</code>执行的命令前面加了<code class="literal">@</code>字符，则不显示命令本身而只显示它的结果；通常<code class="literal">make</code>执行的命令如果出错（该命令的退出状态非0）就立刻终止，不再执行后续命令，但如果命令前面加了<code class="literal">-</code>号，即使这条命令出错，<code class="literal">make</code>也会继续执行后续命令。通常<code class="literal">rm</code>命令和<code class="literal">mkdir</code>命令前面要加<code class="literal">-</code>号，因为<code class="literal">rm</code>要删除的文件可能不存在，<code class="literal">mkdir</code>要创建的目录可能已存在，这两个命令都有可能出错，但这种错误是应该忽略的。例如上面已经执行过一遍<code class="literal">make clean</code>，再执行一遍就没有文件可删了，这时<code class="literal">rm</code>会报错，但<code class="literal">make</code>忽略这一错误，继续执行后面的<code class="literal">echo</code>命令：</p><pre class="screen">$ make clean 
+cleanning project
+rm main *.o
+rm: cannot remove `main': No such file or directory
+rm: cannot remove `*.o': No such file or directory
+make: [clean] Error 1 (ignored)
+clean completed</pre><p>读者可以把命令前面的<code class="literal">@</code>和<code class="literal">-</code>去掉再试试，对比一下结果有何不同。这里还有一个问题，如果当前目录下存在一个文件叫<code class="literal">clean</code>会怎么样呢？</p><pre class="screen">$ touch clean
+$ make clean
+make: `clean' is up to date.</pre><p>如果存在<code class="literal">clean</code>这个文件，<code class="literal">clean</code>目标又不依赖于任何条件，<code class="literal">make</code>就认为它不需要更新了。而我们希望把<code class="literal">clean</code>当作一个特殊的名字使用，不管它存在不存在都要更新，可以添一条特殊规则，把<code class="literal">clean</code>声明为一个伪目标：</p><pre class="programlisting">.PHONY: clean</pre><p>这条规则没有命令列表。类似<code class="literal">.PHONY</code>这种<code class="literal">make</code>内建的特殊目标还有很多，各有不同的用途，详见<a class="xref" href="bi01.html#bibli.make" title="Managing Projects with GNU make">[<abbr class="abbrev">GNUmake</abbr>]</a>。在C语言中要求变量和函数先声明后使用，而Makefile不太一样，这条规则写在<code class="literal">clean:</code>规则的后面也行，也能起到声明<code class="literal">clean</code>是伪目标的作用：</p><pre class="programlisting">clean:
+	@echo "cleanning project"
+	-rm main *.o
+	@echo "clean completed"
+
+.PHONY: clean</pre><p>当然写在前面也行。<code class="literal">gcc</code>处理一个C程序分为预处理和编译两个阶段，类似地，<code class="literal">make</code>处理Makefile的过程也分为两个阶段：</p><div class="orderedlist"><ol type="1"><li><p>首先从前到后读取所有规则，建立起一个完整的依赖关系图，例如：</p><div class="figure"><a id="id2804097"></a><p class="title"><b>图 22.1. Makefile的依赖关系图</b></p><div class="figure-contents"><div><img src="images/make.graph.png" alt="Makefile的依赖关系图" /></div></div></div><br class="figure-break" /></li><li><p>然后从缺省目标或者命令行指定的目标开始，根据依赖关系图选择适当的规则执行，执行Makefile中的规则和执行C代码不一样，并不是从前到后按顺序执行，也不是所有规则都要执行一遍，例如<code class="literal">make</code>缺省目标时不会更新<code class="literal">clean</code>目标，因为从上图可以看出，它跟缺省目标没有任何依赖关系。</p></li></ol></div><p><code class="literal">clean</code>目标是一个约定俗成的名字，在所有软件项目的Makefile中都表示清除编译生成的文件，类似这样的约定俗成的目标名字有：</p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">all</code>，执行主要的编译工作，通常用作缺省目标。</p></li><li><p><code class="literal">install</code>，执行编译后的安装工作，把可执行文件、配置文件、文档等分别拷到不同的安装目录。</p></li><li><p><code class="literal">clean</code>，删除编译生成的二进制文件。</p></li><li><p><code class="literal">distclean</code>，不仅删除编译生成的二进制文件，也删除其它生成的文件，例如配置文件和格式转换后的文档，执行<code class="literal">make distclean</code>之后应该清除所有这些文件，只留下源文件。</p></li></ul></div><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2803212" href="#id2803212" class="para">33</a>] </sup>只要符合本章所描述的语法的文件我们都叫它Makefile，而它的文件名则不一定是<code class="literal">Makefile</code>。事实上，执行<code class="literal">make</code>命令时，是按照<code class="literal">GNUmakefile</code>、<code class="literal">makefile</code>、<code class="literal">Makefile</code>的顺序找到第一个存在的文件并执行它，不过还是建议使用<code class="literal">Makefile</code>做文件名。除了GNU <code class="literal">make</code>，有些UNIX系统的<code class="literal">make</code>命令不是GNU <code class="literal">make</code>，不会查找<code class="literal">GNUmakefile</code>这个文件名，如果你写的Makefile包含GNU <code class="literal">make</code>的特殊语法，可以起名为<code class="literal">GNUmakefile</code>，否则不建议用这个文件名。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch22.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch22.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch22s02.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">第 22 章 Makefile基础 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 2. 隐含规则和模式规则</td></tr></table></div></body></html>

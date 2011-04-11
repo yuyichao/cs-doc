@@ -1,0 +1,571 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>对称特征值问题 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>对称特征值问题
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="SymmetricEigenvalueProblem.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="SymmetricEigenvalueProblem.html#sec1">对称<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">算法</a>
+  </dt>
+  <dt>
+    <a href="SymmetricEigenvalueProblem.html#sec2">Jacobi方法</a>
+  </dt>
+  <dt>
+    <a href="SymmetricEigenvalueProblem.html#sec3">对称三对角矩阵的特征值方法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="SymmetricEigenvalueProblem.html#sec4">Sturm序列与二分法</a>
+      </dt>
+      <dt>
+	<a href="SymmetricEigenvalueProblem.html#sec5">分而治之方法</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="SymmetricEigenvalueProblem.html#sec6">计算SVD</a>
+  </dt>
+</dl>
+</div>
+
+<p>由于对称矩阵的结构性质,其特征值问题在数值线性代数中有许多漂亮的算法.除<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代可以应用于对称特征值问题外,还有Jacobi迭代以及与SVD直接相关的三对角方法.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="SymmetricEigenvalueProblem.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>对称<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">算法</h2>
+
+<p class="first">将<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代的思想结合矩阵的对称性质可以得到对称<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">算法.其导出思路可以简述如下:</p>
+
+<p>用于求最大特征值及特征向量的幂法和用于求不变子空间的<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代分别以<img src="latex/latex2png-SymmetricEigenvalueProblem_22773372_-12.gif" alt="$\left|\frac{\lambda_2}{\lambda_1}\right|^{2k}$" class="latex-inline" style="vertical-align: -12px" width="41" height="35">和<img src="latex/latex2png-SymmetricEigenvalueProblem_84749387_-12.gif" alt="$\left|\frac{\lambda_{r+1}}{\lambda_r}\right|^k$" class="latex-inline" style="vertical-align: -12px" width="49" height="35">的方式收敛到相应特征向量和不变子空间.这引导我们考虑<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代,这相当于<img src="latex/latex2png-SymmetricEigenvalueProblem_236483604_0.gif" alt="$r=n$" class="latex-inline" style="vertical-align: 0px" width="40" height="8">的正交迭代.</p>
+
+<p>我们考察对称<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代的加速算法.首先通过一系列Householder变换<img src="latex/latex2png-SymmetricEigenvalueProblem_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">使得<img src="latex/latex2png-SymmetricEigenvalueProblem_153685834_-1.gif" alt="$U^TAU=T$" class="latex-inline" style="vertical-align: -1px" width="82" height="15">是三对角阵,从而将之后每步迭代的运算量降至<img src="latex/latex2png-SymmetricEigenvalueProblem_210466467_-5.gif" alt="$O (n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">个flop,而三对角化这一步骤约需<img src="latex/latex2png-SymmetricEigenvalueProblem_165307490_-5.gif" alt="$4n^3/3$" class="latex-inline" style="vertical-align: -5px" width="42" height="19">个flop.其次,应用位移思想,可使收敛到对角形的速率为立方收敛.我们着重分析位移思想.</p>
+
+<p>若<img src="latex/latex2png-SymmetricEigenvalueProblem_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">是一个近似特征值,则我们期望用位移<img src="latex/latex2png-SymmetricEigenvalueProblem_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">进行一次<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代后,<img src="latex/latex2png-SymmetricEigenvalueProblem_264380254_-5.gif" alt="$(n,n-1)$" class="latex-inline" style="vertical-align: -5px" width="66" height="18">元会很小.若
+<img src="latex/latex2png-SymmetricEigenvalueProblem_4068901_.gif" alt="
+\begin{equation*}
+  T=
+  \begin{bmatrix}
+    a_1& b_1\\
+    b_1& a_2& \ddots\\
+    & \ddots& \ddots& b_{n-1}\\
+    & & b_{n-1}& a_n
+  \end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="110">由Gerschgorin定理,位移的一个合理选择是<img src="latex/latex2png-SymmetricEigenvalueProblem_255530163_-4.gif" alt="$\mu=a_n$" class="latex-inline" style="vertical-align: -4px" width="49" height="12">,而一个更有效的选择是用<img src="latex/latex2png-SymmetricEigenvalueProblem_113224054_-11.gif" alt="$\left[\begin{smallmatrix}a_{n-1}& b_{n-1}\\ b_{n-1}& a_n \end{smallmatrix}\right]$" class="latex-inline" style="vertical-align: -11px" width="78" height="30">靠近<img src="latex/latex2png-SymmetricEigenvalueProblem_13077484_-2.gif" alt="$a_n$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">的特征值作位移,这称为Wilkinson位移,它由
+<img src="latex/latex2png-SymmetricEigenvalueProblem_85201930_.gif" alt="
+\begin{equation*}
+  \mu=a_n+d-\mathrm{sign} (d)\sqrt{d^2+b_{n-1}^2}
+\end{equation*}
+" class="latex-display" width="580" height="31">给出,其中<img src="latex/latex2png-SymmetricEigenvalueProblem_109945595_-5.gif" alt="$d\equiv (a_{n-1}-a_n)/2$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">.Wilkinson<span class="cite"><a class="cite" href="SymmetricEigenvalueProblem.html#ref-1" name="cite-1">[1]</a></span>证明了以上两种位移策略都是立方收敛,并给出了理由为什么更偏好后者.</p>
+
+<p>应用隐式Q定理,不必显式形成矩阵<img src="latex/latex2png-SymmetricEigenvalueProblem_11662526_-4.gif" alt="$T-\mu I$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">就能实现从<img src="latex/latex2png-SymmetricEigenvalueProblem_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">到<img src="latex/latex2png-SymmetricEigenvalueProblem_141977541_-4.gif" alt="$T^+\equiv RU+\mu I=U^TTU$" class="latex-inline" style="vertical-align: -4px" width="181" height="18">的变换,这在<img src="latex/latex2png-SymmetricEigenvalueProblem_10449940_-4.gif" alt="$\mu$" class="latex-inline" style="vertical-align: -4px" width="10" height="12">远大于某个<img src="latex/latex2png-SymmetricEigenvalueProblem_13339628_-5.gif" alt="$a_j$" class="latex-inline" style="vertical-align: -5px" width="15" height="13">时有优点.</p>
+
+<p>首先取
+<img src="latex/latex2png-SymmetricEigenvalueProblem_204782035_.gif" alt="
+\begin{equation*}
+  G_1=G(1,2,\theta)=\left[
+  \begin{array}{cc|c}
+    c& s& \\
+    -s& c& \\\hline
+    & & I_{n-2}
+  \end{array}\right],
+\end{equation*}
+" class="latex-display" width="580" height="80">使得
+<img src="latex/latex2png-SymmetricEigenvalueProblem_18042017_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    c& s\\
+    -s& c
+  \end{bmatrix}^T
+  \begin{bmatrix}
+    a_1-\mu\\
+    b_1
+  \end{bmatrix}=
+  \begin{bmatrix}
+    x\\
+    0
+  \end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="55">则
+<img src="latex/latex2png-SymmetricEigenvalueProblem_196559475_.gif" alt="
+\begin{equation*}
+  G_1e_1=Ue_1.
+\end{equation*}
+" class="latex-display" width="580" height="14">再计算<img src="latex/latex2png-SymmetricEigenvalueProblem_88593240_-4.gif" alt="$G_2,\cdots,G_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="96" height="16">使得<img src="latex/latex2png-SymmetricEigenvalueProblem_10360263_-2.gif" alt="$Z\equiv G_1\cdots G_{n-1}$" class="latex-inline" style="vertical-align: -2px" width="116" height="14">满足<img src="latex/latex2png-SymmetricEigenvalueProblem_260929143_-2.gif" alt="$Ze_1=G_1e_1=Ue_1$" class="latex-inline" style="vertical-align: -2px" width="134" height="14">且<img src="latex/latex2png-SymmetricEigenvalueProblem_107186510_0.gif" alt="$Z^TTZ$" class="latex-inline" style="vertical-align: 0px" width="46" height="14">是三对角阵,就可以应用隐式Q定理.而实际中,我们使
+<img src="latex/latex2png-SymmetricEigenvalueProblem_10537917_.gif" alt="
+\begin{equation*}
+  G_i=G (i,i+1,\theta_i),(i=2:n-1),
+\end{equation*}
+" class="latex-display" width="580" height="18">则<img src="latex/latex2png-SymmetricEigenvalueProblem_43807762_0.gif" alt="$Z$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">和<img src="latex/latex2png-SymmetricEigenvalueProblem_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="11" height="16">的第一列相等且<img src="latex/latex2png-SymmetricEigenvalueProblem_221475860_-2.gif" alt="$G_i$" class="latex-inline" style="vertical-align: -2px" width="17" height="14">可用于将多余的非零元素逐出矩阵<img src="latex/latex2png-SymmetricEigenvalueProblem_263232331_-4.gif" alt="$G_1^TTG_1$" class="latex-inline" style="vertical-align: -4px" width="54" height="18">.这样就完成了<img src="latex/latex2png-SymmetricEigenvalueProblem_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">到<img src="latex/latex2png-SymmetricEigenvalueProblem_63536318_0.gif" alt="$T^+=Z^TTZ$" class="latex-inline" style="vertical-align: 0px" width="92" height="14">的变换,从而完成了对称<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">算法的一个步骤.</p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="SymmetricEigenvalueProblem.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Jacobi方法</h2>
+
+<p class="first">求解对称特征值问题的Jacobi迭代法因易于并行化而引起人们的注意.它通过进行一系列正交相似变换
+<img src="latex/latex2png-SymmetricEigenvalueProblem_224317466_.gif" alt="
+\begin{equation*}
+A\leftarrow Q^TAQ,
+\end{equation*}
+" class="latex-display" width="580" height="19">逐步减小
+<img src="latex/latex2png-SymmetricEigenvalueProblem_35607378_.gif" alt="
+\begin{equation*}
+  \text{off} (A)\equiv \sqrt{\sum\limits_{i=1}^n\sum\limits_{j\neq i}a_{ij}^2}.
+\end{equation*}
+" class="latex-display" width="580" height="60">我们可以形象地称<img src="latex/latex2png-SymmetricEigenvalueProblem_24317482_-5.gif" alt="$\text{off}(A)$" class="latex-inline" style="vertical-align: -5px" width="41" height="18">为非对角元素的Frobenius范数.实现它的工具是Jacobi-Givens旋转变换.</p>
+
+<p>Jacobi方法的基本步骤:</p>
+
+<ol>
+<li>选择指标<img src="latex/latex2png-SymmetricEigenvalueProblem_130749802_-5.gif" alt="$(p,q) (1\leqslant p<q\leqslant n)$" class="latex-inline" style="vertical-align: -5px" width="148" height="18">,在经典Jacobi算法中选择<img src="latex/latex2png-SymmetricEigenvalueProblem_256149890_-5.gif" alt="$(p,q)$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">使<img src="latex/latex2png-SymmetricEigenvalueProblem_188508302_-7.gif" alt="$a_{pq}^2$" class="latex-inline" style="vertical-align: -7px" width="22" height="21">最大.</li>
+<li>计算一个余弦-正弦对<img src="latex/latex2png-SymmetricEigenvalueProblem_14382717_-5.gif" alt="$(c,s)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">,使得
+<img src="latex/latex2png-SymmetricEigenvalueProblem_28493147_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    c& s\\
+    -s& c
+  \end{bmatrix}^T
+  \begin{bmatrix}
+    a_{pp}& a_{pq}\\
+    a_{qp}& a_{qq}
+  \end{bmatrix}
+  \begin{bmatrix}
+    c& s\\
+    -s& c
+  \end{bmatrix}=
+  \begin{bmatrix}
+    b_{pp}& 0\\
+    0& b_{qq}
+  \end{bmatrix}
+\end{equation*}
+" class="latex-display" width="580" height="55">为对角阵.</li>
+<li>令<img src="latex/latex2png-SymmetricEigenvalueProblem_181019442_-5.gif" alt="$J=J(p,q,\theta)$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">,计算<img src="latex/latex2png-SymmetricEigenvalueProblem_127993294_-1.gif" alt="$B=J^TAJ$" class="latex-inline" style="vertical-align: -1px" width="80" height="15">并覆盖<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">.</li>
+</ol>
+
+<p>容易得到,经过一次Jacobi步骤后,
+<img src="latex/latex2png-SymmetricEigenvalueProblem_77193551_.gif" alt="
+\begin{equation*}
+  \text{off} (B)^2=\text{off} (A)^2-2a_{pq}^2.
+\end{equation*}
+" class="latex-display" width="580" height="22">在此意义下,每个Jacobi步骤后<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">更&quot;靠近&quot;对角形.</p>
+
+<p>经典Jacobi方法(选取<img src="latex/latex2png-SymmetricEigenvalueProblem_188508302_-7.gif" alt="$a_{pq}^2$" class="latex-inline" style="vertical-align: -7px" width="22" height="21">最大)的每次校正要做<img src="latex/latex2png-SymmetricEigenvalueProblem_210466467_-5.gif" alt="$O (n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">次运算,但选取最大元素却需<img src="latex/latex2png-SymmetricEigenvalueProblem_21890366_-5.gif" alt="$O (n^2)$" class="latex-inline" style="vertical-align: -5px" width="41" height="19">次比较.解决此矛盾的途径是将变换顺序固定下来,如逐行进行&quot;扫描&quot;,这称为行循环方法,它是二次收敛的.作为对比，<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">算法是立方收敛的.</p>
+
+<p>如前所述,Jacobi方法的优势在于其并行本性.事实上,Jacobi旋转<img src="latex/latex2png-SymmetricEigenvalueProblem_180852642_-5.gif" alt="$J(p,q,\theta)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">只作用于<img src="latex/latex2png-SymmetricEigenvalueProblem_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">,<img src="latex/latex2png-SymmetricEigenvalueProblem_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">行和<img src="latex/latex2png-SymmetricEigenvalueProblem_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">,<img src="latex/latex2png-SymmetricEigenvalueProblem_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">列.这样,每次将矩阵的全部行与列划分为若干互不冲突的组,每组的运算可以得到并行的处理.各族变换并行处理完成后,变换行与列的划分(类似一次循环赛的过程),直至所有<img src="latex/latex2png-SymmetricEigenvalueProblem_256149890_-5.gif" alt="$(p,q)$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">对都得到处理.这种并行的思想也同样适用于分块的Jacobi迭代.</p>
+
+
+<h2><a name="sec3" id="sec3"></a>
+<a href="SymmetricEigenvalueProblem.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>对称三对角矩阵的特征值方法</h2>
+
+<h3><a name="sec4" id="sec4"></a>
+<a href="SymmetricEigenvalueProblem.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Sturm序列与二分法</h3>
+
+<p class="first">令<img src="latex/latex2png-SymmetricEigenvalueProblem_96701420_-2.gif" alt="$T_r$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">表示<img src="latex/latex2png-SymmetricEigenvalueProblem_157447186_0.gif" alt="$T $" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的<img src="latex/latex2png-SymmetricEigenvalueProblem_146961426_0.gif" alt="$r $" class="latex-inline" style="vertical-align: 0px" width="7" height="8">阶顺序主子阵,定义其特征多项式<img src="latex/latex2png-SymmetricEigenvalueProblem_46890509_-5.gif" alt="$p_r (x)=\det (T_r-xI)$" class="latex-inline" style="vertical-align: -5px" width="151" height="18">,则有以下递推公式(设<img src="latex/latex2png-SymmetricEigenvalueProblem_224723989_-5.gif" alt="$p_0 (x)\equiv 1$" class="latex-inline" style="vertical-align: -5px" width="68" height="18">):
+<img src="latex/latex2png-SymmetricEigenvalueProblem_24312425_.gif" alt="
+\begin{equation*}
+  p_r (x)= (a_r-x)p_{r-1} (x)-b_{r-1} ^2p_{r-2}(x).
+\end{equation*}
+" class="latex-display" width="580" height="20">因通过<img src="latex/latex2png-SymmetricEigenvalueProblem_210466467_-5.gif" alt="$O (n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">次运算即可计算<img src="latex/latex2png-SymmetricEigenvalueProblem_221119050_-5.gif" alt="$p_n (x)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">的值,故利用二分法找它的根是可行的.显然,二分迭代是线性收敛,即每步将误差减半.</p>
+
+<p>对于不可约三对角阵,有如下经典结果,其证明可参见<span class="cite"><a class="cite" href="SymmetricEigenvalueProblem.html#ref-2" name="cite-2">[2]</a></span>.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name">(Sturm序列性质)</span>
+对于不可约三对角阵<img src="latex/latex2png-SymmetricEigenvalueProblem_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,<img src="latex/latex2png-SymmetricEigenvalueProblem_261484967_-2.gif" alt="$T_{r-1}$" class="latex-inline" style="vertical-align: -2px" width="32" height="14">的特征值严格隔离<img src="latex/latex2png-SymmetricEigenvalueProblem_96701420_-2.gif" alt="$T_r$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">的特征值:
+<img src="latex/latex2png-SymmetricEigenvalueProblem_264039584_.gif" alt="
+\begin{equation*}
+  \lambda_r (T_r)<\lambda_{r-1} (T_{r-1})<\lambda_{r-1} (T_r)<\cdots<\lambda_2 (T_r)<\lambda_1 (T_{r-1})<\lambda_1 (T_r).
+\end{equation*}
+" class="latex-display" width="580" height="18">
+
+<p>此外,若<img src="latex/latex2png-SymmetricEigenvalueProblem_125402091_-5.gif" alt="$a(\lambda)$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">表示在序列<img src="latex/latex2png-SymmetricEigenvalueProblem_20177807_-5.gif" alt="$\{p_0 (\lambda),p_1 (\lambda),\cdots,p_n (\lambda)\}$" class="latex-inline" style="vertical-align: -5px" width="178" height="18">中符号改变的个数,则<img src="latex/latex2png-SymmetricEigenvalueProblem_125402091_-5.gif" alt="$a(\lambda)$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">等于<img src="latex/latex2png-SymmetricEigenvalueProblem_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的比<img src="latex/latex2png-SymmetricEigenvalueProblem_234755215_0.gif" alt="$\lambda$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">小的特征值个数.其中<img src="latex/latex2png-SymmetricEigenvalueProblem_68583815_-5.gif" alt="$p_r (\lambda)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">如上定义,且约定若<img src="latex/latex2png-SymmetricEigenvalueProblem_83210369_-6.gif" alt="$p_(\lambda)=0$" class="latex-inline" style="vertical-align: -6px" width="62" height="19">,则<img src="latex/latex2png-SymmetricEigenvalueProblem_59341843_-5.gif" alt="$p_r(\lambda)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">与<img src="latex/latex2png-SymmetricEigenvalueProblem_158843835_-5.gif" alt="$p_{r-1} (\lambda)$" class="latex-inline" style="vertical-align: -5px" width="55" height="18">反号.</p>
+
+
+</div>
+
+<p>结合Gerschgorin定理可知<img src="latex/latex2png-SymmetricEigenvalueProblem_246421044_-5.gif" alt="$\lambda_k (T)\in [y,z]$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">.其中<img src="latex/latex2png-SymmetricEigenvalueProblem_27489972_-15.gif" alt="$y\equiv \min\limits_{1\leqslant i\leqslant n} (a_i-|b_i|-|b_{i-1}|)$" class="latex-inline" style="vertical-align: -15px" width="199" height="28">,<img src="latex/latex2png-SymmetricEigenvalueProblem_10098356_-15.gif" alt="$z\equiv \max\limits_{1\leqslant i\leqslant n} (a_i+|b_i|+|b_{i-1}|)$" class="latex-inline" style="vertical-align: -15px" width="198" height="28">.于是我们可以此为初始值,进行二分法迭代,每次迭代的判断条件为<img src="latex/latex2png-SymmetricEigenvalueProblem_44549296_-5.gif" alt="$a (x)\geqslant n-k$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,则可求出<img src="latex/latex2png-SymmetricEigenvalueProblem_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的第<img src="latex/latex2png-SymmetricEigenvalueProblem_139621394_0.gif" alt="$k $" class="latex-inline" style="vertical-align: 0px" width="9" height="12">大的特征值.</p>
+
+<p>与<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代相比,对分法的优势在于无论特征值大小,计算值都具有小的相对误差.</p>
+
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="SymmetricEigenvalueProblem.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>分而治之方法</h3>
+
+<p class="first">适合于并行处理的三对角阵特征值算法是以以下观察为基础的:设<img src="latex/latex2png-SymmetricEigenvalueProblem_6779962_0.gif" alt="$n=2m$" class="latex-inline" style="vertical-align: 0px" width="54" height="11">,定义
+<img src="latex/latex2png-SymmetricEigenvalueProblem_25471300_.gif" alt="
+\begin{equation*}
+  v=
+  \begin{bmatrix}
+    e_m^{(m)}\\
+    \theta e_1^{(m)}
+  \end{bmatrix}
+\in \mathbb{R}^n,
+\end{equation*}
+" class="latex-display" width="580" height="50">则
+<img src="latex/latex2png-SymmetricEigenvalueProblem_34447612_.gif" alt="
+\begin{equation*}
+  \tilde{T}=T-\rho vv^T
+\end{equation*}
+" class="latex-display" width="580" height="19">除了&quot;中间四个&quot;元素
+<img src="latex/latex2png-SymmetricEigenvalueProblem_143434927_.gif" alt="
+\begin{equation*}
+  \tilde{T} (m:m+1,m:m+1)\equiv
+  \begin{bmatrix}
+    a_m-\rho& b_m-\rho\theta\\
+    b_m-\rho\theta& a_{m+1}-\rho\theta^2
+  \end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="50"><img src="latex/latex2png-SymmetricEigenvalueProblem_188250514_0.gif" alt="$\tilde{T}$" class="latex-inline" style="vertical-align: 0px" width="12" height="15">与<img src="latex/latex2png-SymmetricEigenvalueProblem_157447186_0.gif" alt="$T $" class="latex-inline" style="vertical-align: 0px" width="12" height="12">相等.若取<img src="latex/latex2png-SymmetricEigenvalueProblem_45621219_-4.gif" alt="$\rho\theta=b_m$" class="latex-inline" style="vertical-align: -4px" width="58" height="16">,则
+<img src="latex/latex2png-SymmetricEigenvalueProblem_202782554_.gif" alt="
+\begin{equation*}
+  T=
+  \begin{bmatrix}
+    T_1\\
+    & T_2
+  \end{bmatrix}+\rho vv^T,
+\end{equation*}
+" class="latex-display" width="580" height="50">其中,
+<img src="latex/latex2png-SymmetricEigenvalueProblem_173451235_.gif" alt="
+\begin{align*}
+  T_1 &\equiv
+  \begin{bmatrix}
+    a_1& b_1\\
+    b_1& a_2& \ddots\\
+    & \ddots& \ddots& b_{m-1}\\
+    & & b_{m-1}& a_m-\rho
+  \end{bmatrix},\\
+  T_2 &\equiv
+  \begin{bmatrix}
+    a_{m+1}-\rho\theta^2& b_{m+1}\\
+    b_{m+1}& a_{m+2}& \ddots\\
+    & \ddots& \ddots& b_{n-1}\\
+    & & b_{n-1}& a_n
+  \end{bmatrix}.
+\end{align*}
+" class="latex-display" width="580" height="234">这样,我们就把<img src="latex/latex2png-SymmetricEigenvalueProblem_43414546_0.gif" alt="$T$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">&quot;撕&quot;成了两片,并加上一个修正项.分别解决<img src="latex/latex2png-SymmetricEigenvalueProblem_98339820_-2.gif" alt="$T_1$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">,<img src="latex/latex2png-SymmetricEigenvalueProblem_98274284_-2.gif" alt="$T_2$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">的特征值问题
+<img src="latex/latex2png-SymmetricEigenvalueProblem_187069722_.gif" alt="
+\begin{align*}
+  Q_1^TT_1Q_1&=D_1,\\
+  Q_2^TT_2Q_2&=D_2
+\end{align*}
+" class="latex-display" width="580" height="50">后,只要快速求解一个对角矩阵向量外积修正的特征值问题
+<img src="latex/latex2png-SymmetricEigenvalueProblem_214973005_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    D_1\\
+    & D_2
+  \end{bmatrix}+\rho (U^Tv) (U^Tv)^T
+\end{equation*}
+" class="latex-display" width="580" height="50">就可以了.</p>
+
+<p>对角矩阵向量外积修正的特征值问题的主要计算依赖于以下结果:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name=""></a></span><span class="theorem-name"></span>
+假定<img src="latex/latex2png-SymmetricEigenvalueProblem_154359766_-1.gif" alt="$D\in \mathrm{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="73" height="13">具有性质<img src="latex/latex2png-SymmetricEigenvalueProblem_164124605_-2.gif" alt="$d_1>\cdots>d_n$" class="latex-inline" style="vertical-align: -2px" width="97" height="14">.又设<img src="latex/latex2png-SymmetricEigenvalueProblem_88129820_-4.gif" alt="$\rho\neq 0$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">且<img src="latex/latex2png-SymmetricEigenvalueProblem_111200320_-1.gif" alt="$z\in \mathrm{R}^n$" class="latex-inline" style="vertical-align: -1px" width="49" height="13">没有零分量.若<img src="latex/latex2png-SymmetricEigenvalueProblem_42973967_-5.gif" alt="$(D+\rho zz^T)v=\lambda v,v\neq 0$" class="latex-inline" style="vertical-align: -5px" width="178" height="19">,则<img src="latex/latex2png-SymmetricEigenvalueProblem_73051474_-4.gif" alt="$z^Tv\neq0$" class="latex-inline" style="vertical-align: -4px" width="58" height="18">且<img src="latex/latex2png-SymmetricEigenvalueProblem_41677218_0.gif" alt="$D-\lambda I$" class="latex-inline" style="vertical-align: 0px" width="54" height="12">非奇异.
+
+
+</div>
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-SymmetricEigenvalueProblem_159794656_-5.gif" alt="$D=\mathrm{diag} (d_1,\cdots,d_n)\in \mathrm{R}^{n\times n}$" class="latex-inline" style="vertical-align: -5px" width="212" height="18">且对角元满足<img src="latex/latex2png-SymmetricEigenvalueProblem_164124605_-2.gif" alt="$d_1>\cdots>d_n$" class="latex-inline" style="vertical-align: -2px" width="97" height="14">.假定<img src="latex/latex2png-SymmetricEigenvalueProblem_88129820_-4.gif" alt="$\rho\neq 0$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">且<img src="latex/latex2png-SymmetricEigenvalueProblem_111200320_-1.gif" alt="$z\in \mathrm{R}^n$" class="latex-inline" style="vertical-align: -1px" width="49" height="13">没有零分量,若正交阵<img src="latex/latex2png-SymmetricEigenvalueProblem_147630122_-1.gif" alt="$V\in \mathrm{R}^{n\times n}$" class="latex-inline" style="vertical-align: -1px" width="72" height="13">使得
+<img src="latex/latex2png-SymmetricEigenvalueProblem_77155933_.gif" alt="
+\begin{equation*}
+  V^T (D+\rho zz^T)=\mathrm{diag} (\lambda_1,\cdots,\lambda_n),
+\end{equation*}
+" class="latex-display" width="580" height="20">其中<img src="latex/latex2png-SymmetricEigenvalueProblem_92674403_-3.gif" alt="$\lambda_1\geqslant\cdots\geqslant\lambda_n$" class="latex-inline" style="vertical-align: -3px" width="98" height="15">,且<img src="latex/latex2png-SymmetricEigenvalueProblem_223557911_-5.gif" alt="$V=[v_1,\cdots,v_n]$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">.则
+
+<ol>
+<li><img src="latex/latex2png-SymmetricEigenvalueProblem_30667168_-2.gif" alt="$\lambda_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="14">是
+<img src="latex/latex2png-SymmetricEigenvalueProblem_153238672_.gif" alt="
+\begin{equation*}
+  f (\lambda)=1+\rho z^T (D-\lambda I)^{-1}z
+\end{equation*}
+" class="latex-display" width="580" height="20">的<img src="latex/latex2png-SymmetricEigenvalueProblem_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个零解.</li>
+<li>当<img src="latex/latex2png-SymmetricEigenvalueProblem_185769504_-4.gif" alt="$\rho>0$" class="latex-inline" style="vertical-align: -4px" width="39" height="15">,则
+<img src="./latex/latex2png-SymmetricEigenvalueProblem_231577285_.gif" alt="
+\begin{equation*}
+  \lambda_1>d_1>\lambda_2>\cdots>d_n.
+\end{equation*}
+" class="latex-display" width="580" height="14">当<img src="latex/latex2png-SymmetricEigenvalueProblem_183672352_-4.gif" alt="$\rho<0$" class="latex-inline" style="vertical-align: -4px" width="39" height="15">,则
+<img src="./latex/latex2png-SymmetricEigenvalueProblem_159393059_.gif" alt="
+\begin{equation*}
+  d_1>\lambda_1>d_2>\cdots>\lambda_n.
+\end{equation*}
+" class="latex-display" width="580" height="14"></li>
+<li>特殊向量<img src="latex/latex2png-SymmetricEigenvalueProblem_197954540_-2.gif" alt="$v_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">是<img src="latex/latex2png-SymmetricEigenvalueProblem_165388218_-5.gif" alt="$(D-v_i I)^{-1}z$" class="latex-inline" style="vertical-align: -5px" width="94" height="19">的倍数.</li>
+</ol>
+
+
+</div>
+
+<p>上述定理表明要计算<img src="latex/latex2png-SymmetricEigenvalueProblem_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">,我们应首先用Newton型算法找出<img src="latex/latex2png-SymmetricEigenvalueProblem_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的根<img src="latex/latex2png-SymmetricEigenvalueProblem_161663372_-4.gif" alt="$\lambda_1,\cdots,\lambda_n$" class="latex-inline" style="vertical-align: -4px" width="74" height="16">,然后对<img src="latex/latex2png-SymmetricEigenvalueProblem_82343575_0.gif" alt="$i=1:n$" class="latex-inline" style="vertical-align: 0px" width="60" height="12">,通过正规化向量<img src="latex/latex2png-SymmetricEigenvalueProblem_218804476_-5.gif" alt="$(D-\lambda_iI)^{-1}z$" class="latex-inline" style="vertical-align: -5px" width="96" height="19">来计算<img src="latex/latex2png-SymmetricEigenvalueProblem_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的列向量.</p>
+
+<p>以下考察有重复的<img src="latex/latex2png-SymmetricEigenvalueProblem_36926484_-2.gif" alt="$d_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="14">或零分量<img src="latex/latex2png-SymmetricEigenvalueProblem_130845676_-2.gif" alt="$z_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">的情形,我们对以下定理给出一个构造性的证明,从而解决问题:
+<div class="theorem">
+<span class="theorem-header">定理4<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-SymmetricEigenvalueProblem_127524573_-5.gif" alt="$D=\mathrm{diag} (d_1,\cdots,d_n)$" class="latex-inline" style="vertical-align: -5px" width="152" height="18">且<img src="latex/latex2png-SymmetricEigenvalueProblem_111200320_-1.gif" alt="$z\in \mathrm{R}^n$" class="latex-inline" style="vertical-align: -1px" width="49" height="13">,则存在一正交阵<img src="latex/latex2png-SymmetricEigenvalueProblem_64785388_-2.gif" alt="$V_1$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">使得
+<img src="latex/latex2png-SymmetricEigenvalueProblem_130490711_.gif" alt="
+\begin{equation*}
+  V_1^TDV_1=\mathrm{diag} (\mu_1,\cdots,\mu_n),
+\end{equation*}
+" class="latex-display" width="580" height="20">且
+<img src="latex/latex2png-SymmetricEigenvalueProblem_219312335_.gif" alt="
+\begin{equation*}
+  w=V_Tz,
+\end{equation*}
+" class="latex-display" width="580" height="16">其中
+<img src="./latex/latex2png-SymmetricEigenvalueProblem_189288700_.gif" alt="
+\begin{equation*}
+  \mu_1>\mu_2>\cdots>\mu_r\geqslant\mu_{r+1}\geqslant\mu_n,
+\end{equation*}
+" class="latex-display" width="580" height="16">其中,<img src="latex/latex2png-SymmetricEigenvalueProblem_85474642_-4.gif" alt="$w_i\neq 0,\forall i=1:r$" class="latex-inline" style="vertical-align: -4px" width="121" height="16">而<img src="latex/latex2png-SymmetricEigenvalueProblem_143533073_-4.gif" alt="$w_i=0,\forall i=r+1:n$" class="latex-inline" style="vertical-align: -4px" width="153" height="16"></p>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+
+<ol>
+<li>假设对某个<img src="latex/latex2png-SymmetricEigenvalueProblem_84177940_-4.gif" alt="$i<j$" class="latex-inline" style="vertical-align: -4px" width="35" height="16">有<img src="latex/latex2png-SymmetricEigenvalueProblem_231279033_-5.gif" alt="$d_i=d_j$" class="latex-inline" style="vertical-align: -5px" width="51" height="17">,令<img src="latex/latex2png-SymmetricEigenvalueProblem_62963160_-5.gif" alt="$J (i,j,\theta)$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">是<img src="latex/latex2png-SymmetricEigenvalueProblem_4945534_-5.gif" alt="$(i,j)$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">平面上的旋转变换,使<img src="latex/latex2png-SymmetricEigenvalueProblem_137421390_-5.gif" alt="$J (i,j,\theta)^Tz$" class="latex-inline" style="vertical-align: -5px" width="77" height="19">的第<img src="latex/latex2png-SymmetricEigenvalueProblem_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">个分量为<img src="latex/latex2png-SymmetricEigenvalueProblem_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">.易知
+<img src="latex/latex2png-SymmetricEigenvalueProblem_94193005_.gif" alt="
+\begin{equation*}
+  J (i,j,\theta)^TDJ (i,j,\theta)=D.
+\end{equation*}
+" class="latex-display" width="580" height="20">于是,若有一个重复的<img src="latex/latex2png-SymmetricEigenvalueProblem_36926484_-2.gif" alt="$d_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="14">,我们就能使<img src="latex/latex2png-SymmetricEigenvalueProblem_43283474_0.gif" alt="$z$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的一个分量化为<img src="latex/latex2png-SymmetricEigenvalueProblem_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">.</li>
+<li>令<img src="latex/latex2png-SymmetricEigenvalueProblem_144864274_-4.gif" alt="$p $" class="latex-inline" style="vertical-align: -4px" width="9" height="12">是<img src="latex/latex2png-SymmetricEigenvalueProblem_137524242_0.gif" alt="$i $" class="latex-inline" style="vertical-align: 0px" width="5" height="12">和<img src="latex/latex2png-SymmetricEigenvalueProblem_138572818_-4.gif" alt="$j $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">列互换的单位阵,可推出<img src="latex/latex2png-SymmetricEigenvalueProblem_124619096_0.gif" alt="$P^TDP$" class="latex-inline" style="vertical-align: 0px" width="51" height="14">是对角阵,这样我们就可将为零的<img src="latex/latex2png-SymmetricEigenvalueProblem_130845676_-2.gif" alt="$z_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">放在底部.重复以上步骤就可得到所需的标准结构.<img src="latex/latex2png-SymmetricEigenvalueProblem_64785388_-2.gif" alt="$V_1$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">是这些旋转阵之积.
+<span class="proof-end">□</span></li>
+</ol>
+
+</div>
+
+<p>综合上述所述,我们就得到了分而治之算法.</p>
+
+
+
+<h2><a name="sec6" id="sec6"></a>
+<a href="SymmetricEigenvalueProblem.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>计算SVD</h2>
+
+<p class="first">矩阵<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的奇异值分解与对称阵<img src="latex/latex2png-SymmetricEigenvalueProblem_209488838_0.gif" alt="$A^TA$" class="latex-inline" style="vertical-align: 0px" width="35" height="14">,<img src="latex/latex2png-SymmetricEigenvalueProblem_147426246_0.gif" alt="$AA^T$" class="latex-inline" style="vertical-align: 0px" width="34" height="14">的Schur分解有着密切的联系.若<img src="latex/latex2png-SymmetricEigenvalueProblem_65432328_-5.gif" alt="$U^TAV=\mathrm{diag} (\sigma_1,\cdots,\sigma_n)$" class="latex-inline" style="vertical-align: -5px" width="188" height="19">是<img src="latex/latex2png-SymmetricEigenvalueProblem_249836281_-5.gif" alt="$A\in \mathbb{R}^{m\times n},(m\geqslant n)$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">的SVD,则
+<img src="latex/latex2png-SymmetricEigenvalueProblem_128026259_.gif" alt="
+\begin{align*}
+  V^T (A^TA)V&=\mathrm{diag} (\sigma_1^2,\cdots,\sigma_n^2)\in \mathbb{R}^{n\times n},\\
+  U^T (AA^T)U&=\mathrm{diag} (\sigma_1^2,\cdots,\sigma_n^2;\underbrace{0,\cdots,0}_{m-n})\in \mathbb{R}^{n\times n}.
+\end{align*}
+" class="latex-display" width="580" height="71"></p>
+
+<p>我们计算<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的SVD的思路就是将其化为<img src="latex/latex2png-SymmetricEigenvalueProblem_209488838_0.gif" alt="$A^TA$" class="latex-inline" style="vertical-align: 0px" width="35" height="14">的Schur分解来进行.但如果显式形成<img src="latex/latex2png-SymmetricEigenvalueProblem_209488838_0.gif" alt="$A^TA$" class="latex-inline" style="vertical-align: 0px" width="35" height="14">,则可能造成信息的损失.Golub和Kahan (1965)<span class="cite"><a class="cite" href="SymmetricEigenvalueProblem.html#ref-3" name="cite-3">[3]</a></span>给出了基于隐式对称<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">算法的SVD方法.</p>
+
+<p>首先用Householder变化将<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">化为双对角形:
+<img src="latex/latex2png-SymmetricEigenvalueProblem_242948423_.gif" alt="
+\begin{equation*}
+  U_B^AV_B=
+  \begin{bmatrix}
+    B\\
+    O
+  \end{bmatrix},
+\end{equation*}
+" class="latex-display" width="580" height="50">其中
+<img src="latex/latex2png-SymmetricEigenvalueProblem_9928368_.gif" alt="
+\begin{equation*}
+  B=
+  \begin{bmatrix}
+    d_1& f_1& \cdots& O\\
+    & d_2& \ddots& \vdots\\
+    & & \ddots& f_{n-1}\\
+    & & & d_n
+  \end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="110">接下来只要计算<img src="latex/latex2png-SymmetricEigenvalueProblem_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的SVD.为此考虑三对角阵<img src="latex/latex2png-SymmetricEigenvalueProblem_59022739_0.gif" alt="$T=B^TB$" class="latex-inline" style="vertical-align: 0px" width="71" height="14">,应用<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">算法:</p>
+
+<ol>
+<li>计算矩阵
+<img src="latex/latex2png-SymmetricEigenvalueProblem_246387903_.gif" alt="
+\begin{equation*}
+\begin{bmatrix}
+  d_m^2+f_m^2& d_mf_m\\
+  d_mf_m& d_n^2+f_n^2
+\end{bmatrix}
+\end{equation*}
+" class="latex-display" width="580" height="50">(其中<img src="latex/latex2png-SymmetricEigenvalueProblem_200977036_0.gif" alt="$m\equiv n-1$" class="latex-inline" style="vertical-align: 0px" width="74" height="11">)的靠近<img src="latex/latex2png-SymmetricEigenvalueProblem_28276472_-4.gif" alt="$d_n^2+f_n^2$" class="latex-inline" style="vertical-align: -4px" width="54" height="18">的特征值<img src="latex/latex2png-SymmetricEigenvalueProblem_234755215_0.gif" alt="$\lambda$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">.</li>
+<li>计算<img src="latex/latex2png-SymmetricEigenvalueProblem_15952218_-2.gif" alt="$c_1=\cos\theta_1$" class="latex-inline" style="vertical-align: -2px" width="76" height="14">和<img src="latex/latex2png-SymmetricEigenvalueProblem_245929639_-2.gif" alt="$s_1=\sin\theta_1$" class="latex-inline" style="vertical-align: -2px" width="74" height="14">使得
+<img src="latex/latex2png-SymmetricEigenvalueProblem_4148674_.gif" alt="
+\begin{equation*}
+  \begin{bmatrix}
+    c_1& s_1\\
+    -s_1& c_1
+  \end{bmatrix}^T
+  \begin{bmatrix}
+    d_1^2-\lambda\\
+    d_1f_1
+  \end{bmatrix}=
+  \begin{bmatrix}
+    *\\
+    0
+  \end{bmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="55">令<img src="latex/latex2png-SymmetricEigenvalueProblem_163726801_-5.gif" alt="$G_1=G(1,2,\theta)$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">.</li>
+<li>计算Givens旋转<img src="latex/latex2png-SymmetricEigenvalueProblem_88593240_-4.gif" alt="$G_2,\cdots,G_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="96" height="16">,使得当<img src="latex/latex2png-SymmetricEigenvalueProblem_242096037_-4.gif" alt="$Q=G_1\cdots G_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="117" height="16">时,<img src="latex/latex2png-SymmetricEigenvalueProblem_107776343_-4.gif" alt="$Q^TTQ$" class="latex-inline" style="vertical-align: -4px" width="47" height="18">为三对角阵,且<img src="latex/latex2png-SymmetricEigenvalueProblem_139838950_-4.gif" alt="$Qe_1=G_1e_1$" class="latex-inline" style="vertical-align: -4px" width="84" height="16">.</li>
+</ol>
+
+<p>正如之前指出的,以上算法需显式计算<img src="latex/latex2png-SymmetricEigenvalueProblem_59012154_0.gif" alt="$B^TB$" class="latex-inline" style="vertical-align: 0px" width="37" height="14">,这可能导致算法的不稳定.若我们把Givens变化<img src="latex/latex2png-SymmetricEigenvalueProblem_220427284_-2.gif" alt="$G_1$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">直接作用到<img src="latex/latex2png-SymmetricEigenvalueProblem_138572818_-4.gif" alt="$B $" class="latex-inline" style="vertical-align: -4px" width="8" height="16">上,在决定Givens旋转<img src="latex/latex2png-SymmetricEigenvalueProblem_138559330_-4.gif" alt="$U_1,V_2,U_2,\cdots,V_{n-1},U_{n-1}$" class="latex-inline" style="vertical-align: -4px" width="186" height="16">将<img src="latex/latex2png-SymmetricEigenvalueProblem_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">恢复为双对角阵,得到
+<img src="latex/latex2png-SymmetricEigenvalueProblem_21735291_.gif" alt="
+\begin{equation*}
+  \bar{B}= (U_{n-1}^T\cdots U_1^T)B (G_1V_2\cdots V_{n-1})=\bar{U}^TB\bar{V}.
+\end{equation*}
+" class="latex-display" width="580" height="20">由<img src="latex/latex2png-SymmetricEigenvalueProblem_63736812_-2.gif" alt="$V_i$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">的形式可知
+<img src="latex/latex2png-SymmetricEigenvalueProblem_150977607_.gif" alt="
+\begin{equation*}
+  \bar{V}e_1=Qe_1.
+\end{equation*}
+" class="latex-display" width="580" height="18">从而由隐式Q定理断言<img src="latex/latex2png-SymmetricEigenvalueProblem_122022929_-1.gif" alt="$\bar{V}$" class="latex-inline" style="vertical-align: -1px" width="13" height="15">和<img src="latex/latex2png-SymmetricEigenvalueProblem_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="11" height="16">本质相同.于是我们隐式地完成了<img src="latex/latex2png-SymmetricEigenvalueProblem_59022739_0.gif" alt="$T=B^TB$" class="latex-inline" style="vertical-align: 0px" width="71" height="14">到<img src="latex/latex2png-SymmetricEigenvalueProblem_119009362_0.gif" alt="$\bar{T}=\bar{B}^T\bar{B}$" class="latex-inline" style="vertical-align: 0px" width="71" height="14">的过程.</p>
+
+<p>由于以上本质上是对称<img src="latex/latex2png-SymmetricEigenvalueProblem_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">迭代的方法,所以其收敛是三次的.实际中我们通过检测<img src="latex/latex2png-SymmetricEigenvalueProblem_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">的小次对角元来决定何时将问题降阶或终止迭代.</p>
+
+<p>Chan (1982)<span class="cite"><a class="cite" href="SymmetricEigenvalueProblem.html#ref-4" name="cite-4">[4]</a></span>对Golub和Kahan的算法进行了改进.通过合理安排运算顺序,在<img src="latex/latex2png-SymmetricEigenvalueProblem_153646100_-1.gif" alt="$m>n$" class="latex-inline" style="vertical-align: -1px" width="47" height="10">时可以有效地减少运算量.</p>
+
+<ol>
+<li>形成双对角矩阵时,先通过Householder变换,将<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">上三角化:
+<img src="latex/latex2png-SymmetricEigenvalueProblem_241834059_.gif" alt="
+\begin{equation*}
+  L^TA=
+  \begin{bmatrix}
+    R\\
+    O
+  \end{bmatrix}
+  \begin{array}[c]{l}
+    n\\
+    m-n
+  \end{array},
+\end{equation*}
+" class="latex-display" width="580" height="50">其中<img src="latex/latex2png-SymmetricEigenvalueProblem_43283474_0.gif" alt="$R$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">为上三角阵.随后利用<img src="latex/latex2png-SymmetricEigenvalueProblem_43283474_0.gif" alt="$R$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的上三角性质,利用Givens变换或快速Givens变换将其化为双对角形.由于R-双对角化时只需对较短的向量进行操作,而Givens变换较Householder变换可以减少加法的数目,特别在不需要求变换矩阵时可以有效地减少运算量.当<img src="latex/latex2png-SymmetricEigenvalueProblem_246899518_-2.gif" alt="$m\gg n$" class="latex-inline" style="vertical-align: -2px" width="50" height="12">时尤其有效.</li>
+<li>当求得<img src="latex/latex2png-SymmetricEigenvalueProblem_223201843_-1.gif" alt="$R=X\Sigma Y^T$" class="latex-inline" style="vertical-align: -1px" width="85" height="15">之后,SVD的变换矩阵可如下求出:
+<img src="latex/latex2png-SymmetricEigenvalueProblem_21273290_.gif" alt="
+\begin{equation*}
+  A=L
+  \begin{bmatrix}
+    X\\
+    O
+  \end{bmatrix}
+\Sigma Y^T=L
+\begin{bmatrix}
+  I\\
+  O
+\end{bmatrix}
+X\Sigma Y^T.
+\end{equation*}
+" class="latex-display" width="580" height="50"></li>
+</ol>
+
+<p>Chan给出了算法复杂度的详细分析.他指出在<img src="latex/latex2png-SymmetricEigenvalueProblem_65443421_0.gif" alt="$m\simeq 2n$" class="latex-inline" style="vertical-align: 0px" width="55" height="11">时,R-双对角化几乎总是比Golub-Kahan算法更快速,特别在不需显式求出变换矩阵的情况下.</p>
+
+<p>设我们已求得<img src="latex/latex2png-SymmetricEigenvalueProblem_2915221_0.gif" alt="$m\times n$" class="latex-inline" style="vertical-align: 0px" width="45" height="9">矩阵<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的奇异值<img src="latex/latex2png-SymmetricEigenvalueProblem_11138021_-5.gif" alt="$\{\sigma_1,\cdots,\sigma_r\}$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">,来考虑如何求正交矩阵<img src="latex/latex2png-SymmetricEigenvalueProblem_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">,<img src="latex/latex2png-SymmetricEigenvalueProblem_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">,使<img src="latex/latex2png-SymmetricEigenvalueProblem_158167574_-1.gif" alt="$A=U^T\Sigma V$" class="latex-inline" style="vertical-align: -1px" width="83" height="15">,其中<img src="latex/latex2png-SymmetricEigenvalueProblem_244059321_-5.gif" alt="$\Sigma=\mathrm{diag} (\sigma_1,\cdots,\sigma_r)$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">.</p>
+
+<p>事实上,我们已求得<img src="latex/latex2png-SymmetricEigenvalueProblem_209488838_0.gif" alt="$A^TA$" class="latex-inline" style="vertical-align: 0px" width="35" height="14">的特征值<img src="latex/latex2png-SymmetricEigenvalueProblem_173967239_-4.gif" alt="$\sigma_1^2,\cdots,\sigma_r^2,0,\cdots,0$" class="latex-inline" style="vertical-align: -4px" width="138" height="18">,要求正交矩阵<img src="latex/latex2png-SymmetricEigenvalueProblem_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">,其列向量是<img src="latex/latex2png-SymmetricEigenvalueProblem_209488838_0.gif" alt="$A^TA$" class="latex-inline" style="vertical-align: 0px" width="35" height="14">的特征向量,我们只要用逆迭代求解<img src="latex/latex2png-SymmetricEigenvalueProblem_156831613_-4.gif" alt="$A^TAy=\sigma^2y$" class="latex-inline" style="vertical-align: -4px" width="92" height="18"> .实用中采用双对角矩阵<img src="latex/latex2png-SymmetricEigenvalueProblem_42759186_-1.gif" alt="$J$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">代替<img src="latex/latex2png-SymmetricEigenvalueProblem_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,之后令<img src="latex/latex2png-SymmetricEigenvalueProblem_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">的相应列<img src="latex/latex2png-SymmetricEigenvalueProblem_13698141_-4.gif" alt="$x=\sigma^{-1}Jy$" class="latex-inline" style="vertical-align: -4px" width="78" height="18">即可.这些算法都是稳定有效的.</p>
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="SymmetricEigenvalueProblem.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Wilkinson J.H., </span><span class="ref-title">Global Convergence of Tridiagonal QR Algorithm With Origin Shifts, </span><span class="ref-journal">Lin. Alg. and Its Applic. </span><span class="ref-volume">I </span><span class="ref-year">(1968), </span><span class="ref-pages">409-420. </span></p>
+<p class="ref"><a class="ref" href="SymmetricEigenvalueProblem.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Wilkinson J. H., </span><span class="ref-title">The Algebraic Eigenvalue Problem, </span><span class="ref-publisher">Clarendon Press, Oxford, UK, </span><span class="ref-year">1965. </span></p>
+<p class="ref"><a class="ref" href="SymmetricEigenvalueProblem.html#cite-3" name="ref-3">[3]</a><span class="ref-author">Golub G.H. and Kahan W., </span><span class="ref-title">Calculating the Singular Values and Pseudo-Inverse of a Matrix, </span><span class="ref-journal">SIAM J. Num. Anal. Ser. B </span><span class="ref-volume">2 </span><span class="ref-year">(1965), </span><span class="ref-pages">205-224. </span></p>
+<p class="ref"><a class="ref" href="SymmetricEigenvalueProblem.html#cite-4" name="ref-4">[4]</a><span class="ref-author">Chan T., </span><span class="ref-title">An Improved Algorithm for Computing the Singular Value Decomposition, </span><span class="ref-journal">ACM Trans. Math. Soft. </span><span class="ref-volume">8 </span><span class="ref-year">(1982), </span><span class="ref-number">no.1, </span><span class="ref-pages">72-83. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

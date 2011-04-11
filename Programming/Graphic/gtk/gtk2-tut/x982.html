@@ -1,0 +1,313 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>状态栏 Statusbars</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="标尺 Rulers"
+HREF="x954.html"><LINK
+REL="NEXT"
+TITLE="文本输入构件 Text Entries"
+HREF="x1002.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x954.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1002.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-STATUSBARS">状态栏 Statusbars</H1
+><P
+>状态栏(Statusbars)是一些简单的构件，一般用来显示文本消息。它将文本消息压入到一个栈里面，当弹出当前消息时，将重新显示前一条文本消息。</P
+><P
+>为了让应用程序的不同部分使用同一个状态栏显示消息，状态栏构件使用上下文标识符(Context Identifiers)来识别不同“用户”。在栈顶部的消息就是要显示的消息，不管它的上下文是什么。消息在栈里面是以后进先出(last-in-first-out)的方式保存的，而不是按上下文标识符顺序。</P
+><P
+>状态栏构件用下面的函数创建：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_statusbar_new( void );</PRE
+></TD
+></TR
+></TABLE
+><P
+>用一个上下文的简短文本描述调用下面的函数，可以获得新的上下文标识符：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>guint gtk_statusbar_get_context_id( GtkStatusbar *statusbar,
+                                    const gchar  *context_description );</PRE
+></TD
+></TR
+></TABLE
+><P
+>有三个函数用来操作状态栏：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>guint gtk_statusbar_push( GtkStatusbar *statusbar,
+                          guint         context_id,
+                          const gchar  *text );
+
+void gtk_statusbar_pop( GtkStatusbar *statusbar)
+                        guint         context_id );
+
+void gtk_statusbar_remove( GtkStatusbar *statusbar,
+                           guint         context_id,
+                           guint         message_id ); </PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个函数 gtk_statusbar_push() 用于将新消息加到状态栏中，它返回一个消息标识符(Message Identifier)。这个标识符可以和上下文标识符一起传给gtk_statusbar_remove函数以将该消息从状态栏的栈中删除。</P
+><P
+>函数 gtk_statusbar_pop() 删除在栈中给定上下文标识符的最上面的一条消息。</P
+><P
+>除了显示消息，状态栏还可以显示一个大小改变把柄(resize grip)，用户可以用鼠标拖动它来改变窗口的大小，就像拖动窗口边框一样．下面的函数控制大小改变把柄的显示．</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void     gtk_statusbar_set_has_resize_grip( GtkStatusbar *statusbar,
+					    gboolean      setting );
+
+gboolean gtk_statusbar_get_has_resize_grip( GtkStatusbar *statusbar );</PRE
+></TD
+></TR
+></TABLE
+><P
+>下面的示例创建了一个状态栏和两个按钮，一个将消息压入到状态栏栈中，另一个将最上面一条消息弹出。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/statusbar.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdlib.h&#62;
+#include &#60;gtk/gtk.h&#62;
+#include &#60;glib.h&#62;
+
+GtkWidget *status_bar;
+
+void push_item( GtkWidget *widget,
+                gpointer   data )
+{
+  static int count = 1;
+  char buff[20];
+
+  g_snprintf (buff, 20, "Item %d", count++);
+  gtk_statusbar_push (GTK_STATUSBAR (status_bar), GPOINTER_TO_INT (data), buff);
+
+  return;
+}
+
+void pop_item( GtkWidget *widget,
+               gpointer   data )
+{
+  gtk_statusbar_pop (GTK_STATUSBAR (status_bar), GPOINTER_TO_INT (data));
+  return;
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+
+    GtkWidget *window;
+    GtkWidget *vbox;
+    GtkWidget *button;
+
+    gint context_id;
+
+    gtk_init (&#38;argc, &#38;argv);
+
+    /* 创建新窗口 */
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_widget_set_size_request (GTK_WIDGET (window), 200, 100);
+    gtk_window_set_title (GTK_WINDOW (window), "GTK Statusbar Example");
+    g_signal_connect (G_OBJECT (window), "delete_event",
+                      G_CALLBACK (exit), NULL);
+ 
+    vbox = gtk_vbox_new (FALSE, 1);
+    gtk_container_add (GTK_CONTAINER (window), vbox);
+    gtk_widget_show (vbox);
+          
+    status_bar = gtk_statusbar_new ();      
+    gtk_box_pack_start (GTK_BOX (vbox), status_bar, TRUE, TRUE, 0);
+    gtk_widget_show (status_bar);
+
+    context_id = gtk_statusbar_get_context_id(
+                          GTK_STATUSBAR (status_bar), "Statusbar example");
+
+    button = gtk_button_new_with_label ("push item");
+    g_signal_connect (G_OBJECT (button), "clicked",
+                      G_CALLBACK (push_item), GINT_TO_POINTER (context_id));
+    gtk_box_pack_start (GTK_BOX (vbox), button, TRUE, TRUE, 2);
+    gtk_widget_show (button);              
+
+    button = gtk_button_new_with_label ("pop last item");
+    g_signal_connect (G_OBJECT (button), "clicked",
+                      G_CALLBACK (pop_item), GINT_TO_POINTER (context_id));
+    gtk_box_pack_start (GTK_BOX (vbox), button, TRUE, TRUE, 2);
+    gtk_widget_show (button);
+
+    /* 将窗口最后显示，让整个窗口一次性出现在屏幕上． */
+    gtk_widget_show (window);
+
+    gtk_main ();
+
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x954.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1002.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>标尺 Rulers</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>文本输入构件 Text Entries</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

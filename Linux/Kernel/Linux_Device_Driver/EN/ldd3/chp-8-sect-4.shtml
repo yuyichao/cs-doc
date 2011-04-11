@@ -1,0 +1,524 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>8.4. vmalloc and Friends</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-8-sect-3.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-8-sect-5.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><TD valign="top"><a name="chp-8-sect-4"></a>
+<h3 class="docSection1Title">8.4. vmalloc and Friends</h3>
+
+<p class="docText">The next memory allocation<a name="chp-8-ITERM-5768"></a> <a name="chp-8-ITERM-5769"></a> <a name="chp-8-ITERM-5770"></a> <a name="chp-8-ITERM-5771"></a> function that we show you is
+<span class="docEmphasis">vmalloc</span>, which allocates a contiguous memory
+region in the <span class="docEmphasis">virtual</span> address space. Although
+the pages are not consecutive in physical memory (each page is
+retrieved with a separate call to <span class="docEmphasis">alloc_page</span>),
+the kernel sees them as a contiguous range of addresses.
+<span class="docEmphasis">vmalloc</span> returns <tt>0</tt> (the
+<tt>NULL</tt> address) if an error occurs, otherwise, it
+returns a pointer to a linear memory area of size at least
+<tt>size</tt>.</p>
+
+<p class="docText">We describe <span class="docEmphasis">vmalloc</span> here because it is one of
+the fundamental Linux memory allocation mechanisms. We should note,
+however, that use of <span class="docEmphasis">vmalloc</span> is discouraged in
+most situations. Memory obtained from <span class="docEmphasis">vmalloc</span> is
+slightly less efficient to work with, and, on some architectures, the
+amount of address space set aside for <span class="docEmphasis">vmalloc</span> is
+relatively small. Code that uses <span class="docEmphasis">vmalloc</span> is
+likely to get a chilly reception if submitted for inclusion in the
+kernel. If possible, you should work directly with individual pages
+rather than trying to smooth things over with
+<span class="docEmphasis">vmalloc</span>.</P>
+
+<p class="docText">That said, let's see how
+<span class="docEmphasis">vmalloc</span> works. The prototypes of the function
+and its relatives (<span class="docEmphasis">ioremap</span>, which is not
+strictly an allocation function, is discussed later in this section)
+are as follows:</p>
+
+<pre>#include &lt;linux/vmalloc.h&gt;
+
+void *vmalloc(unsigned long size);
+void vfree(void * addr);
+void *ioremap(unsigned long offset, unsigned long size);
+void iounmap(void * addr);</pre><BR>
+
+
+<p class="docText"><a name="chp-8-ITERM-5772"></a>
+<a name="chp-8-ITERM-5773"></a><a name="chp-8-ITERM-5774"></a><a name="chp-8-ITERM-5775"></a>
+<a name="chp-8-ITERM-5776"></a><a name="chp-8-ITERM-5777"></a><a name="chp-8-ITERM-5778"></a><a name="chp-8-ITERM-5779"></a>
+<a name="chp-8-ITERM-5780"></a><a name="chp-8-ITERM-5781"></a>It's worth stressing
+that memory addresses returned by <span class="docEmphasis">kmalloc</span> and
+<span class="docEmphasis">_ get_free_pages</span> are also virtual addresses.
+Their actual value is still massaged by the MMU (the memory
+management unit, usually part of the CPU) before it is used to
+address physical memory.<sup class="docFootnote"><a class="docLink" href="chp-8-sect-4.shtml#chp-8-FNOTE-4">[4]</a></sup>
+<span class="docEmphasis">vmalloc</span> is not different in how it uses the
+hardware, but rather in how the kernel performs the allocation task.</P><blockquote><p class="docFootnote"><sup><a name="chp-8-FNOTE-4">[4]</a></sup> Actually, some architectures
+define ranges of "virtual"
+addresses as reserved to address physical memory. When this happens,
+the Linux kernel takes advantage of the feature, and both the kernel
+and <span class="docEmphasis">_ _get_free_pages</span> addresses lie in one of
+those memory ranges. The difference is transparent to device drivers
+and other code that is not directly involved with the
+memory-management kernel subsystem.</P></blockquote>
+
+<p class="docText">The (virtual) address range used by <span class="docEmphasis">kmalloc</span> and
+<span class="docEmphasis">_ _get_free_pages</span> features a one-to-one mapping
+to physical memory, possibly shifted by a constant
+<tt>PAGE_OFFSET</tt> value; the functions
+don't need to modify the page tables for that
+address range. The address range used by <span class="docEmphasis">vmalloc</span>
+and <span class="docEmphasis">ioremap</span>, on the other hand, is completely
+synthetic, and each allocation builds the (virtual) memory area by
+suitably setting up the page tables.</p>
+
+<p class="docText">This difference can be perceived by comparing the pointers returned
+by the allocation functions. On some platforms (for example, the
+x86), addresses returned by <span class="docEmphasis">vmalloc</span> are just
+beyond the addresses that <span class="docEmphasis">kmalloc</span> uses. On other
+platforms (for example, MIPS, IA-64, and x86_64), they belong to a
+completely different address range. Addresses available for
+<span class="docEmphasis">vmalloc</span> are in the range from
+<tt>VMALLOC_START</tt> to <tt>VMALLOC_END</tt>.
+Both symbols are defined in
+<i>&lt;asm/pgtable.h&gt;</i>.</p>
+
+<p class="docText">Addresses allocated by <span class="docEmphasis">vmalloc</span>
+can't be used outside of the microprocessor, because
+they make sense only on top of the processor's MMU.
+When a driver needs a real physical address (such as a DMA address,
+used by peripheral hardware to drive the system's
+bus), you can't easily use
+<span class="docEmphasis">vmalloc</span>. The right time to call
+<span class="docEmphasis">vmalloc</span> is when you are allocating memory for a
+large sequential buffer that exists only in software.
+It's important to note that
+<span class="docEmphasis">vmalloc</span> has more overhead than <span class="docEmphasis">_
+_get_free_pages</span>, because it must both retrieve the memory
+and build the page tables. Therefore, it doesn't
+make sense to call <span class="docEmphasis">vmalloc</span> to allocate just one
+page.</P>
+
+<p class="docText">An example of a function in the kernel that uses
+<span class="docEmphasis">vmalloc</span> is the
+<span class="docEmphasis">create_module</span><a name="chp-8-ITERM-5782"></a> system call, which uses
+<span class="docEmphasis">vmalloc</span> to get space for the module being
+created. Code and data of the module are later copied to the
+allocated space using <span class="docEmphasis">copy_from_user</span>. In this
+way, the module appears to be loaded into contiguous memory. You can
+verify, by looking in <I>/proc/kallsyms</I>, that
+kernel symbols exported by modules lie in a different memory range
+from symbols exported by the kernel proper.</p>
+
+<p class="docText">Memory allocated with <span class="docEmphasis">vmalloc</span> is released by
+<span class="docEmphasis">vfree</span>, in <a name="chp-8-ITERM-5783"></a>the same
+way that <span class="docEmphasis">kfree</span> releases memory allocated by
+<span class="docEmphasis">kmalloc</span>.</P>
+
+<p class="docText">Like <span class="docEmphasis">vmalloc</span>, <span class="docEmphasis">ioremap</span>
+builds new page tables; unlike <span class="docEmphasis">vmalloc</span>, however,
+it doesn't actually allocate any memory. The return
+value of <span class="docEmphasis">ioremap</span> is a special virtual address
+that can be used to access the specified physical address range; the
+virtual address obtained is eventually released by calling
+<span class="docEmphasis">iounmap</span>.</P>
+
+<p class="docText"><a name="chp-8-ITERM-5784"></a><span class="docEmphasis">ioremap</span> is
+most useful for mapping the (physical) address of a PCI buffer to
+(virtual) kernel space. For example, it can be used to access the
+frame buffer of a PCI video device; such buffers are usually mapped
+at high physical addresses, outside of the address range for which
+the kernel builds page tables at boot time. PCI issues are explained
+in more detail in <a class="docLink" href="chp-12.shtml#chp-12">Chapter 12</a>.</p>
+
+<p class="docText">It's worth noting that for the sake of portability,
+you should not directly access addresses returned by
+<span class="docEmphasis">ioremap</span><a name="chp-8-ITERM-5785"></a>
+<a name="chp-8-ITERM-5786"></a>
+as if they were pointers to memory. Rather, you should always use
+<span class="docEmphasis">readb</span> and the other I/O functions introduced in
+<a class="docLink" href="chp-9.shtml#chp-9">Chapter 9</a>. This requirement
+applies because some platforms, such as the Alpha, are unable to
+directly map PCI memory regions to the processor address space
+because of differences between PCI specs and Alpha processors in how
+data is transferred.</p>
+
+<p class="docText">Both <span class="docEmphasis">ioremap</span> and <span class="docEmphasis">vmalloc</span>
+are page oriented (they work by modifying the page tables);
+consequently, the relocated or allocated size is rounded up to the
+nearest page boundary. <span class="docEmphasis">ioremap</span> simulates an
+unaligned mapping by "rounding
+down" the address to be remapped and by returning an
+offset into the first remapped page.</p>
+
+<p class="docText">One minor drawback of <span class="docEmphasis">vmalloc</span> is that it
+can't be used in atomic context because, internally,
+it uses <span class="docEmphasis">kmalloc(GFP_KERNEL)</span> to acquire storage
+for the page tables, and therefore could sleep. This
+shouldn't be a problem—if the use of
+<span class="docEmphasis">_ _get_free_page</span> isn't good
+enough for an interrupt handler, the software design needs some
+cleaning up.</p>
+
+<a name="chp-8-sect-4.1"></a>
+<H4 class="docSection2Title">8.4.1. A scull Using Virtual Addresses: scullv</h4>
+
+<p class="docText"><a name="chp-8-ITERM-5787"></a>
+<a name="chp-8-ITERM-5788"></a>Sample code using
+<span class="docEmphasis">vmalloc</span> is provided in the
+<span class="docEmphasis">scullv</span> module. Like <span class="docEmphasis">scullp</span>,
+this module is a stripped-down version of <span class="docEmphasis">scull</span>
+that uses a different allocation function to obtain space for the
+device to store data.</p>
+
+<p class="docText">The module allocates memory 16 pages at a time. The allocation is
+done in large chunks to achieve better performance than
+<span class="docEmphasis">scullp</span> and to show something that takes too long
+with other allocation techniques to be feasible. Allocating more than
+one page with <span class="docEmphasis">_ _get_free_pages</span> is failure
+prone, and even when it succeeds, it can be slow. As we saw earlier,
+<span class="docEmphasis">vmalloc</span> is faster than other functions in
+allocating several pages, but somewhat slower when retrieving a
+single page, because of the overhead of page-table building.
+<span class="docEmphasis">scullv</span> is designed like
+<span class="docEmphasis">scullp</span>. <tt>order</tt> specifies the
+"order" of each allocation and
+defaults to 4. The only difference between
+<span class="docEmphasis">scullv</span> and <span class="docEmphasis">scullp</span> is in
+allocation management. These lines use <span class="docEmphasis">vmalloc</span>
+to obtain new memory:</P>
+
+<pre>/* Allocate a quantum using virtual addresses */
+if (!dptr-&gt;data[s_pos]) {
+    dptr-&gt;data[s_pos] =
+        (void *)vmalloc(PAGE_SIZE &lt;&lt; dptr-&gt;order);
+    if (!dptr-&gt;data[s_pos])
+        goto nomem;
+    memset(dptr-&gt;data[s_pos], 0, PAGE_SIZE &lt;&lt; dptr-&gt;order);
+}</pre><br>
+
+
+<p class="docText">and these lines release memory:</p>
+
+<pre>/* Release the quantum-set */
+for (i = 0; i &lt; qset; i++)
+    if (dptr-&gt;data[i])
+        vfree(dptr-&gt;data[i]);</pre><BR>
+
+
+<p class="docText">If you compile both modules with debugging enabled, you can look at
+their data allocation by reading the files they create in
+<i>/proc</I>. This snapshot was taken on an x86_64
+system:</p>
+
+<pre>salma% cat /tmp/bigfile &gt; /dev/scullp0; head -5 /proc/scullpmem
+Device 0: qset 500, order 0, sz 1535135
+  item at 000001001847da58, qset at 000001001db4c000
+       0:1001db56000
+       1:1003d1c7000
+   
+salma% cat /tmp/bigfile &gt; /dev/scullv0; head -5 /proc/scullvmem
+
+Device 0: qset 500, order 4, sz 1535135
+  item at 000001001847da58, qset at 0000010013dea000
+       0:ffffff0001177000
+       1:ffffff0001188000</pre><br>
+
+
+<p class="docText">The following output, instead, came from an x86 system:</p>
+
+<pre>rudo% cat /tmp/bigfile &gt; /dev/scullp0; head -5 /proc/scullpmem
+
+Device 0: qset 500, order 0, sz 1535135
+  item at ccf80e00, qset at cf7b9800
+       0:ccc58000
+       1:cccdd000
+
+rudo%  cat /tmp/bigfile &gt; /dev/scullv0; head -5 /proc/scullvmem
+
+Device 0: qset 500, order 4, sz 1535135
+  item at cfab4800, qset at cf8e4000
+       0:d087a000
+       1:d08d2000</pre><br>
+
+
+<p class="docText">The values show two different behaviors. On x86_64, physical
+addresses and virtual addresses are mapped to completely different
+address ranges (0x100 and 0xffffff00), while on x86 computers,
+<span class="docEmphasis">vmalloc</span> returns<a name="chp-8-ITERM-5789"></a> <a name="chp-8-ITERM-5790"></a> <a name="chp-8-ITERM-5791"></a> <a name="chp-8-ITERM-5792"></a> virtual addresses just above the
+mapping used for physical memory.</p>
+
+
+
+<ul></ul></td></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-8-sect-3.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-8-sect-5.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

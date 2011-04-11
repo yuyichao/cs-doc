@@ -1,0 +1,145 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>2.4.&#160;编译和加载-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="prev" href="ch02s03.html" title="2.3.&#160;内核模块相比于应用程序">
+<link rel="next" href="ch02s05.html" title="2.5.&#160;内核符号表">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">2.4.&#160;编译和加载</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch02s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;2&#160;章&#160;建立和运行模块</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="CompilingandLoading.sect1"></a>2.4.&#160;编译和加载</h2></div></div></div>
+<p> 本章开头的 "hello world" 例子包含了一个简短的建立并加载模块到系统中去的演示. 当然, 整个过程比我们目前看到的多. 本节提供了更多细节关于一个模块作者如何将源码转换成内核中的运行的子系统.  
+</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="CompilingModules.sect2"></a>2.4.1.&#160;编译模块</h3></div></div></div>
+<p> 第一步, 我们需要看一下模块如何必须被建立. 模块的建立过程与用户空间的应用程序的建立过程有显著不同; 内核是一个大的, 独立的程序, 对于它的各个部分如何组合在一起有详细的明确的要求. 建立过程也与以前版本的内核的过程不同; 新的建立系统用起来更简单并且产生更正确的结果, 但是它看起来与以前非常不同. 内核建立系统是一头负责的野兽, 我们就看它一小部分. 在内核源码的 Document/kbuild 目录下发现的文件, 任何想理解表面之下的真实情况的人都要阅读一下.  </p>
+<p> 有几个前提, 你必须在能建立内核模块前解决. 第一个是保证你有版本足够新的编译器, 模块工具, 以及其他必要工具. 在内核文档目录下的文件 Documentation/Changes 一直列出了需要的工具版本; 你应当在向前走之前参考一下它. 试图建立一个内核(包括它的模块), 用错误的工具版本, 可能导致不尽的奇怪的难题. 注意, 偶尔地, 编译器的版本太新可能会引起和太老的版本引起的一样的问题. 内核源码对于编译器做了很大的假设, 新的发行版本有时会一时地破坏东西.  </p>
+<p> 如果你仍然没有一个内核树在手边, 或者还没有配置和建立内核, 现在是时间去做了. 没有源码树在你的文件系统上, 你无法为 2.6 内核建立可加载的模块. 实际运行为其而建立的内核也是有帮助的( 尽管不是必要的 ).  </p>
+<p> 一旦你已建立起所有东西, 给你的模块创建一个 makefile 就是直截了当的. 实际上, 对于本章前面展示的" hello world" 例子, 单行就够了: </p>
+<pre class="screen">
+obj-m := hello.o 
+</pre>
+<p> 熟悉 make , 但是对 2.6 内核建立系统不熟悉的读者, 可能奇怪这个 makefile 如何工作. 毕竟上面的这一行不是一个传统的 makefile 的样子. 答案, 当然, 是内核建立系统处理了余下的工作. 上面的安排( 它利用了由 GNU make 提供的扩展语法 )表明有一个模块要从目标文件 hello.o 建立. 在从目标文件建立后结果模块命名为 hello.ko.  </p>
+<p> 反之, 如果你有一个模块名为 module.ko, 是来自 2 个源文件( 姑且称之为, file1.c 和 file2.c ), 正确的书写应当是: </p>
+<pre class="screen">
+obj-m := module.o
+module-objs := file1.o file2.o
+</pre>
+<p> 对于一个象上面展示的要工作的 makefile, 它必须在更大的内核建立系统的上下文被调用. 如果你的内核源码数位于, 假设, 你的 ~/kernel-2.6 目录, 用来建立你的模块的 make 命令( 在包含模块源码和 makefile 的目录下键入 )会是: </p>
+<pre class="screen">
+make -C ~/kernel-2.6 M=`pwd` modules
+</pre>
+<p> 这个命令开始是改变它的目录到用 -C 选项提供的目录下( 就是说, 你的内核源码目录 ). 它在那里会发现内核的顶层 makefile. 这个 M= 选项使 makefile 在试图建立模块目标前, 回到你的模块源码目录. 这个目标, 依次地, 是指在 obj-m 变量中发现的模块列表, 在我们的例子里设成了 module.o.  </p>
+<p> 键入前面的 make 命令一会儿之后就会感觉烦, 所以内核开发者就开发了一种 makefile 方式, 使得生活容易些对于那些在内核树之外建立模块的人. 这个窍门是如下书写你的 makefile: </p>
+<pre class="screen">
+# If KERNELRELEASE is defined, we've been invoked from the
+# kernel build system and can use its language.
+ifneq ($(KERNELRELEASE),)
+
+ obj-m := hello.o 
+# Otherwise we were called directly from the command
+# line; invoke the kernel build system.
+else
+
+ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+ PWD := $(shell pwd) 
+default:
+ $(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+
+endif 
+</pre>
+<p> 再一次, 我们看到了扩展的 GNU make 语法在起作用. 这个 makefile 在一次典型的建立中要被读 2 次. 当从命令行中调用这个 makefile , 它注意到 KERNELRELEASE 变量没有设置. 它利用这样一个事实来定位内核源码目录, 即已安装模块目录中的符号连接指回内核建立树. 如果你实际上没有运行你在为其而建立的内核, 你可以在命令行提供一个 KERNELDIR= 选项, 设置 KERNELDIR 环境变量, 或者重写 makefile 中设置 KERNELDIR 的那一行. 一旦发现内核源码树, makefile 调用 default: 目标, 来运行第 2 个 make 命令( 在 makefile 里参数化成 $(MAKE))象前面描述过的一样来调用内核建立系统. 在第 2 次读, makefile 设置 obj-m, 并且内核的 makefile 文件完成实际的建立模块工作.  </p>
+<p> 这种建立模块的机制你可能感觉笨拙模糊. 一旦你习惯了它, 但是, 你很可能会欣赏这种已经编排进内核建立系统的能力. 注意, 上面的不是一个完整的 makefile; 一个真正的 makefile 包含通常的目标类型来清除不要的文件, 安装模块等等. 一个完整的例子可以参考例子代码目录的 makefile.  
+</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="LoadingandUnloadingModules.sect2"></a>2.4.2.&#160;加载和卸载模块</h3></div></div></div>
+<p> 模块建立之后, 下一步是加载到内核. 如我们已指出的, insmod 为你完成这个工作. 这个程序加载模块的代码段和数据段到内核, 接着, 执行一个类似 ld 的函数, 它连接模块中任何未解决的符号连接到内核的符号表上. 但是不象连接器, 内核不修改模块的磁盘文件, 而是内存内的拷贝. insmod 接收许多命令行选项(详情见 manpage), 它能够安排值给你模块中的参数, 在连接到当前内核之前. 因此, 如果一个模块正确设计了, 它能够在加载时配置; 加载时配置比编译时配置给了用户更多的灵活性, 有时仍然在用. 加载时配置在本章后面的 "模块参数" 一节讲解.  </p>
+<p> 感兴趣的读者可能想看看内核如何支持 insmod: 它依赖一个在 kernel/module.c 中定义的系统调用. 函数 sys_init_module 分配内核内存来存放模块 ( 这个内存用 vmalloc 分配; 看第 8 章的 "vmalloc 和其友" ); 它接着拷贝模块的代码段到这块内存区, 借助内核符号表解决模块中的内核引用, 并且调用模块的初始化函数来启动所有东西.  </p>
+<p> 如果你真正看了内核代码, 你会发现系统调用的名子以 sys_ 为前缀. 这对所有系统调用都是成立的, 并且没有别的函数. 记住这个有助于在源码中查找系统调用.  </p>
+<p> modprobe 工具值得快速提及一下. modprobe, 如同 insmod, 加载一个模块到内核. 它的不同在于它会查看要加载的模块, 看是否它引用了当前内核没有定义的符号. 如果发现有, modprobe 在定义相关符号的当前模块搜索路径中寻找其他模块. 当 modprobe 找到这些模块( 要加载模块需要的 ), 它也把它们加载到内核. 如果你在这种情况下代替以使用 insmod , 命令会失败, 在系统日志文件中留下一条 " unresolved symbols "消息.  </p>
+<p> 如前面提到, 模块可以用 rmmod 工具从内核去除. 注意, 如果内核认为模块还在用( 就是说, 一个程序仍然有一个打开文件对应模块输出的设备 ), 或者内核被配置成不允许模块去除, 模块去除会失败. 可以配置内核允许"强行"去除模块, 甚至在它们看来是忙的. 如果你到了需要这选项的地步, 但是, 事情可能已经错的太严重以至于最好的动作就是重启了.  
+</p>
+<p> lsmod 程序生成一个内核中当前加载的模块的列表. 一些其他信息, 例如使用了一个特定模块的其他模块, 也提供了. lsmod 通过读取 /proc/modules 虚拟文件工作. 当前加载的模块的信息也可在位于 /sys/module 的 sysfs 虚拟文件系统找到.  
+</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="VersionDependency.sect2"></a>2.4.3.&#160;版本依赖</h3></div></div></div>
+<p> 记住, 你的模块代码一定要为每个它要连接的内核版本重新编译 -- 至少, 在缺乏 modversions 时, 这里不涉及因为它们更多的是给内核发布制作者, 而不是开发者. 模块是紧密结合到一个特殊内核版本的数据结构和函数原型上的; 模块见到的接口可能一个内核版本与另一个有很大差别. 当然, 在开发中的内核更加是这样.  </p>
+<p> 内核不只是认为一个给定模块是针对一个正确的内核版本建立的. 建立过程的其中一步是对一个当前内核树中的文件(称为 vermagic.o)连接你的模块; 这个东东含有相当多的有关要为其建立模块的内核的信息, 包括目标内核版本, 编译器版本, 以及许多重要配置变量的设置. 当尝试加载一个模块, 这些信息被检查与运行内核的兼容性. 如果不匹配, 模块不会加载; 代之的是你见到如下内容: </p>
+<pre class="screen">
+# insmod hello.ko
+Error inserting './hello.ko': -1 Invalid module format
+</pre>
+<p> 看一下系统日志文件(/var/log/message 或者任何你的系统被配置来用的)将发现导致模块无法加载特定的问题.</p>
+<p> 如果你需要编译一个模块给一个特定的内核版本, 你将需要使用这个特定版本的建立系统和源码树. 前面展示过的在例子 makefile 中简单修改 KERNELDIR 变量, 就完成这个动作.  </p>
+<p> 内核接口在各个发行之间常常变化. 如果你编写一个模块想用来在多个内核版本上工作(特别地是如果它必须跨大的发行版本), 你可能只能使用宏定义和 #ifdef 来使你的代码正确建立. 本书的这个版本只关心内核的一个主要版本, 因此不会在我们的例子代码中经常见到版本检查. 但是这种需要确实有时会有. 在这样情况下, 你要利用在 linux/version.h 中发现的定义. 这个头文件, 自动包含在 linux/module.h, 定义了下面的宏定义: </p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>UTS_RELEASE </span></span></dt>
+<dd><p> 这个宏定义扩展成字符串, 描述了这个内核树的版本. 例如, "2.6.10".  </p></dd>
+<dt><span class="term"><span>LINUX_VERSION_CODE </span></span></dt>
+<dd><p>这个宏定义扩展成内核版本的二进制形式, 版本号发行号的每个部分用一个字节表示. 例如, 2.6.10 的编码是 132618 ( 就是, 0x02060a ). <sup>[<a name="id409823" href="ch02s04.html#ftn.id409823">4</a>]</sup>有了这个信息, 你可以(几乎是)容易地决定你在处理的内核版本.  </p></dd>
+<dt><span class="term"><span>KERNEL_VERSION(major,minor,release)</span></span></dt>
+<dd><p>这个宏定义用来建立一个整型版本编码, 从组成一个版本号的单个数字. 例如, KERNEL_VERSION(2.6.10) 扩展成 132618. 这个宏定义非常有用, 当你需要比较当前版本和一个已知的检查点.  </p></dd>
+</dl></div>
+<p> 大部分的基于内核版本的依赖性可以使用预处理器条件解决, 通过利用 KERNEL_VERSION 和 LINUX_VERSION_VODE. 版本依赖不应当, 但是, 用繁多的 #ifdef 条件来搞乱驱动的代码; 处理不兼容的最好的方式是把它们限制到特定的头文件. 作为一个通用的原则, 明显版本(或者平台)依赖的代码应当隐藏在一个低级的宏定义或者函数后面. 高层的代码就可以只调用这些函数, 而不必关心低层的细节. 这样书写的代码易读并且更健壮.  
+</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="PlatformDependency.sect2"></a>2.4.4.&#160;平台依赖性</h3></div></div></div>
+<p> 每个电脑平台有其自己的特点, 内核设计者可以自由使用所有的特性来获得更好的性能. in the target object file ???  </p>
+<p> 不象应用程序开发者, 他们必须和预编译的库一起连接他们的代码, 依附在参数传递的规定上, 内核开发者可以专用某些处理器寄存器给特别的用途, 他们确实这样做了. 更多的, 内核代码可以为一个 CPU 族里的特定处理器优化, 以最好地利用目标平台; 不象应用程序那样常常以二进制格式发布, 一个定制的内核编译可以为一个特定的计算机系列优化.  </p>
+<p> 例如, IA32 (x86) 结构分为几个不同的处理器类型. 老式的 80386 处理器仍然被支持( 到现在 ), 尽管它的指令集, 以现代的标准看, 非常有限. 这个体系中更加现代的处理器已经引入了许多新特性, 包括进入内核的快速指令, 处理器间的加锁, 拷贝数据, 等等. 更新的处理器也可采用 36 位( 或者更大 )的物理地址, 当在适当的模式下, 以允许他们寻址超过 4 GB 的物理内存. 其他的处理器家族也有类似的改进. 内核, 依赖不同的配置选项, 可以被建立来使用这些附加的特性.  </p>
+<p> 清楚地, 如果一个模块与一个给定内核工作, 它必须以与内核相同的对目标处理器的理解来建立. 再一次, vermagic.o 目标文件登场. 当加载一个模块, 内核为模块检查特定处理器的配置选项, 确认它们匹配运行的内核. 如果模块用不同选项编译, 它不会加载.  </p>
+<p> 如果你计划为通用的发布编写驱动, 你可能很奇怪你怎么可能支持所有这些不同的变体. 最好的答案, 当然, 是发行你的驱动在 GPL 兼容的许可之下, 并且贡献它给主流内核. 如果没有那样, 以源码形式和一套脚本发布你的驱动, 以便在用户系统上编译可能是最好的答案. 一些供应商已发行了工具来简化这个工作. 如果你必须发布你的驱动以二进制形式, 你需要查看由你的目标发布所提供的不同的内核, 并且为每个提供一个模块版本. 要确认考虑到了任何在产生发布后可能发行的勘误内核. 接着, 要考虑许可权的问题, 如同我们在第 1 章的" 许可条款" 一节中讨论的. 作为一个通用的规则, 以源码形式发布东西是你行于世的易途.  
+</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id409823" href="ch02s04.html#id409823">4</a>] </sup>这允许在稳定版本之间多达 256 个开发版本.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch02s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch02.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">2.3.&#160;内核模块相比于应用程序&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.5.&#160;内核符号表</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

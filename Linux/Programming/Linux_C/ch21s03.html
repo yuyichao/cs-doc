@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 条件预处理指示</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch21.html" title="第 21 章 预处理" /><link rel="prev" href="ch21s02.html" title="2. 宏定义" /><link rel="next" href="ch21s04.html" title="4. 其它预处理特性" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 条件预处理指示</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch21s02.html">上一页</a> </td><th width="60%" align="center">第 21 章 预处理</th><td width="20%" align="right"> <a accesskey="n" href="ch21s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2798658"></a>3. 条件预处理指示</h2></div></div></div><p>我们在<a class="xref" href="ch20s02.html#link.header">第 2.2 节 “头文件”</a>中见过Header Guard的用法：</p><pre class="programlisting">#ifndef HEADER_FILENAME
+#define HEADER_FILENAME
+/* body of header */
+#endif</pre><p>条件预处理指示也常用于源代码的配置管理，例如：</p><pre class="programlisting">#if MACHINE == 68000
+    int x;
+#elif MACHINE == 8086
+    long x;
+#else    /* all others */
+    #error UNKNOWN TARGET MACHINE
+#endif</pre><p>假设这段程序是为多种平台编写的，在68000平台上需要定义<code class="literal">x</code>为<code class="literal">int</code>型，在8086平台上需要定义<code class="literal">x</code>为<code class="literal">long</code>型，对其它平台暂不提供支持，就可以用条件预处理指示来写。如果在预处理这段代码之前，<code class="literal">MACHINE</code>被定义为68000，则包含<code class="literal">intx;</code>这段代码；否则如果<code class="literal">MACHINE</code>被定义为8086，则包含<code class="literal">long x;</code>这段代码；否则（<code class="literal">MACHINE</code>没有定义，或者定义为其它值），包含<code class="literal">#error UNKNOWN TARGET MACHINE</code>这段代码，编译器遇到这个预处理指示就报错退出，错误信息就是<code class="literal">UNKNOWN TARGET MACHINE</code>。</p><p>如果要为8086平台编译这段代码，有几种可选的办法：</p><p>1、手动编辑代码，在前面添一行<code class="literal">#define MACHINE 8086</code>。这样做的缺点是难以管理，如果这个项目中有很多源文件都需要定义<code class="literal">MACHINE</code>，每次要为8086平台编译就得把这些定义全部改成8086，每次要为68000平台编译就得把这些定义全部改成68000。</p><p>2、在所有需要配置的源文件开头包含一个头文件，在头文件中定义<code class="literal">#define MACHINE 8086</code>，这样只需要改一个头文件就可以影响所有包含它的源文件。通常这个头文件由配置工具生成，比如在Linux内核源代码的目录下运行<code class="literal">make menuconfig</code>命令可以出来一个配置菜单，在其中配置的选项会自动转换成头文件<code class="literal">include/linux/autoconf.h</code>中的宏定义。</p><p>举一个具体的例子，在内核配置菜单中用回车键和方向键进入<code class="literal">Device Drivers ---&gt; Network device support</code>，然后用空格键选中<code class="literal">Network device support</code>（菜单项左边的<code class="literal">[ ]</code>括号内会出现一个<code class="literal">*</code>号），然后保存退出，会生成一个名为<code class="literal">.config</code>的隐藏文件，其内容类似于：</p><pre class="programlisting">...
+#
+# Network device support
+#
+CONFIG_NETDEVICES=y
+# CONFIG_DUMMY is not set
+# CONFIG_BONDING is not set
+# CONFIG_EQUALIZER is not set
+# CONFIG_TUN is not set
+...</pre><p>然后运行<code class="literal">make</code>命令编译内核，这时根据<code class="literal">.config</code>文件生成头文件<code class="literal">include/linux/autoconf.h</code>，其内容类似于：</p><pre class="programlisting">...
+/*
+ * Network device support
+ */
+#define CONFIG_NETDEVICES 1
+#undef CONFIG_DUMMY
+#undef CONFIG_BONDING
+#undef CONFIG_EQUALIZER
+#undef CONFIG_TUN
+...</pre><p>上面的代码用<code class="literal">#undef</code>确保取消一些宏的定义，如果先前没有定义过<code class="literal">CONFIG_DUMMY</code>，用<code class="literal">#undef CONFIG_DUMMY</code>取消它的定义没有任何作用，也不算错。</p><p><code class="literal">include/linux/autoconf.h</code>被另一个头文件<code class="literal">include/linux/config.h</code>所包含，通常内核代码包含后一个头文件，例如<code class="literal">net/core/sock.c</code>：</p><pre class="programlisting">...
+#include &lt;linux/config.h&gt;
+...
+int sock_setsockopt(struct socket *sock, int level, int optname,
+                    char __user *optval, int optlen)
+{
+...
+#ifdef CONFIG_NETDEVICES
+                case SO_BINDTODEVICE:
+                {
+			...
+                }
+#endif
+...</pre><p>再比如<code class="literal">drivers/isdn/i4l/isdn_common.c</code>：</p><pre class="programlisting">...
+#include &lt;linux/config.h&gt;
+...
+static int
+isdn_ioctl(struct inode *inode, struct file *file, uint cmd, ulong arg)
+{
+...
+#ifdef CONFIG_NETDEVICES
+                        case IIOCNETGPN:
+                                /* Get peer phone number of a connected
+                                 * isdn network interface */
+                                if (arg) {
+                                        if (copy_from_user(&amp;phone, argp, sizeof(phone)))
+                                                return -EFAULT;
+                                        return isdn_net_getpeer(&amp;phone, argp);
+                                } else
+                                        return -EINVAL;
+#endif
+...
+#ifdef CONFIG_NETDEVICES
+                        case IIOCNETAIF:
+...
+#endif                          /* CONFIG_NETDEVICES */
+...</pre><p>这样，在配置菜单中所做的配置通过条件预处理最终决定了哪些代码被编译到内核中。<code class="literal">#ifdef</code>或<code class="literal">#if</code>可以嵌套使用，但预处理指示通常都顶头写不缩进，为了区分嵌套的层次，可以像上面的代码中最后一行那样，在<code class="literal">#endif</code>处用注释写清楚它结束的是哪个<code class="literal">#if</code>或<code class="literal">#ifdef</code>。</p><p>3、要定义一个宏不一定非得在代码中用<code class="literal">#define</code>定义，早在<a class="xref" href="ch11s06.html#sortsearch.binary">第 6 节 “折半查找”</a>我们就见过用<code class="literal">gcc</code>的<code class="literal">-D</code>选项定义一个宏<code class="literal">NDEBUG</code>。对于上面的例子，我们需要给<code class="literal">MACHINE</code>定义一个值，可以写成类似这样的命令：<code class="literal">gcc -c -DMACHINE=8086 main.c</code>。这种办法需要给每个编译命令都加上适当的选项，和第2种方法相比似乎也很麻烦，第2种方法在头文件中只写一次宏定义就可以在很多源文件中生效，第3种方法能不能做到“<span class="quote">只写一次到处生效</span>”呢？等以后学习了Makefile就有办法了。</p><p>最后通过下面的例子说一下<code class="literal">#if</code>后面的表达式：</p><pre class="programlisting">#define VERSION  2
+#if defined x || y || VERSION &lt; 3</pre><div class="orderedlist"><ol type="1"><li><p>首先处理<code class="literal">defined</code>运算符，<code class="literal">defined</code>运算符一般用作表达式中的一部分，如果单独使用，<code class="literal">#if defined x</code>相当于<code class="literal">#ifdef x</code>，而<code class="literal">#if !defined x</code>相当于<code class="literal">#ifndef x</code>。在这个例子中，如果<code class="literal">x</code>这个宏有定义，则把<code class="literal">defined x</code>替换为1，否则替换为0，因此变成<code class="literal">#if 0 || y || VERSION &lt; 3</code>。</p></li><li><p>然后把有定义的宏展开，变成<code class="literal">#if 0 || y || 2 &lt; 3</code>。</p></li><li><p>把没有定义的宏替换成0，变成<code class="literal">#if 0 || 0 || 2 &lt; 3</code>，注意，即使前面定义了一个变量名是<code class="literal">y</code>，在这一步也还是替换成0，因为<code class="literal">#if</code>的表达式必须在编译时求值，其中包含的名字只能是宏定义。</p></li><li><p>把得到的表达式<code class="literal">0 || 0 || 2 &lt; 3</code>像C表达式一样求值，求值的结果是<code class="literal">#if 1</code>，因此条件成立。</p></li></ol></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch21s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch21.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch21s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. 宏定义 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. 其它预处理特性</td></tr></table></div></body></html>

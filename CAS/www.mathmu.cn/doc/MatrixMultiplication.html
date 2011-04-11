@@ -1,0 +1,278 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>矩阵乘法 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>矩阵乘法
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="MatrixMultiplication.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="MatrixMultiplication.html#sec1">基于向量内积算法的Winograd加速算法(1968)</a>
+  </dt>
+  <dt>
+    <a href="MatrixMultiplication.html#sec2">Strassen算法(1968)</a>
+  </dt>
+  <dt>
+    <a href="MatrixMultiplication.html#sec3">影响矩阵运算的因素</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="MatrixMultiplication.html#sec4">数据存储方式及调用顺序的影响</a>
+      </dt>
+      <dt>
+	<a href="MatrixMultiplication.html#sec5">向量触</a>
+      </dt>
+      <dt>
+	<a href="MatrixMultiplication.html#sec6">总结</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p>在有关矩阵的计算中,矩阵乘法具有基础性的意义.对于<img src="latex/latex2png-MatrixMultiplication_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">阶矩阵的乘法,常规算法具有<img src="latex/latex2png-MatrixMultiplication_22781231_-5.gif" alt="$O(N^3)$" class="latex-inline" style="vertical-align: -5px" width="46" height="19">的复杂度,加速矩阵计算是很重要的.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="MatrixMultiplication.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>基于向量内积算法的Winograd加速算法(1968)</h2>
+
+<p class="first">以下讨论主要来自文献<span class="cite"><a class="cite" href="MatrixMultiplication.html#ref-1" name="cite-1">[1]</a></span>.
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(Winograd内积算法)</span>
+设<img src="latex/latex2png-MatrixMultiplication_3311170_-5.gif" alt="$x=(x_1,\cdots,x_n)^T$" class="latex-inline" style="vertical-align: -5px" width="129" height="19">,<img src="latex/latex2png-MatrixMultiplication_265189838_-5.gif" alt="$y=(y_1,\cdots,y_n)^T$" class="latex-inline" style="vertical-align: -5px" width="126" height="19">,记<img src="latex/latex2png-MatrixMultiplication_155773401_-18.gif" alt="$\xi=\sum\limits_{j=1}^{\lfloor n/2\rfloor}x_{2j-1}x_{2j}$" class="latex-inline" style="vertical-align: -18px" width="129" height="44">,<img src="latex/latex2png-MatrixMultiplication_31196877_-18.gif" alt="$\eta=\sum\limits^{\lfloor n/2\rfloor}_{j=1}y_{2j-1}y_{2j}$" class="latex-inline" style="vertical-align: -18px" width="127" height="44">,则内积<img src="latex/latex2png-MatrixMultiplication_247761281_-5.gif" alt="$(x,y)$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">可由下式给出:</p>
+
+<p class="image"><img src="latex/latex2png-MatrixMultiplication_257281048_.gif" alt="
+\begin{equation*}
+  (x,y)=
+  \begin{cases}
+    \sum\limits^{\lfloor n/2\rfloor}_{j=1}(x_{2j-1}+y_{2j})(x_{2j}+y_{2j-1})-\xi-\eta& \text{$n$ even,} \\
+    \sum\limits^{\lfloor n/2\rfloor}_{j=1}(x_{2j-1}+y_{2j})(x_{2j}+y_{2j-1})-\xi-\eta+x_ny_n& \text{$n$ odd.}
+  \end{cases}
+\end{equation*}
+" class="latex-display" width="580" height="91"></p>
+
+
+</div>
+
+<p>将这种算法用于<img src="latex/latex2png-MatrixMultiplication_246123462_-1.gif" alt="$C=AB$" class="latex-inline" style="vertical-align: -1px" width="59" height="13">的矩阵元素运算时,由于减少重复计算<img src="latex/latex2png-MatrixMultiplication_21197844_-4.gif" alt="$\xi$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-MatrixMultiplication_33256508_-4.gif" alt="$\eta$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,可使计算所需的乘法次数减半,但同时使所需的加法运算增加.Winograd算法也是<img src="latex/latex2png-MatrixMultiplication_22781231_-5.gif" alt="$O(N^3)$" class="latex-inline" style="vertical-align: -5px" width="46" height="19">的算法,仅适用于小规模的矩阵求积运算,且由于该算法破坏了向量内积的整体间运算,同时增加了内存开销,因而其算法改进价值并不很大.</p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="MatrixMultiplication.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Strassen算法(1968)</h2>
+
+<p class="first">Strassen算法是一种分治策略的算法.它以分块矩阵运算为基础.</p>
+
+<p>下面介绍改进型Strassen算法,它较原始算法<span class="cite"><a class="cite" href="MatrixMultiplication.html#ref-2" name="cite-2">[2]</a></span>需要更少的矩阵加法运算<span class="cite"><a class="cite" href="MatrixMultiplication.html#ref-3" name="cite-3">[3]</a></span>.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name=""></a></span><span class="theorem-name">(Strassen算法)</span>
+设<img src="latex/latex2png-MatrixMultiplication_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">,<img src="latex/latex2png-MatrixMultiplication_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-MatrixMultiplication_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶矩阵,必要时通过补充零行零列加以扩充,将其分块:
+
+<p class="image"><img src="latex/latex2png-MatrixMultiplication_47863657_.gif" alt="
+\begin{gather*}
+  A=
+  \begin{pmatrix}
+    A_{11}& A_{12}\\
+    A_{21}& A_{22}
+  \end{pmatrix}
+  ,B=
+  \begin{pmatrix}
+    B_{11}& B_{12}\\
+    B_{21}& B_{22}
+  \end{pmatrix}
+ ,C=AB=
+  \begin{pmatrix}
+    C_{11}& C_{12}\\
+    C_{21}& C_{22}
+  \end{pmatrix}.
+\end{gather*}
+" class="latex-display" width="580" height="50">
+进行如下递归运算:</p>
+
+<ol>
+<li>若<img src="latex/latex2png-MatrixMultiplication_79101926_-3.gif" alt="$n\leq l$" class="latex-inline" style="vertical-align: -3px" width="36" height="15">(<img src="latex/latex2png-MatrixMultiplication_42365970_0.gif" alt="$l$" class="latex-inline" style="vertical-align: 0px" width="4" height="12">为递归下界),做直接乘法.</li>
+<li>令
+<img src="latex/latex2png-MatrixMultiplication_31291233_.gif" alt="
+\begin{gather*}
+  S_1=A_{21}+A_{22},S_2=S_1-A_{11},S_3=A_{11}-A_{21},S_4=A_{12}-S_2,\\
+  T_1=B_{12}-B_{11},T_2=B_{22}-T_1,T_3=B_{22}-B_{11},T_4=T_2-B_{21}.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>令
+<img src="latex/latex2png-MatrixMultiplication_206134534_.gif" alt="
+\begin{gather*}
+  P_1=A_{11}B_{11},P_2=A_{12}B_{21},P_3=S_4B_{22},P_4=B_{22}T_4,\\
+  P_5=S_1T_1,P_6=S_2T_2,P_7=S_3T_3.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>令
+<img src="latex/latex2png-MatrixMultiplication_63071635_.gif" alt="
+\begin{gather*}
+  U_1=P_1+P_2,U_2=P_1+P_6,U_3=U_2+P_7,U_4=U_2+P_5,\\
+  U_5=U_4+P_3,U_6=U_3-P_4,U_7=U_3+P_5.
+\end{gather*}
+" class="latex-display" width="580" height="47"></li>
+<li>return
+<img src="latex/latex2png-MatrixMultiplication_25059248_.gif" alt="
+\begin{equation*}
+\begin{pmatrix}
+   U_1& U_5\\
+   U_6& U_7
+\end{pmatrix}.
+\end{equation*}
+" class="latex-display" width="580" height="50"></li>
+</ol>
+
+
+</div>
+
+<p>可以看出,每次需要7次乘法与15次加法,从而其算法复杂度是<img src="latex/latex2png-MatrixMultiplication_76721645_-5.gif" alt="$O(N^{log_27})\simeq O(N^{2.808})$" class="latex-inline" style="vertical-align: -5px" width="165" height="19">.</p>
+
+<p>这种算法中的分治策略思想,也适用于矩阵求逆及求行列式,所依据的公式可参考<span class="cite"><a class="cite" href="MatrixMultiplication.html#ref-4" name="cite-4">[4]</a></span>.事实上,由此可证明,以上两问题的复杂度不超过矩阵乘法的复杂度.</p>
+
+<p>Strassen算法在之后有许多推广,包括双线性(bilinear)算法及S-disjoint双线性算法等,其渐进复杂度可以降到<img src="latex/latex2png-MatrixMultiplication_146725201_-5.gif" alt="$O(N^{2.376})$" class="latex-inline" style="vertical-align: -5px" width="70" height="19">.但在实际中,仅当<img src="latex/latex2png-MatrixMultiplication_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">极大时才有价值,可参考<span class="cite"><a class="cite" href="MatrixMultiplication.html#ref-5" name="cite-5">[5]</a></span>.</p>
+
+
+<h2><a name="sec3" id="sec3"></a>
+<a href="MatrixMultiplication.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>影响矩阵运算的因素</h2>
+
+<p class="first">以下讨论主要来自文献<span class="cite"><a class="cite" href="MatrixMultiplication.html#ref-6" name="cite-6">[6]</a></span>.
+<h3><a href="MatrixMultiplication.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>向量化与数据重复利用</h3></p>
+
+<p>与流水线作业类似,向量处理器可通过数据处理的并行化提高运算效率.考虑到处理的向量长度<img src="latex/latex2png-MatrixMultiplication_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">长于向量硬件的长度<img src="latex/latex2png-MatrixMultiplication_197233644_-2.gif" alt="$v_L$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">,其计算效率
+<img src="latex/latex2png-MatrixMultiplication_121104560_.gif" alt="
+\begin{equation*}
+  R_{op}{n}=\frac{\rho_n}{T_{op}(n)}=\frac{\rho}{\mu}\frac{1}{1+\frac{\tau_{op}}{n}\lceil\frac{n}{v_L}\rceil}\rightarrow\frac{\rho}{\mu}\frac{1}{1+\frac{\tau_{op}}{n}}(n\rightarrow\infty),
+\end{equation*}
+" class="latex-display" width="580" height="41">其中<img src="latex/latex2png-MatrixMultiplication_239694908_-4.gif" alt="$\rho$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">为每步计算flop数,<img src="latex/latex2png-MatrixMultiplication_10449940_-4.gif" alt="$\mu$" class="latex-inline" style="vertical-align: -4px" width="10" height="12">为每步计算所需时间,则<img src="latex/latex2png-MatrixMultiplication_14435377_-5.gif" alt="$R_{op}(n)$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">表示每秒计算的flop数.</p>
+
+<p>以矩阵乘法的简单算法为例.经分析,当<img src="latex/latex2png-MatrixMultiplication_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">,<img src="latex/latex2png-MatrixMultiplication_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,<img src="latex/latex2png-MatrixMultiplication_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">均小于<img src="latex/latex2png-MatrixMultiplication_197233644_-2.gif" alt="$v_L$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">时,最有效的形式应具有最长的内层循环.<img src="latex/latex2png-MatrixMultiplication_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">,<img src="latex/latex2png-MatrixMultiplication_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,<img src="latex/latex2png-MatrixMultiplication_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">均远大于<img src="latex/latex2png-MatrixMultiplication_197233644_-2.gif" alt="$v_L$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">时,各种运算形式差别细微.</p>
+
+
+<h3><a name="sec4" id="sec4"></a>
+<a href="MatrixMultiplication.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>数据存储方式及调用顺序的影响</h3>
+
+<p class="first">二维数组在计算机中的存储方式及调用顺序对于计算效率也产生一定的影响.储存浮点向量的&quot;间&quot;是指向量元素(在逻辑内存位置之间)的距离.非整体间的运算影响计算机的流水线能力,从而影响运算效率.</p>
+
+<p>对于矩阵乘法,简单算法可以通过合理地设计运算顺序使计算具有整体间的性质,从而提高效率.</p>
+
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="MatrixMultiplication.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>向量触</h3>
+
+<p class="first">在进行大量数据运算时,从内存读写一组向量所需时间是影响算法效率的,故矩阵程序中向量触的数目是重要的统计数.向量触是一次向量读取或一次数据存写.</p>
+
+<p>例如,<img src="latex/latex2png-MatrixMultiplication_2915221_0.gif" alt="$m\times n$" class="latex-inline" style="vertical-align: 0px" width="45" height="9">外积修正<img src="latex/latex2png-MatrixMultiplication_144784046_-4.gif" alt="$A=A+xy^T$" class="latex-inline" style="vertical-align: -4px" width="96" height="18">约需要<img src="latex/latex2png-MatrixMultiplication_157780972_0.gif" alt="$2mn$" class="latex-inline" style="vertical-align: 0px" width="33" height="11">次向量触,而gaxpy修正<img src="latex/latex2png-MatrixMultiplication_50568547_-4.gif" alt="$y=Ax+y$" class="latex-inline" style="vertical-align: -4px" width="81" height="16">约需要<img src="latex/latex2png-MatrixMultiplication_144208914_0.gif" alt="$mn$" class="latex-inline" style="vertical-align: 0px" width="25" height="8">次向量触.</p>
+
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="MatrixMultiplication.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>总结</h3>
+
+<p class="first">以上分析大多只适用于矩阵加法与矩阵乘法的简单算法,而对于一些加速算法则并不适用.正是由于以上因素的影响,对于规模较小的矩阵运算,&quot;加速算法&quot;往往不及简单算法有效.</p>
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="MatrixMultiplication.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Winograd S., </span><span class="ref-title">A New Algorithm for Inner Product, </span><span class="ref-journal">IEEE Trans. Comp. </span><span class="ref-volume">17 </span><span class="ref-year">(1968), </span><span class="ref-pages">693-694. </span></p>
+<p class="ref"><a class="ref" href="MatrixMultiplication.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Strassen V., </span><span class="ref-title">Gaussian Elimination is not Optimal, </span><span class="ref-journal">Numer. Math. </span><span class="ref-volume">13 </span><span class="ref-year">(1969), </span><span class="ref-pages">354-356. </span></p>
+<p class="ref"><a class="ref" href="MatrixMultiplication.html#cite-3" name="ref-3">[3]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<p class="ref"><a class="ref" href="MatrixMultiplication.html#cite-4" name="ref-4">[4]</a><span class="ref-author">张贤科，许甫华, </span><span class="ref-title-chs">高等代数学, </span><span class="ref-publisher">清华大学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2004. </span></p>
+<p class="ref"><a class="ref" href="MatrixMultiplication.html#cite-5" name="ref-5">[5]</a><span class="ref-author">Pan V., </span><span class="ref-title">How Can We Speed Up Matrix Multiplication?, </span><span class="ref-journal">SIAM Review </span><span class="ref-volume">26 </span><span class="ref-year">(1984), </span><span class="ref-number">no.3. </span></p>
+<p class="ref"><a class="ref" href="MatrixMultiplication.html#cite-6" name="ref-6">[6]</a><span class="ref-author">Golub G. H. and Van Loan C. F.著，袁亚湘等译, </span><span class="ref-title-chs">矩阵计算, </span><span class="ref-publisher">科学出版社, </span><span class="ref-year">2001. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

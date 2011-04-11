@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 注释</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch09.html" title="第 9 章 编码风格" /><link rel="prev" href="ch09s01.html" title="1. 缩进和空白" /><link rel="next" href="ch09s03.html" title="3. 标识符命名" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 注释</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch09s01.html">上一页</a> </td><th width="60%" align="center">第 9 章 编码风格</th><td width="20%" align="right"> <a accesskey="n" href="ch09s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2738090"></a>2. 注释</h2></div></div></div><p>单行注释应采用<code class="literal">/*␣comment␣*/</code>的形式，用空格把界定符和文字分开。多行注释最常见的是这种形式：</p><pre class="programlisting">/*
+␣*␣Multi-line
+␣*␣comment
+␣*/</pre><p>也有更花哨的形式：</p><pre class="programlisting">/*************\
+* Multi-line  *
+* comment     *
+\*************/</pre><p>使用注释的场合主要有以下几种。</p><p>1、整个源文件的顶部注释。说明此模块的相关信息，例如文件名、作者和版本历史等，顶头写不缩进。例如内核源代码目录下的<code class="literal">kernel/sched.c</code>文件的开头：</p><pre class="programlisting">/*
+ *  kernel/sched.c
+ *
+ *  Kernel scheduler and related syscalls
+ *
+ *  Copyright (C) 1991-2002  Linus Torvalds
+ *
+ *  1996-12-23  Modified by Dave Grothe to fix bugs in semaphores and
+ *              make semaphores SMP safe
+ *  1998-11-19  Implemented schedule_timeout() and related stuff
+ *              by Andrea Arcangeli
+ *  2002-01-04  New ultra-scalable O(1) scheduler by Ingo Molnar:
+ *              hybrid priority-list and round-robin design with
+ *              an array-switch method of distributing timeslices
+ *              and per-CPU runqueues.  Cleanups and useful suggestions
+ *              by Davide Libenzi, preemptible kernel bits by Robert Love.
+ *  2003-09-03  Interactivity tuning by Con Kolivas.
+ *  2004-04-02  Scheduler domains code by Nick Piggin
+ */</pre><p>2、函数注释。说明此函数的功能、参数、返回值、错误码等，写在函数定义上侧，和此函数定义之间不留空行，顶头写不缩进。</p><p>3、相对独立的语句组注释。对这一组语句做特别说明，写在语句组上侧，和此语句组之间不留空行，与当前语句组的缩进一致。</p><p>4、代码行右侧的简短注释。对当前代码行做特别说明，一般为单行注释，和代码之间至少用一个空格隔开，一个源文件中所有的右侧注释最好能上下对齐。尽管<a class="xref" href="ch02s01.html#expr.morehelloworld">例 2.1 “带更多注释的Hello World”</a>讲过注释可以穿插在一行代码中间，但不建议这么写。内核源代码目录下的<code class="literal">lib/radix-tree.c</code>文件中的一个函数包含了上述三种注释：</p><pre class="programlisting">/**
+ *      radix_tree_insert    -    insert into a radix tree
+ *      @root:          radix tree root
+ *      @index:         index key
+ *      @item:          item to insert
+ *
+ *      Insert an item into the radix tree at position @index.
+ */
+int radix_tree_insert(struct radix_tree_root *root,
+                        unsigned long index, void *item)
+{
+        struct radix_tree_node *node = NULL, *slot;
+        unsigned int height, shift;
+        int offset;
+        int error;
+
+        /* Make sure the tree is high enough.  */
+        if ((!index &amp;&amp; !root-&gt;rnode) ||
+                        index &gt; radix_tree_maxindex(root-&gt;height)) {
+                error = radix_tree_extend(root, index);
+                if (error)
+                        return error;
+        }
+
+        slot = root-&gt;rnode;
+        height = root-&gt;height;
+        shift = (height-1) * RADIX_TREE_MAP_SHIFT;
+
+        offset = 0;                     /* uninitialised var warning */
+        do {
+                if (slot == NULL) {
+                        /* Have to add a child node.  */
+                        if (!(slot = radix_tree_node_alloc(root)))
+                                return -ENOMEM;
+                        if (node) {
+                                node-&gt;slots[offset] = slot;
+                                node-&gt;count++;
+                        } else
+                                root-&gt;rnode = slot;
+                }
+
+                /* Go a level down */
+                offset = (index &gt;&gt; shift) &amp; RADIX_TREE_MAP_MASK;
+                node = slot;
+                slot = node-&gt;slots[offset];
+                shift -= RADIX_TREE_MAP_SHIFT;
+                height--;
+        } while (height &gt; 0);
+
+        if (slot != NULL)
+                return -EEXIST;
+
+        BUG_ON(!node);
+        node-&gt;count++;
+        node-&gt;slots[offset] = item;
+        BUG_ON(tag_get(node, 0, offset));
+        BUG_ON(tag_get(node, 1, offset));
+
+        return 0;
+}</pre><p><a class="xref" href="bi01.html#bibli.codingstyle" title="Linux内核源代码目录下的Documentation/CodingStyle文件">[<abbr class="abbrev">CodingStyle</abbr>]</a>中特别指出，函数内的注释要尽可能少用。写注释主要是为了说明你的代码“<span class="quote">能做什么</span>”（比如函数接口定义），而不是为了说明“<span class="quote">怎样做</span>”，只要代码写得足够清晰，“<span class="quote">怎样做</span>”是一目了然的，如果你需要用注释才能解释清楚，那就表示你的代码可读性很差，除非是特别需要提醒注意的地方才使用函数内注释。</p><p>5、复杂的结构体定义比函数更需要注释。例如内核源代码目录下的<code class="literal">kernel/sched.c</code>文件中定义了这样一个结构体：</p><pre class="programlisting">/*
+ * This is the main, per-CPU runqueue data structure.
+ *
+ * Locking rule: those places that want to lock multiple runqueues
+ * (such as the load balancing or the thread migration code), lock
+ * acquire operations must be ordered by ascending &amp;runqueue.
+ */
+struct runqueue {
+        spinlock_t lock;
+
+        /*
+         * nr_running and cpu_load should be in the same cacheline because
+         * remote CPUs use both these fields when doing load calculation.
+         */
+        unsigned long nr_running;
+#ifdef CONFIG_SMP
+        unsigned long cpu_load[3];
+#endif
+        unsigned long long nr_switches;
+
+        /*
+         * This is part of a global counter where only the total sum
+         * over all CPUs matters. A task can increase this counter on
+         * one CPU and if it got migrated afterwards it may decrease
+         * it on another CPU. Always updated under the runqueue lock:
+         */
+        unsigned long nr_uninterruptible;
+
+        unsigned long expired_timestamp;
+        unsigned long long timestamp_last_tick;
+        task_t *curr, *idle;
+        struct mm_struct *prev_mm;
+        prio_array_t *active, *expired, arrays[2];
+        int best_expired_prio;
+        atomic_t nr_iowait;
+
+#ifdef CONFIG_SMP
+        struct sched_domain *sd;
+
+        /* For active balancing */
+        int active_balance;
+        int push_cpu;
+
+        task_t *migration_thread;
+        struct list_head migration_queue;
+        int cpu;
+#endif
+
+#ifdef CONFIG_SCHEDSTATS
+        /* latency stats */
+        struct sched_info rq_sched_info;
+
+        /* sys_sched_yield() stats */
+        unsigned long yld_exp_empty;
+        unsigned long yld_act_empty;
+        unsigned long yld_both_empty;
+        unsigned long yld_cnt;
+
+        /* schedule() stats */
+        unsigned long sched_switch;
+        unsigned long sched_cnt;
+        unsigned long sched_goidle;
+
+        /* try_to_wake_up() stats */
+        unsigned long ttwu_cnt;
+        unsigned long ttwu_local;
+#endif
+};</pre><p>6、复杂的宏定义和变量声明也需要注释。例如内核源代码目录下的<code class="literal">include/linux/jiffies.h</code>文件中的定义：</p><pre class="programlisting">/* TICK_USEC_TO_NSEC is the time between ticks in nsec assuming real ACTHZ and  */
+/* a value TUSEC for TICK_USEC (can be set bij adjtimex)                */
+#define TICK_USEC_TO_NSEC(TUSEC) (SH_DIV (TUSEC * USER_HZ * 1000, ACTHZ, 8))
+
+/* some arch's have a small-data section that can be accessed register-relative
+ * but that can only take up to, say, 4-byte variables. jiffies being part of
+ * an 8-byte variable may not be correctly accessed unless we force the issue
+ */
+#define __jiffy_data  __attribute__((section(".data")))
+
+/*
+ * The 64-bit value is not volatile - you MUST NOT read it
+ * without sampling the sequence number in xtime_lock.
+ * get_jiffies_64() will do this for you as appropriate.
+ */
+extern u64 __jiffy_data jiffies_64;
+extern unsigned long volatile __jiffy_data jiffies;</pre></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch09s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch09.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch09s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 缩进和空白 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 标识符命名</td></tr></table></div></body></html>

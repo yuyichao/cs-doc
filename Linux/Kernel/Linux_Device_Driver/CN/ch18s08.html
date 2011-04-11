@@ -1,0 +1,107 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>18.8.&#160;tty_struct 结构的细节-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+<link rel="prev" href="ch18s07.html" title="18.7.&#160;tty_operaions 结构的细节">
+<link rel="next" href="ch18s09.html" title="18.9.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">18.8.&#160;tty_struct 结构的细节</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch18s07.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;18&#160;章&#160;TTY 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch18s09.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ThettystructStructureinDetail.sect"></a>18.8.&#160;tty_struct 结构的细节</h2></div></div></div>
+<p>tty_struct 变量被 tty 核心用来保持当前的特定 tty 端口的状态. 几乎它的所有的朋友都只被 tty 核心使用, 有几个例外. 一个 tty 驱动可以使用的成员在此描述:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>unsigned long flags;</span></span></dt>
+<dd>
+<p>tty 设备的当前状态. 这是一个位段变量, 并且通过下面的宏定义存取:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>TTY_THROTTLED </span></span></dt>
+<dd><p>当驱动以及有抑制函数被调用. 不应当被一个 tty 驱动设置, 只有 tty 核心.</p></dd>
+<dt><span class="term"><span>TTY_IO_ERROR </span></span></dt>
+<dd><p>由驱动设置当它不想任何数据被读出或写入驱动. 如果一个用户程序试图做这个, 它接收一个 -EIO 错误从内核中. 这常常在设备被关闭时设置.</p></dd>
+<dt><span class="term"><span>TTY_OTHER_CLOSED </span></span></dt>
+<dd><p>只由 pty 驱动使用来通知, 当端口已经被关闭.</p></dd>
+<dt><span class="term"><span>TTY_EXCLUSIVE </span></span></dt>
+<dd><p>由 tty 核心设置来指示一个端口在独占模式并且只能一次由一个用户存取.</p></dd>
+<dt><span class="term"><span>TTY_DEBUG </span></span></dt>
+<dd><p>内核中任何地方都不用.</p></dd>
+<dt><span class="term"><span>TTY_DO_WRITE_WAKEUP </span></span></dt>
+<dd><p>如果被设置, 线路规程的 write_wakeup 函数被允许来被调用. 常常在 tty_driver 调用 wake_up_interruptible 函数的同一时间被调用.</p></dd>
+<dt><span class="term"><span>TTY_PUSH </span></span></dt>
+<dd><p>只被缺省的 tty 线路规程内部使用.</p></dd>
+<dt><span class="term"><span>TTY_CLOSING </span></span></dt>
+<dd><p>tty 核心用来跟踪是否一个端口在那个时刻及时处于关闭过程.</p></dd>
+<dt><span class="term"><span>TTY_DONT_FLIP </span></span></dt>
+<dd><p>被缺省的 tty 线路规程用来通知 tty 核心, 它不应当改变 flip 缓冲, 当它被置位.</p></dd>
+<dt><span class="term"><span>TTY_HW_COOK_OUT </span></span></dt>
+<dd><p>如果被一个 tty 驱动设置, 它通知线路规程应当"烹调"发送给它的输出. 如果它没有设置, 线路规程成块拷贝驱动的输出; 否则, 它不得不为线路改变将单个发送的字节逐个求值. 这个标志应当通常不被 tty 驱动设置.</p></dd>
+<dt><span class="term"><span>TTY_HW_COOK_IN </span></span></dt>
+<dd><p>几乎和设置在驱动中的 flag 变量中的 TTY_DRIVER_REAL_RAW 标志一致. 这个标志通常应当不被 tty 驱动设置.</p></dd>
+<dt><span class="term"><span>TTY_PTY_LOCK </span></span></dt>
+<dd><p>pty 驱动用来加锁和解锁一个端口.</p></dd>
+<dt><span class="term"><span>TTY_NO_WRITE_SPLIT </span></span></dt>
+<dd><p>如果设置, tty 核心不将对 tty 驱动的写分成正常大小的块. 这个值不应当用来阻止对 tty 端口通过发送大量数据到端口的DoS攻击, </p></dd>
+</dl></div>
+</dd>
+<dt><span class="term"><span>struct tty_flip_buffer flip;</span></span></dt>
+<dd><p>给 tty 设备的 flip 缓冲.</p></dd>
+<dt><span class="term"><span>struct tty_ldisc ldisc;</span></span></dt>
+<dd><p>给 tty 设备的线路规程.</p></dd>
+<dt><span class="term"><span>wait_queue_head_t write_wait;</span></span></dt>
+<dd><p>给 tty 写函数的 wait_queue. 一个 tty 驱动应当唤醒它,当它可以接收更多数据时.</p></dd>
+<dt><span class="term"><span>struct termios *termios;</span></span></dt>
+<dd><p>指向 tty 设备的当前 termios 设置的指针.</p></dd>
+<dt><span class="term"><span>unsigned char stopped:1;</span></span></dt>
+<dd><p>指示是否 tty 设备被停止. tty 驱动可以设置这个值.</p></dd>
+<dt><span class="term"><span>unsigned char hw_stopped:1;</span></span></dt>
+<dd><p>指示是否 tty 设备的已经被停止. tty 驱动可以设置这个值.</p></dd>
+<dt><span class="term"><span>unsigned char low_latency:1;</span></span></dt>
+<dd><p>指示是否 tty 设备是一个低反应周期的设备, 能够高速接收数据. tty 驱动可以设置这个值.</p></dd>
+<dt><span class="term"><span>unsigned char closing:1;</span></span></dt>
+<dd><p>指示是否 tty 设备在关闭端口当中. tty 驱动可以设置这个值.</p></dd>
+<dt><span class="term"><span>struct tty_driver driver;</span></span></dt>
+<dd><p>当前控制这个 tty 设备的 tty_driver 结构.</p></dd>
+<dt><span class="term"><span>void *driver_data;</span></span></dt>
+<dd><p>指针, tty_driver 可以用来存储对于 tty 驱动本地的数据. 这个变量不被 tty 核心修改.</p></dd>
+</dl></div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch18s07.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch18.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch18s09.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">18.7.&#160;tty_operaions 结构的细节&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;18.9.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

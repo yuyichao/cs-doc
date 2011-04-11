@@ -1,0 +1,159 @@
+<!doctype html public "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!--
+
+Generated from intro.tex by tex2page, v 20050501
+(running on MzScheme 205, unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html
+
+-->
+<head>
+<title>
+tex2page 使用指南
+</title>
+<link rel="stylesheet" type="text/css" href="intro-Z-S.css" title=default>
+<link rel="stylesheet" type="text/css" href="tex2page.css" title=default>
+<meta name=robots content="noindex,follow">
+<meta http-equiv="Content-Type" content="text/html;charset=gb2312"></head>
+<body>
+<div id=content>
+<div align=right class=navigation><i>[<span><a href="intro.html">首页</a>, <a href="intro-Z-H-15.html">上一页</a></span><span>, <a href="intro-Z-H-17.html">下一页</a></span><span>; &nbsp;&nbsp;</span><span><a href="intro-Z-H-1.html#node_toc_start">目录 </a></span><span><span>; &nbsp;&nbsp;</span><a href="intro-Z-H-21.html#node_index_start"> 索引 </a></span>]</i></div>
+<p></p>
+<a name="node_chap_15"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="intro-Z-H-1.html#node_toc_node_chap_15">第十五章</a></div><br>
+<a href="intro-Z-H-1.html#node_toc_node_chap_15">.t2p 文件的设定</a></h1>
+<p>
+<a name="node_idx_182"></a></p>
+<p>
+你可以在一个跟源文件同名的 .t2p 文件里进行针对 HTML 的配置，
+比如定义一些专门输出指定格式 HTML 的T<small>E</small>X宏，定义
+CSS，等等。</p>
+<p>
+</p>
+<a name="node_sec_15.1"></a>
+<h2><a href="intro-Z-H-1.html#node_toc_node_sec_15.1">15.1&nbsp;&nbsp;操纵 HTML 分页方式</a></h2>
+<p><a name="node_idx_184"></a>
+tex2page 的分页缺省是每章分成一个 HTML 文件。</p>
+<p>
+我可以把下面这些加到 jobname.t2p, 使得我的每一
+个 <code class=verbatim>\section</code> 都成为单独一个网页。</p>
+<p>
+</p>
+<pre class=verbatim>\let\ORIGsection\section&nbsp;
+\def\section{\vfill\eject\ORIGsection}</pre><p></p>
+<p>
+</p>
+<a name="node_sec_15.2"></a>
+<h2><a href="intro-Z-H-1.html#node_toc_node_sec_15.2">15.2&nbsp;&nbsp;改变图片格式</a></h2>
+<p>缺省的， tex2page 生成的数学公式会用 png 图片格式。如果你想
+用其它格式，比如 jpg，请把这些加入 t2p 文件：</p>
+<p>
+</p>
+<pre class=verbatim>\htmlimageformat{jpg}&nbsp;
+</pre><p></p>
+<p>
+</p>
+<a name="node_sec_15.3"></a>
+<h2><a href="intro-Z-H-1.html#node_toc_node_sec_15.3">15.3&nbsp;&nbsp;改变 T<small>E</small>X图片比例</a></h2>
+<p></p>
+<p>
+<a name="node_idx_186"></a></p>
+<p>
+这些可以使你的图片和公式都放大一些：</p>
+<p>
+</p>
+<pre class=verbatim>\imgpreamble&nbsp;
+  \let\LaTeXdocument\document&nbsp;
+  \def\document{\LaTeXdocument\Large}&nbsp;
+\endimgpreamble&nbsp;
+</pre><p></p>
+<p>
+其实就是改了一下 <img src="intro-Z-G-D-1.png" border="0" alt="[intro-Z-G-D-1.png]">的字体大小而已。
+如果嫌不够大你还可以用 <code class=verbatim>\Huge</code>。</p>
+<p>
+</p>
+<a name="node_sec_15.4"></a>
+<h2><a href="intro-Z-H-1.html#node_toc_node_sec_15.4">15.4&nbsp;&nbsp;重新定义标题页样式</a></h2>
+<p>这些可以重新定义标题页的样式。你可以参考一下。
+注意里面使用的 <code class=verbatim>\TIIPtitle</code>, <code class=verbatim>\TIIPauthor</code>, <tt>...</tt>你可以利用它们来构造你需要的首页样式。</p>
+<p>
+</p>
+<pre class=verbatim>\def\maketitle{\begingroup&nbsp;
+\let\\\break&nbsp;
+\rawhtml&lt;h1&gt;\endrawhtml&nbsp;
+\TIIPtitle&nbsp;
+\rawhtml&lt;/h1&gt;\endrawhtml&nbsp;
+\medskip&nbsp;
+\leftline{\SAVEedition}&nbsp;
+\bigskip\bigskip&nbsp;
+\leftline{\TIIPauthor}&nbsp;
+\medskip&nbsp;
+\leftline{foreword by \SAVEforewordauthor}&nbsp;
+\bigskip\bigskip\bigskip&nbsp;
+\leftline{\SAVEpublisher}&nbsp;
+\endgroup}&nbsp;
+</pre><p></p>
+<p>
+</p>
+<a name="node_sec_15.5"></a>
+<h2><a href="intro-Z-H-1.html#node_toc_node_sec_15.5">15.5&nbsp;&nbsp;写入 Scheme 语句</a></h2>
+<p>这恐怕是最强大功能了。我可以在 t2p 文件里定义我需要的函数，
+改变程序运行的方式…… 这样我可以更大程度的修改 tex2page
+的行为。</p>
+<p>
+比如，我在 chinese.t2p 里写了一个函数叫 chinese-number。它可
+以把任意大的整数用中文表示出来。这个函数可以在自动生成章节标
+题时使用。</p>
+<p>
+<a name="node_idx_188"></a></p>
+<p>
+再比如，本文以前的版本每一章左上角的浮动标题就是这段 Scheme
+代码加进去的。 代码被包含在了对 T<small>E</small>X的命令 <code class=verbatim>\chapter</code>
+的重新定义当中。</p>
+<p>
+</p>
+<pre class=scheme><span class=variable>\let\ORIGchapter\chapter</span>
+<span class=variable>\def\chapter</span>{
+
+<span class=variable>\evalh</span>{
+(<span class=keyword>let</span> ((<span class=variable>chno</span> (<span class=variable>string-&gt;number</span> (<span class=variable>section-counter-value</span> <span class=selfeval>0</span>))))
+  (<span class=keyword>when</span> (<span class=variable>&gt;</span> <span class=variable>chno</span> <span class=selfeval>0</span>)
+    (<span class=variable>tex2page-string</span> <span class=selfeval>&quot;\\tl&quot;</span>)
+    (<span class=variable>emit-chapter-heading</span> <span class=variable>chno</span>)
+    (<span class=variable>tex2page-string</span> <span class=selfeval>&quot;\\endtl&quot;</span>)))
+} 
+<span class=variable>\ORIGchapter</span>
+}
+</pre><p></p>
+<p>
+它的含义就是，如果当前的章编号大于0，那么就在章标题前面插入</p>
+<p>
+</p>
+<pre class=verbatim>\tl&nbsp;
+这章的编号&nbsp;
+\endtl&nbsp;
+</pre><p></p>
+<p>
+其中 <code class=verbatim>\tl</code> 和 <code class=verbatim>\endtl</code> 是我定义的宏，用来浮动文字到浏览
+器左上角。它们的定义也在 t2p 文件里， 因为它们是直接跟 HTML
+有关系的东西。这两个宏实际上是输出了一个含有 CSS 信息的
+&lt;div&gt; 标记。详细情况请看第 <a href="intro-Z-H-6.html#node_chap_5">5</a> 章。</p>
+<p>
+这些都是跟 HTML 相关的，如果你把它们定义在 .t2p 文件里，使用
+T<small>E</small>X处理这个文档的时候就不会出现不能识别命令的问题了。这样的
+文档既可以转成 HTML 屏幕阅读，也可以转成 PDF, PS,
+打印在纸上。</p>
+<p>
+</p>
+<a name="node_sec_15.6"></a>
+<h2><a href="intro-Z-H-1.html#node_toc_node_sec_15.6">15.6&nbsp;&nbsp;中文设置</a></h2>
+<p>请看<a href="intro-Z-H-17.html#node_tag_Temp_7">下一章</a>。</p>
+<p>
+</p>
+<div align=right class=navigation><i>[<span><a href="intro.html">首页</a>, <a href="intro-Z-H-15.html">上一页</a></span><span>, <a href="intro-Z-H-17.html">下一页</a></span><span>; &nbsp;&nbsp;</span><span><a href="intro-Z-H-1.html#node_toc_start">目录 </a></span><span><span>; &nbsp;&nbsp;</span><a href="intro-Z-H-21.html#node_index_start"> 索引 </a></span>]</i></div>
+<p></p>
+</div>
+</body>
+</html>

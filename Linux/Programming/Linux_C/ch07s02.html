@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 数据抽象</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch07.html" title="第 7 章 结构体" /><link rel="prev" href="ch07s01.html" title="1. 复合类型与结构体" /><link rel="next" href="ch07s03.html" title="3. 数据类型标志" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 数据抽象</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s01.html">上一页</a> </td><th width="60%" align="center">第 7 章 结构体</th><td width="20%" align="right"> <a accesskey="n" href="ch07s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2730921"></a>2. 数据抽象</h2></div></div></div><p>现在我们来实现一个完整的复数运算程序。在上一节我们已经定义了复数的结构体类型，现在需要围绕它定义一些函数。复数可以用直角座标或极座标表示，直角座标做加减法比较方便，极座标做乘除法比较方便。如果我们定义的复数结构体是直角座标的，那么应该提供极座标的转换函数，以便在需要的时候可以方便地取它的模和辐角：</p><pre class="programlisting">#include &lt;math.h&gt;
+
+struct complex_struct {
+	double x, y;
+};
+
+double real_part(struct complex_struct z)
+{
+	return z.x;
+}
+
+double img_part(struct complex_struct z)
+{
+	return z.y;
+}
+
+double magnitude(struct complex_struct z)
+{
+	return sqrt(z.x * z.x + z.y * z.y);
+}
+
+double angle(struct complex_struct z)
+{
+	return atan2(z.y, z.x);
+}</pre><p>此外，我们还提供两个函数用来构造复数变量，既可以提供直角座标也可以提供极座标，在函数中自动做相应的转换然后返回构造的复数变量：</p><pre class="programlisting">struct complex_struct make_from_real_img(double x, double y)
+{
+	struct complex_struct z;
+	z.x = x;
+	z.y = y;
+	return z;
+}
+
+struct complex_struct make_from_mag_ang(double r, double A)
+{
+	struct complex_struct z;
+	z.x = r * cos(A);
+	z.y = r * sin(A);
+	return z;
+}</pre><p>在此基础上就可以实现复数的加减乘除运算了：</p><pre class="programlisting">struct complex_struct add_complex(struct complex_struct z1, struct complex_struct z2)
+{
+	return make_from_real_img(real_part(z1) + real_part(z2),
+				  img_part(z1) + img_part(z2));
+}
+
+struct complex_struct sub_complex(struct complex_struct z1, struct complex_struct z2)
+{
+	return make_from_real_img(real_part(z1) - real_part(z2),
+				  img_part(z1) - img_part(z2));
+}
+
+struct complex_struct mul_complex(struct complex_struct z1, struct complex_struct z2)
+{
+	return make_from_mag_ang(magnitude(z1) * magnitude(z2),
+				 angle(z1) + angle(z2));
+}
+
+struct complex_struct div_complex(struct complex_struct z1, struct complex_struct z2)
+{
+	return make_from_mag_ang(magnitude(z1) / magnitude(z2),
+				 angle(z1) - angle(z2));
+}</pre><p>可以看出，复数加减乘除运算的实现并没有直接访问结构体<code class="literal">complex_struct</code>的成员<code class="literal">x</code>和<code class="literal">y</code>，而是把它看成一个整体，通过调用相关函数来取它的直角座标和极座标。这样就可以非常方便地替换掉结构体<code class="literal">complex_struct</code>的存储表示，例如改为用极座标来存储：</p><pre class="programlisting">#include &lt;math.h&gt;
+
+struct complex_struct {
+	double r, A;
+};
+
+double real_part(struct complex_struct z)
+{
+	return z.r * cos(z.A);
+}
+
+double img_part(struct complex_struct z)
+{
+	return z.r * sin(z.A);
+}
+
+double magnitude(struct complex_struct z)
+{
+	return z.r;
+}
+
+double angle(struct complex_struct z)
+{
+	return z.A;
+}
+
+struct complex_struct make_from_real_img(double x, double y)
+{
+	struct complex_struct z;
+	z.A = atan2(y, x);
+	z.r = sqrt(x * x + y * y);
+}
+
+struct complex_struct make_from_mag_ang(double r, double A)
+{
+	struct complex_struct z;
+	z.r = r;
+	z.A = A;
+	return z;
+}</pre><p>虽然结构体<code class="literal">complex_struct</code>的存储表示做了这样的改动，<code class="literal">add_complex</code>、<code class="literal">sub_complex</code>、<code class="literal">mul_complex</code>、<code class="literal">div_complex</code>这几个复数运算的函数却不需要做任何改动，仍然可以用，原因在于这几个函数只把结构体<code class="literal">complex_struct</code>当作一个整体来使用，而没有直接访问它的成员，因此也不依赖于它有哪些成员。我们结合下图具体分析一下。</p><div class="figure"><a id="id2731079"></a><p class="title"><b>图 7.3. 数据抽象</b></p><div class="figure-contents"><div><img src="images/struct.abstraction.png" alt="数据抽象" /></div></div></div><br class="figure-break" /><p>这里是一种抽象的思想。其实“<span class="quote">抽象</span>”这个概念并没有那么抽象，简单地说就是“<span class="quote">提取公因式</span>”：ab+ac=a(b+c)。如果a变了，ab和ac这两项都需要改，但如果写成a(b+c)的形式就只需要改其中一个因子。</p><p>在我们的复数运算程序中，复数有可能用直角座标或极座标来表示，我们把这个有可能变动的因素提取出来组成复数存储表示层：<code class="literal">real_part</code>、<code class="literal">img_part</code>、<code class="literal">magnitude</code>、<code class="literal">angle</code>、<code class="literal">make_from_real_img</code>、<code class="literal">make_from_mag_ang</code>。这一层看到的数据是结构体的两个成员<code class="literal">x</code>和<code class="literal">y</code>，或者<code class="literal">r</code>和<code class="literal">A</code>，如果改变了结构体的实现就要改变这一层函数的实现，但函数接口不改变，因此调用这一层函数接口的复数运算层也不需要改变。复数运算层看到的数据只是一个抽象的“<span class="quote">复数</span>”的概念，知道它有直角座标和极座标，可以调用复数存储表示层的函数得到这些座标。再往上看，其它使用复数运算的程序看到的数据是一个更为抽象的“<span class="quote">复数</span>”的概念，只知道它是一个数，像整数、小数一样可以加减乘除，甚至连它有直角座标和极座标也不需要知道。</p><p>这里的复数存储表示层和复数运算层称为抽象层（Abstraction Layer）<a id="id2731193" class="indexterm"></a>，从底层往上层来看，复数越来越抽象了，把所有这些层组合在一起就是一个完整的系统。<span class="emphasis"><em>组合使得系统可以任意复杂，而抽象使得系统的复杂性是可以控制的，任何改动都只局限在某一层，而不会波及整个系统</em></span>。著名的计算机科学家Butler Lampson说过：“<span class="quote">All problems in computer science can be solved by another level of indirection.</span>”这里的indirection其实就是abstraction的意思。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2731216"></a>习题</h3></div></div></div><p>1、在本节的基础上实现一个打印复数的函数，打印的格式是x+yi，如果实部或虚部为0则省略，例如：1.0、-2.0i、-1.0+2.0i、1.0-2.0i。最后编写一个<code class="literal">main</code>函数测试本节的所有代码。想一想这个打印函数应该属于上图中的哪一层？</p><p>2、实现一个用分子分母的格式来表示有理数的结构体<code class="literal">rational</code>以及相关的函数，<code class="literal">rational</code>结构体之间可以做加减乘除运算，运算的结果仍然是<code class="literal">rational</code>。测试代码如下：</p><pre class="programlisting">int main(void)
+{
+	struct rational a = make_rational(1, 8); /* a=1/8 */
+	struct rational b = make_rational(-1, 8); /* b=-1/8 */
+	print_rational(add_rational(a, b));
+	print_rational(sub_rational(a, b));
+	print_rational(mul_rational(a, b));
+	print_rational(div_rational(a, b));
+
+	return 0;
+}</pre><p>注意要约分为最简分数，例如1/8和-1/8相减的打印结果应该是1/4而不是2/8，可以利用<a class="xref" href="ch05s03.html#func2.recursion">第 3 节 “递归”</a>练习题中的Euclid算法来约分。在动手编程之前先思考一下这个问题实现了什么样的数据抽象，抽象层应该由哪些函数组成。</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 复合类型与结构体 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 数据类型标志</td></tr></table></div></body></html>

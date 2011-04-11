@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 观察点</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch10.html" title="第 10 章 gdb" /><link rel="prev" href="ch10s02.html" title="2. 断点" /><link rel="next" href="ch10s04.html" title="4. 段错误" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 观察点</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch10s02.html">上一页</a> </td><th width="60%" align="center">第 10 章 gdb</th><td width="20%" align="right"> <a accesskey="n" href="ch10s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2741904"></a>3. 观察点</h2></div></div></div><p>接着上一节的步骤，经过调试我们知道，虽然<code class="literal">sum</code>已经赋了初值0，但仍需要在<code class="literal">while (1)</code>循环的开头加上<code class="literal">sum = 0;</code>：</p><div class="example"><a id="id2741931"></a><p class="title"><b>例 10.3. 观察点调试实例</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	int sum = 0, i = 0;
+	char input[5];
+
+	while (1) {
+		sum = 0;
+		scanf("%s", input);
+		for (i = 0; input[i] != '\0'; i++)
+			sum = sum*10 + input[i] - '0';
+		printf("input=%d\n", sum);
+	}
+	return 0;
+}</pre><p>使用<code class="literal">scanf</code>函数是非常凶险的，即使修正了这个Bug也还存在很多问题。如果输入的字符串超长了会怎么样？我们知道数组访问越界是不会检查的，所以<code class="literal">scanf</code>会写出界。现象是这样的：</p><pre class="screen">$ ./main
+123
+input=123
+67
+input=67
+12345
+input=123407</pre><p>下面用调试器看看最后这个诡异的结果是怎么出来的<sup>[<a id="id2741970" href="#ftn.id2741970" class="footnote">21</a>]</sup>。</p><pre class="screen">$ gdb main
+...
+(gdb) start
+Breakpoint 1 at 0x80483b5: file main.c, line 5.
+Starting program: /home/akaedu/main 
+main () at main.c:5
+5		int sum = 0, i = 0;
+(gdb) n
+9			sum = 0;
+(gdb) （直接回车）
+10			scanf("%s", input);
+(gdb) （直接回车）
+12345
+11			for (i = 0; input[i] != '\0'; i++)
+(gdb) p input
+$1 = "12345"</pre><p><code class="literal">input</code>数组只有5个元素，写出界的是<code class="literal">scanf</code>自动添的<code class="literal">'\0'</code>，用<code class="literal">x</code>命令看会更清楚一些：</p><pre class="screen">(gdb) x/7b input
+0xbfb8f0a7:	0x31	0x32	0x33	0x34	0x35	0x00	0x00</pre><p><code class="literal">x</code>命令打印指定存储单元的内容。<code class="literal">7b</code>是打印格式，<code class="literal">b</code>表示每个字节一组，7表示打印7组<sup>[<a id="id2742046" href="#ftn.id2742046" class="footnote">22</a>]</sup>，从<code class="literal">input</code>数组的第一个字节开始连续打印7个字节。前5个字节是<code class="literal">input</code>数组的存储单元，打印的正是十六进制ASCII码的<code class="literal">'1'</code>到<code class="literal">'5'</code>，第6个字节是写出界的<code class="literal">'\0'</code>。根据运行结果，前4个字符转成数字都没错，第5个错了，也就是<code class="literal">i</code>从0到3的循环都没错，我们设一个条件断点从<code class="literal">i</code>等于4开始单步调试：</p><pre class="screen">(gdb) l
+6		char input[5];
+7	
+8		while (1) {
+9			sum = 0;
+10			scanf("%s", input);
+11			for (i = 0; input[i] != '\0'; i++)
+12				sum = sum*10 + input[i] - '0';
+13			printf("input=%d\n", sum);
+14		}
+15		return 0;
+(gdb) b 12 if i == 4
+Breakpoint 2 at 0x80483e6: file main.c, line 12.
+(gdb) c
+Continuing.
+
+Breakpoint 2, main () at main.c:12
+12				sum = sum*10 + input[i] - '0';
+(gdb) p sum
+$2 = 1234</pre><p>现在<code class="literal">sum</code>是1234没错，根据运行结果是123407我们知道即将进行的这步计算肯定要出错，算出来应该是12340，那就是说<code class="literal">input[4]</code>肯定不是<code class="literal">'5'</code>了，事实证明这个推理是不严谨的：</p><pre class="screen">(gdb) x/7b input
+0xbfb8f0a7:	0x31	0x32	0x33	0x34	0x35	0x04	0x00</pre><p><code class="literal">input[4]</code>的确是0x35，产生123407还有另外一种可能，就是在下一次循环中123450不是加上而是减去一个数得到123407。可现在不是到字符串末尾了吗？怎么会有下一次循环呢？注意到循环控制条件是<code class="literal">input[i] != '\0'</code>，而本来应该是0x00的位置现在莫名其妙地变成了0x04，因此循环不会结束。继续单步：</p><pre class="screen">(gdb) n
+11			for (i = 0; input[i] != '\0'; i++)
+(gdb) p sum
+$3 = 12345
+(gdb) n
+12				sum = sum*10 + input[i] - '0';
+(gdb) x/7b input
+0xbfb8f0a7:	0x31	0x32	0x33	0x34	0x35	0x05	0x00</pre><p>进入下一次循环，原来的0x04又莫名其妙地变成了0x05，这是怎么回事？这个暂时解释不了，但123407这个结果可以解释了，是12345*10 + 0x05 - 0x30得到的，虽然多循环了一次，但下次一定会退出循环了，因为0x05的后面是<code class="literal">'\0'</code>。</p><p><code class="literal">input[4]</code>后面那个字节到底是什么时候变的？可以用观察点（Watchpoint）<a id="id2742192" class="indexterm"></a>来跟踪。我们知道断点是当程序执行到某一代码行时中断，而观察点是当程序访问某个存储单元时中断，如果我们不知道某个存储单元是在哪里被改动的，这时候观察点尤其有用。下面删除原来设的断点，从头执行程序，重复上次的输入，用<code class="literal">watch</code>命令设置观察点，跟踪<code class="literal">input[4]</code>后面那个字节（可以用<code class="literal">input[5]</code>表示，虽然这是访问越界）：</p><pre class="screen">(gdb) delete breakpoints 
+Delete all breakpoints? (y or n) y
+(gdb) start
+Breakpoint 1 at 0x80483b5: file main.c, line 5.
+Starting program: /home/akaedu/main 
+main () at main.c:5
+5		int sum = 0, i = 0;
+(gdb) n
+9			sum = 0;
+(gdb) （直接回车）
+10			scanf("%s", input);
+(gdb) （直接回车）
+12345
+11			for (i = 0; input[i] != '\0'; i++)
+(gdb) watch input[5]
+Hardware watchpoint 2: input[5]
+(gdb) i watchpoints 
+Num     Type           Disp Enb Address    What
+2       hw watchpoint  keep y              input[5]
+(gdb) c
+Continuing.
+Hardware watchpoint 2: input[5]
+
+Old value = 0 '\0'
+New value = 1 '\001'
+0x0804840c in main () at main.c:11
+11			for (i = 0; input[i] != '\0'; i++)
+(gdb) c
+Continuing.
+Hardware watchpoint 2: input[5]
+
+Old value = 1 '\001'
+New value = 2 '\002'
+0x0804840c in main () at main.c:11
+11			for (i = 0; input[i] != '\0'; i++)
+(gdb) c
+Continuing.
+Hardware watchpoint 2: input[5]
+
+Old value = 2 '\002'
+New value = 3 '\003'
+0x0804840c in main () at main.c:11
+11			for (i = 0; input[i] != '\0'; i++)</pre><p>已经很明显了，每次都是回到<code class="literal">for</code>循环开头的时候改变了<code class="literal">input[5]</code>的值，而且是每次加1，而循环变量<code class="literal">i</code>正是在每次回到循环开头之前加1，原来<code class="literal">input[5]</code>就是变量<code class="literal">i</code>的存储单元，换句话说，<code class="literal">i</code>的存储单元是紧跟在<code class="literal">input</code>数组后面的。</p><p>修正这个Bug对初学者来说有一定难度。如果你发现了这个Bug却没想到数组访问越界这一点，也许一时想不出原因，就会先去处理另外一个更容易修正的Bug：如果输入的不是数字而是字母或别的符号也能算出结果来，这显然是不对的，可以在循环中加上判断条件检查非法字符：</p><pre class="programlisting">while (1) {
+	sum = 0;
+	scanf("%s", input);
+	for (i = 0; input[i] != '\0'; i++) {
+		if (input[i] &lt; '0' || input[i] &gt; '9') {
+			printf("Invalid input!\n");
+			sum = -1;
+			break;
+		}
+		sum = sum*10 + input[i] - '0';
+	}
+	printf("input=%d\n", sum);
+}</pre></div></div><br class="example-break" /><p>然后你会惊喜地发现，不仅输入字母会报错，输入超长也会报错：</p><pre class="screen">$ ./main
+123a
+Invalid input!
+input=-1
+dead
+Invalid input!
+input=-1
+1234578
+Invalid input!
+input=-1
+1234567890abcdef
+Invalid input!
+input=-1
+23
+input=23</pre><p>似乎是两个Bug一起解决掉了，但这是治标不治本的解决方法。看起来输入超长的错误是不出现了，但只要没有找到根本原因就不可能真的解决掉，等到条件一变，它可能又冒出来了，在下一节你会看到它又以一种新的形式冒出来了。现在请思考一下为什么加上检查非法字符的代码之后输入超长也会报错。最后总结一下本节用到的<code class="literal">gdb</code>命令：</p><div class="table"><a id="id2742356"></a><p class="title"><b>表 10.3. gdb基本命令3</b></p><div class="table-contents"><table summary="gdb基本命令3" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>命令</th><th>描述</th></tr></thead><tbody><tr><td>watch</td><td>设置观察点</td></tr><tr><td>info（或i） watchpoints</td><td>查看当前设置了哪些观察点</td></tr><tr><td>x</td><td>从某个位置开始打印存储单元的内容，全部当成字节来看，而不区分哪个字节属于哪个变量</td></tr></tbody></table></div></div><br class="table-break" /><div class="footnotes"><br /><hr width="100" align="left" /><div class="footnote"><p><sup>[<a id="ftn.id2741970" href="#id2741970" class="para">21</a>] </sup>不得不承认，在有些平台和操作系统上也未必得到这个结果，产生Bug的往往都是一些平台相关的问题，举这样的例子才比较像是真实软件开发中遇到的Bug，如果您的程序跑不出我这样的结果，那这一节您就凑合着看吧。</p></div><div class="footnote"><p><sup>[<a id="ftn.id2742046" href="#id2742046" class="para">22</a>] </sup>打印结果最左边的一长串数字是内存地址，在<a class="xref" href="ch17s01.html#arch.addr">第 1 节 “内存与地址”</a>详细解释，目前可以无视。</p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch10s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch10.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch10s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. 断点 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. 段错误</td></tr></table></div></body></html>

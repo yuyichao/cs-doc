@@ -1,0 +1,293 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>固定容器 Fixed Container</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="容器构件 Container Widgets"
+HREF="c1289.html"><LINK
+REL="PREVIOUS"
+TITLE="对齐构件 The Alignment widget"
+HREF="x1306.html"><LINK
+REL="NEXT"
+TITLE="布局容器 Layout Container"
+HREF="x1342.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1306.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>容器构件 Container Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1342.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-FIXEDCONTAINER">固定容器 Fixed Container</H1
+><P
+>固定容器(The Fixed container)允许将构件放在窗口的固定位置，这个位置是相对于固定容器的左上角的。构件的位置可以动态改变。</P
+><P
+>只有少数几个与固定容器构件相关的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget* gtk_fixed_new( void );
+
+void gtk_fixed_put( GtkFixed  *fixed,
+                    GtkWidget *widget,
+                    gint       x,
+                    gint       y );
+
+void gtk_fixed_move( GtkFixed  *fixed,
+                     GtkWidget *widget,
+                     gint       x,
+                     gint       y );</PRE
+></TD
+></TR
+></TABLE
+><P
+>gtk_fixed_new() 函数用于创建新的固定容器。</P
+><P
+>gtk_fixed_put() 函数将<TT
+CLASS="LITERAL"
+>widget</TT
+>放在<TT
+CLASS="LITERAL"
+>fixed</TT
+>的由<TT
+CLASS="LITERAL"
+>x</TT
+>和<TT
+CLASS="LITERAL"
+>y</TT
+>指定的位置。</P
+><P
+>gtk_fixed_move() 函数将指定构件移动到新位置。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_fixed_set_has_window( GtkFixed  *fixed,
+                               gboolean   has_window );
+
+gboolean gtk_fixed_get_has_window( GtkFixed *fixed );</PRE
+></TD
+></TR
+></TABLE
+><P
+>通常，固定容器没有它们自己的 X 窗口。由于这点在早期版本的 GTK 中是不同的，gtk_fixed_set_has_window() 函数可以使创建的固定容器<I
+CLASS="EMPHASIS"
+>有</I
+>它们自己的窗口。这个必须在构件实例化(realizing)之前调用。</P
+><P
+>下面的示例演示了怎样使用固定容器。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/fixed.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+
+/* 我准备偷点懒，用一些全局变量储存固定容器里构件的位置。 */
+gint x = 50;
+gint y = 50;
+
+/* 这个回调函数将按钮移动到固定容器的新位置。 */
+void move_button( GtkWidget *widget,
+                  GtkWidget *fixed )
+{
+  x = (x + 30) % 300;
+  y = (y + 50) % 300;
+  gtk_fixed_move (GTK_FIXED (fixed), widget, x, y); 
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+  /* GtkWidget 是构件的存储类型 */
+  GtkWidget *window;
+  GtkWidget *fixed;
+  GtkWidget *button;
+  gint i;
+
+  /* 初始化 */
+  gtk_init (&#38;argc, &#38;argv);
+    
+  /* 创建一个新窗口 */
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title (GTK_WINDOW (window), "Fixed Container");
+
+  /* 为窗口的 "destroy" 事件设置一个信号处理函数 */ 
+  g_signal_connect (G_OBJECT (window), "destroy",
+		    G_CALLBACK (gtk_main_quit), NULL);
+ 
+  /* 设置窗口的边框宽度 */
+  gtk_container_set_border_width (GTK_CONTAINER (window), 10);
+
+  /* 创建一个固定容器 */
+  fixed = gtk_fixed_new ();
+  gtk_container_add (GTK_CONTAINER (window), fixed);
+  gtk_widget_show (fixed);
+  
+  for (i = 1 ; i &#60;= 3 ; i++) {
+    /* 创建一个标签为"Press me"的新按钮 */
+    button = gtk_button_new_with_label ("Press me");
+  
+    /* 当按钮接收到 "clicked" 信号时，调用 move_button() 函数，并把这个固定
+     * 容器作为参数传给它 */
+    g_signal_connect (G_OBJECT (button), "clicked",
+		      G_CALLBACK (move_button), fixed);
+  
+    /* 将按钮组装到一个固定容器的窗口中 */
+    gtk_fixed_put (GTK_FIXED (fixed), button, i*50, i*50);
+  
+    /* 最后一步是显示新建的构件 */
+    gtk_widget_show (button);
+  }
+
+  /* 显示窗口 */
+  gtk_widget_show (window);
+    
+  /* 进入事件循环 */
+  gtk_main ();
+    
+  return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1306.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1342.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>对齐构件 The Alignment widget</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1289.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>布局容器 Layout Container</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

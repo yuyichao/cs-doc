@@ -1,0 +1,336 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>单选按钮 Radio Buttons</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="按钮构件"
+HREF="c554.html"><LINK
+REL="PREVIOUS"
+TITLE="复选按钮 Check Buttons"
+HREF="x600.html"><LINK
+REL="NEXT"
+TITLE="调整对象 Adjustments"
+HREF="c628.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x600.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>按钮构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c628.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-RADIOBUTTONS">单选按钮 Radio Buttons</H1
+><P
+>单选按钮与复选按钮相似，只是单选按钮是分组的，在一组中只有一个处于选中/按下状态。这在你的应用程序中要从几个选项中选一个的地方可以用到。</P
+><P
+>用这些调用之一来创建一个新的单选按钮：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_radio_button_new( GSList *group );
+
+GtkWidget *gtk_radio_button_new_from_widget( GtkRadioButton *group );
+
+GtkWidget *gtk_radio_button_new_with_label( GSList *group,
+                                            const gchar  *label );
+
+GtkWidget* gtk_radio_button_new_with_label_from_widget( GtkRadioButton *group,
+                                                        const gchar    *label );
+
+GtkWidget *gtk_radio_button_new_with_mnemonic( GSList *group,
+                                               const gchar  *label );
+
+GtkWidget *gtk_radio_button_new_with_mnemonic_from_widget( GtkRadioButton *group,
+                                                           const gchar  *label );&#13;</PRE
+></TD
+></TR
+></TABLE
+><P
+>你可能注意到了，这些调用有个额外的参数。它们需要一个组以正常运作。第一次调用 gtk_radio_button_new() 或 gtk_radio_button_new_with_label() 应该传递 NULL 值作为第一个参数。接着用如下函数创建一个组：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GSList *gtk_radio_button_get_group( GtkRadioButton *radio_button );</PRE
+></TD
+></TR
+></TABLE
+><P
+>有一点很重要，必须为每个添加到组的新按钮调用 gtk_radio_button_get_group()，并把前一个按钮作为参数。返回的结果再传给下一个调用 gtk_radio_button_new() 或 gtk_radio_button_new_with_label()。这样才能建立连锁的按钮。看一下下面的示例会更清楚一些。</P
+><P
+>你可以使用下面的语法来稍微缩短上面的步骤，它不需要一个变量来存储按钮列表：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>     button2 = gtk_radio_button_new_with_label(
+                 gtk_radio_button_get_group (GTK_RADIO_BUTTON (button1)),
+                 "button2");</PRE
+></TD
+></TR
+></TABLE
+><P
+>而 _from_widget() 创建函数可以让你做得更简洁些，它完全省略了 gtk_radio_button_get_group() 调用。在下面示例的第三个按钮就是用这种方法创建的。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>     button2 = gtk_radio_button_new_with_label_from_widget(
+	         GTK_RADIO_BUTTON (button1), 
+                 "button2");</PRE
+></TD
+></TR
+></TABLE
+><P
+>明确地指定哪个按钮应该被默认按下也是个好主意，用：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_toggle_button_set_active( GtkToggleButton *toggle_button,
+                                   gboolean        state );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这在开关按钮部分描述过，在这里它也确切地以同样的方式工作。多个单选按钮组合到一起后，组中一次只能有一个被激活。如果用户点击一个单选按钮，接着点另一个，第一个单选按钮会首先发出 "toggled" 信号 (以报告变得不激活了)，然后第二个也会发出 "toggled" 信号 (以报告变得激活了)。</P
+><P
+>下面的示例创建一个含三个按钮的单选按钮组。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/radiobuttons.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;glib.h&#62;
+#include &#60;gtk/gtk.h&#62;
+
+gint close_application( GtkWidget *widget,
+                        GdkEvent  *event,
+                        gpointer   data )
+{
+  gtk_main_quit ();
+  return FALSE;
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+    GtkWidget *window = NULL;
+    GtkWidget *box1;
+    GtkWidget *box2;
+    GtkWidget *button;
+    GtkWidget *separator;
+    GSList *group;
+  
+    gtk_init (&#38;argc, &#38;argv);    
+      
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  
+    g_signal_connect (G_OBJECT (window), "delete_event",
+		      G_CALLBACK (close_application),
+                      NULL);
+
+    gtk_window_set_title (GTK_WINDOW (window), "radio buttons");
+    gtk_container_set_border_width (GTK_CONTAINER (window), 0);
+
+    box1 = gtk_vbox_new (FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (window), box1);
+    gtk_widget_show (box1);
+
+    box2 = gtk_vbox_new (FALSE, 10);
+    gtk_container_set_border_width (GTK_CONTAINER (box2), 10);
+    gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
+    gtk_widget_show (box2);
+
+    button = gtk_radio_button_new_with_label (NULL, "button1");
+    gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
+    gtk_widget_show (button);
+
+    group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+    button = gtk_radio_button_new_with_label (group, "button2");
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
+    gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
+    gtk_widget_show (button);
+
+    button = gtk_radio_button_new_with_label_from_widget (GTK_RADIO_BUTTON (button),
+	                                                  "button3");
+    gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
+    gtk_widget_show (button);
+
+    separator = gtk_hseparator_new ();
+    gtk_box_pack_start (GTK_BOX (box1), separator, FALSE, TRUE, 0);
+    gtk_widget_show (separator);
+
+    box2 = gtk_vbox_new (FALSE, 10);
+    gtk_container_set_border_width (GTK_CONTAINER (box2), 10);
+    gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, TRUE, 0);
+    gtk_widget_show (box2);
+
+    button = gtk_button_new_with_label ("close");
+    g_signal_connect_swapped (G_OBJECT (button), "clicked",
+                              G_CALLBACK (close_application),
+                              window);
+    gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
+    GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+    gtk_widget_grab_default (button);
+    gtk_widget_show (button);
+    gtk_widget_show (window);
+     
+    gtk_main ();
+
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x600.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c628.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>复选按钮 Check Buttons</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c554.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>调整对象 Adjustments</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

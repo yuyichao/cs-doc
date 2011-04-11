@@ -1,0 +1,259 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>对话框 Dialogs</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="进度条 Progress Bars"
+HREF="x892.html"><LINK
+REL="NEXT"
+TITLE="标尺 Rulers"
+HREF="x954.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x892.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x954.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-DIALOGS">对话框 Dialogs</H1
+><P
+>对话构件非常简单，事实上它仅仅是一个预先组装了几个构件到里面的窗口。对话框的数据结构是：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct GtkDialog
+{
+      GtkWindow window;
+    
+      GtkWidget *vbox;
+      GtkWidget *action_area;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>从上面可以看到，对话框只是简单地创建一个窗口，并在顶部组装一个纵向盒(vbox)，然后在这个纵向盒中组装一个分隔线(separator)，再加一个称为“活动区(action_area)”的横向盒(hbox).</P
+><P
+>对话框构件可以用于弹出消息，或者其它类似的任务。这里有两个函数来创建一个新的对话框：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_dialog_new( void );
+
+GtkWidget *gtk_dialog_new_with_buttons( const gchar    *title,
+                                        GtkWindow      *parent,
+                                        GtkDialogFlags  flags, 
+                                        const gchar    *first_button_text,
+                                        ... );</PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个函数将创建一个空地对话框，你现在就可以使用它了。你可以组装一个按钮到它的活动区(action_area)，就像下面这样：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    button = ...
+    gtk_box_pack_start (GTK_BOX (GTK_DIALOG (window)-&#62;action_area),
+                        button, TRUE, TRUE, 0);
+    gtk_widget_show (button);</PRE
+></TD
+></TR
+></TABLE
+><P
+>你可以通过组装来扩充活动区，比如，增加一个标签，可以像下面这样做：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    label = gtk_label_new ("Dialogs are groovy");
+    gtk_box_pack_start (GTK_BOX (GTK_DIALOG (window)-&#62;vbox),
+                        label, TRUE, TRUE, 0);
+    gtk_widget_show (label);</PRE
+></TD
+></TR
+></TABLE
+><P
+>作为一个示例，可以在活动区里面组装两个按钮：一个“取消”按钮和一个“确定”按钮，再在纵向盒(vbox)里组装一个标签，以便向用户提出疑问，或显示一个错误信息等。然后可以把不同信号连接到每个按钮，对用户的选择进行响应。</P
+><P
+>如果由对话框提供的纵向和横向盒的简单功能不能满足你的需要，可以简单地在组装盒中添加其它布局构件。例如，可以在纵向盒中添加一个组装表(table)。</P
+><P
+>更复杂的 gtk_dialog_new_with_buttons() 函数允许你设置下面的一个或多个参数。</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_DIALOG_MODAL</TT
+></DT
+><DD
+><P
+>使对话框使用独占模式。</P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_DIALOG_DESTROY_WITH_PARENTS</TT
+></DT
+><DD
+><P
+>保证对话框在指定父窗口被关闭时也一起关闭。</P
+></DD
+><DT
+><TT
+CLASS="LITERAL"
+>GTK_DIALOG_NO_SEPARATOR</TT
+></DT
+><DD
+><P
+>省略纵向盒与活动区之间的分隔线</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x892.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x954.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>进度条 Progress Bars</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>标尺 Rulers</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

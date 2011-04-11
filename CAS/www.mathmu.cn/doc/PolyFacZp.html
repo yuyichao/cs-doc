@@ -1,0 +1,1103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>有限域上多项式因子分解 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>有限域上多项式因子分解
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="PolyFacZp.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="PolyFacZp.html#sec1">不同次数因子分解</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="PolyFacZp.html#sec2">有限域<img src="latex/latex2png-PolyFacZp_205157396_-5.gif" alt="$F_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">和<img src="latex/latex2png-PolyFacZp_35258457_-6.gif" alt="$F_{p^d}$" class="latex-inline" style="vertical-align: -6px" width="24" height="18"></a>
+      </dt>
+      <dt>
+	<a href="PolyFacZp.html#sec3">不同次因子分解算法</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="PolyFacZp.html#sec4">同次因子分解</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="PolyFacZp.html#sec5">特征为奇素数的有限域</a>
+      </dt>
+      <dt>
+	<a href="PolyFacZp.html#sec6">特征为2的有限域</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="PolyFacZp.html#sec7">一个完整的因子分解算法</a>
+  </dt>
+  <dt>
+    <a href="PolyFacZp.html#sec8">无平方因子分解</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="PolyFacZp.html#sec9">特征为零的域上无平方分解</a>
+      </dt>
+      <dt>
+	<a href="PolyFacZp.html#sec10">特征有限的域上无平方分解</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="PolyFacZp.html#sec11">Berlekamp 算法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="PolyFacZp.html#sec12">Frobenius映射和Berlekamp子代数</a>
+      </dt>
+      <dt>
+	<a href="PolyFacZp.html#sec13">Berlekamp算法的实现</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="PolyFacZp.html#sec14">素性检测和不可约多项式的构造</a>
+  </dt>
+</dl>
+</div>
+
+<p>多项式因子分解问题比最大公因子问题要复杂，因而也更困难一些。然而令人惊喜的是在有限域上，多项式的因子分解问题却变得十分简单，这给我们提供了一种将整数环或有理数域上的多项式因子分解问题转化到较简单的有限域情况上来解决的可能性。</p>
+
+<p>这一部分我们首先解决<img src="latex/latex2png-PolyFacZp_68858419_-5.gif" alt="$\mathbb{F}_p$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">域上的多项式因子分解问题。这些内容是<img src="latex/latex2png-PolyFacZp_27044286_-5.gif" alt="$\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">,<img src="latex/latex2png-PolyFacZp_27044295_-5.gif" alt="$\mathbb{Q}[x]$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">,<img src="latex/latex2png-PolyFacZp_197024685_-5.gif" alt="$\mathbb{Z}_m[x]$" class="latex-inline" style="vertical-align: -5px" width="41" height="18">乃至<img src="latex/latex2png-PolyFacZp_27044294_-5.gif" alt="$\mathbb{R}[x]$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">,<img src="latex/latex2png-PolyFacZp_27044309_-5.gif" alt="$\mathbb{C}[x]$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">和多元多项式因子分解的基础.</p>
+
+<p>在有限域上进行因子分解的方法很多，一般来说,有限域上多项式因子分解要经过下面三个步骤：</p>
+
+<ol>
+<li>无平方因子分解(squarefree factorization)</li>
+
+<li>不同次数因子分解(distinct-degree factorization)</li>
+
+<li>同次因子分解(equal-degree factorization)</li>
+</ol>
+
+<p>这一章首先将从上面三个方面介绍有限域上的因子分解问题，然后讨论其他算法(<span class="cite"><a class="cite" href="PolyFacZp.html#ref-1" name="cite-1">[1]</a></span>Chapter 14).</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>不同次数因子分解</h2>
+
+<p class="first">这里我们假定多项式是无平方因子的(squarefree)，即无重因子。这一点很容易做到，比如<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">含重因子，那么取<img src="latex/latex2png-PolyFacZp_174169349_-5.gif" alt="$f/\gcd(f,f')$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">，则可消去重因子，得到无重因子的多项式。不同次因子分解(Distinct-degree factorization)即是在无平方因子分解的基础上，将多项式中各不同次数因子的乘积逐一剥离出来。</p>
+
+<p>首先我们介绍一些有限域的知识.</p>
+
+<h3><a name="sec2" id="sec2"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>有限域<img src="latex/latex2png-PolyFacZp_205157396_-5.gif" alt="$F_p$" class="latex-inline" style="vertical-align: -5px" width="18" height="17">和<img src="latex/latex2png-PolyFacZp_35258457_-6.gif" alt="$F_{p^d}$" class="latex-inline" style="vertical-align: -6px" width="24" height="18"></h3>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name="fermatlittletheorem"></a></span><span class="theorem-name">(Fermat小定理)</span>
+对于非零元<img src="latex/latex2png-PolyFacZp_71475813_-5.gif" alt="$a\in\mathbb{F}_p$" class="latex-inline" style="vertical-align: -5px" width="46" height="17">,我们有<img src="latex/latex2png-PolyFacZp_193113026_0.gif" alt="$a^{p-1}=1$" class="latex-inline" style="vertical-align: 0px" width="63" height="14">且<img src="latex/latex2png-PolyFacZp_56056541_-5.gif" alt="$\forall a\in\mathbb{F}_p$" class="latex-inline" style="vertical-align: -5px" width="55" height="17">，有<img src="latex/latex2png-PolyFacZp_202077841_0.gif" alt="$a^p=a$" class="latex-inline" style="vertical-align: 0px" width="47" height="11">且<img src="latex/latex2png-PolyFacZp_40929541_.gif" alt="$$x^p-x=\prod_{a\in\mathbb{F}_p}(x-a).$$" class="latex-display" width="580" height="41">
+
+
+</div>
+
+<p>有限域的阶数只可能是素数以及素数的幂，对于<img src="latex/latex2png-PolyFacZp_163362878_-3.gif" alt="$d\ge 1\in\mathbb{N}$" class="latex-inline" style="vertical-align: -3px" width="71" height="15">,可以构造<img src="latex/latex2png-PolyFacZp_236876820_-4.gif" alt="$p^d$" class="latex-inline" style="vertical-align: -4px" width="16" height="18">阶的域如下：<img src="latex/latex2png-PolyFacZp_3525721_.gif" alt="$$\mathbb{F}_{p^d}=\mathbb{F}_p[x]/\langle f\rangle,$$" class="latex-display" width="580" height="20">其中<img src="latex/latex2png-PolyFacZp_138719318_-5.gif" alt="$f\in\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">是<img src="latex/latex2png-PolyFacZp_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次不可约多项式。</p>
+
+<p>Fermat小定理<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">对于素数以及素数的幂均成立，素数的幂情况证明同素数情况。</p>
+
+
+<p>下面的定理是Fermat小定理的推广，Fermat小定理是其<img src="latex/latex2png-PolyFacZp_226324_0.gif" alt="$d=1$" class="latex-inline" style="vertical-align: 0px" width="38" height="12">的特殊情形。</p>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name="th:fermat2"></a></span><span class="theorem-name">(Fermat小定理推广)</span>
+对于任何<img src="latex/latex2png-PolyFacZp_255040562_-3.gif" alt="$d\ge 1$" class="latex-inline" style="vertical-align: -3px" width="38" height="15">,<img src="latex/latex2png-PolyFacZp_8163950_-5.gif" alt="$x^{p^d}-x\in\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="109" height="22">是<img src="latex/latex2png-PolyFacZp_71405651_-5.gif" alt="$\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中所有次数整除<img src="latex/latex2png-PolyFacZp_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的不可约首一多项式的乘积。其中<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">是素数或素数幂.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由Fermat小定理知<img src="latex/latex2png-PolyFacZp_62346250_0.gif" alt="$h=x^{p^d}-x$" class="latex-inline" style="vertical-align: 0px" width="85" height="17">是所有的一次因子<img src="latex/latex2png-PolyFacZp_217353196_0.gif" alt="$x-a$" class="latex-inline" style="vertical-align: 0px" width="38" height="8">的乘积，其中<img src="latex/latex2png-PolyFacZp_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">取遍<img src="latex/latex2png-PolyFacZp_3749946_-6.gif" alt="$\mathbb{F}_{p^d}$" class="latex-inline" style="vertical-align: -6px" width="23" height="18">中的元素。因此，<img src="latex/latex2png-PolyFacZp_42103826_0.gif" alt="$h$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是无平方因子的，于是我们只须证明对任何<img src="latex/latex2png-PolyFacZp_71405651_-5.gif" alt="$\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中首一不可约<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">:
+<img src="latex/latex2png-PolyFacZp_22030762_.gif" alt="$$f|x^{p^d}-x\Leftrightarrow n|d.$$" class="latex-display" width="580" height="23">
+
+<p>若<img src="latex/latex2png-PolyFacZp_71783434_-5.gif" alt="$f|x^{p^d}-x$" class="latex-inline" style="vertical-align: -5px" width="67" height="22">,则由Fermat小定理，可以取<img src="latex/latex2png-PolyFacZp_3749946_-6.gif" alt="$\mathbb{F}_{p^d}$" class="latex-inline" style="vertical-align: -6px" width="23" height="18">的子集<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">使得<img src="latex/latex2png-PolyFacZp_236818600_-7.gif" alt="$f=\prod_{a\in A}(x-a)$" class="latex-inline" style="vertical-align: -7px" width="124" height="20">.任取<img src="latex/latex2png-PolyFacZp_129786878_-1.gif" alt="$a\in A$" class="latex-inline" style="vertical-align: -1px" width="41" height="13">,令<img src="latex/latex2png-PolyFacZp_183773177_-6.gif" alt="$\mathbb{F}_p[x]/\langle f\rangle\cong\mathbb{F}_p(a)\subset\mathbb{F}_{p^d}$" class="latex-inline" style="vertical-align: -6px" width="174" height="19">,其中<img src="latex/latex2png-PolyFacZp_261984339_-5.gif" alt="$\mathbb{F}_p(a)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">是<img src="latex/latex2png-PolyFacZp_3749946_-6.gif" alt="$\mathbb{F}_{p^d}$" class="latex-inline" style="vertical-align: -6px" width="23" height="18">中包含<img src="latex/latex2png-PolyFacZp_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的最小子域，有<img src="latex/latex2png-PolyFacZp_237532180_-4.gif" alt="$p^n$" class="latex-inline" style="vertical-align: -4px" width="17" height="15">个元素，<img src="latex/latex2png-PolyFacZp_3749946_-6.gif" alt="$\mathbb{F}_{p^d}$" class="latex-inline" style="vertical-align: -6px" width="23" height="18">是它的扩域，因此<img src="latex/latex2png-PolyFacZp_229600250_-5.gif" alt="$p^d=(p^n)^e\Rightarrow n|d$" class="latex-inline" style="vertical-align: -5px" width="127" height="19">.</p>
+
+<p>若<img src="latex/latex2png-PolyFacZp_192836628_-5.gif" alt="$n|d$" class="latex-inline" style="vertical-align: -5px" width="24" height="18">,令<img src="latex/latex2png-PolyFacZp_52413290_-6.gif" alt="$\mathbb{F}_{p^d}=\mathbb{F}_p[x]/\langle f\rangle$" class="latex-inline" style="vertical-align: -6px" width="113" height="19">,且<img src="latex/latex2png-PolyFacZp_249776563_-5.gif" alt="$a=(x \bmod f)\in\mathbb{F}_{p^n}$" class="latex-inline" style="vertical-align: -5px" width="148" height="18">为<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个根。而<img src="latex/latex2png-PolyFacZp_74798092_0.gif" alt="$a^{p^n}=a$" class="latex-inline" style="vertical-align: 0px" width="55" height="15">,由于<img src="latex/latex2png-PolyFacZp_221018786_-5.gif" alt="$p^n-1|p^d-1$" class="latex-inline" style="vertical-align: -5px" width="95" height="19">，设<img src="latex/latex2png-PolyFacZp_242377448_.gif" alt="$$p^d-1=(p^n-1)e=(p^n-1)(p^{d-n}+p^{d-2n}+\cdots+1),$$" class="latex-display" width="580" height="20">则<img src="latex/latex2png-PolyFacZp_158582508_.gif" alt="$$x^{p^d-1}-1=(x^{p^n-1}-1)(x^{(p^n-1)(e-1)}+\cdots+1).$$" class="latex-display" width="580" height="23">
+将上式乘以<img src="latex/latex2png-PolyFacZp_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">则可得<img src="latex/latex2png-PolyFacZp_25631694_-5.gif" alt="$(x-a)|(x^{p^n}-x)|(x^{p^d}-x)$" class="latex-inline" style="vertical-align: -5px" width="193" height="22">.因此在<img src="latex/latex2png-PolyFacZp_211940895_-5.gif" alt="$\mathbb{F}_{p^n}[x]$" class="latex-inline" style="vertical-align: -5px" width="43" height="18">中<img src="latex/latex2png-PolyFacZp_231633328_-5.gif" alt="$(x-a)|\gcd(f,x^{p^d}-x)$" class="latex-inline" style="vertical-align: -5px" width="164" height="22">,由于<img src="latex/latex2png-PolyFacZp_71405651_-5.gif" alt="$\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中多项式的最大公因子应该也在<img src="latex/latex2png-PolyFacZp_71405651_-5.gif" alt="$\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中，于是由其非平凡可推出<img src="latex/latex2png-PolyFacZp_256015960_-5.gif" alt="$\gcd(f,x^{p^d}-x)=f$" class="latex-inline" style="vertical-align: -5px" width="139" height="22">,即<img src="latex/latex2png-PolyFacZp_71783434_-5.gif" alt="$f|x^{p^d}-x$" class="latex-inline" style="vertical-align: -5px" width="67" height="22">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>不同次因子分解算法</h3>
+
+<p class="first">不同次因子分解算法即是要求出多项式的不同次因子序列,其定义如下:</p>
+
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name">(不同次因子序列)</span>
+<img src="latex/latex2png-PolyFacZp_71405651_-5.gif" alt="$\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中非平凡多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不同次因子分解是指得到如下的不同次因子序列<img src="latex/latex2png-PolyFacZp_192742890_-5.gif" alt="$(g_1,\ldots,g_s)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">,其中<img src="latex/latex2png-PolyFacZp_87258132_-4.gif" alt="$g_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">在<img src="latex/latex2png-PolyFacZp_71405651_-5.gif" alt="$\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中所有首一不可约<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">次多项式的乘积,且<img src="latex/latex2png-PolyFacZp_38226660_-4.gif" alt="$g_s\neq 1$" class="latex-inline" style="vertical-align: -4px" width="44" height="16">.
+
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name="al:distinct"></a></span><span class="theorem-name">(不同次因子分解)</span>
+
+<p>输入：无平方因子<img src="latex/latex2png-PolyFacZp_19625626_-5.gif" alt="$n(>0)$" class="latex-inline" style="vertical-align: -5px" width="47" height="18">次首一多项式<img src="latex/latex2png-PolyFacZp_138719318_-5.gif" alt="$f\in\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不同次因子序列<img src="latex/latex2png-PolyFacZp_192742890_-5.gif" alt="$(g_1,\ldots,g_s)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">.</p>
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_69367448_-3.gif" alt="$h_0=x$" class="latex-inline" style="vertical-align: -3px" width="48" height="15">,<img src="latex/latex2png-PolyFacZp_68187798_-4.gif" alt="$f_0=f$" class="latex-inline" style="vertical-align: -4px" width="46" height="16">,<img src="latex/latex2png-PolyFacZp_84046868_-1.gif" alt="$i=0$" class="latex-inline" style="vertical-align: -1px" width="36" height="13">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_203196777_-2.gif" alt="$i=i+1$" class="latex-inline" style="vertical-align: -2px" width="61" height="14">,在环<img src="latex/latex2png-PolyFacZp_148078824_-5.gif" alt="$R=\mathbb{F}_p[x]/\langle f\rangle$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">中调用快速求幂算法计算<img src="latex/latex2png-PolyFacZp_243342786_-5.gif" alt="$h_i=h_{i-1}^p \bmod f$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_119723490_-5.gif" alt="$g_i=\gcd(h_i-x,f_{i-1})$" class="latex-inline" style="vertical-align: -5px" width="155" height="18">,<img src="latex/latex2png-PolyFacZp_166809331_-15.gif" alt="$f_i=\displaystyle\frac{f_{i-1}}{g_i}$" class="latex-inline" style="vertical-align: -15px" width="68" height="38">,</li>
+
+<li>若<img src="latex/latex2png-PolyFacZp_38294756_-4.gif" alt="$f_i\neq 1$" class="latex-inline" style="vertical-align: -4px" width="42" height="16">则转到2步,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_252933140_0.gif" alt="$s=i$" class="latex-inline" style="vertical-align: 0px" width="34" height="12">,输出<img src="latex/latex2png-PolyFacZp_192742890_-5.gif" alt="$(g_1,\ldots,g_s)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">.</li>
+</ol>
+
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法有效性)</span>
+不妨设<img src="latex/latex2png-PolyFacZp_191692266_-5.gif" alt="$(G_1,\ldots,G_t)$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不同次因子序列，则考虑命题<img src="latex/latex2png-PolyFacZp_240453060_.gif" alt="$$P_i:h_i\equiv x^{p^i}\pmod{f},\quad f_i=G_{i+1}\cdots G_t,\quad g_i=G_i(\text{若}i>0).$$" class="latex-display" width="580" height="23">
+
+<p>显然<img src="latex/latex2png-PolyFacZp_165514220_-3.gif" alt="$P_0$" class="latex-inline" style="vertical-align: -3px" width="17" height="15">成立，设<img src="latex/latex2png-PolyFacZp_170410911_-4.gif" alt="$P_0,\ldots,P_{i-1}$" class="latex-inline" style="vertical-align: -4px" width="87" height="16">均成立，则对<img src="latex/latex2png-PolyFacZp_255040642_-3.gif" alt="$i\ge 1$" class="latex-inline" style="vertical-align: -3px" width="35" height="15">,有<img src="latex/latex2png-PolyFacZp_11238865_-5.gif" alt="$h_i\equiv h_{i-1}^p\equiv x^{p^i}\pmod{f}$" class="latex-inline" style="vertical-align: -5px" width="180" height="22">且<img src="latex/latex2png-PolyFacZp_223393279_.gif" alt="$$g_i=\gcd(h_i-x,f_{i-1})=\gcd(x^{p^i}-x,f_{i-1}).$$" class="latex-display" width="580" height="23"></p>
+
+<p>由Fermat小定理推广，<img src="latex/latex2png-PolyFacZp_87258132_-4.gif" alt="$g_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">是<img src="latex/latex2png-PolyFacZp_71405651_-5.gif" alt="$\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中所有首一不可约且次数整除<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的多项式的乘积且能整除<img src="latex/latex2png-PolyFacZp_192801728_-4.gif" alt="$f_{i-1}=G_i\cdots G_t$" class="latex-inline" style="vertical-align: -4px" width="113" height="16">,因此<img src="latex/latex2png-PolyFacZp_46794425_-4.gif" alt="$g_i=G_i$" class="latex-inline" style="vertical-align: -4px" width="54" height="16">(低于<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">次的因子已在前面提出了).于是归纳证明了<img src="latex/latex2png-PolyFacZp_175890859_-5.gif" alt="$P_i(0\le i\le s)$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">成立，也同时可得<img src="latex/latex2png-PolyFacZp_253654036_0.gif" alt="$s=t$" class="latex-inline" style="vertical-align: 0px" width="34" height="11">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>算法<a class="ref-th" href="PolyFacZp.html#al:distinct">1</a>可在<img src="latex/latex2png-PolyFacZp_226401441_-5.gif" alt="$\deg f_i<2(i+1)$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">时即终止，因为<img src="latex/latex2png-PolyFacZp_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">所有不可约因子次数至少为<img src="latex/latex2png-PolyFacZp_65238036_-2.gif" alt="$i+1$" class="latex-inline" style="vertical-align: -2px" width="33" height="14">,因此<img src="latex/latex2png-PolyFacZp_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">即已经是不可约的了。</p>
+
+<div class="problem">
+<span class="proof-header">例1<a name=""></a></span><span class="theorem-name"></span>
+考虑多项式<img src="latex/latex2png-PolyFacZp_210707106_-5.gif" alt="$f=x^5+x^3+x^2+x-1\in\mathbb{F}_3[x]$" class="latex-inline" style="vertical-align: -5px" width="236" height="19">.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+我们将单步执行算法<a class="ref-th" href="PolyFacZp.html#al:distinct">1</a>的步骤列于下：
+<img src="latex/latex2png-PolyFacZp_267203353_.gif" alt="$$f_0=f=x^5+x^3+x^2+x-1,h_0=x,$$" class="latex-display" width="580" height="19">
+<img src="latex/latex2png-PolyFacZp_262784135_.gif" alt="$$h_1=h_0^3\bmod f=x^3\bmod f=x^3,$$" class="latex-display" width="580" height="20">
+<img src="latex/latex2png-PolyFacZp_16967920_.gif" alt="$$g_1=\gcd(h_1-x,f_0)=x^2-1,f_1=\frac{f_0}{g_1}=x^3-x+1,$$" class="latex-display" width="580" height="39">
+<img src="latex/latex2png-PolyFacZp_9393185_.gif" alt="$$h_2=h_1^3\bmod f=x^9\bmod f=-x^3-x,$$" class="latex-display" width="580" height="19">
+<img src="latex/latex2png-PolyFacZp_34467650_.gif" alt="$$g_2=\gcd(h_2-x,f_1)=1,f_2=x^3-x+1.$$" class="latex-display" width="580" height="20">
+此时已可以结束，得到不同次因子序列为<img src="latex/latex2png-PolyFacZp_267007684_-5.gif" alt="$(x^2-1,1,x^3-x+1)$" class="latex-inline" style="vertical-align: -5px" width="154" height="19">.
+
+
+</div>
+
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>同次因子分解</h2>
+
+<p class="first">本节基于上一节不同次因子分解的结果继续对其进行同次因子分解(Equal-degree factorization)，或者Cantor-Zassenhaus算法，直到将<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">完全分解为不可约多项式的积。但是由于奇素数与2在下面的处理技术中有一点微小的区别，因此本节分成两部分来讨论.</p>
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>特征为奇素数的有限域</h3>
+
+<div class="lemma">
+<span class="theorem-header">引理1<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">为一素数幂,<img src="latex/latex2png-PolyFacZp_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">为<img src="latex/latex2png-PolyFacZp_201552916_-4.gif" alt="$q-1$" class="latex-inline" style="vertical-align: -4px" width="35" height="15">的因子，<img src="latex/latex2png-PolyFacZp_25311970_-7.gif" alt="$S=\{b^k|b\in\mathbb{F}_q^*\}$" class="latex-inline" style="vertical-align: -7px" width="113" height="21">为<img src="latex/latex2png-PolyFacZp_11889194_-7.gif" alt="$\mathbb{F}_q^*$" class="latex-inline" style="vertical-align: -7px" width="16" height="19">中的<img src="latex/latex2png-PolyFacZp_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次幂集合。则：
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">为<img src="latex/latex2png-PolyFacZp_63446830_-5.gif" alt="$(q-1)/k$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">阶子群。</li>
+
+<li><img src="latex/latex2png-PolyFacZp_156840968_-7.gif" alt="$S=\{a\in\mathbb{F}_q^*|a^{(q-1)/k}=1\}$" class="latex-inline" style="vertical-align: -7px" width="187" height="22">.</li>
+</ol>
+
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+<img src="latex/latex2png-PolyFacZp_43349010_-1.gif" alt="$S$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">为<img src="latex/latex2png-PolyFacZp_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次幂同态(homomorphism)映射<img src="latex/latex2png-PolyFacZp_24813984_-7.gif" alt="$\sigma_k:\mathbb{F}_q^*\rightarrow\mathbb{F}_q^*$" class="latex-inline" style="vertical-align: -7px" width="91" height="19">的象，易证其为<img src="latex/latex2png-PolyFacZp_11889194_-7.gif" alt="$\mathbb{F}_q^*$" class="latex-inline" style="vertical-align: -7px" width="16" height="19">的子群。<img src="latex/latex2png-PolyFacZp_257917797_-2.gif" alt="$\sigma_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">的核为<img src="latex/latex2png-PolyFacZp_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次单位根：<img src="latex/latex2png-PolyFacZp_45899428_.gif" alt="$$\ker\sigma_k=\{a\in\mathbb{F}_q^*|\sigma_k(a)=1\}.$$" class="latex-display" width="580" height="20">
+由于<img src="latex/latex2png-PolyFacZp_68923955_-5.gif" alt="$\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">为域，则多项式<img src="latex/latex2png-PolyFacZp_79214983_-5.gif" alt="$x^k-1\in\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="101" height="19">的根至多有<img src="latex/latex2png-PolyFacZp_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">个，于是<img src="latex/latex2png-PolyFacZp_217130586_-4.gif" alt="$\#\ker\sigma_k\le k$" class="latex-inline" style="vertical-align: -4px" width="89" height="16">.
+
+<p><img src="latex/latex2png-PolyFacZp_172732917_-5.gif" alt="$(b^k)^{(q-1)/k}=b^{q-1}=1$" class="latex-inline" style="vertical-align: -5px" width="159" height="20">对于任何<img src="latex/latex2png-PolyFacZp_122341334_-7.gif" alt="$b\in\mathbb{F}_q^*$" class="latex-inline" style="vertical-align: -7px" width="43" height="19">均成立，由Fermat小定理得<img src="latex/latex2png-PolyFacZp_183385780_-6.gif" alt="$S\subset\ker\sigma_{(q-1)/k}$" class="latex-inline" style="vertical-align: -6px" width="114" height="18">,则<img src="latex/latex2png-PolyFacZp_213335847_-5.gif" alt="$\# S\le (q-1)/k$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">.于是由群同态定理
+<img src="latex/latex2png-PolyFacZp_46823976_.gif" alt="$$q-1=\# \mathbb{F}_q^*=\#\ker\sigma_k\cdot \#\mathrm{im}\sigma_k=\#\ker\sigma_k\cdot \# S\le k(q-1)/k=q-1,$$" class="latex-display" width="580" height="20">
+则<img src="latex/latex2png-PolyFacZp_145837912_-4.gif" alt="$\#\ker\sigma_k=k$" class="latex-inline" style="vertical-align: -4px" width="89" height="16">且<img src="latex/latex2png-PolyFacZp_25981180_-5.gif" alt="$\# S=(q-1)/k$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">,<img src="latex/latex2png-PolyFacZp_101877540_-6.gif" alt="$S=\ker\sigma_{(q-1)/k}$" class="latex-inline" style="vertical-align: -6px" width="114" height="18">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>作为上面引理的推论，我们有
+<div class="lemma">
+<span class="theorem-header">引理2<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">为一奇素数幂,<img src="latex/latex2png-PolyFacZp_19142560_-7.gif" alt="$S=\{a\in\mathbb{F}_q^*|\exists b\in\mathbb{F}_q^*(a=b^2)\}$" class="latex-inline" style="vertical-align: -7px" width="211" height="21">,则</p>
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_3782503_-7.gif" alt="$S\subset\mathbb{F}_q^*$" class="latex-inline" style="vertical-align: -7px" width="48" height="19">是<img src="latex/latex2png-PolyFacZp_64560942_-5.gif" alt="$(q-1)/2$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">阶子群。</li>
+
+<li><img src="latex/latex2png-PolyFacZp_156840696_-7.gif" alt="$S=\{a\in\mathbb{F}_q^*|a^{(q-1)/2}=1\}$" class="latex-inline" style="vertical-align: -7px" width="186" height="22">.</li>
+
+<li><img src="latex/latex2png-PolyFacZp_16275579_-7.gif" alt="$\forall a\in\mathbb{F}_q^*,a^{(q-1)/2}\in\{1,-1\}$" class="latex-inline" style="vertical-align: -7px" width="193" height="22">.</li>
+</ol>
+
+
+
+</div>
+
+<p>下面的概率性算法给出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的可能因子，其中<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是经上节算法给出的无平方首一同次因子乘积，即存在<img src="latex/latex2png-PolyFacZp_244771054_-4.gif" alt="$n=\deg f$" class="latex-inline" style="vertical-align: -4px" width="69" height="16">的一个因子<img src="latex/latex2png-PolyFacZp_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">使得<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">可分解为<img src="latex/latex2png-PolyFacZp_154039316_-5.gif" alt="$n/d$" class="latex-inline" style="vertical-align: -5px" width="27" height="18">个<img src="latex/latex2png-PolyFacZp_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次首一不可约因子.
+<div class="algorithm">
+<span class="theorem-header">算法2<a name="al:preEDF"></a></span><span class="theorem-name">(同次因子分解概率算法)</span></p>
+
+<p>输入：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-PolyFacZp_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的首一因子<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,或者failure.</p>
+
+<ol>
+<li>(随机)任取<img src="latex/latex2png-PolyFacZp_213602218_-5.gif" alt="$a\in\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">使得<img src="latex/latex2png-PolyFacZp_47025117_-4.gif" alt="$\deg a<n$" class="latex-inline" style="vertical-align: -4px" width="69" height="16">.若<img src="latex/latex2png-PolyFacZp_71541349_-5.gif" alt="$a\in\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="45" height="17">则输出failure,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_87795074_-5.gif" alt="$g_1=\gcd(a,f)$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,若<img src="latex/latex2png-PolyFacZp_38233316_-4.gif" alt="$g_1\neq 1$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">且<img src="latex/latex2png-PolyFacZp_37381348_-4.gif" alt="$g_1\neq f$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">则输出<img src="latex/latex2png-PolyFacZp_86209556_-4.gif" alt="$g_1$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">,</li>
+
+<li>调用快速求幂算法在环<img src="latex/latex2png-PolyFacZp_148078825_-5.gif" alt="$R=\mathbb{F}_q[x]/\langle f\rangle$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">中计算<img src="latex/latex2png-PolyFacZp_109670670_-4.gif" alt="$b=a^{(q^d-1)/2} \bmod f$" class="latex-inline" style="vertical-align: -4px" width="143" height="21">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_264444664_-5.gif" alt="$g_2=\gcd(b-1,f)$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,若<img src="latex/latex2png-PolyFacZp_38233060_-4.gif" alt="$g_2\neq 1$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">且<img src="latex/latex2png-PolyFacZp_37381092_-4.gif" alt="$g_2\neq f$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">则输出<img src="latex/latex2png-PolyFacZp_86275092_-4.gif" alt="$g_2$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">,否则输出failure.</li>
+</ol>
+
+
+
+</div>
+
+<p>若设<img src="latex/latex2png-PolyFacZp_195247501_-4.gif" alt="$f=f_1f_2\cdots f_r$" class="latex-inline" style="vertical-align: -4px" width="101" height="16">,则由中国剩余定理有如下的环同构：
+<img src="latex/latex2png-PolyFacZp_227858419_.gif" alt="$$\chi:R=\mathbb{F}_q[x]/\langle f\rangle\rightarrow\mathbb{F}_q[x]/\langle f_1\rangle\times\cdots\times\mathbb{F}_q[x]/\langle f_r\rangle=R_1\times\cdots\times R_r,$$" class="latex-display" width="580" height="19">
+其中<img src="latex/latex2png-PolyFacZp_266396701_-6.gif" alt="$\mathbb{F}_{q^d}\cong R_i=\mathbb{F}_q[x]/\langle f_i\rangle\supset\mathbb{F}_q$" class="latex-inline" style="vertical-align: -6px" width="196" height="19">.
+引入下面记号：<img src="latex/latex2png-PolyFacZp_241038080_-5.gif" alt="$\chi(a\bmod f)=(a\bmod f_1,\ldots,a\bmod f_r)=(\chi_1(a),\ldots,\chi_r(a))$" class="latex-inline" style="vertical-align: -5px" width="434" height="18">,其中<img src="latex/latex2png-PolyFacZp_194342490_-5.gif" alt="$\chi_i(a)=a\bmod f_i$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">.记<img src="latex/latex2png-PolyFacZp_48142844_-5.gif" alt="$e=(q^d-1)/2$" class="latex-inline" style="vertical-align: -5px" width="102" height="19">,则对任意<img src="latex/latex2png-PolyFacZp_34209359_-9.gif" alt="$\beta\in R_i^*=\mathbb{F}_{q^d}^*$" class="latex-inline" style="vertical-align: -9px" width="96" height="21">,我们有<img src="latex/latex2png-PolyFacZp_244209144_-5.gif" alt="$\beta^e\in\{-1,1\}$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">,且取两个值是等概率的.如果我们随机任意选取<img src="latex/latex2png-PolyFacZp_213602218_-5.gif" alt="$a\in\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">使得<img src="latex/latex2png-PolyFacZp_47025117_-4.gif" alt="$\deg a<n$" class="latex-inline" style="vertical-align: -4px" width="69" height="16">且<img src="latex/latex2png-PolyFacZp_221405140_-5.gif" alt="$\gcd(a,f)=1$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">，则<img src="latex/latex2png-PolyFacZp_6506571_-5.gif" alt="$\chi_1(a),\ldots,\chi_r(a)$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">是<img src="latex/latex2png-PolyFacZp_53437374_-9.gif" alt="$\mathbb{F}_{q^d}^*$" class="latex-inline" style="vertical-align: -9px" width="23" height="21">中随机元素，且<img src="latex/latex2png-PolyFacZp_124930367_-5.gif" alt="$\varepsilon_i=\chi_i(a^e)\in R_i$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">等概率取<img src="latex/latex2png-PolyFacZp_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">或<img src="latex/latex2png-PolyFacZp_117666834_0.gif" alt="$-1$" class="latex-inline" style="vertical-align: 0px" width="19" height="11">,因此<img src="latex/latex2png-PolyFacZp_90178872_.gif" alt="$$\chi(a^e-1)=(\varepsilon_1-1,\ldots,\varepsilon_r-1),$$" class="latex-display" width="580" height="18">
+此时<img src="latex/latex2png-PolyFacZp_226961_0.gif" alt="$a^e-1$" class="latex-inline" style="vertical-align: 0px" width="43" height="11">是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个因子(不一定不可约),除非<img src="latex/latex2png-PolyFacZp_121113845_-2.gif" alt="$\varepsilon_1=\cdots=\varepsilon_r$" class="latex-inline" style="vertical-align: -2px" width="93" height="10">(若有<img src="latex/latex2png-PolyFacZp_153784852_-2.gif" alt="$\varepsilon_i=1$" class="latex-inline" style="vertical-align: -2px" width="42" height="13">则<img src="latex/latex2png-PolyFacZp_264174074_-5.gif" alt="$\chi_i(a^e-1)=0$" class="latex-inline" style="vertical-align: -5px" width="103" height="18">,则<img src="latex/latex2png-PolyFacZp_243557198_-5.gif" alt="$f_i|\gcd(a^e-1,f)$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">.)，而后一种情况发生的概率为<img src="latex/latex2png-PolyFacZp_12248447_-5.gif" alt="$2\cdot(1/2)^r=2^{-r+1}\le 1/2$" class="latex-inline" style="vertical-align: -5px" width="177" height="19">.(<img src="latex/latex2png-PolyFacZp_255106322_-3.gif" alt="$r\ge 2$" class="latex-inline" style="vertical-align: -3px" width="38" height="14">)</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法3<a name="al:EDF"></a></span><span class="theorem-name">(同次因子分解)</span>
+
+<p>输入：同算法<a class="ref-th" href="PolyFacZp.html#al:preEDF">2</a>,</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">在<img src="latex/latex2png-PolyFacZp_197029805_-5.gif" alt="$\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">中的首一不可约因子.</p>
+
+<ol>
+<li>若<img src="latex/latex2png-PolyFacZp_168719380_0.gif" alt="$n=d$" class="latex-inline" style="vertical-align: 0px" width="41" height="12">则输出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,</li>
+
+<li>调用算法<a class="ref-th" href="PolyFacZp.html#al:preEDF">2</a>，输入<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">和<img src="latex/latex2png-PolyFacZp_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">，直至复返回<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个因子<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,</li>
+
+<li>递归调用算法<a class="ref-th" href="PolyFacZp.html#al:preEDF">2</a>,输入<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">和<img src="latex/latex2png-PolyFacZp_20018196_-5.gif" alt="$f/g$" class="latex-inline" style="vertical-align: -5px" width="25" height="18">,输出所有的结果.</li>
+</ol>
+
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例2<a name=""></a></span><span class="theorem-name"></span>
+我们讨论<img src="latex/latex2png-PolyFacZp_152730794_-4.gif" alt="$f=x^4+x^3+x-1$" class="latex-inline" style="vertical-align: -4px" width="142" height="18">,<img src="latex/latex2png-PolyFacZp_291860_0.gif" alt="$d=2$" class="latex-inline" style="vertical-align: 0px" width="39" height="12">(这里我们之所以知道<img src="latex/latex2png-PolyFacZp_291860_0.gif" alt="$d=2$" class="latex-inline" style="vertical-align: 0px" width="39" height="12">，是因为这样的问题很可能是上节因子算法已分解出的<img src="latex/latex2png-PolyFacZp_86275092_-4.gif" alt="$g_2$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">).
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+随机取<img src="latex/latex2png-PolyFacZp_48073708_0.gif" alt="$a=x$" class="latex-inline" style="vertical-align: 0px" width="40" height="8">,则<img src="latex/latex2png-PolyFacZp_46865161_-5.gif" alt="$g_1=\gcd(a,f)=1$" class="latex-inline" style="vertical-align: -5px" width="131" height="18">,
+<img src="latex/latex2png-PolyFacZp_118952751_.gif" alt="$$b=a^{(3^2-1)/2}\bmod f=a^4\bmod f=-x^3-x+1,$$" class="latex-display" width="580" height="22">
+<img src="latex/latex2png-PolyFacZp_196539619_.gif" alt="$$g_2=\gcd(b-1,f)=x^2+1,$$" class="latex-display" width="580" height="20">
+因而找到了一个因子<img src="latex/latex2png-PolyFacZp_186419544_-2.gif" alt="$x^2+1$" class="latex-inline" style="vertical-align: -2px" width="44" height="16">,另一个因子为<img src="latex/latex2png-PolyFacZp_207439992_-5.gif" alt="$f/(x^2+1)=x^2+x+2$" class="latex-inline" style="vertical-align: -5px" width="173" height="19">.
+
+
+</div>
+
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>特征为2的有限域</h3>
+
+<p class="first">以下设<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">是一特征为2的域，且<img src="latex/latex2png-PolyFacZp_136672927_-4.gif" alt="$q=2^k$" class="latex-inline" style="vertical-align: -4px" width="45" height="18">,<img src="latex/latex2png-PolyFacZp_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是一正整数.<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是无平方因子<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式,且是<img src="latex/latex2png-PolyFacZp_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">个<img src="latex/latex2png-PolyFacZp_41841682_0.gif" alt="$d$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">次不可约多项式之积.</p>
+
+<div class="definition">
+<span class="theorem-header">定义2<a name="def:tracepolynomial"></a></span><span class="theorem-name"></span>
+对于正整数<img src="latex/latex2png-PolyFacZp_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">，定义<img src="latex/latex2png-PolyFacZp_115893974_-2.gif" alt="$\field{2}$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">上<img src="latex/latex2png-PolyFacZp_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">阶迹多项式(<img src="latex/latex2png-PolyFacZp_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">th trace polynomial)<img src="latex/latex2png-PolyFacZp_97029100_-2.gif" alt="$T_m$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">为<img src="latex/latex2png-PolyFacZp_86268142_.gif" alt="$$T_m=x^{2^{m-1}}+x^{2^{m-2}}+\cdots+x^4+x^2+x.$$" class="latex-display" width="580" height="20">
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注1<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_149595080_-5.gif" alt="$x^{2m}+x=T_m(T_m+1)$" class="latex-inline" style="vertical-align: -5px" width="165" height="19">.此式可直接验证.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注2<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_8693946_-2.gif" alt="$\forall\alpha\in\field{2^m}$" class="latex-inline" style="vertical-align: -2px" width="66" height="14">,<img src="latex/latex2png-PolyFacZp_220748287_-5.gif" alt="$T_m(\alpha)=0\vee 1$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">,且各有一半概率.此事是因为<img src="latex/latex2png-PolyFacZp_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">一定是<img src="latex/latex2png-PolyFacZp_137090936_-2.gif" alt="$x^{2m}+x$" class="latex-inline" style="vertical-align: -2px" width="58" height="16">的根，因而<img src="latex/latex2png-PolyFacZp_230127893_-5.gif" alt="$T_m(\alpha)=0\vee T_m(\alpha)+1=0$" class="latex-inline" style="vertical-align: -5px" width="199" height="18">,且二者次数均为<img src="latex/latex2png-PolyFacZp_6941769_0.gif" alt="$2^{m-1}$" class="latex-inline" style="vertical-align: 0px" width="36" height="14">，因此各有<img src="latex/latex2png-PolyFacZp_6941769_0.gif" alt="$2^{m-1}$" class="latex-inline" style="vertical-align: 0px" width="36" height="14">个根.
+
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理3<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-PolyFacZp_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">是<img src="latex/latex2png-PolyFacZp_229169362_-5.gif" alt="$R=\field{q}[x]/\idea{f}$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">上随机选取的一个多项式,<img src="latex/latex2png-PolyFacZp_102384763_-5.gif" alt="$b=T_{kd}(a)$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,则<img src="latex/latex2png-PolyFacZp_3825636_-5.gif" alt="$\gcd(b-1,f)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">可能给出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个非平凡因子,且否定概率不超过1/2.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+首先,<img src="latex/latex2png-PolyFacZp_251187759_-5.gif" alt="$\chi_i(b)=\chi_i(T_{kd}(a))=T_{kd}(\chi_i(a))=0\vee 1$" class="latex-inline" style="vertical-align: -5px" width="287" height="18">,而由中国剩余定理所得到的环同构可知,当且仅当<img src="latex/latex2png-PolyFacZp_209625556_-5.gif" alt="$\chi_i(b)(1\le i\le r)$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">同时为0或1时,<img src="latex/latex2png-PolyFacZp_63464534_-2.gif" alt="$b\in\field{2}$" class="latex-inline" style="vertical-align: -2px" width="43" height="14">,此概率为<img src="latex/latex2png-PolyFacZp_246494588_-6.gif" alt="$2\times 2^{-r}=2^{1-r}\le\frac{1}{2}$" class="latex-inline" style="vertical-align: -6px" width="141" height="21">.而当<img src="latex/latex2png-PolyFacZp_21519380_-4.gif" alt="$b\not\in\field{2}$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">时，必有<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">使<img src="latex/latex2png-PolyFacZp_217573200_-5.gif" alt="$\chi_i(b)=1$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,此时<img src="latex/latex2png-PolyFacZp_3825636_-5.gif" alt="$\gcd(b-1,f)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">至少将<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个非平凡因子分开.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法4<a name=""></a></span><span class="theorem-name">(特征为2的域上同次因子分解)</span>
+算法基本同奇素数幂情况,只需将算法<a class="ref-th" href="PolyFacZp.html#al:preEDF">2</a>中第3步改为计算<img src="latex/latex2png-PolyFacZp_102384763_-5.gif" alt="$b=T_{kd}(a)$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">即可.
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例3<a name=""></a></span><span class="theorem-name"></span>
+作为例子，我们计算<img src="latex/latex2png-PolyFacZp_232566285_-5.gif" alt="$f=(x^3+x^2+1)(x^3+x+1)=x^6+x^5+x^4+x^3+x^2+x+1\in\field{2}[x]$" class="latex-inline" style="vertical-align: -5px" width="516" height="19">的同次因子分解,其中<img src="latex/latex2png-PolyFacZp_357396_-1.gif" alt="$d=3$" class="latex-inline" style="vertical-align: -1px" width="39" height="13">,<img src="latex/latex2png-PolyFacZp_117666836_0.gif" alt="$k=1$" class="latex-inline" style="vertical-align: 0px" width="38" height="12">.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+若取<img src="latex/latex2png-PolyFacZp_48073708_0.gif" alt="$a=x$" class="latex-inline" style="vertical-align: 0px" width="40" height="8">,则<img src="latex/latex2png-PolyFacZp_132904475_-5.gif" alt="$b=T_2(a)=x^4+x^2+x\bmod f=x^4+x^2+x$" class="latex-inline" style="vertical-align: -5px" width="331" height="19">,而
+<img src="latex/latex2png-PolyFacZp_20683880_.gif" alt="$$g=\gcd(b,f)=x^3+x+1,$$" class="latex-display" width="580" height="20">
+则<img src="latex/latex2png-PolyFacZp_118004266_-4.gif" alt="$f_1=x^3+x+1$" class="latex-inline" style="vertical-align: -4px" width="111" height="18">,<img src="latex/latex2png-PolyFacZp_30434482_-5.gif" alt="$f_2=f/f_1=x^3+x^2+1$" class="latex-inline" style="vertical-align: -5px" width="174" height="19">.
+
+
+</div>
+
+
+
+<h2><a name="sec7" id="sec7"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一个完整的因子分解算法</h2>
+
+<p class="first">对于有重因子的多项式<img src="latex/latex2png-PolyFacZp_129716138_-5.gif" alt="$f\in\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">，利用上两节的方法可以完全将其分解。如果设<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是首一的，并且<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的首一不可约因子分解为<img src="latex/latex2png-PolyFacZp_90915097_-5.gif" alt="$f=\prod_{i=1}^{m}g_i^{e_i}$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,记<img src="latex/latex2png-PolyFacZp_222259572_-5.gif" alt="$U=\{(g_1,e_1),\ldots,(g_m,e_m)\}$" class="latex-inline" style="vertical-align: -5px" width="198" height="18">表示它的分解，则可利用下面的算法给出此分解：</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法5<a name="factor1"></a></span><span class="theorem-name">(一个完整的分解算法)</span>
+
+<p>输入：首一多项式<img src="latex/latex2png-PolyFacZp_129716138_-5.gif" alt="$f\in\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">为一素数幂.</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的分解<img src="latex/latex2png-PolyFacZp_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">.</p>
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_92031507_-4.gif" alt="$h_0=x,f_0=f,i=0,u=\emptyset$" class="latex-inline" style="vertical-align: -4px" width="193" height="17">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_203196777_-2.gif" alt="$i=i+1$" class="latex-inline" style="vertical-align: -2px" width="61" height="14">,</li>
+
+<li>不同次因子分解：利用快速求幂算法计算<img src="latex/latex2png-PolyFacZp_129709928_-5.gif" alt="$h_i=h_{i-1}^q\bmod f$" class="latex-inline" style="vertical-align: -5px" width="119" height="18">,<img src="latex/latex2png-PolyFacZp_119888020_-5.gif" alt="$g=\gcd(h_i-x,f_{i-1})$" class="latex-inline" style="vertical-align: -5px" width="150" height="18">,</li>
+
+<li>若<img src="latex/latex2png-PolyFacZp_80348900_-4.gif" alt="$g\neq 1$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">则利用算法<a class="ref-th" href="PolyFacZp.html#al:EDF">3</a>求出<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的所有同次首一不可约因子<img src="latex/latex2png-PolyFacZp_6832014_-4.gif" alt="$g_1,g_2,\ldots,g_s$" class="latex-inline" style="vertical-align: -4px" width="89" height="12">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_77367387_-4.gif" alt="$f_i=f_{i-1}$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,并不断除以<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的同次因子求出<img src="latex/latex2png-PolyFacZp_122005618_-4.gif" alt="$g_1,\ldots,g_s$" class="latex-inline" style="vertical-align: -4px" width="66" height="12">的次数<img src="latex/latex2png-PolyFacZp_88451154_-4.gif" alt="$e_1,\ldots,e_s$" class="latex-inline" style="vertical-align: -4px" width="66" height="12">,每求出一个<img src="latex/latex2png-PolyFacZp_53703700_-2.gif" alt="$e_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">,将<img src="latex/latex2png-PolyFacZp_173553838_-5.gif" alt="$(g_i,e_i)$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">添入<img src="latex/latex2png-PolyFacZp_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,</li>
+
+<li>直至<img src="latex/latex2png-PolyFacZp_184322410_-4.gif" alt="$f_i=1$" class="latex-inline" style="vertical-align: -4px" width="42" height="16">,否则转第2步,</li>
+
+<li>输出<img src="latex/latex2png-PolyFacZp_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">.</li>
+</ol>
+
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注3<a name=""></a></span><span class="theorem-name"></span>
+算法中每次循环的过程中，都会先利用不同次因子分解求出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">中所包含的<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">次不可约因子，这些不可约因子的(一次）乘积即为<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,然后依次求出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">中包含<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的不可约因子的次数。
+
+
+</div>
+
+<p>作为前面提过的诸多因子分解算法的应用，下面讨论多项式求根问题。设<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">为<img src="latex/latex2png-PolyFacZp_197029805_-5.gif" alt="$\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">上一非平凡多项式，则下面的算法给出其所有<img src="latex/latex2png-PolyFacZp_68923955_-5.gif" alt="$\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">中的根。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法6<a name="al:finiteroot"></a></span><span class="theorem-name">(<img src="latex/latex2png-PolyFacZp_68923955_-5.gif" alt="$\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上多项式求根算法)</span>
+利用快速求幂算法求出<img src="latex/latex2png-PolyFacZp_257727453_-4.gif" alt="$h=x^q\bmod f$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,令<img src="latex/latex2png-PolyFacZp_3826375_-5.gif" alt="$g=\gcd(h-x,f)$" class="latex-inline" style="vertical-align: -5px" width="124" height="18">,若<img src="latex/latex2png-PolyFacZp_53244963_-4.gif" alt="$\deg g=0$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">则无根，否则利用同次因子分解算法<a class="ref-th" href="PolyFacZp.html#al:EDF">3</a>其出所有不可约因子<img src="latex/latex2png-PolyFacZp_193285017_-4.gif" alt="$x-u_1,\ldots,x-u_r$" class="latex-inline" style="vertical-align: -4px" width="129" height="12">,则<img src="latex/latex2png-PolyFacZp_180049582_-4.gif" alt="$u_1,\ldots,u_r$" class="latex-inline" style="vertical-align: -4px" width="70" height="12">即为其所有<img src="latex/latex2png-PolyFacZp_68923955_-5.gif" alt="$\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上的根。
+
+
+</div>
+
+<p>这样算法就避免了将<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">完全分解，先将其与<img src="latex/latex2png-PolyFacZp_203585192_0.gif" alt="$x^q-x$" class="latex-inline" style="vertical-align: 0px" width="46" height="11">取最大公因子，使得结果只能含有形如<img src="latex/latex2png-PolyFacZp_26368993_-5.gif" alt="$x-u(u\in\mathbb{F}_q)$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">的因子。由此而衍生出下面的<img src="latex/latex2png-PolyFacZp_27044286_-5.gif" alt="$\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">中求整数根的算法，但在引入该算法之前，先有下面的：</p>
+
+<div class="lemma">
+<span class="theorem-header">引理4<a name="le:prezroot"></a></span><span class="theorem-name"></span>
+对于<img src="latex/latex2png-PolyFacZp_27044286_-5.gif" alt="$\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">上非常数<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">，设<img src="latex/latex2png-PolyFacZp_231597701_-5.gif" alt="$\|f\|_{\infty}=A$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,且<img src="latex/latex2png-PolyFacZp_184517248_-1.gif" alt="$u\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="41" height="13">是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的非零根，<img src="latex/latex2png-PolyFacZp_420891_-5.gif" alt="$f=(x-u)g$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">,则<img src="latex/latex2png-PolyFacZp_119964628_-5.gif" alt="$\|g\|_{\infty}\le nA$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-PolyFacZp_115121968_-6.gif" alt="$g=\sum_{i=0}^{n-1}g_ix^i$" class="latex-inline" style="vertical-align: -6px" width="104" height="22">,则<img src="latex/latex2png-PolyFacZp_97788503_-5.gif" alt="$f=(x-u)g=g_{n-1}x^n+(g_{n-2}-ug_{n-1})x^{n-1}+\cdots+(g_0-ug_1)x-ug_0$" class="latex-inline" style="vertical-align: -5px" width="520" height="19">.式中每项系数绝对值均不超过<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">，于是<img src="latex/latex2png-PolyFacZp_42722596_.gif" alt="$$|g_0|\le\frac{A}{|u|},$$" class="latex-display" width="580" height="40"> <img src="latex/latex2png-PolyFacZp_262847161_.gif" alt="$$|g_1|\le\frac{A+|g_0|}{|u|}\le\frac{2A}{|u|},(|u|\ge 1)$$" class="latex-display" width="580" height="41"> <img src="latex/latex2png-PolyFacZp_16585730_.gif" alt="$$\cdots$$" class="latex-display" width="580" height="2"> <img src="latex/latex2png-PolyFacZp_91730517_.gif" alt="$$|g_{n-1}|\le\frac{nA}{|u|}.$$" class="latex-display" width="580" height="40">
+
+<p>于是<img src="latex/latex2png-PolyFacZp_119964628_-5.gif" alt="$\|g\|_{\infty}\le nA$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法7<a name="al:zroot"></a></span><span class="theorem-name">(整数多项式整数根算法)</span>
+
+<p>输入：非常数<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">从多项式<img src="latex/latex2png-PolyFacZp_15161698_-5.gif" alt="$f\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">,且<img src="latex/latex2png-PolyFacZp_231597701_-5.gif" alt="$\|f\|_{\infty}=A$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">.</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_50353232_0.gif" alt="$\mathbb{Z}$" class="latex-inline" style="vertical-align: 0px" width="11" height="12">中<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不同的根.</p>
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_145620909_-5.gif" alt="$B=2n(A+A^2)$" class="latex-inline" style="vertical-align: -5px" width="118" height="19">,任取奇素数<img src="latex/latex2png-PolyFacZp_153601762_-5.gif" alt="$p\in(B+1,2B]$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">.</li>
+
+<li>用算法<a class="ref-th" href="PolyFacZp.html#al:finiteroot">6</a>找出<img src="latex/latex2png-PolyFacZp_71410771_-5.gif" alt="$\mathbb{Z}_p[x]$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">上<img src="latex/latex2png-PolyFacZp_242398203_-4.gif" alt="$f\bmod p$" class="latex-inline" style="vertical-align: -4px" width="58" height="16">的所有根<img src="latex/latex2png-PolyFacZp_223615713_-5.gif" alt="$\{u_1\bmod p,\ldots,u_r\bmod p\}$" class="latex-inline" style="vertical-align: -5px" width="183" height="18">,其中<img src="latex/latex2png-PolyFacZp_181827648_-2.gif" alt="$u_i\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -2px" width="46" height="14">且<img src="latex/latex2png-PolyFacZp_70543624_-5.gif" alt="$|u_i|<p/2(1\le i\le r)$" class="latex-inline" style="vertical-align: -5px" width="148" height="18">.</li>
+
+<li>对于每个<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">，计算<img src="latex/latex2png-PolyFacZp_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">次多项式<img src="latex/latex2png-PolyFacZp_224765596_-5.gif" alt="$v_i\in\mathbb{Z}[x]$" class="latex-inline" style="vertical-align: -5px" width="62" height="18">且<img src="latex/latex2png-PolyFacZp_89657131_-5.gif" alt="$\|v_i\|_{\infty}\le p/2$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">使得<img src="latex/latex2png-PolyFacZp_119652855_-5.gif" alt="$f\equiv (x-u_i)v_i\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="167" height="18">.</li>
+
+<li>输出<img src="latex/latex2png-PolyFacZp_224303257_-5.gif" alt="$\{u_i|1\le i\le r\wedge |u_i|\le A\wedge\|v_i\|_{\infty}\le nA\}$" class="latex-inline" style="vertical-align: -5px" width="284" height="18">.</li>
+</ol>
+
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法有效性)</span>
+不妨设<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">无零根，则对于其任何一个非零根<img src="latex/latex2png-PolyFacZp_184517248_-1.gif" alt="$u\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -1px" width="41" height="13">,其能整除<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的常数项，因而<img src="latex/latex2png-PolyFacZp_37424256_-5.gif" alt="$|u|\le A<p/2$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">,因此所有整数根都可以从其在模<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的象还原出来。现在我们只需证明<img src="latex/latex2png-PolyFacZp_47546043_-5.gif" alt="$f(u_i)=0$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">当且仅当<img src="latex/latex2png-PolyFacZp_67674211_-5.gif" alt="$|u_i|\le A\wedge\|v_i\|_{\infty}\le nA$" class="latex-inline" style="vertical-align: -5px" width="165" height="18">.
+
+<p>若<img src="latex/latex2png-PolyFacZp_47546043_-5.gif" alt="$f(u_i)=0$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,则显然有<img src="latex/latex2png-PolyFacZp_148286130_-5.gif" alt="$|u_i|\le A$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">.可设<img src="latex/latex2png-PolyFacZp_30497209_-5.gif" alt="$f/(x-u_i)=g$" class="latex-inline" style="vertical-align: -5px" width="105" height="18">,则由引理<a class="ref-th" href="PolyFacZp.html#le:prezroot">4</a>知<img src="latex/latex2png-PolyFacZp_147699101_-5.gif" alt="$\|f/(x-u_i)\|_{\infty}=\|g\|_{\infty}\le nA<p/2$" class="latex-inline" style="vertical-align: -5px" width="258" height="18">.但由于<img src="latex/latex2png-PolyFacZp_204313667_-5.gif" alt="$f/(x-u_i)\equiv v_i\pmod{p}$" class="latex-inline" style="vertical-align: -5px" width="175" height="18">,且两边多项式系数均比<img src="latex/latex2png-PolyFacZp_186938388_-5.gif" alt="$p/2$" class="latex-inline" style="vertical-align: -5px" width="25" height="18">小，则有<img src="latex/latex2png-PolyFacZp_23439824_-5.gif" alt="$f/(x-u_i)=v_i$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">,故也有<img src="latex/latex2png-PolyFacZp_230249021_-5.gif" alt="$\|v_i\|_{\infty}\le nA$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">.</p>
+
+<p>另一方面，若<img src="latex/latex2png-PolyFacZp_148286130_-5.gif" alt="$|u_i|\le A$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">且<img src="latex/latex2png-PolyFacZp_230249021_-5.gif" alt="$\|v_i\|_{\infty}\le nA$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">，则<img src="latex/latex2png-PolyFacZp_247924945_-5.gif" alt="$\|(x-u_i)v_i\|_{\infty}\le(1+A)nA<p/2$" class="latex-inline" style="vertical-align: -5px" width="246" height="18">,因此<img src="latex/latex2png-PolyFacZp_257802217_.gif" alt="$$f\equiv(x-u_i)v_i\pmod{p}\Rightarrow f=(x-u_i)v_i.$$" class="latex-display" width="580" height="18"></p>
+
+<p>证毕。
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+<h2><a name="sec8" id="sec8"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>无平方因子分解</h2>
+
+<p class="first">这一小节详细介绍无平方因子分解(Squarefree factorization).我们分两个部分进行.</p>
+
+<h3><a name="sec9" id="sec9"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>特征为零的域上无平方分解</h3>
+
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name"></span>
+多项式<img src="latex/latex2png-PolyFacZp_134897919_-6.gif" alt="$f=\sum_{i=0}^nf_ix^i\in\mathbb{F}[x]$" class="latex-inline" style="vertical-align: -6px" width="150" height="20">(<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">可以是环、域等)的形式微商定义为：<img src="latex/latex2png-PolyFacZp_195256852_.gif" alt="$$f'=\sum_{i=0}^nif_ix^{i-1}.$$" class="latex-display" width="580" height="46">
+
+
+</div>
+
+<p>我们先假定<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">是一特征为零的域，那么我们已经知道若<img src="latex/latex2png-PolyFacZp_205488768_-1.gif" alt="$u\in\mathbb{F}$" class="latex-inline" style="vertical-align: -1px" width="40" height="13">是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的<img src="latex/latex2png-PolyFacZp_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">阶零点，则其是<img src="latex/latex2png-PolyFacZp_134837266_-4.gif" alt="$f'$" class="latex-inline" style="vertical-align: -4px" width="13" height="17">的<img src="latex/latex2png-PolyFacZp_134444052_0.gif" alt="$m-1$" class="latex-inline" style="vertical-align: 0px" width="42" height="11">阶零点，于是<img src="latex/latex2png-PolyFacZp_217484230_-5.gif" alt="$f/f'$" class="latex-inline" style="vertical-align: -5px" width="31" height="18">中将只含<img src="latex/latex2png-PolyFacZp_235178369_-5.gif" alt="$(x-u)$" class="latex-inline" style="vertical-align: -5px" width="50" height="18">的一次因子。当然我们可以在<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">的代数扩域上证明若<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个不可约因子，那么<img src="latex/latex2png-PolyFacZp_107771068_-5.gif" alt="$g|f/f'\wedge g^2\not |f/f'$" class="latex-inline" style="vertical-align: -5px" width="126" height="19">,但我们也可以在任一域<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">内证明如下的命题：</p>
+
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">是任一域，若<img src="latex/latex2png-PolyFacZp_15227214_-5.gif" alt="$g\in\mathbb{F}[x]$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">是<img src="latex/latex2png-PolyFacZp_15161678_-5.gif" alt="$f\in\mathbb{F}[x]$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">的一不可约因子，且<img src="latex/latex2png-PolyFacZp_233661389_-4.gif" alt="$f=g^eh$" class="latex-inline" style="vertical-align: -4px" width="56" height="16">,<img src="latex/latex2png-PolyFacZp_15292750_-5.gif" alt="$h\in\mathbb{F}[x]$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">,<img src="latex/latex2png-PolyFacZp_33715220_-4.gif" alt="$g,h$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">互素，则<img src="latex/latex2png-PolyFacZp_262347752_-5.gif" alt="$g^{e-1}|f'$" class="latex-inline" style="vertical-align: -5px" width="51" height="19">,并且<img src="latex/latex2png-PolyFacZp_47415598_-5.gif" alt="$g^e\not |f'$" class="latex-inline" style="vertical-align: -5px" width="43" height="18">当且仅当<img src="latex/latex2png-PolyFacZp_38563556_-4.gif" alt="$eg'\neq 0$" class="latex-inline" style="vertical-align: -4px" width="51" height="17">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的表达式我们得到<img src="latex/latex2png-PolyFacZp_71829566_.gif" alt="$$f'=ehg^{e-1}g'+g^eh',$$" class="latex-display" width="580" height="19">则显然<img src="latex/latex2png-PolyFacZp_262347752_-5.gif" alt="$g^{e-1}|f'$" class="latex-inline" style="vertical-align: -5px" width="51" height="19">.另一方面<img src="latex/latex2png-PolyFacZp_85947412_-4.gif" alt="$g^e$" class="latex-inline" style="vertical-align: -4px" width="15" height="15">对<img src="latex/latex2png-PolyFacZp_134837266_-4.gif" alt="$f'$" class="latex-inline" style="vertical-align: -4px" width="13" height="17">的整除性等价于对<img src="latex/latex2png-PolyFacZp_173976340_-4.gif" alt="$ehg^{e-1}g'$" class="latex-inline" style="vertical-align: -4px" width="62" height="18">的整除性，即<img src="latex/latex2png-PolyFacZp_68318228_-4.gif" alt="$ g $" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是否能整除<img src="latex/latex2png-PolyFacZp_18445332_-4.gif" alt="$eg'$" class="latex-inline" style="vertical-align: -4px" width="20" height="17">,由于<img src="latex/latex2png-PolyFacZp_89507347_-4.gif" alt="$\deg eg'<\deg g$" class="latex-inline" style="vertical-align: -4px" width="107" height="17">，则<img src="latex/latex2png-PolyFacZp_40512601_-5.gif" alt="$g|eg'\Leftrightarrow eg'=0$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注4<a name=""></a></span><span class="theorem-name"></span>
+我们注意到，在特征为零的域中，当<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是一非平凡因子时，<img src="latex/latex2png-PolyFacZp_77950692_-4.gif" alt="$g'\neq 0$" class="latex-inline" style="vertical-align: -4px" width="43" height="17">,但在特征有限的域中，这一点并不一定正确，如<img src="latex/latex2png-PolyFacZp_37235096_-5.gif" alt="$g=x^3+1\in\mathbb{F}_3[x]$" class="latex-inline" style="vertical-align: -5px" width="131" height="19">的形式微商<img src="latex/latex2png-PolyFacZp_135885842_-4.gif" alt="$g'$" class="latex-inline" style="vertical-align: -4px" width="13" height="17"> <img src="latex/latex2png-PolyFacZp_41907218_2.gif" alt="$=$" class="latex-inline" style="vertical-align: 2px" width="11" height="5"> <img src="latex/latex2png-PolyFacZp_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">.
+
+
+</div>
+
+<p>有了上面的定理，则首先我们可以在特征为零的域上求出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的无平方因子部分(squarefree part).</p>
+
+
+<div class="algorithm">
+<span class="theorem-header">算法8<a name=""></a></span><span class="theorem-name">(无平方因子部分)</span>
+
+<p>对于输入的特征为零的域<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">上的<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次首一多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">，输出<img src="latex/latex2png-PolyFacZp_34372900_-16.gif" alt="$\displaystyle\frac{f}{\gcd(f,f')}$" class="latex-inline" style="vertical-align: -16px" width="69" height="39">.</p>
+
+
+
+</div>
+
+<p>还有一种无平方分解的算法，即若首一非平凡多项式<img src="latex/latex2png-PolyFacZp_210293136_-4.gif" alt="$f=g_1g_2^2\cdots g_m^m$" class="latex-inline" style="vertical-align: -4px" width="108" height="18">,其中<img src="latex/latex2png-PolyFacZp_121612402_-4.gif" alt="$g_1,\ldots,g_m$" class="latex-inline" style="vertical-align: -4px" width="72" height="12">两两互素且无平方因子，<img src="latex/latex2png-PolyFacZp_38228196_-4.gif" alt="$g_m\neq 1$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">,则称<img src="latex/latex2png-PolyFacZp_199034346_-5.gif" alt="$(g_1,\ldots,g_m)$" class="latex-inline" style="vertical-align: -5px" width="83" height="18">为<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的无平方分解(squarefree decompositon).在特征非零的域<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">上有如下一种较快的分解算法。</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法9<a name="al:SFD"></a></span><span class="theorem-name">(无平方分解)</span>
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_207723780_-5.gif" alt="$u=\gcd(f,f')$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">,<img src="latex/latex2png-PolyFacZp_247330761_-5.gif" alt="$v_1=f/u$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,<img src="latex/latex2png-PolyFacZp_174638691_-5.gif" alt="$w_1=f'/u$" class="latex-inline" style="vertical-align: -5px" width="73" height="18">,<img src="latex/latex2png-PolyFacZp_84112404_0.gif" alt="$i=1$" class="latex-inline" style="vertical-align: 0px" width="35" height="12">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_88883347_-5.gif" alt="$h_i=\gcd(v_i,w_i-v_i')$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">,<img src="latex/latex2png-PolyFacZp_190894963_-5.gif" alt="$v_{i+1}=v_i/h_i$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,<img src="latex/latex2png-PolyFacZp_29466409_-5.gif" alt="$w_{i+1}=(w_i-v_i')/h_i$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">,<img src="latex/latex2png-PolyFacZp_203196777_-2.gif" alt="$i=i+1$" class="latex-inline" style="vertical-align: -2px" width="61" height="14">,</li>
+
+<li>若<img src="latex/latex2png-PolyFacZp_37246180_-4.gif" alt="$v_i\neq 1$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">则转第2步,</li>
+
+<li>输出<img src="latex/latex2png-PolyFacZp_226490669_-5.gif" alt="$(h_1,\ldots,h_{i-1})$" class="latex-inline" style="vertical-align: -5px" width="96" height="18">.</li>
+</ol>
+
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注5<a name=""></a></span><span class="theorem-name"></span>
+该算法的思想是简单的,但要给出严格证明比较繁琐.其基本思想是利求导运算将不同次幂的不可约因子的次数变成某项前的系数，利用系数的不同将这些因子一层一层“剥离”出来.这个思想对于理解后面有限域上无平方分解算法的原理是很重要的.下面我们用一个例子来具体展示这一过程.
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例4<a name="prob:SFD"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_171328035_-4.gif" alt="$f=abc^2d^3$" class="latex-inline" style="vertical-align: -4px" width="77" height="18">的无平方分解.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+<img src="latex/latex2png-PolyFacZp_134837266_-4.gif" alt="$f'$" class="latex-inline" style="vertical-align: -4px" width="13" height="17"> <img src="latex/latex2png-PolyFacZp_41907218_2.gif" alt="$=$" class="latex-inline" style="vertical-align: 2px" width="11" height="5"> <img src="latex/latex2png-PolyFacZp_72935500_-2.gif" alt="$ a'bc^2d^3+ab'c^2d^3+2abcc'd^3+3abc^2d^2d'$" class="latex-inline" style="vertical-align: -2px" width="291" height="16">,<img src="latex/latex2png-PolyFacZp_11906577_-5.gif" alt="$u=\gcd(f,f')=cd^2$" class="latex-inline" style="vertical-align: -5px" width="145" height="19">,<img src="latex/latex2png-PolyFacZp_264271796_-5.gif" alt="$v_1=f/u=abcd$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,
+
+<p><img src="latex/latex2png-PolyFacZp_65884254_-5.gif" alt="$w_1=f'/u=a'bcd+ab'cd+2abc'd+3abcd'$" class="latex-inline" style="vertical-align: -5px" width="318" height="18">,<img src="latex/latex2png-PolyFacZp_40027732_-4.gif" alt="$w_1-v_1'$" class="latex-inline" style="vertical-align: -4px" width="54" height="17"> <img src="latex/latex2png-PolyFacZp_41907218_2.gif" alt="$=$" class="latex-inline" style="vertical-align: 2px" width="11" height="5"> <img src="latex/latex2png-PolyFacZp_214196886_-2.gif" alt="$abc'd+2abcd'$" class="latex-inline" style="vertical-align: -2px" width="101" height="15">,</p>
+
+<p><img src="latex/latex2png-PolyFacZp_249808907_-5.gif" alt="$h_1=\gcd(abcd,abc'd+2abcd')=ab$" class="latex-inline" style="vertical-align: -5px" width="256" height="18">,<img src="latex/latex2png-PolyFacZp_214900554_-5.gif" alt="$v_2=v_1/h_1=cd$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,<img src="latex/latex2png-PolyFacZp_123566568_-5.gif" alt="$w_2=(w_1-v_1')/h_1=c'd+2cd'$" class="latex-inline" style="vertical-align: -5px" width="226" height="18">,</p>
+
+<p><img src="latex/latex2png-PolyFacZp_68000598_-4.gif" alt="$w_2-v_2'= cd'$" class="latex-inline" style="vertical-align: -4px" width="97" height="17">,<img src="latex/latex2png-PolyFacZp_198260989_-5.gif" alt="$h_2=\gcd(cd,cd')=c$" class="latex-inline" style="vertical-align: -5px" width="150" height="18">,<img src="latex/latex2png-PolyFacZp_221420508_-5.gif" alt="$v_3=v_2/h_2=d$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">,<img src="latex/latex2png-PolyFacZp_170953819_-5.gif" alt="$w_3=(w_2-v_2')/h_2=d'$" class="latex-inline" style="vertical-align: -5px" width="170" height="18">,</p>
+
+<p><img src="latex/latex2png-PolyFacZp_241912172_-5.gif" alt="$w_3-v_3' = 0$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,<img src="latex/latex2png-PolyFacZp_46143960_-5.gif" alt="$h_3=\gcd(d,0)=d$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">,<img src="latex/latex2png-PolyFacZp_254254300_-5.gif" alt="$v_4=v_3/h_3=1$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">,<img src="latex/latex2png-PolyFacZp_58268035_-5.gif" alt="$w_4=(w_3-v_3')/h=0$" class="latex-inline" style="vertical-align: -5px" width="158" height="18">.</p>
+
+<p>最后输出<img src="latex/latex2png-PolyFacZp_1192161_-5.gif" alt="$(ab,c,d)$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">.</p>
+
+
+</div>
+
+
+<h3><a name="sec10" id="sec10"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>特征有限的域上无平方分解</h3>
+
+<p class="first">我们再来考虑特征有限的域上无平方分解。我们已经看到在有限域上，例如素域<img src="latex/latex2png-PolyFacZp_68858419_-5.gif" alt="$\mathbb{F}_p$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">中，与特征为零的域的区别为对于一个非平凡的多项式<img src="latex/latex2png-PolyFacZp_213065694_-5.gif" alt="$f(\deg f\ge 1)$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">,它的形式微商仍然可能是零。下面探讨一下什么情况下形式微商为零，以及此时的多项式有什么特点。</p>
+
+<p>考虑多项式<img src="latex/latex2png-PolyFacZp_158702803_-6.gif" alt="$f=\sum_{i=0}^nf_ix^i\in\mathbb{F}_p[x]$" class="latex-inline" style="vertical-align: -6px" width="157" height="20">,<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">是一素数.若其微商为零，则<img src="latex/latex2png-PolyFacZp_211771348_-6.gif" alt="$f'=\sum_{i=0}^nif_ix^{i-1}=0$" class="latex-inline" style="vertical-align: -6px" width="160" height="20">,若<img src="latex/latex2png-PolyFacZp_38360292_-4.gif" alt="$f_i\neq 0$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">,则须有<img src="latex/latex2png-PolyFacZp_193831488_-4.gif" alt="$i\bmod p=0$" class="latex-inline" style="vertical-align: -4px" width="85" height="16">,于是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">中所含的单项均是<img src="latex/latex2png-PolyFacZp_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的倍数的幂次项，亦即<img src="latex/latex2png-PolyFacZp_178413477_-6.gif" alt="$f=\sum_{i=0}^{n/p}f_ix^{ip}$" class="latex-inline" style="vertical-align: -6px" width="109" height="23">.于是：<img src="latex/latex2png-PolyFacZp_130175160_.gif" alt="$$f=\sum_{i=0}^{n/p}(f_ix^i)^p=\left(\sum_{i=0}^{n/p}f_ix^i\right)^p.$$" class="latex-display" width="580" height="61">则<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是一个<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">次幂，对于素幂阶的域<img src="latex/latex2png-PolyFacZp_74306304_-5.gif" alt="$\mathbb{F}_{q}(q=p^d)$" class="latex-inline" style="vertical-align: -5px" width="75" height="19">,也有下面的结论：</p>
+
+<div class="theorem">
+<span class="theorem-header">定理4<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">为素数<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的幂<img src="latex/latex2png-PolyFacZp_31557985_-4.gif" alt="$q=p^d$" class="latex-inline" style="vertical-align: -4px" width="45" height="18">,非平凡多项式<img src="latex/latex2png-PolyFacZp_129716138_-5.gif" alt="$f\in\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">且<img src="latex/latex2png-PolyFacZp_254965394_-4.gif" alt="$f'= 0$" class="latex-inline" style="vertical-align: -4px" width="44" height="17">,那么<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">为一<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">次幂.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注6<a name=""></a></span><span class="theorem-name"></span>
+该定理的证明要点在于注意到同<img src="latex/latex2png-PolyFacZp_68858419_-5.gif" alt="$\mathbb{F}_p$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">一样,<img src="latex/latex2png-PolyFacZp_68923955_-5.gif" alt="$\mathbb{F}_q$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">中的元<img src="latex/latex2png-PolyFacZp_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">均有<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">次根.
+
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论1<a name="cor:squarefree1"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_29381712_0.gif" alt="$\mathbb{F}$" class="latex-inline" style="vertical-align: 0px" width="10" height="12">为任一域，则其上非平凡多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是无平方因子的当且仅当<img src="latex/latex2png-PolyFacZp_903876_-5.gif" alt="$\gcd(f,f')=1$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">.
+
+
+</div>
+
+<p>由上面的定理我们知道不可约非平凡多项式的形式微商一定非零。现在前面的算法唯一不可行之处即是对于<img src="latex/latex2png-PolyFacZp_53704351_-5.gif" alt="$p|e_i$" class="latex-inline" style="vertical-align: -5px" width="27" height="18">的情形。设<img src="latex/latex2png-PolyFacZp_241679524_-5.gif" alt="$f=\prod_{i=1}^rf_i^{e_i}$" class="latex-inline" style="vertical-align: -5px" width="91" height="18">,式中<img src="latex/latex2png-PolyFacZp_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">两两互素且不可约,<img src="latex/latex2png-PolyFacZp_263743374_-4.gif" alt="$\deg f=n\ge 1$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,<img src="latex/latex2png-PolyFacZp_88385618_-4.gif" alt="$e_1,\ldots,e_r$" class="latex-inline" style="vertical-align: -4px" width="66" height="12">均是正整数.显然我们有<img src="latex/latex2png-PolyFacZp_117493491_.gif" alt="$$f'= \prod_{p\not |e_i}e_i\frac{f}{f_i}f_i',$$" class="latex-display" width="580" height="46">则<img src="latex/latex2png-PolyFacZp_10914181_-8.gif" alt="$u=\gcd(f,f')=\prod_{p\not |e_i}f_i^{e_i-1}\prod_{p|e_i}f_i^{e_i}$" class="latex-inline" style="vertical-align: -8px" width="267" height="23">,于是<img src="latex/latex2png-PolyFacZp_67679014_.gif" alt="$$v=\frac{f}{u}=\prod_{p\not |e_i}f_i,$$" class="latex-display" width="580" height="46">其中缺少了某些项，这些项的次数均是<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的倍数.</p>
+
+<p>我们注意到多项式<img src="latex/latex2png-PolyFacZp_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">中含有我们需要的这些幂次，且<img src="latex/latex2png-PolyFacZp_9394302_-3.gif" alt="$e_i\le n$" class="latex-inline" style="vertical-align: -3px" width="45" height="14">,则有如下关系：<img src="latex/latex2png-PolyFacZp_247872896_.gif" alt="$$w=u/\gcd(u,v^n)=\prod_{p|e_i}f_i^{e_i},$$" class="latex-display" width="580" height="40"> <img src="latex/latex2png-PolyFacZp_43086866_0.gif" alt="$w$" class="latex-inline" style="vertical-align: 0px" width="12" height="8">为<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">次幂。由此我们可以得到如下算法：</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法10<a name=""></a></span><span class="theorem-name">(有限域无平方部分算法)</span>
+
+<p>输入：有限域<img src="latex/latex2png-PolyFacZp_197029805_-5.gif" alt="$\mathbb{F}_q[x]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">上首一非平凡多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-PolyFacZp_37909539_-4.gif" alt="$\deg f=n$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">.</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的无平方部分<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">.</p>
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_207723780_-5.gif" alt="$u=\gcd(f,f')$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">,<img src="latex/latex2png-PolyFacZp_247499100_-5.gif" alt="$v=f/u$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">,<img src="latex/latex2png-PolyFacZp_222497741_-5.gif" alt="$w=u/\gcd(u,v^n)$" class="latex-inline" style="vertical-align: -5px" width="126" height="18">,</li>
+
+<li>若<img src="latex/latex2png-PolyFacZp_217877484_0.gif" alt="$w=1$" class="latex-inline" style="vertical-align: 0px" width="41" height="11">，则输出<img src="latex/latex2png-PolyFacZp_43021330_0.gif" alt="$v$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">,否则递归调用本算法计算<img src="latex/latex2png-PolyFacZp_64620872_0.gif" alt="$w^{1/p}$" class="latex-inline" style="vertical-align: 0px" width="33" height="15">的无平方部分<img src="latex/latex2png-PolyFacZp_199003116_-2.gif" alt="$v_1$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">.</li>
+
+<li>输出<img src="latex/latex2png-PolyFacZp_199003077_-2.gif" alt="$vv_1$" class="latex-inline" style="vertical-align: -2px" width="23" height="10">.</li>
+</ol>
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例5<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_209460506_-5.gif" alt="$f=a^2b^3c^6d^9\in\mathbb{F}_3[x]$" class="latex-inline" style="vertical-align: -5px" width="147" height="19">的无平方部分,其中<img src="latex/latex2png-PolyFacZp_33492978_-4.gif" alt="$a,b,c,d$" class="latex-inline" style="vertical-align: -4px" width="54" height="16">是互素且不可约首一多项式.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+<img src="latex/latex2png-PolyFacZp_263439783_-4.gif" alt="$f'= 2aa'b^3c^6d^9$" class="latex-inline" style="vertical-align: -4px" width="110" height="18">,<img src="latex/latex2png-PolyFacZp_31075421_-5.gif" alt="$u=\gcd(f,f')=ab^3c^6d^9$" class="latex-inline" style="vertical-align: -5px" width="176" height="19">,<img src="latex/latex2png-PolyFacZp_17696291_-5.gif" alt="$v=f/u=a$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,<img src="latex/latex2png-PolyFacZp_255964733_-5.gif" alt="$w=u/\gcd(u,v^n)=u/a=b^3c^6d^9$" class="latex-inline" style="vertical-align: -5px" width="243" height="19">,
+
+<p>递归调用算法，计算<img src="latex/latex2png-PolyFacZp_147040092_-4.gif" alt="$f_1=w^{1/3}=bc^2d^3$" class="latex-inline" style="vertical-align: -4px" width="129" height="19">,<img src="latex/latex2png-PolyFacZp_45287225_-4.gif" alt="$f_1'= b'c^2d^3+2bcc'd^3$" class="latex-inline" style="vertical-align: -4px" width="149" height="18">,<img src="latex/latex2png-PolyFacZp_230775198_-2.gif" alt="$u_1=cd^3$" class="latex-inline" style="vertical-align: -2px" width="61" height="16">,<img src="latex/latex2png-PolyFacZp_253911724_-2.gif" alt="$v_1=bc$" class="latex-inline" style="vertical-align: -2px" width="52" height="14">,<img src="latex/latex2png-PolyFacZp_233305801_-2.gif" alt="$w_1=d^3$" class="latex-inline" style="vertical-align: -2px" width="56" height="16">,</p>
+
+<p>再次递归调用的结果为<img src="latex/latex2png-PolyFacZp_101611174_-2.gif" alt="$v_2=d$" class="latex-inline" style="vertical-align: -2px" width="47" height="14">.</p>
+
+<p>故最后输出<img src="latex/latex2png-PolyFacZp_34911900_-2.gif" alt="$vv_1v_2=abcd$" class="latex-inline" style="vertical-align: -2px" width="94" height="14">.</p>
+
+
+</div>
+
+<p>上节中的例<a class="ref-th" href="PolyFacZp.html#prob:SFD">4</a>给了我们对于算法<a class="ref-th" href="PolyFacZp.html#al:SFD">9</a>的理解：<img src="latex/latex2png-PolyFacZp_197954540_-2.gif" alt="$v_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">序列包含了要处理的无平方部分，<img src="latex/latex2png-PolyFacZp_257598774_-4.gif" alt="$g=v_1=g_1\cdots g_m$" class="latex-inline" style="vertical-align: -4px" width="129" height="12">,<img src="latex/latex2png-PolyFacZp_201597959_-5.gif" alt="$w_1=\sum_{i=1}^{m}e_ig_i'g/g_i$" class="latex-inline" style="vertical-align: -5px" width="140" height="18">,<img src="latex/latex2png-PolyFacZp_53703700_-2.gif" alt="$e_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">是<img src="latex/latex2png-PolyFacZp_87258132_-4.gif" alt="$g_i$" class="latex-inline" style="vertical-align: -4px" width="13" height="12">在<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">中的次数(在下面的说明中<img src="latex/latex2png-PolyFacZp_183273835_-2.gif" alt="$e_i=i$" class="latex-inline" style="vertical-align: -2px" width="40" height="14">)，每处理一次，<img src="latex/latex2png-PolyFacZp_197954540_-2.gif" alt="$v_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">中去掉次数<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的项，如果是在有限域中，该算法就只能在<img src="latex/latex2png-PolyFacZp_151680020_-4.gif" alt="$m<p$" class="latex-inline" style="vertical-align: -4px" width="45" height="13">时正确，因为它会将模<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">相同的次数归于同一个次数（小于<img src="latex/latex2png-PolyFacZp_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的那个）。即会有下面的结果：<img src="latex/latex2png-PolyFacZp_210810884_.gif" alt="$$h_i=\prod_{j\equiv i\pmod{p}}g_j\quad(1\le i<p),$$" class="latex-display" width="580" height="40"> <img src="latex/latex2png-PolyFacZp_31593905_.gif" alt="$$h_i=1\quad(i\ge p).$$" class="latex-display" width="580" height="18"></p>
+
+<p>假设<img src="latex/latex2png-PolyFacZp_153777172_-4.gif" alt="$m>p$" class="latex-inline" style="vertical-align: -4px" width="45" height="13">,<img src="latex/latex2png-PolyFacZp_255267315_-5.gif" alt="$f=\prod_{i=1}^mg_i^i$" class="latex-inline" style="vertical-align: -5px" width="85" height="19">,则算出<img src="latex/latex2png-PolyFacZp_52955965_-5.gif" alt="$h_1,h_2,\ldots,h_{p-1}$" class="latex-inline" style="vertical-align: -5px" width="111" height="17">后，令<img src="latex/latex2png-PolyFacZp_237151420_-7.gif" alt="$f_1=fh_1^{-1}h_2^{-2}\cdots h_{p-1}^{-p+1}$" class="latex-inline" style="vertical-align: -7px" width="169" height="23">,则
+<img src="latex/latex2png-PolyFacZp_251827379_.gif" alt="$$f_1=\prod_{i\ge p}g_i^{i-i\bmod p},$$" class="latex-display" width="580" height="41">
+于是
+<img src="latex/latex2png-PolyFacZp_69934983_.gif" alt="$$f_1^{\frac{1}{p}}=\prod_{i\ge p}g_i^{\left[\frac{i}{p}\right]}.$$" class="latex-display" width="580" height="47"></p>
+
+<p>如果我们能够构造递归算法以得到<img src="latex/latex2png-PolyFacZp_106666824_-4.gif" alt="$f_1^{1/p}$" class="latex-inline" style="vertical-align: -4px" width="30" height="22">的无平方分解<img src="latex/latex2png-PolyFacZp_200079849_-5.gif" alt="$(s_1,\ldots,s_l)$" class="latex-inline" style="vertical-align: -5px" width="75" height="18">,则显然有
+<img src="latex/latex2png-PolyFacZp_63490821_.gif" alt="$$s_j=\prod_{[\frac{i}{p}]=j}g_i,$$" class="latex-display" width="580" height="45">
+于是<img src="latex/latex2png-PolyFacZp_218159460_-5.gif" alt="$\gcd(h_i,s_j)=g_{jp+i}$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">.</p>
+
+<p>上面给我们提供了一种利用递归进行分解的想法：</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法11<a name=""></a></span><span class="theorem-name">(有限域无平方分解)</span>
+输入：有限域<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上首一不可约多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">
+
+<p>输出:<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的无平方分解<img src="latex/latex2png-PolyFacZp_115328450_-5.gif" alt="$(g_1,g_2,\ldots,g_m)$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">.</p>
+
+<ol>
+<li>调用算法<a class="ref-th" href="PolyFacZp.html#al:SFD">9</a>计算出<img src="latex/latex2png-PolyFacZp_107118220_-5.gif" alt="$h_k(1\le k<p)$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">,若<img src="latex/latex2png-PolyFacZp_241732569_-17.gif" alt="$f_1=\displaystyle\frac{f}{h_1h_2^2\cdots h_k^k}=1$" class="latex-inline" style="vertical-align: -17px" width="147" height="40">则输出<img src="latex/latex2png-PolyFacZp_67304214_-5.gif" alt="$(h_1,\ldots,h_k)$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">,</li>
+
+<li>递归调用本算法得到<img src="latex/latex2png-PolyFacZp_106666824_-4.gif" alt="$f_1^{1/p}$" class="latex-inline" style="vertical-align: -4px" width="30" height="22">的无平方分解<img src="latex/latex2png-PolyFacZp_84952639_-5.gif" alt="$(s_1,s_2,\ldots,s_l)$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">,</li>
+
+<li>令<img src="latex/latex2png-PolyFacZp_38524860_-5.gif" alt="$h_{k+1},\ldots,h_{p-1}=1$" class="latex-inline" style="vertical-align: -5px" width="135" height="17">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_49531121_-5.gif" alt="$g_{jp+i}=\gcd(h_i,s_j)\quad(1\le i<p,1\le j\le l)$" class="latex-inline" style="vertical-align: -5px" width="302" height="18">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_249830993_-17.gif" alt="$g_{jp}=\displaystyle\frac{s_j}{g_{jp+1}g_{jp+2}\cdots g_{(j+1)p-1}}\quad(1\le j\le l)$" class="latex-inline" style="vertical-align: -17px" width="310" height="36">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_202429629_-17.gif" alt="$g_i=\displaystyle\frac{h_i}{g_{p+i}g_{2p+i}\cdots g_{lp+i}}\quad(1\le i<p)$" class="latex-inline" style="vertical-align: -17px" width="261" height="40">,</li>
+
+<li>令<img src="latex/latex2png-PolyFacZp_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">为最大的使<img src="latex/latex2png-PolyFacZp_38228196_-4.gif" alt="$g_m\neq 1$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">的下标，则输出<img src="latex/latex2png-PolyFacZp_199034346_-5.gif" alt="$(g_1,\ldots,g_m)$" class="latex-inline" style="vertical-align: -5px" width="83" height="18">.</li>
+</ol>
+
+
+</div>
+
+
+
+<h2><a name="sec11" id="sec11"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Berlekamp 算法</h2>
+
+<p class="first">最早的多项式时间的算法是Berlekamp于1967至1970年间提出的.为了引入这个算法，我们有必要在此讨论一些代数问题.</p>
+
+<h3><a name="sec12" id="sec12"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Frobenius映射和Berlekamp子代数</h3>
+
+<div class="definition">
+<span class="theorem-header">定义4<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_220427220_-5.gif" alt="$\field{q^n}$" class="latex-inline" style="vertical-align: -5px" width="23" height="17">或<img src="latex/latex2png-PolyFacZp_223283782_-5.gif" alt="$\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">上(<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">为一素数幂)的映射<img src="latex/latex2png-PolyFacZp_257000213_-1.gif" alt="$\sigma:a\mapsto a^q$" class="latex-inline" style="vertical-align: -1px" width="74" height="12">称为Frobenius映射.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注7<a name=""></a></span><span class="theorem-name"></span>
+注意到Frobenius映射<img src="latex/latex2png-PolyFacZp_208953823_0.gif" alt="$\sigma$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是线性映射,且保持加法和乘法.
+
+
+</div>
+
+<p>以下设<img src="latex/latex2png-PolyFacZp_220645908_-5.gif" alt="$f\in\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">是一首一无平方因子多项式,<img src="latex/latex2png-PolyFacZp_37909539_-4.gif" alt="$\deg f=n$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">且<img src="latex/latex2png-PolyFacZp_205984478_-5.gif" alt="$f=\prod_{i=1}^{r}f_i$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,<img src="latex/latex2png-PolyFacZp_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">为两两互素且不可约首一多项式.由中国剩余定理有下面的环同构：<img src="latex/latex2png-PolyFacZp_36457043_.gif" alt="$$R=\field{q}[x]/\idea{f}\cong\field{q}[x]/\idea{f_1}\times\cdots\times\field{q}[x]/\idea{f_r}=R_1\times\cdots\times R_r,$$" class="latex-display" width="580" height="19">并定义同构映射：<img src="latex/latex2png-PolyFacZp_220212484_.gif" alt="$$\chi:a\in R\mapsto(a\bmod f_1,\ldots,a\bmod f_r).$$" class="latex-display" width="580" height="18"></p>
+
+<div class="theorem">
+<span class="theorem-header">定理5<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_208953823_0.gif" alt="$\sigma$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是<img src="latex/latex2png-PolyFacZp_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">上自同构.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由于<img src="latex/latex2png-PolyFacZp_12356549_-4.gif" alt="$\chi$" class="latex-inline" style="vertical-align: -4px" width="10" height="12">是<img src="latex/latex2png-PolyFacZp_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">到<img src="latex/latex2png-PolyFacZp_53311568_-5.gif" alt="$\prod_{i=1}^rR_i$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">的同构,故可由<img src="latex/latex2png-PolyFacZp_208953823_0.gif" alt="$\sigma$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">在<img src="latex/latex2png-PolyFacZp_130845676_-2.gif" alt="$R_i$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">上诱导出相应的线性映射<img src="latex/latex2png-PolyFacZp_195349374_-5.gif" alt="$\sigma_i:a_i\mapsto a_i^q(a_i\in R_i)$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">,于是<img src="latex/latex2png-PolyFacZp_124932967_-5.gif" alt="$\ker\sigma\cong\prod_{i=1}^r\ker\sigma_i$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">.又由于<img src="latex/latex2png-PolyFacZp_130845676_-2.gif" alt="$R_i$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">为域，那么<img src="latex/latex2png-PolyFacZp_176654042_-5.gif" alt="$\sigma_i(a_i)=a_i^q=0$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">仅有<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">重根<img src="latex/latex2png-PolyFacZp_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">,即<img src="latex/latex2png-PolyFacZp_15588696_-2.gif" alt="$\dim\ker\sigma_i=0$" class="latex-inline" style="vertical-align: -2px" width="101" height="14">,因此<img src="latex/latex2png-PolyFacZp_196312128_-1.gif" alt="$\dim\ker\sigma=0$" class="latex-inline" style="vertical-align: -1px" width="96" height="13">,<img src="latex/latex2png-PolyFacZp_208953823_0.gif" alt="$\sigma$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是单射.
+
+<p>又由于<img src="latex/latex2png-PolyFacZp_172786320_-2.gif" alt="$\dim R=\dim\mathrm{Im}\sigma+\dim\ker\sigma=\dim\mathrm{Im}\sigma$" class="latex-inline" style="vertical-align: -2px" width="294" height="14">,则<img src="latex/latex2png-PolyFacZp_208953823_0.gif" alt="$\sigma$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是满射,因而是同构.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义5<a name=""></a></span><span class="theorem-name"></span>
+记<img src="latex/latex2png-PolyFacZp_71024228_-5.gif" alt="$\mathcal{B}=\ker(\sigma-\mathrm{id})$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">,其是<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上<img src="latex/latex2png-PolyFacZp_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">的子代数，也被称为Frobenius子代数.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理6<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_163604314_0.gif" alt="$\dim\mathcal{B}=r$" class="latex-inline" style="vertical-align: 0px" width="75" height="12">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由于<img src="latex/latex2png-PolyFacZp_12356549_-4.gif" alt="$\chi$" class="latex-inline" style="vertical-align: -4px" width="10" height="12">是<img src="latex/latex2png-PolyFacZp_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">到<img src="latex/latex2png-PolyFacZp_53311568_-5.gif" alt="$\prod_{i=1}^rR_i$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">上的同构，因此我们实际上将两者等同看待，则<img src="latex/latex2png-PolyFacZp_208953823_0.gif" alt="$\sigma$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">可使<img src="latex/latex2png-PolyFacZp_164470888_.gif" alt="$$(a\bmod f_1,\ldots,a\bmod f_r)\mapsto(a^q\bmod f_1,\ldots,a^q\bmod f_r).$$" class="latex-display" width="580" height="18"> <img src="latex/latex2png-PolyFacZp_175220943_-1.gif" alt="$\forall a\in\mathcal{B}$" class="latex-inline" style="vertical-align: -1px" width="54" height="13">,记<img src="latex/latex2png-PolyFacZp_182221389_-4.gif" alt="$a_i=a\bmod f_i$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,则<img src="latex/latex2png-PolyFacZp_40207841_-5.gif" alt="$a^q=a\Rightarrow a_i^q=a_i$" class="latex-inline" style="vertical-align: -5px" width="125" height="18">.但是<img src="latex/latex2png-PolyFacZp_183809365_-5.gif" alt="$a_i\in R_i=\field{q}[x]/\langle f_i\rangle$" class="latex-inline" style="vertical-align: -5px" width="144" height="18">,<img src="latex/latex2png-PolyFacZp_130845676_-2.gif" alt="$R_i$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">实际上是一个域，其上的代数方程<img src="latex/latex2png-PolyFacZp_67439166_-1.gif" alt="$x^q-x=0$" class="latex-inline" style="vertical-align: -1px" width="77" height="12">至多有<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">个根，恰好是<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">这个子域，即<img src="latex/latex2png-PolyFacZp_39184287_-5.gif" alt="$a_i\in\field{q}$" class="latex-inline" style="vertical-align: -5px" width="51" height="17">.
+
+<p>于是<img src="latex/latex2png-PolyFacZp_90284972_-5.gif" alt="$a\in\prod_{i=1}^r\field{q}\Rightarrow\mathcal{B}\subset\prod_{i=1}^r\field{q}$" class="latex-inline" style="vertical-align: -5px" width="208" height="18">.而显然后者也属于前者，于是有两者相等，<img src="latex/latex2png-PolyFacZp_163604314_0.gif" alt="$\dim\mathcal{B}=r$" class="latex-inline" style="vertical-align: 0px" width="75" height="12">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义6<a name=""></a></span><span class="theorem-name"></span>
+Frobenius映射在<img src="latex/latex2png-PolyFacZp_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">上自然基<img src="latex/latex2png-PolyFacZp_62307409_-4.gif" alt="$1,x,\ldots,x^{n-1}$" class="latex-inline" style="vertical-align: -4px" width="94" height="18">下的表示矩阵记作<img src="latex/latex2png-PolyFacZp_198731953_-7.gif" alt="$Q\in\field{q}^{n\times n}$" class="latex-inline" style="vertical-align: -7px" width="68" height="19">,称为Petr-Berlekamp矩阵.
+
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论2<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上无平方因子<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">不可约当且仅当<img src="latex/latex2png-PolyFacZp_211755044_-5.gif" alt="$\rank(Q-I)=n-1$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">.
+
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论3<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上无平方因子<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不可约因子的个数为<img src="latex/latex2png-PolyFacZp_87896309_-5.gif" alt="$\ker\mathcal{B}=n-\rank(Q-I)$" class="latex-inline" style="vertical-align: -5px" width="179" height="18">.
+
+
+</div>
+
+<p>取<img src="latex/latex2png-PolyFacZp_133859326_0.gif" alt="$\mathcal{B}$" class="latex-inline" style="vertical-align: 0px" width="16" height="12">的一组基<img src="latex/latex2png-PolyFacZp_96026590_-4.gif" alt="$b_1,b_2,\ldots,b_r$" class="latex-inline" style="vertical-align: -4px" width="86" height="16">,因为<img src="latex/latex2png-PolyFacZp_108232324_-5.gif" alt="$\mathcal{B}=\prod_{i=1}^r\field{q}$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">,可设这组基在<img src="latex/latex2png-PolyFacZp_135461721_-2.gif" alt="$R_1\times R_2\times\cdots\times R_r$" class="latex-inline" style="vertical-align: -2px" width="139" height="14">中的表示矩阵为<img src="latex/latex2png-PolyFacZp_159910260_.gif" alt="$$B=(b_1,\ldots,b_r)=\begin{pmatrix} b_{11} &b_{21} &\cdots &b_{r1}\\ \vdots &\vdots & &\vdots\\ b_{1r} &b_{2r} &\cdots &b_{rr}\end{pmatrix}\in\field{q}^{n\times n}.$$" class="latex-display" width="580" height="79"></p>
+
+<p>此为一可逆矩阵，于是<img src="latex/latex2png-PolyFacZp_216117911_-4.gif" alt="$\forall 1\le i<j\le r$" class="latex-inline" style="vertical-align: -4px" width="104" height="16">,<img src="latex/latex2png-PolyFacZp_189512567_-5.gif" alt="$\exists k(1\le k\le r)$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">使得<img src="latex/latex2png-PolyFacZp_162099055_-5.gif" alt="$b_{ik}\neq b_{jk}$" class="latex-inline" style="vertical-align: -5px" width="62" height="17">,即<img src="latex/latex2png-PolyFacZp_70491352_-5.gif" alt="$b_k\bmod f_i\neq b_k\bmod f_j$" class="latex-inline" style="vertical-align: -5px" width="162" height="17">,则对于<img src="latex/latex2png-PolyFacZp_41233130_-2.gif" alt="$b_k-b_{ik}$" class="latex-inline" style="vertical-align: -2px" width="55" height="14">有<img src="latex/latex2png-PolyFacZp_163475159_.gif" alt="$$f_i|(b_i-b_{ik}),\quad f_j\not |(b_i-b_{ik}).$$" class="latex-display" width="580" height="19"></p>
+
+<p>则<img src="latex/latex2png-PolyFacZp_41241322_-2.gif" alt="$b_i-b_{ik}$" class="latex-inline" style="vertical-align: -2px" width="52" height="14">是可以分离<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个多项式.</p>
+
+<div class="corollary">
+<span class="theorem-header">推论4<a name=""></a></span><span class="theorem-name"></span>
+任取<img src="latex/latex2png-PolyFacZp_133859326_0.gif" alt="$\mathcal{B}$" class="latex-inline" style="vertical-align: 0px" width="16" height="12">的一个基矢<img src="latex/latex2png-PolyFacZp_3503124_-2.gif" alt="$b_k$" class="latex-inline" style="vertical-align: -2px" width="14" height="14">,任取<img src="latex/latex2png-PolyFacZp_39347287_-5.gif" alt="$a\in\field{q}$" class="latex-inline" style="vertical-align: -5px" width="45" height="17">,则<img src="latex/latex2png-PolyFacZp_251099666_-5.gif" alt="$\gcd(b_k-a,f)$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">可能给出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个非平凡因子.
+
+
+</div>
+
+
+<h3><a name="sec13" id="sec13"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Berlekamp算法的实现</h3>
+
+<p class="first">有了上面的准备工作,下面我们可以来引入Berlekamp算法了.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法12<a name="al:berlekamp1"></a></span><span class="theorem-name">(Berlekamp算法1)</span>
+
+<p>输入：<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上无平方因子首一<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次非平凡多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">可能的非平凡因子，或者失败.</p>
+
+<ol>
+<li>构作环<img src="latex/latex2png-PolyFacZp_229169362_-5.gif" alt="$R=\field{q}[x]/\idea{f}$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">上的Frobenius映射的表示矩阵<img src="latex/latex2png-PolyFacZp_43217938_-4.gif" alt="$Q$" class="latex-inline" style="vertical-align: -4px" width="11" height="16">,即Petr-Berlekamp矩阵,</li>
+
+<li>对<img src="latex/latex2png-PolyFacZp_199527404_-4.gif" alt="$Q-I$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">进行高斯消元法，求出<img src="latex/latex2png-PolyFacZp_149935639_-5.gif" alt="$\mathcal{B}=\ker(Q-I)$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">的<img src="latex/latex2png-PolyFacZp_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">个基矢，<img src="latex/latex2png-PolyFacZp_38053922_-4.gif" alt="$b_1,\ldots,b_r$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,</li>
+
+<li>随机任取一个基矢<img src="latex/latex2png-PolyFacZp_91406453_-5.gif" alt="$b_k(1\le k\le r)$" class="latex-inline" style="vertical-align: -5px" width="96" height="18">,任取<img src="latex/latex2png-PolyFacZp_39347287_-5.gif" alt="$a\in\field{q}$" class="latex-inline" style="vertical-align: -5px" width="45" height="17">,对<img src="latex/latex2png-PolyFacZp_43480082_-1.gif" alt="$U$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">中任何一个元素<img src="latex/latex2png-PolyFacZp_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,计算<img src="latex/latex2png-PolyFacZp_266996130_-5.gif" alt="$v=\gcd(b_k-a,u)$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">,若<img src="latex/latex2png-PolyFacZp_80345060_-4.gif" alt="$v\neq 1$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">且<img src="latex/latex2png-PolyFacZp_78510052_-4.gif" alt="$v\neq u$" class="latex-inline" style="vertical-align: -4px" width="40" height="16">,则输出<img src="latex/latex2png-PolyFacZp_43021330_0.gif" alt="$v$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">,否则输出失败.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注8<a name=""></a></span><span class="theorem-name"></span>
+求Petr-Berlekamp矩阵时可先用快速求幂算法算出<img src="latex/latex2png-PolyFacZp_140286981_-4.gif" alt="$x^q\bmod f$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">,进而求出<img src="latex/latex2png-PolyFacZp_79523433_-5.gif" alt="$x^{qi}(1\le i\le n)$" class="latex-inline" style="vertical-align: -5px" width="101" height="19">.
+
+
+</div>
+
+<p>下面是另外一种概率性的Berlekamp算法，能给出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的可能因子.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法13<a name="al:berlekamp2"></a></span><span class="theorem-name">(Berlekamp算法2)</span>
+输入:<img src="latex/latex2png-PolyFacZp_91776726_-5.gif" alt="$\field{q}$" class="latex-inline" style="vertical-align: -5px" width="16" height="17">上无平方因子首一<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次非平凡多项式<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">，其中<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是奇素数幂,
+
+<p>输出:<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的可能非平凡因子,或者失败.</p>
+
+<ol>
+<li>构作环<img src="latex/latex2png-PolyFacZp_229169362_-5.gif" alt="$R=\field{q}[x]/\idea{f}$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">上的Petr-Berlekamp矩阵Q,</li>
+
+<li>对<img src="latex/latex2png-PolyFacZp_199527404_-4.gif" alt="$Q-I$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">进行高斯消元法，求出<img src="latex/latex2png-PolyFacZp_149935639_-5.gif" alt="$\mathcal{B}=\ker(Q-I)$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">的<img src="latex/latex2png-PolyFacZp_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">个基矢<img src="latex/latex2png-PolyFacZp_38053922_-4.gif" alt="$b_1,\ldots,b_r$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">,</li>
+
+<li>随机任取互相独立的<img src="latex/latex2png-PolyFacZp_164107396_-5.gif" alt="$c_1,c_2,\ldots,c_r\in\field{q}$" class="latex-inline" style="vertical-align: -5px" width="124" height="17">,计算<img src="latex/latex2png-PolyFacZp_206652012_-5.gif" alt="$a=\sum_{i=1}^rc_ib_i$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_180640382_-5.gif" alt="$g_1=\gcd(b,f)$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">,若<img src="latex/latex2png-PolyFacZp_38233316_-4.gif" alt="$g_1\neq 1$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">且<img src="latex/latex2png-PolyFacZp_37381348_-4.gif" alt="$g_1\neq f$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">则输出<img src="latex/latex2png-PolyFacZp_86209556_-4.gif" alt="$g_1$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_190546147_-4.gif" alt="$b=a^{(q-1)/2}\bmod f$" class="latex-inline" style="vertical-align: -4px" width="136" height="19">,<img src="latex/latex2png-PolyFacZp_264444664_-5.gif" alt="$g_2=\gcd(b-1,f)$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,</li>
+
+<li>若<img src="latex/latex2png-PolyFacZp_38233060_-4.gif" alt="$g_2\neq 1$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">且<img src="latex/latex2png-PolyFacZp_37381092_-4.gif" alt="$g_2\neq f$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">则输出<img src="latex/latex2png-PolyFacZp_86275092_-4.gif" alt="$g_2$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">,否则输出失败.</li>
+</ol>
+
+
+</div>
+
+<p>该算法的正确性证明与奇素数幂同次因子分解类似,只须注意到<img src="latex/latex2png-PolyFacZp_233121911_-5.gif" alt="$\chi_i(a)\in\field{q}$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,这样我们有<img src="latex/latex2png-PolyFacZp_253606358_-1.gif" alt="$a^{(q-1)/2}=0\vee 1$" class="latex-inline" style="vertical-align: -1px" width="113" height="16">,两种取值等概率为<img src="latex/latex2png-PolyFacZp_198937580_-5.gif" alt="$1/2$" class="latex-inline" style="vertical-align: -5px" width="23" height="18">.</p>
+
+<p>为了引入特征为2的域上与算法<a class="ref-th" href="PolyFacZp.html#al:berlekamp2">13</a>对应的Berlekamp算法,我们先回忆定义<a class="ref-th" href="PolyFacZp.html#def:tracepolynomial">2</a>中对<img src="latex/latex2png-PolyFacZp_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">阶迹多项式(mth trace polynoial)<img src="latex/latex2png-PolyFacZp_97029100_-2.gif" alt="$T_m$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">的定义.</p>
+
+<div class="lemma">
+<span class="theorem-header">引理5<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-PolyFacZp_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">是<img src="latex/latex2png-PolyFacZp_149935639_-5.gif" alt="$\mathcal{B}=\ker(Q-I)$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">中任意一随机元素,<img src="latex/latex2png-PolyFacZp_68987211_-5.gif" alt="$b=T_k(a)$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,则<img src="latex/latex2png-PolyFacZp_3825636_-5.gif" alt="$\gcd(b-1,f)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">可能给出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的一个非平凡因子,且失败概率不超过<img src="latex/latex2png-PolyFacZp_198937580_-5.gif" alt="$1/2$" class="latex-inline" style="vertical-align: -5px" width="23" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+首先,由于<img src="latex/latex2png-PolyFacZp_76458464_-5.gif" alt="$\chi_i(a)\in\field{2^k}=\field{q}$" class="latex-inline" style="vertical-align: -5px" width="121" height="18">,有<img src="latex/latex2png-PolyFacZp_115420098_-5.gif" alt="$\chi_i(T_k(a))=T_k(\chi_i(a))=0\vee 1$" class="latex-inline" style="vertical-align: -5px" width="215" height="18">,且两值等概率.当且仅当<img src="latex/latex2png-PolyFacZp_26515323_-5.gif" alt="$\chi_i(b)$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">全为<img src="latex/latex2png-PolyFacZp_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">或<img src="latex/latex2png-PolyFacZp_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">时,<img src="latex/latex2png-PolyFacZp_240027100_-1.gif" alt="$b=0\vee 1$" class="latex-inline" style="vertical-align: -1px" width="63" height="13">,此概率为<img src="latex/latex2png-PolyFacZp_129741804_-5.gif" alt="$2^{1-r}\le 1/2$" class="latex-inline" style="vertical-align: -5px" width="79" height="19">.
+
+<p>易知,当且仅当<img src="latex/latex2png-PolyFacZp_21519380_-4.gif" alt="$b\not\in\field{2}$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">时,<img src="latex/latex2png-PolyFacZp_3825636_-5.gif" alt="$\gcd(b-1,f)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">含有<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的非平凡因子.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>于是对于特征为2的域<img src="latex/latex2png-PolyFacZp_138107215_-5.gif" alt="$\field{q}=\field{2^k}$" class="latex-inline" style="vertical-align: -5px" width="63" height="17">,有如下的：</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法14<a name="al:berlekamp3"></a></span><span class="theorem-name">(Berlekamp算法3)</span>
+将算法<a class="ref-th" href="PolyFacZp.html#al:berlekamp2">13</a>中第5步改为计算<img src="latex/latex2png-PolyFacZp_68987211_-5.gif" alt="$b=T_k(a)$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,其余不变.
+
+
+</div>
+
+<p>有限域上的因子分解算法在近些年有很多进展,如1998年Kaltofen和Shoup的Subquadratic算法(见<span class="cite"><a class="cite" href="PolyFacZp.html#ref-2" name="cite-2">[2]</a></span>),Huang和Pan的Fast rectangular matrix multiplication算法(见<span class="cite"><a class="cite" href="PolyFacZp.html#ref-3" name="cite-3">[3]</a></span>)等等.</p>
+
+
+
+<h2><a name="sec14" id="sec14"></a>
+<a href="PolyFacZp.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>素性检测和不可约多项式的构造</h2>
+
+<p class="first">若要检测一个多项式的不可约性,前面的因子分解的方法当然也是适用的,只需相应修改算法终止即可,下面再介绍一个比较简单的检测方法.</p>
+
+<div class="corollary">
+<span class="theorem-header">推论5<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次非平凡多项式<img src="latex/latex2png-PolyFacZp_220645908_-5.gif" alt="$f\in\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">是不可约的当且仅当:
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_71783417_-5.gif" alt="$f|x^{q^n}-x$" class="latex-inline" style="vertical-align: -5px" width="68" height="20">,</li>
+
+<li><img src="latex/latex2png-PolyFacZp_41348035_-1.gif" alt="$\forall$" class="latex-inline" style="vertical-align: -1px" width="10" height="13">素数<img src="latex/latex2png-PolyFacZp_125068033_-5.gif" alt="$t(t|n)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">,<img src="latex/latex2png-PolyFacZp_243537320_-5.gif" alt="$\gcd(x^{q^{n/t}}-x,f)=1$" class="latex-inline" style="vertical-align: -5px" width="150" height="23">.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由定理<a class="ref-th" href="PolyFacZp.html#th:fermat2">2</a>知道上面两个条件是必要的.再设两个条件满足,则首先由条件1知<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的不可约因子次数均整除<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,不妨设有这样一个非平凡因子<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">且<img src="latex/latex2png-PolyFacZp_100104875_-4.gif" alt="$\deg g=d<n$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,则存在<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的素因子<img src="latex/latex2png-PolyFacZp_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">使<img src="latex/latex2png-PolyFacZp_202508930_-5.gif" alt="$d|(n/t)$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">,于是<img src="latex/latex2png-PolyFacZp_158370125_-5.gif" alt="$g|\gcd(x^{q^{n/t}}-x,f)$" class="latex-inline" style="vertical-align: -5px" width="135" height="23">,矛盾,于是<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">不可约.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法15<a name=""></a></span><span class="theorem-name">(有限域上素性检测)</span>
+
+<p>输入：<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-PolyFacZp_220645908_-5.gif" alt="$f\in\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,</p>
+
+<p>输出：不可约或可约.</p>
+
+<ol>
+<li>调用快速求幂算法计算<img src="latex/latex2png-PolyFacZp_140286981_-4.gif" alt="$x^q\bmod f$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">,</li>
+
+<li>调用模复合算法计算<img src="latex/latex2png-PolyFacZp_227800671_-4.gif" alt="$a=x^{q^n}\bmod f$" class="latex-inline" style="vertical-align: -4px" width="106" height="19">,若<img src="latex/latex2png-PolyFacZp_78318820_-4.gif" alt="$a\neq x$" class="latex-inline" style="vertical-align: -4px" width="40" height="16">则输出可约,</li>
+
+<li>对于所有<img src="latex/latex2png-PolyFacZp_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的素因子<img src="latex/latex2png-PolyFacZp_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">,调用模复合算法计算<img src="latex/latex2png-PolyFacZp_188832933_-4.gif" alt="$a=x^{q^{n/t}}\bmod f$" class="latex-inline" style="vertical-align: -4px" width="117" height="22">,若<img src="latex/latex2png-PolyFacZp_268193273_-5.gif" alt="$\gcd(b-x,f)\neq 1$" class="latex-inline" style="vertical-align: -5px" width="121" height="18">则输出可约,</li>
+
+<li>输出不可约.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注9<a name=""></a></span><span class="theorem-name"></span>
+模复合(Modular composition)算法是取自快速线性代数中的算法,这里不加证明地给出如下.
+
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法16<a name="al:fastmodularcomposition"></a></span><span class="theorem-name">(模复合算法)</span>
+
+<p>输入：<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,<img src="latex/latex2png-PolyFacZp_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,<img src="latex/latex2png-PolyFacZp_48593303_-5.gif" alt="$h\in R[x]$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">,且<img src="latex/latex2png-PolyFacZp_247357934_-4.gif" alt="$\deg g$" class="latex-inline" style="vertical-align: -4px" width="36" height="16">,<img src="latex/latex2png-PolyFacZp_161672156_-4.gif" alt="$\deg h<\deg f=n$" class="latex-inline" style="vertical-align: -4px" width="130" height="16">,<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">首一且不为零,</p>
+
+<p>输出：<img src="latex/latex2png-PolyFacZp_261723773_-5.gif" alt="$g(h)\bmod f\in R[x]$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">.</p>
+
+<ol>
+<li><img src="latex/latex2png-PolyFacZp_253806728_-5.gif" alt="$m=[n^{1/2}]$" class="latex-inline" style="vertical-align: -5px" width="75" height="20">,并设<img src="latex/latex2png-PolyFacZp_225429035_-9.gif" alt="$g=\sum_{0\le i<m}g_ix^{mi}$" class="latex-inline" style="vertical-align: -9px" width="135" height="23">,其中<img src="latex/latex2png-PolyFacZp_181751577_-5.gif" alt="$g_0,\ldots,g_{m-1}\in R[x]$" class="latex-inline" style="vertical-align: -5px" width="140" height="18">的次数少于<img src="latex/latex2png-PolyFacZp_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">,</li>
+
+<li>对于<img src="latex/latex2png-PolyFacZp_145790844_-3.gif" alt="$2\le i\le m$" class="latex-inline" style="vertical-align: -3px" width="72" height="15">,计算<img src="latex/latex2png-PolyFacZp_157096965_-4.gif" alt="$h^i\bmod f$" class="latex-inline" style="vertical-align: -4px" width="65" height="18">,</li>
+
+<li>令<img src="latex/latex2png-PolyFacZp_187117060_-1.gif" alt="$A\in R^{m\times n}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">,其行由<img src="latex/latex2png-PolyFacZp_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">,<img src="latex/latex2png-PolyFacZp_241751035_-4.gif" alt="$h\bmod f$" class="latex-inline" style="vertical-align: -4px" width="60" height="16">,<img src="latex/latex2png-PolyFacZp_202219025_3.gif" alt="$\cdots$" class="latex-inline" style="vertical-align: 3px" width="17" height="2">,<img src="latex/latex2png-PolyFacZp_105335903_-4.gif" alt="$h^{m-1}\bmod f$" class="latex-inline" style="vertical-align: -4px" width="89" height="18">的系数组成,<img src="latex/latex2png-PolyFacZp_187117060_-1.gif" alt="$B\in R^{m\times m}$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">,其行由<img src="latex/latex2png-PolyFacZp_188241055_-4.gif" alt="$g_0,\ldots,g_{m-1}$" class="latex-inline" style="vertical-align: -4px" width="88" height="12">的系数组成,计算<img src="latex/latex2png-PolyFacZp_220671490_-1.gif" alt="$BA\in R^{m\times n}$" class="latex-inline" style="vertical-align: -1px" width="89" height="13">,</li>
+
+<li>对于<img src="latex/latex2png-PolyFacZp_86955153_-3.gif" alt="$0\le i<m$" class="latex-inline" style="vertical-align: -3px" width="72" height="15">循环,令<img src="latex/latex2png-PolyFacZp_265063404_-2.gif" alt="$r_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="10">为<img src="latex/latex2png-PolyFacZp_140735506_0.gif" alt="$BA$" class="latex-inline" style="vertical-align: 0px" width="25" height="12">第<img src="latex/latex2png-PolyFacZp_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">行作为系数构成的多项式,并计算<img src="latex/latex2png-PolyFacZp_253142818_-9.gif" alt="$b=\sum_{0\le i<m}r_i(h^m)^i\bmod f$" class="latex-inline" style="vertical-align: -9px" width="198" height="23">(利用Horner规则),</li>
+
+<li>输出b.</li>
+</ol>
+
+
+</div>
+
+<p>构造一个不可约多项式的最基本的想法就是随机取一个多项式,再对其作素性检测。于是我们必须要对随机选取取到不可约多项式的概率进行估计。首先我们有下面的引理：</p>
+
+<div class="lemma">
+<span class="theorem-header">引理6<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是一素数幂,<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是正整数,则<img src="latex/latex2png-PolyFacZp_223283782_-5.gif" alt="$\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">中<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次首一不可约多项式的个数<img src="latex/latex2png-PolyFacZp_256140082_-5.gif" alt="$I(n,q)$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">满足<img src="latex/latex2png-PolyFacZp_26181515_.gif" alt="$$\frac{q^n-2q^{n/2}}{n}\le I(n,q)\le\frac{q^n}{n},$$" class="latex-display" width="580" height="38">因此<img src="latex/latex2png-PolyFacZp_223283782_-5.gif" alt="$\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">中<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次首一多项式不可约的概率<img src="latex/latex2png-PolyFacZp_238580756_-4.gif" alt="$p_n$" class="latex-inline" style="vertical-align: -4px" width="17" height="12">满足<img src="latex/latex2png-PolyFacZp_136330392_.gif" alt="$$\frac{1}{n}(1-\frac{2}{q^{n/2}})\le p_n\le\frac{1}{n}.$$" class="latex-display" width="580" height="38">
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+令<img src="latex/latex2png-PolyFacZp_70808596_-4.gif" alt="$f_n$" class="latex-inline" style="vertical-align: -4px" width="15" height="16">为<img src="latex/latex2png-PolyFacZp_223283782_-5.gif" alt="$\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">中所有首一不可约<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式的乘积，则<img src="latex/latex2png-PolyFacZp_17546474_-5.gif" alt="$\deg f_n=n\cdot I(n,q)$" class="latex-inline" style="vertical-align: -5px" width="135" height="18">,由定理<a class="ref-th" href="PolyFacZp.html#th:fermat2">2</a>知<img src="latex/latex2png-PolyFacZp_190531425_.gif" alt="$$x^{q^n}-x=\prod_{d|n}f_d=f_n\cdot\prod_{d|n\wedge d<n}f_d.$$" class="latex-display" width="580" height="40">
+
+<p>对上式取次数，有<img src="latex/latex2png-PolyFacZp_107064497_.gif" alt="$$q^n=\deg f_n+\sum_{d|n\wedge d<n}\deg f_d,$$" class="latex-display" width="580" height="40">因此<img src="latex/latex2png-PolyFacZp_29921242_.gif" alt="$$q^n\ge\deg f_n=n\cdot I(n,q)\Rightarrow I(n,q)\le\frac{q^n}{n}.$$" class="latex-display" width="580" height="34"></p>
+
+<p>另外,<img src="latex/latex2png-PolyFacZp_132714418_.gif" alt="$$\sum_{d|n\wedge d<n}\deg f_d\le\sum_{1\le d\le n/2}\deg f_d\le\sum_{1\le d\le n/2}q^d<\frac{q^{n/2+1}-1}{q-1}\le 2q^{n/2},$$" class="latex-display" width="580" height="50">因此<img src="latex/latex2png-PolyFacZp_18942534_.gif" alt="$$n\cdot I(n,q)=\deg f_n=q^n-\sum_{d|n\wedge d<n}\deg f_d\ge q^n-2q^{n/2},$$" class="latex-display" width="580" height="40">由此可得到关于<img src="latex/latex2png-PolyFacZp_256140082_-5.gif" alt="$I(n,q)$" class="latex-inline" style="vertical-align: -5px" width="45" height="18">下界的估计.</p>
+
+<p>由于<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次首一多项式共有<img src="latex/latex2png-PolyFacZp_254309396_-4.gif" alt="$q^n$" class="latex-inline" style="vertical-align: -4px" width="16" height="15">个,因此不可约的概率为<img src="latex/latex2png-PolyFacZp_15019441_-5.gif" alt="$p_n=I(n,q)/q^n$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">,由此得到关于概率的估计.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注10<a name=""></a></span><span class="theorem-name"></span>
+由于<img src="latex/latex2png-PolyFacZp_411556_-8.gif" alt="$q^n=\sum_{d|n}\deg f_d$" class="latex-inline" style="vertical-align: -8px" width="122" height="21">,则由Mobius反演公式有(<span class="cite"><a class="cite" href="PolyFacZp.html#ref-4" name="cite-4">[4]</a></span>p26-29)<img src="latex/latex2png-PolyFacZp_86997989_.gif" alt="$$\deg f_n=\sum_{d|n}\mu\left(\frac{n}{d}\right)q^d.$$" class="latex-display" width="580" height="43">
+
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法17<a name=""></a></span><span class="theorem-name">(产生不可约多项式算法)</span>
+
+<p>输入：素数幂<img src="latex/latex2png-PolyFacZp_42693650_-4.gif" alt="$q$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">和正整数<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,</p>
+
+<p>输出：一个随机生成的<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次首一多项式<img src="latex/latex2png-PolyFacZp_220645908_-5.gif" alt="$f\in\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">.</p>
+
+<ol>
+<li>随机生成一个首一<img src="latex/latex2png-PolyFacZp_75658260_0.gif" alt="$ n $" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式<img src="latex/latex2png-PolyFacZp_220645908_-5.gif" alt="$f\in\field{q}[x]$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,</li>
+
+<li>对于<img src="latex/latex2png-PolyFacZp_88878477_-5.gif" alt="$i=1,\ldots,[n/2]$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">循环,令<img src="latex/latex2png-PolyFacZp_146459654_-5.gif" alt="$g_i=\gcd(x^{q^i}-x,f)$" class="latex-inline" style="vertical-align: -5px" width="141" height="22">,若<img src="latex/latex2png-PolyFacZp_38229220_-4.gif" alt="$g_i\neq 1$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">则转1,</li>
+
+<li>输出<img src="latex/latex2png-PolyFacZp_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">.</li>
+</ol>
+
+
+</div>
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="PolyFacZp.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<p class="ref"><a class="ref" href="PolyFacZp.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Erich Kaltofen and Victor Shoup, </span><span class="ref-title">Subquadratic-Time Factoring of Polynomials over Finite Fields, </span><span class="ref-journal">Mathematics of Computation </span><span class="ref-volume">67 </span><span class="ref-year">(1998), </span><span class="ref-pages">1179-1197. </span></p>
+<p class="ref"><a class="ref" href="PolyFacZp.html#cite-3" name="ref-3">[3]</a><span class="ref-author">Xiaohan HUANG and Victor Y. Pan, </span><span class="ref-title">Fast Rectangular Matrix Multiplication and Applications, </span><span class="ref-journal">Journal of Complexity </span><span class="ref-volume">14 </span><span class="ref-year">(1998), </span><span class="ref-pages">257-299. </span></p>
+<p class="ref"><a class="ref" href="PolyFacZp.html#cite-4" name="ref-4">[4]</a><span class="ref-author">冯克勤, </span><span class="ref-title-chs">初等数论及应用, </span><span class="ref-publisher">北京师范大学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2003. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3. 基于UDP协议的网络程序</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch37.html" title="第 37 章 socket编程" /><link rel="prev" href="ch37s02.html" title="2. 基于TCP协议的网络程序" /><link rel="next" href="ch37s04.html" title="4. UNIX Domain Socket IPC" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. 基于UDP协议的网络程序</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch37s02.html">上一页</a> </td><th width="60%" align="center">第 37 章 socket编程</th><td width="20%" align="right"> <a accesskey="n" href="ch37s04.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2904144"></a>3. 基于UDP协议的网络程序</h2></div></div></div><p>下图是典型的UDP客户端/服务器通讯过程（该图出自<a class="xref" href="bi01.html#bibli.unp" title="UNIX Network Programming, Volume 1: The Sockets Networking API">[<abbr class="abbrev">UNPv13e</abbr>]</a>）。</p><div class="figure"><a id="id2904159"></a><p class="title"><b>图 37.3. UDP通讯流程</b></p><div class="figure-contents"><div><img src="images/socket.udpflowchart.png" alt="UDP通讯流程" /></div></div></div><br class="figure-break" /><p>以下是简单的UDP服务器和客户端程序。</p><pre class="programlisting">/* server.c */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;netinet/in.h&gt;
+#include "wrap.h"
+
+#define MAXLINE 80
+#define SERV_PORT 8000
+
+int main(void)
+{
+	struct sockaddr_in servaddr, cliaddr;
+	socklen_t cliaddr_len;
+	int sockfd;
+	char buf[MAXLINE];
+	char str[INET_ADDRSTRLEN];
+	int i, n;
+
+	sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port = htons(SERV_PORT);
+    
+	Bind(sockfd, (struct sockaddr *)&amp;servaddr, sizeof(servaddr));
+
+	printf("Accepting connections ...\n");
+	while (1) {
+		cliaddr_len = sizeof(cliaddr);
+		n = recvfrom(sockfd, buf, MAXLINE, 0, (struct sockaddr *)&amp;cliaddr, &amp;cliaddr_len);
+		if (n == -1)
+			perr_exit("recvfrom error");
+		printf("received from %s at PORT %d\n",
+		       inet_ntop(AF_INET, &amp;cliaddr.sin_addr, str, sizeof(str)),
+		       ntohs(cliaddr.sin_port));
+    
+		for (i = 0; i &lt; n; i++)
+			buf[i] = toupper(buf[i]);
+		n = sendto(sockfd, buf, n, 0, (struct sockaddr *)&amp;cliaddr, sizeof(cliaddr));
+		if (n == -1)
+			perr_exit("sendto error");
+	}
+}</pre><pre class="programlisting">/* client.c */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;netinet/in.h&gt;
+#include "wrap.h"
+
+#define MAXLINE 80
+#define SERV_PORT 8000
+
+int main(int argc, char *argv[])
+{
+	struct sockaddr_in servaddr;
+	int sockfd, n;
+	char buf[MAXLINE];
+	char str[INET_ADDRSTRLEN];
+	socklen_t servaddr_len;
+    
+	sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+
+	bzero(&amp;servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	inet_pton(AF_INET, "127.0.0.1", &amp;servaddr.sin_addr);
+	servaddr.sin_port = htons(SERV_PORT);
+    
+	while (fgets(buf, MAXLINE, stdin) != NULL) {
+		n = sendto(sockfd, buf, strlen(buf), 0, (struct sockaddr *)&amp;servaddr, sizeof(servaddr));
+		if (n == -1)
+			perr_exit("sendto error");
+
+		n = recvfrom(sockfd, buf, MAXLINE, 0, NULL, 0);
+		if (n == -1)
+			perr_exit("recvfrom error");
+	  
+		Write(STDOUT_FILENO, buf, n);
+	}
+
+	Close(sockfd);
+	return 0;
+}</pre><p>由于UDP不需要维护连接，程序逻辑简单了很多，但是UDP协议是不可靠的，实际上有很多保证通讯可靠性的机制需要在应用层实现。</p><p>编译运行server，在两个终端里各开一个client与server交互，看看server是否具有并发服务的能力。用Ctrl+C关闭server，然后再运行server，看此时client还能否和server联系上。和前面TCP程序的运行结果相比较，体会无连接的含义。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch37s02.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch37.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch37s04.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">2. 基于TCP协议的网络程序 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 4. UNIX Domain Socket IPC</td></tr></table></div></body></html>

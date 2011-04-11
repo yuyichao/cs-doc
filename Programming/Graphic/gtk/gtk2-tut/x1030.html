@@ -1,0 +1,757 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>微调按钮 Spin Buttons</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="杂项构件"
+HREF="c816.html"><LINK
+REL="PREVIOUS"
+TITLE="文本输入构件 Text Entries"
+HREF="x1002.html"><LINK
+REL="NEXT"
+TITLE="组合框 Combo Box"
+HREF="x1126.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1002.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>杂项构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1126.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-SPINBUTTONS">微调按钮 Spin Buttons</H1
+><P
+>微调按钮(Spin Button)构件通常用于让用户从一个取值范围你选择一个值。它由一个文本输入框和旁边的向上和向下两个按钮组成。点击某一个按钮会让文本输入框你的数值大小在一定范围你改变。文本输入框里也可以直接输入一个特定值。</P
+><P
+>微调按钮构件允许其中的数值没有小数位或具有指定的小数位，并且数值可以按一种可配置的方式增加或减小。在按钮较长时间呈按下状态时，构件的数值会根据工具按下时间的长短加速变化。</P
+><P
+>微调按钮用一个<A
+HREF="c628.html"
+>调整对象</A
+>来维护该按钮能够取值的范围。微调按钮构件因此而具有了很强大的功能。</P
+><P
+>下面是创建调整对象的函数。这里的用意是展示其中所包含的数值的意义：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkObject *gtk_adjustment_new( gdouble value,
+                               gdouble lower,
+                               gdouble upper,
+                               gdouble step_increment,
+                               gdouble page_increment,
+                               gdouble page_size );</PRE
+></TD
+></TR
+></TABLE
+><P
+>调整对象的这些属性在微调按钮构件中有如下用处：</P
+><P
+></P
+><UL
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>value</TT
+>：微调按钮构件的初始值</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>lower</TT
+>：构件允许的最小值</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>upper</TT
+>：构件允许的最大值</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>step_increment</TT
+>：当鼠标左键按下时构件一次增加/减小的值</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>page_increment</TT
+>：当鼠标右键按下时构件一次增加/减小的值</P
+></LI
+><LI
+><P
+> <TT
+CLASS="LITERAL"
+>page_size</TT
+>：没有用到</P
+></LI
+></UL
+><P
+>另外，当用鼠标中间键点击按钮时，可以直接跳到构件的<TT
+CLASS="LITERAL"
+>upper</TT
+>或<TT
+CLASS="LITERAL"
+>lower</TT
+>值。下面看看怎样创建一个微调按钮构件：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_spin_button_new( GtkAdjustment *adjustment,
+                                gdouble         climb_rate,
+                                guint          digits );</PRE
+></TD
+></TR
+></TABLE
+><P
+>其中的<TT
+CLASS="LITERAL"
+>climb_rate</TT
+>参数是介于0.0和1.0间的值，指明构件数值变化的加速度(长时间按住按钮，数值会加速变化)。<TT
+CLASS="LITERAL"
+>digits</TT
+>参数指定要显示的值的小数位数。</P
+><P
+>创建微调按钮构件之后，还可以用下面的函数对其重新配置：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_configure( GtkSpinButton *spin_button,
+                                GtkAdjustment *adjustment,
+                                gdouble        climb_rate,
+                                guint          digits );</PRE
+></TD
+></TR
+></TABLE
+><P
+>其中<TT
+CLASS="LITERAL"
+>spin_button</TT
+>参数就是要重新配置的构件。其它的参数与创建时的意思相同。</P
+><P
+>使用下面的两个函数可以设置或获取构件内部使用的调整对象：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_set_adjustment( GtkSpinButton  *spin_button,
+                                     GtkAdjustment  *adjustment );
+
+GtkAdjustment *gtk_spin_button_get_adjustment( GtkSpinButton *spin_button );</PRE
+></TD
+></TR
+></TABLE
+><P
+>显示数值的小数位数可以用下面的函数改变：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_set_digits( GtkSpinButton *spin_button,
+                                 guint          digits) ;</PRE
+></TD
+></TR
+></TABLE
+><P
+>微调按钮上当前显示的数值可以用下面的函数改变：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_set_value( GtkSpinButton *spin_button,
+                                gdouble        value );</PRE
+></TD
+></TR
+></TABLE
+><P
+>微调按钮构件的当前值可以以浮点数或整数的形式获得。使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gdouble gtk_spin_button_get_value ( GtkSpinButton *spin_button );
+
+gint gtk_spin_button_get_value_as_int( GtkSpinButton *spin_button );</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果想以当前值为基数改变微调按钮的值，可以使用下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_spin( GtkSpinButton *spin_button,
+                           GtkSpinType    direction,
+                           gdouble        increment );</PRE
+></TD
+></TR
+></TABLE
+><P
+>其中，<TT
+CLASS="LITERAL"
+>direction</TT
+>参数可以取下面的值：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  GTK_SPIN_STEP_FORWARD
+  GTK_SPIN_STEP_BACKWARD
+  GTK_SPIN_PAGE_FORWARD
+  GTK_SPIN_PAGE_BACKWARD
+  GTK_SPIN_HOME
+  GTK_SPIN_END
+  GTK_SPIN_USER_DEFINED</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个函数中包含的一些功能将在下面详细介绍。其中的许多设置都使用了与微调按钮构件相关联的调整对象的值。</P
+><P
+><TT
+CLASS="LITERAL"
+>GTK_SPIN_STEP_FORWARD</TT
+>和<TT
+CLASS="LITERAL"
+>GTK_SPIN_STEP_BACKWARD</TT
+>将构件的值按<TT
+CLASS="LITERAL"
+>increment</TT
+>参数指定的数值增大或减小，除非<TT
+CLASS="LITERAL"
+>increment</TT
+>参数是0。这种情况下，构件的值将按与其相关联的调整对象的<TT
+CLASS="LITERAL"
+>step_increment</TT
+>值改变。</P
+><P
+><TT
+CLASS="LITERAL"
+>GTK_SPIN_PAGE_FORWARD</TT
+>和<TT
+CLASS="LITERAL"
+>GTK_SPIN_PAGE_BACKWARD</TT
+>只是简单地按<TT
+CLASS="LITERAL"
+>increment</TT
+>参数改变微调按钮构件的值。</P
+><P
+><TT
+CLASS="LITERAL"
+>GTK_SPIN_HOME</TT
+>将构件的值设置为相关联调整对象的范围的最小值。</P
+><P
+><TT
+CLASS="LITERAL"
+>GTK_SPIN_END</TT
+>将构件的值设置为相关联调整对象的范围的最大值。</P
+><P
+><TT
+CLASS="LITERAL"
+>GTK_SPIN_USER_DEFINED</TT
+>简单地按指定的数值改变构件的数值。</P
+><P
+>介绍了设置和获取微调按钮的范围属性的函数，下面再介绍影响微调按钮构件的外观和行为的函数。</P
+><P
+>要介绍的第一个函数就是限制微调按钮构件的文本框只能输入数值。这样就阻止了用户输入任何非法的字符：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_set_numeric( GtkSpinButton *spin_button,
+                                  gboolean       numeric );</PRE
+></TD
+></TR
+></TABLE
+><P
+>可以设置让微调按钮构件在upper和lower之间循环。也就是当达到最大值后再向上调整回到最小值，当达到最小值后再向下调整变为最大值。可以用下面的函数实现：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_set_wrap( GtkSpinButton *spin_button,
+                               gboolean       wrap );</PRE
+></TD
+></TR
+></TABLE
+><P
+>可以设置让微调按钮构件将其值圆整到最接近<TT
+CLASS="LITERAL"
+>step_increment</TT
+>的值(在该微调按钮构件使用的调整对象中设置的)。用下面的函数实现：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_set_snap_to_ticks( GtkSpinButton  *spin_button,
+                                        gboolean        snap_to_ticks );</PRE
+></TD
+></TR
+></TABLE
+><P
+>微调按钮构件的更新方式可以用下面的函数改变：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_set_update_policy( GtkSpinButton  *spin_button,
+                                    GtkSpinButtonUpdatePolicy policy );</PRE
+></TD
+></TR
+></TABLE
+><P
+>其中<TT
+CLASS="LITERAL"
+>policy</TT
+>参数可以取<TT
+CLASS="LITERAL"
+>GTK_UPDATE_ALWAYS</TT
+>或<TT
+CLASS="LITERAL"
+>GTK_UPDATE_IF_VALID</TT
+>。</P
+><P
+>这些更新方式影响微调按钮构件在解析插入文本并将其值与调整对象的值同步时的行为。</P
+><P
+>在<TT
+CLASS="LITERAL"
+>GTK_UPDATE_IF_VALID</TT
+>方式下，微调按钮构件只有在输入文本是其调整对象指定范围你合法的值时才进行更新，否则文本会被重置为当前的值。</P
+><P
+>在<TT
+CLASS="LITERAL"
+>GTK_UPDATE_ALWAYS</TT
+>方式下，我们将忽略在文本转换为数值时的错误。</P
+><P
+>最后，可以强行要求微调按钮构件更新自己：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_spin_button_update( GtkSpinButton  *spin_button );</PRE
+></TD
+></TR
+></TABLE
+><P
+>下面是一个使用微调按钮构件的示例。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/spinbutton.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdio.h&#62;
+#include &#60;gtk/gtk.h&#62;
+
+static GtkWidget *spinner1;
+
+void toggle_snap( GtkWidget     *widget,
+		  GtkSpinButton *spin )
+{
+  gtk_spin_button_set_snap_to_ticks (spin, GTK_TOGGLE_BUTTON (widget)-&#62;active);
+}
+
+void toggle_numeric( GtkWidget *widget,
+		     GtkSpinButton *spin )
+{
+  gtk_spin_button_set_numeric (spin, GTK_TOGGLE_BUTTON (widget)-&#62;active);
+}
+
+void change_digits( GtkWidget *widget,
+	            GtkSpinButton *spin )
+{
+  gtk_spin_button_set_digits (GTK_SPIN_BUTTON (spinner1),
+                              gtk_spin_button_get_value_as_int (spin));
+}
+
+void get_value( GtkWidget *widget,
+		gpointer data )
+{
+  gchar buf[32];
+  GtkLabel *label;
+  GtkSpinButton *spin;
+
+  spin = GTK_SPIN_BUTTON (spinner1);
+  label = GTK_LABEL (g_object_get_data (G_OBJECT (widget), "user_data"));
+  if (GPOINTER_TO_INT (data) == 1)
+    sprintf (buf, "%d", gtk_spin_button_get_value_as_int (spin));
+  else
+    sprintf (buf, "%0.*f", spin-&#62;digits,
+             gtk_spin_button_get_value (spin));
+  gtk_label_set_text (label, buf);
+}
+
+
+int main( int   argc,
+          char *argv[] )
+{
+  GtkWidget *window;
+  GtkWidget *frame;
+  GtkWidget *hbox;
+  GtkWidget *main_vbox;
+  GtkWidget *vbox;
+  GtkWidget *vbox2;
+  GtkWidget *spinner2;
+  GtkWidget *spinner;
+  GtkWidget *button;
+  GtkWidget *label;
+  GtkWidget *val_label;
+  GtkAdjustment *adj;
+
+  /* 初始化 */
+  gtk_init (&#38;argc, &#38;argv);
+
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+
+  g_signal_connect (G_OBJECT (window), "destroy",
+		    G_CALLBACK (gtk_main_quit),
+		    NULL);
+
+  gtk_window_set_title (GTK_WINDOW (window), "Spin Button");
+
+  main_vbox = gtk_vbox_new (FALSE, 5);
+  gtk_container_set_border_width (GTK_CONTAINER (main_vbox), 10);
+  gtk_container_add (GTK_CONTAINER (window), main_vbox);
+  
+  frame = gtk_frame_new ("Not accelerated");
+  gtk_box_pack_start (GTK_BOX (main_vbox), frame, TRUE, TRUE, 0);
+  
+  vbox = gtk_vbox_new (FALSE, 0);
+  gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
+  gtk_container_add (GTK_CONTAINER (frame), vbox);
+  
+  /* 日、月、年微调器 */
+  
+  hbox = gtk_hbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 5);
+  
+  vbox2 = gtk_vbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox), vbox2, TRUE, TRUE, 5);
+  
+  label = gtk_label_new ("Day :");
+  gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
+  gtk_box_pack_start (GTK_BOX (vbox2), label, FALSE, TRUE, 0);
+  
+  adj = (GtkAdjustment *) gtk_adjustment_new (1.0, 1.0, 31.0, 1.0,
+					      5.0, 0.0);
+  spinner = gtk_spin_button_new (adj, 0, 0);
+  gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), TRUE);
+  gtk_box_pack_start (GTK_BOX (vbox2), spinner, FALSE, TRUE, 0);
+  
+  vbox2 = gtk_vbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox), vbox2, TRUE, TRUE, 5);
+  
+  label = gtk_label_new ("Month :");
+  gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
+  gtk_box_pack_start (GTK_BOX (vbox2), label, FALSE, TRUE, 0);
+  
+  adj = (GtkAdjustment *) gtk_adjustment_new (1.0, 1.0, 12.0, 1.0,
+					      5.0, 0.0);
+  spinner = gtk_spin_button_new (adj, 0, 0);
+  gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), TRUE);
+  gtk_box_pack_start (GTK_BOX (vbox2), spinner, FALSE, TRUE, 0);
+  
+  vbox2 = gtk_vbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox), vbox2, TRUE, TRUE, 5);
+  
+  label = gtk_label_new ("Year :");
+  gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
+  gtk_box_pack_start (GTK_BOX (vbox2), label, FALSE, TRUE, 0);
+  
+  adj = (GtkAdjustment *) gtk_adjustment_new (1998.0, 0.0, 2100.0,
+					      1.0, 100.0, 0.0);
+  spinner = gtk_spin_button_new (adj, 0, 0);
+  gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
+  gtk_widget_set_size_request (spinner, 55, -1);
+  gtk_box_pack_start (GTK_BOX (vbox2), spinner, FALSE, TRUE, 0);
+  
+  frame = gtk_frame_new ("Accelerated");
+  gtk_box_pack_start (GTK_BOX (main_vbox), frame, TRUE, TRUE, 0);
+  
+  vbox = gtk_vbox_new (FALSE, 0);
+  gtk_container_set_border_width (GTK_CONTAINER (vbox), 5);
+  gtk_container_add (GTK_CONTAINER (frame), vbox);
+  
+  hbox = gtk_hbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 5);
+  
+  vbox2 = gtk_vbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox), vbox2, TRUE, TRUE, 5);
+  
+  label = gtk_label_new ("Value :");
+  gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
+  gtk_box_pack_start (GTK_BOX (vbox2), label, FALSE, TRUE, 0);
+  
+  adj = (GtkAdjustment *) gtk_adjustment_new (0.0, -10000.0, 10000.0,
+					      0.5, 100.0, 0.0);
+  spinner1 = gtk_spin_button_new (adj, 1.0, 2);
+  gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner1), TRUE);
+  gtk_widget_set_size_request (spinner1, 100, -1);
+  gtk_box_pack_start (GTK_BOX (vbox2), spinner1, FALSE, TRUE, 0);
+  
+  vbox2 = gtk_vbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox), vbox2, TRUE, TRUE, 5);
+  
+  label = gtk_label_new ("Digits :");
+  gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
+  gtk_box_pack_start (GTK_BOX (vbox2), label, FALSE, TRUE, 0);
+  
+  adj = (GtkAdjustment *) gtk_adjustment_new (2, 1, 5, 1, 1, 0);
+  spinner2 = gtk_spin_button_new (adj, 0.0, 0);
+  gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner2), TRUE);
+  g_signal_connect (G_OBJECT (adj), "value_changed",
+		    G_CALLBACK (change_digits),
+		    spinner2);
+  gtk_box_pack_start (GTK_BOX (vbox2), spinner2, FALSE, TRUE, 0);
+  
+  hbox = gtk_hbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 5);
+  
+  button = gtk_check_button_new_with_label ("Snap to 0.5-ticks");
+  g_signal_connect (G_OBJECT (button), "clicked",
+		    G_CALLBACK (toggle_snap),
+		    spinner1);
+  gtk_box_pack_start (GTK_BOX (vbox), button, TRUE, TRUE, 0);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
+  
+  button = gtk_check_button_new_with_label ("Numeric only input mode");
+  g_signal_connect (G_OBJECT (button), "clicked",
+		    G_CALLBACK (toggle_numeric),
+		    spinner1);
+  gtk_box_pack_start (GTK_BOX (vbox), button, TRUE, TRUE, 0);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
+  
+  val_label = gtk_label_new ("");
+  
+  hbox = gtk_hbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 5);
+  button = gtk_button_new_with_label ("Value as Int");
+  g_object_set_data (G_OBJECT (button), "user_data", val_label);
+  g_signal_connect (G_OBJECT (button), "clicked",
+		    G_CALLBACK (get_value),
+		    GINT_TO_POINTER (1));
+  gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 5);
+  
+  button = gtk_button_new_with_label ("Value as Float");
+  g_object_set_data (G_OBJECT (button), "user_data", val_label);
+  g_signal_connect (G_OBJECT (button), "clicked",
+		    G_CALLBACK (get_value),
+		    GINT_TO_POINTER (2));
+  gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 5);
+  
+  gtk_box_pack_start (GTK_BOX (vbox), val_label, TRUE, TRUE, 0);
+  gtk_label_set_text (GTK_LABEL (val_label), "0");
+  
+  hbox = gtk_hbox_new (FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (main_vbox), hbox, FALSE, TRUE, 0);
+  
+  button = gtk_button_new_with_label ("Close");
+  g_signal_connect_swapped (G_OBJECT (button), "clicked",
+                            G_CALLBACK (gtk_widget_destroy),
+			    window);
+  gtk_box_pack_start (GTK_BOX (hbox), button, TRUE, TRUE, 5);
+
+  gtk_widget_show_all (window);
+
+  /* 进入事件循环 */
+  gtk_main ();
+    
+  return 0;
+}&#13;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1002.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1126.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>文本输入构件 Text Entries</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c816.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>组合框 Combo Box</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

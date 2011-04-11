@@ -1,0 +1,254 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;16&#160;章&#160;块驱动-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch15s05.html" title="15.5.&#160;快速参考">
+<link rel="next" href="ch16s02.html" title="16.2.&#160;块设备操作">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;16&#160;章&#160;块驱动</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch15s05.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch16s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="BlockDrivers.chap"></a>第&#160;16&#160;章&#160;块驱动</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch16.html#Registration.sect1">16.1. 注册</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16.html#BlockDriverRegistration.sect2">16.1.1. 块驱动注册</a></span></dt>
+<dt><span class="sect2"><a href="ch16.html#DiskRegistration.sect2">16.1.2. 磁盘注册</a></span></dt>
+<dt><span class="sect2"><a href="ch16.html#Initializationinsbull.sect2">16.1.3. 在 sbull 中的初始化</a></span></dt>
+<dt><span class="sect2"><a href="ch16.html#ANoteonSectorSizes.sect2">16.1.4. 注意扇区大小</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s02.html">16.2. 块设备操作</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16s02.html#TheopenandreleaseMethods.sect2">16.2.1. open 和 release 方法</a></span></dt>
+<dt><span class="sect2"><a href="ch16s02.html#SupportingRemovableMedia.sect2">16.2.2. 支持可移出的介质</a></span></dt>
+<dt><span class="sect2"><a href="ch16s02.html#TheioctlMethod.sect2">16.2.3. ioctl 方法</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s03.html">16.3. 请求处理</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16s03.html#IntroductiontotherequestMethod.sect2">16.3.1. 对请求方法的介绍</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#ASimplerequestMethod.sect2">16.3.2. 一个简单的请求方法</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#RequestQueues.sect2">16.3.3. 请求队列</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#TheAnatomyofaRequest.sect2">16.3.4. 请求的分析</a></span></dt>
+<dt><span class="sect2"><a href="ch16s03.html#RequestCompletionFunctions.sect2">16.3.5. 请求完成函数</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s04.html">16.4. 一些其他的细节</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch16s04.html#CommandPrePreparation.sect2">16.4.1. 命令预准备</a></span></dt>
+<dt><span class="sect2"><a href="ch16s04.html#TaggedCommandQueueing.sect2">16.4.2. 被标识的命令排队</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch16s05.html">16.5. 快速参考</a></span></dt>
+</dl>
+</div>
+<p>至今, 我们的讨论一直限于字符驱动. 但是, 在 Linux 系统中有其他类型的驱动, 并且到时候要开阔我们的视野了. 因此, 本章讨论块驱动.</p>
+<p>一个块驱动提供设备的存取, 这个设备可随机地以固定大小的块传送数据--主要的是, 磁盘驱动. Linux 内核看待块设备根本上不同于字符设备; 结果, 块驱动有明显不同的接口和它们自己的特殊的挑战.</p>
+<p>高效的块驱动对于性能是重要的 -- 不只是为在用户应用程序的明确的读和写. 现代的有虚拟内存的系统将不需要的数据移向(希望地)二级存储中, 它常常是一个磁盘驱动器. 块驱动是核心内存和二级存储之间的导管; 因此, 它们可组成虚拟内存子系统的一部分. 虽然可能编写一个块驱动不必知道 struct page 和其他重要的内存概念, 任何需要编写一个高性能驱动的人必须使用 15 章所涉及的内容.</p>
+<p>许多块层的设计围绕性能. 许多字符设备可在它们的最大速率以下运行, 并且系统的总体性能不被影响. 但是如果它的块 I/O 子系统没有调整好, 系统不能很好地运行. Linux 块驱动接口允许你从一个块设备中获得最多输出, 但是有必要, 施加一些你必须处理的复杂性. 好的是, 2.6 的块接口比之前的内核很大提高.</p>
+<p>如你会期望的, 本章的讨论集中在一个例子驱动, 它实现了一个面向块的, 基于内存的设备. 基本上, 它是一个 ramdisk. 内核硬件包含了一个很高级的 ramdisk 实现, 但是我们的驱动(称为 sbull)让我们演示创建一个块驱动, 同时最小化无关的复杂性.</p>
+<p>在进入细节之前, 我们精确定义几个词语. 一个块是一个固定大小的数据块, 大小由内核决定. 块常常是 4096 字节, 但是这个值可依赖体系和使用的文件系统而变化. 一个扇区, 相反, 是一个小块, 它的大小常常由底层的硬件决定. 内核期望处理实现 512-字节扇区的设备. 如果你的设备使用不同的大小, 内核调整并且避免产生硬件无法处理的 I/O 请求. 但是, 它值得记住, 任何时候内核给你一个扇区号, 它是工作在一个 512-字节扇区的世界. 如果你使用不同的硬件扇区大小, 你必须相应地调整内核的扇区号. 我们在 sbull 驱动中见如何完成这个.</p>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="Registration.sect1"></a>16.1.&#160;注册</h2></div></div></div>
+<p>块驱动, 象字符驱动, 必须使用一套注册接口来使内核可使用它们的设备. 概念是类似的, 但是块设备注册的细节是都不同的. 你有一整套新的数据结构和设备操作要学习.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="BlockDriverRegistration.sect2"></a>16.1.1.&#160;块驱动注册</h3></div></div></div>
+<p>大部分块驱动采取的第一步是注册它们自己到内核. 这个任务的函数是 register_blkdev(在 &lt;linux/fs.h&gt; 中定义):</p>
+<pre class="programlisting">
+int register_blkdev(unsigned int major, const char *name); 
+</pre>
+<p>参数是你的设备要使用的主编号和关联的名子(内核将显示它在 /proc/devices). 如果 major 传递为0, 内核分配一个新的主编号并且返回它给调用者. 如常, 自 register_blkdev 的一个负的返回值指示已发生了一个错误.</p>
+<p>取消注册的对应函数是:</p>
+<pre class="programlisting">
+int unregister_blkdev(unsigned int major, const char *name); 
+</pre>
+<p>这里, 参数必须匹配传递给 register_blkdev 的那些, 否则这个函数返回 -EINVAL 并且什么都不注销.</p>
+<p>在2.6内核, 对 register_blkdev 的调用完全是可选的. 由 register_blkdev 所进行的功能已随时间正在减少; 这个调用唯一的任务是 (1) 如果需要, 分配一个动态主编号, 并且 (2) 在 /proc/devices 创建一个入口. 在将来的内核, register_blkdev 可能被一起去掉. 同时, 但是, 大部分驱动仍然调用它; 它是惯例.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="DiskRegistration.sect2"></a>16.1.2.&#160;磁盘注册</h3></div></div></div>
+<p>虽然 register_blkdev 可用来获得一个主编号, 它不使任何磁盘驱动器对系统可用. 有一个分开的注册接口你必须使用来管理单独的驱动器. 使用这个接口要求熟悉一对新结构, 这就是我们的起点.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Blockdeviceoperations.sect3"></a>16.1.2.1.&#160;块设备操作</h4></div></div></div>
+<p>字符设备通过 file_ 操作结构使它们的操作对系统可用. 一个类似的结构用在块设备上; 它是 struct block_device_operations, 定义在 &lt;linux/fs.h&gt;. 下面是一个对这个结构中的成员的简短的概览; 当我们进入 sbull 驱动的细节时详细重新访问它们.</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>int (*open)(struct inode *inode, struct file *filp);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int (*release)(struct inode *inode, struct file *filp);</span></span></dt>
+<dd><p>就像它们的字符驱动对等体一样工作的函数; 无论何时设备被打开和关闭都调用它们. 一个字符驱动可能通过启动设备或者锁住门(为可移出的介质)来响应一个 open 调用. 如果你将介质锁入设备, 你当然应当在 release 方法中解锁.</p></dd>
+<dt><span class="term"><span>int (*ioctl)(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);</span></span></dt>
+<dd><p>实现 ioctl 系统调用的方法. 但是, 块层首先解释大量的标准请求; 因此大部分的块驱动 ioctl 方法相当短.</p></dd>
+<dt><span class="term"><span>int (*media_changed) (struct gendisk *gd);</span></span></dt>
+<dd>
+<p>被内核调用来检查是否用户已经改变了驱动器中的介质的方法, 如果是这样返回一个非零值. 显然, 这个方法仅适用于支持可移出的介质的驱动器(并且最好给驱动一个"介质被改变"标志); 在其他情况下可被忽略.</p>
+<p>struct gendisk 参数是内核任何表示单个磁盘; 我们将在下一节查看这个结构.</p>
+</dd>
+<dt><span class="term"><span>int (*revalidate_disk) (struct gendisk *gd);</span></span></dt>
+<dd><p>revalidate_disk 方法被调用来响应一个介质改变; 它给驱动一个机会来进行需要的任何工作使新介质准备好使用. 这个函数返回一个 int 值, 但是值被内核忽略.</p></dd>
+<dt><span class="term"><span>struct module *owner;</span></span></dt>
+<dd><p>一个指向拥有这个结构的模块的指针; 它应当常常被初始化为 THIS_MODULE.</p></dd>
+</dl></div>
+<p>专心的读者可能已注意到这个列表一个有趣的省略: 没有实际读或写数据的函数. 在块 I/O 子系统, 这些操作由请求函数处理, 它们应当有它们自己的一节并且在本章后面讨论. 在我们谈论服务请求之前, 我们必须完成对磁盘注册的讨论.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Thegendiskstructure.sect3"></a>16.1.2.2.&#160;gendisk 结构</h4></div></div></div>
+<p>struct gendisk (定义于 &lt;linux/genhd.h&gt;) 是单独一个磁盘驱动器的内核表示. 事实上, 内核还使用 gendisk 来表示分区, 但是驱动作者不必知道这点. struct gedisk 中有几个成员, 必须被一个块驱动初始化:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>int major;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int first_minor;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>int minors;</span></span></dt>
+<dd><p>描述被磁盘使用的设备号的成员. 至少, 一个驱动器必须使用最少一个次编号. 如果你的驱动会是可分区的, 但是(并且大部分应当是), 你要分配一个次编号给每个可能的分区. 次编号的一个普通的值是 16, 它允许"全磁盘"设备盒 15 个分区. 一些磁盘驱动使用 64 个次编号给每个设备.</p></dd>
+<dt><span class="term"><span>char disk_name[32];</span></span></dt>
+<dd><p>应当被设置为磁盘驱动器名子的成员. 它出现在 /proc/partitions 和 sysfs.</p></dd>
+<dt><span class="term"><span>struct block_device_operations *fops;</span></span></dt>
+<dd><p>来自前一节的设备操作集合.</p></dd>
+<dt><span class="term"><span>struct request_queue *queue;</span></span></dt>
+<dd><p>被内核用来管理这个设备的 I/O 请求的结构; 我们在"请求处理"一节中检查它.</p></dd>
+<dt><span class="term"><span>int flags;</span></span></dt>
+<dd><p>一套标志(很少使用), 描述驱动器的状态. 如果你的设备有可移出的介质, 你应当设置 GENHD_FL_REMOVABLE. CD-ROM 驱动器可设置 GENHD_FL_CD. 如果, 由于某些原因, 你不需要分区信息出现在 /proc/partitions, 设置 GENHD_FL_SUPPRESS_PARTITIONS_INFO.</p></dd>
+<dt><span class="term"><span>sector_t capacity;</span></span></dt>
+<dd><p>这个驱动器的容量, 以512-字节扇区来计. sector_t 类型可以是 64 位宽. 驱动不应当直接设置这个成员; 相反, 传递扇区数目给 set_capacity.</p></dd>
+<dt><span class="term"><span>void *private_data;</span></span></dt>
+<dd><p>块驱动可使用这个成员作为一个指向它们自己内部数据的指针.</p></dd>
+</dl></div>
+<p>内核提供了一小部分函数来使用 gendisk 结构. 我们在这里介绍它们, 接着看 sbull 如何使用它们来使系统可使用它的磁盘驱动器.</p>
+<p>struct gendisk 是一个动态分配的结构, 它需要特别的内核操作来初始化; 驱动不能自己分配这个结构. 相反, 你必须调用:</p>
+<pre class="programlisting">
+struct gendisk *alloc_disk(int minors); 
+</pre>
+<p>minors 参数应当是这个磁盘使用的次编号数目; 注意你不能在之后改变 minors 成员并且期望事情可以正确工作. 当不再需要一个磁盘时, 它应当被释放, 使用:</p>
+<pre class="programlisting">
+void del_gendisk(struct gendisk *gd);
+</pre>
+<p>一个 gendisk 是一个被引用计数的结构(它含有一个 kobject). 有 get_disk 和 put_disk 函数用来操作引用计数, 但是驱动应当从不需要做这个. 正常地, 对 del_gendisk 的调用去掉了最一个 gendisk 的最终的引用, 但是不保证这样. 因此, 这个结构可能继续存在(并且你的方法可能被调用)在调用 del_gendisk 之后. 但是, 如果你删除这个结构当没有用户时(即, 在最后的释放之后, 或者在你的模块清理函数), 你可确信你不会再收到它的信息.</p>
+<p>分配一个 gendisk 结构不能使系统可使用这个磁盘. 要做到这点, 你必须初始化这个结构并且调用 add_disk:</p>
+<pre class="programlisting">
+void add_disk(struct gendisk *gd); 
+</pre>
+<p>这里记住一件重要的事情:一旦你调用add_disk, 这个磁盘是"活的"并且它的方法可被在任何时间被调用. 实际上, 这样的第一个调用将可能发生, 即便在 add_disk 返回之前; 内核将读前几个字节以试图找到一个分区表. 因此你不应当调用 add_disk 直到你的驱动被完全初始化并且准备好响应对那个磁盘的请求.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="Initializationinsbull.sect2"></a>16.1.3.&#160;在 sbull 中的初始化</h3></div></div></div>
+<p>是时间进入一些例子了. sbull 驱动(从 O'Reilly 的 FTP 网站, 以及其他例子源码)实现一套内存中的虚拟磁盘驱动器. 对每个驱动器, sbull 分配(使用 vmalloc, 为了简单)一个内存数组; 它接着使这个数组可通过块操作来使用. 这个 sbull 驱动可通过分区这个驱动器, 在上面建立文件系统, 以及加载到系统层级中来测试. </p>
+<p>象我们其他的例子驱动一样, sbull 允许一个主编号在编译或者模块加载时被指定. 如果没有指定, 动态分配一个. 因为对 register_blkdev 的调用被用来动态分配, sbull 应当这样做:</p>
+<pre class="programlisting">
+sbull_major = register_blkdev(sbull_major, "sbull");
+if (sbull_major &lt;= 0)
+{
+        printk(KERN_WARNING "sbull: unable to get major number\n");
+        return -EBUSY;
+}
+</pre>
+<p>同样, 象我们在本书已展现的其他虚拟设备, sbull 设备由一个内部结构描述:</p>
+<pre class="programlisting">
+struct sbull_dev {
+ int size;  /* Device size in sectors */ 
+ u8 *data;  /* The data array */ 
+ short users;  /* How many users */ 
+ short media_change;  /* Flag a media change? */ 
+ spinlock_t lock;  /* For mutual exclusion */ 
+ struct request_queue *queue;  /* The device request queue */ 
+ struct gendisk *gd;  /* The gendisk structure */ 
+ struct timer_list timer;  /* For simulated media changes */  
+};  
+</pre>
+<p>需要几个步骤来初始化这个结构, 并且使系统可用关联的设备. 我们从基本的初始化开始, 并且分配底层的内存:</p>
+<pre class="programlisting">
+memset (dev, 0, sizeof (struct sbull_dev));
+dev-&gt;size = nsectors*hardsect_size;
+dev-&gt;data = vmalloc(dev-&gt;size);
+if (dev-&gt;data == NULL)
+{
+        printk (KERN_NOTICE "vmalloc failure.\n");
+        return;
+}
+spin_lock_init(&amp;dev-&gt;lock);
+</pre>
+<p>重要的是在下一步之前分配和初始化一个自旋锁, 下一步是分配请求队列. 我们在进入请求处理时详细看这个过程; 现在, 只需说必要的调用是:</p>
+<pre class="programlisting">
+dev-&gt;queue = blk_init_queue(sbull_request, &amp;dev-&gt;lock); 
+</pre>
+<p>这里, sbull_request 是我们的请求函数 -- 实际进行块读和写请求的函数. 当我们分配一个请求队列时, 我们必须提供一个自旋锁来控制对那个队列的存取. 这个锁由驱动提供而不是内核通常的部分, 因为, 常常, 请求队列和其他的驱动数据结构在相同的临界区; 它们可能被同时存取. 如同任何分配内存的函数, blk_init_queue 可能失败, 因此你必须在继续之前检查返回值.</p>
+<p>一旦我们有我们的设备内存和请求队列, 我们可分配, 初始化, 并且安装对应的 gendisk 结构. 做这个工作的代码是:</p>
+<pre class="programlisting">
+dev-&gt;gd = alloc_disk(SBULL_MINORS);
+if (! dev-&gt;gd)
+{
+        printk (KERN_NOTICE "alloc_disk failure\n");
+        goto out_vfree;
+}
+dev-&gt;gd-&gt;major = sbull_major;
+dev-&gt;gd-&gt;first_minor = which*SBULL_MINORS;
+dev-&gt;gd-&gt;fops = &amp;sbull_ops;
+dev-&gt;gd-&gt;queue = dev-&gt;queue;
+dev-&gt;gd-&gt;private_data = dev;
+snprintf (dev-&gt;gd-&gt;disk_name, 32, "sbull%c", which + 'a');
+set_capacity(dev-&gt;gd, nsectors*(hardsect_size/KERNEL_SECTOR_SIZE));
+add_disk(dev-&gt;gd);
+</pre>
+<p>这里, SBULL_MINORS 是每个 sbull 设备所支持的次编号的数目. 当我们设置第一个次编号给每个设备, 我们必须考虑被之前的设备所用的全部编号. 磁盘的名子被设置, 这样第一个是 sbulla, 第二个是 sbullb, 等等. 用户空间可接着添加分区号以便它们在第 2 个设备上的分区可能是 /dev/sbull3. </p>
+<p>一旦所有的都被设置, 我们以对 add_disk 的调用来结束. 我们的几个方法将在 add_disk 返回时被调用, 因此我们负责做这个调用, 这是初始化我们的设备的最后一步.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ANoteonSectorSizes.sect2"></a>16.1.4.&#160;注意扇区大小</h3></div></div></div>
+<p>如同我们之前提到的, 内核对待每个磁盘如同一个 512-字节扇区的数组. 不是所有的硬件都使用那个扇区大小, 但是. 使一个有不同扇区大小的设备工作不是一件很难的事; 只要小心处理几个细节. sbull 设备输出一个 hardsect_size 参数, 可被用来改变设备的"硬件"扇区大小. 通过看它的实现, 你可见到如何添加这个支持到你自己的驱动.</p>
+<p>这些细节中的第一个是通知内核你的设备支持的扇区大小. 硬件扇区大小是一个在请求队列的参数, 而不是在 gendisk 结构. 这个大小通过调用 blk_queue_hardsect_size 设置的, 在分配队列后马上进行:</p>
+<pre class="programlisting">
+blk_queue_hardsect_size(dev-&gt;queue, hardsect_size); 
+</pre>
+<p>一旦完成那个, 内核坚持你的设备的硬件扇区大小. 所有的 I/O 请求被正确对齐到一个硬件扇区的起始, 并且每个请求的长度是一个整数的扇区数. 你必须记住, 但是, 内核一直以 512-字节扇区表述自己; 因此, 有必要相应地转换所有的扇区号. 因此, 例如, 当 sbull 在它的 gendisk 结构中设置设备的容量时, 这个调用看来象:</p>
+<pre class="programlisting">
+set_capacity(dev-&gt;gd, nsectors*(hardsect_size/KERNEL_SECTOR_SIZE));
+</pre>
+<p>KERNEL_SECTOR_SIZE 是一个本地定义的常量, 我们用来调整内核的 512-字节和任何我们已被告知要使用的大小. 在我们查看 sbull 请求处理逻辑中会不时看到这类计算出来.</p>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch15s05.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch16s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">15.5.&#160;快速参考&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;16.2.&#160;块设备操作</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

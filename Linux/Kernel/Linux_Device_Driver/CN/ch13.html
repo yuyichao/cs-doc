@@ -1,0 +1,170 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;13&#160;章&#160;USB 驱动-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch12s08.html" title="12.8.&#160;快速参考">
+<link rel="next" href="ch13s02.html" title="13.2.&#160;USB 和 sysfs">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;13&#160;章&#160;USB 驱动</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch12s08.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch13s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="USBDrivers.chap"></a>第&#160;13&#160;章&#160;USB 驱动</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch13.html#USBDeviceBasics.sect1">13.1. USB 设备基础知识</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13.html#Endpoints.sect2">13.1.1. 端点</a></span></dt>
+<dt><span class="sect2"><a href="ch13.html#Interfaces.sect2">13.1.2. 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch13.html#Congurations.sect2">13.1.3. 配置</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s02.html">13.2. USB 和 sysfs</a></span></dt>
+<dt><span class="sect1"><a href="ch13s03.html">13.3. USB 的 Urbs</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13s03.html#structurb.sect2">13.3.1. 结构 struct urb</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#CreatingandDestroyingUrbs.sect2">13.3.2. 创建和销毁 urb</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#SubmittingUrbs.sect2">13.3.3. 提交 urb</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#CompletingUrbsTheCompletionCallbackHandler.sect2">13.3.4. 完成 urb: 完成回调处理者</a></span></dt>
+<dt><span class="sect2"><a href="ch13s03.html#CancelingUrbs.sect2">13.3.5. 取消 urb</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s04.html">13.4. 编写一个 USB 驱动</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13s04.html#WhatDevicesDoestheDriverSupport.sect2">13.4.1. 驱动支持什么设备</a></span></dt>
+<dt><span class="sect2"><a href="ch13s04.html#RegisteringaUSBDriver.sect2">13.4.2. 注册一个 USB 驱动</a></span></dt>
+<dt><span class="sect2"><a href="ch13s04.html#SubmittingandControllingaUrb.sect2">13.4.3. 提交和控制一个 urb</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s05.html">13.5. 无 urb 的 USB 传送</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch13s05.html#usb_bulk_msg.sect2">13.5.1. usb_bulk_msg 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch13s05.html#usb_control_msg.sect2">13.5.2. usb_control_msg 接口</a></span></dt>
+<dt><span class="sect2"><a href="ch13s05.html#OtherUSBDataFunctions.sect2">13.5.3. 使用 USB 数据函数</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch13s06.html">13.6. 快速参考</a></span></dt>
+</dl>
+</div>
+<p>通用串行总线(USB)是一个在主机和许多外设之间的连接. 最初它被创建来替代许多慢速和不同的总线-并口, 串口, 和键盘连接--有一个单个的所有设备都可以连接的总线类型.<sup>[<a name="id473861" href="ch13.html#ftn.id473861">45</a>]</sup> USB 已经成长超出了这些慢速连接并且现在支持几乎每种可以连接到 PC 的设备. USB 规范的最新版本增加了高速连接, 理论上到 480 MBps.</p>
+<p>拓扑结构上, 一个 USB 子系统没有如同一个总线一样分布; 它更多是一个树, 有几个点对点连接. 这些连接是 4-线 电缆(地, 电源, 和 2 个信号线)来连接一个设备和一个集线器, 如同双绞线以太网. USB 主控制器负责询问每个 USB 设备是否它有数据发送. 由于这个拓扑关系, 一个 USB 设备在没有首先被主控制器询问时从不启动发送数据. 这个配置允许一个非常容易即插即用的系统, 这样各种设备可自动被主机配置.</p>
+<p>在技术层面这个总线是非常简单的, 因为它是一个单主实现, 其中主机查询各种外设. 除了这个固有的限制, 这个总线有一些有趣的特性, 例如一个设备能够请求一个固定的数据传送带宽, 为了可靠地支持视频和音频 I/O. 另一个重要的特性是它只作为设备和主机之间的一个通讯通道, 对它传递的数据没有特殊的含义和结构要求.</p>
+<p>实际上, 有一些结构, 但是它大部分精简为适应一个预先定义的类别: 例如, 一个键盘不会分配带宽, 而一些视频摄像头会.</p>
+<p>USB 协议规范定义了一套标准, 任何特定类型的设备都可以遵循. 如果一个设备遵循这个标准, 那么给那个设备的一个特殊的驱动就不必了. 这些不同的类型称为类, 并且包含如同存储设备, 键盘, 鼠标, 游戏杆, 网络设备, 和猫. 其他不适合这些类的设备需要一个特殊的供应商-特定的驱动给这些特别的设备. 视频设备和 USB-到-串口 设备是一个好的例子, 这里没有定义好的标准, 并且需要一个驱动给每个来自不同制造商的不同的设备.</p>
+<p>这些特性, 连同固有的设计上的热插拔能力, 使 USB 称为一个方便的, 低成本的机制来连接(和去连接)多个设备到计算机, 而不必关机, 开盒子, 并且旋开螺钉和电线.</p>
+<p>Linux 内核支持 2 类 USB 驱动: 位于主机系统的驱动和位于设备的驱动. 给主机系统的 USB 驱动控制插入其中的 USB 设备, 从主机的观点看(一个通常的 USB 主机是一个桌面计算机). 在设备中的 USB 驱动, 控制单个设备如何作为一个 USB 设备看待主机系统. 由于术语" USB 设备驱动"是非常迷惑, USB 开发者已经创建了术语" USB 器件驱动"来描述控制一个连接到计算机的 USB 设备的驱动(记住 Linux 也运行在这些小的嵌入式的设备中). 本章详述了运行在一台桌面计算机上的 USB 系统如何工作的. USB 器件驱动此时超出了本书的范围.</p>
+<p>如同图<a href="ch13.html#ldd3-13-1.fig" title="图&#160;13.1.&#160;USB 驱动概览">USB 驱动概览</a>所示, USB 驱动位于不同的内核子系统(块, 网络, 字符, 等等)和硬件控制器之间. USB 核心提供了一个接口给 USB 驱动用来存取和控制 USB 硬件, 而不必担心出现在系统中的不同的 USB 硬件控制器.</p>
+<div class="figure">
+<a name="ldd3-13-1.fig"></a><p class="title"><b>图&#160;13.1.&#160;USB 驱动概览</b></p>
+<div><img src="images/snagitldd3/ldd3-13-1.png" alt="USB 驱动概览"></div>
+</div>
+<div class="figure">
+<a name="ldd3-13-2.fig"></a><p class="title"><b>图&#160;13.2.&#160;USB 设备概览</b></p>
+<div><img src="images/snagitldd3/ldd3-13-2.png" alt="USB 设备概览"></div>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="USBDeviceBasics.sect1"></a>13.1.&#160;USB 设备基础知识</h2></div></div></div>
+<p>一个 USB 设备是一个非常复杂的事物, 如同在官方的 USB 文档(可从 http://www.usb.org 中得到)中描述的. 幸运的是, Linux 提供了一个子系统称为 USB 核, 来处理大部分复杂的工作. 这一章描述驱动和 USB 核之间的交互. 图<a href="ch13.html#ldd3-13-2.fig" title="图&#160;13.2.&#160;USB 设备概览">USB 设备概览</a>显示了 USB 设备如何包含配置, 接口, 和端点, 以及 USB 驱动如何绑定到 USB 接口, 而不是整个 USB 设备.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="Endpoints.sect2"></a>13.1.1.&#160;端点</h3></div></div></div>
+<p>USB 通讯的最基本形式是通过某些称为 端点 的. 一个 USB 端点只能在一个方向承载数据, 或者从主机到设备(称为输出端点)或者从设备到主机(称为输入端点). 端点可看作一个单向的管道.</p>
+<p>一个 USB 端点可是 4 种不同类型的一种, 它来描述数据如何被传送:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>CONTROL </span></span></dt>
+<dd><p>控制端点被用来允许对 USB 设备的不同部分存取. 通常用作配置设备, 获取关于设备的信息, 发送命令到设备, 或者获取关于设备的状态报告. 这些端点在尺寸上常常较小. 每个 USB 设备有一个控制端点称为"端点 0", 被 USB 核用来在插入时配置设备. 这些传送由 USB 协议保证来总有足够的带宽使它到达设备.</p></dd>
+<dt><span class="term"><span>INTERRUPT </span></span></dt>
+<dd><p>中断端点传送小量的数据, 以固定的速率在每次 USB 主请求设备数据时. 这些端点对 USB 键盘和鼠标来说是主要的传送方法. 它们还用来传送数据到 USB 设备来控制设备, 但通常不用来传送大量数据. 这些传送由 USB 协议保证来总有足够的带宽使它到达设备.</p></dd>
+<dt><span class="term"><span>BULK </span></span></dt>
+<dd><p>块端点传送大量的数据. 这些端点常常比中断端点大(它们一次可持有更多的字符). 它们是普遍的, 对于需要传送不能有任何数据丢失的数据. 这些传送不被 USB 协议保证来一直使它在特定时间范围内完成. 如果总线上没有足够的空间来发送整个 BULK 报文, 它被分为多次传送到或者从设备. 这些端点普遍在打印机, 存储器, 和网络设备上.</p></dd>
+<dt><span class="term"><span>ISOCHRONOUS </span></span></dt>
+<dd><p>同步端点也传送大量数据, 但是这个数据常常不被保证它完成. 这些端点用在可以处理数据丢失的设备中, 并且更多依赖于保持持续的数据流. 实时数据收集, 例如音频和视频设备, 一直都使用这些端点.</p></dd>
+</dl></div>
+<p>控制和块端点用作异步数据传送, 无论何时驱动决定使用它们. 中断和同步端点是周期性的. 这意味着这些端点被设置来连续传送数据在固定的时间, 这使它们的带宽被 USB 核所保留.</p>
+<p>USB 端点在内核中使用结构 struct usb_host_endpoint 来描述. 这个结构包含真实的端点信息在另一个结构中, 称为 struct usb_endpoint_descriptor. 后者包含所有的 USB-特定 数据, 以设备自身特定的准确格式. 驱动关心的这个结构的成员是:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>bEndpointAddress </span></span></dt>
+<dd><p>这是这个特定端点的 USB 地址. 还包含在这个 8-位 值的是端点的方向. 位掩码 USB_DIR_OUT 和 USB_DIR_IN 可用来和这个成员比对, 来决定给这个端点的数据是到设备还是到主机.</p></dd>
+<dt><span class="term"><span>bmAttributes </span></span></dt>
+<dd><p>这是端点的类型. 位掩码 USB_ENDPOINT_XFERTYPE_MASK 应当用来和这个值比对, 来决定这个端点是否是 USB_ENDPOINT_XFER_ISOC, USB_ENDPOINT_XFER_BULK, 或者是类型 USB_ENDPOINT_XFER_INT. 这些宏定义了同步, 块, 和中断端点, 相应地.</p></dd>
+<dt><span class="term"><span>wMaxPacketSize </span></span></dt>
+<dd><p>这是以字节计的这个端点可一次处理的最大大小. 注意驱动可能发送大量的比这个值大的数据到端点, 但是数据会被分为 wMaxPakcetSize 的块, 当真正传送到设备时. 对于高速设备, 这个成员可用来支持端点的一个高带宽模式, 通过使用几个额外位在这个值的高位部分. 关于如何完成的细节见 USB 规范.</p></dd>
+<dt><span class="term"><span>bInterval </span></span></dt>
+<dd><p>如果这个端点是中断类型的, 这个值是为这个端点设置的间隔, 即在请求端点的中断之间的时间. 这个值以毫秒表示.</p></dd>
+</dl></div>
+<p>这个结构的成员没有一个"传统" Linux 内核的命名机制. 这是因为这些成员直接对应于 USB 规范中的名子. USB 内核程序员认为使用规定的名子更重要, 以便在阅读规范时减少混乱, 不必使这些名子对 Linux 程序员看起来熟悉. </p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="Interfaces.sect2"></a>13.1.2.&#160;接口</h3></div></div></div>
+<p>USB 端点被绑在接口中. USB 接口只处理一类 USB 逻辑连接, 例如一个鼠标, 一个键盘, 或者一个音频流. 一些 USB 设备有多个接口, 例如一个 USB 扬声器可能有 2 个接口: 一个 USB 键盘给按钮和一个 USB 音频流. 因为一个 USB 接口表示基本的功能, 每个 USB 驱动控制一个接口; 因此, 对扬声器的例子, Linux 需要 2 个不同的驱动给一个硬件设备.</p>
+<p>USB 接口可能有预备的设置, 是对接口参数的不同选择. 接口的初始化的状态是第一个设置, 0 号. 预备的设置可用来以不同方式控制单独的端点, 例如来保留不同量的 USB 带宽给设备. 每个有同步端点的设备使用预备设备给同一个接口.</p>
+<p>USB 接口在内核中使用 struct usb_interface 结构来描述. 这个结构是 USB 核传递给 USB 驱动的并且是 USB 驱动接下来负责控制的. 这个结构中的重要成员是:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct usb_host_interface *altsetting </span></span></dt>
+<dd><p>一个包含所有预备设置的接口结构的数组, 可被挑选给这个接口. 每个 struct usb_host_interface 包含一套端点配置, 如同由 struct usb_host_endpoint 结构所定义的. 注意这些接口结构没有特别的顺序.</p></dd>
+<dt><span class="term"><span>unsigned num_altsetting</span></span></dt>
+<dd><p>由 altsetting 指针指向的预备设置的数目.</p></dd>
+<dt><span class="term"><span>struct usb_host_interface *cur_altsetting </span></span></dt>
+<dd><p>指向数组 altsetting 的一个指针, 表示这个接口当前的激活的设置.</p></dd>
+<dt><span class="term"><span>int minor </span></span></dt>
+<dd><p>如果绑定到这个接口的 USB 驱动使用 USB 主编号, 这个变量包含由 USB 核心安排给接口的次编号. 这只在一次成功地调用 usb_register_dev (本章稍后描述)之后才有效.</p></dd>
+</dl></div>
+<p>在 struct usb_interface 结构中有其他成员, 但是 USB 驱动不需要知道它们.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="Congurations.sect2"></a>13.1.3.&#160;配置</h3></div></div></div>
+<p>USB 接口是自己被捆绑到配置的. 一个 USB 设备可有多个配置并且可能在它们之间转换以便改变设备的状态. 例如, 一些允许固件被下载到它们的设备包含多个配置来实现这个. 一个配置只能在一个时间点上被使能. Linux 处理多配置 USB 设备不是太好, 但是, 幸运的是, 它们很少.</p>
+<p>linux 描述 USB 配置使用结构 struct usb_host_config 和整个 USB 设备使用结构 struct usb_device. USB 设备驱动通常不会需要读写这些结构的任何值, 因此它们在这里没有详细定义. 好奇的读者可在内核源码树的文件 include/linux/usb.h 中找到对它们的描述.</p>
+<p>一个 USB 设备驱动通常不得不转换数据从给定的 struct usb_interface 结构到 struct usb_device 结构, USB 核心需要给很多的函数调用. 为此, 提供有函数 interface_to_usbdev. 在以后, 希望所有的当前需要一个 struct usb_device 的 USB 调用, 将被转换为采用一个 struct usb_interface 参数, 并且不会要求驱动做这个转换.</p>
+<p>所以总结, USB 设备是非常复杂的, 并且由许多不同逻辑单元组成. 这些单元之间的关系可简单地描述如下:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>设备通常有一个或多个配置.</p></li>
+<li><p>配置常常有一个或多个接口</p></li>
+<li><p>接口常常有一个或多个设置.</p></li>
+<li><p>接口有零或多个端点.</p></li>
+</ul></div>
+</div>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id473861" href="ch13.html#id473861">45</a>] </sup>本章的多个部分是基于内核中的给 Linux 内核 USB 代码的文档, 这些代码由内核 USB 开发者编写并且以 GPL 发布.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch12s08.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch13s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">12.8.&#160;快速参考&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;13.2.&#160;USB 和 sysfs</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

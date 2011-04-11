@@ -1,0 +1,1406 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>代数方程组求解 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>代数方程组求解
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="EqSolving.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="EqSolving.html#sec1">结式</a>
+  </dt>
+  <dt>
+    <a href="EqSolving.html#sec2">吴方法</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="EqSolving.html#sec3">一些基本概念</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec4">升列</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec5">基本列</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec6">特征列与解方程</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="EqSolving.html#sec7">Gr&ouml;bner基</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="EqSolving.html#sec8">一些概念与介绍</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec9">单项式理想及一些准备定理</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec10">Gr&ouml;bner基及其性质</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec11">Buchberger算法及约化Gr&ouml;bner基</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec12">Buchberger算法的两个改进</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec13">Gr&ouml;bner基的应用</a>
+      </dt>
+      <dt>
+	<a href="EqSolving.html#sec14">Gr&ouml;bner基和特征值法解方程组</a>
+      </dt>
+    </dl>
+  </dd>
+</dl>
+</div>
+
+<p>本章名为代数方程组的求解,所以我们将从求解代数方程组的角度来引出一系列概念和算法.根据我们从解线性方程组得到的经验,我们需要发展一套消元方法,以使将方程组化为类似于三角阵的形状,这样引出两种算法.一是吴文俊院士于上世纪七十年代为实现几何定理机器证明而提出的吴方法,它不仅能进行机器证明,同时特征列是一种三角列使得它也可以用于代数方程组的求解.另外一种是Gr&ouml;bner基方法,它除了将多项式组化为三角形的基可用于解方程外,还有可以进行多项式理想的计算等诸多用处.</p>
+
+<p>如果只从几何证明的角度,吴方法无疑比Gr&ouml;bner基要高效很多,正是如此,吴方法在几何证明领域中在世界上都是十分有名的.然而,吴方法毕竟相当于一种不完全的约化,其除法用的是伪除法,因而在解方程、多项式理想计算等方面不如Gr&ouml;bner基.</p>
+
+<p>另外,由高等代数学我们知道还可以利用结式的计算来进行消元,这一过程及其理论本身比较简单,因此下面我们先从介绍结式消元法开始.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>结式</h2>
+
+<p class="first">我们所说的结式一般都是指Sylvester结式,利用结式进行消元基于我们以前提过的一个命题(见推论<a class="ref-th-external" href="PolyGCD.html#cor:resultantforeq">3</a>),现在重述如下:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">是UFD,且有非零多项式<img src="latex/latex2png-EqSolving_23361946_-5.gif" alt="$f,g\in R[x]$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,则<img src="latex/latex2png-EqSolving_222584066_-5.gif" alt="$\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">非平凡当且仅当<img src="latex/latex2png-EqSolving_72289009_-5.gif" alt="$\mathrm{res}(f,g)=0$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">.
+
+
+</div>
+
+<p>现在我们考虑一个二元多项式方程组.设<img src="latex/latex2png-EqSolving_205667347_-5.gif" alt="$f,g\in\mathbb{C}[x,y]=\mathbb{C}[y][x]$" class="latex-inline" style="vertical-align: -5px" width="160" height="18">,我们可以把它们看成<img src="latex/latex2png-EqSolving_25995733_-5.gif" alt="$\mathbb{C}[y]$" class="latex-inline" style="vertical-align: -5px" width="28" height="18">上关于<img src="latex/latex2png-EqSolving_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的一元多项式.那么利用上面的定理,我们有<img src="latex/latex2png-EqSolving_263546816_-5.gif" alt="$\gcd_x(f,g)$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">非平凡当且仅当<img src="latex/latex2png-EqSolving_196840768_-5.gif" alt="$\mathrm{res}_x(f,g)=0$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">.现在我们要求它们的公共根,不妨设<img src="latex/latex2png-EqSolving_165514220_-3.gif" alt="$x_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">是其一根,则有<img src="latex/latex2png-EqSolving_42141073_-5.gif" alt="$(x-x_0)|\gcd_x(f,g)$" class="latex-inline" style="vertical-align: -5px" width="136" height="18">,故有关于<img src="latex/latex2png-EqSolving_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的方程
+<img src="latex/latex2png-EqSolving_62676259_.gif" alt="$$\mathrm{res}_x(f,g)=0.$$" class="latex-display" width="580" height="18">
+由此,我们实际上进行了消元,将方程组化为一个只关于<img src="latex/latex2png-EqSolving_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的方程.</p>
+
+<p>事实上,我们可以将这种消元方法推广到<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个变元的情形.设变元分别为<img src="latex/latex2png-EqSolving_240991870_-4.gif" alt="$x_1,x_2,\ldots,x_n$" class="latex-inline" style="vertical-align: -4px" width="95" height="12">,则我们首先可以从<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个方程中取出<img src="latex/latex2png-EqSolving_264538498_-5.gif" alt="$(n-1)$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">对方程,两两用结式法消去<img src="latex/latex2png-EqSolving_165448684_-2.gif" alt="$x_1$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">,之后得到<img src="latex/latex2png-EqSolving_264538498_-5.gif" alt="$(n-1)$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">个关于<img src="latex/latex2png-EqSolving_138455426_-4.gif" alt="$x_2,\ldots,x_n$" class="latex-inline" style="vertical-align: -4px" width="71" height="12">的方程,再将此过程递归做下去,最终可求出方程的解.</p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>吴方法</h2>
+
+<h3><a name="sec3" id="sec3"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一些基本概念</h3>
+
+<p class="first">吴方法也称为特征列方法,这原本是由J. F. Ritt 在它的关于微分代数的工作中引入, 上个世纪70年代末,吴文俊在建立几何定理机器证明时大大发展了这一领域.它同Gr&ouml;bner基类似,也是一种消元方法,在几何定理证明,代数方程求解等方面均有很重要的应用.关于吴方法,可以参考<span class="cite"><a class="cite" href="EqSolving.html#ref-1" name="cite-1">[1]</a></span>,<span class="cite"><a class="cite" href="EqSolving.html#ref-2" name="cite-2">[2]</a></span>,也可见吴文俊本人的著作<span class="cite"><a class="cite" href="EqSolving.html#ref-3" name="cite-3">[3]</a></span>4.3节.</p>
+
+<p>下面设<img src="latex/latex2png-EqSolving_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是一特征为0的域,<img src="latex/latex2png-EqSolving_82572681_-5.gif" alt="$k[X]=k[x_1,\ldots,x_n]=R$" class="latex-inline" style="vertical-align: -5px" width="181" height="18">,并取字典序为<img src="latex/latex2png-EqSolving_26857859_-2.gif" alt="$x_1<x_2<\cdots<x_n$" class="latex-inline" style="vertical-align: -2px" width="137" height="11">.</p>
+
+<div class="definition">
+<span class="theorem-header">定义1<a name=""></a></span><span class="theorem-name"></span>
+对于单项式<img src="latex/latex2png-EqSolving_129000142_-1.gif" alt="$t\in M$" class="latex-inline" style="vertical-align: -1px" width="44" height="13">,记<img src="latex/latex2png-EqSolving_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">中含<img src="latex/latex2png-EqSolving_164400108_-2.gif" alt="$x_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">最大的下标<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">为<img src="latex/latex2png-EqSolving_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">,定义它的类<img src="latex/latex2png-EqSolving_112954454_-5.gif" alt="$\cl{t}=p$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">.即<img src="latex/latex2png-EqSolving_217263839_.gif" alt="$$\cl{t}=p=\max\{i:x_i|t\},$$" class="latex-display" width="580" height="18">其中非0常数的类定义为0.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义2<a name=""></a></span><span class="theorem-name"></span>
+对于多项式<img src="latex/latex2png-EqSolving_128672686_-4.gif" alt="$f\in R$" class="latex-inline" style="vertical-align: -4px" width="42" height="16">,定义其类为<img src="latex/latex2png-EqSolving_228629468_-5.gif" alt="$\cl{f}=\cl{\lt{f}}$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义3<a name=""></a></span><span class="theorem-name"></span>
+定义一种全序关系<img src="latex/latex2png-EqSolving_63800666_-1.gif" alt="$<\subset R\times R$" class="latex-inline" style="vertical-align: -1px" width="75" height="13">,对于<img src="latex/latex2png-EqSolving_126057374_-4.gif" alt="$f,g\in R$" class="latex-inline" style="vertical-align: -4px" width="57" height="16">,称<img src="latex/latex2png-EqSolving_33649684_-4.gif" alt="$f<g$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">如果下列条件之一满足:
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_256177999_-5.gif" alt="$\cl{f}<\cl{g}$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,</li>
+
+<li><img src="latex/latex2png-EqSolving_72474478_-7.gif" alt="$\cl{f}=\cl{g}=p>0\wedge\deg_pf<\deg_pg$" class="latex-inline" style="vertical-align: -7px" width="281" height="20">.</li>
+</ol>
+
+<p>若<img src="latex/latex2png-EqSolving_84950861_-4.gif" alt="$f\not<g\wedge g\not<f$" class="latex-inline" style="vertical-align: -4px" width="98" height="16">,则称<img src="latex/latex2png-EqSolving_146540511_-4.gif" alt="$f\sim g$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">(级别相同).</p>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注1<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-EqSolving_33649684_-4.gif" alt="$f<g$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">,则<img src="latex/latex2png-EqSolving_146475195_-5.gif" alt="$\lt{f}<\lt{g}$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">.反之则不然,例如<img src="latex/latex2png-EqSolving_62138091_-4.gif" alt="$f=x_1x_2^2x_3$" class="latex-inline" style="vertical-align: -4px" width="80" height="18">,<img src="latex/latex2png-EqSolving_27797885_-4.gif" alt="$g=x_1^2x_3$" class="latex-inline" style="vertical-align: -4px" width="63" height="18">级别相同.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注2<a name=""></a></span><span class="theorem-name"></span>
+这样的序不仅是全序,而且是良序.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义4<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_101845835_-5.gif" alt="$\cl{f}=p>0$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">,若<img src="latex/latex2png-EqSolving_126235668_-7.gif" alt="$\deg_pg<\deg_pf$" class="latex-inline" style="vertical-align: -7px" width="111" height="19">,则称<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">对<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是约化的（这里与我们在之前一章所说的约化的定义不大一样）,记为<img src="latex/latex2png-EqSolving_144718605_-5.gif" alt="$g\red{f}$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注3<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-EqSolving_33649684_-4.gif" alt="$f<g$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">,则显然<img src="latex/latex2png-EqSolving_143674125_-5.gif" alt="$f\red{g}$" class="latex-inline" style="vertical-align: -5px" width="55" height="18">.但当<img src="latex/latex2png-EqSolving_143674125_-5.gif" alt="$f\red{g}$" class="latex-inline" style="vertical-align: -5px" width="55" height="18">时,不一定有<img src="latex/latex2png-EqSolving_33649684_-4.gif" alt="$f<g$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">.例如<img src="latex/latex2png-EqSolving_105748084_-4.gif" alt="$f=x_1x_3$" class="latex-inline" style="vertical-align: -4px" width="63" height="16">,<img src="latex/latex2png-EqSolving_103052949_-4.gif" alt="$g=x_2$" class="latex-inline" style="vertical-align: -4px" width="46" height="12">.
+
+
+</div>
+
+<p>下面记<img src="latex/latex2png-EqSolving_101845835_-5.gif" alt="$\cl{f}=p>0$" class="latex-inline" style="vertical-align: -5px" width="95" height="18">,且<img src="latex/latex2png-EqSolving_60884881_.gif" alt="$$f=f_0x_p^m+f_1x_p^{m-1}+\cdots+f_m,$$" class="latex-display" width="580" height="22"> <img src="latex/latex2png-EqSolving_62523282_.gif" alt="$$g=g_0x_p^M+g_1x_p^{M-1}+\cdots+g_M,$$" class="latex-display" width="580" height="22"> 首先</p>
+
+<div class="definition">
+<span class="theorem-header">定义5<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_144709957_-5.gif" alt="$f_0\in k[x_1,x_2,\ldots,x_{p-1},x_{p+1},\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="261" height="18">称为<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的初式.
+
+
+</div>
+
+<p>当<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">相对<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">不约化时,即<img src="latex/latex2png-EqSolving_249072620_-1.gif" alt="$M>m$" class="latex-inline" style="vertical-align: -1px" width="54" height="13">,我们可由下面定义的伪除法将其约化.</p>
+
+<div class="definition">
+<span class="theorem-header">定义6<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_96382110_-1.gif" alt="$\exists s\in\mathbb{N}$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">使得<img src="latex/latex2png-EqSolving_182279354_-5.gif" alt="$f_0^sg=qf+r$" class="latex-inline" style="vertical-align: -5px" width="92" height="17">,其中<img src="latex/latex2png-EqSolving_144673549_-5.gif" alt="$r\red{f}$" class="latex-inline" style="vertical-align: -5px" width="55" height="18">.
+
+
+</div>
+
+
+<h3><a name="sec4" id="sec4"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>升列</h3>
+
+<p class="first">我们引入一系列的定义.</p>
+
+<div class="definition">
+<span class="theorem-header">定义7<a name=""></a></span><span class="theorem-name"></span>
+多项式序列<img src="latex/latex2png-EqSolving_176973695_-5.gif" alt="$F=\{f_1,f_2,\ldots,f_r\}$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">称为升列(ascending set),若下列条件之一满足:
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_235107348_0.gif" alt="$r=1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">且<img src="latex/latex2png-EqSolving_38364388_-4.gif" alt="$f_1\neq 0$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">,</li>
+
+<li><img src="latex/latex2png-EqSolving_236155924_-1.gif" alt="$r>1$" class="latex-inline" style="vertical-align: -1px" width="37" height="12">,且<img src="latex/latex2png-EqSolving_34901159_-5.gif" alt="$0<\cl{f_1}<\cl{f_2}<\cdots<\cl{f_r}$" class="latex-inline" style="vertical-align: -5px" width="236" height="18">,且<img src="latex/latex2png-EqSolving_105861530_-4.gif" alt="$\forall j>i$" class="latex-inline" style="vertical-align: -4px" width="44" height="16">,有<img src="latex/latex2png-EqSolving_115889489_-5.gif" alt="$f_j\red{f_i}$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">.</li>
+</ol>
+
+
+</div>
+
+<p>由升列的定义我们知道升列的项数<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">必然不大于未定元个数<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">.</p>
+
+<div class="definition">
+<span class="theorem-header">定义8<a name=""></a></span><span class="theorem-name"></span>
+升列称为矛盾列,如果升列只由一个非零常数组成.矛盾列构成的多项式方程组是无解的.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义9<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是升列,对多项式<img src="latex/latex2png-EqSolving_128672670_-4.gif" alt="$g\in R$" class="latex-inline" style="vertical-align: -4px" width="42" height="16">,若<img src="latex/latex2png-EqSolving_165608875_-4.gif" alt="$\forall f\in F$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">有<img src="latex/latex2png-EqSolving_144718605_-5.gif" alt="$g\red{f}$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">,则称<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">相对于<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是约化的,记为<img src="latex/latex2png-EqSolving_136329997_-5.gif" alt="$g\red{F}$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义10<a name=""></a></span><span class="theorem-name"></span>
+定义升列上的偏序关系<img src="latex/latex2png-EqSolving_235763378_-1.gif" alt="$\prec$" class="latex-inline" style="vertical-align: -1px" width="11" height="10">,对于两个升列<img src="latex/latex2png-EqSolving_188400768_-5.gif" alt="$F=\{f_1,\ldots,f_r\}$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">,<img src="latex/latex2png-EqSolving_63253375_-5.gif" alt="$G=\{g_1,\ldots,g_s\}$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,称<img src="latex/latex2png-EqSolving_225588498_-1.gif" alt="$F\succ G$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">,若下列条件之一满足:
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_43247226_-5.gif" alt="$\exists j\le\min(r,s)$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,使得<img src="latex/latex2png-EqSolving_229766986_.gif" alt="$$f_1\sim g_1,f_2\sim g_2,\ldots,f_{j-1}\sim g_{j-1},f_j>g_j,$$" class="latex-display" width="580" height="18"></li>
+
+<li><img src="latex/latex2png-EqSolving_254571540_-1.gif" alt="$s>r$" class="latex-inline" style="vertical-align: -1px" width="36" height="10">且<img src="latex/latex2png-EqSolving_59102197_-4.gif" alt="$f_1\sim g_1,\ldots,f_r\sim g_r$" class="latex-inline" style="vertical-align: -4px" width="141" height="16">.</li>
+</ol>
+
+<p>若<img src="latex/latex2png-EqSolving_248183628_-4.gif" alt="$F\not\prec G\wedge G\not\prec F$" class="latex-inline" style="vertical-align: -4px" width="114" height="16">,则称二者级别相同,记为<img src="latex/latex2png-EqSolving_146014175_-1.gif" alt="$F\sim G$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">.</p>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注4<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-EqSolving_146014175_-1.gif" alt="$F\sim G$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">,显然有<img src="latex/latex2png-EqSolving_73366674_-5.gif" alt="$r=s\wedge f_i\sim g_i(\forall i)$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">.
+
+
+</div>
+
+<p>下面的定理很重要,是特征列方法的基础.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name="th:ritt"></a></span><span class="theorem-name">(Ritt引理)</span>
+设<img src="latex/latex2png-EqSolving_193078562_-5.gif" alt="$F_1,F_2,\ldots,F_q,\cdots$" class="latex-inline" style="vertical-align: -5px" width="124" height="17">是不增升列的序列,即<img src="latex/latex2png-EqSolving_149659631_-4.gif" alt="$\forall q$" class="latex-inline" style="vertical-align: -4px" width="17" height="16">,有<img src="latex/latex2png-EqSolving_255787721_-5.gif" alt="$F_{q+1}\prec F_q\vee F_{q+1}\sim F_q$" class="latex-inline" style="vertical-align: -5px" width="167" height="17">,则<img src="latex/latex2png-EqSolving_21251566_-4.gif" alt="$\exists q'$" class="latex-inline" style="vertical-align: -4px" width="20" height="17">,<img src="latex/latex2png-EqSolving_176730976_-4.gif" alt="$\forall q>q'$" class="latex-inline" style="vertical-align: -4px" width="51" height="17">,有<img src="latex/latex2png-EqSolving_213717402_-5.gif" alt="$F_q\sim F_{q'}$" class="latex-inline" style="vertical-align: -5px" width="60" height="17">,即有极小升列<img src="latex/latex2png-EqSolving_70804266_-5.gif" alt="$F_{q'}$" class="latex-inline" style="vertical-align: -5px" width="20" height="17">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+记<img src="latex/latex2png-EqSolving_20205248_-5.gif" alt="$r_q=\#F_q$" class="latex-inline" style="vertical-align: -5px" width="68" height="17">,<img src="latex/latex2png-EqSolving_192977814_-5.gif" alt="$f_q\in F_q$" class="latex-inline" style="vertical-align: -5px" width="52" height="17">是每个升列中第一个多项式,则<img src="latex/latex2png-EqSolving_10690475_.gif" alt="$$f_1,f_2,\ldots,f_q,\cdots$$" class="latex-display" width="580" height="18">是一个不增列.对于良序下的不增列我们显然有<img src="latex/latex2png-EqSolving_194427200_-4.gif" alt="$q_1\in\mathbb{N}$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">使得<img src="latex/latex2png-EqSolving_83821313_-4.gif" alt="$\forall q>q_1$" class="latex-inline" style="vertical-align: -4px" width="52" height="16">时,<img src="latex/latex2png-EqSolving_156694607_-5.gif" alt="$f_{q_1}\sim f_q$" class="latex-inline" style="vertical-align: -5px" width="57" height="17">.
+
+<p>我们再考虑<img src="latex/latex2png-EqSolving_256664641_-4.gif" alt="$q\ge q_1$" class="latex-inline" style="vertical-align: -4px" width="43" height="15">时<img src="latex/latex2png-EqSolving_205222932_-5.gif" alt="$F_q$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">中第2个多项式构成的序列<img src="latex/latex2png-EqSolving_69872388_.gif" alt="$$f_{q_1}^{(1)},\ldots,f_{q}^{(1)},\cdots$$" class="latex-display" width="580" height="23">同样的分析给出<img src="latex/latex2png-EqSolving_194427184_-4.gif" alt="$q_2\in\mathbb{N}$" class="latex-inline" style="vertical-align: -4px" width="47" height="16">使得<img src="latex/latex2png-EqSolving_256730177_-4.gif" alt="$q\ge q_2$" class="latex-inline" style="vertical-align: -4px" width="43" height="15">时有<img src="latex/latex2png-EqSolving_232029892_-5.gif" alt="$f_{q}^{(1)}\sim f_{a_2}^{(1)}$" class="latex-inline" style="vertical-align: -5px" width="75" height="23">,由于每个升列都有<img src="latex/latex2png-EqSolving_9340926_-5.gif" alt="$r_q\le n$" class="latex-inline" style="vertical-align: -5px" width="47" height="16">,我们将这个过程继续下去总会终止,于是可找到<img src="latex/latex2png-EqSolving_196943840_-4.gif" alt="$q'\in\mathbb{N}$" class="latex-inline" style="vertical-align: -4px" width="45" height="17">,使得<img src="latex/latex2png-EqSolving_189005036_-4.gif" alt="$q\ge q'$" class="latex-inline" style="vertical-align: -4px" width="42" height="17">时,<img src="latex/latex2png-EqSolving_80430614_-5.gif" alt="$r_q=r_{q'}$" class="latex-inline" style="vertical-align: -5px" width="54" height="13">且<img src="latex/latex2png-EqSolving_213717402_-5.gif" alt="$F_q\sim F_{q'}$" class="latex-inline" style="vertical-align: -5px" width="60" height="17">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论1<a name=""></a></span><span class="theorem-name"></span>
+对于严格下降的升列序列,其必为有限的.
+
+
+</div>
+
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>基本列</h3>
+
+<p class="first">设<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">是一有限非零多项式的集合,其中必含有升列,我们记从中选出的升列的全体集合为<img src="latex/latex2png-EqSolving_63211880_-5.gif" alt="$AS(A)$" class="latex-inline" style="vertical-align: -5px" width="47" height="18">.</p>
+
+<div class="definition">
+<span class="theorem-header">定义11<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-EqSolving_83610712_-5.gif" alt="$F\in AS(A)$" class="latex-inline" style="vertical-align: -5px" width="80" height="18">是当中的一个极小元,则称<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">的基本列.(basic set)
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">上的基本列存在,且能在有限步内构造出来.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+我们只需给出构造性的证明即可.设<img src="latex/latex2png-EqSolving_85161625_-2.gif" alt="$A_1=A$" class="latex-inline" style="vertical-align: -2px" width="54" height="14">.
+
+<p>先取<img src="latex/latex2png-EqSolving_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">为<img src="latex/latex2png-EqSolving_119763988_-2.gif" alt="$A_1$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">中的某个最小元,若<img src="latex/latex2png-EqSolving_217969836_-5.gif" alt="$\cl{f_1}=0$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">则<img src="latex/latex2png-EqSolving_119149958_-5.gif" alt="$\{f_1\}$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">已是基本列.若<img src="latex/latex2png-EqSolving_216921260_-5.gif" alt="$\cl{f_1}>0$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,记<img src="latex/latex2png-EqSolving_202171189_-5.gif" alt="$B_1=A_1\setminus\{f_1\}$" class="latex-inline" style="vertical-align: -5px" width="109" height="18">.若<img src="latex/latex2png-EqSolving_136541204_-2.gif" alt="$B_1$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">中元素对<img src="latex/latex2png-EqSolving_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">均未约化,则<img src="latex/latex2png-EqSolving_119149958_-5.gif" alt="$\{f_1\}$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">仍然是基本列,否则记<img src="latex/latex2png-EqSolving_136541204_-2.gif" alt="$B_1$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">中对<img src="latex/latex2png-EqSolving_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">约化的多项式全体为<img src="latex/latex2png-EqSolving_119829524_-2.gif" alt="$A_2$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">.</p>
+
+<p><img src="latex/latex2png-EqSolving_177622462_-4.gif" alt="$\forall f_2\in A_2$" class="latex-inline" style="vertical-align: -4px" width="63" height="16">,显然有<img src="latex/latex2png-EqSolving_208008257_-4.gif" alt="$f_2\ge f_1$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">.倘若<img src="latex/latex2png-EqSolving_139166571_-4.gif" alt="$f_2\sim f_1$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">,则与<img src="latex/latex2png-EqSolving_82335057_-5.gif" alt="$f_2\red{f_1}$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">矛盾.故<img src="latex/latex2png-EqSolving_69597240_-4.gif" alt="$f_2>f_1$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">,由于<img src="latex/latex2png-EqSolving_82335057_-5.gif" alt="$f_2\red{f_1}$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,则只能<img src="latex/latex2png-EqSolving_211512605_-5.gif" alt="$\cl{f_2}>\cl{f_1}$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">.</p>
+
+<p>再取<img src="latex/latex2png-EqSolving_69497876_-4.gif" alt="$f_2$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">为<img src="latex/latex2png-EqSolving_119829524_-2.gif" alt="$A_2$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">中的某个最小元,若<img src="latex/latex2png-EqSolving_185328436_-5.gif" alt="$B_2=A_2\setminus\{f_2\}$" class="latex-inline" style="vertical-align: -5px" width="109" height="18">中元素关于<img src="latex/latex2png-EqSolving_69497876_-4.gif" alt="$f_2$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">都未约化,则<img src="latex/latex2png-EqSolving_160143384_-5.gif" alt="$\{f_1,f_2\}$" class="latex-inline" style="vertical-align: -5px" width="53" height="18">已是基本列,否则可以构造出<img src="latex/latex2png-EqSolving_244620561_-3.gif" alt="$A_3\cdots$" class="latex-inline" style="vertical-align: -3px" width="40" height="15"></p>
+
+<p>由于<img src="latex/latex2png-EqSolving_206564947_-4.gif" alt="$f_1,f_2,\cdots$" class="latex-inline" style="vertical-align: -4px" width="63" height="16">的类是严格增加的,则上述过程必能有限步终止,得到基本列.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>鉴于基本列的存在性,我们记集合<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">的全体基本列的集合为<img src="latex/latex2png-EqSolving_63211879_-5.gif" alt="$BS(A)$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理4<a name="th:thofbs"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">是非零多项式有限集,<img src="latex/latex2png-EqSolving_266284216_-5.gif" alt="$F=\{f_1,\ldots,f_r\}\in BS(A)$" class="latex-inline" style="vertical-align: -5px" width="188" height="18">,<img src="latex/latex2png-EqSolving_216921260_-5.gif" alt="$\cl{f_1}>0$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,设<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是一非零多项式,且<img src="latex/latex2png-EqSolving_59829856_-5.gif" alt="$g\red{f_i}(\forall f_i\in F)$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">,设<img src="latex/latex2png-EqSolving_210961398_-5.gif" alt="$B=A\bigcup\{g\}$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">,则<img src="latex/latex2png-EqSolving_13424283_-5.gif" alt="$\exists G\in BS(B),G\prec F$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+若<img src="latex/latex2png-EqSolving_153908137_-5.gif" alt="$\cl{g}=0$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,则<img src="latex/latex2png-EqSolving_182845629_-5.gif" alt="$G=\{g\}$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">满足要求.
+
+<p>若<img src="latex/latex2png-EqSolving_101845851_-5.gif" alt="$\cl{g}=p>0$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">,则<img src="latex/latex2png-EqSolving_189514743_-5.gif" alt="$\exists s(1\le s\le r)$" class="latex-inline" style="vertical-align: -5px" width="96" height="18">使得<img src="latex/latex2png-EqSolving_252368814_-5.gif" alt="$\cl{f_{s-1}}<p\le\cl{f_s}$" class="latex-inline" style="vertical-align: -5px" width="148" height="18">,又由于<img src="latex/latex2png-EqSolving_207115561_-5.gif" alt="$g\red{f_s}$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">,则<img src="latex/latex2png-EqSolving_71136917_-4.gif" alt="$g<f_s$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">,故<img src="latex/latex2png-EqSolving_223753859_-5.gif" alt="$G=\{f_1,f_2,\ldots,f_{s-1},g\}$" class="latex-inline" style="vertical-align: -5px" width="173" height="18">满足要求.</p>
+
+<p>若<img src="latex/latex2png-EqSolving_124906590_-5.gif" alt="$\cl{g}>\cl{f_r}$" class="latex-inline" style="vertical-align: -5px" width="94" height="18">,则<img src="latex/latex2png-EqSolving_141026058_-5.gif" alt="$G=\{f_1,\ldots,f_r,g\}$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">满足要求.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>特征列与解方程</h3>
+
+<div class="definition">
+<span class="theorem-header">定义12<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">对升列<img src="latex/latex2png-EqSolving_188400768_-5.gif" alt="$F=\{f_1,\ldots,f_r\}$" class="latex-inline" style="vertical-align: -5px" width="118" height="18">不是约化的,设<img src="latex/latex2png-EqSolving_255030292_-2.gif" alt="$I_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="14">为<img src="latex/latex2png-EqSolving_126830718_-4.gif" alt="$f_i\in F$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">的初式,则有带余除法:<img src="latex/latex2png-EqSolving_215212179_.gif" alt="$$I_r^{s_r}g=Q_rf_r+R_r,\quad R_r\red{f_r},$$" class="latex-display" width="580" height="18"> <img src="latex/latex2png-EqSolving_200834323_.gif" alt="$$I_{r-1}^{s_{r-1}}R_r=Q_{r-1}f_{r-1}+R_{r-1},\quad R_{r-1}\red{f_{r-1}},$$" class="latex-display" width="580" height="19"> <img src="latex/latex2png-EqSolving_16585730_.gif" alt="$$\cdots$$" class="latex-display" width="580" height="2"> <img src="latex/latex2png-EqSolving_63872461_.gif" alt="$$I_1^{s_1}R_2=Q_1f_1+R_1,\quad R_1\red{f_1}.$$" class="latex-display" width="580" height="18"> 显然<img src="latex/latex2png-EqSolving_131894252_-2.gif" alt="$R_1$" class="latex-inline" style="vertical-align: -2px" width="19" height="14">对<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是约化的,我们称其为<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">对<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的余式,记为<img src="latex/latex2png-EqSolving_146081504_-4.gif" alt="$g\rem F$" class="latex-inline" style="vertical-align: -4px" width="54" height="16">.
+
+
+</div>
+
+<p>下面给出特征列的定义:</p>
+
+<div class="definition">
+<span class="theorem-header">定义13<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">为有限非零多项式集合,称升列<img src="latex/latex2png-EqSolving_96193624_-5.gif" alt="$C\in AS(P)$" class="latex-inline" style="vertical-align: -5px" width="80" height="18">为其特征列(characteristic set),如果<img src="latex/latex2png-EqSolving_140375533_-5.gif" alt="$C\subset\idea{P}$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">且<img src="latex/latex2png-EqSolving_164953355_-4.gif" alt="$\forall p\in P$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">有<img src="latex/latex2png-EqSolving_160465449_-4.gif" alt="$p\rem C=0$" class="latex-inline" style="vertical-align: -4px" width="86" height="16">.
+
+
+</div>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(求特征列的算法)</span>
+
+<p>输入:非零有限多项式集合<img src="latex/latex2png-EqSolving_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,</p>
+
+<p>输出:<img src="latex/latex2png-EqSolving_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的特征列<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">.</p>
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_86144680_-2.gif" alt="$P_1=P$" class="latex-inline" style="vertical-align: -2px" width="53" height="14">,<img src="latex/latex2png-EqSolving_84112404_0.gif" alt="$i=1$" class="latex-inline" style="vertical-align: 0px" width="35" height="12">,</li>
+
+<li>求出<img src="latex/latex2png-EqSolving_164400108_-2.gif" alt="$P_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">的一个基本列<img src="latex/latex2png-EqSolving_208411598_-5.gif" alt="$F_i\in BS(P_i)$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,</li>
+
+<li>将<img src="latex/latex2png-EqSolving_26856800_-5.gif" alt="$P_i\setminus F_i$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">中的多项式对<img src="latex/latex2png-EqSolving_204698644_-2.gif" alt="$F_i$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">求余式,其非零项构成集合<img src="latex/latex2png-EqSolving_130845676_-2.gif" alt="$R_i$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_20451668_-4.gif" alt="$R_i\neq\emptyset$" class="latex-inline" style="vertical-align: -4px" width="48" height="17">,令<img src="latex/latex2png-EqSolving_67149836_-4.gif" alt="$P_{i+1}=P_i\bigcup R_i$" class="latex-inline" style="vertical-align: -4px" width="109" height="17">,<img src="latex/latex2png-EqSolving_203196777_-2.gif" alt="$i=i+1$" class="latex-inline" style="vertical-align: -2px" width="61" height="14">,转2步,</li>
+
+<li>输出<img src="latex/latex2png-EqSolving_204698644_-2.gif" alt="$F_i$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">.</li>
+</ol>
+
+
+</div>
+
+<p>对于上面的算法过程,设其在<img src="latex/latex2png-EqSolving_85423124_0.gif" alt="$i=m$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">时终止,我们很容易有如下断言:<img src="latex/latex2png-EqSolving_177591668_.gif" alt="$$V(P_1)=V(P_2)=\cdots=V(P_m).$$" class="latex-display" width="580" height="18"></p>
+
+<p>而对于算法的终止性,由定理<a class="ref-th" href="EqSolving.html#th:thofbs">4</a>可知我们得到如下的递降基本列:<img src="latex/latex2png-EqSolving_197422437_.gif" alt="$$F_1\succ F_2\succ\cdots$$" class="latex-display" width="580" height="14"> 由于Ritt引理,我们可以断言在某一步,例如<img src="latex/latex2png-EqSolving_85423124_0.gif" alt="$i=m$" class="latex-inline" style="vertical-align: 0px" width="42" height="12">时,算法会终止,即此时会得到<img src="latex/latex2png-EqSolving_196177797_-2.gif" alt="$R_i=\emptyset$" class="latex-inline" style="vertical-align: -2px" width="48" height="15">.</p>
+
+<p>关于特征列和多项式零点的关系,有如下的定理:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理5<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_176973695_-5.gif" alt="$F=\{f_1,f_2,\ldots,f_r\}$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">为求得的基本列,且<img src="latex/latex2png-EqSolving_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">的初式为<img src="latex/latex2png-EqSolving_255030292_-2.gif" alt="$I_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="14">,<img src="latex/latex2png-EqSolving_1929854_-2.gif" alt="$J=I_1I_2\cdots I_r$" class="latex-inline" style="vertical-align: -2px" width="99" height="14">,则<img src="latex/latex2png-EqSolving_148615908_-5.gif" alt="$V(P)=(V(F)\setminus V(J))\bigcup V(P,I_1)\bigcup V(P,I_2)\bigcup\cdots\bigcup V(P,I_r)$" class="latex-inline" style="vertical-align: -5px" width="440" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由伪除法的定义,我们知道对于多项式<img src="latex/latex2png-EqSolving_128803598_-4.gif" alt="$p\in P$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">,由于<img src="latex/latex2png-EqSolving_136293133_-5.gif" alt="$p\red{F}$" class="latex-inline" style="vertical-align: -5px" width="60" height="18">,则存在<img src="latex/latex2png-EqSolving_19638547_-4.gif" alt="$q_r,\ldots,q_1$" class="latex-inline" style="vertical-align: -4px" width="65" height="12">使得<img src="latex/latex2png-EqSolving_54959815_.gif" alt="$$I_r^{s_r}\cdots I_1^{s_1}p=q_rf_r+\cdots+q_1f_1,$$" class="latex-display" width="580" height="17">
+由此等式显然可以看出右边任何一项都是左边的子集,因此右<img src="latex/latex2png-EqSolving_253826322_-1.gif" alt="$\subset$" class="latex-inline" style="vertical-align: -1px" width="11" height="10">左.现在<img src="latex/latex2png-EqSolving_167074443_-5.gif" alt="$\forall a\in V(P)$" class="latex-inline" style="vertical-align: -5px" width="76" height="18">,若<img src="latex/latex2png-EqSolving_256539031_-5.gif" alt="$a\in V(J)$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,则必有某个<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">使得<img src="latex/latex2png-EqSolving_230622815_-5.gif" alt="$a\in V(I_i)$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,此时易知<img src="latex/latex2png-EqSolving_121568319_-5.gif" alt="$a\in V(P,I_i)$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,若<img src="latex/latex2png-EqSolving_141722602_-5.gif" alt="$a\not\in V(J)$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,则<img src="latex/latex2png-EqSolving_219139076_-5.gif" alt="$a\in V(F)\setminus V(J)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">,因此有左<img src="latex/latex2png-EqSolving_253826322_-1.gif" alt="$\subset$" class="latex-inline" style="vertical-align: -1px" width="11" height="10">右.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注5<a name=""></a></span><span class="theorem-name"></span>
+若<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">是矛盾列,则有<img src="latex/latex2png-EqSolving_80585344_-5.gif" alt="$V(P)\subset V(F)=\emptyset$" class="latex-inline" style="vertical-align: -5px" width="131" height="18">.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理6<a name=""></a></span><span class="theorem-name"></span>
+对于有限非零多项式集合<img src="latex/latex2png-EqSolving_43152402_0.gif" alt="$P$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,存在一系列的特征列<img src="latex/latex2png-EqSolving_214953683_-4.gif" alt="$F_1,F_2,\cdots$" class="latex-inline" style="vertical-align: -4px" width="69" height="16">使得<img src="latex/latex2png-EqSolving_158099602_.gif" alt="$$V(P)=\bigcup[V(F_i)\setminus V(J_i)],$$" class="latex-display" width="580" height="24">其中<img src="latex/latex2png-EqSolving_265063404_-2.gif" alt="$J_i$" class="latex-inline" style="vertical-align: -2px" width="13" height="14">为<img src="latex/latex2png-EqSolving_204698644_-2.gif" alt="$F_i$" class="latex-inline" style="vertical-align: -2px" width="16" height="14">中各多项式初式之积.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+根据前面定理,我们已有分解<img src="latex/latex2png-EqSolving_222981934_.gif" alt="$$V(P)=(V(F)\setminus V(J))\bigcup(\bigcup V(P,I_i)).$$" class="latex-display" width="580" height="24">
+
+<p>首先我们证明若<img src="latex/latex2png-EqSolving_37639396_-4.gif" alt="$I_i\neq 0$" class="latex-inline" style="vertical-align: -4px" width="43" height="16">,则<img src="latex/latex2png-EqSolving_21685491_-5.gif" alt="$I_i\red{P}$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">.由于<img src="latex/latex2png-EqSolving_255030292_-2.gif" alt="$I_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="14">是特征列<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">中<img src="latex/latex2png-EqSolving_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">的初式,则显然有<img src="latex/latex2png-EqSolving_11199731_-5.gif" alt="$I_i\red{F}$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">.因此<img src="latex/latex2png-EqSolving_21685491_-5.gif" alt="$I_i\red{P}$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">.</p>
+
+<p>再用递归思想,对每个不为零的<img src="latex/latex2png-EqSolving_255030292_-2.gif" alt="$I_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="14">,分解<img src="latex/latex2png-EqSolving_211484350_-5.gif" alt="$V(P,I_i)$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">,若其特征列不是矛盾列,则可得到递减的特征列序列,由定理<a class="ref-th" href="EqSolving.html#th:thofbs">4</a>可知其必有限终止,<img src="latex/latex2png-EqSolving_220951611_-5.gif" alt="$V(P)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">可化为本定理形式.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+
+
+<h2><a name="sec7" id="sec7"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Gr&ouml;bner基</h2>
+
+<p class="first">Gr&ouml;bner基是Buchberger在1965年于其博士毕业论文中提出,最初是用来解决多项式方程组的问题.其后经过发展,它在多元多项式环的理想等问题上也有重要的应用.<span class="cite"><a class="cite" href="EqSolving.html#ref-4" name="cite-4">[4]</a></span>一书对此有详细介绍,另外<span class="cite"><a class="cite" href="EqSolving.html#ref-5" name="cite-5">[5]</a></span>,<span class="cite"><a class="cite" href="EqSolving.html#ref-2" name="cite-2">[2]</a></span>对此也有介绍.</p>
+
+<h3><a name="sec8" id="sec8"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一些概念与介绍</h3>
+
+<p class="first">我们主要是为了处理多元多项式而引入了Gr&ouml;bner基,因此我们先给出一些记号上的说明.</p>
+
+<p>设<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">为一域,以<img src="latex/latex2png-EqSolving_43676690_0.gif" alt="$X$" class="latex-inline" style="vertical-align: 0px" width="14" height="12">表示<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">个不定元<img src="latex/latex2png-EqSolving_240991870_-4.gif" alt="$x_1,x_2,\ldots,x_n$" class="latex-inline" style="vertical-align: -4px" width="95" height="12">,则记多项式环<img src="latex/latex2png-EqSolving_203762781_-5.gif" alt="$R=F[X]=F[x_1,x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="212" height="18">,设有<img src="latex/latex2png-EqSolving_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">个多项式<img src="latex/latex2png-EqSolving_44509019_-4.gif" alt="$f_1,\ldots,f_s\in R$" class="latex-inline" style="vertical-align: -4px" width="100" height="16">,由它们生成的理想记作<img src="latex/latex2png-EqSolving_148664413_.gif" alt="$$I=\langle f_1,f_2,\ldots,f_s\rangle=\left\{\sum_{1\le i\le s}q_if_i|q_i\in R\right\}.$$" class="latex-display" width="580" height="61"></p>
+
+<div class="definition">
+<span class="theorem-header">定义14<a name=""></a></span><span class="theorem-name"></span>
+对于上面的理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,定义其仿射簇(The variety of <img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">)为<img src="latex/latex2png-EqSolving_80061281_.gif" alt="$$V(I)=\{a=(a_1,a_2,\ldots,a_n)\in F^n|f_i(a)=0,i=1,2,\ldots,s\}.$$" class="latex-display" width="580" height="18">
+
+
+</div>
+
+<p>显然我们有<img src="latex/latex2png-EqSolving_151124771_-5.gif" alt="$V(f_1,f_2,\ldots,f_s)=\bigcap_{i=1}^sV(f_i)$" class="latex-inline" style="vertical-align: -5px" width="217" height="18">,且<img src="latex/latex2png-EqSolving_182635984_-5.gif" alt="$\forall f\in I(f(V(I))=0)$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">.</p>
+
+<p>采用上面的记号,<img src="latex/latex2png-EqSolving_105228386_-4.gif" alt="$f_1,\ldots,f_s$" class="latex-inline" style="vertical-align: -4px" width="65" height="16">显然是<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的基,我们知道,在一元多项式环中,由于其是主理想环,我们有<img src="latex/latex2png-EqSolving_157608204_.gif" alt="$$\langle f_1,\ldots,f_s\rangle=\langle\gcd(f_1,\ldots,f_s)\rangle=\langle g\rangle,$$" class="latex-display" width="580" height="18"> 且对于任何一个多项式<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,将其对<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">作Euclid除法得到<img src="latex/latex2png-EqSolving_235103181_-4.gif" alt="$f=qg+r$" class="latex-inline" style="vertical-align: -4px" width="75" height="16">,则<img src="latex/latex2png-EqSolving_108030603_-5.gif" alt="$f\in\langle g\rangle\Leftrightarrow r=0$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">.但对于多元情形,这些良好的性质未必成立,比如<img src="latex/latex2png-EqSolving_235784845_.gif" alt="$$\langle x,y\rangle\neq F[x,y]=\langle 1\rangle=\langle\gcd(x,y)\rangle.$$" class="latex-display" width="580" height="18"></p>
+
+<p>对于指标<img src="latex/latex2png-EqSolving_134901639_-5.gif" alt="$\alpha=(\alpha_1,\alpha_2,\ldots,\alpha_n)\in\mathbb{N}^n$" class="latex-inline" style="vertical-align: -5px" width="186" height="18">,定义<img src="latex/latex2png-EqSolving_78758452_-4.gif" alt="$X^{\alpha}=x_1^{\alpha_1}x_2^{\alpha_2}\cdots x_n^{\alpha_n}$" class="latex-inline" style="vertical-align: -4px" width="146" height="16">,称为单项式(Monomial),将全体单项式集合记作<img src="latex/latex2png-EqSolving_126186753_-1.gif" alt="$M\subset R$" class="latex-inline" style="vertical-align: -1px" width="53" height="13">.</p>
+
+<p>我们可以定义<img src="latex/latex2png-EqSolving_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">中的一种良序<img src="latex/latex2png-EqSolving_41841682_-1.gif" alt="$<$" class="latex-inline" style="vertical-align: -1px" width="11" height="10">,使其满足与加法的和谐性,即对任何三个指标<img src="latex/latex2png-EqSolving_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,<img src="latex/latex2png-EqSolving_33257137_-4.gif" alt="$\beta$" class="latex-inline" style="vertical-align: -4px" width="10" height="16">,<img src="latex/latex2png-EqSolving_241064698_-4.gif" alt="$\gamma\in\mathbb{N}^n$" class="latex-inline" style="vertical-align: -4px" width="50" height="16">,有<img src="latex/latex2png-EqSolving_111759558_-4.gif" alt="$\alpha<\beta\Rightarrow\alpha+\gamma<\beta+\gamma$" class="latex-inline" style="vertical-align: -4px" width="171" height="16">.下面给出几个序的例子:</p>
+
+<div class="problem">
+<span class="proof-header">例1<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">上的字典序(Lexicographic order) <img src="latex/latex2png-EqSolving_82743129_-2.gif" alt="${<}_{lex}$" class="latex-inline" style="vertical-align: -2px" width="29" height="11"> : <img src="latex/latex2png-EqSolving_197888300_-4.gif" alt="$\alpha{<}_{lex}\beta\Leftrightarrow\alpha-\beta$" class="latex-inline" style="vertical-align: -4px" width="120" height="16">左边第一非零分量为负.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例2<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">上的分级字典序(Graded lexicographic order)<img src="latex/latex2png-EqSolving_215558282_-2.gif" alt="${<}_{lex1}$" class="latex-inline" style="vertical-align: -2px" width="36" height="11">:<img src="latex/latex2png-EqSolving_203210656_-5.gif" alt="$\alpha{<}_{lex1}\beta\Leftrightarrow\|\alpha\|<\|\beta\|\vee (\|\alpha\|=\|\beta\|\wedge\alpha{<}_{lex}\beta)$" class="latex-inline" style="vertical-align: -5px" width="339" height="18">,其中<img src="latex/latex2png-EqSolving_79172610_-5.gif" alt="$\|\cdot\|$" class="latex-inline" style="vertical-align: -5px" width="26" height="18">是1-范数.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例3<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">上的分级逆字典序(Graded reverse lexicographic order)<img src="latex/latex2png-EqSolving_216606858_-2.gif" alt="${<}_{lex2}$" class="latex-inline" style="vertical-align: -2px" width="36" height="11">:<img src="latex/latex2png-EqSolving_136247895_-5.gif" alt="$\alpha{<}_{lex2}\beta\Leftrightarrow\|\alpha\|<\|\beta\|\vee (\|\alpha\|=\|\beta\|\wedge\alpha-\beta\text{最右非零分量为零})$" class="latex-inline" style="vertical-align: -5px" width="460" height="19">.
+<span class="example-end">◇</span>
+
+</div>
+
+<p>我们一般取字典序即可,就以<img src="latex/latex2png-EqSolving_41841682_-1.gif" alt="$<$" class="latex-inline" style="vertical-align: -1px" width="11" height="10">来表示,在该序下,我们可以定义多项式<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的领项<img src="latex/latex2png-EqSolving_147349989_-5.gif" alt="$\lt{f}$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">,领项系数<img src="latex/latex2png-EqSolving_121246938_-5.gif" alt="$\plc{f}$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">和领项单项式<img src="latex/latex2png-EqSolving_121085466_-5.gif" alt="$\lm{f}$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">.一个多项式次数的定义为<img src="latex/latex2png-EqSolving_82021158_-5.gif" alt="$\deg f=\deg \lt{f}\in\mathbb{N}^n$" class="latex-inline" style="vertical-align: -5px" width="162" height="18">.有了这些概念,我们可以像在一元多项式环中那样做带余除法,下面给出<img src="latex/latex2png-EqSolving_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">中带余除法的算法:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name="al:division1"></a></span><span class="theorem-name">(带余除法)</span>
+
+<p>输入:<img src="latex/latex2png-EqSolving_2433849_-4.gif" alt="$f,f_1,f_2,\ldots,f_s\in R$" class="latex-inline" style="vertical-align: -4px" width="139" height="16">,</p>
+
+<p>输出:<img src="latex/latex2png-EqSolving_16251362_-4.gif" alt="$q_1,q_2,\ldots,q_s,r\in R$" class="latex-inline" style="vertical-align: -4px" width="137" height="16">使得<img src="latex/latex2png-EqSolving_215442967_-4.gif" alt="$f=q_1f_1+\cdots+q_sf_s+r$" class="latex-inline" style="vertical-align: -4px" width="178" height="16">且<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">中任何单项不被<img src="latex/latex2png-EqSolving_125544129_-5.gif" alt="$\lt{f_1},\ldots,\lt{f_s}$" class="latex-inline" style="vertical-align: -5px" width="114" height="18">中任何一个整除,即不可再约化.</p>
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_235041812_-1.gif" alt="$r=0$" class="latex-inline" style="vertical-align: -1px" width="38" height="12">,<img src="latex/latex2png-EqSolving_202404884_-4.gif" alt="$p=f$" class="latex-inline" style="vertical-align: -4px" width="40" height="16">,<img src="latex/latex2png-EqSolving_198117478_-5.gif" alt="$q_i=0(i=1,\ldots,s)$" class="latex-inline" style="vertical-align: -5px" width="136" height="18">,</li>
+
+<li>当<img src="latex/latex2png-EqSolving_80412132_-4.gif" alt="$p\neq 0$" class="latex-inline" style="vertical-align: -4px" width="39" height="16">时,循环做下面第3步,</li>
+
+<li>若存在某个<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">使<img src="latex/latex2png-EqSolving_202423980_-5.gif" alt="$\lt{f_i}|\lt{p}$" class="latex-inline" style="vertical-align: -5px" width="75" height="18">则<img src="latex/latex2png-EqSolving_2584418_.gif" alt="$$q_i=q_i+\frac{\lt{p}}{\lt{f_i}},\quad p=p-\frac{\lt{p}}{\lt{f_i}}f_i,$$" class="latex-display" width="580" height="41">否则<img src="latex/latex2png-EqSolving_12141851_-5.gif" alt="$r=r+\lt{p}$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">,<img src="latex/latex2png-EqSolving_10037019_-5.gif" alt="$p=p-\lt{p}$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">,</li>
+
+<li>输出<img src="latex/latex2png-EqSolving_128355172_-4.gif" alt="$q_1,q_2,\ldots,q_s,r$" class="latex-inline" style="vertical-align: -4px" width="103" height="12">.</li>
+</ol>
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例4<a name=""></a></span><span class="theorem-name"></span>
+考虑<img src="latex/latex2png-EqSolving_27833011_-4.gif" alt="$f=x^2y+xy^2+y^2$" class="latex-inline" style="vertical-align: -4px" width="138" height="18">,<img src="latex/latex2png-EqSolving_198461852_-4.gif" alt="$f_1=xy-1$" class="latex-inline" style="vertical-align: -4px" width="82" height="16">,<img src="latex/latex2png-EqSolving_142108103_-4.gif" alt="$f_2=y^2-1$" class="latex-inline" style="vertical-align: -4px" width="80" height="18">.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+用上面的算法计算除法,我们发现,第一步只可以用<img src="latex/latex2png-EqSolving_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">来约化,得到<img src="latex/latex2png-EqSolving_148964994_-5.gif" alt="$f=xf_1+(xy^2+x+y^2)$" class="latex-inline" style="vertical-align: -5px" width="180" height="19">,第二步我们可以用<img src="latex/latex2png-EqSolving_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">或<img src="latex/latex2png-EqSolving_69497876_-4.gif" alt="$f_2$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">来约化,简单计算我们发现若这一步用<img src="latex/latex2png-EqSolving_69432340_-4.gif" alt="$f_1$" class="latex-inline" style="vertical-align: -4px" width="13" height="16">来约化,得到结果<img src="latex/latex2png-EqSolving_117434391_.gif" alt="$$f=(x+y)f_1+f_2+(x+y+1),$$" class="latex-display" width="580" height="18">反之则得到<img src="latex/latex2png-EqSolving_75070401_.gif" alt="$$f=xf_1+(x+1)f_2+(2x+1),$$" class="latex-display" width="580" height="18"> 我们看到,约化的顺序不同会导致结果不同,这也是多元多项式环区别于一元多项式环的性质之一.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义15<a name=""></a></span><span class="theorem-name"></span>
+在算法<a class="ref-th" href="EqSolving.html#al:division1">2</a>第3步中若选取满足领项能整除<img src="latex/latex2png-EqSolving_136864229_-5.gif" alt="$\lt{p}$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">的最小的指标<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">对应的多项式进行约化,则定义此时得到的<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">为余式<img src="latex/latex2png-EqSolving_46328930_-5.gif" alt="$f\rem (f_1,f_2,\ldots,f_s)=r$" class="latex-inline" style="vertical-align: -5px" width="172" height="18">.
+
+
+</div>
+
+<p>由前面约化结果的不唯一性我们知道并不能用余式是否为零来判断一个多项式是否在所考察的理想中,为了解决种种在多元多项式环中出现的问题,我们需要引入Gr&ouml;bner基.</p>
+
+
+<h3><a name="sec9" id="sec9"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>单项式理想及一些准备定理</h3>
+
+<p class="first">单项理想即是指由一些单项式生成的理想,若<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">是<img src="latex/latex2png-EqSolving_198675436_0.gif" alt="$N^n$" class="latex-inline" style="vertical-align: 0px" width="23" height="12">的一个子集,定义<img src="latex/latex2png-EqSolving_165451052_-5.gif" alt="$\idea{x^A}=\idea{\{x^{\alpha}|\alpha\in A\}}$" class="latex-inline" style="vertical-align: -5px" width="149" height="20">.</p>
+
+<div class="lemma">
+<span class="theorem-header">引理1<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_260966509_-5.gif" alt="$x^{\beta}\in I\Leftrightarrow\exists\alpha\in A(x^{\alpha}|x^{\beta})$" class="latex-inline" style="vertical-align: -5px" width="179" height="19">.
+
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理2<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是一个单项理想,以下三个命题是等价的:
+
+<p>(1)<img src="latex/latex2png-EqSolving_129262510_-4.gif" alt="$f\in I$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">,</p>
+
+<p>(2)<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">中每个单项都属于理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">,</p>
+
+<p>(3)<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">是<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">中某些多项式的<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">-线性组合.</p>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+(1)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(2) 设<img src="latex/latex2png-EqSolving_177441501_-5.gif" alt="$I=\idea{x^A}$" class="latex-inline" style="vertical-align: -5px" width="63" height="20">,则必有<img src="latex/latex2png-EqSolving_44990028_-7.gif" alt="$f=\sum_{\alpha\in A}q_{\alpha}x^{\alpha}$" class="latex-inline" style="vertical-align: -7px" width="114" height="20">,其中<img src="latex/latex2png-EqSolving_215745514_-4.gif" alt="$q_{\alpha}$" class="latex-inline" style="vertical-align: -4px" width="15" height="12">是多项式.由此可知<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">中每个单项必可被某个<img src="latex/latex2png-EqSolving_223020010_0.gif" alt="$x^{\alpha}$" class="latex-inline" style="vertical-align: 0px" width="17" height="11">整除.
+
+<p>(2)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(3)和(3)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(1)均显然.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>由引理第二个等价条件得到:
+<div class="corollary">
+<span class="theorem-header">推论2<a name=""></a></span><span class="theorem-name"></span>
+两个单项理想<img src="latex/latex2png-EqSolving_253981716_-2.gif" alt="$I_1$" class="latex-inline" style="vertical-align: -2px" width="13" height="14">,<img src="latex/latex2png-EqSolving_254047252_-2.gif" alt="$I_2$" class="latex-inline" style="vertical-align: -2px" width="13" height="14">相等的充要条件是它们含有相同的单项式.</p>
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理7<a name=""></a></span><span class="theorem-name">(Dickson引理)</span>
+<img src="latex/latex2png-EqSolving_136996385_-4.gif" alt="$\forall A\subset\mathbb{N}^n,\exists$" class="latex-inline" style="vertical-align: -4px" width="80" height="16">有限集<img src="latex/latex2png-EqSolving_113538305_-1.gif" alt="$B\subset A$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">使得<img src="latex/latex2png-EqSolving_92995009_-5.gif" alt="$\idea{x^A}=\idea{x^B}$" class="latex-inline" style="vertical-align: -5px" width="87" height="20">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+为了便于证明,我们引入<img src="latex/latex2png-EqSolving_67678772_-1.gif" alt="$\mathbb{N}^n$" class="latex-inline" style="vertical-align: -1px" width="20" height="13">上的偏序<img src="latex/latex2png-EqSolving_33317978_-3.gif" alt="$\preccurlyeq$" class="latex-inline" style="vertical-align: -3px" width="11" height="13">满足<img src="latex/latex2png-EqSolving_126813861_-5.gif" alt="$\alpha\preccurlyeq\beta\Leftrightarrow\forall i\in\{1,2,\ldots,n\}(\alpha_i\le\beta_i)$" class="latex-inline" style="vertical-align: -5px" width="256" height="18">.由是我们知道<img src="latex/latex2png-EqSolving_232204312_-5.gif" alt="$\alpha\preccurlyeq\beta\Leftrightarrow x^{\alpha}|x^{\beta}$" class="latex-inline" style="vertical-align: -5px" width="110" height="19">.
+
+<p>设<img src="latex/latex2png-EqSolving_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">为<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">的极小元集合,即<img src="latex/latex2png-EqSolving_138561784_-5.gif" alt="$B=\{\beta\in A|\forall\alpha\in A(\alpha\not\prec\beta)\}$" class="latex-inline" style="vertical-align: -5px" width="207" height="18">.</p>
+
+<p>于是<img src="latex/latex2png-EqSolving_204097589_-5.gif" alt="$\forall\alpha\in A,\exists\beta\in B(\beta\preccurlyeq\alpha)$" class="latex-inline" style="vertical-align: -5px" width="168" height="18">,如若不然,首先<img src="latex/latex2png-EqSolving_116826854_-4.gif" alt="$\beta\neq\alpha\Rightarrow\alpha\not\in B$" class="latex-inline" style="vertical-align: -4px" width="113" height="16">,即<img src="latex/latex2png-EqSolving_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">非极小元,必存在<img src="latex/latex2png-EqSolving_27798742_-5.gif" alt="$\beta'\in B(\beta'\prec\alpha)$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">,矛盾.因此<img src="latex/latex2png-EqSolving_163653834_-5.gif" alt="$\forall\alpha\in A,\exists\beta\in  B(x^{\beta}|x^{\alpha})$" class="latex-inline" style="vertical-align: -5px" width="167" height="19">,即<img src="latex/latex2png-EqSolving_9007688_-5.gif" alt="$x^{\alpha}\in\idea{x^B}\Rightarrow\idea{x^A}\subset\idea{x^B}$" class="latex-inline" style="vertical-align: -5px" width="187" height="20">.又<img src="latex/latex2png-EqSolving_16503949_-5.gif" alt="$B\subset A\Rightarrow\idea{x^B}\subset\idea{x^A}$" class="latex-inline" style="vertical-align: -5px" width="162" height="20">,因而<img src="latex/latex2png-EqSolving_92995009_-5.gif" alt="$\idea{x^A}=\idea{x^B}$" class="latex-inline" style="vertical-align: -5px" width="87" height="20">.</p>
+
+<p>下面我们证明<img src="latex/latex2png-EqSolving_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">是有限集.对于一元<img src="latex/latex2png-EqSolving_167998484_0.gif" alt="$n=1$" class="latex-inline" style="vertical-align: 0px" width="39" height="11">的情况,由于<img src="latex/latex2png-EqSolving_33317978_-3.gif" alt="$\preccurlyeq$" class="latex-inline" style="vertical-align: -3px" width="11" height="13">是全序,则<img src="latex/latex2png-EqSolving_42234898_0.gif" alt="$B$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">是单元集,命题显然成立.下面假设命题对于<img src="latex/latex2png-EqSolving_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">的情况也是成立的,命<img src="latex/latex2png-EqSolving_264752139_.gif" alt="$$A^*=\{(\alpha_1,\alpha_2,\ldots,\alpha_{n-1}\in\mathbb{N}^{n-1}|\exists\alpha_n\in\mathbb{N},(\alpha_1,\ldots,\alpha_n)\in A\},$$" class="latex-display" width="580" height="20"> 则<img src="latex/latex2png-EqSolving_118256660_0.gif" alt="$A^*$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">的极小元集<img src="latex/latex2png-EqSolving_135033876_0.gif" alt="$B^*$" class="latex-inline" style="vertical-align: 0px" width="19" height="12">是有限集.<img src="latex/latex2png-EqSolving_37833881_-5.gif" alt="$\forall\beta^*=(\beta_1,\ldots,\beta_{n-1})\in B^*$" class="latex-inline" style="vertical-align: -5px" width="191" height="18">,我们可取<img src="latex/latex2png-EqSolving_160995184_-5.gif" alt="$b_{\beta^*}\in\mathbb{N}$" class="latex-inline" style="vertical-align: -5px" width="55" height="17">使得<img src="latex/latex2png-EqSolving_202675967_-5.gif" alt="$(\beta^*,b_{\beta^*})\in A$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,由于<img src="latex/latex2png-EqSolving_135033876_0.gif" alt="$B^*$" class="latex-inline" style="vertical-align: 0px" width="19" height="12">的有限性,我们可取最大值<img src="latex/latex2png-EqSolving_81307126_.gif" alt="$$b=\max\{b_{\beta^*}|\beta^*\in B^*\}.$$" class="latex-display" width="580" height="19"> 于是<img src="latex/latex2png-EqSolving_35583451_-1.gif" alt="$\forall\alpha\in A$" class="latex-inline" style="vertical-align: -1px" width="52" height="13">,<img src="latex/latex2png-EqSolving_207456264_-4.gif" alt="$\exists\beta^*\in B^*$" class="latex-inline" style="vertical-align: -4px" width="66" height="16">使得<img src="latex/latex2png-EqSolving_246331461_-5.gif" alt="$\beta^*\preccurlyeq(\alpha_1,\ldots,\alpha_{n-1})$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">,假设<img src="latex/latex2png-EqSolving_68812881_-2.gif" alt="$\alpha_n>b$" class="latex-inline" style="vertical-align: -2px" width="49" height="14">,则<img src="latex/latex2png-EqSolving_85455899_.gif" alt="$$(\beta^*,b_{\beta^*})\preccurlyeq(\beta^*,b)<\alpha,$$" class="latex-display" width="580" height="19"> 即<img src="latex/latex2png-EqSolving_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">不是极小元.因此<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">中任一极小元<img src="latex/latex2png-EqSolving_205233679_0.gif" alt="$\alpha$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">必满足<img src="latex/latex2png-EqSolving_134190478_-3.gif" alt="$\alpha_n\le b$" class="latex-inline" style="vertical-align: -3px" width="49" height="15">,那么<img src="latex/latex2png-EqSolving_188877310_-5.gif" alt="$\#B\le (\#B^*)\times(b+1)$" class="latex-inline" style="vertical-align: -5px" width="163" height="18">是有限的.由归纳法,本定理得证.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理3<a name="le:g1"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是<img src="latex/latex2png-EqSolving_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">中任一理想,若<img src="latex/latex2png-EqSolving_119305473_-1.gif" alt="$G\subset I$" class="latex-inline" style="vertical-align: -1px" width="43" height="13">是有限集且<img src="latex/latex2png-EqSolving_8567911_-5.gif" alt="$\idea{\lt{G}}=\idea{\lt{I}}$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">,则<img src="latex/latex2png-EqSolving_215976711_-5.gif" alt="$\idea{G}=I$" class="latex-inline" style="vertical-align: -5px" width="56" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-EqSolving_45438442_-4.gif" alt="$G={g_1,\ldots,g_t}$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">,则<img src="latex/latex2png-EqSolving_165412267_-4.gif" alt="$\forall f\in I$" class="latex-inline" style="vertical-align: -4px" width="48" height="16">,由带余除法可得到<img src="latex/latex2png-EqSolving_151805033_.gif" alt="$$f=q_1g_1+\cdots+q_tg_t+r,$$" class="latex-display" width="580" height="16">其中<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">不可再被<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">约化.而由于<img src="latex/latex2png-EqSolving_195689504_-4.gif" alt="$r=f-q_1g_1-\cdots-q_tg_t\in I$" class="latex-inline" style="vertical-align: -4px" width="207" height="16">,于是<img src="latex/latex2png-EqSolving_58655157_-5.gif" alt="$\lt{r}\in\lt{I}\Rightarrow\lt{r}\in\idea{\lt{G}}$" class="latex-inline" style="vertical-align: -5px" width="210" height="18">,即<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">中每个单项都在<img src="latex/latex2png-EqSolving_213256003_-5.gif" alt="$\idea{\lt{G}}$" class="latex-inline" style="vertical-align: -5px" width="47" height="18">中,因此<img src="latex/latex2png-EqSolving_235041812_-1.gif" alt="$r=0$" class="latex-inline" style="vertical-align: -1px" width="38" height="12">,则<img src="latex/latex2png-EqSolving_99087706_-5.gif" alt="$f\in\idea{G}\Rightarrow\idea{G}=I$" class="latex-inline" style="vertical-align: -5px" width="138" height="18">.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>由于任何单项理想均可有限生成,我们有下面的:
+<div class="theorem">
+<span class="theorem-header">定理8<a name=""></a></span><span class="theorem-name">(Hilbert基定理)</span>
+<img src="latex/latex2png-EqSolving_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">中任何理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">均可有限生成.</p>
+
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论3<a name=""></a></span><span class="theorem-name">(理想升链定理)</span>
+设<img src="latex/latex2png-EqSolving_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">中有一理想升链<img src="latex/latex2png-EqSolving_216907378_-2.gif" alt="$I_1\subset I_2\subset\cdots\subset I_n\subset\cdots$" class="latex-inline" style="vertical-align: -2px" width="172" height="14">,则存在<img src="latex/latex2png-EqSolving_121666537_-5.gif" alt="$n\in\mathbb{N}(\forall m>n,I_m=I_n)$" class="latex-inline" style="vertical-align: -5px" width="175" height="18">.
+
+
+</div>
+
+<p>这可由<img src="latex/latex2png-EqSolving_61885638_-5.gif" alt="$I=\bigcup_{i=1}^{\infty}I_i$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">是有限生成的得到.满足这样条件的环也叫诺特环(Noetherian Domain).</p>
+
+
+<h3><a name="sec10" id="sec10"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Gr&ouml;bner基及其性质</h3>
+
+<p class="first">现在引入Gr&ouml;bner基的定义:</p>
+
+<div class="definition">
+<span class="theorem-header">定义16<a name=""></a></span><span class="theorem-name"></span>
+设有多项式环<img src="latex/latex2png-EqSolving_43283474_-1.gif" alt="$R$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">中的理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">和某一单项序<img src="latex/latex2png-EqSolving_41841682_-1.gif" alt="$<$" class="latex-inline" style="vertical-align: -1px" width="11" height="10">,<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的有限子集<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">当满足<img src="latex/latex2png-EqSolving_8567911_-5.gif" alt="$\idea{\lt{G}}=\idea{\lt{I}}$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">时,称为<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的Groenber基.
+
+
+</div>
+
+<p>我们记理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的全体Gr&ouml;bner基为<img src="latex/latex2png-EqSolving_213612189_-5.gif" alt="$GB(I)$" class="latex-inline" style="vertical-align: -5px" width="46" height="18">,即<img src="latex/latex2png-EqSolving_89386310_.gif" alt="$$GB(I)=\{G\in 2^{I}|G\text{是}I\text{的Groenber基}\}.$$" class="latex-display" width="580" height="20">
+Gr&ouml;bner基的存在性是由Hilbert基定理和引理<a class="ref-th" href="EqSolving.html#le:g1">3</a>保证的,它有如下的性质:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理9<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_175387555_-5.gif" alt="$G\in GB(I)$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,则<img src="latex/latex2png-EqSolving_127649226_-1.gif" alt="$\exists !r\in R$" class="latex-inline" style="vertical-align: -1px" width="54" height="13">使得<img src="latex/latex2png-EqSolving_126646766_-4.gif" alt="$f-r\in I$" class="latex-inline" style="vertical-align: -4px" width="66" height="16">且<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">中无单项可被<img src="latex/latex2png-EqSolving_137912805_-5.gif" alt="$\lt{G}$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中元素整除,即不可被<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">约化.
+
+
+</div>
+
+<p>当考察的<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">是Gr&ouml;bner基时,我们也记<img src="latex/latex2png-EqSolving_24729210_-4.gif" alt="$f\rem G=\overline{f}^G$" class="latex-inline" style="vertical-align: -4px" width="97" height="24">或<img src="latex/latex2png-EqSolving_212247402_-4.gif" alt="$\overline{f}$" class="latex-inline" style="vertical-align: -4px" width="10" height="19">.</p>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+存在性由带余除法算法得到,对于唯一性,可令<img src="latex/latex2png-EqSolving_46899291_-4.gif" alt="$f=h_1+r_1=h_2+r_2$" class="latex-inline" style="vertical-align: -4px" width="156" height="16">,其中<img src="latex/latex2png-EqSolving_266111980_-2.gif" alt="$r_1$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">,<img src="latex/latex2png-EqSolving_266046444_-2.gif" alt="$r_2$" class="latex-inline" style="vertical-align: -2px" width="13" height="10">分别是两种不同途径约化的结果.则<img src="latex/latex2png-EqSolving_128918088_-5.gif" alt="$r_1-r_2=h_2-h_1\in I\Rightarrow \lt{r_1-r_2}$" class="latex-inline" style="vertical-align: -5px" width="254" height="18">可被<img src="latex/latex2png-EqSolving_137912805_-5.gif" alt="$\lt{G}$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中元素整除.由<img src="latex/latex2png-EqSolving_265878474_-4.gif" alt="$r_1,r_2$" class="latex-inline" style="vertical-align: -4px" width="35" height="12">的定义可知<img src="latex/latex2png-EqSolving_143824943_-2.gif" alt="$r_1-r-2=0$" class="latex-inline" style="vertical-align: -2px" width="102" height="13">.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论4<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_122271858_-4.gif" alt="$f\in I\Leftrightarrow r=\overline{f}=f\rem G=0$" class="latex-inline" style="vertical-align: -4px" width="212" height="19">.
+
+
+</div>
+
+<p>构造理想的Gr&ouml;bner基需要一种称为S-多项式的概念,下面简要讨论之.</p>
+
+<div class="definition">
+<span class="theorem-header">定义17<a name=""></a></span><span class="theorem-name"></span>
+对于非零多项式<img src="latex/latex2png-EqSolving_33715220_-4.gif" alt="$g,h$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">,设<img src="latex/latex2png-EqSolving_168118705_-4.gif" alt="$\alpha=\deg g$" class="latex-inline" style="vertical-align: -4px" width="69" height="16">,<img src="latex/latex2png-EqSolving_258099004_-4.gif" alt="$\beta=\deg h$" class="latex-inline" style="vertical-align: -4px" width="69" height="16">,<img src="latex/latex2png-EqSolving_208139388_-5.gif" alt="$x^{\gamma}=\mathrm{lcm}(x^{\alpha},x^{\beta})$" class="latex-inline" style="vertical-align: -5px" width="122" height="19">,即<img src="latex/latex2png-EqSolving_99988693_-5.gif" alt="$\gamma=(\max(\alpha_1,\beta_1),\ldots,\max(\alpha_n,\beta_n))$" class="latex-inline" style="vertical-align: -5px" width="255" height="18">,则定义<img src="latex/latex2png-EqSolving_33715220_-4.gif" alt="$g,h$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">的S-多项式为<img src="latex/latex2png-EqSolving_42184860_.gif" alt="$$S(g,h)=\left(\frac{x^{\gamma}}{\lt{g}}g-\frac{x^{\gamma}}{\lt{h}}h\right)\in R.$$" class="latex-display" width="580" height="41">
+
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理4<a name="le:g2"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_27727707_-4.gif" alt="$g_1,\ldots,g_s\in R$" class="latex-inline" style="vertical-align: -4px" width="101" height="16">,<img src="latex/latex2png-EqSolving_134233057_-4.gif" alt="$\alpha_1,\ldots,\alpha_s\in\mathbb{N}^n$" class="latex-inline" style="vertical-align: -4px" width="113" height="16">,<img src="latex/latex2png-EqSolving_95979929_-5.gif" alt="$c_1,\ldots,c_s\in F\setminus\{0\}$" class="latex-inline" style="vertical-align: -5px" width="138" height="18">,<img src="latex/latex2png-EqSolving_140891607_.gif" alt="$$f=\sum_{1\le i\le s}c_ix^{\alpha_i}g_i\in R,$$" class="latex-display" width="580" height="40"> 且有<img src="latex/latex2png-EqSolving_93889798_-1.gif" alt="$\delta\in\mathbb{N}^n$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">使<img src="latex/latex2png-EqSolving_238126571_-5.gif" alt="$\alpha_i+\deg g_i=\delta(1\le i\le s)$" class="latex-inline" style="vertical-align: -5px" width="186" height="18">,<img src="latex/latex2png-EqSolving_99641166_-4.gif" alt="$\deg f<\delta$" class="latex-inline" style="vertical-align: -4px" width="68" height="16">,即这些多项式的和最高领项消去(Leading term cancellation).
+
+<p>令<img src="latex/latex2png-EqSolving_48991261_-5.gif" alt="$x^{\gamma_{ij}}=\mathrm{lcm}(\lm{g_i},\lm{g_j})$" class="latex-inline" style="vertical-align: -5px" width="185" height="18">,则存在<img src="latex/latex2png-EqSolving_108016700_-5.gif" alt="$c_{ij}\in F$" class="latex-inline" style="vertical-align: -5px" width="51" height="17">使得<img src="latex/latex2png-EqSolving_73201221_-5.gif" alt="$x^{\gamma_{ij}}|x^{\delta}$" class="latex-inline" style="vertical-align: -5px" width="48" height="20">且<img src="latex/latex2png-EqSolving_101935611_.gif" alt="$$f=\sum_{1\le i<j\le s}c_{ij}x^{\delta-\gamma_{ij}}S(g_i,g_j),$$" class="latex-display" width="580" height="41"> 且<img src="latex/latex2png-EqSolving_88455737_-5.gif" alt="$\deg x^{\delta-\gamma_{ij}}S(g_i,g_j)<\delta,(1\le i<j\le s)$" class="latex-inline" style="vertical-align: -5px" width="277" height="20">.</p>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+可假定<img src="latex/latex2png-EqSolving_164330344_-5.gif" alt="$\plc{g_i}=1$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,否则可将其归并入<img src="latex/latex2png-EqSolving_20149268_-2.gif" alt="$c_i$" class="latex-inline" style="vertical-align: -2px" width="12" height="10">中而使定理条件形式仍不变,于是<img src="latex/latex2png-EqSolving_121618702_-5.gif" alt="$\lt{g_i}=\lm{g_i}=x^{\deg g_i}$" class="latex-inline" style="vertical-align: -5px" width="167" height="19">.由于<img src="latex/latex2png-EqSolving_233635191_-5.gif" alt="$x^{\delta}=x^{\alpha_i}\lm{g_i}=x^{\alpha_j}\lm{g_j}$" class="latex-inline" style="vertical-align: -5px" width="206" height="20">,则有<img src="latex/latex2png-EqSolving_73201221_-5.gif" alt="$x^{\gamma_{ij}}|x^{\delta}$" class="latex-inline" style="vertical-align: -5px" width="48" height="20">.
+
+<p>由于<img src="latex/latex2png-EqSolving_120636357_.gif" alt="$$S(g_i,g_j)=\frac{x^{\gamma_{ij}}}{\lt{g_i}}g_i-\frac{x^{\gamma_{ij}}}{\lt{g_j}}g_j,$$" class="latex-display" width="580" height="39"> 首项消去告诉我们<img src="latex/latex2png-EqSolving_149321138_-5.gif" alt="$\deg S(g_i,g_j)<\gamma_{ij}$" class="latex-inline" style="vertical-align: -5px" width="130" height="18">,因此<img src="latex/latex2png-EqSolving_167365968_-5.gif" alt="$\deg x^{\delta-\gamma_{ij}}S(g_i,g_j)\prec\delta$" class="latex-inline" style="vertical-align: -5px" width="163" height="20">.</p>
+
+<p>不妨设<img src="latex/latex2png-EqSolving_255106338_-3.gif" alt="$s\ge 2$" class="latex-inline" style="vertical-align: -3px" width="37" height="14">, 则
+<img src="latex/latex2png-EqSolving_84723066_.gif" alt="
+\begin{align*}
+g&=f-c_1x^{\delta-\gamma_{ij}}S(g_1,g_2)\\
+&=c_1x^{\alpha_1}g_1+c_2x^{\alpha_2}g_2+\sum_{3\le i\le s}c_ix^{\alpha_i}g_i-c_1x^{\delta-\gamma_{12}}\left(\frac{x^{\gamma_{12}}}{\lt{g_1}}g_1-\frac{x^{\gamma_{12}}}{\lt{g_2}}g_2\right)\\
+&=c_1(x^{\alpha_1}-x^{\delta-\deg g_1})g_1+(c_2x^{\alpha_2}+c_1x^{\delta-\deg g_2})g_2+\sum_{3\le i\le s}c_ix^{\alpha_i}g_i\\
+&=(c_1+c_2)x^{\alpha_2}g_2+\sum_{3\le i\le s}c_ix^{\alpha_i}g_i,
+\end{align*}
+" class="latex-display" width="580" height="175">
+显然<img src="latex/latex2png-EqSolving_99637070_-4.gif" alt="$\deg g<\delta$" class="latex-inline" style="vertical-align: -4px" width="67" height="16">,由此时<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">的形式和归纳法,我们可以证明<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">可以表成定理中的形式.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>下面的定理给出了判别Gr&ouml;bner基的一个充要条件:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理10<a name="th:g1"></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_36587462_-5.gif" alt="$G=\{g_1,\ldots,g_s\}\in GB(I)\Leftrightarrow\forall(1\le i<j\le s),S(g_i,g_j)\rem G=0$" class="latex-inline" style="vertical-align: -5px" width="474" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">.<img src="latex/latex2png-EqSolving_107944331_-5.gif" alt="$S(g_i,g_j)\in I=\idea{G}\Rightarrow\overline{S(g_i,g_j)}=0$" class="latex-inline" style="vertical-align: -5px" width="252" height="20">.
+
+<p><img src="latex/latex2png-EqSolving_120486128_-1.gif" alt="$\Leftarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">.令<img src="latex/latex2png-EqSolving_117798234_-5.gif" alt="$f\in I\setminus\{0\}$" class="latex-inline" style="vertical-align: -5px" width="76" height="18">,由定义需证明<img src="latex/latex2png-EqSolving_66139244_-5.gif" alt="$\lt{f}\in\idea{\lt{G}}$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">即可.</p>
+
+<p>不妨设<img src="latex/latex2png-EqSolving_196873575_-9.gif" alt="$f=\sum_{1\le i\le s}q_ig_i$" class="latex-inline" style="vertical-align: -9px" width="116" height="22">,<img src="latex/latex2png-EqSolving_147530305_-5.gif" alt="$\delta=\max\{\deg(q_ig_i)|1\le i\le s\}$" class="latex-inline" style="vertical-align: -5px" width="212" height="18">,则显然<img src="latex/latex2png-EqSolving_222205715_-4.gif" alt="$\deg f\le\delta$" class="latex-inline" style="vertical-align: -4px" width="68" height="16">.倘若等号不成立,即<img src="latex/latex2png-EqSolving_99641166_-4.gif" alt="$\deg f<\delta$" class="latex-inline" style="vertical-align: -4px" width="68" height="16">,定义<img src="latex/latex2png-EqSolving_1083196_.gif" alt="$$f^*=\sum_{1\le i\le s,\deg(q_ig_i)=\delta}\lt{q_i}g_i,$$" class="latex-display" width="580" height="41"> 它显然满足引理<a class="ref-th" href="EqSolving.html#le:g2">6</a>的条件,可写为<img src="latex/latex2png-EqSolving_56113326_-5.gif" alt="$S(g_i,g_j)$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">的线性组合,因而其在<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">下约化为零.由带余除法,存在<img src="latex/latex2png-EqSolving_150178143_-4.gif" alt="$q_i^*$" class="latex-inline" style="vertical-align: -4px" width="14" height="16">使得<img src="latex/latex2png-EqSolving_231535122_-9.gif" alt="$f^*=\sum_{1\le i\le s}q_i^*g_i$" class="latex-inline" style="vertical-align: -9px" width="127" height="22">且<img src="latex/latex2png-EqSolving_178834596_-5.gif" alt="$\max\{\deg(q_i^*g_i)|1\le i\le s\}\le\deg f^*<\delta$" class="latex-inline" style="vertical-align: -5px" width="283" height="18">.由<img src="latex/latex2png-EqSolving_67925012_-4.gif" alt="$f^*$" class="latex-inline" style="vertical-align: -4px" width="15" height="16">的定义可知<img src="latex/latex2png-EqSolving_195272301_-9.gif" alt="$f-f^*=\sum_{1\le i\le s}q_i^{**}g_i$" class="latex-inline" style="vertical-align: -9px" width="164" height="22">,<img src="latex/latex2png-EqSolving_148296033_-5.gif" alt="$\max\{\deg(q_i^{**}g_i)|1\le i\le s\}<\delta$" class="latex-inline" style="vertical-align: -5px" width="222" height="18">.于是<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">也可以表示成<img src="latex/latex2png-EqSolving_3089784_.gif" alt="$$f=\sum_{1\le i\le s}q_ig_i,\quad\max\{\deg(q_ig_i)|1\le i\le s\}<\delta,$$" class="latex-display" width="580" height="40"> 这与<img src="latex/latex2png-EqSolving_117727726_0.gif" alt="$\delta$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">的定义矛盾,故<img src="latex/latex2png-EqSolving_99640910_-4.gif" alt="$\deg f=\delta$" class="latex-inline" style="vertical-align: -4px" width="68" height="16">,即<img src="latex/latex2png-EqSolving_266573938_0.gif" alt="$\exists i$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">使<img src="latex/latex2png-EqSolving_212969620_-5.gif" alt="$\deg f=\deg(q_ig_i)$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">,因此<img src="latex/latex2png-EqSolving_147668476_.gif" alt="$$\lt{f}=\sum_{1\le i\le s,\deg(q_ig_i)=\delta}\lt{q_i}\lt{g_i}\in\idea{\lt{G}}.$$" class="latex-display" width="580" height="41"></p>
+
+<p>证毕.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+<h3><a name="sec11" id="sec11"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Buchberger算法及约化Gr&ouml;bner基</h3>
+
+<p class="first">Buchberger提出了Gr&ouml;bner基的概念并给出了计算它的方法,即下面的Buchberger算法:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法3<a name="al:buchberger1"></a></span><span class="theorem-name">(Buchberger算法)</span>
+
+<p>输入:<img src="latex/latex2png-EqSolving_44509019_-4.gif" alt="$f_1,\ldots,f_s\in R$" class="latex-inline" style="vertical-align: -4px" width="100" height="16">,</p>
+
+<p>输出:<img src="latex/latex2png-EqSolving_191285690_-5.gif" alt="$I=\idea{f_1,\ldots,f_s}$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">的一个Groenber基<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">.</p>
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_63257472_-5.gif" alt="$G=\{f_1,\ldots,f_s\}$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,</li>
+
+<li>循环作后面所有步骤,</li>
+
+<li><img src="latex/latex2png-EqSolving_162624027_-2.gif" alt="$S=\emptyset$" class="latex-inline" style="vertical-align: -2px" width="40" height="15">,将<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">中元素编号为<img src="latex/latex2png-EqSolving_46476159_-5.gif" alt="$G=\{g_1,\ldots,g_t\}$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">,</li>
+
+<li>对于所有的序对<img src="latex/latex2png-EqSolving_209514357_-5.gif" alt="$(i,j),1\le i<j\le t$" class="latex-inline" style="vertical-align: -5px" width="133" height="18">做:<img src="latex/latex2png-EqSolving_8331123_-5.gif" alt="$r=S(g_i,g_j)\rem G$" class="latex-inline" style="vertical-align: -5px" width="136" height="18">,若<img src="latex/latex2png-EqSolving_80411620_-4.gif" alt="$r\neq 0$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">则<img src="latex/latex2png-EqSolving_26407652_-5.gif" alt="$S=S\bigcup\{r\}$" class="latex-inline" style="vertical-align: -5px" width="83" height="18">,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_162624027_-2.gif" alt="$S=\emptyset$" class="latex-inline" style="vertical-align: -2px" width="40" height="15">则输出<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">,否则<img src="latex/latex2png-EqSolving_203774314_-4.gif" alt="$G=G\bigcup S$" class="latex-inline" style="vertical-align: -4px" width="78" height="17">.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span><span class="">(算法有效性)</span>
+我们只需证明该算法循环是可以终止的,因为终止时由定理<a class="ref-th" href="EqSolving.html#th:g1">10</a>可知<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">即是Gr&ouml;bner基.因为每步循环之后我们都可以得到一个新的集合<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">,我们给它们编上号,记为<img src="latex/latex2png-EqSolving_201881763_-2.gif" alt="$G_1\subset G_2\subset\cdots$" class="latex-inline" style="vertical-align: -2px" width="102" height="14">,显然<img src="latex/latex2png-EqSolving_237938015_.gif" alt="$$\idea{\lt{G_1}}\subset\idea{\lt{G_2}}\subset\cdots,$$" class="latex-display" width="580" height="18"> 由理想升链定理,<img src="latex/latex2png-EqSolving_96382190_-1.gif" alt="$\exists n\in\mathbb{N}$" class="latex-inline" style="vertical-align: -1px" width="50" height="13">使得<img src="latex/latex2png-EqSolving_156520858_-1.gif" alt="$\forall m>n$" class="latex-inline" style="vertical-align: -1px" width="56" height="13">有<img src="latex/latex2png-EqSolving_210475092_-5.gif" alt="$\idea{\lt{G_n}}=\idea{\lt{G_m}}$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">,此时<img src="latex/latex2png-EqSolving_77884862_-4.gif" alt="$\forall g,h\in G_n$" class="latex-inline" style="vertical-align: -4px" width="76" height="16">,令<img src="latex/latex2png-EqSolving_227566725_-5.gif" alt="$r=S(g,h)\rem G_n$" class="latex-inline" style="vertical-align: -5px" width="134" height="18">,则显然<img src="latex/latex2png-EqSolving_253813367_-4.gif" alt="$r=0\vee r\in G_{n+1}$" class="latex-inline" style="vertical-align: -4px" width="122" height="16">,于是<img src="latex/latex2png-EqSolving_264668974_-5.gif" alt="$\lt{r}\in\idea{\lt{G_{n+1}}}=\idea{\lt{G_n}}$" class="latex-inline" style="vertical-align: -5px" width="207" height="18">,由<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">是多项式对<img src="latex/latex2png-EqSolving_221803540_-2.gif" alt="$G_n$" class="latex-inline" style="vertical-align: -2px" width="20" height="14">的约化结果知道<img src="latex/latex2png-EqSolving_235041812_-1.gif" alt="$r=0$" class="latex-inline" style="vertical-align: -1px" width="38" height="12">,于是算法终止.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>多项式理想的Gr&ouml;bner基并不是唯一的,而且在上面的算法中<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">的规模的增长是十分迅速的,因此我们要对Gr&ouml;bner基作一定的优化,下面我们一步一步对其进行约化化简.</p>
+
+<div class="lemma">
+<span class="theorem-header">引理5<a name="le:minimalgb"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_175387555_-5.gif" alt="$G\in GB(I)$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,<img src="latex/latex2png-EqSolving_129393566_-4.gif" alt="$g\in G$" class="latex-inline" style="vertical-align: -4px" width="42" height="16">且<img src="latex/latex2png-EqSolving_188608104_-5.gif" alt="$\lt{g}\in\idea{\lt{G\setminus\{g\}}}$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">,则<img src="latex/latex2png-EqSolving_133152358_-5.gif" alt="$G\setminus\{g\}\in GB(I)$" class="latex-inline" style="vertical-align: -5px" width="120" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+<img src="latex/latex2png-EqSolving_235204207_-5.gif" alt="$\lt{g}\in\idea{\lt{G\setminus\{g\}}}\Rightarrow\idea{\lt{G\setminus\{g\}}}=\idea{\lt{G}}=\idea{\lt{I}}\Rightarrow G\setminus\{g\}\in GB(I)$" class="latex-inline" style="vertical-align: -5px" width="546" height="18">.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义18<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_175387555_-5.gif" alt="$G\in GB(I)$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,且<img src="latex/latex2png-EqSolving_165543323_-4.gif" alt="$\forall g\in G$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">,有<img src="latex/latex2png-EqSolving_78648880_-5.gif" alt="$\plc{g}=1\wedge\lt{g}\not\in\idea{\lt{G\setminus\{g\}}}$" class="latex-inline" style="vertical-align: -5px" width="224" height="18">,则称<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">是<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的极小Gr&ouml;bner基(Minimal Gr&ouml;bner bases),并简记为<img src="latex/latex2png-EqSolving_104793809_-5.gif" alt="$G\in MGB(I)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义19<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_104793809_-5.gif" alt="$G\in MGB(I)$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,若对于<img src="latex/latex2png-EqSolving_129393566_-4.gif" alt="$g\in G$" class="latex-inline" style="vertical-align: -4px" width="42" height="16">,<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">不可再被<img src="latex/latex2png-EqSolving_173034702_-5.gif" alt="$G\setminus\{g\}$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">约化,即<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">中任何一单项均不在理想<img src="latex/latex2png-EqSolving_36086586_-5.gif" alt="$\idea{\lt{G\setminus\{g\}}}$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">中,则称<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">关于<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">是约化的.若<img src="latex/latex2png-EqSolving_165543323_-4.gif" alt="$\forall g\in G$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">,<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">关于<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">都是约化的,则称<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">是约化Gr&ouml;bner基(Reduced Gr&ouml;bner bases),并简记为<img src="latex/latex2png-EqSolving_104793729_-5.gif" alt="$G\in RGB(I)$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">(或由下面的唯一性可记为<img src="latex/latex2png-EqSolving_216278653_-5.gif" alt="$G=RGB(I)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">).
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理11<a name=""></a></span><span class="theorem-name"></span>
+每个多项式理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">都有唯一的约化Gr&ouml;bner基.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+存在性.由引理<a class="ref-th" href="EqSolving.html#le:minimalgb">5</a>可将<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">化为<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的极小Gr&ouml;bner基,设此时<img src="latex/latex2png-EqSolving_74676352_-5.gif" alt="$G=\{g_1,g_2,\ldots,g_s\}$" class="latex-inline" style="vertical-align: -5px" width="140" height="18">,然后对<img src="latex/latex2png-EqSolving_162174844_-3.gif" alt="$1\le i\le s$" class="latex-inline" style="vertical-align: -3px" width="64" height="15">归纳地做<img src="latex/latex2png-EqSolving_126810551_-5.gif" alt="$h_i=g_i\rem\{h_1,\ldots,h_{i-1},g_{i+1},\ldots,g_s\}$" class="latex-inline" style="vertical-align: -5px" width="272" height="18">.由极小Gr&ouml;bner基的条件知道<img src="latex/latex2png-EqSolving_219720033_-5.gif" alt="$\lt{h_i}=\lt{g_i},(1\le i\le s)$" class="latex-inline" style="vertical-align: -5px" width="184" height="18">.于是由<img src="latex/latex2png-EqSolving_104035348_-2.gif" alt="$h_i$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">相对于<img src="latex/latex2png-EqSolving_86877726_-5.gif" alt="$\{h_1,\ldots,h_{i-1},g_{i+1},\ldots,g_s\}$" class="latex-inline" style="vertical-align: -5px" width="190" height="18">约化可知其相对于<img src="latex/latex2png-EqSolving_63238866_-5.gif" alt="$G_s=\{h_1,\ldots,h_s\}$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">也是约化的.
+
+<p>唯一性.设<img src="latex/latex2png-EqSolving_218920604_-4.gif" alt="$G,G^*$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">均是<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的约化Gr&ouml;bner基,则<img src="latex/latex2png-EqSolving_186622289_-5.gif" alt="$\forall g\in\lt{G}\subset\idea{\lt{G}}=\idea{\lt{G^*}}$" class="latex-inline" style="vertical-align: -5px" width="225" height="18">,<img src="latex/latex2png-EqSolving_190823019_-4.gif" alt="$\exists g^*\in G^*$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">使<img src="latex/latex2png-EqSolving_207208108_-5.gif" alt="$\lt{g^*}|\lt{g}$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,同样地,<img src="latex/latex2png-EqSolving_39607342_-4.gif" alt="$\exists g^{**}\in G$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">使<img src="latex/latex2png-EqSolving_189214544_-5.gif" alt="$\lt{g^{**}}|\lt{g^*}$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,因此<img src="latex/latex2png-EqSolving_28625554_-5.gif" alt="$\lt{g^{**}}|\lt{g}$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,由于约化Gr&ouml;bner基也是极小Gr&ouml;bner基,我们知道<img src="latex/latex2png-EqSolving_2303687_-5.gif" alt="$\lt{g}=\lt{g^{**}}=\lt{g^*}\in\lt{G^*}\Rightarrow\lt{G}\subset\lt{G^*}$" class="latex-inline" style="vertical-align: -5px" width="357" height="18">，再由对称可证<img src="latex/latex2png-EqSolving_227351995_-5.gif" alt="$\lt{G}=\lt{G^*}$" class="latex-inline" style="vertical-align: -5px" width="102" height="18">.</p>
+
+<p><img src="latex/latex2png-EqSolving_165543323_-4.gif" alt="$\forall g\in G$" class="latex-inline" style="vertical-align: -4px" width="51" height="16">,取<img src="latex/latex2png-EqSolving_178424726_-4.gif" alt="$g^*\in G^*$" class="latex-inline" style="vertical-align: -4px" width="55" height="16">使得<img src="latex/latex2png-EqSolving_93134266_-5.gif" alt="$\lt{g}=\lt{g^*}$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">.由于<img src="latex/latex2png-EqSolving_218920604_-4.gif" alt="$G,G^*$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">约化,则<img src="latex/latex2png-EqSolving_7128338_-4.gif" alt="$g-g^*\in I$" class="latex-inline" style="vertical-align: -4px" width="74" height="16">中任一单项式均不能被<img src="latex/latex2png-EqSolving_260811194_-5.gif" alt="$\lt{G\setminus\{g\}}=\lt{G^*\setminus\{g^*\}}$" class="latex-inline" style="vertical-align: -5px" width="191" height="18">中元素约化.于是<img src="latex/latex2png-EqSolving_11379124_-4.gif" alt="$g-g^*=g-g^*\rem G=0\Rightarrow g=g^*\in G^*\Rightarrow G\subset G^*\Rightarrow G=G^*$" class="latex-inline" style="vertical-align: -4px" width="464" height="16">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+<h3><a name="sec12" id="sec12"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Buchberger算法的两个改进</h3>
+
+<p class="first">Buchberger算法复杂性膨胀得很厉害,因而需要对其作一定的优化.<span class="cite"><a class="cite" href="EqSolving.html#ref-4" name="cite-4">[4]</a></span>3.3节提出了两种改进的方法.首先从算法<a class="ref-th" href="EqSolving.html#al:buchberger1">3</a>本身可以看到它比较啰嗦,实际上是采用下面的算法:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法4<a name="al:buchberger2"></a></span><span class="theorem-name">(Buchberger算法)</span>
+
+<p>输入输出同算法<a class="ref-th" href="EqSolving.html#al:buchberger1">3</a>,</p>
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_63257472_-5.gif" alt="$G=\{f_1,\ldots,f_s\}$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,<img src="latex/latex2png-EqSolving_164184124_-5.gif" alt="$H=\{\{i,j\}|i\neq j\wedge 1\le i,j\le s\}$" class="latex-inline" style="vertical-align: -5px" width="230" height="18">,</li>
+
+<li>当<img src="latex/latex2png-EqSolving_17741508_-4.gif" alt="$H\neq\emptyset$" class="latex-inline" style="vertical-align: -4px" width="45" height="17">时循环做后面两步,</li>
+
+<li>任取<img src="latex/latex2png-EqSolving_260775429_-5.gif" alt="$h=\{i,j\}\in H$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">,<img src="latex/latex2png-EqSolving_137654885_-5.gif" alt="$H=H\setminus \{h\}$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,<img src="latex/latex2png-EqSolving_7282531_-5.gif" alt="$r=S(f_i,f_j)\rem G$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_80411620_-4.gif" alt="$r\neq 0$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">则<img src="latex/latex2png-EqSolving_195083248_-4.gif" alt="$f_{s+1}=r$" class="latex-inline" style="vertical-align: -4px" width="60" height="16">,<img src="latex/latex2png-EqSolving_185430319_-5.gif" alt="$H=H\bigcup\{\{i,s+1\}|1\le i\le s\}$" class="latex-inline" style="vertical-align: -5px" width="221" height="18">,<img src="latex/latex2png-EqSolving_160043389_-5.gif" alt="$G=G\bigcup\{f_{s+1}\}$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">,<img src="latex/latex2png-EqSolving_35424607_-2.gif" alt="$s=s+1$" class="latex-inline" style="vertical-align: -2px" width="64" height="13">,</li>
+
+<li>输出<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">.</li>
+</ol>
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注6<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_63257472_-5.gif" alt="$E=\{f_1,\ldots,f_s\}$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,如果我们要得到矩阵<img src="latex/latex2png-EqSolving_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">使得<img src="latex/latex2png-EqSolving_241208262_-1.gif" alt="$G=EM$" class="latex-inline" style="vertical-align: -1px" width="65" height="13">,首先令<img src="latex/latex2png-EqSolving_5523261_-3.gif" alt="$M_s=I_{s\times s}$" class="latex-inline" style="vertical-align: -3px" width="74" height="15">,然后在上面算法每次第4步判断成功后,设带余除法给出<img src="latex/latex2png-EqSolving_197623821_-5.gif" alt="$r=S(f_i,f_j)\rem G=S(f_i,f_j)-q_1f_1-\cdots-q_sf_s$" class="latex-inline" style="vertical-align: -5px" width="358" height="18">,设<img src="latex/latex2png-EqSolving_221397520_-9.gif" alt="$S(f_i,f_j)=\sum_{1\le k\le s}S_kf_k$" class="latex-inline" style="vertical-align: -9px" width="177" height="22">,其中<img src="latex/latex2png-EqSolving_249025880_-5.gif" alt="$S_i=x^{\gamma_{ij}}/\lt{g_i}$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">,<img src="latex/latex2png-EqSolving_241707064_-5.gif" alt="$S_j=-x^{\gamma_{ij}}/\lt{g_j}$" class="latex-inline" style="vertical-align: -5px" width="128" height="18">,其余的<img src="latex/latex2png-EqSolving_150833493_-2.gif" alt="$S_k=0$" class="latex-inline" style="vertical-align: -2px" width="47" height="14">.则由<img src="latex/latex2png-EqSolving_251186174_.gif" alt="$$(f_1,\ldots,f_s,r)=(f_1,\ldots,f_s)\begin{pmatrix}1 & & & &S_1-q_1\\ &1 & & &S_2-q_2\\ & &\ddots & &\vdots\\ & & &1 &S_s-q_s \end{pmatrix}=(f_1,\ldots,f_s)Q_s,$$" class="latex-display" width="580" height="109"> 可知有迭代<img src="latex/latex2png-EqSolving_86257530_-4.gif" alt="$M_{s+1}=M_sQ_s$" class="latex-inline" style="vertical-align: -4px" width="104" height="16">,输出最后的<img src="latex/latex2png-EqSolving_54359715_-2.gif" alt="$M=M_s$" class="latex-inline" style="vertical-align: -2px" width="62" height="14">即可.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注7<a name=""></a></span><span class="theorem-name"></span>
+产生极小Gr&ouml;bner基时只要从<img src="latex/latex2png-EqSolving_42955794_0.gif" alt="$M$" class="latex-inline" style="vertical-align: 0px" width="18" height="12">中去掉相应的列,而对于约化过程,同样由带余除法得到<img src="latex/latex2png-EqSolving_247092974_-4.gif" alt="$q_1,\ldots,q_s$" class="latex-inline" style="vertical-align: -4px" width="65" height="12">,乘以相应的迭代矩阵.
+
+
+</div>
+
+<h4><a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>第一个改进</h4>
+
+<div class="lemma">
+<span class="theorem-header">引理6<a name="le:g2"></a></span><span class="theorem-name"></span>
+设有多项式<img src="latex/latex2png-EqSolving_105228386_-4.gif" alt="$f_1,\ldots,f_s$" class="latex-inline" style="vertical-align: -4px" width="65" height="16">和<img src="latex/latex2png-EqSolving_41841682_-1.gif" alt="$d$" class="latex-inline" style="vertical-align: -1px" width="11" height="10">,<img src="latex/latex2png-EqSolving_191285690_-5.gif" alt="$I=\idea{f_1,\ldots,f_s}$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">,<img src="latex/latex2png-EqSolving_131737768_-5.gif" alt="$J=\idea{f_1d,\ldots,f_sd}$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">,则<img src="latex/latex2png-EqSolving_118066303_-5.gif" alt="$\{f_1,\ldots,f_s\}\in GB(I)\Leftrightarrow \{f_1d,\ldots,f_sd\}\in GB(J)$" class="latex-inline" style="vertical-align: -5px" width="348" height="18">.
+
+
+</div>
+
+<p>此引理由Gr&ouml;bner基的定义<img src="latex/latex2png-EqSolving_8567911_-5.gif" alt="$\idea{\lt{G}}=\idea{\lt{I}}$" class="latex-inline" style="vertical-align: -5px" width="115" height="18">可证.</p>
+
+<div class="lemma">
+<span class="theorem-header">引理7<a name=""></a></span><span class="theorem-name"></span>
+设有非零多项式<img src="latex/latex2png-EqSolving_16872468_-4.gif" alt="$f,g$" class="latex-inline" style="vertical-align: -4px" width="23" height="16">,<img src="latex/latex2png-EqSolving_55342369_-5.gif" alt="$I=\idea{f,g}$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,<img src="latex/latex2png-EqSolving_263478528_-5.gif" alt="$d=\gcd(f,g)$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">,则下面两个条件等价:
+
+<p>(1) <img src="latex/latex2png-EqSolving_213812039_-5.gif" alt="$\lm{f/d}$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">与<img src="latex/latex2png-EqSolving_54623417_-5.gif" alt="$\lm{g/d}$" class="latex-inline" style="vertical-align: -5px" width="55" height="18">互素,</p>
+
+<p>(2) <img src="latex/latex2png-EqSolving_260774134_-5.gif" alt="$S(f,g)\rem\{f,g\}=0$" class="latex-inline" style="vertical-align: -5px" width="150" height="18">,即<img src="latex/latex2png-EqSolving_23731347_-5.gif" alt="$\{f,g\}\in GB(I)$" class="latex-inline" style="vertical-align: -5px" width="107" height="18">.</p>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+(1)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(2).先设<img src="latex/latex2png-EqSolving_221405858_-5.gif" alt="$d=\gcd(f,g)=1$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">,且<img src="latex/latex2png-EqSolving_252442144_-4.gif" alt="$f=aX+f'$" class="latex-inline" style="vertical-align: -4px" width="89" height="17">,<img src="latex/latex2png-EqSolving_14944479_-4.gif" alt="$g=bY+g'$" class="latex-inline" style="vertical-align: -4px" width="84" height="17">,其中<img src="latex/latex2png-EqSolving_207153119_-5.gif" alt="$\plc{f}=a,\lm{f}=X,\lc{g}=b,\lm{g}=Y$" class="latex-inline" style="vertical-align: -5px" width="293" height="18">,<img src="latex/latex2png-EqSolving_134837266_-4.gif" alt="$f'$" class="latex-inline" style="vertical-align: -4px" width="13" height="17">,<img src="latex/latex2png-EqSolving_135885842_-4.gif" alt="$g'$" class="latex-inline" style="vertical-align: -4px" width="13" height="17">是余下的部分,于是<img src="latex/latex2png-EqSolving_176808603_.gif" alt="$$X=\frac{f-f'}{a},\quad Y=\frac{g-g'}{b}.$$" class="latex-display" width="580" height="36">
+
+<p>(I)若<img src="latex/latex2png-EqSolving_83561277_-4.gif" alt="$f'=g'=0$" class="latex-inline" style="vertical-align: -4px" width="79" height="17">,则<img src="latex/latex2png-EqSolving_47460318_-5.gif" alt="$S(f,g)=0$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">,</p>
+
+<p>(II)若<img src="latex/latex2png-EqSolving_191009692_-4.gif" alt="$f'=0,g'\neq 0$" class="latex-inline" style="vertical-align: -4px" width="95" height="17">,由<img src="latex/latex2png-EqSolving_68291021_-5.gif" alt="$\gcd(\lm{f},\lm{g})=1$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">得<img src="latex/latex2png-EqSolving_95813921_.gif" alt="$$S(f,g)=\frac{1}{a}Yf-\frac{1}{b}Xg=\frac{1}{ab}(g-g')f-\frac{1}{ab}fg=-\frac{1}{ab}g'f,$$" class="latex-display" width="580" height="34"> 若它能被<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">约化,则由<img src="latex/latex2png-EqSolving_265691995_-5.gif" alt="$\lm{g}|\lm{g'f}\wedge\gcd(\lm{g},\lm{f})=1$" class="latex-inline" style="vertical-align: -5px" width="276" height="18">知<img src="latex/latex2png-EqSolving_116244827_-5.gif" alt="$\lm{g}|\lm{g'}$" class="latex-inline" style="vertical-align: -5px" width="90" height="18">,这与<img src="latex/latex2png-EqSolving_5177357_-4.gif" alt="$\deg g'<\deg g\wedge g'\neq 0$" class="latex-inline" style="vertical-align: -4px" width="161" height="17">矛盾.</p>
+
+<p>(III)若<img src="latex/latex2png-EqSolving_253094457_-4.gif" alt="$f'\neq 0,g'$" class="latex-inline" style="vertical-align: -4px" width="64" height="17"> <img src="latex/latex2png-EqSolving_134378514_-1.gif" alt="$=0$" class="latex-inline" style="vertical-align: -1px" width="25" height="12">,这与情形(II)类似.</p>
+
+<p>(IV)若<img src="latex/latex2png-EqSolving_2329827_-4.gif" alt="$f'\neq 0\wedge g'\neq 0$" class="latex-inline" style="vertical-align: -4px" width="106" height="17">,此时经过计算可知<img src="latex/latex2png-EqSolving_142071174_.gif" alt="$$S(f,g)=\frac{1}{ab}(f'g-g'f),$$" class="latex-display" width="580" height="34"> 我们断言<img src="latex/latex2png-EqSolving_234719278_-5.gif" alt="$\lm{f'g}\neq\lm{g'f}$" class="latex-inline" style="vertical-align: -5px" width="130" height="18">.假设二者相等,则<img src="latex/latex2png-EqSolving_86312680_-5.gif" alt="$\lm{f'}\lm{g}=\lm{g'}\lm{f}$" class="latex-inline" style="vertical-align: -5px" width="198" height="18">,由于<img src="latex/latex2png-EqSolving_121085466_-5.gif" alt="$\lm{f}$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">和<img src="latex/latex2png-EqSolving_122134042_-5.gif" alt="$\lm{g}$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">互素,我们得到<img src="latex/latex2png-EqSolving_134070619_-5.gif" alt="$\lm{f}|\lm{f'}$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">,矛盾.不妨设此时<img src="latex/latex2png-EqSolving_227801303_-5.gif" alt="$\lm{f'g}>\lm{g'f}$" class="latex-inline" style="vertical-align: -5px" width="130" height="18">,则第一步仅可通过<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">约化,其结果为<img src="latex/latex2png-EqSolving_139658302_.gif" alt="$$S(f,g)\rightarrow\frac{1}{ab}[(f'-\lt{f'})g-g'f],$$" class="latex-display" width="580" height="34"> 对于相反的情形如法炮制,得到第一步的约化结果仍然可进行同样的讨论,只需将其中的<img src="latex/latex2png-EqSolving_120478557_-5.gif" alt="$f'-\lt{f'}$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">看作<img src="latex/latex2png-EqSolving_134837266_-4.gif" alt="$f'$" class="latex-inline" style="vertical-align: -4px" width="13" height="17">即可.于是这样的约化过程可一直继续,直至约化为0.</p>
+
+<p>综上,我们在<img src="latex/latex2png-EqSolving_226324_0.gif" alt="$d=1$" class="latex-inline" style="vertical-align: 0px" width="38" height="12">的情况下证明了(1)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(2).当<img src="latex/latex2png-EqSolving_80349668_-4.gif" alt="$d\neq 1$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">时,我们有<img src="latex/latex2png-EqSolving_115800989_-5.gif" alt="$\gcd(f/d,g/d)=1$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,于是<img src="latex/latex2png-EqSolving_249792250_-5.gif" alt="$S(f/d,g/d)\rem\{f/d,g/d\}=0$" class="latex-inline" style="vertical-align: -5px" width="220" height="18">,即<img src="latex/latex2png-EqSolving_209149162_-5.gif" alt="$\{f/d,g/d\}$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">是Gr&ouml;bner基,由引理<a class="ref-th" href="EqSolving.html#le:g2">6</a>可知<img src="latex/latex2png-EqSolving_85595523_-5.gif" alt="$\{f,g\}$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">也是Gr&ouml;bner基,命题得证.</p>
+
+<p>(2)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(1).(I)首先我们仍然设<img src="latex/latex2png-EqSolving_221405858_-5.gif" alt="$d=\gcd(f,g)=1$" class="latex-inline" style="vertical-align: -5px" width="123" height="18">,取单项式<img src="latex/latex2png-EqSolving_12658178_-4.gif" alt="$D,X,Y\in M$" class="latex-inline" style="vertical-align: -4px" width="95" height="16">满足<img src="latex/latex2png-EqSolving_119615889_.gif" alt="$$\lm{f}=DX,\quad\lm{g}=DY,\quad \gcd(X,Y)=1,$$" class="latex-display" width="580" height="18"> 于是<img src="latex/latex2png-EqSolving_243677389_-9.gif" alt="$S(f,g)=\frac{Y}{\plc{f}}f-\frac{X}{\plc{g}}g$" class="latex-inline" style="vertical-align: -9px" width="171" height="24">,由假设<img src="latex/latex2png-EqSolving_85595523_-5.gif" alt="$\{f,g\}$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">是Gr&ouml;bner基,我们进行带余除法可以得到多项式<img src="latex/latex2png-EqSolving_267357164_-4.gif" alt="$u,v$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">使得<img src="latex/latex2png-EqSolving_204575068_-5.gif" alt="$S(f,g)=uf+vg$" class="latex-inline" style="vertical-align: -5px" width="126" height="18">,且<img src="latex/latex2png-EqSolving_125140892_-5.gif" alt="$\lm{uf},\lm{vg}\le\lm{S(f,g)}$" class="latex-inline" style="vertical-align: -5px" width="207" height="18">.整理之可得<img src="latex/latex2png-EqSolving_11821244_.gif" alt="$$\left(\frac{X}{\plc{g}}+v\right)g=\left(\frac{Y}{\plc{f}}-u\right)f,$$" class="latex-display" width="580" height="41">因此<img src="latex/latex2png-EqSolving_118126835_-5.gif" alt="$g|(Y/\plc{f}-u)$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">,又<img src="latex/latex2png-EqSolving_262719085_.gif" alt="$$\lm{u}DX=\lm{uf}\le\lm{S(f,g)}<\lm{Yf}=\lm{Xg}=DXY\Rightarrow\lm{u}<Y,$$" class="latex-display" width="580" height="18"> 则<img src="latex/latex2png-EqSolving_262527827_-5.gif" alt="$g|(Y/\plc{f}-u)\Rightarrow DY|Y\Rightarrow D=1$" class="latex-inline" style="vertical-align: -5px" width="254" height="18">,亦即<img src="latex/latex2png-EqSolving_121085466_-5.gif" alt="$\lm{f}$" class="latex-inline" style="vertical-align: -5px" width="40" height="18">,<img src="latex/latex2png-EqSolving_122134042_-5.gif" alt="$\lm{g}$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">互素.</p>
+
+<p>(II)当<img src="latex/latex2png-EqSolving_80349668_-4.gif" alt="$d\neq 1$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">时,则<img src="latex/latex2png-EqSolving_115800989_-5.gif" alt="$\gcd(f/d,g/d)=1$" class="latex-inline" style="vertical-align: -5px" width="127" height="18">,于是由<img src="latex/latex2png-EqSolving_85595523_-5.gif" alt="$\{f,g\}$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">是Gr&ouml;bner基可知<img src="latex/latex2png-EqSolving_209149162_-5.gif" alt="$\{f/d,g/d\}$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">是Gr&ouml;bner基,因而<img src="latex/latex2png-EqSolving_213812039_-5.gif" alt="$\lm{f/d}$" class="latex-inline" style="vertical-align: -5px" width="57" height="18">,<img src="latex/latex2png-EqSolving_54623417_-5.gif" alt="$\lm{g/d}$" class="latex-inline" style="vertical-align: -5px" width="55" height="18">互素.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理12<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_260774134_-5.gif" alt="$S(f,g)\rem\{f,g\}=0$" class="latex-inline" style="vertical-align: -5px" width="150" height="18">的一个充分条件是:<img src="latex/latex2png-EqSolving_68291021_-5.gif" alt="$\gcd(\lm{f},\lm{g})=1$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注8<a name=""></a></span><span class="theorem-name"></span>
+只需注意到<img src="latex/latex2png-EqSolving_60402502_-5.gif" alt="$\gcd(\lm{f},\lm{g})=1\Rightarrow\gcd(f,g)=1$" class="latex-inline" style="vertical-align: -5px" width="274" height="18">.
+
+
+</div>
+
+<p>我们可以由此得到Buchberger算法的第一个修正,在计算S-多项式并约化之前由<img src="latex/latex2png-EqSolving_239404869_-5.gif" alt="$\lm{f},\lm{g}$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">是否互素来决定是否要计算.</p>
+
+
+<h4><a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>第二个改进</h4>
+
+<div class="definition">
+<span class="theorem-header">定义20<a name=""></a></span><span class="theorem-name"></span>
+对于多项式<img src="latex/latex2png-EqSolving_105228386_-4.gif" alt="$f_1,\ldots,f_s$" class="latex-inline" style="vertical-align: -4px" width="65" height="16">,设<img src="latex/latex2png-EqSolving_16084154_-5.gif" alt="$f=(f_1,\ldots,f_s)\in R^s$" class="latex-inline" style="vertical-align: -5px" width="151" height="18">,定义<img src="latex/latex2png-EqSolving_154656852_-5.gif" alt="$\mathrm{Syz}(E)=\{h=(h_1,\ldots,h_s)\in R^s|h\cdot f=0\}$" class="latex-inline" style="vertical-align: -5px" width="309" height="18">.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理13<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_95979929_-5.gif" alt="$c_1,\ldots,c_s\in F\setminus\{0\}$" class="latex-inline" style="vertical-align: -5px" width="138" height="18">,<img src="latex/latex2png-EqSolving_145393499_-4.gif" alt="$X_1,\ldots,X_s\in M$" class="latex-inline" style="vertical-align: -4px" width="117" height="16">,<img src="latex/latex2png-EqSolving_263996634_-5.gif" alt="$X_{ij}=\mathrm{lcm}(X_i,X_j)$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">,则<img src="latex/latex2png-EqSolving_156962666_-5.gif" alt="$\mathrm{Syz}(c_1X_1,\ldots,c_sX_s)$" class="latex-inline" style="vertical-align: -5px" width="144" height="18">由<img src="latex/latex2png-EqSolving_106582890_.gif" alt="$$\{\tau_{ij}=\frac{X_{ij}}{c_iX_i}e_i-\frac{X_{ij}}{c_jX_j}e_j\in R^s|1\le i<j\le s\}$$" class="latex-display" width="580" height="40">生成,其中<img src="latex/latex2png-EqSolving_53933894_-5.gif" alt="$e_i,e_j$" class="latex-inline" style="vertical-align: -5px" width="35" height="13">为<img src="latex/latex2png-EqSolving_131238892_-1.gif" alt="$R^s$" class="latex-inline" style="vertical-align: -1px" width="19" height="13">中的自然基矢.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+首先易验证<img src="latex/latex2png-EqSolving_262837469_-5.gif" alt="$\idea{\tau_{ij}}\subset\mathrm{Syz}(c_1X_1,\ldots,c_sX_s)$" class="latex-inline" style="vertical-align: -5px" width="198" height="18">.现在假设<img src="latex/latex2png-EqSolving_195418467_-5.gif" alt="$h=(h_1,\ldots,h_s)\in\mathrm{Syz}(c_1X_1,\ldots,c_sX_s)$" class="latex-inline" style="vertical-align: -5px" width="280" height="18">,于是有<img src="latex/latex2png-EqSolving_229647638_.gif" alt="$$h_1c_1X_1+\cdots+h_sc_sX_s=0.$$" class="latex-display" width="580" height="14"> 考虑任一单项式<img src="latex/latex2png-EqSolving_128999950_-1.gif" alt="$X\in M$" class="latex-inline" style="vertical-align: -1px" width="53" height="13">,则在上式中含<img src="latex/latex2png-EqSolving_43676690_0.gif" alt="$X$" class="latex-inline" style="vertical-align: 0px" width="14" height="12">的同类项合并之后为<img src="latex/latex2png-EqSolving_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">,因此我们可只考虑这些项,将其分离出来.可设<img src="latex/latex2png-EqSolving_109741943_-4.gif" alt="$h_i=c_i'X_i'$" class="latex-inline" style="vertical-align: -4px" width="69" height="17">,其中<img src="latex/latex2png-EqSolving_83715035_-4.gif" alt="$c_i'=0$" class="latex-inline" style="vertical-align: -4px" width="43" height="17">或<img src="latex/latex2png-EqSolving_137844768_-4.gif" alt="$X_i'X_i=X$" class="latex-inline" style="vertical-align: -4px" width="75" height="17">,设<img src="latex/latex2png-EqSolving_150715777_-6.gif" alt="$c_{i_1}',\ldots,c_{i_t}'$" class="latex-inline" style="vertical-align: -6px" width="72" height="19">是<img src="latex/latex2png-EqSolving_214338502_-4.gif" alt="$c_i'$" class="latex-inline" style="vertical-align: -4px" width="12" height="17">中不为零的系数重新编号,于是有<img src="latex/latex2png-EqSolving_241709084_-6.gif" alt="$c_1'c_1+\cdots+c_s'c_s=c_{i_1}'c_{i_1}+\cdots+c_{i_t}'c_{i_t}=0$" class="latex-inline" style="vertical-align: -6px" width="305" height="19">,则
+<img src="latex/latex2png-EqSolving_157563768_.gif" alt="
+\begin{align*}
+h=&(h_1,\ldots,h_s)=c_{i_1}'X_{i_1}'e_{i_1}+\cdots+c_{i_t}'X_{i_t}'e_{i_t}\\
+&=c_{i_1}'c_{i_1}\frac{X}{c_{i_1}X_{i_1}}e_{i_1}+\cdots+c_{i_t}'c_{i_t}\frac{X}{c_{i_t}X_{i_t}}e_{i_t}\\
+&=c_{i_1}'c_{i_1}\frac{X}{X_{i_1i_2}}(\frac{X_{i_1i_2}}{c_{i_1}X_{i_1}}e_{i_1}-\frac{X_{i_1i_2}}{c_{i_2}X_{i_2}}e_{i_2})\\
+&+(c_{i_1}'c_{i_1}+c_{i_2}'c_{i_2})\frac{X}{X_{i_2i_3}}(\frac{X_{i_2i_3}}{c_{i_2}X_{i_2}}e_{i_2}-\frac{X_{i_2i_3}}{C_{i_3}X_{i_3}}e_{i_3})+\cdots\\
+&+(c_{i_1}'c_{i_1}+\cdots+c_{i_{t-1}}'c_{i_{t-1}})\frac{X}{X_{i_{t-1}i_t}}(\frac{X_{i_{t-1}i_t}}{c_{i_{t-1}}X_{i_{t-1}}}e_{i_{t-1}}-\frac{X_{i_{t-1}i_t}}{c_{i_t}X_{i_t}}e_{i_t})\\
+&+(c_{i_1}'c_{i_1}+\cdots+c_{i_t}'c_{i_t})\frac{X}{c_{i_t}X_{i_t}}e_{i_t}.
+\end{align*}
+" class="latex-display" width="580" height="248">
+
+<p>注意到上式最后一项为零,得证.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理14<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_63253375_-5.gif" alt="$G=\{g_1,\ldots,g_s\}$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,<img src="latex/latex2png-EqSolving_59545098_-5.gif" alt="$B\{\tau_{ij}|1\le i<j\le s\}$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">是<img src="latex/latex2png-EqSolving_223179159_-5.gif" alt="$\mathrm{Syz}(\lt{g_1},\ldots,\lt{g_s})$" class="latex-inline" style="vertical-align: -5px" width="151" height="18">的生成元集,则<img src="latex/latex2png-EqSolving_264752805_-5.gif" alt="$G\in GB(\idea{G})\Leftrightarrow\forall h=(h_1,\ldots,h_s)\in B(h_1g_1+\cdots+h_sg_s\rem G=0)$" class="latex-inline" style="vertical-align: -5px" width="494" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+注意到<img src="latex/latex2png-EqSolving_165409832_-5.gif" alt="$\tau_{ij}\cdot(g_1,\ldots,g_s)=S(g_i,g_j)$" class="latex-inline" style="vertical-align: -5px" width="192" height="18">,则命题显然.
+<span class="proof-end">□</span>
+
+</div>
+
+<div class="lemma">
+<span class="theorem-header">引理8<a name=""></a></span><span class="theorem-name"></span>
+记<img src="latex/latex2png-EqSolving_263996634_-5.gif" alt="$X_{ij}=\mathrm{lcm}(X_i,X_j)$" class="latex-inline" style="vertical-align: -5px" width="132" height="18">,<img src="latex/latex2png-EqSolving_217327421_-5.gif" alt="$X_{ijl}=\mathrm{lcm}(X_i,X_j,X_l)$" class="latex-inline" style="vertical-align: -5px" width="163" height="18">,则<img src="latex/latex2png-EqSolving_24484458_.gif" alt="$$\frac{X_{ijl}}{X_{ij}}\tau_{ij}+\frac{X_{ijl}}{X_{jl}}\tau_{jl}+\frac{X_{ijl}}{X_{li}}\tau_{li}=0,$$" class="latex-display" width="580" height="40">若<img src="latex/latex2png-EqSolving_10809866_-5.gif" alt="$X_l|X_{ij}$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">,则<img src="latex/latex2png-EqSolving_132615610_-5.gif" alt="$\tau_{ij}$" class="latex-inline" style="vertical-align: -5px" width="18" height="13">在<img src="latex/latex2png-EqSolving_113741242_-5.gif" alt="$\tau_{jl}$" class="latex-inline" style="vertical-align: -5px" width="17" height="13">和<img src="latex/latex2png-EqSolving_127427274_-2.gif" alt="$t_{li}$" class="latex-inline" style="vertical-align: -2px" width="15" height="13">生成的<img src="latex/latex2png-EqSolving_131238892_-1.gif" alt="$R^s$" class="latex-inline" style="vertical-align: -1px" width="19" height="13">的子模中.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注9<a name=""></a></span><span class="theorem-name"></span>
+等式可以由<img src="latex/latex2png-EqSolving_132615610_-5.gif" alt="$\tau_{ij}$" class="latex-inline" style="vertical-align: -5px" width="18" height="13">的定义式直接验证,对于第二个断言利用<img src="latex/latex2png-EqSolving_10809866_-5.gif" alt="$X_l|X_{ij}$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">时<img src="latex/latex2png-EqSolving_182530266_-5.gif" alt="$X_{ijl}=X_{ij}$" class="latex-inline" style="vertical-align: -5px" width="77" height="17">代入等式直接得.
+
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论5<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_75724994_-5.gif" alt="$B\subset\{\tau_{ij}|1\le i<j\le s\}$" class="latex-inline" style="vertical-align: -5px" width="171" height="18">是<img src="latex/latex2png-EqSolving_156968042_-5.gif" alt="$\mathrm{Syz}(c_1X_1,\ldots,x_sX_s)$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">的生成元集,若<img src="latex/latex2png-EqSolving_157713398_-4.gif" alt="$\exists i,j,l$" class="latex-inline" style="vertical-align: -4px" width="40" height="16">使<img src="latex/latex2png-EqSolving_75984893_-5.gif" alt="$\tau_{ij},\tau_{jl},\tau_{li}\in B$" class="latex-inline" style="vertical-align: -5px" width="103" height="17">,且<img src="latex/latex2png-EqSolving_10809866_-5.gif" alt="$X_l|X_{ij}$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">,则<img src="latex/latex2png-EqSolving_212722344_-5.gif" alt="$B\setminus\{\tau_{ij}\}$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">也是<img src="latex/latex2png-EqSolving_156962666_-5.gif" alt="$\mathrm{Syz}(c_1X_1,\ldots,c_sX_s)$" class="latex-inline" style="vertical-align: -5px" width="144" height="18">的生成元集.
+
+
+</div>
+
+<p>由此推论我们可以得到Buchberger算法的第二个改进,即某些S-多项式可能是其它两个S-多项式的线性组合,可以不予计算.这一步,能够显著提高Buchberger算法的效率.</p>
+
+
+<h4><a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>改进后的算法</h4>
+
+<div class="algorithm">
+<span class="theorem-header">算法5<a name="al:buchberger3"></a></span><span class="theorem-name">(改进Buchberger算法)</span>
+
+<p>输入:多项式<img src="latex/latex2png-EqSolving_105228386_-4.gif" alt="$f_1,\ldots,f_s$" class="latex-inline" style="vertical-align: -4px" width="65" height="16">,</p>
+
+<p>输出:理想<img src="latex/latex2png-EqSolving_191452234_-5.gif" alt="$\idea{f_1,\ldots,f_s}$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">的Gr&ouml;bner基<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">.</p>
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_63257472_-5.gif" alt="$G=\{f_1,\ldots,f_s\}$" class="latex-inline" style="vertical-align: -5px" width="117" height="18">,<img src="latex/latex2png-EqSolving_105811429_-2.gif" alt="$C=\emptyset$" class="latex-inline" style="vertical-align: -2px" width="42" height="15">,<img src="latex/latex2png-EqSolving_212402481_-5.gif" alt="$NC=\{\{1,2\}\}$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">,<img src="latex/latex2png-EqSolving_84177940_0.gif" alt="$i=2$" class="latex-inline" style="vertical-align: 0px" width="36" height="12">,</li>
+
+<li>当<img src="latex/latex2png-EqSolving_84767764_-1.gif" alt="$i<s$" class="latex-inline" style="vertical-align: -1px" width="35" height="13">时,循环做:<img src="latex/latex2png-EqSolving_117285218_-5.gif" alt="$NC=NC\bigcup\{\{j,i+1\}|1\le j\le i\}$" class="latex-inline" style="vertical-align: -5px" width="247" height="18">,<img src="latex/latex2png-EqSolving_69170406_-5.gif" alt="$NC=\mathrm{crit}(NC,C,i+1)$" class="latex-inline" style="vertical-align: -5px" width="175" height="18">,<img src="latex/latex2png-EqSolving_203196777_-2.gif" alt="$i=i+1$" class="latex-inline" style="vertical-align: -2px" width="61" height="14">,</li>
+
+<li>当<img src="latex/latex2png-EqSolving_17899636_-4.gif" alt="$NC\neq\emptyset$" class="latex-inline" style="vertical-align: -4px" width="58" height="17">时,循环做后面所有步骤,否则输出<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">退出,</li>
+
+<li>任选<img src="latex/latex2png-EqSolving_114454088_-5.gif" alt="$\{i,j\}\in NC$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,令<img src="latex/latex2png-EqSolving_27529227_-5.gif" alt="$NC=NC\setminus\{\{i,j\}\}$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">,<img src="latex/latex2png-EqSolving_173589085_-5.gif" alt="$C=C\bigcup\{\{i,j\}\}$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_29433582_-5.gif" alt="$\gcd(\lm{f_i},\lm{f_j})\neq 1$" class="latex-inline" style="vertical-align: -5px" width="166" height="18">,则做下面6、7步,</li>
+
+<li><img src="latex/latex2png-EqSolving_7282531_-5.gif" alt="$r=S(f_i,f_j)\rem G$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_80411620_-4.gif" alt="$r\neq 0$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">则<img src="latex/latex2png-EqSolving_133541957_-5.gif" alt="$f_{s+1}=r,G=G\bigcup\{f_{s+1}\}$" class="latex-inline" style="vertical-align: -5px" width="180" height="18">,<img src="latex/latex2png-EqSolving_35424607_-2.gif" alt="$s=s+1$" class="latex-inline" style="vertical-align: -2px" width="64" height="13">,<img src="latex/latex2png-EqSolving_11336897_-5.gif" alt="$NC=NC\bigcup\{\{i,s\}|1\le i\le s-1\}$" class="latex-inline" style="vertical-align: -5px" width="247" height="18">,<img src="latex/latex2png-EqSolving_182364142_-5.gif" alt="$NC=\mathrm{crit}(NC,C,s)$" class="latex-inline" style="vertical-align: -5px" width="149" height="18">.</li>
+</ol>
+
+
+</div>
+
+<p>上面算法中<img src="latex/latex2png-EqSolving_199466718_0.gif" alt="$\mathrm{crit}$" class="latex-inline" style="vertical-align: 0px" width="25" height="12">函数是第二个改进判别法,由下面算法给出,其中的<img src="latex/latex2png-EqSolving_112884963_-5.gif" alt="$X_i=\lm{f_i}$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法6<a name=""></a></span><span class="theorem-name">(crit函数)</span>
+
+<p><img src="latex/latex2png-EqSolving_185060478_-5.gif" alt="$\mathrm{crit}(NC,C,s)$" class="latex-inline" style="vertical-align: -5px" width="99" height="18">,输出简化后的<img src="latex/latex2png-EqSolving_153449490_-1.gif" alt="$NC$" class="latex-inline" style="vertical-align: -1px" width="28" height="13">.</p>
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_134444052_0.gif" alt="$l=1$" class="latex-inline" style="vertical-align: 0px" width="34" height="12">,</li>
+
+<li>当<img src="latex/latex2png-EqSolving_135099412_-1.gif" alt="$l<s$" class="latex-inline" style="vertical-align: -1px" width="34" height="13">时循环做下面3-7步,否则转8步,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_63532616_-5.gif" alt="$\{l,s\}\in NC$" class="latex-inline" style="vertical-align: -5px" width="84" height="18">则令<img src="latex/latex2png-EqSolving_84112404_0.gif" alt="$i=1$" class="latex-inline" style="vertical-align: 0px" width="35" height="12">并做下面4-6步,否则转7步,</li>
+
+<li>当<img src="latex/latex2png-EqSolving_84767764_-1.gif" alt="$i<s$" class="latex-inline" style="vertical-align: -1px" width="35" height="13">时循环做下面5,6步,否则转7步,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_33137110_-5.gif" alt="$\{i,l\}\in NC\bigcup\wedge \{i,s\}\in NC$" class="latex-inline" style="vertical-align: -5px" width="199" height="18">则看<img src="latex/latex2png-EqSolving_251427692_-5.gif" alt="$X_l|\mathrm{lcm}(X_i,X_s)$" class="latex-inline" style="vertical-align: -5px" width="108" height="18">是否成立,是则令<img src="latex/latex2png-EqSolving_27529218_-5.gif" alt="$NC=NC\setminus\{\{i,s\}\}$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">,</li>
+
+<li><img src="latex/latex2png-EqSolving_203196777_-2.gif" alt="$i=i+1$" class="latex-inline" style="vertical-align: -2px" width="61" height="14">,</li>
+
+<li><img src="latex/latex2png-EqSolving_152865126_-2.gif" alt="$l=l+1$" class="latex-inline" style="vertical-align: -2px" width="60" height="14">,</li>
+
+<li><img src="latex/latex2png-EqSolving_84112404_0.gif" alt="$i=1$" class="latex-inline" style="vertical-align: 0px" width="35" height="12">,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_84767764_-1.gif" alt="$i<s$" class="latex-inline" style="vertical-align: -1px" width="35" height="13">则做下面10-14步,否则转15步,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_113864264_-5.gif" alt="$\{i,s\}\in NC$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">则令<img src="latex/latex2png-EqSolving_203196776_-4.gif" alt="$j=i+1$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">并做下面11-13步,否则转14步,</li>
+
+<li>当<img src="latex/latex2png-EqSolving_101544980_-4.gif" alt="$j<s$" class="latex-inline" style="vertical-align: -4px" width="38" height="16">时做下面12,13步,否则转14步,</li>
+
+<li>若<img src="latex/latex2png-EqSolving_63372820_-5.gif" alt="$\{j,s\}\in NC\wedge\{i,j\}\in NC$" class="latex-inline" style="vertical-align: -5px" width="191" height="18">则看<img src="latex/latex2png-EqSolving_241992300_-5.gif" alt="$X_s|\mathrm{lcm}(X_i,X_j)$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">是否成立,是则令<img src="latex/latex2png-EqSolving_27529227_-5.gif" alt="$NC=NC\setminus\{\{i,j\}\}$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">,</li>
+
+<li><img src="latex/latex2png-EqSolving_186419560_-4.gif" alt="$j=j+1$" class="latex-inline" style="vertical-align: -4px" width="66" height="16">,</li>
+
+<li><img src="latex/latex2png-EqSolving_203196777_-2.gif" alt="$i=i+1$" class="latex-inline" style="vertical-align: -2px" width="61" height="14">,</li>
+
+<li>输出<img src="latex/latex2png-EqSolving_153449490_-1.gif" alt="$NC$" class="latex-inline" style="vertical-align: -1px" width="28" height="13">.</li>
+</ol>
+
+
+</div>
+
+
+
+<h3><a name="sec13" id="sec13"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Gr&ouml;bner基的应用</h3>
+
+<h4><a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>一些简单的应用</h4>
+
+<p class="first">现在我们可以回到本章开头所提出的一些关于多元多项式理想的问题上来了.我们要解决的第一个问题是对于任何一个多项式<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">,如何判断它在不在一个已知的理想<img src="latex/latex2png-EqSolving_191285690_-5.gif" alt="$I=\idea{f_1,\ldots,f_s}$" class="latex-inline" style="vertical-align: -5px" width="110" height="18">中,以及找出多项式<img src="latex/latex2png-EqSolving_163206814_-4.gif" alt="$v_1,\ldots,v_s$" class="latex-inline" style="vertical-align: -4px" width="66" height="12">使得<img src="latex/latex2png-EqSolving_122855560_-4.gif" alt="$f=v_1f_1+\cdots+v_sf_s$" class="latex-inline" style="vertical-align: -4px" width="151" height="16">.</p>
+
+<p>首先我们根据前面生成Gr&ouml;bner基的算法,不仅得到了约化的Gr&ouml;bner基<img src="latex/latex2png-EqSolving_46476159_-5.gif" alt="$G=\{g_1,\ldots,g_t\}$" class="latex-inline" style="vertical-align: -5px" width="116" height="18">,而且可以得到变换矩阵<img src="latex/latex2png-EqSolving_47678409_-3.gif" alt="$M_{t\times s}$" class="latex-inline" style="vertical-align: -3px" width="37" height="15">使得<img src="latex/latex2png-EqSolving_93468468_-5.gif" alt="$(g_1,\ldots,g_t)=(f_1,\ldots,f_s)M$" class="latex-inline" style="vertical-align: -5px" width="198" height="18">.我们利用除法算法可以得到多项式<img src="latex/latex2png-EqSolving_179918510_-4.gif" alt="$u_1,\ldots,u_t$" class="latex-inline" style="vertical-align: -4px" width="69" height="12">满足<img src="latex/latex2png-EqSolving_139763832_-4.gif" alt="$f=u_1g_1+\cdots+u_tg_t$" class="latex-inline" style="vertical-align: -4px" width="152" height="16">,于是由<img src="latex/latex2png-EqSolving_265862599_.gif" alt="$$f=(g_1,\ldots,g_t) \begin{pmatrix}u_1\\ \vdots\\ u_t\end{pmatrix}=(f_1,\ldots,f_s)M\begin{pmatrix}u_1\\ \vdots\\ u_t\end{pmatrix}$$" class="latex-display" width="580" height="79">知<img src="latex/latex2png-EqSolving_181469133_-5.gif" alt="$(v_1,\ldots,v_s)^T=M(u_1,\ldots,u_t)^T$" class="latex-inline" style="vertical-align: -5px" width="222" height="19">.</p>
+
+<p>对于两个多项式理想是否相等的判定,也可由它们唯一的约化Gr&ouml;bner基来进行.而在商环<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">中的算术需要用到代表元,我们也可取为<img src="latex/latex2png-EqSolving_178548900_-4.gif" alt="$\overline{f}=f\rem G$" class="latex-inline" style="vertical-align: -4px" width="88" height="19">.下面定理给出了商环<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">的一组基.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理15<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_145175350_-5.gif" alt="$\mathcal{B}=\{\overline{g}|g\in M\wedge g\not\in\idea{\lt{G}}\}$" class="latex-inline" style="vertical-align: -5px" width="188" height="18">是<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">在<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">上的一组基.
+
+
+</div>
+
+<p><img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">中的求逆问题.设<img src="latex/latex2png-EqSolving_178015126_-5.gif" alt="$f\in R/I$" class="latex-inline" style="vertical-align: -5px" width="59" height="18">,我们既已知道了该环的基,则可设<img src="latex/latex2png-EqSolving_6790229_-4.gif" alt="$f^{-1}$" class="latex-inline" style="vertical-align: -4px" width="25" height="18">为<img src="latex/latex2png-EqSolving_133859326_0.gif" alt="$\mathcal{B}$" class="latex-inline" style="vertical-align: 0px" width="16" height="12">的元素的线性组合来求解,这比较复杂.我们设<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">是<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">的逆,注意到<img src="latex/latex2png-EqSolving_227161575_.gif" alt="$$fg-1\in I\Leftrightarrow 1\in\idea{I,f}\Leftrightarrow\idea{I,f}=R,$$" class="latex-display" width="580" height="18">则我们可以求<img src="latex/latex2png-EqSolving_171734265_-5.gif" alt="$\idea{I,f}$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">的Gr&ouml;bner基,看1是否在其中来确定是否存在逆.再求出<img src="latex/latex2png-EqSolving_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">在<img src="latex/latex2png-EqSolving_171734265_-5.gif" alt="$\idea{I,f}$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">中的线性表示,即<img src="latex/latex2png-EqSolving_236267897_-4.gif" alt="$1=v_1f_1+\cdots+v_sf_s+gf$" class="latex-inline" style="vertical-align: -4px" width="189" height="16">,<img src="latex/latex2png-EqSolving_42038290_-4.gif" alt="$g$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">即是<img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">在<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">中的逆.</p>
+
+
+<h4><a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Hilbert零点定理(Hilbert Nullstellensatz)及Gr&ouml;bner基在解方程中的应用</h4>
+
+<p class="first">现在考虑<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的某个扩域<img src="latex/latex2png-EqSolving_191784013_-5.gif" alt="$k\supset F(\vee k=F)$" class="latex-inline" style="vertical-align: -5px" width="111" height="18">.</p>
+
+<div class="definition">
+<span class="theorem-header">定义21<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_19453242_-5.gif" alt="$V_k(I)=\{a\in k^n|\forall f\in I(f(a)=0)\}$" class="latex-inline" style="vertical-align: -5px" width="251" height="18">.
+
+<p>对于<img src="latex/latex2png-EqSolving_203977748_0.gif" alt="$F^n$" class="latex-inline" style="vertical-align: 0px" width="21" height="12">中子集<img src="latex/latex2png-EqSolving_43545618_-1.gif" alt="$V$" class="latex-inline" style="vertical-align: -1px" width="13" height="13">,定义理想<img src="latex/latex2png-EqSolving_121561502_-5.gif" alt="$I(V)=\{f\in R|f(V)=0\}$" class="latex-inline" style="vertical-align: -5px" width="186" height="18">.</p>
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理16<a name="weakhilbert"></a></span><span class="theorem-name">(弱Hilbert零点定理)</span>
+<img src="latex/latex2png-EqSolving_121992449_-1.gif" alt="$I\subset R$" class="latex-inline" style="vertical-align: -1px" width="44" height="13">,<img src="latex/latex2png-EqSolving_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是<img src="latex/latex2png-EqSolving_42497042_0.gif" alt="$F$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">的代数闭域,则<img src="latex/latex2png-EqSolving_146570349_-5.gif" alt="$V_k(I)=\emptyset\Leftrightarrow I=R=F[x]$" class="latex-inline" style="vertical-align: -5px" width="191" height="18">.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义22<a name=""></a></span><span class="theorem-name"></span>
+定义多项式理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的根理想(radical)为<img src="latex/latex2png-EqSolving_218222224_-5.gif" alt="$\sqrt{I}=\{f\in R|\exists e\in\mathbb{N}(f^e\in I)\}$" class="latex-inline" style="vertical-align: -5px" width="214" height="20">.
+
+
+</div>
+
+<p>显然有<img src="latex/latex2png-EqSolving_215757753_-1.gif" alt="$\forall k\supset F$" class="latex-inline" style="vertical-align: -1px" width="53" height="13">,<img src="latex/latex2png-EqSolving_138858663_-5.gif" alt="$V_k(I)=V_k(\sqrt{I})$" class="latex-inline" style="vertical-align: -5px" width="113" height="20">.</p>
+
+<div class="theorem">
+<span class="theorem-header">定理17<a name="stronghilbert"></a></span><span class="theorem-name">(强Hilbert零点定理)</span>
+<img src="latex/latex2png-EqSolving_59226291_-5.gif" alt="$I(V_k(I))=\sqrt{I}$" class="latex-inline" style="vertical-align: -5px" width="106" height="20">.
+
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论6<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_63551284_-5.gif" alt="$V_k(I)=V_k(J)\Leftrightarrow\sqrt{I}=\sqrt{J}$" class="latex-inline" style="vertical-align: -5px" width="198" height="20">.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注10<a name=""></a></span><span class="theorem-name"></span>
+强、弱Hilbert零点定理的证明见有关代数几何的书,如<span class="cite"><a class="cite" href="EqSolving.html#ref-6" name="cite-6">[6]</a></span>及其中译本<span class="cite"><a class="cite" href="EqSolving.html#ref-7" name="cite-7">[7]</a></span>.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理18<a name="th:hilbert"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_10605405_-5.gif" alt="$G=\{g_1,\ldots,g_t\}\in GB(I)$" class="latex-inline" style="vertical-align: -5px" width="184" height="18">,下面三个命题等价:
+
+<p>(1)<img src="latex/latex2png-EqSolving_54813227_-5.gif" alt="$V_k(I)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">是有限集,</p>
+
+<p>(2)<img src="latex/latex2png-EqSolving_57501170_-5.gif" alt="$\forall i\in\{1,\ldots,n\}$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">,<img src="latex/latex2png-EqSolving_151051894_-5.gif" alt="$\exists v_i\in\mathbb{N},j\in\{1,\ldots,t\}$" class="latex-inline" style="vertical-align: -5px" width="156" height="18">使得<img src="latex/latex2png-EqSolving_110514845_-5.gif" alt="$\lm{g_j}=x_i^{v_i}$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">,</p>
+
+<p>(3)<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">有限维.</p>
+
+<p>当上面任何一个条件满足时,我们也称理想<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是零维理想(zero-dimensional).</p>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+(1)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(2).若<img src="latex/latex2png-EqSolving_59223744_-5.gif" alt="$V_k(I)=\emptyset$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">则<img src="latex/latex2png-EqSolving_129393790_-1.gif" alt="$1\in G$" class="latex-inline" style="vertical-align: -1px" width="41" height="13">,无须证明.下面假设<img src="latex/latex2png-EqSolving_45852202_-5.gif" alt="$V_k(I)\neq\emptyset$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">,取某个<img src="latex/latex2png-EqSolving_158344138_-5.gif" alt="$i\in\{1,\ldots,n\}$" class="latex-inline" style="vertical-align: -5px" width="97" height="18">,对于<img src="latex/latex2png-EqSolving_87973077_-5.gif" alt="$l=\#V_k(I)$" class="latex-inline" style="vertical-align: -5px" width="79" height="18">,取<img src="latex/latex2png-EqSolving_187950539_-5.gif" alt="$a_{im}(m=1,2,\ldots,l)$" class="latex-inline" style="vertical-align: -5px" width="140" height="18">为<img src="latex/latex2png-EqSolving_54813227_-5.gif" alt="$V_k(I)$" class="latex-inline" style="vertical-align: -5px" width="38" height="18">中点的第<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$i$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">个分量,取非零多项式<img src="latex/latex2png-EqSolving_139262865_-5.gif" alt="$f_m\in F[x_i]\subset F[x]$" class="latex-inline" style="vertical-align: -5px" width="129" height="18">使得<img src="latex/latex2png-EqSolving_188629520_-5.gif" alt="$f_m(a_{im})=0$" class="latex-inline" style="vertical-align: -5px" width="89" height="18">,令<img src="latex/latex2png-EqSolving_157678339_-5.gif" alt="$f=f_1\cdots f_l\in F[x_i]\subset F[x]$" class="latex-inline" style="vertical-align: -5px" width="194" height="18">,则<img src="latex/latex2png-EqSolving_126170285_-5.gif" alt="$f\in I(V_k(I))=\sqrt{I}$" class="latex-inline" style="vertical-align: -5px" width="135" height="20">,于是<img src="latex/latex2png-EqSolving_96382334_-1.gif" alt="$\exists e\in\mathbb{N}$" class="latex-inline" style="vertical-align: -1px" width="48" height="13">使得<img src="latex/latex2png-EqSolving_126634430_-4.gif" alt="$f^e\in I$" class="latex-inline" style="vertical-align: -4px" width="45" height="16">,则<img src="latex/latex2png-EqSolving_38894777_-5.gif" alt="$\lm{f^e}$" class="latex-inline" style="vertical-align: -5px" width="47" height="18">是<img src="latex/latex2png-EqSolving_164400108_-2.gif" alt="$x_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">的幂,<img src="latex/latex2png-EqSolving_42562578_-1.gif" alt="$G$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">中有元素<img src="latex/latex2png-EqSolving_87323668_-5.gif" alt="$g_j$" class="latex-inline" style="vertical-align: -5px" width="14" height="13">满足<img src="latex/latex2png-EqSolving_108155441_-5.gif" alt="$g_j=x_i^{v_i}$" class="latex-inline" style="vertical-align: -5px" width="56" height="17">为<img src="latex/latex2png-EqSolving_164400108_-2.gif" alt="$x_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">的幂.
+
+<p>(2)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(3).对于<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">的基<img src="latex/latex2png-EqSolving_134392526_-9.gif" alt="$\prod_{1\le i\le n}x_i^{\alpha_i}$" class="latex-inline" style="vertical-align: -9px" width="80" height="22">,一定满足<img src="latex/latex2png-EqSolving_239094927_-2.gif" alt="$\alpha_i<v_i$" class="latex-inline" style="vertical-align: -2px" width="51" height="11">,维数不超过<img src="latex/latex2png-EqSolving_63472754_-9.gif" alt="$\prod_{1\le i\le n}v_i$" class="latex-inline" style="vertical-align: -9px" width="72" height="22">,因此它是有限维的.</p>
+
+<p>(3)<img src="latex/latex2png-EqSolving_265901806_-1.gif" alt="$\Rightarrow$" class="latex-inline" style="vertical-align: -1px" width="15" height="10">(1).考虑多项式集合<img src="latex/latex2png-EqSolving_221021506_-5.gif" alt="$\{\overline{x_i^j}|j\in\mathbb{N}\}$" class="latex-inline" style="vertical-align: -5px" width="75" height="24">,由于在<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">中维数有限,则它们一定线性相关,即存在<img src="latex/latex2png-EqSolving_197100288_-1.gif" alt="$m\in\mathbb{N}$" class="latex-inline" style="vertical-align: -1px" width="47" height="13">使得<img src="latex/latex2png-EqSolving_2026740_-9.gif" alt="$\sum_{0\le j\le m}c_j\overline{x_i^j}=0$" class="latex-inline" style="vertical-align: -9px" width="126" height="28">,亦即<img src="latex/latex2png-EqSolving_76995097_-9.gif" alt="$\sum_{0\le j\le m}c_jx_i^j\in I$" class="latex-inline" style="vertical-align: -9px" width="125" height="25">,该多形式在<img src="latex/latex2png-EqSolving_57646290_-5.gif" alt="$F[x_i]$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">中零点有限,至多为<img src="latex/latex2png-EqSolving_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">个,不妨设其零点集为<img src="latex/latex2png-EqSolving_63736812_-2.gif" alt="$V_i$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">,于是<img src="latex/latex2png-EqSolving_149768294_-9.gif" alt="$V_k(I)\subset\prod_{1\le i\le n}V_i$" class="latex-inline" style="vertical-align: -9px" width="136" height="22">是有限集.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论7<a name="cor:groebnerforequation"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是零维理想,<img src="latex/latex2png-EqSolving_210713732_-5.gif" alt="$G=\{g_1,\ldots,g_t\}=RGB(I)$" class="latex-inline" style="vertical-align: -5px" width="198" height="18">,规定的字典序为<img src="latex/latex2png-EqSolving_26857859_-2.gif" alt="$x_1<x_2<\cdots<x_n$" class="latex-inline" style="vertical-align: -2px" width="137" height="11">,则<img src="latex/latex2png-EqSolving_256417074_-3.gif" alt="$t\ge n$" class="latex-inline" style="vertical-align: -3px" width="38" height="14">,并可将<img src="latex/latex2png-EqSolving_28448587_-4.gif" alt="$g_1,\ldots,g_t\in G$" class="latex-inline" style="vertical-align: -4px" width="99" height="16">重新编号使得<img src="latex/latex2png-EqSolving_87232085_-5.gif" alt="$g_i(1\le i\le n)$" class="latex-inline" style="vertical-align: -5px" width="93" height="18">只含<img src="latex/latex2png-EqSolving_241319550_-4.gif" alt="$x_1,x_2,\ldots,x_i$" class="latex-inline" style="vertical-align: -4px" width="92" height="12">且<img src="latex/latex2png-EqSolving_208569159_-5.gif" alt="$\lm{g_i}$" class="latex-inline" style="vertical-align: -5px" width="43" height="18">为<img src="latex/latex2png-EqSolving_164400108_-2.gif" alt="$x_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">的幂.
+
+
+</div>
+
+<div class="problem">
+<span class="proof-header">例5<a name=""></a></span><span class="theorem-name"></span>
+考虑由<img src="latex/latex2png-EqSolving_117330171_-4.gif" alt="$f_1=x^2+y^2+z^2-1,f_2=x+y+z,f_3=x^2-2x+y^2-2y+z^2+2z$" class="latex-inline" style="vertical-align: -4px" width="514" height="18">生成的理想的Gr&ouml;bner基.
+<span class="example-end">◇</span>
+
+</div>
+
+<div class="solution">
+<span class="proof-header">解</span>
+由Buchberger算法可得其Gr&ouml;bner基为<img src="latex/latex2png-EqSolving_135223923_.gif" alt="$$G=\{g_1,g_2,g_3\}=\{16x^2-4x-7,4x+4y-1,4z+1\}.$$" class="latex-display" width="580" height="20">
+
+<p>显然,<img src="latex/latex2png-EqSolving_213611579_-5.gif" alt="$V(I)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">是一有限集,此基的形式正如推论所说,由此我们可以由第一个一元多项式方程解出其根,代入第二个方程解出第二个变元,依次迭代下去即可解出所有的根.</p>
+
+
+</div>
+
+
+<h4><a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>方程组解的结构的一些讨论</h4>
+
+<p class="first">现在为了方便起见,将所讨论的域限定为复数域<img src="latex/latex2png-EqSolving_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">,由上一小节所讨论的内容,我们很容易推广到如下结论:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理19<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是零维理想当且仅当<img src="latex/latex2png-EqSolving_57501170_-5.gif" alt="$\forall i\in\{1,\ldots,n\}$" class="latex-inline" style="vertical-align: -5px" width="106" height="18">,消元理想<img src="latex/latex2png-EqSolving_239790969_-5.gif" alt="$I\bigcap\mathbb{C}[x]\neq\{0\}$" class="latex-inline" style="vertical-align: -5px" width="104" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+<img src="latex/latex2png-EqSolving_40814175_-5.gif" alt="$(\Rightarrow)$" class="latex-inline" style="vertical-align: -5px" width="27" height="18">显然.我们只要选取相应的字典序<img src="latex/latex2png-EqSolving_222917147_-4.gif" alt="$x_i<x_1<\cdots<x_{i-1}<x_{i+1}<\cdots<x_n$" class="latex-inline" style="vertical-align: -4px" width="284" height="13">即可.
+
+<p><img src="latex/latex2png-EqSolving_219980823_-5.gif" alt="$(\Leftarrow)$" class="latex-inline" style="vertical-align: -5px" width="27" height="18">.当消元理想是非平凡理想时,其是一元多项式环<img src="latex/latex2png-EqSolving_122785104_-5.gif" alt="$\mathbb{C}[x_i]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">上的理想,因而是一个主理想,可设其由<img src="latex/latex2png-EqSolving_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">生成,<img src="latex/latex2png-EqSolving_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">首一且<img src="latex/latex2png-EqSolving_79382415_-4.gif" alt="$\deg f_i=m_i$" class="latex-inline" style="vertical-align: -4px" width="84" height="16">,则对任何单项序有<img src="latex/latex2png-EqSolving_163922527_-5.gif" alt="$x_i^{m_i}\in\idea{\lt{I}}=\idea{\lt{G}}$" class="latex-inline" style="vertical-align: -5px" width="163" height="18">.由此易得<img src="latex/latex2png-EqSolving_180653036_-5.gif" alt="$R/I$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">是<img src="latex/latex2png-EqSolving_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">上有限维线性空间.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注11<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_70480916_-4.gif" alt="$f_i$" class="latex-inline" style="vertical-align: -4px" width="12" height="16">可由满足<img src="latex/latex2png-EqSolving_171830459_-8.gif" alt="$\sum_{j=0}^{m_i}c_j\overline{x_i}^j=\overline{0}$" class="latex-inline" style="vertical-align: -8px" width="110" height="22">的极小多项式得到.
+
+
+</div>
+
+<div class="definition">
+<span class="theorem-header">定义23<a name=""></a></span><span class="theorem-name"></span>
+记<img src="latex/latex2png-EqSolving_18481753_-4.gif" alt="$p_{red}$" class="latex-inline" style="vertical-align: -4px" width="29" height="12">为多项式<img src="latex/latex2png-EqSolving_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">的无平方部分,即<img src="latex/latex2png-EqSolving_125795917_-5.gif" alt="$p_{red}:=p/\gcd(p,p')$" class="latex-inline" style="vertical-align: -5px" width="141" height="18">.
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理20<a name=""></a></span><span class="theorem-name"></span>
+当<img src="latex/latex2png-EqSolving_42628114_-4.gif" alt="$p$" class="latex-inline" style="vertical-align: -4px" width="9" height="12">是一元多项式时,有<img src="latex/latex2png-EqSolving_108848475_-6.gif" alt="$\sqrt{\idea{p}}=\idea{p_{red}}$" class="latex-inline" style="vertical-align: -6px" width="99" height="21">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+首先由<img src="latex/latex2png-EqSolving_21509237_-6.gif" alt="$V(p)=V(p_{red})\Rightarrow\sqrt{\idea{p}}=I(V(p_{red}))=\sqrt{\idea{p_{red}}}$" class="latex-inline" style="vertical-align: -6px" width="355" height="21">.而显然有<img src="latex/latex2png-EqSolving_184489662_-6.gif" alt="$\sqrt{\idea{p_{red}}}=\idea{p_{red}}$" class="latex-inline" style="vertical-align: -6px" width="120" height="21">.
+<span class="proof-end">□</span>
+
+</div>
+
+<p><span class="cite"><a class="cite" href="EqSolving.html#ref-8" name="cite-8">[8]</a></span>P46给出了如下定理:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理21<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_194088349_-5.gif" alt="$I\subset\mathbb{C}[x_1,x_2,\ldots,x_n]$" class="latex-inline" style="vertical-align: -5px" width="147" height="18">是一多项式理想,则有<img src="latex/latex2png-EqSolving_25958816_.gif" alt="$$\sqrt{I}=I+\idea{p_{1,red},p_{2,red},\ldots,p_{n,red}},$$" class="latex-display" width="580" height="22">其中<img src="latex/latex2png-EqSolving_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">是消元理想<img src="latex/latex2png-EqSolving_96510898_-5.gif" alt="$I\bigcap\mathbb{C}[x_i]$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">的唯一首一生成元,且<img src="latex/latex2png-EqSolving_61193042_-5.gif" alt="$p_{i,red}$" class="latex-inline" style="vertical-align: -5px" width="38" height="13">是<img src="latex/latex2png-EqSolving_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">的无平方部分.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设上面等式右边的理想为<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$J$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">,先证其为一根理想.我们先将诸<img src="latex/latex2png-EqSolving_238253076_-4.gif" alt="$p_i$" class="latex-inline" style="vertical-align: -4px" width="14" height="12">(记<img src="latex/latex2png-EqSolving_242846644_-4.gif" alt="$n_i=\deg p_i$" class="latex-inline" style="vertical-align: -4px" width="79" height="16">)进行<img src="latex/latex2png-EqSolving_26235984_-1.gif" alt="$\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="12" height="13">上的因子分解,得到<img src="latex/latex2png-EqSolving_222831925_.gif" alt="$$p_{i,red}=\prod_{1\le j\le n_i}(x_i-a_{ij}),$$" class="latex-display" width="580" height="41">其中由无平方部分的性质可知<img src="latex/latex2png-EqSolving_396156_-4.gif" alt="$a_{i1},a_{i2},\ldots,a_{in_i}$" class="latex-inline" style="vertical-align: -4px" width="111" height="12">互不相同.由<img src="latex/latex2png-EqSolving_61165914_-5.gif" alt="$p_{1,red}\in J$" class="latex-inline" style="vertical-align: -5px" width="72" height="17">可得<img src="latex/latex2png-EqSolving_110792027_.gif" alt="$$J=J+\idea{p_{1,red}}=\bigcap_{1\le j\le n_1}(J+\idea{x_1-a_{1j}}),$$" class="latex-display" width="580" height="41">同样地对于其它<img src="latex/latex2png-EqSolving_61193042_-5.gif" alt="$p_{i,red}$" class="latex-inline" style="vertical-align: -5px" width="38" height="13">可得<img src="latex/latex2png-EqSolving_194363368_.gif" alt="$$J=\bigcap_{1\le j_i\le n_i,1\le i\le n}(J+\idea{x_1-a_{1j_1},x_2-a_{2j_2},\ldots,x_n-a_{nj_n}}).$$" class="latex-display" width="580" height="41">对于每一项,<img src="latex/latex2png-EqSolving_240929615_-5.gif" alt="$\idea{x_1-a_{1j_1},\ldots,x_n-a_{nj_n}}$" class="latex-inline" style="vertical-align: -5px" width="183" height="18">都是极大理想,因而<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$J$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">是有限个极大理想的交集,即有限个根理想的交集,仍然是根理想.
+
+<p>由<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$J$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">的定义显然有<img src="latex/latex2png-EqSolving_121468161_-1.gif" alt="$I\subset J$" class="latex-inline" style="vertical-align: -1px" width="42" height="13">,又由于<img src="latex/latex2png-EqSolving_42759186_0.gif" alt="$J$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">的零点全在<img src="latex/latex2png-EqSolving_213611579_-5.gif" alt="$V(I)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">中,于是<img src="latex/latex2png-EqSolving_75655936_-2.gif" alt="$I\subset J\subset\sqrt{I}$" class="latex-inline" style="vertical-align: -2px" width="87" height="17">,取根理想有<img src="latex/latex2png-EqSolving_220873899_-2.gif" alt="$\sqrt{I}=\sqrt{J}=J$" class="latex-inline" style="vertical-align: -2px" width="101" height="17">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>下面我们给出一个有用的引理:</p>
+
+<div class="lemma">
+<span class="theorem-header">引理9<a name="le:multi-interpolation"></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_188818308_-5.gif" alt="$S=\{p_1,p_2,\ldots,p_m\}\subset\mathbb{C}^n$" class="latex-inline" style="vertical-align: -5px" width="188" height="18">是<img src="latex/latex2png-EqSolving_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">个互不相同的点的集合,则存在多项式组<img src="latex/latex2png-EqSolving_264750363_-5.gif" alt="$g_i\in\mathbb{C}[x_1,\ldots,x_n](1\le i\le m)$" class="latex-inline" style="vertical-align: -5px" width="212" height="18">,使得<img src="latex/latex2png-EqSolving_122296453_-5.gif" alt="$g_i(p_j)=\delta_{ij}$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+回忆一元多项式情形下的Lagrange插值的构造方法,我们可以类似地构造.首先考虑<img src="latex/latex2png-EqSolving_237437494_-4.gif" alt="$p_1,p_2$" class="latex-inline" style="vertical-align: -4px" width="38" height="12">两个点,两个点肯定有某个分量不同,不妨设<img src="latex/latex2png-EqSolving_149488357_-5.gif" alt="$p_{1,k}\neq p_{2,k}$" class="latex-inline" style="vertical-align: -5px" width="76" height="17">,则定义<img src="latex/latex2png-EqSolving_67482521_.gif" alt="$$g_{1,2}=\frac{x_k-p_{2,k}}{p_{1,k}-p_{2,k}},$$" class="latex-display" width="580" height="36">其满足<img src="latex/latex2png-EqSolving_16456008_-5.gif" alt="$g_{1,2}(p_1)=1$" class="latex-inline" style="vertical-align: -5px" width="84" height="18">,<img src="latex/latex2png-EqSolving_252044984_-5.gif" alt="$g_{1,2}(p_2)=0$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,同样作出<img src="latex/latex2png-EqSolving_157205437_-5.gif" alt="$g_{1,j}(2\le j\le m)$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">后,取<img src="latex/latex2png-EqSolving_125865533_-5.gif" alt="$g_1=g_{1,2}g_{1,3}\cdots g_{1,m}$" class="latex-inline" style="vertical-align: -5px" width="145" height="13">即可.
+
+<p>对于<img src="latex/latex2png-EqSolving_182251947_-5.gif" alt="$g_i(2\le i\le m)$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">可类似构造.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<p>下面的定理给出了方程组根的个数的估计(<span class="cite"><a class="cite" href="EqSolving.html#ref-8" name="cite-8">[8]</a></span>P47).</p>
+
+<div class="theorem">
+<span class="theorem-header">定理22<a name=""></a></span><span class="theorem-name"></span>
+<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是<img src="latex/latex2png-EqSolving_18655701_-5.gif" alt="$\mathbb{C}[X]$" class="latex-inline" style="vertical-align: -5px" width="35" height="18">中的零维理想,<img src="latex/latex2png-EqSolving_87783063_-5.gif" alt="$A=R/I$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,则<img src="latex/latex2png-EqSolving_19810048_-5.gif" alt="$\dim A\ge\#V(I)$" class="latex-inline" style="vertical-align: -5px" width="112" height="18">,取等号当且仅当<img src="latex/latex2png-EqSolving_12223473_-2.gif" alt="$I=\sqrt{I}$" class="latex-inline" style="vertical-align: -2px" width="54" height="17">.
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+设<img src="latex/latex2png-EqSolving_163709650_-5.gif" alt="$V(I)=\{p_1,\ldots,p_m\}$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">,其中<img src="latex/latex2png-EqSolving_216270586_-5.gif" alt="$m=\#V(I)$" class="latex-inline" style="vertical-align: -5px" width="84" height="18">,考虑线性映射:<img src="latex/latex2png-EqSolving_222273234_.gif" alt="$$\delta\subset\mathbb{C}[X]/I\times\mathbb{C}^m:\overline{f}\mapsto(\overline{f}(p_1),\ldots,\overline{f}(p_m)).$$" class="latex-display" width="580" height="20">
+
+<p>根据引理<a class="ref-th" href="EqSolving.html#le:multi-interpolation">9</a>设<img src="latex/latex2png-EqSolving_121612402_-4.gif" alt="$g_1,\ldots,g_m$" class="latex-inline" style="vertical-align: -4px" width="72" height="12">满足<img src="latex/latex2png-EqSolving_122296453_-5.gif" alt="$g_i(p_j)=\delta_{ij}$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">,则<img src="latex/latex2png-EqSolving_92394870_-5.gif" alt="$\overline{g_i}(p_j)=\delta_{ij}$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">.由于<img src="latex/latex2png-EqSolving_195870392_-5.gif" alt="$\forall(\lambda_1,\ldots,\lambda_m)\in\mathbb{C}^m$" class="latex-inline" style="vertical-align: -5px" width="143" height="18">,<img src="latex/latex2png-EqSolving_5824133_-9.gif" alt="$\exists f=\sum_{1\le i\le m}\lambda_ig_i$" class="latex-inline" style="vertical-align: -9px" width="133" height="22">,使得<img src="latex/latex2png-EqSolving_185288967_-5.gif" alt="$\delta(\overline{f})=(\lambda_1,\ldots,\lambda_m)$" class="latex-inline" style="vertical-align: -5px" width="141" height="20">,因此<img src="latex/latex2png-EqSolving_117727726_0.gif" alt="$\delta$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">是满射.于是<img src="latex/latex2png-EqSolving_92191894_-5.gif" alt="$\dim A\ge\dim\mathbb{C}^m=m=\#V(I)$" class="latex-inline" style="vertical-align: -5px" width="226" height="18">.</p>
+
+<p>对于第二个等价条件,先设<img src="latex/latex2png-EqSolving_12223473_-2.gif" alt="$I=\sqrt{I}$" class="latex-inline" style="vertical-align: -2px" width="54" height="17">,令<img src="latex/latex2png-EqSolving_45757984_-4.gif" alt="$\overline{f}\in\ker\delta$" class="latex-inline" style="vertical-align: -4px" width="63" height="19">,则<img src="latex/latex2png-EqSolving_47514996_-5.gif" alt="$f(V(I))=0\Rightarrow f\in I(V(I))=\sqrt{I}=I\Rightarrow\overline{f}=0$" class="latex-inline" style="vertical-align: -5px" width="341" height="20">,从而<img src="latex/latex2png-EqSolving_117727726_0.gif" alt="$\delta$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">是单射,因而是同构,<img src="latex/latex2png-EqSolving_88175721_0.gif" alt="$\dim A=m$" class="latex-inline" style="vertical-align: 0px" width="79" height="12">.</p>
+
+<p>若<img src="latex/latex2png-EqSolving_88175721_0.gif" alt="$\dim A=m$" class="latex-inline" style="vertical-align: 0px" width="79" height="12">,首先<img src="latex/latex2png-EqSolving_120747250_-2.gif" alt="$I\subset\sqrt{I}$" class="latex-inline" style="vertical-align: -2px" width="54" height="17">,<img src="latex/latex2png-EqSolving_113145944_-5.gif" alt="$\forall f\in\sqrt{I}=I(V(I))$" class="latex-inline" style="vertical-align: -5px" width="139" height="20">,有<img src="latex/latex2png-EqSolving_8172323_-5.gif" alt="$f(V(I))=0$" class="latex-inline" style="vertical-align: -5px" width="87" height="18">,则<img src="latex/latex2png-EqSolving_160892715_-5.gif" alt="$\delta(\overline{f})=(0,\ldots,0)\Rightarrow\overline{f}\in\ker\delta\Rightarrow f\in I\Rightarrow I=\sqrt{I}$" class="latex-inline" style="vertical-align: -5px" width="352" height="20">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+
+
+<h3><a name="sec14" id="sec14"></a>
+<a href="EqSolving.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Gr&ouml;bner基和特征值法解方程组</h3>
+
+<p class="first">在用Gr&ouml;bner基理论将方程组化为三角形列后,采用一步步迭代来算会引入累积误差,<span class="cite"><a class="cite" href="EqSolving.html#ref-8" name="cite-8">[8]</a></span>2.4节给出了一种方法,用于求解的任何一个分量,同时也给出了求消元理想<img src="latex/latex2png-EqSolving_96510898_-5.gif" alt="$I\bigcap\mathbb{C}[x_i]$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">的首一生成元的快速方法.设<img src="latex/latex2png-EqSolving_87783063_-5.gif" alt="$A=R/I$" class="latex-inline" style="vertical-align: -5px" width="64" height="18">,首先我们定义</p>
+
+<div class="definition">
+<span class="theorem-header">定义24<a name=""></a></span><span class="theorem-name"></span>
+线性映射<img src="latex/latex2png-EqSolving_248219010_-5.gif" alt="$m_f\subset A\times A$" class="latex-inline" style="vertical-align: -5px" width="90" height="17">使得<img src="latex/latex2png-EqSolving_238155772_-5.gif" alt="$m_f(\overline{g})=\overline{f}\overline{g}$" class="latex-inline" style="vertical-align: -5px" width="86" height="20">,显然<img src="latex/latex2png-EqSolving_45979867_-5.gif" alt="$m_f=0\Leftrightarrow\overline{f}=0$" class="latex-inline" style="vertical-align: -5px" width="120" height="20">.以后<img src="latex/latex2png-EqSolving_187724820_-5.gif" alt="$m_f$" class="latex-inline" style="vertical-align: -5px" width="22" height="13">既指线性映射,也可指其在<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">的某组基上的矩阵表示.
+
+
+</div>
+
+<p>很显然可以验证这样定义的线性映射具有一定的和谐性,即<img src="latex/latex2png-EqSolving_231748057_-5.gif" alt="$\forall h(t)\in\mathbb{C}[t]$" class="latex-inline" style="vertical-align: -5px" width="84" height="18">,有<img src="latex/latex2png-EqSolving_14905211_-6.gif" alt="$m_{h(f)}=h(m_f)$" class="latex-inline" style="vertical-align: -6px" width="108" height="19">.只需逐一验证<img src="latex/latex2png-EqSolving_175970954_-5.gif" alt="$m_{f+g}=m_f+m_g$" class="latex-inline" style="vertical-align: -5px" width="128" height="15">,<img src="latex/latex2png-EqSolving_229242800_-5.gif" alt="$m_{fg}=m_fm_g$" class="latex-inline" style="vertical-align: -5px" width="97" height="13">即可.</p>
+
+<p>下面的定理给出了求解的方法:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理23<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_103838740_-5.gif" alt="$h_f$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">是<img src="latex/latex2png-EqSolving_187724820_-5.gif" alt="$m_f$" class="latex-inline" style="vertical-align: -5px" width="22" height="13">的极小多项式,<img src="latex/latex2png-EqSolving_74116660_-1.gif" alt="$\forall\lambda\in\mathbb{C}$" class="latex-inline" style="vertical-align: -1px" width="51" height="13">,<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是一零维理想,则下面三个命题是等价的:
+
+<ol>
+<li><img src="latex/latex2png-EqSolving_185234772_-5.gif" alt="$h_f(\lambda)=0$" class="latex-inline" style="vertical-align: -5px" width="71" height="18">,</li>
+
+<li><img src="latex/latex2png-EqSolving_234755215_0.gif" alt="$\lambda$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">是<img src="latex/latex2png-EqSolving_187724820_-5.gif" alt="$m_f$" class="latex-inline" style="vertical-align: -5px" width="22" height="13">的特征值,</li>
+
+<li><img src="latex/latex2png-EqSolving_41972754_-4.gif" alt="$f$" class="latex-inline" style="vertical-align: -4px" width="8" height="16">在<img src="latex/latex2png-EqSolving_213611579_-5.gif" alt="$V(I)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">上取得值<img src="latex/latex2png-EqSolving_234755215_0.gif" alt="$\lambda$" class="latex-inline" style="vertical-align: 0px" width="8" height="12">,即<img src="latex/latex2png-EqSolving_102469066_-5.gif" alt="$\lambda\in f(V(I))$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">.</li>
+</ol>
+
+
+</div>
+
+<div class="proof">
+<span class="proof-header">证明</span>
+由高等代数知识知道1和2等价是显然的.
+
+<p><img src="latex/latex2png-EqSolving_107649410_-1.gif" alt="$2\Rightarrow 3$" class="latex-inline" style="vertical-align: -1px" width="42" height="12">.不妨设<img src="latex/latex2png-EqSolving_83087262_-5.gif" alt="$\lambda\not\in f(V(I))$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">,由特征值的定义知<img src="latex/latex2png-EqSolving_174387040_-5.gif" alt="$\exists \overline{z}\in A\setminus\{0\}$" class="latex-inline" style="vertical-align: -5px" width="88" height="18">,使得特征方程<img src="latex/latex2png-EqSolving_134353354_-4.gif" alt="$\overline{f-\lambda}\overline{z}=0$" class="latex-inline" style="vertical-align: -4px" width="78" height="19">成立.令<img src="latex/latex2png-EqSolving_163709650_-5.gif" alt="$V(I)=\{p_1,\ldots,p_m\}$" class="latex-inline" style="vertical-align: -5px" width="146" height="18">,则<img src="latex/latex2png-EqSolving_50219335_-5.gif" alt="$f(p_i)\neq\lambda(\forall p_i\in V(I))$" class="latex-inline" style="vertical-align: -5px" width="157" height="18">.令<img src="latex/latex2png-EqSolving_250829678_-4.gif" alt="$g=f-\lambda$" class="latex-inline" style="vertical-align: -4px" width="70" height="16">,有<img src="latex/latex2png-EqSolving_132795580_-5.gif" alt="$g(p_i)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="65" height="18">,设<img src="latex/latex2png-EqSolving_86183509_-5.gif" alt="$g_i(1\le i\le m)$" class="latex-inline" style="vertical-align: -5px" width="98" height="18">满足<img src="latex/latex2png-EqSolving_122296453_-5.gif" alt="$g_i(p_j)=\delta_{ij}$" class="latex-inline" style="vertical-align: -5px" width="82" height="18">,定义<img src="latex/latex2png-EqSolving_248631323_.gif" alt="$$g'=\sum_{i=1}^m\frac{1}{g(p_i)}g_i,$$" class="latex-display" width="580" height="45"> 则<img src="latex/latex2png-EqSolving_219529188_-5.gif" alt="$g'(p_i)g(p_i)=1\Rightarrow 1-g'g\in I(V(I))=\sqrt{I}\Rightarrow\exists l\in\mathbb{N}((1-g'g)^l\in I)$" class="latex-inline" style="vertical-align: -5px" width="484" height="20">.将其作二项式展开,可得<img src="latex/latex2png-EqSolving_26833940_-4.gif" alt="$g''$" class="latex-inline" style="vertical-align: -4px" width="17" height="17">满足<img src="latex/latex2png-EqSolving_207425380_-4.gif" alt="$1-g''g\in I$" class="latex-inline" style="vertical-align: -4px" width="82" height="17">,即<img src="latex/latex2png-EqSolving_30965303_-4.gif" alt="$\overline{g''}\overline{g}=1$" class="latex-inline" style="vertical-align: -4px" width="55" height="18">,故<img src="latex/latex2png-EqSolving_203389290_.gif" alt="$$\overline{f-\lambda}\overline{z}=0\Rightarrow \overline{g''}\overline{g}\overline{z}=0=\overline{z},$$" class="latex-display" width="580" height="19">矛盾.</p>
+
+<p><img src="latex/latex2png-EqSolving_107518354_-1.gif" alt="$3\Rightarrow 1$" class="latex-inline" style="vertical-align: -1px" width="41" height="12">.设<img src="latex/latex2png-EqSolving_157581901_-5.gif" alt="$\lambda=f(p)(p\in V(I))$" class="latex-inline" style="vertical-align: -5px" width="137" height="18">,由<img src="latex/latex2png-EqSolving_136000875_-5.gif" alt="$h_f(m_f)=0\Rightarrow h_f(\overline{f})=0\Rightarrow h_f(f)\in I$" class="latex-inline" style="vertical-align: -5px" width="278" height="20">,故<img src="latex/latex2png-EqSolving_80447577_-5.gif" alt="$h_f(\lambda)=h_f(f(p))=0$" class="latex-inline" style="vertical-align: -5px" width="155" height="18">.
+<span class="proof-end">□</span></p>
+
+</div>
+
+<div class="corollary">
+<span class="theorem-header">推论8<a name=""></a></span><span class="theorem-name"></span>
+设<img src="latex/latex2png-EqSolving_42693650_0.gif" alt="$I$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">是零维理想,则<img src="latex/latex2png-EqSolving_57278298_-4.gif" alt="$m_{x_i}$" class="latex-inline" style="vertical-align: -4px" width="26" height="12">的特征值集合<img src="latex/latex2png-EqSolving_63736812_-2.gif" alt="$V_i$" class="latex-inline" style="vertical-align: -2px" width="15" height="14">即为<img src="latex/latex2png-EqSolving_213611579_-5.gif" alt="$V(I)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">中点的<img src="latex/latex2png-EqSolving_164400108_-2.gif" alt="$x_i$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">分量,且<img src="latex/latex2png-EqSolving_130132663_-5.gif" alt="$h_{x_i}(x_i)$" class="latex-inline" style="vertical-align: -5px" width="50" height="18">是消元理想<img src="latex/latex2png-EqSolving_96510898_-5.gif" alt="$I\bigcap\mathbb{C}[x_i]$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">的唯一首一生成元.
+
+
+</div>
+
+<div class="remark">
+<span class="proof-header">注12<a name=""></a></span><span class="theorem-name"></span>
+使用上面方法的好处在于,当我们只用Gr&ouml;bner基方法时,由于要求指定的字典序下的Gr&ouml;bner基,其计算是较为复杂的.由于我们的定理仅涉及<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">的代数结构,我们可以用计算量较小的分级字典序求出Gr&ouml;bner基,得到<img src="latex/latex2png-EqSolving_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="5" height="12">上的基,以此来进行特征值的计算.
+
+
+</div>
+
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="EqSolving.html#cite-1" name="ref-1">[1]</a><span class="ref-author">王东明，夏壁灿, </span><span class="ref-title-chs">计算机代数, </span><span class="ref-publisher">清华大学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">2004. </span></p>
+<p class="ref"><a class="ref" href="EqSolving.html#cite-2" name="ref-2">[2]</a><span class="ref-author">张树功，雷娜，刘停战, </span><span class="ref-title-chs">计算机代数基础---代数与符号计算的基本原理, </span><span class="ref-publisher">科学出版社, </span><span class="ref-year">2005. </span></p>
+<p class="ref"><a class="ref" href="EqSolving.html#cite-3" name="ref-3">[3]</a><span class="ref-author">吴文俊, </span><span class="ref-title-chs">几何定理机器证明的基本原理（初等几何部分）, </span><span class="ref-publisher">科学出版社, </span><span class="ref-address">北京, </span><span class="ref-year">1984. </span></p>
+<p class="ref"><a class="ref" href="EqSolving.html#cite-4" name="ref-4">[4]</a><span class="ref-author">William W. Adams and Philippe Loustaunau, </span><span class="ref-title">An Introduction to Gr&ouml;bner Bases, </span><span class="ref-publisher">American Mathematical Society, </span><span class="ref-year">1994. </span></p>
+<p class="ref"><a class="ref" href="EqSolving.html#cite-5" name="ref-5">[5]</a><span class="ref-author">Joachim von zur Gathen and J&uuml;rgen Gerhard, </span><span class="ref-title">Modern Computer Algebra, </span><span class="ref-publisher">Cambridge University Press, </span><span class="ref-year">2002. </span></p>
+<p class="ref"><a class="ref" href="EqSolving.html#cite-6" name="ref-6">[6]</a><span class="ref-author">T. W. Hungerford, </span><span class="ref-title">Algebra, </span><span class="ref-publisher">Springer Verlag, </span><span class="ref-address">Berlin and New York, </span><span class="ref-year">1974. </span></p>
+<p class="ref"><a class="ref" href="EqSolving.html#cite-7" name="ref-7">[7]</a><span class="ref-author">冯克勤译，聂灵沼校, </span><span class="ref-title-chs">代数学, </span><span class="ref-publisher">湖南教育出版社, </span><span class="ref-address">长沙, </span><span class="ref-year">1985. </span></p>
+<p class="ref"><a class="ref" href="EqSolving.html#cite-8" name="ref-8">[8]</a><span class="ref-author">周梦, </span><span class="ref-title-chs">计算代数与应用, </span><span class="ref-publisher">武汉大学出版社, </span><span class="ref-address">武汉, </span><span class="ref-year">2002. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

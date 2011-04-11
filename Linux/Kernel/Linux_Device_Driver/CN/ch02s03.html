@@ -1,0 +1,105 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>2.3.&#160;内核模块相比于应用程序-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="prev" href="ch02s02.html" title="2.2.&#160;Hello World 模块">
+<link rel="next" href="ch02s04.html" title="2.4.&#160;编译和加载">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">2.3.&#160;内核模块相比于应用程序</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch02s02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;2&#160;章&#160;建立和运行模块</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s04.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="KernelModulesVersusApplications.sect1"></a>2.3.&#160;内核模块相比于应用程序</h2></div></div></div>
+<p> 在我们深入之前, 有必要强调一下内核模块和应用程序之间的各种不同.  </p>
+<p> 不同于大部分的小的和中型的应用程序从头至尾处理一个单个任务, 每个内核模块只注册自己以便来服务将来的请求, 并且它的初始化函数立刻终止. 换句话说, 模块初始化函数的任务是为以后调用模块的函数做准备; 好像是模块说, " 我在这里, 这是我能做的."模块的退出函数( 例子里是 hello_exit )就在模块被卸载时调用. 它好像告诉内核, "我不再在那里了, 不要要求我做任何事了."这种编程的方法类似于事件驱动的编程, 但是虽然不是所有的应用程序都是事件驱动的, 每个内核模块都是. 另外一个主要的不同, 在事件驱动的应用程序和内核代码之间, 是退出函数: 一个终止的应用程序可以在释放资源方面懒惰, 或者完全不做清理工作, 但是模块的退出函数必须小心恢复每个由初始化函数建立的东西, 否则会保留一些东西直到系统重启.  </p>
+<p> 偶然地, 卸载模块的能力是你将最欣赏的模块化的其中一个特色, 因为它有助于减少开发时间; 你可测试你的新驱动的连续的版本, 而不用每次经历漫长的关机/重启周期.  </p>
+<p>作为一个程序员, 你知道一个应用程序可以调用它没有定义的函数: 连接阶段使用合适的函数库解决了外部引用. printf 是一个这种可调用的函数并且在 libc 里面定义. 一个模块, 在另一方面, 只连接到内核, 它能够调用的唯一的函数是内核输出的那些; 没有库来连接.在 hello.c 中使用的 printk 函数, 例如, 是在内核中定义的 printf 版本并且输出给模块. 它表现类似于原始的函数, 只有几个小的不同, 首要的一个是缺乏浮点的支持.  </p>
+<p> 图 <a href="ch02s03.html#ldd3-2-1.fig" title="图&#160;2.1.&#160;连接一个模块到内核">连接一个模块到内核</a> 展示了函数调用和函数指针在模块中如何使用来增加新功能到一个运行中的内核.  </p>
+<div class="figure">
+<a name="ldd3-2-1.fig"></a><p class="title"><b>图&#160;2.1.&#160;连接一个模块到内核</b></p>
+<div><img src="images/snagitldd3/ldd3-2-1.png" alt="连接一个模块到内核"></div>
+</div>
+<p> 因为没有库连接到模块中, 源文件不应当包含通常的头文件, &lt;stdarg.h&gt;和非常特殊的情况是仅有的例外. 只有实际上是内核的一部分的函数才可以在内核模块里使用. 内核相关的任何东西都在头文件里声明, 这些头文件在你已建立和配置的内核源码树里; 大部分相关的头文件位于 include/linux 和 include/asm, 但是别的 include 的子目录已经添加到关联特定内核子系统的材料里了.  </p>
+<p> 单个内核头文件的作用在书中需要它们的时候进行介绍.  </p>
+<p> 另外一个在内核编程和应用程序编程之间的重要不同是每一个环境是如何处理错误: 在应用程序开发中段错误是无害的, 一个调试器常常用来追踪错误到源码中的问题, 而一个内核错误至少会杀掉当前进程, 如果不终止整个系统. 我们会在第 4 章看到如何跟踪内核错误.  </p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="UserSpaceandKernelSpace.sect2"></a>2.3.1.&#160;用户空间和内核空间</h3></div></div></div>
+
+A module runs in kernel space, whereas applications run in user space. This concept is at the base of operating systems theory. 
+一个模块在内核空间运行, 而应用程序在用户空间运行. 这个概念是操作系统理论的基础.
+<p> 操作系统的角色, 实际上, 是给程序提供一个一致的计算机硬件的视角. 另外, 操作系统必须承担程序的独立操作和保护对于非授权的资源存取. 这一不平凡的任务只有 CPU 增强系统软件对应用程序的保护才有可能.  
+</p>
+<p> 每种现代处理器都能够加强这种行为. 选中的方法是 CPU 自己实现不同的操作形态(或者级别). 这些级别有不同的角色, 一些操作在低些级别中不允许; 程序代码只能通过有限的几个门从一种级别切换到另一个. Unix 系统设计成利用了这种硬件特性, 使用了两个这样的级别. 所有当今的处理器至少有两个保护级别, 并且某些, 例如 x86 家族, 有更多级别; 当几个级别存在时, 使用最高和最低级别. 在 Unix 下, 内核在最高级运行( 也称之为超级模式 ), 这里任何事情都允许, 而应用程序在最低级运行(所谓的用户模式), 这里处理器控制了对硬件的直接存取以及对内存的非法存取.  </p>
+<p> 我们常常提到运行模式作为内核空间和用户空间. 这些术语不仅包含存在于这两个模式中不同特权级别, 还包含有这样的事实, 即每个模式有它自己的内存映射 -- 它自己的地址空间.  </p>
+<p> Unix 从用户空间转换执行到内核空间, 无论何时一个应用程序发出一个系统调用或者被硬件中断挂起时. 执行系统调用的内核代码在进程的上下文中工作 -- 它代表调用进程并且可以存取该进程的地址空间. 换句话说, 处理中断的代码对进程来说是异步的, 不和任何特别的进程有关.  </p>
+<p> 模块的角色是扩展内核的功能; 模块化的代码在内核空间运行. 经常地一个驱动进行之前提到的两种任务: 模块中一些的函数作为系统调用的一部分执行, 一些负责中断处理.  
+</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ConcurrencyintheKernel.sect2"></a>2.3.2.&#160;内核的并发</h3></div></div></div>
+<p> 内核编程与传统应用程序编程方式很大不同的是并发问题. 大部分应用程序, 多线程的应用程序是一个明显的例外, 典型地是顺序运行的, 从头至尾, 不必要担心其他事情会发生而改变它们的环境. 内核代码没有运行在这样的简单世界中, 即便最简单的内核模块必须在这样的概念下编写, 很多事情可能马上发生.</p>
+<p> 内核编程中有几个并发的来源. 自然的, Linux 系统运行多个进程, 在同一时间, 不止一个进程能够试图使用你的驱动. 大部分设备能够中断处理器; 中断处理异步运行, 并且可能在你的驱动试图做其他事情的同一时间被调用. 几个软件抽象( 例如内核定时器, 第 7 章介绍 )也异步运行. 而且, 当然, Linux 可以在对称多处理器系统( SMP )上运行, 结果是你的驱动可能在多个 CPU 上并发执行. 最后, 在 2.6, 内核代码已经是可抢占的了; 这个变化使得即便是单处理器会有许多与多处理器系统同样的并发问题.</p>
+<p> 结果, Linux 内核代码, 包括驱动代码, 必须是可重入的 -- 它必须能够同时在多个上下文中运行. 数据结构必须小心设计以保持多个执行线程分开, 并且代码必须小心存取共享数据, 避免数据的破坏. 编写处理并发和避免竞争情况( 一个不幸的执行顺序导致不希望的行为的情形 )的代码需要仔细考虑并可能是微妙的. 正确的并发管理在编写正确的内核代码时是必须的; 由于这个理由, 本书的每一个例子驱动都是考虑了并发下编写的. 用到的技术在我们遇到它们时再讲解; 第 5 章也专门讲述这个问题, 以及并发管理的可用的内核原语.  </p>
+<p> 驱动程序员的一个通常的错误是假定并发不是一个问题, 只要一段特别的代码没有进入睡眠( 或者 "阻塞" ). 即便在之前的内核( 不可抢占), 这种假设在多处理器系统中也不成立. 在 2.6, 内核代码不能(极少)假定它能在一段给定代码上持有处理器. 如果你不考虑并发来编写你的代码, 就极有可能导致严重失效, 以至于非常难于调试.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheCurrentProcess.sect2"></a>2.3.3.&#160;当前进程</h3></div></div></div>
+<p> 尽管内核模块不象应用程序一样顺序执行, 内核做的大部分动作是代表一个特定进程的. 内核代码可以引用当前进程, 通过存取全局项 current, 它在 &lt;asm/current.h&gt; 中定义, 它产生一个指针指向结构 task_struct, 在 &lt;linux/sched.h&gt; 定义. current 指针指向当前在运行的进程. 在一个系统调用执行期间, 例如 open 或者 read, 当前进程是发出调用的进程. 内核代码可以通过使用 current 来使用进程特定的信息, 如果它需要这样. 这种技术的一个例子在第 6 章展示.  </p>
+<p> 实际上, current 不真正地是一个全局变量. 支持 SMP 系统的需要强迫内核开发者去开发一种机制, 在相关的 CPU 上来找到当前进程. 这种机制也必须快速, 因为对 current 的引用非常频繁地发生. 结果就是一个依赖体系的机制, 常常, 隐藏了一个指向 task_struct 的指针在内核堆栈内. 实现的细节对别的内核子系统保持隐藏, 一个设备驱动可以只包含 &lt;linux/sched.h&gt; 并且引用当前进程. 例如, 下面的语句打印了当前进程的进程 ID 和命令名称, 通过存取结构 task_struct 中的某些字段.  </p>
+<pre class="programlisting">
+printk(KERN_INFO "The process is \"%s\" (pid %i)\n", current-&gt;comm, current-&gt;pid);
+</pre>
+<p> 存于 current-&gt;comm 的命令名称是由当前进程执行的程序文件的基本名称( 截短到 15 个字符, 如果需要 ).  
+</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="AFewOtherDetails.sect2"></a>2.3.4.&#160;几个别的细节</h3></div></div></div>
+<p> 内核编程与用户空间编程在许多方面不同. 我们将在本书的过程中指出它们, 但是有几个基础性的问题, 尽管没有保证它们自己有一节内容, 也值得一提. 因此, 当你深入内核时, 下面的事项应当牢记.  </p>
+<p> 应用程序存在于虚拟内存中, 有一个非常大的堆栈区. 堆栈, 当然, 是用来保存函数调用历史以及所有的由当前活跃的函数创建的自动变量. 内核, 相反, 有一个非常小的堆栈; 它可能小到一个, 4096 字节的页. 你的函数必须与这个内核空间调用链共享这个堆栈. 因此, 声明一个巨大的自动变量从来就不是一个好主意; 如果你需要大的结构, 你应当在调用时间内动态分配.  </p>
+<p> 常常, 当你查看内核 API 时, 你会遇到以双下划线(__)开始的函数名. 这样标志的函数名通常是一个低层的接口组件, 应当小心使用. 本质上讲, 双下划线告诉程序员:" 如果你调用这个函数, 确信你知道你在做什么." </p>
+<p> 内核代码不能做浮点算术. 使能浮点将要求内核在每次进出内核空间的时候保存和恢复浮点处理器的状态 -- 至少, 在某些体系上. 在这种情况下, 内核代码真的没有必要包含浮点, 额外的负担不值得.  
+</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch02s02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch02.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s04.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">2.2.&#160;Hello World 模块&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.4.&#160;编译和加载</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,476 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>16.3.&#160;请求处理-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch16.html" title="第&#160;16&#160;章&#160;块驱动">
+<link rel="prev" href="ch16s02.html" title="16.2.&#160;块设备操作">
+<link rel="next" href="ch16s04.html" title="16.4.&#160;一些其他的细节">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">16.3.&#160;请求处理</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch16s02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;16&#160;章&#160;块驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch16s04.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="RequestProcessing.sect1"></a>16.3.&#160;请求处理</h2></div></div></div>
+<p>每个块驱动的核心是它的请求函数. 这个函数是真正做工作的地方 --或者至少开始的地方; 剩下的都是开销. 因此, 我们花不少时间来看在块驱动中的请求处理.</p>
+<p>一个磁盘驱动的性能可能是系统整个性能的关键部分. 因此, 内核的块子系统编写时在性能上考虑了很多; 它做所有可能的事情来使你的驱动从它控制的设备上获得最多. 这是一个好事情, 其中它盲目地使能快速 I/O. 另一方面, 块子系统没必要在驱动 API 中曝露大量复杂性. 有可能编写一个非常简单的请求函数( 我们将很快见到 ), 但是如果你的驱动必须在一个高层次上操作复杂的硬件, 它可能是任何样子.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="IntroductiontotherequestMethod.sect2"></a>16.3.1.&#160;对请求方法的介绍</h3></div></div></div>
+<p>块驱动的请求方法有下面的原型:</p>
+<pre class="programlisting">
+void request(request_queue_t *queue); 
+</pre>
+<p>这个函数被调用, 无论何时内核认为你的驱动是时候处理对设备的读, 写, 或者其他操作. 请求函数在返回之前实际不需要完成所有的在队列中的请求; 实际上, 它可能不完成它们任何一个, 对大部分真实设备. 它必须, 但是, 驱动这些请求并且确保它们最终被驱动全部处理.</p>
+<p>每个设备有一个请求队列. 这是因为实际的从和到磁盘的传输可能在远离内核请求它们时发生, 并且因为内核需要这个灵活性来调度每个传送, 在最好的时刻(将影响磁盘上邻近扇区的请求集合到一起, 例如). 并且这个请求函数, 你可能记得, 和一个请求队列相关, 当这个队列被创建时. 让我们回顾 sbull 如何创建它的队列: </p>
+<pre class="programlisting">
+dev-&gt;queue = blk_init_queue(sbull_request, &amp;dev-&gt;lock); 
+</pre>
+<p>这样, 当这个队列被创建时, 请求函数和它关联到一起. 我们还提供了一个自旋锁作为队列创建过程的一部分. 无论何时我们的请求函数被调用, 内核持有这个锁. 结果, 请求函数在原子上下文中运行; 它必须遵循所有的 5 章讨论过的原子代码的通用规则.</p>
+<p>在你的请求函数持有锁时, 队列锁还阻止内核去排队任何对你的设备的其他请求. 在一些条件下, 你可能考虑在请求函数运行时丢弃这个锁. 如果你这样做, 但是, 你必须保证不存取请求队列, 或者任何其他的被这个锁保护的数据结构, 在这个锁不被持有时. 你必须重新请求这个锁,  在请求函数返回之前. </p>
+<p>最后, 请求函数的启动(常常地)与任何用户空间进程之间是完全异步的. 你不能假设内核运行在发起当前请求的进程上下文. 你不知道由这个请求提供的 I/O 缓冲是否在内核或者用户空间. 因此任何类型的明确存取用户空间的操作都是错误的并且将肯定引起麻烦. 如你将见到的, 你的驱动需要知道的关于请求的所有事情, 都包含在通过请求队列传递给你的结构中.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="ASimplerequestMethod.sect2"></a>16.3.2.&#160;一个简单的请求方法</h3></div></div></div>
+<p>sbull 例子驱动提供了几个不同的方法给请求处理. 缺省地, sbull 使用一个方法, 称为 sbull_request, 它打算作为一个最简单地请求方法的例子. 别忙, 它在这里:</p>
+<pre class="programlisting">
+static void sbull_request(request_queue_t *q)
+{
+        struct request *req;
+        while ((req = elv_next_request(q)) != NULL) {
+                struct sbull_dev *dev = req-&gt;rq_disk-&gt;private_data;
+                if (! blk_fs_request(req)) {
+
+                        printk (KERN_NOTICE "Skip non-fs request\n");
+                        end_request(req, 0);
+                        continue;
+                }
+                sbull_transfer(dev, req-&gt;sector, req-&gt;current_nr_sectors,
+                               req-&gt;buffer, rq_data_dir(req));
+                end_request(req, 1);
+        }
+}
+</pre>
+<p>这个函数介绍了 struct request 结构. 我们之后将详细检查 struct request; 现在, 只需说它表示一个我们要执行的块 I/O 请求.</p>
+<p>内核提供函数 elv_next_request 来获得队列中第一个未完成的请求; 当没有请求要被处理时这个函数返回 NULL. 注意 elf_next 不从队列里去除请求. 如果你连续调用它 2 次, 它 2 次都返回同一个请求结构. 在这个简单的操作模式中, 请求只在它们完成时被剥离队列.</p>
+<p>一个块请求队列可包含实际上不从磁盘和自磁盘移动块的请求. 这些请求可包括供应商特定的, 低层的诊断操作或者和特殊设备模式相关的指令, 例如给可记录介质的报文写模式. 大部分块驱动不知道如何处理这样的请求, 并且简单地失败它们; sbull 也以这种方式工作. 对 block_fs_request 的调用告诉我们是否我们在查看一个文件系统请求--一个一旦数据块的. 如果这个请求不是一个文件系统请求, 我们传递它到 end_request:</p>
+<pre class="programlisting">
+void end_request(struct request *req, int succeeded); 
+</pre>
+<p>当我们处理了非文件系统请求, 之后我们传递 succeeded 为 0 来指示我们没有成功完成这个请求. 否则, 我们调用 sbull_transfer 来真正移动数据, 使用一套在请求结构中提供的成员:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>sector_t sector;</span></span></dt>
+<dd><p>我们设备上起始扇区的索引. 记住这个扇区号, 象所有这样的在内核和驱动之间传递的数目, 是以 512-字节扇区来表示的. 如果你的硬件使用一个不同的扇区大小, 你需要相应地调整扇区. 例如, 如果硬件是 2048-字节的扇区, 你需要用 4 来除起始扇区号, 在安放它到对硬件的请求之前.</p></dd>
+<dt><span class="term"><span>unsigned long nr_sectors;</span></span></dt>
+<dd><p>要被传送的扇区(512-字节)数目.</p></dd>
+<dt><span class="term"><span>char *buffer;</span></span></dt>
+<dd><p>一个指向缓冲的指针, 数据应当被传送到或者从的缓冲. 这个指针是一个内核虚拟地址并且可被驱动直接解引用, 如果需要.</p></dd>
+<dt><span class="term"><span>rq_data_dir(struct request *req);</span></span></dt>
+<dd><p>这个宏从请求中抽取传送的方向; 一个 0 返回值表示从设备中读, 非 0 返回值表示写入设备.</p></dd>
+</dl></div>
+<p>有了这个信息, sbull 驱动可实现实际的数据传送, 使用一个简单的 memcpy 调用 -- 我们数据已经在内存, 毕竟. 进行这个拷贝操作的函数( sbull_transfer ) 也处理扇区大小的调整, 并确保我们没有拷贝超过我们的虚拟设备的尾.</p>
+<pre class="programlisting">
+static void sbull_transfer(struct sbull_dev *dev, unsigned long sector, unsigned long nsect, char *buffer, int write)
+{
+        unsigned long offset = sector*KERNEL_SECTOR_SIZE;
+        unsigned long nbytes = nsect*KERNEL_SECTOR_SIZE;
+        if ((offset + nbytes) &gt; dev-&gt;size)
+        {
+                printk (KERN_NOTICE "Beyond-end write (%ld %ld)\n", offset, nbytes);
+                return;
+        }
+        if (write)
+                memcpy(dev-&gt;data + offset, buffer, nbytes);
+        else
+                memcpy(buffer, dev-&gt;data + offset, nbytes);
+}
+</pre>
+<p>用这个代码, sbull 实现了一个完整的, 简单的基于 RAM 的磁盘设备. 但是, 对于很多类型的设备, 它不是一个实际的驱动, 由于几个理由.</p>
+<p>这些原因的第一个是 sbull 同步执行请求, 一次一个. 高性能的磁盘设备能够在同时有很多个请求停留; 磁盘的板上控制器因此可以优化的顺序(有人希望)执行它们. 如果我们只处理队列中的第一个请求, 我们在给定时间不能有多个请求被满足. 能够工作于多个请求要求对请求队列和请求结构的深入理解; 下面几节会帮助来建立这种理解.</p>
+<p>但是, 有另外一个问题要考虑. 当系统进行大的传输, 包含多个在一起的磁盘扇区, 就获得最好的性能. 磁盘操作的最高开销常常是读写头的定位; 一旦这个完成, 实际上需要的读或者写数据的时间几乎可忽略. 设计和实现文件系统和虚拟内存子系统的开发者理解这点, 因此他们尽力在磁盘上连续地查找相关的数据, 并且在一次请求中传送尽可能多扇区. 块子系统也在这个方面起作用; 请求队列包含大量逻辑,目的是找到邻近的请求并且接合它们为更大的操作.</p>
+<p>sbull 驱动, 但是, 采取所有这些工作并且简单地忽略它. 一次只有一个缓冲被传送, 意味着最大的单次传送几乎从不超过单个页的大小. 一个块驱动能做的比那个要好的多, 但是它需要一个对请求结构和bio结构的更深的理解, 请求是从它们建立的.</p>
+<p>下面几节更深入地研究块层如何完成它的工作, 已经这些工作导致的数据结构.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="RequestQueues.sect2"></a>16.3.3.&#160;请求队列</h3></div></div></div>
+<p>最简单的说, 一个块请求队列就是: 一个块 I/O 请求的队列. 如果你往下查看, 一个请求队列是一令人吃惊得复杂的数据结构. 幸运的是, 驱动不必担心大部分的复杂性.</p>
+<p>请求队列跟踪等候的块I/O请求. 但是它们也在这些请求的创建中扮演重要角色. 请求队列存储参数, 来描述这个设备能够支持什么类型的请求: 它们的最大大小, 多少不同的段可进入一个请求, 硬件扇区大小, 对齐要求, 等等. 如果你的请求队列被正确配置了, 它应当从不交给你一个你的设备不能处理的请求.</p>
+<p>请求队列还实现一个插入接口, 这个接口允许使用多 I/O 调度器(或者电梯). 一个 I/O 调度器的工作是提交 I/O 请求给你的驱动, 以最大化性能的方式. 为此, 大部分 I/O 调度器累积批量的 I/O 请求, 排列它们为递增(或递减)的块索引顺序, 并且以那个顺序提交请求给驱动. 磁头, 当给定一列排序的请求时, 从磁盘的一头到另一头工作, 非常象一个满载的电梯, 在一个方向移动直到所有它的"请求"(等待出去的人)已被满足. 2.6 内核包含一个"底线调度器", 它努力确保每个请求在预设的最大时间内被满足, 以及一个"预测调度器", 它实际上短暂停止设备, 在一个预想中的读请求之后, 这样另一个邻近的读将几乎是马上到达. 到本书为止, 缺省的调度器是预测调度器, 它看来有最好的交互的系统性能.</p>
+<p>I/O 调度器还负责合并邻近的请求. 当一个新 I/O 请求被提交给调度器, 它在队列里搜寻包含邻近扇区的请求; 如果找到一个, 并且如果结果的请求不是太大, 这 2 个请求被合并.</p>
+<p>请求队列有一个 struct request_queue 或者 request_queue_t 类型. 这个类型, 和许多操作它的函数, 定义在 &lt;linux/blkdev.h&gt;. 如果你对请求队列的实现感兴趣, 你可找到大部分代码在 drivers/block/ll_rw_block.c 和 elevator.c.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Queuecreationanddeletion.sect3"></a>16.3.3.1.&#160;队列的创建和删除</h4></div></div></div>
+<p>如同我们在我们的例子代码中见到的, 一个请求队列是一个动态的数据结构, 它必须被块 I/O 子系统创建. 这个创建和初始化一个队列的函数是:</p>
+<pre class="programlisting">
+request_queue_t *blk_init_queue(request_fn_proc *request, spinlock_t *lock); 
+</pre>
+<p>当然, 参数是, 这个队列的请求函数和一个控制对队列存取的自旋锁. 这个函数分配内存(实际上, 不少内存)并且可能失败因为这个; 你应当一直检查返回值, 在试图使用这个队列之前.</p>
+<p>作为初始化一个请求队列的一部分, 你可设置成员 queuedata(它是一个 void * 指针 )为任何你喜欢的值. 这个成员是请求队列的对于我们在其他结构中见到的 private_data 的对等体.</p>
+<p>为返回一个请求队列给系统(在模块卸载时间, 通常), 调用 blk_cleanup_queue:</p>
+<pre class="programlisting">
+void blk_cleanup_queue(request_queue_t *); 
+</pre>
+<p>这个调用后, 你的驱动从给定的队列中不再看到请求,并且不应当再次引用它.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Queueingfunctions.sect3"></a>16.3.3.2.&#160;排队函数</h4></div></div></div>
+<p>有非常少的函数来操作队列中的请求 -- 至少, 考虑到驱动. 你必须持有队列锁, 在你调用这些函数之前.</p>
+<p>返回要处理的下一个请求的函数是 elv_next_request:</p>
+<pre class="programlisting">
+struct request *elv_next_request(request_queue_t *queue); 
+</pre>
+<p>我们已经在简单的 sbull 例子中见到这个函数. 它返回一个指向下一个要处理的请求的指针(由 I/O 调度器所决定的)或者 NULL 如果没有请求要处理. elv_next_request 留这个请求在队列上, 但是标识它为活动的; 这个标识阻止了 I/O 调度器试图合并其他的请求到这些你开始执行的.</p>
+<p>为实际上从一个队列中去除一个请求, 使用 blkdev_dequeue_request:</p>
+<pre class="programlisting">
+void blkdev_dequeue_request(struct request *req); 
+</pre>
+<p>如果你的驱动同时从同一个队列中操作多个请求, 它必须以这样的方式将它们解出队列.</p>
+<p>如果你由于同样的理由需要放置一个出列请求回到队列中, 你可以调用:</p>
+<pre class="programlisting">
+void elv_requeue_request(request_queue_t *queue, struct request *req); 
+</pre>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Queuecontrolfunctions.sect3"></a>16.3.3.3.&#160;队列控制函数</h4></div></div></div>
+<p>块层输出了一套函数, 可被驱动用来控制一个请求队列如何操作. 这些函数包括:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>void blk_stop_queue(request_queue_t *queue);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_start_queue(request_queue_t *queue);</span></span></dt>
+<dd><p>如果你的设备已到到达一个状态, 它不能处理等候的命令, 你可调用 blk_stop_queue 来告知块层. 在这个调用之后, 你的请求函数将不被调用直到你调用 blk_start_queue. 不用说, 你不应当忘记重启队列, 当你的设备可处理更多请求时. 队列锁必须被持有当调用任何一个这些函数时.</p></dd>
+<dt><span class="term"><span>void blk_queue_bounce_limit(request_queue_t *queue, u64 dma_addr);</span></span></dt>
+<dd><p>告知内核你的设备可进行 DMA 的最高物理地址的函数. 如果一个请求包含一个超出这个限制的内存引用, 一个反弹缓冲将被用来给这个操作; 当然, 这是一个进行块 I/O 的昂贵方式, 并且应当尽量避免. 你可在这个参数中提供任何可能的值, 或者使用预先定义的符号 BLK_BOUNCE_HIGH(使用反弹缓冲给高内存页), BLK_BOUNCE_ISA (驱动只可 DMA 到 16MB 的 ISA 区), 或者BLK_BOUCE_ANY(驱动可进行 DMA 到任何地址). 缺省值是 BLK_BOUNCE_HIGH.</p></dd>
+<dt><span class="term"><span>void blk_queue_max_sectors(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_max_phys_segments(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_max_hw_segments(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void blk_queue_max_segment_size(request_queue_t *queue, unsigned int max);</span></span></dt>
+<dd><p>设置参数的函数, 这些参数描述可被设备满足的请求. blk_queue_max 可用来以扇区方式设置任一请求的最大的大小; 缺省是 255. blk_queue_max_phys_segments 和 blk_queue_max_hw_segments 都控制多少物理段(系统内存中不相邻的区)可包含在一个请求中. 使用 blk_queue_max_phys_segments 来说你的驱动准备处理多少段; 例如, 这可能是一个静态分配的散布表的大小. blk_queue_max_hw_segments, 相反, 是设备可处理的最多的段数. 这 2 个参数缺省都是 128. 最后, blk_queue_max_segment_size 告知内核任一个请求的段可能是多大字节; 缺省是 65,536 字节.</p></dd>
+<dt><span class="term"><span>blk_queue_segment_boundary(request_queue_t *queue, unsigned long mask);</span></span></dt>
+<dd><p>一些设备无法处理跨越一个特殊大小内存边界的请求; 如果你的设备是其中之一, 使用这个函数来告知内核这个边界. 例如, 如果你的设备处理跨 4-MB 边界的请求有困难, 传递一个 0x3fffff 掩码. 缺省的掩码是 0xffffffff.</p></dd>
+<dt><span class="term"><span>void blk_queue_dma_alignment(request_queue_t *queue, int mask);</span></span></dt>
+<dd><p>告知内核关于你的设备施加于 DMA 传送的内存对齐限制的函数. 所有的请求被创建有给定的对齐, 并且请求的长度也匹配这个对齐. 缺省的掩码是 0x1ff, 它导致所有的请求被对齐到 512-字节边界. </p></dd>
+<dt><span class="term"><span>void blk_queue_hardsect_size(request_queue_t *queue, unsigned short max);</span></span></dt>
+<dd><p>告知内核你的设备的硬件扇区大小. 所有由内核产生的请求是这个大小的倍数并且被正确对齐. 所有的在块层和驱动之间的通讯继续以 512-字节扇区来表达, 但是.</p></dd>
+</dl></div>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheAnatomyofaRequest.sect2"></a>16.3.4.&#160;请求的分析</h3></div></div></div>
+<p>在我们的简单例子里, 我们遇到了这个请求结构. 但是, 我们未曾接触这个复杂的数据结构. 在本节, 我们看, 详细地, 块 I/O 请求在 Linux 内核中如何被表示.</p>
+<p>每个请求结构代表一个块 I/O 请求, 尽管它可能是由几个独立的请求在更高层次合并而成. 对任何特殊的请求而传送的扇区可能分布在整个主内存, 尽管它们常常对应块设备中的多个连续的扇区. 这个请求被表示为多个段, 每个对应一个内存中的缓冲. 内核可能合并多个涉及磁盘上邻近扇区的请求, 但是它从不合并在单个请求结构中的读和写操作. 内核还确保不合并请求, 如果结果会破坏任何的在前面章节中描述的请求队列限制.</p>
+<p>基本上, 一个请求结构被实现为一个 bio 结构的链表, 结合一些维护信息来使驱动可以跟踪它的位置, 当它在完成这个请求中. 这个 bio 结构是一个块 I/O 请求移植的低级描述; 我们现在看看它.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Thebiostructure.sect3"></a>16.3.4.1.&#160;bio 结构</h4></div></div></div>
+<p>当内核, 以一个文件系统的形式, 虚拟文件子系统, 或者一个系统调用, 决定一组块必须传送到或从一个块 I/O 设备; 它装配一个 bio 结构来描述那个操作. 那个结构接着被递给这个块 I/O 代码, 这个代码合并它到一个存在的请求结构, 或者, 如果需要, 创建一个新的. 这个 bio 结构包含一个块驱动需要来进行请求的任何东西, 而不必涉及使这个请求启动的用户空间进程.</p>
+<p>bio 结构, 在 &lt;linux/bio.h&gt; 中定义, 包含许多成员对驱动作者是有用的:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>sector_t bi_sector;</span></span></dt>
+<dd><p>这个 bio 要被传送的第一个(512字节)扇区.</p></dd>
+<dt><span class="term"><span>unsigned int bi_size;</span></span></dt>
+<dd><p>被传送的数据大小, 以字节计. 相反, 常常更易使用 bio_sectors(bio), 一个给定以扇区计的大小的宏.</p></dd>
+<dt><span class="term"><span>unsigned long bi_flags;</span></span></dt>
+<dd><p>一组描述 bio 的标志; 最低有效位被置位如果这是一个写请求(尽管宏 bio_data_dir(bio)应当用来代替直接加锁这个标志).</p></dd>
+<dt><span class="term"><span>unsigned short bio_phys_segments;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned short bio_hw_segments;</span></span></dt>
+<dd><p>包含在这个 BIO 中的物理段的数目, 和在 DMA 映射完成后被硬件看到的段数目, 分别地.</p></dd>
+</dl></div>
+<p>一个 bio 的核心, 但是, 是一个称为 bi_io_vec 的数组, 它由下列结构组成:</p>
+<pre class="programlisting">
+struct bio_vec {
+ struct page  *bv_page; 
+ unsigned int  bv_len; 
+ unsigned int  bv_offset;  
+};  
+</pre>
+<p>图 <a href="ch16s03.html#ldd3-16-1.fig" title="图&#160;16.1.&#160;bio 结构">bio 结构</a>显示了这些结构如何结合在一起. 如同你所见到的, 在一个块 I/O 请求被转换为一个 bio 结构后, 它已被分为单独的物理内存页. 所有的一个驱动需要做的事情是步进全部这个结构数组(它们有 bi_vcnt 个), 和在每个页内传递数据(但是只 len 字节, 从 offset 开始).</p>
+<div class="figure">
+<a name="ldd3-16-1.fig"></a><p class="title"><b>图&#160;16.1.&#160;bio 结构</b></p>
+<div><img src="images/snagitldd3/ldd3-16-1.png" alt="bio 结构"></div>
+</div>
+<p>直接使用 bi_io_vec 数组不被推荐, 为了内核开发者可以在以后改变 bio 结构而不会引起破坏. 为此, 一组宏被提供来简化使用 bio 结构. 开始的地方是 bio_for_each_segment, 它简单地循环 bi_io_vec 数组中每个未被处理的项. 这个宏应当如下用: </p>
+<pre class="programlisting">
+int segno;
+struct bio_vec *bvec;
+
+bio_for_each_segment(bvec, bio, segno) {
+ /* Do something with this segment
+}
+</pre>
+<p>在这个循环中, bvec 指向当前的 bio_vec 项, 并且 segno 是当前的段号. 这些值可被用来设置 DMA 发送器(一个使用 blk_rq_map_sg 的替代方法在"块请求和 DMA"一节中描述). 如果你需要直接存取页, 你应当首先确保一个正确的内核虚拟地址存在; 为此, 你可使用:</p>
+<pre class="programlisting">
+char *__bio_kmap_atomic(struct bio *bio, int i, enum km_type type); 
+void __bio_kunmap_atomic(char *buffer, enum km_type type);
+</pre>
+<p>这个底层的函数允许你直接映射在一个给定的 bio_vec 中找到的缓冲, 由索引 i 所指定的. 一个原子的 kmap 被创建; 调用者必须提供合适的来使用的槽位(如同在 15 章的"内存映射和 struct page"一节中描述的).</p>
+<p>块层还维护一组位于 bio 结构的指针来跟踪请求处理的当前状态. 几个宏来提供对这个状态的存取:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct page *bio_page(struct bio *bio);</span></span></dt>
+<dd><p>返回一个指向页结构的指针, 表示下一个被传送的页.</p></dd>
+<dt><span class="term"><span>int bio_offset(struct bio *bio);</span></span></dt>
+<dd><p>返回页内的被传送的数据的偏移.</p></dd>
+<dt><span class="term"><span>int bio_cur_sectors(struct bio *bio);</span></span></dt>
+<dd><p>返回要被传送出当前页的扇区数.</p></dd>
+<dt><span class="term"><span>char *bio_data(struct bio *bio);</span></span></dt>
+<dd><p>返回一个内核逻辑地址, 指向被传送的数据. 注意这个地址可用仅当请求的页不在高内存中; 在其他情况下调用它是一个错误. 缺省地, 块子系统不传递高内存缓冲到你的驱动, 但是如果你已使用 blk_queue_bounce_limit 改变设置, 你可能不该使用 bio_data.</p></dd>
+<dt><span class="term"><span>char *bio_kmap_irq(struct bio *bio, unsigned long *flags);</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>void bio_kunmap_irq(char *buffer, unsigned long *flags);</span></span></dt>
+<dd><p>bio_kmap_irq 给任何缓冲返回一个内核虚拟地址, 不管它是否在高或低内存. 一个原子 kmap 被使用, 因此你的驱动在这个映射被激活时不能睡眠. 使用 bio_kunmap_irq 来去映射缓冲. 注意因为使用一个原子 kmap, 你不能一次映射多于一个段.</p></dd>
+</dl></div>
+<p>刚刚描述的所有函数都存取当前缓冲 -- 还未被传送的第一个缓冲, 只要内核知道. 驱动常常想使用 bio 中的几个缓冲, 在它们任何一个指出完成之前(使用 end_that_request_first, 马上就讲到), 因此这些函数常常没有用. 几个其他的宏存在来使用 bio 结构的内部接口(详情见 &lt;linux/bio.h&gt;).</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Requeststructurefields.sect3"></a>16.3.4.2.&#160;请求结构成员</h4></div></div></div>
+<p>现在我们有了 bio 结构如何工作的概念, 我们可以深入 struct request 并且看请求处理如何工作. 这个结构的成员包括:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>sector_t hard_sector;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned long hard_nr_sectors;</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>unsigned int hard_cur_sectors;</span></span></dt>
+<dd><p>追踪请求硬件完成的扇区的成员. 第一个尚未被传送的扇区被存储到 hard_sector, 已经传送的扇区总数在 hard_nr_sectors, 并且在当前 bio 中剩余的扇区数是 hard_cur_sectors. 这些成员打算只用在块子系统; 驱动不应当使用它们.</p></dd>
+<dt><span class="term"><span>struct bio *bio;</span></span></dt>
+<dd><p>bio 是给这个请求的 bio 结构的链表. 你不应当直接存取这个成员; 使用 rq_for_each_bio(后面描述) 代替.</p></dd>
+<dt><span class="term"><span>char *buffer;</span></span></dt>
+<dd><p>在本章前面的简单驱动例子使用这个成员来找到传送的缓冲. 随着我们的深入理解, 我们现在可见到这个成员仅仅是在当前 bio 上调用 bio_data 的结果.</p></dd>
+<dt><span class="term"><span>unsigned short nr_phys_segments;</span></span></dt>
+<dd><p>被这个请求在物理内存中占用的独特段的数目, 在邻近页已被合并后.</p></dd>
+<dt><span class="term"><span>struct list_head queuelist;</span></span></dt>
+<dd><p>链表结构(如同在 11 章中"链表"一节中描述的), 连接这个请求到请求队列. 如果(并且只是)你从队列中去除 blkdev_dequeue_request, 你可能使用这个列表头来跟踪这个请求, 在一个被你的驱动维护的内部列表中.</p></dd>
+</dl></div>
+<p>图 <a href="ch16s03.html#ldd3-16-2.fig" title="图&#160;16.2.&#160;一个带有一个部分被处理的请求的请求队列">一个带有一个部分被处理的请求的请求队列</a> 展示了请求队列和它的组件 bio 结构如何对应到一起. 在图中, 这个请求已被部分满足. cbio 和 buffer 处于指向尚未传送的第一个 bio.</p>
+<div class="figure">
+<a name="ldd3-16-2.fig"></a><p class="title"><b>图&#160;16.2.&#160;一个带有一个部分被处理的请求的请求队列</b></p>
+<div><img src="images/snagitldd3/ldd3-16-2.png" alt="一个带有一个部分被处理的请求的请求队列"></div>
+</div>
+<p>有许多不同的字段在请求结构中, 但是本节中的列表应当对大部分驱动编写者是足够的.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Barrierrequests.sect3"></a>16.3.4.3.&#160;屏障请求</h4></div></div></div>
+<p>块层在你的驱动见到它们之前重新排序来提高 I/O 性能. 你的驱动, 也可以重新排序请求, 如果有理由这样做. 常常地, 这种重新排序通过传递多个请求到驱动并且使硬件考虑优化的顺序来实现. 但是, 对于不严格的请求顺序有一个问题: 有些应用程序要求保证某些操作在其他的启动前完成. 例如, 关系数据库管理者, 必须绝对确保它们的日志信息刷新到驱动器, 在执行在数据库内容上的一次交易之前. 日志式文件系统, 现在在大部分 Linux 系统中使用, 有非常类似的排序限制. 如果错误的操作被重新排序, 结果可能是严重的, 无法探测的数据破坏.</p>
+<p>2.6 块层解决这个问题通过一个屏障请求的概念. 如果一个请求被标识为 REQ_HARDBARRER 标志, 它必须被写入驱动器在任何后续的请求被初始化之前. "被写入设备", 我们意思是数据必须实际位于并且是持久的在物理介质中. 许多的驱动器进行写请求的缓存; 这个缓存提高了性能, 但是它可能使屏障请求的目的失败. 如果一个电力失效在关键数据仍然在驱动器的缓存中时发生, 数据仍然被丢失即便驱动器报告完成. 因此一个实现屏障请求的驱动器必须采取步骤来强制驱动器真正写这些数据到介质中.</p>
+<p>如果你的驱动器尊敬屏障请求, 第一步是通知块层这个事实. 屏障处理是另一个请求队列; 它被设置为:</p>
+<pre class="programlisting">
+void blk_queue_ordered(request_queue_t *queue, int flag);
+</pre>
+<p>为指示你的驱动实现了屏障请求, 设置 flag 参数为一个非零值.</p>
+<p>实际的屏障请求实现是简单地测试在请求结构中关联的标志. 已经提供了一个宏来进行这个测试:</p>
+<pre class="programlisting">
+int blk_barrier_rq(struct request *req); 
+</pre>
+<p>如果这个宏返回一个非零值, 这个请求是一个屏障请求. 根据你的硬件如何工作, 你可能必须停止从队列中获取请求, 直到屏障请求已经完成. 另外的驱动器能理解屏障请求; 在这个情况中, 你的驱动所有的必须做的是对这些驱动器发出正确的操作.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Nonretryablerequests.sect3"></a>16.3.4.4.&#160;不可重入请求</h4></div></div></div>
+<p>块驱动常常试图重试第一次失败的请求. 这个做法可产生一个更加可靠的系统并且帮助来避免数据丢失. 内核, 但是, 有时标识请求为不可重入的. 这样的请求应当完全尽快失败, 如果它们无法在第一次试的时候执行.</p>
+<p>如果你的驱动在考虑重试一个失败的请求, 他应当首先调用:</p>
+<pre class="programlisting">
+int blk_noretry_request(struct request *req); 
+</pre>
+<p>如果这个宏返回非零值, 你的驱动应当放弃这个请求, 使用一个错误码来代替重试它.</p>
+</div>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="RequestCompletionFunctions.sect2"></a>16.3.5.&#160;请求完成函数</h3></div></div></div>
+<p>如同我们将见到的, 有几个不同的方式来使用一个请求结构. 它们所有的都使用几个通用的函数, 但是, 它们处理一个 I/O 请求或者部分请求的完成. 这 2 个函数都是原子的并且可从一个原子上下文被安全地调用.</p>
+<p>当你的设备已经完成传送一些或者全部扇区, 在一个 I/O 请求中, 它必须通知块子系统, 使用:</p>
+<pre class="programlisting">
+int end_that_request_first(struct request *req, int success, int count); 
+</pre>
+<p>这个函数告知块代码, 你的驱动已经完成 count 个扇区地传送, 从你最后留下的地方开始. 如果 I/O 是成功的, 传递 success 为 1; 否则传递 0. 注意你必须指出完成, 按照从第一个扇区到最后一个的顺序; 如果你的驱动和设备有些共谋来乱序完成请求, 你必须存储这个乱序的完成状态直到介入的扇区已经被传递.</p>
+<p>从 end_that_request_first 的返回值是一个指示, 指示是否所有的这个请求中的扇区已经被传送或者没有. 一个 0 返回值表示所有的扇区已经被传送并且这个请求完成. 在这点, 你必须使用 blkdev_dequeue_request 来从队列中解除请求(如果你还没有这样做)并且传递它到:</p>
+<pre class="programlisting">
+void end_that_request_last(struct request *req); 
+</pre>
+<p>end_that_request_last 通知任何在等待这个请求的人, 这个请求已经完成并且回收这个请求结构; 它必须在持有队列锁时被调用.</p>
+<p>在我们的简单的 sbull 例子里, 我们不使用任何上面的函数. 相反, 那个例子, 被称为 end_request. 为显示这个调用的效果, 这里有整个的 end_request 函数, 如果在 2.6.10 内核中见到的:</p>
+<pre class="programlisting">
+void end_request(struct request *req, int uptodate)
+{
+
+ if (!end_that_request_first(req, uptodate, req-&gt;hard_cur_sectors)) {
+ add_disk_randomness(req-&gt;rq_disk);
+ blkdev_dequeue_request(req);
+ end_that_request_last(req);
+ }
+}
+</pre>
+<p>函数 add_disk_randomness 使用块 I/O 请求的定时来贡献熵给系统的随机数池; 它应当被调用仅当磁盘的定时是真正的随机的. 对大部分的机械设备这是真的, 但是对一个基于内存的虚拟设备它不是真的, 例如 sbull. 因此, 下一节中更复杂的 sbull 版本不调用 add_disk_randomness.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Workingwithbios.sect3"></a>16.3.5.1.&#160;使用 bio</h4></div></div></div>
+<p>现在你了解了足够多的来编写一个块驱动, 可直接使用组成一个请求的 bio 结构. 但是, 一个例子可能会有帮助. 如果这个 sbull 驱动被加载为 request_mode 参数被设为 1, 它注册一个知道 bio 的请求函数来代替我们上面见到的简单函数. 那个函数看来如此:</p>
+<pre class="programlisting">
+static void sbull_full_request(request_queue_t *q)
+{
+        struct request *req;
+        int sectors_xferred;
+        struct sbull_dev *dev = q-&gt;queuedata;
+        while ((req = elv_next_request(q)) != NULL) {
+                if (! blk_fs_request(req)) {
+                        printk (KERN_NOTICE "Skip non-fs request\n");
+
+                        end_request(req, 0);
+                        continue;
+                }
+                sectors_xferred = sbull_xfer_request(dev, req);
+                if (! end_that_request_first(req, 1, sectors_xferred)) {
+                        blkdev_dequeue_request(req);
+                        end_that_request_last(req);
+                }
+        }
+}
+</pre>
+<p>这个函数简单地获取每个请求, 传递它到 sbull_xfer_request, 接着使用 end_that_request_first 和, 如果需要, end_that_request_last 来完成它. 因此, 这个函数在处理高级队列并且请求管理部分问题. 真正执行一个请求的工作, 但是, 落入 sbull_xfer_request:</p>
+<pre class="programlisting">
+static int sbull_xfer_request(struct sbull_dev *dev, struct request *req)
+{
+        struct bio *bio;
+        int nsect = 0;
+
+        rq_for_each_bio(bio, req)
+        {
+                sbull_xfer_bio(dev, bio);
+                nsect += bio-&gt;bi_size/KERNEL_SECTOR_SIZE;
+
+        }
+        return nsect;
+}
+</pre>
+<p>这里我们介绍另一个宏: rq_for_each_bio. 如同你可能期望的, 这个宏简单地步入请求中的每个 bio 结构, 给我们一个可传递给 sbull_xfer_bio 用于传输的指针. 那个函数看来如此:</p>
+<pre class="programlisting">
+static int sbull_xfer_bio(struct sbull_dev *dev, struct bio *bio)
+{
+        int i;
+        struct bio_vec *bvec;
+        sector_t sector = bio-&gt;bi_sector;
+
+        /* Do each segment independently. */
+        bio_for_each_segment(bvec, bio, i)
+        {
+                char *buffer = __bio_kmap_atomic(bio, i, KM_USER0);
+                sbull_transfer(dev, sector, bio_cur_sectors(bio),
+
+                               buffer, bio_data_dir(bio) == WRITE);
+                sector += bio_cur_sectors(bio);
+                __bio_kunmap_atomic(bio, KM_USER0);
+
+        }
+        return 0; /* Always "succeed" */
+}
+</pre>
+<p>这个函数简单地步入每个 bio 结构中的段, 获得一个内核虚拟地址来存取缓冲, 接着调用之前我们见到的同样的 sbull_transfer 函数来拷贝数据.</p>
+<p>每个设备有它自己的需要, 但是, 作为一个通用的规则, 刚刚展示的代码应当作为一个模型, 给许多的需要深入 bio 结构的情形.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="BlockrequestsandDMA.sect3"></a>16.3.5.2.&#160;块请求和 DMA</h4></div></div></div>
+<p>如果你工作在一个高性能块驱动上, 你有机会使用 DMA 来进行真正的数据传输. 一个块驱动当然可步入 bio 结构, 如同上面描述的, 为每一个创建一个 DMA 映射, 并且传递结构给设备. 但是, 有一个更容易的方法, 如果你的驱动可进行发散/汇聚 I/O. 函数:</p>
+<pre class="programlisting">
+int blk_rq_map_sg(request_queue_t *queue, struct request *req, struct scatterlist *list);
+</pre>
+<p>使用来自给定请求的全部段填充给定的列表. 内存中邻近的段在插入散布表之前被接合, 因此你不需要自己探测它们. 返回值是列表中的项数. 这个函数还回传, 在它第 3 个参数, 一个适合传递给 dma_map_sg 的散布表.(关于 dma_map_sg 的更多信息见 15 章的"发散-汇聚映射"一节). </p>
+<p>你的驱动必须在调用 blk_rq_map_sg 之前给散布表分配存储. 这个列表必须能够至少持有这个请求有的物理段那么多的项; struct request 成员 nr_phys_segments 持有那个数量, 它不能超过由 blk_queue_max_phys_segments 指定的物理段的最大数目.</p>
+<p>如果你不想 blk_rq_map_sg 来接合邻近的段, 你可改变这个缺省的行为, 使用一个调用诸如:</p>
+<pre class="programlisting">
+clear_bit(QUEUE_FLAG_CLUSTER, &amp;queue-&gt;queue_flags); 
+</pre>
+<p>一些 SCSI 磁盘驱动用这样的方式标识它们的请求队列, 因为它们没有从接合请求中获益.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Doingwithoutarequestqueue.sect3"></a>16.3.5.3.&#160;不用一个请求队列</h4></div></div></div>
+<p>前面, 我们已经讨论了内核所作的在队列中优化请求顺序的工作; 这个工作包括排列请求和, 或许, 甚至延迟队列来允许一个预期的请求到达. 这些技术在处理一个真正的旋转的磁盘驱动器时有助于系统的性能. 但是, 使用一个象 sbull 的设备它们是完全浪费了. 许多面向块的设备, 例如闪存阵列, 用于数字相机的存储卡的读取器, 并且 RAM 盘真正地有随机存取的性能, 包含从高级的请求队列逻辑中获益. 其他设备, 例如软件 RAID 阵列或者被逻辑卷管理者创建的虚拟磁盘, 没有这个块层的请求队列被优化的性能特征. 对于这类设备, 它最好直接从块层接收请求, 并且根本不去烦请求队列.</p>
+<p>对于这些情况, 块层支持"无队列"的操作模式. 为使用这个模式, 你的驱动必须提供一个"制作请求"函数, 而不是一个请求函数. make_request 函数有这个原型:</p>
+<pre class="programlisting">
+typedef int (make_request_fn) (request_queue_t *q, struct bio *bio); 
+</pre>
+<p>注意一个请求队列仍然存在, 即便它从不会真正有任何请求. make_request 函数用一个 bio 结构作为它的主要参数, 这个 bio 结构表示一个或多个要传送的缓冲. make_request 函数做 2 个事情之一: 它可或者直接进行传输, 或者重定向这个请求到另一个设备.</p>
+<p>直接进行传送只是使用我们前面描述的存取者方法来完成这个 bio. 因为没有使用请求结构, 但是, 你的函数应当通知这个 bio 结构的创建者直接指出完成, 使用对 bio_endio 的调用:</p>
+<pre class="programlisting">
+void bio_endio(struct bio *bio, unsigned int bytes, int error);
+</pre>
+<p>这里, bytes 是你至今已经传送的字节数. 它可小于由这个 bio 整体所代表的字节数; 在这个方式中, 你可指示部分完成, 并且更新在 bio 中的内部的"当前缓冲"指针. 你应当再次调用 bio_endio 在你的设备进行进一步处理时, 或者当你不能完成这个请求指出一个错误. 错误是通过提供一个非零值给 error 参数来指示的; 这个值通常是一个错误码, 例如 -EIO. make_request 应当返回 0, 不管这个 I/O 是否成功.</p>
+<p>如果 sbull 用 request_mode=2 加载, 它操作一个 make_request 函数. 因为 sbull 已经有一个函数看传送单个 bio, 这个 make_request 函数简单:</p>
+<pre class="programlisting">
+static int sbull_make_request(request_queue_t *q, struct bio *bio)
+{
+        struct sbull_dev *dev = q-&gt;queuedata;
+        int status;
+        status = sbull_xfer_bio(dev, bio);
+        bio_endio(bio, bio-&gt;bi_size, status);
+        return 0;
+}
+</pre>
+<p>请注意你应当从不调用 bio_endio 从一个通常的请求函数; 那个工作由 end_that_request_first 代替来处理.</p>
+<p>一些块驱动, 例如那些实现卷管理者和软件 RAID 阵列的, 真正需要重定向请求到另一个设备来处理真正的 I/O. 编写这样的一个驱动超出了本书的范围. 我们, 但是, 注意如果 make_request 函数返回一个非零值, bio 被再次提交. 一个"堆叠"驱动, 可, 因此, 修改 bi_bdev 成员来指向一个不同的设备, 改变起始扇区值, 接着返回; 块系统接着传递 bio 到新设备. 还有一个 bio_split 调用来划分一个 bio 到多个块以提交给多个设备. 尽管如果队列参数被之前设置, 划分一个  bio 几乎从不需要.</p>
+<p>任何一个方式, 你都必须告知块子系统, 你的驱动在使用一个自定义的 make_request 函数. 为此, 你必须分配一个请求队列, 使用:</p>
+<pre class="programlisting">
+request_queue_t *blk_alloc_queue(int flags); 
+</pre>
+<p>这个函数不同于 blk_init_queue, 它不真正建立队列来持有请求. flags 参数是一组分配标志被用来为队列分配内存; 常常地正确值是 GFP_KERNEL. 一旦你有一个队列, 传递它和你的 make_request 函数到 blk_queue_make_request:</p>
+<pre class="programlisting">
+void blk_queue_make_request(request_queue_t *queue, make_request_fn *func); 
+</pre>
+<p>sbull 代码来设置 make_request 函数, 象:</p>
+<pre class="programlisting">
+dev-&gt;queue = blk_alloc_queue(GFP_KERNEL);
+if (dev-&gt;queue == NULL)
+        goto out_vfree;
+blk_queue_make_request(dev-&gt;queue, sbull_make_request);
+</pre>
+<p>对于好奇的人, 花些时间深入 drivers/block/ll_rw_block.c 会发现, 所有的队列都有一个 make_request 函数. 缺省的版本, generic_make_request, 处理 bio 和一个请求结构的结合. 通过提供一个它自己的 make_request 函数, 一个驱动真正只覆盖一个特定的请求队列方法, 并且排序大部分工作.</p>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch16s02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch16.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch16s04.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">16.2.&#160;块设备操作&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;16.4.&#160;一些其他的细节</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

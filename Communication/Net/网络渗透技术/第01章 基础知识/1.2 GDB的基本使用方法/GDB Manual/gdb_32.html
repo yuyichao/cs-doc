@@ -1,0 +1,241 @@
+<HTML>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- Created on February, 7  2004 by texi2html 1.64 -->
+<!-- 
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Olaf Bachmann <obachman@mathematik.uni-kl.de>
+Send bugs and suggestions to <texi2html@mathematik.uni-kl.de>
+ 
+-->
+<HEAD>
+<TITLE>Debugging with GDB: Maintenance Commands</TITLE>
+
+<META NAME="description" CONTENT="Debugging with GDB: Maintenance Commands">
+<META NAME="keywords" CONTENT="Debugging with GDB: Maintenance Commands">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<META NAME="Generator" CONTENT="texi2html 1.64">
+
+</HEAD>
+
+<BODY LANG="" BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#800080" ALINK="#FF0000">
+
+<A NAME="SEC653"></A>
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_31.html#SEC652"> &lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_33.html#SEC654"> &gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_33.html#SEC654"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb.html#SEC_Top"> Up </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_33.html#SEC654"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_toc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_37.html#SEC707">Index</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_abt.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<H1> C. Maintenance Commands </H1>
+<!--docid::SEC653::-->
+<P>
+
+In addition to commands intended for GDB users, GDB
+includes a number of commands intended for GDB developers.
+These commands are provided here for reference.
+</P><P>
+
+<DL COMPACT>
+<A NAME="IDX1220"></A>
+<A NAME="maint info breakpoints"></A>
+<DT><CODE>maint info breakpoints</CODE>
+<DD>Using the same format as <SAMP>`info breakpoints'</SAMP>, display both the
+breakpoints you've set explicitly, and those GDB is using for
+internal purposes.  Internal breakpoints are shown with negative
+breakpoint numbers.  The type column identifies what kind of breakpoint
+is shown:
+<P>
+
+<DL COMPACT>
+<DT><CODE>breakpoint</CODE>
+<DD>Normal, explicitly set breakpoint.
+<P>
+
+<DT><CODE>watchpoint</CODE>
+<DD>Normal, explicitly set watchpoint.
+<P>
+
+<DT><CODE>longjmp</CODE>
+<DD>Internal breakpoint, used to handle correctly stepping through
+<CODE>longjmp</CODE> calls.
+<P>
+
+<DT><CODE>longjmp resume</CODE>
+<DD>Internal breakpoint at the target of a <CODE>longjmp</CODE>.
+<P>
+
+<DT><CODE>until</CODE>
+<DD>Temporary internal breakpoint used by the GDB <CODE>until</CODE> command.
+<P>
+
+<DT><CODE>finish</CODE>
+<DD>Temporary internal breakpoint used by the GDB <CODE>finish</CODE> command.
+<P>
+
+<DT><CODE>shlib events</CODE>
+<DD>Shared library events.
+<P>
+
+</DL>
+<P>
+
+<A NAME="IDX1221"></A>
+<A NAME="IDX1222"></A>
+<DT><CODE>maint internal-error</CODE>
+<DD><DT><CODE>maint internal-warning</CODE>
+<DD>Cause GDB to call the internal function <CODE>internal_error</CODE>
+or <CODE>internal_warning</CODE> and hence behave as though an internal error
+or internal warning has been detected.  In addition to reporting the
+internal problem, these functions give the user the opportunity to
+either quit GDB or create a core file of the current
+GDB session.
+<P>
+
+<TABLE><tr><td>&nbsp;</td><td class=smallexample><FONT SIZE=-1><pre>(gdb) <KBD>maint internal-error testing, 1, 2</KBD>
+<small>...</small>/maint.c:121: internal-error: testing, 1, 2
+A problem internal to GDB has been detected.  Further
+debugging may prove unreliable.
+Quit this debugging session? (y or n) <KBD>n</KBD>
+Create a core file? (y or n) <KBD>n</KBD>
+(gdb)
+</FONT></pre></td></tr></table></P><P>
+
+Takes an optional parameter that is used as the text of the error or
+warning message.
+</P><P>
+
+<A NAME="IDX1223"></A>
+<DT><CODE>maint print dummy-frames</CODE>
+<DD><P>
+
+Prints the contents of GDB's internal dummy-frame stack.
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=smallexample><FONT SIZE=-1><pre>(gdb) <KBD>b add</KBD>
+<small>...</small>
+(gdb) <KBD>print add(2,3)</KBD>
+Breakpoint 2, add (a=2, b=3) at <small>...</small>
+58	  return (a + b);
+The program being debugged stopped while in a function called from GDB.
+<small>...</small>
+(gdb) <KBD>maint print dummy-frames</KBD>
+0x1a57c80: pc=0x01014068 fp=0x0200bddc sp=0x0200bdd6
+ top=0x0200bdd4 id={stack=0x200bddc,code=0x101405c}
+ call_lo=0x01014000 call_hi=0x01014001
+(gdb)
+</FONT></pre></td></tr></table></P><P>
+
+Takes an optional file parameter.
+</P><P>
+
+<A NAME="IDX1224"></A>
+<A NAME="IDX1225"></A>
+<A NAME="IDX1226"></A>
+<A NAME="IDX1227"></A>
+<DT><CODE>maint print registers</CODE>
+<DD><DT><CODE>maint print raw-registers</CODE>
+<DD><DT><CODE>maint print cooked-registers</CODE>
+<DD><DT><CODE>maint print register-groups</CODE>
+<DD>Print GDB's internal register data structures.
+<P>
+
+The command <CODE>maint print raw-registers</CODE> includes the contents of
+the raw register cache; the command <CODE>maint print cooked-registers</CODE>
+includes the (cooked) value of all registers; and the command
+<CODE>maint print register-groups</CODE> includes the groups that each
+register is a member of.  See section `Registers' in <CITE>GDB Internals</CITE>.
+</P><P>
+
+Takes an optional file parameter.
+</P><P>
+
+<A NAME="IDX1228"></A>
+<DT><CODE>maint print reggroups</CODE>
+<DD>Print GDB's internal register group data structures.
+<P>
+
+Takes an optional file parameter.
+</P><P>
+
+<TABLE><tr><td>&nbsp;</td><td class=smallexample><FONT SIZE=-1><pre>(gdb) <KBD>maint print reggroups</KBD>
+ Group      Type
+ general    user
+ float      user
+ all        user
+ vector     user
+ system     user
+ save       internal
+ restore    internal
+</FONT></pre></td></tr></table></P><P>
+
+<A NAME="IDX1229"></A>
+<A NAME="IDX1230"></A>
+<A NAME="IDX1231"></A>
+<DT><CODE>maint set profile</CODE>
+<DD><DT><CODE>maint show profile</CODE>
+<DD>Control profiling of GDB.
+<P>
+
+Profiling will be disabled until you use the <SAMP>`maint set profile'</SAMP>
+command to enable it.  When you enable profiling, the system will begin
+collecting timing and execution count data; when you disable profiling or
+exit GDB, the results will be written to a log file.  Remember that
+if you use profiling, GDB will overwrite the profiling log file
+(often called <TT>`gmon.out'</TT>).  If you have a record of important profiling
+data in a <TT>`gmon.out'</TT> file, be sure to move it to a safe location.
+</P><P>
+
+Configuring with <SAMP>`--enable-profiling'</SAMP> arranges for GDB to be
+compiled with the <SAMP>`-pg'</SAMP> compiler option.
+</P><P>
+
+</DL>
+<P>
+
+<A NAME="Remote Protocol"></A>
+<HR SIZE="6">
+<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=0>
+<TR><TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_33.html#SEC654"> &lt;&lt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_33.html#SEC654"> &gt;&gt; </A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT"> &nbsp; <TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb.html#SEC_Top">Top</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_toc.html#SEC_Contents">Contents</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_37.html#SEC707">Index</A>]</TD>
+<TD VALIGN="MIDDLE" ALIGN="LEFT">[<A HREF="gdb_abt.html#SEC_About"> ? </A>]</TD>
+</TR></TABLE>
+<BR>  
+<FONT SIZE="-1">
+
+<address>
+
+<p>Please send FSF &amp; GNU inquiries &amp; questions to <a
+href="mailto:gnu@gnu.org">gnu@gnu.org</a>.  There are also <a
+href="http://www.gnu.org/home.html#ContactInfo">other ways to
+contact</a> the FSF.</p>
+
+<p>These pages are maintained by <a
+href="http://www.gnu.org/software/gdb/">the GDB developers</a>.</p>
+
+<p>Copyright Free Software Foundation, Inc., 59 Temple Place - Suite
+330, Boston, MA 02111, USA.</p>
+
+<p>Verbatim copying and distribution of this entire article is
+permitted in any medium, provided this notice is preserved.</p>
+
+</address>
+
+This document was generated
+by <I>GDB Administrator</I> on <I>February, 7  2004</I>
+using <A HREF="http://www.mathematik.uni-kl.de/~obachman/Texi2html
+"><I>texi2html</I></A>
+
+</BODY>
+</HTML>

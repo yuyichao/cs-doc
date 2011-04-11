@@ -1,0 +1,962 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>10.2. Installing an Interrupt Handler</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-10-sect-1.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-10-sect-3.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><TD valign="top"><a name="chp-10-sect-2"></a>
+<h3 class="docSection1Title">10.2. Installing an Interrupt Handler</h3>
+
+<p class="docText">If you want to actually "see"
+interrupts being generated, writing to the hardware device
+isn't enough; a software handler must be configured
+in the system. If the Linux kernel hasn't been told
+to expect your interrupt, it simply acknowledges and ignores it.</p>
+
+<p class="docText"><a name="chp-10-ITERM-6028"></a> <a name="chp-10-ITERM-6029"></a> <a name="chp-10-ITERM-6030"></a> <a name="chp-10-ITERM-6031"></a>Interrupt lines are a precious and
+often limited resource, particularly when there are only 15 or 16 of
+them. The kernel keeps a registry of interrupt lines, similar to the
+registry of I/O ports. A module is expected to request an interrupt
+channel (or IRQ, for interrupt request) before using it and to
+release it when finished. In many situations, modules are also
+expected to be able to share interrupt lines with other drivers, as
+we will see. The following functions, declared in
+<I>&lt;linux/interrupt.h&gt;</i>, implement the
+interrupt registration interface:</P>
+
+<pre>int request_irq(unsigned int irq,
+                irqreturn_t (*handler)(int, void *, struct pt_regs *),
+                unsigned long flags, 
+                const char *dev_name,
+                void *dev_id);
+
+void free_irq(unsigned int irq, void *dev_id);</pre><BR>
+
+
+<p class="docText">The value returned from <span class="docEmphasis">request_irq</span> to the
+requesting function is either <tt>0</tt> to indicate
+success or a negative error code, as usual. It's not
+uncommon for the function to return <tt>-EBUSY</tt> to
+signal that another driver is already using the requested interrupt
+line. The arguments to the functions are as follows:</P>
+
+<a name="chp-10-ITERM-6032"></a><a name="chp-10-ITERM-6033"></a><a name="chp-10-ITERM-6034"></a><a name="chp-10-ITERM-6035"></a><a name="chp-10-ITERM-6036"></a><a name="chp-10-ITERM-6037"></a><a name="chp-10-ITERM-6038"></a><a name="chp-10-ITERM-6039"></a><a name="chp-10-ITERM-6040"></a><a name="chp-10-ITERM-6041"></a><a name="chp-10-ITERM-6042"></a><a name="chp-10-ITERM-6043"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned int irq</span></span><a name="chp-10-ITERM-6032"></a>
+<a name="chp-10-ITERM-6033"></a></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-10-ITERM-6034"></a><a name="chp-10-ITERM-6035"></a>The interrupt number
+being requested.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">irqreturn_t (*handler)(int, void *, struct pt_regs *)</span></span><a name="chp-10-ITERM-6036"></a>
+<a name="chp-10-ITERM-6037"></a></span></dt></P>
+<dd>
+<p class="docList">The pointer to the handling function being installed. We discuss the
+arguments to this function and its return value later in this
+chapter.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long flags</span></span><a name="chp-10-ITERM-6038"></a>
+<a name="chp-10-ITERM-6039"></a></span></dt></p>
+<dd>
+<p class="docList">As you might expect, a bit mask of options (described later) related
+to interrupt management.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">const char *dev_name</span></span><a name="chp-10-ITERM-6040"></a>
+<a name="chp-10-ITERM-6041"></a></span></dt></P>
+<dd>
+<p class="docList">The string passed to <span class="docEmphasis">request_irq</span> is used in
+<i>/proc/interrupts</i> to show the owner of the
+interrupt (see the next section).</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">void *dev_id</span></span><a name="chp-10-ITERM-6042"></a>
+<a name="chp-10-ITERM-6043"></a></span></dt></P>
+<dd>
+<p class="docList">Pointer used for shared interrupt lines. It is a unique identifier
+that is used when the interrupt line is freed and that may also be
+used by the driver to point to its own private data area (to identify
+which device is interrupting). If the interrupt is not shared,
+<tt>dev_id</tt> can be set to <tt>NULL</tt>, but
+it a good idea anyway to use this item to point to the device
+structure. We'll see a practical use for
+<tt>dev_id</tt> in <a class="docLink" href="chp-10-sect-3.shtml#chp-10-sect-3">Section 10.3</a>.</p>
+</dd>
+</dl>
+
+<p class="docText">The bits that can be set in <tt>flags</tt> are as follows:</P>
+
+<a name="chp-10-ITERM-6044"></a><a name="chp-10-ITERM-6045"></a><a name="chp-10-ITERM-6046"></a><a name="chp-10-ITERM-6047"></a><a name="chp-10-ITERM-6048"></a><a name="chp-10-ITERM-6049"></a><a name="chp-10-ITERM-6050"></a><a name="chp-10-ITERM-6051"></a><a name="chp-10-ITERM-6052"></a><a name="chp-10-ITERM-6053"></a><a name="chp-10-ITERM-6054"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">SA_INTERRUPT</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-10-ITERM-6044"></a>
+<a name="chp-10-ITERM-6045"></a>When
+set, this indicates a "fast"
+interrupt handler. Fast handlers are executed with interrupts
+disabled on the current processor (the topic is covered in the
+<a class="docLink" href="chp-10-sect-2.shtml#chp-10-sect-2.3">Section 10.2.3</a>).</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">SA_SHIRQ</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-10-ITERM-6046"></a>
+<a name="chp-10-ITERM-6047"></a>This
+bit signals that the interrupt can be shared between devices. The
+concept of sharing is outlined in <a class="docLink" href="chp-10-sect-5.shtml#chp-10-sect-5">Section 10.5</a>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">SA_SAMPLE_RANDOM</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-10-ITERM-6048"></a>
+<a name="chp-10-ITERM-6049"></a><a name="chp-10-ITERM-6050"></a><a name="chp-10-ITERM-6051"></a><a name="chp-10-ITERM-6052"></a><a name="chp-10-ITERM-6053"></a><a name="chp-10-ITERM-6054"></a>This bit indicates that
+the generated interrupts can contribute to the entropy pool used by
+<i>/dev/random</i> and
+<I>/dev/urandom</i>. These devices return truly random
+numbers when read and are designed to help application software
+choose secure keys for encryption. Such random numbers are extracted
+from an entropy pool that is contributed by various random events. If
+your device generates interrupts at truly random times, you should
+set this flag. If, on the other hand, your interrupts are predictable
+(for example, vertical blanking of a frame grabber), the flag is not
+worth setting—it wouldn't contribute to system
+entropy anyway. Devices that could be influenced by attackers should
+not set this flag; for example, network drivers can be subjected to
+predictable packet timing from outside and should not contribute to
+the entropy pool. See the comments in
+<I>drivers/char/random.c</I> for more information.</p>
+</dd>
+</dl>
+
+<p class="docText">The interrupt handler can be installed either at
+driver<a name="chp-10-ITERM-6055"></a>
+<a name="chp-10-ITERM-6056"></a> initialization or when the device is first
+opened. Although installing the interrupt handler from within the
+module's initialization function might sound like a
+good idea, it often isn't, especially if your device
+does not share interrupts. Because the number of interrupt lines is
+limited, you don't want to waste them. You can
+easily end up with more devices in your computer than there are
+interrupts. If a module requests an IRQ at initialization, it
+prevents any other driver from using the interrupt, even if the
+device holding it is never used. Requesting the interrupt at device
+open, on the other hand, allows some sharing of resources.</p>
+
+<p class="docText">It is possible, for example, to run a frame grabber on the same
+interrupt as a modem, as long as you don't use the
+two devices at the same time. It is quite common for users to load
+the module for a special device at system boot, even if the device is
+rarely used. A data acquisition gadget might use the same interrupt
+as the second serial port. While it's not too hard
+to avoid connecting to your Internet service provider (ISP) during
+data acquisition, being forced to unload a module in order to use the
+modem is really unpleasant.</p>
+
+<p class="docText">The correct place to call <span class="docEmphasis">request_irq</span> is when
+the device is first opened, <span class="docEmphasis">before</span> the hardware
+is instructed to generate interrupts. The place to call
+<span class="docEmphasis">free_irq</span> is the last time the device is closed,
+<span class="docEmphasis">after</span> the hardware is told not to interrupt the
+processor any more. The disadvantage of this technique is that you
+need to keep a per-device open count so that you know when interrupts
+can be disabled.</P>
+
+<p class="docText"><a name="chp-10-ITERM-6057"></a>
+<a name="chp-10-ITERM-6058"></a>This discussion notwithstanding,
+<span class="docEmphasis">short</span> requests its interrupt line at load time.
+This was done so that you can run the test programs without having to
+run an extra process to keep the device open.
+<span class="docEmphasis">short</span>, therefore, requests the interrupt from
+within its initialization function (<span class="docEmphasis">short_init</span>)
+instead of doing it in <span class="docEmphasis">short_open</span>, as a real
+device driver would.</p>
+
+<p class="docText">The interrupt requested by the following code is
+<tt>short_irq</tt>. The actual assignment of the variable
+(i.e., determining which IRQ to use) is shown later, since it is not
+relevant to the current discussion. <tt>short_base</tt> is
+the base I/O address of the parallel interface being used; register 2
+of the interface is written to<a name="chp-10-ITERM-6059"></a>
+<a name="chp-10-ITERM-6060"></a>
+enable interrupt reporting.</P>
+
+<pre>if (short_irq &gt;= 0) {
+    result = request_irq(short_irq, short_interrupt,
+            SA_INTERRUPT, "short", NULL);
+   if (result) {
+        printk(KERN_INFO "short: can't get assigned irq %i\n",
+                short_irq);
+        short_irq = -1;
+    }
+    else { /* actually enable it -- assume this *is* a parallel port */
+        outb(0x10,short_base+2);
+    }
+}</pre><BR>
+
+
+<p class="docText">The code shows that the handler being installed is a fast handler
+(<tt>SA_INTERRUPT</tt>), doesn't support
+interrupt sharing (<tt>SA_SHIRQ</tt> is missing), and
+doesn't contribute to system entropy
+(<tt>SA_SAMPLE_RANDOM</tt> is missing, too). The
+<span class="docEmphasis">outb</span> call then enables interrupt reporting for
+the parallel port.</P>
+
+<p class="docText">For what it's worth, the i386 and x86_64
+architectures define a function for querying the availability of an
+interrupt line:</p>
+
+<pre>int can_request_irq(unsigned int irq, unsigned long flags);</pre><br>
+
+
+<p class="docText">This function returns a nonzero value if an attempt to allocate the
+given interrupt succeeds. Note, however, that things can always
+change between calls to <span class="docEmphasis">can_request_irq</span> and
+<span class="docEmphasis">request_irq</span>.</p>
+
+<a name="chp-10-sect-2.1"></a>
+<h4 class="docSection2Title">10.2.1. The /proc Interface</H4>
+
+<p class="docText"><a name="chp-10-ITERM-6061"></a>
+<a name="chp-10-ITERM-6062"></a><a name="chp-10-ITERM-6063"></a><a name="chp-10-ITERM-6064"></a><a name="chp-10-ITERM-6065"></a>
+<a name="chp-10-ITERM-6066"></a>Whenever
+a hardware interrupt reaches the processor, an internal counter is
+incremented, providing a way to check whether the device is working
+as expected. Reported interrupts are shown in
+<I>/proc/interrupts</I>. The following snapshot was
+taken on a two-processor Pentium system:</p>
+
+<pre>root@montalcino:/bike/corbet/write/ldd3/src/short# <B>m /proc/interrupts</b>
+           CPU0       CPU1       
+  0:    4848108         34    IO-APIC-edge  timer
+  2:          0          0          XT-PIC  cascade
+  8:          3          1    IO-APIC-edge  rtc
+ 10:       4335          1   IO-APIC-level  aic7xxx
+ 11:       8903          0   IO-APIC-level  uhci_hcd
+ 12:         49          1    IO-APIC-edge  i8042
+NMI:          0          0 
+LOC:    4848187    4848186 
+ERR:          0
+MIS:          0</pre><BR>
+
+
+<p class="docText">The first column is the IRQ number. You can see from the IRQs that
+are missing that the file shows only interrupts corresponding to
+installed handlers. For example, the first serial port (which uses
+interrupt number 4) is not shown, indicating that the modem
+isn't being used. In fact, even if the modem had
+been used earlier but wasn't in use at the time of
+the snapshot, it would not show up in the file; the serial ports are
+well behaved and release their interrupt handlers when the device is
+closed.</p>
+
+<p class="docText">The <i>/proc/interrupts</i> display shows how many
+interrupts have been delivered to each CPU on the system. As you can
+see from the output, the Linux kernel generally handles interrupts on
+the first CPU as a way of maximizing cache locality.<sup class="docFootnote"><a class="docLink" href="chp-10-sect-2.shtml#chp-10-FNOTE-1">[1]</a></sup> The last two columns give information on
+the programmable interrupt controller that handles the interrupt (and
+that a driver writer does not need to worry about), and the name(s)
+of the device(s) that have registered handlers for the interrupt (as
+specified in the <tt>dev_name</tt> argument to
+<span class="docEmphasis">request_irq</span>).</p><blockquote><p class="docFootnote"><sup><a name="chp-10-FNOTE-1">[1]</a></sup> Although, some larger systems explicitly use interrupt
+balancing schemes to spread the interrupt load across the
+system.</P></blockquote>
+
+<p class="docText"><a name="chp-10-ITERM-6067"></a>
+<a name="chp-10-ITERM-6068"></a><a name="chp-10-ITERM-6069"></a><a name="chp-10-ITERM-6070"></a>The
+<i>/proc</i> tree contains another interrupt-related
+file, <I>/proc/stat</i>; sometimes
+you'll find one file more useful and sometimes
+you'll prefer the other.
+<i>/proc/stat</I> records several low-level statistics
+about system activity, including (but not limited to) the number of
+interrupts received since system boot. Each line of
+<i>stat</I> begins with a text string that is the key
+to the line; the <tt>intr</tt> mark is what we are looking
+for. The following (truncated) snapshot was taken shortly after the
+previous one:</p>
+
+<pre>intr 5167833 5154006 2 0 2 4907 0 2 68 4 0 4406 9291 50 0 0</pre><br>
+
+
+<p class="docText"><a name="chp-10-ITERM-6071"></a>The
+first number is the total of all interrupts, while each of the others
+represents a single IRQ line, starting with interrupt
+<tt>0</tt>. All of the counts are summed across all
+processors in the system. This snapshot shows that interrupt number 4
+has been used 4907 times, even though no handler is
+<span class="docEmphasis">currently</span> installed. If the driver
+you're testing acquires and releases the interrupt
+at each open and close cycle, you may find
+<i>/proc/stat</i> more useful than
+<i>/proc/interrupts</i>.</p>
+
+<p class="docText"><a name="chp-10-ITERM-6072"></a><a name="chp-10-ITERM-6073"></a>Another difference between the two files is
+that <i>interrupts</i> is not architecture dependent
+(except, perhaps, for a couple of lines at the end), whereas
+<i>stat</i> is; the number of fields depends on the
+hardware underlying the kernel. The number of available interrupts
+varies from as few as 15 on the SPARC to as many as 256 on the IA-64
+and a few other systems. It's interesting to note
+that the number of interrupts defined on the x86 is currently 224,
+not 16 as you may expect; this, as explained in
+<i>include/asm-i386/irq.h</i>, depends on Linux using
+the architectural limit instead of an implementation-specific limit
+(such as the 16 interrupt sources of the old-fashioned PC interrupt
+controller).</P>
+
+<p class="docText">The following is a snapshot of <i>/proc/interrupts</I>
+taken on an IA-64 system. As you can see, besides different hardware
+routing of common interrupt sources, the output is very similar to
+that from the 32-bit system shown earlier.</P>
+
+<pre>           CPU0       CPU1       
+ 27:       1705      34141  IO-SAPIC-level  qla1280
+ 40:          0          0           SAPIC  perfmon
+ 43:        913       6960  IO-SAPIC-level  eth0
+ 47:      26722        146  IO-SAPIC-level  usb-uhci
+ 64:          3          6   IO-SAPIC-edge  ide0
+ 80:          4          2   IO-SAPIC-edge  keyboard
+ 89:          0          0   IO-SAPIC-edge  PS/2 Mouse
+239:    5606341    5606052           SAPIC  timer
+254:      67575      52815           SAPIC  IPI
+NMI:          0          0 
+ERR:          0</pre><br>
+
+
+
+<a name="chp-10-sect-2.2"></a>
+<h4 class="docSection2Title">10.2.2. Autodetecting the IRQ Number</h4>
+
+<p class="docText"><a name="chp-10-ITERM-6074"></a>
+<a name="chp-10-ITERM-6075"></a><a name="chp-10-ITERM-6076"></a><a name="chp-10-ITERM-6077"></a><a name="chp-10-ITERM-6078"></a>One of
+the most challenging problems for a driver at initialization time can
+be how to determine which IRQ line is going to be used by the device.
+The driver needs the information in order to correctly install the
+handler. Even though a programmer could require the user to specify
+the interrupt number at load time, this is a bad practice, because
+most of the time the user doesn't know the number,
+either because he didn't configure the jumpers or
+because the device is jumperless. Most users want their hardware to
+"just work" and are not interested
+in issues like interrupt numbers. So autodetection of the interrupt
+number is a basic requirement for driver usability.</P>
+
+<p class="docText">Sometimes autodetection depends on the knowledge that some devices
+feature a default behavior that rarely, if ever, changes. In this
+case, the driver might assume that the default values apply. This is
+exactly how <span class="docEmphasis">short</span> behaves by default with the
+parallel port. The implementation is straightforward, as shown by
+<span class="docEmphasis">short</span> itself:</p>
+
+<pre>if (short_irq &lt; 0) /* not yet specified: force the default on */
+    switch(short_base) {
+        case 0x378: short_irq = 7; break;
+        case 0x278: short_irq = 2; break;
+        case 0x3bc: short_irq = 5; break;
+    }</pre><BR>
+
+
+<p class="docText">The code assigns the interrupt number according to the
+<a name="chp-10-ITERM-6079"></a>chosen base I/O
+address, while allowing the user to override the default at load time
+with something like:</P>
+
+<pre>insmod ./short.ko irq=<tt><I>x</i></tt></pre><br>
+
+
+<p class="docText"><tt>short_base</tt> defaults to <tt>0x378</tt>,
+so <tt>short_irq</tt> defaults to <tt>7</tt>.</p>
+
+<p class="docText">Some devices are more advanced in design and simply
+"announce" which interrupt
+they're going to use. In this case, the driver
+retrieves the interrupt number by reading a status byte from one of
+the device's I/O ports or PCI configuration space.
+When the target device is one that has the ability to tell the driver
+which interrupt it is going to use, autodetecting the IRQ number just
+means probing the device, with no additional work required to probe
+the interrupt. Most modern hardware works this way, fortunately; for
+example, the PCI standard solves the problem by requiring peripheral
+devices to declare what interrupt line(s) they are going to use. The
+PCI standard is discussed in <a class="docLink" href="chp-12.shtml#chp-12">Chapter 12</a>.</p>
+
+<p class="docText">Unfortunately, not every device is programmer friendly, and
+autodetection might require some probing. The technique is quite
+simple: the driver tells the device to generate interrupts and
+watches what happens. If everything goes well, only one interrupt
+line is activated.</P>
+
+<p class="docText">Although probing is simple in theory, the actual implementation might
+be unclear. We look at two ways to perform the task: calling
+kernel-defined helper functions and implementing our own version.</P>
+
+<a name="chp-10-sect-2.2.1"></a>
+<H5 class="docSection3Title">10.2.2.1 Kernel-assisted probing</h5>
+
+<p class="docText"><a name="chp-10-ITERM-6080"></a>
+<a name="chp-10-ITERM-6081"></a>The
+Linux kernel offers a low-level facility for probing the interrupt
+number. It works for only nonshared interrupts, but most hardware
+that is capable of working in a shared interrupt mode provides better
+ways of finding the configured interrupt number anyway. The facility
+consists of two functions, declared in
+<I>&lt;linux/interrupt.h&gt;</I> (which also describes
+the probing machinery):</p>
+
+<a name="chp-10-ITERM-6082"></a><a name="chp-10-ITERM-6083"></a><a name="chp-10-ITERM-6084"></a><a name="chp-10-ITERM-6085"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">unsigned long probe_irq_on(void);</span></span></span></dt></p>
+<dd>
+<p class="docList"><a name="chp-10-ITERM-6082"></a>
+<a name="chp-10-ITERM-6083"></a>This
+function returns a bit mask of unassigned interrupts. The driver must
+preserve the returned bit mask, and pass it to
+<span class="docEmphasis">probe_irq_off</span> later. After this call, the driver
+should arrange for its device to generate at least one interrupt.</P>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int probe_irq_off(unsigned long);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-10-ITERM-6084"></a>
+<a name="chp-10-ITERM-6085"></a>After
+the device has requested an interrupt, the driver calls this
+function, passing as its argument the bit mask previously returned by
+<span class="docEmphasis">probe_irq_on</span>. <span class="docEmphasis">probe_irq_off</span>
+returns the number of the interrupt that was issued after
+"probe_on." If no interrupts
+occurred, <tt>0</tt> is returned (therefore, IRQ
+<tt>0</tt> can't be probed for, but no
+custom device can use it on any of the supported architectures
+anyway). If more than one interrupt occurred (ambiguous detection),
+<span class="docEmphasis">probe_irq_off</span> returns a negative value.</p>
+</dd>
+</dl>
+
+<p class="docText">The programmer should be careful to enable interrupts on the device
+<span class="docEmphasis">after</span> the call to
+<span class="docEmphasis">probe_irq_on</span> and to disable them
+<span class="docEmphasis">before</span> calling
+<span class="docEmphasis">probe_irq_off</span>. Additionally, you must remember
+to service the pending interrupt in your device after
+<span class="docEmphasis">probe_irq_off</span>.</p>
+
+<p class="docText">The<a name="chp-10-ITERM-6086"></a>
+<a name="chp-10-ITERM-6087"></a>
+<span class="docEmphasis">short</span> module demonstrates how to use such
+probing. If you load the module with <tt>probe=1</tt>, the
+following code is executed to detect your interrupt line, provided
+pins 9 and 10 of the parallel connector are bound together:</P>
+
+<pre>int count = 0;
+do {
+    unsigned long mask;
+
+    mask = probe_irq_on(  );
+    outb_p(0x10,short_base+2); /* enable reporting */
+    outb_p(0x00,short_base);   /* clear the bit */
+    outb_p(0xFF,short_base);   /* set the bit: interrupt! */
+    outb_p(0x00,short_base+2); /* disable reporting */
+    udelay(5);  /* give it some time */
+    short_irq = probe_irq_off(mask);
+
+    if (short_irq =  = 0) { /* none of them? */
+        printk(KERN_INFO "short: no irq reported by probe\n");
+        short_irq = -1;
+    }
+    /*
+     * if more than one line has been activated, the result is
+     * negative. We should service the interrupt (no need for lpt port)
+     * and loop over again. Loop at most five times, then give up
+     */
+} while (short_irq &lt; 0 &amp;&amp; count++ &lt; 5);
+if (short_irq &lt; 0)
+    printk("short: probe failed %i times, giving up\n", count);</pre><br>
+
+
+<p class="docText">Note the use of <span class="docEmphasis">udelay</span> before calling
+<span class="docEmphasis">probe_irq_off</span>. Depending on the speed of your
+processor, you may have to wait for a brief period to give the
+interrupt time to actually be delivered.</P>
+
+<p class="docText">Probing might be a lengthy task. While this is not true for
+<span class="docEmphasis">short</span>, probing a frame grabber, for example,
+requires a delay of at least 20 ms (which is ages for the processor),
+and other devices might take even longer. Therefore,
+it's best to probe for the interrupt line only once,
+at module initialization, independently of whether you install the
+handler at device open (as you should) or within the initialization
+function (which is not recommended).</p>
+
+<p class="docText">It's interesting to note that on some platforms
+(PowerPC, M68k, most MIPS implementations, and both SPARC versions)
+probing is unnecessary, and, therefore, the previous functions are
+just empty placeholders, sometimes called "useless
+ISA nonsense." On other platforms, probing is
+implemented only for ISA devices. Anyway, most architectures define
+the functions (even if they are empty) to ease porting existing
+device drivers.</p>
+
+
+
+<a name="chp-10-sect-2.2.2"></a>
+<h5 class="docSection3Title">10.2.2.2 Do-it-yourself probing</h5>
+
+<p class="docText"><a name="chp-10-ITERM-6088"></a>
+<a name="chp-10-ITERM-6089"></a>Probing
+can also be implemented in the driver itself without too much
+trouble. It is a rare driver that must implement its own probing, but
+seeing how it works gives some insight into the process. To that end,
+the <span class="docEmphasis">short</span> module performs do-it-yourself
+detection of the IRQ line if it is loaded with
+<tt>probe=2</tt>.</p>
+
+<p class="docText">The mechanism is the same as the one described earlier: enable all
+unused interrupts, then wait and see what happens. We can, however,
+exploit our knowledge of the device. Often a device can be configured
+to use one IRQ number from a set of three or four; probing just those
+IRQs enables us to detect the right one, without having to test for
+all possible IRQs.</p>
+
+<p class="docText"><a name="chp-10-ITERM-6090"></a>
+<a name="chp-10-ITERM-6091"></a>The
+<span class="docEmphasis">short</span> implementation assumes that
+<tt>3</tt>, <tt>5</tt>, <tt>7</tt>, and
+<tt>9</tt> are the only possible IRQ values. These numbers
+are actually the values that some parallel devices allow you to
+select.</p>
+
+<p class="docText">The following code probes by testing all
+"possible" interrupts and looking
+at what happens. The <tt>trials</tt> array lists the IRQs
+to try and has <tt>0</tt> as the end marker; the
+<tt>tried</tt> array is used to keep track of which
+handlers have actually been registered by this driver.</p>
+
+<pre>int trials[  ] = {3, 5, 7, 9, 0};
+int tried[  ]  = {0, 0, 0, 0, 0};
+int i, count = 0;
+
+/*
+ * install the probing handler for all possible lines. Remember
+ * the result (0 for success, or -EBUSY) in order to only free
+ * what has been acquired
+ */
+for (i = 0; trials[i]; i++)
+    tried[i] = request_irq(trials[i], short_probing,
+            SA_INTERRUPT, "short probe", NULL);
+
+do {
+    short_irq = 0; /* none got, yet */
+    outb_p(0x10,short_base+2); /* enable */
+    outb_p(0x00,short_base);
+    outb_p(0xFF,short_base); /* toggle the bit */
+    outb_p(0x00,short_base+2); /* disable */
+    udelay(5);  /* give it some time */
+
+    /* the value has been set by the handler */
+    if (short_irq =  = 0) { /* none of them? */
+        printk(KERN_INFO "short: no irq reported by probe\n");
+    }
+    /*
+     * If more than one line has been activated, the result is
+     * negative. We should service the interrupt (but the lpt port
+     * doesn't need it) and loop over again. Do it at most 5 times
+     */
+} while (short_irq &lt;=0 &amp;&amp; count++ &lt; 5);
+
+/* end of loop, uninstall the handler */
+for (i = 0; trials[i]; i++)
+    if (tried[i] =  = 0)
+        free_irq(trials[i], NULL);
+
+if (short_irq &lt; 0)
+    printk("short: probe failed %i times, giving up\n", count);</pre><br>
+
+
+<p class="docText"><a name="chp-10-ITERM-6092"></a>
+<a name="chp-10-ITERM-6093"></a><a name="chp-10-ITERM-6094"></a>You might not know in advance what
+the "possible" IRQ values are. In
+that case, you need to probe all the free interrupts, instead of
+limiting yourself to a few <tt>trials[ ]</tt>. To probe for
+all interrupts, you have to probe from IRQ <tt>0</tt> to
+IRQ <tt>NR_IRQS-1</tt>, where <tt>NR_IRQS</tt> is
+defined in <i>&lt;asm/irq.h&gt;</I> and is platform
+dependent.</p>
+
+<p class="docText">Now we are missing only the probing handler itself. The
+handler's role is to update
+<tt>short_irq</tt> according to which interrupts are
+actually received. A <tt>0</tt> value in
+<tt>short_irq</tt> means "nothing
+yet," while a negative value means
+"ambiguous." These values were
+chosen to be consistent with <span class="docEmphasis">probe_irq_off</span> and
+to allow the same code to call either kind of probing within
+<I>short.c</I>.</p>
+
+<pre>irqreturn_t short_probing(int irq, void *dev_id, struct pt_regs *regs)
+{
+    if (short_irq =  = 0) short_irq = irq;    /* found */
+    if (short_irq != irq) short_irq = -irq; /* ambiguous */
+    return IRQ_HANDLED;
+}</pre><br>
+
+
+<p class="docText">The arguments to the handler are described later. Knowing that
+<tt>irq</tt> is the interrupt being handled should be
+sufficient to understand the function just shown.</p>
+
+
+
+<a name="chp-10-sect-2.3"></a>
+<H4 class="docSection2Title">10.2.3. Fast and Slow Handlers</h4>
+
+<p class="docText">Older versions of the <a name="chp-10-ITERM-6095"></a> <a name="chp-10-ITERM-6096"></a>Linux kernel took great pains to
+distinguish between "fast" and
+"slow" interrupts. Fast interrupts
+were those that could be handled very quickly, whereas handling slow
+interrupts took significantly longer. Slow interrupts could be
+sufficiently demanding of the processor, and it was worthwhile to
+reenable interrupts while they were being handled. Otherwise, tasks
+requiring quick attention could be delayed for too long.</P>
+
+<p class="docText">In modern kernels, most of the differences between fast and slow
+interrupts have disappeared. There remains only one: fast interrupts
+(those that were requested with the <tt>SA_INTERRUPT</tt>
+flag) are executed with all other interrupts disabled on the current
+processor. Note that other processors can still handle interrupts,
+although you will never see two processors handling the same IRQ at
+the same time.</P>
+
+<p class="docText">So, which type of interrupt should your driver use? On modern
+systems, <tt>SA_INTERRUPT</tt> is intended only for use in
+a few, specific situations such as timer interrupts. Unless you have
+a strong reason to run your interrupt handler with other interrupts
+disabled, you should not use <tt>SA_INTERRUPT</tt>.</P>
+
+<p class="docText">This description should satisfy most readers, although someone with a
+taste for hardware and some experience with her computer might be
+interested in going deeper. If you don't care about
+the internal details, you can skip to the next section.</p>
+
+<a name="chp-10-sect-2.3.1"></a>
+<h5 class="docSection3Title">10.2.3.1 The internals of interrupt handling on the x86</h5>
+
+<p class="docText"><a name="chp-10-ITERM-6097"></a><a name="chp-10-ITERM-6098"></a>This description has been extrapolated from
+<i>arch/i386/kernel/irq.c</I>,
+<I>arch/i386/kernel/apic.c</I>,
+<i>arch/i386/kernel/entry.S</I>,
+<I>arch/i386/kernel/i8259.c</i>, and
+<i>include/asm-i386/hw_irq.h</i> as they appear in the
+2.6 kernels; although the general concepts remain the same, the
+hardware details differ on other platforms.</p>
+
+<p class="docText"><a name="chp-10-ITERM-6099"></a>
+<a name="chp-10-ITERM-6100"></a>The
+lowest level of interrupt handling can be found in
+<I>entry.S</i>, an assembly-language file that handles
+much of the machine-level work. By way of a bit of assembler trickery
+and some macros, a bit of code is assigned to every possible
+interrupt. In each case, the code pushes the interrupt number on the
+stack and jumps to a common segment, which calls
+<span class="docEmphasis">do_IRQ</span>, defined in <i>irq.c</I>.</p>
+
+<p class="docText">The first thing <span class="docEmphasis">do_IRQ</span> does is to acknowledge
+the interrupt so that the interrupt controller can go on to other
+things. It then obtains a spinlock for the given IRQ number, thus
+preventing any other CPU from handling this IRQ. It clears a couple
+of status bits (including one called <tt>IRQ_WAITING</tt>
+that we'll look at shortly) and then looks up the
+handler(s) for this particular IRQ. If there is no handler,
+there's nothing to do; the spinlock is released, any
+pending software interrupts are handled, and
+<span class="docEmphasis">do_IRQ</span> returns.</p>
+
+<p class="docText"><a name="chp-10-ITERM-6101"></a>
+<a name="chp-10-ITERM-6102"></a>Usually,
+however, if a device is interrupting, there is at least one handler
+registered for its IRQ as well. The function
+<span class="docEmphasis">handle_IRQ_event</span> is called to actually invoke
+the handlers. If the handler is of the slow variety
+(<tt>SA_INTERRUPT</tt> is not set), interrupts are
+reenabled in the hardware, and the handler is invoked. Then
+it's just a matter of cleaning up, running software
+interrupts, and getting back to regular work. The
+"regular work" may well have
+changed as a result of an interrupt (the handler could
+<span class="docEmphasis">wake_up</span> a process, for example), so the last
+thing that happens on return from an interrupt is a possible
+rescheduling of the processor.</P>
+
+<p class="docText">Probing for IRQs is done by setting the
+<tt>IRQ_WAITING</tt> status bit for each IRQ that currently
+lacks a handler. When the interrupt happens,
+<span class="docEmphasis">do_IRQ</span> clears that bit and then returns, because
+no handler is registered. <span class="docEmphasis">probe_irq_off</span>, when
+called by a driver, needs to search for only the IRQ that <a name="chp-10-ITERM-6103"></a> <a name="chp-10-ITERM-6104"></a> <a name="chp-10-ITERM-6105"></a> <a name="chp-10-ITERM-6106"></a>no longer has
+<tt>IRQ_WAITING</tt> set.</p>
+
+
+
+
+<UL></ul></td></tr></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-10-sect-1.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-10-sect-3.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

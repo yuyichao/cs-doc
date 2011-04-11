@@ -1,0 +1,2060 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 11. Column Types</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="charset.html" title="Chapter 10. Character Set Support"><link rel="next" href="functions.html" title="Chapter 12. Functions and Operators">
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="column-types"></a>
+	第11章：列类型</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="column-types.html#column-type-overview">
+			11.1. 列类型概述</a></span></dt><dd><dl><dt><span class="section"><a href="column-types.html#numeric-type-overview">
+				11.1.1. 数值类型概述</a></span></dt><dt><span class="section"><a href="column-types.html#date-and-time-type-overview">
+				11.1.2. 日期和时间类型概述</a></span></dt><dt><span class="section"><a href="column-types.html#string-type-overview">
+				11.1.3. 字符串类型概述</a></span></dt></dl></dd><dt><span class="section"><a href="column-types.html#numeric-types">
+			11.2. 数值类型</a></span></dt><dt><span class="section"><a href="column-types.html#date-and-time-types">
+			11.3. 日期和时间类型</a></span></dt><dd><dl><dt><span class="section"><a href="column-types.html#datetime">
+				11.3.1. DATETIME、DATE和TIMESTAMP类型</a></span></dt><dt><span class="section"><a href="column-types.html#time">
+				11.3.2. TIME类型</a></span></dt><dt><span class="section"><a href="column-types.html#year">
+				11.3.3. YEAR类型</a></span></dt><dt><span class="section"><a href="column-types.html#y2k-issues">
+				11.3.4. Y2K事宜和日期类型</a></span></dt></dl></dd><dt><span class="section"><a href="column-types.html#string-types">
+			11.4. String类型</a></span></dt><dd><dl><dt><span class="section"><a href="column-types.html#char">
+				11.4.1. CHAR和VARCHAR类型</a></span></dt><dt><span class="section"><a href="column-types.html#binary-varbinary">
+				11.4.2. BINARY和VARBINARY类型</a></span></dt><dt><span class="section"><a href="column-types.html#blob">
+				11.4.3. BLOB和TEXT类型<code class="literal"></code></a></span></dt><dt><span class="section"><a href="column-types.html#enum">
+				11.4.4. ENUM类型</a></span></dt><dt><span class="section"><a href="column-types.html#set">
+				11.4.5. SET类型</a></span></dt></dl></dd><dt><span class="section"><a href="column-types.html#storage-requirements">
+			11.5. 列类型存储需求</a></span></dt><dt><span class="section"><a href="column-types.html#choosing-types">
+			11.6. 选择正确的列类型</a></span></dt><dt><span class="section"><a href="column-types.html#other-vendor-column-types">
+			11.7. 使用来自其他数据库引擎的列类型</a></span></dt></dl></div>
+	<p>
+	<span>MySQL</span>支持多种列类型：数值类型、日期<span>/</span>时间类型和字符串<span>(</span>字符<span>)</span>类型。本章首先对这些列类型进行了概述，然后更加详细地描述了各种列的类型，以及列类型存储需求的总结。概述很简单。关于具体列类型的详细信息应查阅详细的描述，例如指定值时允许使用的格式。</p>
+	<p>
+	<span>MySQL</span>支持处理空间数据的扩展名。关于空间类型的信息参见<a href="spatial-extensions-in-mysql.html">第19章：</a><a href="spatial-extensions-in-mysql.html" title="Chapter 19. Spatial Extensions in MySQL"><i>MySQL中的空间扩展</i></a>。</p>
+	<p>
+	几种列类型描述使用了下述惯例：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span><i>
+	<span>M</span></i></span></p>
+	<p>
+	表示最大显示宽度。最大有效显示宽度是<span>255</span>。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span><i>
+	<span>D</span></i></span></p>
+	<p>
+	适用于浮点和定点类型，并表示小数点后面的位数。最大可能的值是<span>30</span>，但不应大于<span><i><span>M</span></i></span><span>-2</span>。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>方括号<span>(</span>‘<span>[</span>’和‘<span>]</span>’<span>)</span>表示可选部分。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="column-type-overview"></a>
+		11.1.&nbsp;列类型概述</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="column-types.html#numeric-type-overview">
+			11.1.1. 数值类型概述</a></span></dt><dt><span class="section"><a href="column-types.html#date-and-time-type-overview">
+			11.1.2. 日期和时间类型概述</a></span></dt><dt><span class="section"><a href="column-types.html#string-type-overview">
+			11.1.3. 字符串类型概述</a></span></dt></dl></div><a class="indexterm" name="id2844482"></a><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="numeric-type-overview"></a>
+			11.1.1.&nbsp;数值类型概述</h3></div></div></div>
+			<p>
+			下面为数值列类型的概述。详细信息参见<a href="column-types.html#numeric-types" title="11.2. Numeric Types">11.2节，“数值类型”</a>。列存储需求参见<a href="column-types.html#storage-requirements" title="11.5. Column Type Storage Requirements">11.5节，“列类型存储需求”</a>。</p>
+			<p>
+			<span><i>
+			<span>M</span></i></span>指示最大显示宽度。最大有效显示宽度是<span>255</span>。显示宽度与存储大小或类型包含的值的范围无关，相关描述见<a href="column-types.html#numeric-types" title="11.2. Numeric Types">11.2节，“数值类型”</a>。</p>
+			<p>
+			如果为一个数值列指定<span>ZEROFILL</span>，<span>MySQL</span>自动为该列添加<span>UNSIGNED</span>属性。</p>
+			<p>
+			<span>SERIAL</span>是<span>BIGINT 
+			UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE</span>的一个别名。</p>
+			<p>
+			在整数列定义中，<span>SERIAL 
+			DEFAULT VALUE</span>是<span>NOT 
+			NULL AUTO_INCREMENT UNIQUE</span>的一个别名。</p>
+			<p><strong><span>警告：</span></strong>应当清楚，当使用在整数值（其中一个是<span>UNSIGNED</span>类型）之间使用减号时，结果是无符号。参见<a href="functions.html#cast-functions" title="12.8. Cast Functions and Operators">12.8节，“Cast函数和操作符”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>BIT[(<i>M</i>)]</span></p>
+			<p>
+			位字段类型。<span><i><span>M</span></i></span>表示每个值的位数，范围为从<span>1</span>到<span>64</span>。如果<span><i><span>M</span></i></span>被省略，
+			默认为<span>1</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>TINYINT[(<i>M</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			很小的整数。带符号的范围是<span>-128</span>到<span>127</span>。无符号的范围是<span>0</span>到<span>255</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>BOOL</span>，<span>BOOLEAN</span></p>
+			<p>
+			是<span>TINYINT(1)</span>的同义词。<span>zero</span>值被视为假。非<span>zero</span>值视为真。</p>
+			<p>
+			在将来，将根据标准<span>SQL</span>引入完全布尔类型的处理。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>SMALLINT[(<i>M</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			小的整数。带符号的范围是<span>-32768</span>到<span>32767</span>。无符号的范围是<span>0</span>到<span>65535</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>MEDIUMINT[(<i>M</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			中等大小的整数。带符号的范围是<span>-8388608</span>到<span>8388607</span>。无符号的范围是<span>0</span>到<span>16777215</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>INT[(<i>M</i>)] [UNSIGNED] 
+			[ZEROFILL]</span></p>
+			<p>
+			普通大小的整数。带符号的范围是<span>-2147483648</span>到<span>2147483647</span>。无符号的范围是<span>0</span>到<span>4294967295</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>INTEGER[(<i>M</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			这是<span>INT</span>的同义词。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>BIGINT[(<i>M</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			大整数。带符号的范围是<span>-9223372036854775808</span>到<span>9223372036854775807</span>。无符号的范围是<span>0</span>到<span>18446744073709551615</span>。</p>
+			<p>
+			应清楚<span>BIGINT</span>列的下述内容：</p>
+			<p >
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>使用带符号的<span>BIGINT</span>或<span>DOUBLE</span>值进行所有算法，因此除了位函数，不应使用大于<span>9223372036854775807</span><span>(63</span>位<span>)</span>的无符号的大整数<span>!
+			</span>如果这样做，结果中的最后几位可能出错，这是由于将<span>BIGINT</span>值转换为<span>DOUBLE</span>进行四舍五入时造成的错误。</p>
+			<p>
+			<span>MySQL</span>可以在以下情况下处理<span>BIGINT</span>：</p>
+			<p>
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当使用整数在一个<span>BIGINT</span>列保存大的无符号的值时。</p>
+			<p>
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在<span>MIN(<i>col_name</i>)</span>或<span>MAX(<i>col_name</i>)</span>中，其中<span><i><span>col_name</span></i></span>指<span>BIGINT</span>列。</p>
+			<p >
+			<span  >§<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>使用操作符<span>(</span><span>+</span>，<span>-</span>，<span>*</span>等等<span>)</span>并且两个操作数均为整数时。</p>
+			<p >
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>总是可以使用一个字符串在<span>BIGINT</span>列中保存严格整数值。在这种情况下，<span>MySQL</span>执行字符串<span>-</span>数字转换，其间不存在双精度表示。</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>当两个操作数均为整数值时，<span><span>-</span><span>、<span>+</span></span></span>和<span>*</span><span>
+			</span>操作符使用<span>BIGINT</span>算法。这说明如果乘两个大整数<span>(</span>或来自返回整数的函数<span>)</span>，当结果大于<span>9223372036854775807</span>时，会得到意想不到的结果。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>FLOAT[(<i>M</i>,<i>D</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			小<span>(</span>单精度<span>)</span>浮点数。允许的值是<span>-3.402823466E+38</span>到<span>-1.175494351E-38</span>、<span>0</span>和<span>1.175494351E-38</span>到<span>3.402823466E+38</span>。这些是理论限制，基于<span>IEEE</span>标准。实际的范围根据硬件或操作系统的不同可能稍微小些。</p>
+			<p>
+			<span><i>
+			<span>M</span></i></span>是小数纵位数，<span><i><span>D</span></i></span>是小数点后面的位数。如果<span><i><span>M</span></i></span>和<span><i><span>D</span></i></span>被省略，根据硬件允许的限制来保存值。单精度浮点数精确到大约<span>7</span>位小数位。</p>
+			<p>
+			如果指定<span>UNSIGNED</span>，不允许负值。</p>
+			<p>使用浮点数可能会遇到意想不到的问题，因为在<span>MySQL</span>中的所有计算用双精度完成。参见<a href="problems.html#no-matching-rows" title="A.5.7. Solving Problems with No Matching Rows">A.5.7节，“解决与不匹配行有关的问题”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>DOUBLE[(<i>M</i>,<i>D</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			普通大小<span>(</span>双精度<span>)</span>浮点数。允许的值是<span>-1.7976931348623157E+308</span>到<span>-2.2250738585072014E-308</span>、<span>0</span>和<span>2.2250738585072014E-308</span>到 
+			<span>1.7976931348623157E+308</span>。这些是理论限制，基于<span>IEEE</span>标准。实际的范围根据硬件或操作系统的不同可能稍微小些。</p>
+			<p>
+			<span><i>
+			<span>M</span></i></span>是小数总位数，<span><i><span>D</span></i></span>是小数点后面的位数。如果<span><i><span>M</span></i></span>和<span><i><span>D</span></i></span>被省略，根据硬件允许的限制来保存值。双精度浮点数精确到大约<span>15</span>位小数位。</p>
+			<p>如果指定<span>UNSIGNED</span>，不允许负值。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>DOUBLE PRECISION[(<i>M</i>,<i>D</i>)] 
+			[UNSIGNED] [ZEROFILL]</span><span>, </span>
+			<span>REAL[(<i>M</i>,<i>D</i>)] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>为<span>DOUBLE</span>的同义词。除了：如果<span>SQL</span>服务器模式包括<span>REAL_AS_FLOAT</span>选项，<span>REAL</span>是<span>FLOAT</span>的同义词而不是<span>DOUBLE</span>的同义词。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>FLOAT(<i>p</i>) [UNSIGNED] 
+			[ZEROFILL]</span></p>
+			<p>
+			浮点数。<span><i><span>p</span></i></span>表示精度（以位数表示），但<span>MySQL</span>只使用该值来确定是否结果列的数据类型为<span>FLOAT</span>或<span>DOUBLE</span>。如果<span><i><span>p</span></i></span>为从<span>0</span>到<span>24</span>，数据类型变为没有<span><i><span>M</span></i></span>或<span><i><span>D</span></i></span>值的<span>FLOAT</span>。如果<span><i><span>p</span></i></span>为从<span>25</span>到<span>53</span>，数据类型变为没有<span><i><span>M</span></i></span>或<span><i><span>D</span></i></span>值的<span>DOUBLE</span>。结果列范围与本节前面描述的单精度<span>FLOAT</span>或双精度<span>DOUBLE</span>数据类型相同。</p>
+			<p>
+			<span>FLOAT(<i>p</i>)</span>语法与<span>ODBC</span>兼容。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>DECIMAL[(<i>M</i>[,<i>D</i>])] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>
+			压缩的“<span class="quote">严格</span>”定点数。<span><i><span>M</span></i></span>是小数位数<span>(</span>精度<span>)</span>的总数，<span><i><span>D</span></i></span>是小数点<span>(</span>标度<span>)</span>后面的位数。小数点和<span>(</span>负数<span>)</span>的‘<span>-</span>’符号不包括在<span><i><span>M</span></i></span>中。如果<span><i><span>D</span></i></span>是<span>0</span>，则值没有小数点或分数部分。<span>DECIMAL</span>整数最大位数<span>(</span><span><i><span>M</span></i></span><span>)</span>为<span>65</span>。支持的十进制数的最大位数<span>(</span><span><i><span>D</span></i></span><span>)</span>是<span>30</span>。如果<span><i><span>D</span></i></span>被省略，
+			默认是<span>0</span>。如果<span><i><span>M</span></i></span>被省略，
+			默认是<span>10</span>。</p>
+			<p>
+			如果指定<span>UNSIGNED</span>，不允许负值。</p>
+			<p>所有<span>DECIMAL</span>列的基本计算<span>(</span><span><span>+</span><span>，<span>-</span>，<span>*</span>，<span>/</span></span></span><span>)</span>用<span>65</span>位精度完成。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>DEC[(<i>M</i>[,<i>D</i>])] 
+			[UNSIGNED] [ZEROFILL]</span><span>, </span>
+			<span>NUMERIC[(<i>M</i>[,<i>D</i>])] 
+			[UNSIGNED] [ZEROFILL]</span><span>, </span>
+			<span>FIXED[(<i>M</i>[,<i>D</i>])] 
+			[UNSIGNED] [ZEROFILL]</span></p>
+			<p>是<span>DECIMAL</span>的同义词。<span>FIXED</span>同义词适用于与其它服务器的兼容性。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="date-and-time-type-overview"></a>
+			11.1.2.&nbsp;日期和时间类型概述</h3></div></div></div>
+			<p>
+			本节综合讨论了临时列类型。详细信息，参见<a href="column-types.html#date-and-time-types" title="11.3. Date and Time Types">11.3节，“日期和时间类型”</a>。列存储需求参见<a href="column-types.html#storage-requirements" title="11.5. Column Type Storage Requirements">11.5节，“列类型存储需求”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>DATE</span></p>
+			<p>
+			日期。支持的范围为<span>&#39;1000-01-01&#39;</span>到<span>&#39;9999-12-31&#39;</span>。<span>MySQL</span>以<span>&#39;YYYY-MM-DD&#39;</span>格式显示<span>DATE</span>值，但允许使用字符串或数字为<span>DATE</span>列分配值。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>DATETIME</span></p>
+			<p>
+			日期和时间的组合。支持的范围是<span>&#39;1000-01-01 
+			00:00:00&#39;</span>到<span>&#39;9999-12-31 
+			23:59:59&#39;</span>。<span>MySQL</span>以<span>&#39;YYYY-MM-DD 
+			HH:MM:SS&#39;</span>格式显示<span>DATETIME</span>值，但允许使用字符串或数字为<span>DATETIME</span>列分配值。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>TIMESTAMP[(<i>M</i>)]</span></p>
+			<p>
+			时间戳。范围是<span>&#39;1970-01-01 
+			00:00:00&#39;</span>到<span>2037</span>年。</p>
+			<p>
+			<span>TIMESTAMP</span>列用于<span>INSERT</span>或<span>UPDATE</span>操作时记录日期和时间。如果你不分配一个值，表中的第一个<span>TIMESTAMP</span>列自动设置为最近操作的日期和时间。也可以通过分配一个<span>NULL</span>值，将<span>TIMESTAMP</span>列设置为当前的日期和时间。</p>
+			<p>
+			<span>TIMESTAMP</span>值返回后显示为<span>&#39;YYYY-MM-DD 
+			HH:MM:SS&#39;</span>格式的字符串，显示宽度固定为<span>19</span>个字符。如果想要获得数字值，应在<span>TIMESTAMP
+			</span>列添加<span>+0</span>。</p>
+			<p>
+			<strong><span>注释：</span></strong><span>MySQL 
+			4.1</span>以前使用的<span>TIMESTAMP</span>格式在<span>MySQL 
+			5.1</span>中不支持；关于旧格式的信息参见<em><span>MySQL 
+			4.1 </span><span>参考手册</span></em>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>TIME</span></p>
+			<p>
+			时间。范围是<span>&#39;-838:59:59&#39;</span>到<span>&#39;838:59:59&#39;</span>。<span>MySQL</span>以<span>&#39;HH:MM:SS&#39;</span>格式显示<span>TIME</span>值，但允许使用字符串或数字为<span>TIME</span>列分配值。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>YEAR[(2|4)]</span></p>
+			<p>两位或四位格式的年。默认是四位格式。在四位格式中，允许的值是<span>1901</span>到<span>2155</span>和<span>0000</span>。在两位格式中，允许的值是<span>70</span>到<span>69</span>，表示从<span>1970</span>年到<span>2069</span>年。<span>MySQL</span>以<span>YYYY</span><span>
+			</span>格式显示<span>YEAR</span>值，但允许使用字符串或数字为<span>YEAR</span>列分配值。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="string-type-overview"></a>
+			11.1.3.&nbsp;字符串类型概述</h3></div></div></div>
+			<p>
+			本节综合讨论了字符串列类型。详细信息参见<a href="column-types.html#string-types" title="11.4. String Types">11.4节，“String类型”</a>。列存储需求参见<a href="column-types.html#storage-requirements" title="11.5. Column Type Storage Requirements">11.5节，“列类型存储需求”</a>。</p>
+			<p>
+			在某些情况中，<span>MySQL</span>可以将一个字符串列更改为不同于<span>CREATE 
+			TABLE</span>或<span>ALTER 
+			TABLE</span>语句中所给出的类型。参见<a href="sql-syntax.html#silent-column-changes" title="13.1.5.1. Silent Column Specification Changes">13.1.5.1节，“沉寂的列规格变更”</a>。</p>
+			<p>
+			<span>MySQL 5.1</span>字符串数据类型包括部分在<span>MySQL 
+			4.1</span>之前的版本中没有的特性：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>许多字符串数据类型的列定义可以包括指定字符集的<span>CHARACTER 
+			SET</span>属性，也可能包括校对规则。<span>(</span><span>CHARSET</span>是<span>CHARACTER 
+			SET</span>的一个同义词）<span>。</span>这些属性适用于<span>CHAR</span>、<span>VARCHAR</span>、<span>TEXT</span>类型、<span>ENUM</span>和<span>SET</span>。例如：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>CREATE TABLE t</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>(</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;c1 CHAR(20) CHARACTER SET utf8,</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;c2 CHAR(20) CHARACTER SET latin1 COLLATE latin1_bin</span></pre>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>);</span></pre>
+			<p>
+			该表定义创建了一个名为<span>c1</span>的列，具有一个<span>utf8</span>字符集和该字符集的默认
+			校对规则，和一个名为<span>c2</span>的列以及<span>latin1</span>字符集和该字符集的二元
+			校对规则。二元校对规则对大小写不敏感。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span><span>MySQL 5.1</span>用字符单位解释在字符列定义中的长度规范。<span>(</span>以前的一些<span>MySQL</span>版本以字节解释长度）<span>。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>对于<span>CHAR</span></span>、<span>VARCHAR</span>和<span>TEXT</span>类型，<span>BINARY</span>属性可以为列分配该列字符集的
+			校对规则。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>字符列的排序和比较基于分配给列的字符集。在以前的版本中，排序和比较基于服务器字符集的校对规则。对于<span>CHAR</span>和<span>VARCHAR</span><span>
+			</span>列，你可以用<span>BINARY</span>属性声明列让排序和
+			校对规则使用当前的字符代码值而不是词汇顺序。</p>
+			<p>
+			关于<span>MySQL 5.1</span>中字符集的支持，参见<a href="charset.html">第10章：</a><a href="charset.html" title="Chapter 10. Character Set Support"><i>字符集支持</i></a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>[NATIONAL] CHAR(<i>M</i>) 
+			[BINARY| ASCII | UNICODE]</span></p>
+			<p>
+			固定长度字符串，当保存时在右侧填充空格以达到指定的长度。<span><i><span>M</span></i></span>表示列长度。<span><i><span>M</span></i></span>的范围是<span>0</span>到<span>255</span>个字符。</p>
+			<p>
+			<strong><span>注释：</span></strong>当检索<span>CHAR</span>值时尾部空格被删除。</p>
+			<p>如果想要将某个<span>CHAR</span>的长度设为大于<span>255</span>，执行的<span>CREATE 
+			TABLE</span>或<span>ALTER 
+			TABLE</span>语句将失败并提示错误：</p>
+			<pre ><span>mysql&gt; </span><span><b><span>CREATE TABLE c1 (col1 INT, col2 CHAR(500));</span></b></span></pre>
+			<pre ><span>ERROR 1074 (42000): Column length too big for column &#39;col&#39; (max = 255); use BLOB or TEXT instead</span></pre>
+			<pre ><span>mysql&gt; </span><span><b><span>SHOW CREATE TABLE c1;</span></b></span></pre>
+			<pre ><span>ERROR 1146 (42S02): Table &#39;test.c1&#39; doesn&#39;t exist</span></pre>
+			<p>
+			<span>CHAR</span>是<span>CHARACTER</span>的简写。<span>NATIONAL 
+			CHAR</span><span>(</span>或其等效短形式<span>NCHAR</span><span>)</span>是标准的定义<span>CHAR</span>列应使用
+			默认字符集的<span>SQL</span>方法。这在<span>MySQL</span>中为默认值。</p>
+			<p>
+			<span>BINARY</span>属性是指定列字符集的二元
+			校对规则的简写。排序和比较基于数值字符值。</p>
+			<p>
+			列类型<span>CHAR 
+			BYTE</span>是<span>CHAR 
+			BINARY</span>的一个别名。这是为了保证兼容性。</p>
+			<p>
+			可以为<span>CHAR</span>指定<span>ASCII</span>属性。它分配<span>latin1</span>字符集。</p>
+			<p>
+			可以为<span>CHAR</span>指定<span>UNICODE</span>属性。它分配<span>ucs2</span>字符集。</p>
+			<p>
+			<span>MySQL</span>允许创建类型<span>CHAR(0)</span>的列。这主要用于必须有一个列但实际上不使用值的旧版本的应用程序相兼容。当你需要只能取两个值的列时也很好：没有定义为<span>NOT 
+			NULL</span>的一个<span>CHAR(0)</span>列只占用一位，只可以取值<span>NULL</span>和<span>&#39;&#39;</span><span>(</span>空字符串<span>)</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>CHAR</span></p>
+			<p>
+			这是<span>CHAR(1)</span>的同义词。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>[NATIONAL] VARCHAR(<i>M</i>) 
+			[BINARY]</span></p>
+			<p>
+			变长字符串。<span><i><span>M</span></i></span><span>
+			</span>表示最大列长度。<span><i><span>M</span></i></span>的范围是<span>0</span>到<span>65,535</span>。<span>(</span><span>VARCHAR</span>的最大实际长度由最长的行的大小和使用的字符集确定。最大<em><span>有效</span></em>长度是<span>65,532</span>字节）<span>。</span></p>
+			<p>
+			<strong><span>注释：</span></strong><span>MySQL 
+			5.1</span>遵从标准<span>SQL</span>规范，并且不删除<span>VARCHAR</span>值的尾部空格。</p>
+			<p>
+			<span>VARCHAR</span>是字符<span>VARYING</span>的简写。</p>
+			<p>
+			<span>BINARY</span>属性是指定列的字符集的二元
+			校对规则的简写。排序和比较基于数值字符值。</p>
+			<p>
+			<span>VARCHAR</span>保存时用一个字节或两个字节长的前缀<span>+</span>数据。如果<span>VARCHAR</span>列声明的长度大于<span>255</span>，长度前缀是两个字节。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>BINARY(<i>M</i>)</span></p>
+			<p>
+			<span>BINARY</span>类型类似于<span>CHAR</span>类型，但保存二进制字节字符串而不是非二进制字符串。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>VARBINARY(<i>M</i>)</span></p>
+			<p>
+			<span>VARBINARY</span>类型类似于<span>VARCHAR</span>类型，但保存二进制字节字符串而不是非二进制字符串。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>TINYBLOB</span></p>
+			<p>
+			最大长度为<span>255(2<sup>8</sup></span>–<span>1)</span>字节的<span>BLOB</span>列。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>TINYTEXT</span></p>
+			<p>
+			最大长度为<span>255(2<sup>8</sup></span>–<span>1)</span>字符的<span>TEXT</span>列。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>BLOB[(<i>M</i>)]</span></p>
+			<p>
+			最大长度为<span>65,535(2<sup>16</sup></span>–<span>1)</span>字节的<span>BLOB</span>列。</p>
+			<p>
+			可以给出该类型的可选长度<span><i><span>M</span></i></span>。如果给出，则<span>MySQL</span>将列创建为最小的但足以容纳<span><i><span>M</span></i></span>字节长的值的<span>BLOB</span>类型。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>TEXT[(<i>M</i>)]</span></p>
+			<p>
+			最大长度为<span>65,535(2<sup>16</sup></span>–<span>1)</span>字符的<span>TEXT</span>列。</p>
+			<p>
+			可以给出可选长度<span><i><span>M</span></i></span>。则<span>MySQL</span>将列创建为最小的但足以容纳<span><i><span>M</span></i></span>字符长的值的<span>TEXT</span>类型。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>MEDIUMBLOB</span></p>
+			<p>
+			最大长度为<span>16,777,215(2<sup>24</sup></span>–<span>1)</span>字节的<span>BLOB</span>列。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>MEDIUMTEXT</span></p>
+			<p>
+			最大长度为<span>16,777,215(2<sup>24</sup></span>–<span>1)</span>字符的<span>TEXT</span>列。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>LONGBLOB</span></p>
+			<p>
+			最大长度为<span>4,294,967,295</span>或<span>4GB(2<sup>32</sup></span>–<span>1)</span>字节的<span>BLOB</span>列。<span>LONGBLOB</span>列的最大<em><span>有效</span></em><span>(</span>允许的<span>)</span>长度取决于客户端<span>/</span>服务器协议中配置最大包大小和可用的内存。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>LONGTEXT</span></p>
+			<p>
+			最大长度为<span>4,294,967,295</span>或<span>4GB(2<sup>32</sup></span>–<span>1)</span>字符的<span>TEXT</span>列。<span>LONGTEXT</span>列的最大<em><span>有效</span></em><span>(</span>允许的<span>)</span>长度取决于客户端<span>/</span>服务器协议中配置最大包大小和可用的内存。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>ENUM(&#39;<i>value1</i>&#39;,&#39;<i>value2</i>&#39;,...)</span></p>
+			<p>
+			枚举类型。只能有一个值的字符串，从值列<span>&#39;<i>value1</i>&#39;</span>，<span>&#39;<i>value2</i>&#39;</span>，<span>...</span>，<span>NULL</span>中或特殊 
+			<span>&#39;&#39;</span>错误值中选出。<span>ENUM</span>列最多可以有<span>65,535</span>个截然不同的值。<span>ENUM</span>值在内部用整数表示。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>SET(&#39;<i>value1</i>&#39;,&#39;<i>value2</i>&#39;,...)</span></p>
+			<p>
+			一个设置。字符串对象可以有零个或多个值，每个值必须来自列值<span>&#39;<i>value1</i>&#39;</span>，<span>&#39;<i>value2</i>&#39;</span>，<span>...SET</span>列最多可以有<span>64</span>个成员。<span>SET</span>值在内部用整数表示。 </div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="numeric-types"></a>
+		11.2.&nbsp;数值类型</h2></div></div></div>
+		<p>
+		<span>MySQL</span>支持所有标准<span>SQL</span>数值数据类型。这些类型包括严格数值数据类型<span>(</span><span><span>INTEGER</span><span>、<span>SMALLINT</span>、<span>DECIMAL</span></span></span>和<span>NUMERIC</span><span>)</span>，以及近似数值数据类型<span>(</span><span>FLOAT</span>、<span>REAL</span>和<span>DOUBLE 
+		PRECISION</span><span>)</span>。关键字<span>INT</span>是<span>INTEGER</span>的同义词，关键字<span>DEC</span>是<span>DECIMAL</span>的同义词。</p>
+		<p>
+		<span>
+		BIT</span>数据类型保存位字段值，并且支持<span>MyISAM</span>、<span>MEMORY</span>、<span>InnoDB</span>和<span>BDB</span>表。</p>
+		<p>作为<span>SQL</span>标准的扩展，<span>MySQL</span>也支持整数类型<span><span>TINYINT</span><span>、<span>MEDIUMINT</span></span></span>和<span>BIGINT</span>。下面的表显示了需要的每个整数类型的存储和范围。</p>
+		<table border="1" cellpadding="0" id="table1">
+			<tr>
+				<td>
+				<p><strong><span>类型</span></strong></td>
+				<td>
+				<p><strong><span>字节</span></strong></td>
+				<td>
+				<p><strong><span>最小值</span></strong></td>
+				<td>
+				<p><strong><span>最大值</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p><strong>
+				<span>(</span><span>带符号的<span>/</span>无符号的<span>)</span></span></strong></td>
+				<td>
+				<p><strong>
+				<span>(</span><span>带符号的<span>/</span>无符号的<span>)</span></span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TINYINT</span></td>
+				<td>
+				<p><span>1</span></td>
+				<td>
+				<p>
+				<span>-128</span></td>
+				<td>
+				<p>
+				<span>127</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p>
+				<span>0</span></td>
+				<td>
+				<p>
+				<span>255</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>SMALLINT</span></td>
+				<td>
+				<p><span>2</span></td>
+				<td>
+				<p>
+				<span>-32768</span></td>
+				<td>
+				<p>
+				<span>32767</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p>
+				<span>0</span></td>
+				<td>
+				<p>
+				<span>65535</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>MEDIUMINT</span></td>
+				<td>
+				<p><span>3</span></td>
+				<td>
+				<p>
+				<span>-8388608</span></td>
+				<td>
+				<p>
+				<span>8388607</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p>
+				<span>0</span></td>
+				<td>
+				<p>
+				<span>16777215</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>INT</span></td>
+				<td>
+				<p><span>4</span></td>
+				<td>
+				<p>
+				<span>-2147483648</span></td>
+				<td>
+				<p>
+				<span>2147483647</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p>
+				<span>0</span></td>
+				<td>
+				<p>
+				<span>4294967295</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>BIGINT</span></td>
+				<td>
+				<p><span>8</span></td>
+				<td>
+				<p>
+				<span>-9223372036854775808</span></td>
+				<td>
+				<p>
+				<span>9223372036854775807</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p><span>&nbsp;</span></td>
+				<td>
+				<p>
+				<span>0</span></td>
+				<td>
+				<p>
+				<span>18446744073709551615</span></td>
+			</tr>
+		</table>
+		<p>
+		<span>MySQL</span>还支持选择在该类型关键字后面的括号内指定整数值的显示宽度<span>(</span>例如，<span>INT(4)</span><span>)</span>。该可选显示宽度规定用于显示宽度小于指定的列宽度的值时从左侧填满宽度。</p>
+		<p>
+		显示宽度并不限制可以在列内保存的值的范围，也不限制超过列的指定宽度的值的显示。</p>
+		<p>当结合可选扩展属性<span>ZEROFILL</span>使用时，
+		默认补充的空格用零代替。例如，对于声明为<span>INT(5) 
+		ZEROFILL</span>的列，值<span>4</span>检索为<span>00004</span>。请注意如果在整数列保存超过显示宽度的一个值，当<span>MySQL</span>为复杂联接生成临时表时会遇到问题，因为在这些情况下<span>MySQL</span>相信数据适合原列宽度。</p>
+		<p>
+		所有整数类型可以有一个可选<span>(</span>非标准<span>)</span>属性<span>UNSIGNED</span>。当你想要在列内只允许非负数和该列需要较大的上限数值范围时可以使用无符号值。</p>
+		<p>
+		浮点和定点类型也可以为<span>UNSIGNED</span>。同数类型，该属性防止负值保存到列中。然而，与整数类型不同的是，列值的上范围保持不变。</p>
+		<p>
+		如果为一个数值列指定<span>ZEROFILL</span>，<span>MySQL</span>自动为该列添加<span>UNSIGNED</span>属性。</p>
+		<p>
+		对于浮点列类型，在<span>MySQL</span>中单精度值使用<span>4</span>个字节，双精度值使用<span>8</span>个字节。</p>
+		<p>
+		<span>FLOAT</span>类型用于表示近似数值数据类型。<span>SQL</span>标准允许在关键字<span>FLOAT</span>后面的括号内选择用位指定精度<span>(</span>但不能为指数范围<span>)</span>。<span>MySQL</span>还支持可<span>选的只用于确定存储大小的精度规定。<span>0</span>到<span>23</span>的精度对应</span><span  >FLOAT</span><span>列的<span>4</span>字节单精度。<span>24</span>到<span>53</span>的精度对应</span><span  >DOUBLE</span><span>列的<span>8</span>字节双精度。</span></p>
+		<p>
+		<span >MySQL</span><span>允许使用非标准语法：</span><span  >FLOAT(<i>M</i>,<i>D</i>)</span><span>或</span><span  >REAL(<i>M</i>,<i>D</i>)</span><span>或</span><span  >DOUBLE 
+		PRECISION(<i>M</i>,<i>D</i>)</span><span>。这里，“</span><span  >(<i>M</i>,<i>D</i>)</span><span>”表示该值一共显示</span><span><i><span  >M</span></i></span><span>位整数，其中</span><span><i><span  >D</span></i></span><span>位位于小数点后面。例如，定义为</span><span  >FLOAT(7,4)</span><span>的一个列可以显示为</span><span  >-999.9999</span><span>。<span>MySQL</span>保存值时进行四舍五入，因此如果在</span><span  >FLOAT(7,4)</span><span>列内插入</span><span  >999.00009</span><span>，近似结果是</span><span  >999.0001</span><span>。</span></p>
+		<p><span >MySQL</span><span>将</span><span  >DOUBLE</span><span>视为</span><span  >DOUBLE 
+		PRECISION</span><span >(</span><span>非标准扩展<span>)</span>的同义词。<span>MySQL</span>还将</span><span  >REAL</span><span>视为</span><span  >DOUBLE 
+		PRECISION</span><span >(</span><span>非标准扩展<span>)</span>的同义词，除非<span>SQL</span>服务器模式包括</span><span  >REAL_AS_FLOAT</span><span>选项。</span></p>
+		<p>
+		为了保证最大可能的可移植性，需要使用近似数值数据值存储的代码应使用<span>FLOAT</span>或<span>DOUBLE 
+		PRECISION</span>，不规定精度或位数。</p>
+		<p>
+		<span>
+		DECIMAL</span>和<span>NUMERIC</span>类型在<span>MySQL</span>中视为相同的类型。它们用于保存必须为确切精度的值，例如货币数据。当声明该类型的列时，可以<span>(</span>并且通常要<span>)</span>指定精度和标度；例如：</p>
+		<pre><span>salary DECIMAL(5,2)</span></pre>
+		<p>
+		在该例子中，<span>5</span>是精度，<span>2</span>是标度。精度表示保存值的主要位数，标度表示小数点后面可以保存的位数。</p>
+		<p>
+		在<span>MySQL 5.1</span>中以二进制格式保存<span>DECIMAL</span>和<span>NUMERIC</span>值。</p>
+		<p>
+		标准<span>SQL</span>要求<span>salary</span>列能够用<span>5</span>位整数位和两位小数保存任何值。因此，在这种情况下可以保存在<span>salary</span>列的值的范围是从<span>-999.99</span>到<span>999.99</span>。</p>
+		<p>
+		在标准<span>SQL</span>中，语法<span>DECIMAL(<i>M</i>)</span>等价于<span>DECIMAL(<i>M</i>,0)</span>。同样，语法<span>DECIMAL</span>等价于<span>DECIMAL(<i>M</i>,0)</span>，可以通过计算确定<span><i><span>M</span></i></span>的值。在<span>MySQL 
+		5.1</span>中支持<span>DECIMAL</span>和<span>NUMERIC</span>数据类型的变量形式。<span><i><span>M</span></i></span>默认值是<span>10</span>。</p>
+		<p>
+		<span>
+		DECIMAL</span>或<span>NUMERIC</span>的最大位数是<span>65</span>，但具体的<span>DECIMAL</span>或<span>NUMERIC</span>列的实际范围受具体列的精度或标度约束。如果此类列分配的值小数点后面的位数超过指定的标度允许的范围，值被转换为该标度。<span>(</span>具体操作与操作系统有关，但一般结果均被截取到允许的位数）<span>。</span></p>
+		<p>
+		<span>
+		BIT</span>数据类型可用来保存位字段值。<span>BIT(<i>M</i>)</span>类型允许存储<span><i><span>M</span></i></span>位值。<span><i><span>M</span></i></span>范围为<span>1</span>到<span>64</span>。</p>
+		<p>
+		要指定位值，可以使用<span>b&#39;<i>value</i>&#39;</span>符。<span><i><span>value</span></i></span>是一个用<span>0</span>和<span>1</span>编写的二进制值。例如，<span>b&#39;111&#39;</span>和<span>b&#39;100000000&#39;</span>分别表示<span>7</span>和<span>128</span>。参见<a href="language-structure.html#bit-field-values" title="9.1.5. Bit-Field Values">9.1.5节，“位字段值”</a>。</p>
+		<p>
+		如果为<span>BIT(M)</span>列分配的值的长度小于<span><i><span>M</span></i></span>位，在值的左边用<span>0</span>填充。例如，为<span>BIT(6)</span>列分配一个值<span>b&#39;101&#39;</span>，其效果与分配<span>b&#39;000101&#39;</span>相同。</p>
+		<p>当要在一个数值列内保存一个超出该列允许范围的值时，<span>MySQL</span>的操作取决于此时有效的<span>SQL</span>模式。如果模式未设置，<span>MySQL</span>将值裁剪到范围的相应端点，并保存裁减好的值。但是，如果模式设置为<span>traditional</span><span>(</span>“严格<span class="quote">模式</span>”<span>)</span>，超出范围的值将被拒绝并提示错误，并且根据<span>SQL</span>标准插入会失败。参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+		<p>
+		如果<span>INT</span>列是<span>UNSIGNED</span>，列范围的大小相同，但其端点会变为到<span>0</span>和<span>4294967295</span>。如果你试图保存<span>-9999999999</span>和<span>9999999999</span>，以非严格模式保存到列中的值是<span>0</span>和<span>4294967296</span>。</p>
+		<p>
+		<span>如果在浮点或定点列中分配的值超过指定<span>(</span>或默认<span>)</span>精度和标度规定的范围，<span>MySQL</span>以非严格模式保存表示范围相应端点的值。</span></p>
+		<p><span>当<span>MySQL</span>没有工作在严格模式时，对于</span><span><span  >ALTER 
+		TABLE</span><span >、<span>LOAD 
+		DATA INFILE</span>、<span>UPDATE</span></span></span><span>和多行</span><span  >INSERT</span><span>语句，由于裁剪发生的转换将报告为警告。当<span>MySQL</span>工作在严格模式时，这些语句将失败，并且部分或全部值不会插入或更改，取决于是否表为事务表和其它因素。详情参见</span><a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="date-and-time-types"></a>
+		11.3.&nbsp;日期和时间类型</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="column-types.html#datetime">
+			11.3.1. DATETIME、DATE和TIMESTAMP类型</a></span></dt><dt><span class="section"><a href="column-types.html#time">
+			11.3.2. TIME类型</a></span></dt><dt><span class="section"><a href="column-types.html#year">
+			11.3.3. YEAR类型</a></span></dt><dt><span class="section"><a href="column-types.html#y2k-issues">
+			11.3.4. Y2K事宜和日期类型</a></span></dt></dl></div><a class="indexterm" name="id2849193"></a><a class="indexterm" name="id2849203"></a>
+		<p>表示时间值的<span>DATE</span>和时间类型为<span>DATETIME</span>、<span><span>DATE</span><span>、<span>TIMESTAMP</span>、<span>TIME</span></span></span>和<span>YEAR</span>。每个时间类型有一个有效值范围和一个“<span class="quote">零</span>”值，当指定不合法的<span>MySQL</span>不能表示的值时使用“<span class="quote">零</span>”值。<span>TIMESTAMP</span>类型有专有的自动更新特性，将在后面描述。</p>
+		<p>如果试图插入一个不合法的日期，<span>MySQL</span>将给出警告或错误。可以使用<span>ALLOW_INVALID_DATES 
+		SQL</span>模式让<span>MySQL</span>接受某些日期，例如<span>&#39;1999-11-31&#39;</span>。当你想要保存一个“<span class="quote">可能错误的</span>”用户已经在数据库中指定<span>(</span>例如，以<span>web</span>形式<span>)</span>用于将来处理的值时很有用。在这种模式下，<span>MySQL</span>只验证月范围为从<span>0</span>到<span>12</span>，日范围为从<span>0</span>到<span>31</span>。这些范围可以包括零，因为<span>MySQL</span>允许在<span>DATE</span>或<span>DATETIME</span>列保存日<span>/</span>月和日是零的日期。这在应用程序需要保存一个你不知道确切日期的生日时非常有用。在这种情况下，只需要将日期保存为<span>&#39;1999-00-00&#39;</span>或<span>&#39;1999-01-00&#39;</span>。如果保存此类日期，<span>DATE_SUB()</span>或<span>DATE_ADD</span>等需要完整日期的函数不会得到正确的结果。<span>(</span>如果你不想在日期中出现零，可以使用<span>NO_ZERO_IN_DATE</span><span> 
+		SQL</span>模式<span>)</span>。</p>
+		<p>
+		<span>MySQL</span>还允许将<span>&#39;0000-00-00&#39;</span>保存为“伪日期”<span>(</span>如果不使用<span>NO_ZERO_DATE</span><span> 
+		SQL</span>模式<span>)</span>。这在某些情况下比使用<span>NULL</span>值更方便<span>(</span>并且数据和索引占用的空间更小<span>)</span>。</p>
+		<p>将<span>sql_mode</span>系统变量设置为相应模式值，可以更确切你想让<span>MySQL</span>支持哪种日期。参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+		<p>
+		当使用日期和时间类型时应记住以下几点：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MySQL</span>以标准输出格式检索给定日期或时间类型的值，但它尽力解释你指定的各种输入值格式<span>(</span>例如，当你指定一个分配给或与日期或时间类型进行比较的值时<span>)</span>。只支持下面章节中描述的格式。期望你能提供有效值。如果你使用其它格式的值会发生意想不到的结果。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>包含两位年值的日期会令人模糊，因为世纪不知道。<span>MySQL</span>使用以下规则解释两位年值：</p>
+		<p >
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>70-99</span>范围的年值转换为<span>1970-1999</span>。</p>
+		<p>
+		<span>o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>
+		<span>00-69</span>范围的年值转换为<span>2000-2069</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>尽管<span>MySQL</span>尝试解释几种格式的值，日期总是以年<span>-</span>月<span>-</span>日顺序<span>(</span>例如，<span>&#39;98-09-04&#39;</span><span>)</span>，而不是其它地方常用的月<span>-</span>日<span>-</span>年或日<span>-</span>月<span>-</span>年顺序<span>(</span>例如，<span>&#39;09-04-98&#39;</span>，<span>&#39;04-09-98&#39;</span><span>)</span>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果值用于数值上下文中，<span>MySQL</span>自动将日期或时间类型的值转换为数字，反之亦然。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>当<span> MySQL</span>遇到一个日期或时间类型的超出范围或对于该类型不合法的值时<span>(</span>如本节开始所描述<span>)</span>，它将该值转换为该类的“<span class="quote">零</span>”值。一个例外是超出范围的<span>TIME</span>值被裁剪到<span>TIME</span>范围的相应端点。</p>
+		<p>下面的表显示了各类“<span class="quote">零</span>”值的格式。请注意如果启用<span>NO_ZERO_DATE</span><span> 
+		SQL</span>模式，使用这些值会产生警告。</p>
+		<table border="1" cellpadding="0" id="table2">
+			<tr>
+				<td>
+				<p><strong><span>列类型</span></strong></td>
+				<td>
+				<p><strong><span>“</span></strong><span class="quote"><b>零</b></span><strong><span>”值</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>DATETIME</span></td>
+				<td>
+				<p>
+				<span>&#39;0000-00-00 
+				00:00:00&#39;</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>DATE</span></td>
+				<td>
+				<p>
+				<span>&#39;0000-00-00&#39;</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TIMESTAMP</span></td>
+				<td>
+				<p>
+				<span>00000000000000</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TIME</span></td>
+				<td>
+				<p>
+				<span>&#39;00:00:00&#39;</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>YEAR</span></td>
+				<td>
+				<p>
+				<span>0000</span></td>
+			</tr>
+		</table>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>“<span class="quote">零</span>”值是特殊值，但你可以使用表内显示的值显式保存或引用它们。你也可以使用值<span>&#39;0&#39;</span>或<span>0</span>来保存或引用，写起来更容易。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span>MyODBC</span>中使用的“<span class="quote">零</span>”日期或时间值在<span>MyODBC 
+		2.50.12</span>和以上版本中被自动转换为<span>NULL</span>，因为<span>ODBC</span>不能处理此类值。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="datetime"></a>
+			11.3.1.&nbsp;DATETIME、DATE和TIMESTAMP类型</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="column-types.html#timestamp-4-1">11.3.1.1. 
+				自MySQL 4.1以来的TIMESTAMP属性</a></span></dt></dl></div><a class="indexterm" name="id2849637"></a><a class="indexterm" name="id2849646"></a><a class="indexterm" name="id2849655"></a><a class="indexterm" name="id2849664"></a><a class="indexterm" name="id2849677"></a><a class="indexterm" name="id2849689"></a>
+			<p>
+			<span
+			<span>DATETIME</span><span>、<span>DATE</span></span></span>和<span>TIMESTAMP</span>类型是相关的。该节描述了它们的特征，它们的相似点和不同点。</p>
+			<p>
+			当你需要同时包含日期和时间信息的值时则使用<span>DATETIME</span>类型。<span>MySQL</span>以<span>&#39;YYYY-MM-DD 
+			HH:MM:SS&#39;</span>格式检索和显示<span>DATETIME</span>值。支持的范围为<span>&#39;1000-01-01 
+			00:00:00&#39;</span>到<span>&#39;9999-12-31 
+			23:59:59&#39;</span>。<span>(</span>“<span class="quote">支持</span>”表示尽管先前的值可能工作，但没有保证<span>)</span>。</p>
+			<p>当你只需要日期值而不需要时间部分时应使用<span>DATE</span>类型。<span>MySQL</span>用<span>&#39;YYYY-MM-DD&#39;</span>格式检索和显示<span>DATE</span>值。支持的范围是<span>&#39;1000-01-01&#39;</span>到 
+			<span>&#39;9999-12-31&#39;</span>。 
+			</p>
+			<p>
+			<span>TIMESTAMP</span>列类型的属性不固定，取决于<span>MySQL</span>版本和服务器运行的<span>SQL</span>模式。这些属性将在本节后面描述。</p>
+			<p>
+			可以使用任何常见格式指定<span><span>DATETIME</span><span>、<span>DATE</span></span></span>和<span>TIMESTAMP</span>值：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>&#39;YYYY-MM-DD HH:MM:SS&#39;</span>或<span>&#39;YY-MM-DD 
+			HH:MM:SS&#39;</span>格式的字符串。允许“<span class="quote">不严格</span>”语法：任何标点符都可以用做日期部分或时间部分之间的间割符。例如，<span>&#39;98-12-31 
+			11:30:45&#39;</span>、<span>&#39;98.12.31 
+			11+30+45&#39;</span>、<span>&#39;98/12/31 
+			11*30*45&#39;</span>和<span>&#39;98@12@31 
+			11^30^45&#39;</span>是等价的。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>&#39;YYYY-MM-DD&#39;</span>或<span>&#39;YY-MM-DD&#39;</span>格式的字符串。这里也允许使用“不严格的”语法。例如，<span><span>&#39;98-12-31&#39;</span><span>、<span>&#39;98.12.31&#39;</span>、<span>&#39;98/12/31&#39;</span></span></span>和<span>&#39;98@12@31&#39;</span>是等价的。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>&#39;YYYYMMDDHHMMSS&#39;</span>或<span>&#39;YYMMDDHHMMSS&#39;</span>格式的没有间割符的字符串，假定字符串对于日期类型是有意义的。例如，<span>&#39;19970523091528&#39;</span>和<span>&#39;970523091528&#39;</span>被解释为<span>&#39;1997-05-23 
+			09:15:28&#39;</span>，但<span>&#39;971122129015&#39;</span>是不合法的<span>(</span>它有一个没有意义的分钟部分<span>)</span>，将变为<span>&#39;0000-00-00 
+			00:00:00&#39;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>&#39;YYYYMMDD&#39;</span>或<span>&#39;YYMMDD&#39;</span>格式的没有间割符的字符串，假定字符串对于日期类型是有意义的。例如，<span>&#39;19970523&#39;</span>和<span>&#39;970523&#39;</span>被解释为 
+			<span>&#39;1997-05-23&#39;</span>，但<span>&#39;971332&#39;</span>是不合法的<span>(</span>它有一个没有意义的月和日部分<span>)</span>，将变为<span>&#39;0000-00-00&#39;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>YYYYMMDDHHMMSS</span>或<span>YYMMDDHHMMSS</span>格式的数字，假定数字对于日期类型是有意义的。例如，<span>19830905132800</span>和<span>830905132800</span>被解释为 
+			<span>&#39;1983-09-05 13:28:00&#39;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>YYYYMMDD</span>或<span>YYMMDD</span>格式的数字，假定数字对于日期类型是有意义的。例如，<span>19830905</span>和<span>830905</span>被解释为<span>&#39;1983-09-05&#39;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>函数返回的结果，其值适合<span><span>DATETIME</span><span>、<span>DATE</span></span></span>或者<span>TIMESTAMP</span>上下文，例如<span>NOW()</span>或<span>CURRENT_DATE</span>。</p>
+			<p>
+			无效<span>DATETIME</span>、<span>DATE</span>或者<span>TIMESTAMP</span>值被转换为相应类型的“<span class="quote">零</span>”值<span>(</span><span><span>&#39;0000-00-00 
+			00:00:00&#39;</span><span>、<span>&#39;0000-00-00&#39;</span></span></span>或者<span>00000000000000</span><span>)</span>。</p>
+			<p>对于包括日期部分间割符的字符串值，如果日和月的值小于<span>10</span>，不需要指定两位数。<span>&#39;1979-6-9&#39;</span>与<span>&#39;1979-06-09&#39;</span>是相同的。同样，对于包括时间部分间割符的字符串值，如果时、分和秒的值小于<span>10</span>，不需要指定两位数。<span>&#39;1979-10-30 
+			1:2:3&#39;</span>与<span>&#39;1979-10-30 
+			01:02:03&#39;</span>相同。</p>
+			<p>
+			数字值应为<span>6</span>、<span>8</span>、<span>12</span>或者<span>14</span>位长。如果一个数值是<span>8</span>或<span>14</span>位长，则假定为<span>YYYYMMDD</span>或<span>YYYYMMDDHHMMSS</span>格式，前<span>4</span>位数表示年。如果数字 
+			是<span>6</span>或<span>12</span>位长，则假定为<span>YYMMDD</span>或<span>YYMMDDHHMMSS</span>格式，前<span>2</span>位数表示年。其它数字被解释为仿佛用零填充到了最近的长度。</p>
+			<p>
+			指定为非限定符字符串的值使用给定的长度进行解释。如果字符串为<span>8</span>或<span>14</span>字符长，前<span>4</span>位数表示年。否则，前<span>2</span>位数表示年。从左向右解释字符串内出现的各部分，以发现年、月、日、小时、分和秒值。这说明不应使用少于<span>6</span>字符的字符串。例如，如果你指定<span>&#39;9903&#39;</span>，认为它表示<span>1999</span>年<span>3</span>月，<span>MySQL</span>将在你的表内插入一个“<span class="quote">零</span>”日期值。这是因为年和月值是<span>99</span>和<span>03</span>，但日部分完全丢失，因此该值不是一个合法的日期。但是，可以明显指定一个零值来代表缺少的月或日部分。例如，可以使用<span>&#39;990300&#39;</span>来插入值<span>&#39;1999-03-00&#39;</span>。</p>
+			<p>
+			在一定程度上，可以将一个日期类型的值分配给一个不同的日期类型。但是，值可能会更改或丢失一些信息：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果你为一个<span>DATETIME</span>或<span>TIMESTAMP</span>对象分配一个<span>DATE</span>值，结果值的时间部分被设置为<span>&#39;00:00:00&#39;</span>，因为<span>DATE</span>值未包含时间信息。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果你为一个<span>DATE</span>对象分配一个<span>DATETIME</span>或<span>TIMESTAMP</span>值，结果值的时间部分被删除，因为<span>DATE</span>值未包含时间信息。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>记住尽管可以使用相同的格式指定<span>DATETIME</span>、<span>DATE</span>和<span>TIMESTAMP</span>值，不同类型的值的范围却不同。例如，<span>TIMESTAMP</span>值不能早于<span>1970</span>或晚于<span>2037</span>。这说明一个日期，例如<span>&#39;1968-01-01&#39;</span>，虽然对于<span>DATETIME</span>或<span>DATE</span>值是有效的，但对于<span>TIMESTAMP</span>值却无效，如果分配给这样一个对象将被转换为<span>0</span>。</p>
+			<p>
+			当指定日期值时请注意某些缺陷：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>指定为字符串的值允许的非严格格式可能会欺骗。例如，值<span>&#39;10:11:12&#39;</span>由于‘<span>:</span>’间割符看上去可能象时间值，但如果用于日期上下文值则被解释为年<span>&#39;2010-11-12&#39;</span>。值<span>&#39;10:45:15&#39;</span>被转换为<span>&#39;0000-00-00&#39;</span>因为<span>&#39;45&#39;</span>不是合法月。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>在非严格模式，<span>MySQL</span>服务器只对日期的合法性进行基本检查：年、月和日的范围分别是<span>1000</span>到<span>9999</span>、<span>00</span>到<span>12</span>和<span>00</span>到<span>31</span>。任何包含超出这些范围的部分的日期被转换成<span>&#39;0000-00-00&#39;</span>。请注意仍然允许你保存非法日期，例如<span>&#39;2002-04-31&#39;</span>。要想确保不使用严格模式时日期有效，应检查应用程序。</p>
+			<p>
+			在严格模式，非法日期不被接受，并且不转换。</p>
+			<p>
+			详细信息参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>包含两位年值的日期会令人模糊，因为世纪不知道。<span>MySQL</span>使用以下规则解释两位年值：</p>
+			<p>
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>00-69</span>范围的年值转换为<span>2000-2069</span>。</p>
+			<p >
+			<span>
+			o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+			</span>
+			<span>70-99</span>范围的年值转换为<span>1970-1999</span>。</p>
+			<div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="timestamp-4-1"></a>11.3.1.1. 自MySQL 
+				4.1以来的TIMESTAMP属性</h4></div></div></div>
+				<p>
+				<strong><span>注释：</span><span>在</span></strong>旧版本的<span>MySQL</span>中<span>(4.1</span>之前<span>)</span>，<span>TIMESTAMP</span>列类型的属性在许多方面于本节所描述的大大不同。如果你需要对旧的<span>TIMESTAMP</span>数据进行转化以便在<span>MySQL 
+				5.1</span>中工作，详情请参见<em><span>MySQL 
+				4.1 </span><span>参考手册</span></em>。</p>
+				<p>
+				<span>TIMESTAMP</span>列的显示格式与<span>DATETIME</span>列相同。换句话说，显示宽度固定在<span>19</span>字符，并且格式为<span>YYYY-MM-DD 
+				HH:MM:SS</span>。</p>
+				<p>
+				<span>MySQL</span>服务器也可以以<span>MAXDB</span>模式运行。当服务器以该模式运行时，<span>TIMESTAMP</span>与<span>DATETIME</span>相等。也就是说，如果创建表时服务器以<span>MAXDB</span>模式运行，<span>TIMESTAMP</span>列创建为<span>DATETIME</span>列。结果是，该列使用<span>DATETIME</span>显示格式，有相同的值范围，并且没有自动对当前的日期和时间进行初始化或更新。</p>
+				<p>
+				要想启用<span>MAXDB</span>模式，在启动服务器时使用<span>--sql-mode=MAXDB</span>服务器选项或在运行时通过设置全局<span>sql_mode</span>变量将<span>SQL</span>服务器模式设置为<span>MAXDB</span>：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SET GLOBAL sql_mode=MAXDB</span><span>；</span></b></span></pre>
+				<p>
+				客户端可以按照下面方法让服务器为它的连接以<span>MAXDB</span>模式运行：</p>
+				<pre><span>mysql&gt; </span><span><b><span>SET SESSION sql_mode=MAXDB;</span></b></span></pre>
+				<p>
+				<span>&nbsp;</span></p>
+				<p>
+				<span>MySQL</span>不接受在日或月列包括一个零或包含非法日期值的时间戳值。该规则的唯一例外是特殊值<span>&#39;0000-00-00 
+				00:00:00&#39;</span>。</p>
+				<p>
+				你可以非常灵便地确定什么时候初始化和更新<span>TIMESTAMP</span>和对哪些列进行初始化和更新：</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>你可以将当前的时间戳指定为默认值和自动更新的值。但只能选择一个，或者两者都不选。<span>(</span>不可能一个列选择一个行为而另一个列选择另一个行为）<span>。</span></p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>你可以指定哪个<span>TIMESTAMP</span>列自动初始化或更新为当前的日期和时间。不再需要为第<span>1</span>个<span>TIMESTAMP</span>列。</p>
+				<p>
+				请注意下面讨论所信息只适用于创建时未启用<span>MAXDB</span>模式的表的<span>TIMESTAMP</span>列。<span>(</span>如上所述，<span>MAXDB</span>模式使列创建为<span>DATETIME</span>列）<span>。</span>控制<span>TIMESTAMP</span>列的初始化和更新的规则如下所示：</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>如果一个表内的第<span>1</span>个<span>TIMESTAMP</span>列指定为一个<span  >DEFAULT</span>值，则不能忽略。
+				默认值可以为<span>CURRENT_TIMESTAMP</span>或常量日期和时间值。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>
+				<span>DEFAULT NULL</span>与第<span>1</span>个<em><span>TIMESTAMP</span></em><span>
+				</span>列的<span  >DEFAULT 
+				CURRENT_TIMESTAMP</span>相同。对于其它<span>TIMESTAMP</span>列，<span>DEFAULT 
+				NULL</span>被视为<span  >DEFAULT 
+				0</span>。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>表内的任何一个<span>TIMESTAMP</span>列可以设置为自动初始化为当前时间戳和<span>/</span>或更新。</p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>在<span>CREATE 
+				TABLE</span>语句中，可以用下面的任何一种方式声明第<span>1</span>个<span>TIMESTAMP</span>列：</p>
+				<p >
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>用<span>DEFAULT 
+				CURRENT_TIMESTAMP</span>和<span>ON 
+				UPDATE CURRENT_TIMESTAMP</span>子句，列为默认值使用当前的时间戳，并且自动更新。</p>
+				<p >
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>不使用<span>DEFAULT</span>或<span>ON 
+				UPDATE</span>子句，与<span><span>DEFAULT 
+				CURRENT_TIMESTAMP</span><span> 
+				ON UPDATECURRENT_TIMESTAMP</span></span>相同。</p>
+				<p >
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>用<span>DEFAULT 
+				CURRENT_TIMESTAMP</span>子句不用<span>ON 
+				UPDATE</span>子句，列为默认值使用当前的时间戳但是不自动更新。</p>
+				<p >
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>不用<span>DEFAULT</span>子句但用<span>ON 
+				UPDATE CURRENT_TIMESTAMP</span>子句，列有默认值<span>0</span>并自动更新。</p>
+				<p >
+				<span>
+				o<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>用常量<span>DEFAULT</span>值，列有给出的
+				默认值。如果列有一个<span>ON 
+				UPDATE CURRENT_TIMESTAMP</span>子句，它自动更新，否则不。</p>
+				<p>
+				换句话说，你可以为初始值和自动更新的值使用当前的时间戳，或者其中一个使用，或者两个皆不使用。<span>(</span>例如，你可以指定<span>ON 
+				UPDATE</span>来启用自动更新而不让列自动初始化）<span>。</span></p>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>在<span>DEFAULT</span>和<span>ON 
+				UPDATE</span>子句中可以使用<span>CURRENT_TIMESTAMP</span>、<span>CURRENT_TIMESTAMP()</span>或者<span>NOW()</span>。它们均具有相同的效果。</p>
+				<p>
+				两个属性的顺序并不重要。如果一个<span>TIMESTAMP</span>列同时指定了<span>DEFAULT</span>和<span>ON 
+				UPDATE</span>，任何一个可以在另一个的前面。</p>
+				<p>
+				例子，下面这些语句是等效的：</p>
+				<pre ><span>CREATE TABLE t (ts TIMESTAMP);</span></pre>
+				<pre ><span>CREATE TABLE t (ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ON UPDATE CURRENT_TIMESTAMP);</span></pre>
+				<pre ><span>CREATE TABLE t (ts TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DEFAULT CURRENT_TIMESTAMP);</span></pre>
+				<p>
+				<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				</span></span>要为<span>TIMESTAMP</span>列而不是第<span>1</span>列指定自动默认或更新，必须通过将第<span>1</span>个<span>TIMESTAMP</span>列显式分配一个常量<span>DEFAULT</span>值来禁用自动初始化和更新。<span>(</span>例如，<span>DEFAULT 
+				0</span>或<span>DEFAULT&#39;2003-01-01 
+				00:00:00&#39;</span><span>)</span>。然后，对于其它<span>TIMESTAMP</span>列，规则与第<span>1</span>个<span>TIMESTAMP</span>列相同，例外情况是不能忽略<span>DEFAULT</span>和<span>ON 
+				UPDATE</span>子句。如果这样做，则不会自动进行初始化或更新。</p>
+				<p>例如：下面这些语句是等效的：</p>
+				<pre ><span>CREATE TABLE t (</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp; ts1 TIMESTAMP DEFAULT 0,</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp; ts2 TIMESTAMP DEFAULT CURRENT_TIMESTAMP</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ON UPDATE CURRENT_TIMESTAMP);</span></pre>
+				<pre ><span>CREATE TABLE t (</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp; ts1 TIMESTAMP DEFAULT 0,</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp; ts2 TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</span></pre>
+				<pre ><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DEFAULT CURRENT_TIMESTAMP);</span></pre>
+				<p>
+				可以对每个连接设置当前的时区，相关描述参见<a href="database-administration.html#time-zone-support" title="5.10.8. MySQL Server Time Zone Support">5.10.8节，“MySQL服务器时区支持”</a>。<span>TIMESTAMP</span>值以<span>UTC</span>格式保存，存储时对当前的时区进行转换，检索时再转换回当前的时区。只要时区设定值为常量，便可以得到保存时的值。如果保存一个<span>TIMESTAMP</span>值，应更改时区然后检索该值，它与你保存的值不同。这是因为在两个方向的转换中没有使用相同的时区。当前的时区可以用作<span>time_zone</span>系统变量的值。</p>
+				<p>可以在<span>TIMESTAMP</span>列的定义中包括<span>NULL</span>属性以允许列包含<span>NULL</span>值。例如：</p>
+				<pre><span>CREATE TABLE t</span></pre>
+				<pre><span>(</span></pre>
+				<pre><span>&nbsp; ts1 TIMESTAMP NULL DEFAULT NULL,</span></pre>
+				<pre><span>&nbsp; ts2 TIMESTAMP NULL DEFAULT 0,</span></pre>
+				<pre><span>&nbsp; ts3 TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP</span></pre>
+				<pre><span>);</span></pre>
+				<p>
+				如果未指定<span>NULL</span>属性，将列设置为<span>NULL</span>设置则会将它设置为当前的时间戳。请注意允许<span>NULL</span>值的<span>TIMESTAMP</span>列不会采用当前的时间戳，除非要么其
+				默认值定义为<span>CURRENT_TIMESTAMP</span>，或者<span>NOW()</span>或<span>CURRENT_TIMESTAMP</span>被插入到该列内。换句话说，只有使用如下定义创建，定义为 
+				<span>NULL</span>的<span>TIMESTAMP</span>列才会自动更新：</p>
+				<pre><span>CREATE TABLE t (ts NULLDEFAULT CURRENT_TIMESTAMP)</span>；</pre>
+				<p>否则<span>-</span>也就是说，如果使用<span>NULL</span>而不是<span>DEFAULT 
+				TIMESTAMP</span>来定义<span>TIMESTAMP</span>列，如下所示<span>...</span></p>
+				<pre><span>CREATE TABLE t1 (ts NULL DEFAULT NULL);</span></pre>
+				<pre><span>CREATE TABLE t2 (ts NULL DEFAULT &#39;0000-00-00 00:00:00&#39;);</span></pre>
+				<p><span>...</span>则必须显式插入一个对应当前日期和时间的值。例如：</p>
+				<pre><span>INSERT INTO t1 VALUES (NOW());</span></pre>
+				<pre><span>INSERT INTO t2 VALUES (CURRENT_TIMESTAMP);</span></pre>
+			</div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="time"></a>
+			11.3.2.&nbsp;TIME类型</h3></div></div></div><a class="indexterm" name="id2851158"></a><a class="indexterm" name="id2851167"></a></div><div class="section"><div class="titlepage"><div><div>
+			<p>
+			<span>MySQL</span>以<span>&#39;HH:MM:SS&#39;</span>格式检索和显示<span>TIME</span>值<span>(</span>或对于大的小时值采用<span>&#39;HHH:MM:SS&#39;</span>格式<span>)</span>。<span>TIME</span>值的范围可以从<span>&#39;-838:59:59&#39;</span>到<span>&#39;838:59:59&#39;</span>。小时部分会因此大的原因是<span>TIME</span>类型不仅可以用于表示一天的时间<span>(</span>必须小于<span>24</span>小时<span>)</span>，还可能为某个事件过去的时间或两个事件之间的时间间隔<span>(</span>可以大于<span>24</span>小时，或者甚至为负<span>)</span>。</p>
+			<p>你可以用各种格式指定<span>TIME</span>值：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>&#39;D HH:MM:SS.fraction&#39;</span>格式的字符串。还可以使用下面任何一种“<span class="quote">非严格</span>”语法：<span><span>&#39;HH:MM:SS.fraction&#39;</span><span>、<span>&#39;HH:MM:SS&#39;</span>、<span>&#39;HH:MM&#39;</span>、<span>&#39;D 
+			HH:MM:SS&#39;</span>、<span>&#39;D HH:MM&#39;</span>、<span>&#39;D 
+			HH&#39;</span></span></span>或<span>&#39;SS&#39;</span>。这里<span>D</span>表示日，可以取<span>0</span>到<span>34</span>之间的值。请注意<span>MySQL</span>还不保存分数。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>&#39;HHMMSS&#39;</span>格式的没有间割符的字符串，假定是有意义的时间。例如，<span>&#39;101112&#39;</span>被理解为<span>&#39;10:11:12&#39;</span>，但<span>&#39;109712&#39;</span>是不合法的<span>(</span>它有一个没有意义的分钟部分<span>)</span>，将变为<span>&#39;00:00:00&#39;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>HHMMSS</span>格式的数值，假定是有意义的时间。例如，<span>101112</span>被理解为<span>&#39;10:11:12&#39;</span>。下面格式也可以理解：<span><span>SS</span><span>、<span>MMSS</span>、<span>HHMMSS</span>、<span>HHMMSS.fraction</span></span></span>。请注意<span>MySQL</span>还不保存分数。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>函数返回的结果，其值适合<span>TIME</span>上下文，例如<span>CURRENT_TIME</span>。</p>
+			<p>
+			对于指定为包括时间部分间割符的字符串的<span>TIME</span>值，如果时、分或者秒值小于<span>10</span>，则不需要指定两位数。<span>&#39;8:3:2&#39;</span>与<span>&#39;08:03:02&#39;</span>相同。</p>
+			<p>为<span>TIME</span>列分配简写值时应注意。没有冒号，<span>MySQL</span>解释值时假定最右边的两位表示秒。<span>(MySQL</span>解释<span>TIME</span>值为过去的时间而不是当天的时间）<span>。</span>例如，你可能认为<span>&#39;1112&#39;</span>和<span>1112</span>表示<span>&#39;11:12:00&#39;</span><span>(11</span>点过<span>12</span>分<span>)</span>，但<span>MySQL</span>将它们解释为<span>&#39;00:11:12&#39;</span><span>(11</span>分，<span>12
+			</span>秒<span>)</span>。同样，<span>&#39;12&#39;</span>和<span>12</span><span>
+			</span>被解释为 
+			<span>&#39;00:00:12&#39;</span>。相反，<span>TIME</span>值中使用冒号则肯定被看作当天的时间。也就是说，<span>&#39;11:12&#39;</span>表示<span>&#39;11:12:00&#39;</span>，而不是<span>&#39;00:11:12&#39;</span>。</p>
+			<p>
+			超出<span>TIME</span>范围但合法的值被裁为范围最接近的端点。例如，<span>&#39;-850:00:00&#39;</span>和<span>&#39;850:00:00&#39;</span>被转换为<span>&#39;-838:59:59&#39;</span>和<span>&#39;838:59:59&#39;</span>。</p>
+			<p>无效<span>TIME</span>值被转换为<span>&#39;00:00:00&#39;</span>。请注意由于<span>&#39;00:00:00&#39;</span>本身是一个合法<span>TIME</span>值，只从表内保存的一个<span>&#39;00:00:00&#39;</span>值还不能说出原来的值是 
+			<span>&#39;00:00:00&#39;</span>还是不合法的值。</p>
+			<h3 class="title"><a name="year"></a>
+			11.3.3.&nbsp;YEAR类型</h3></div></div></div><a class="indexterm" name="id2851517"></a><a class="indexterm" name="id2851526"></a></div><div class="section"><div class="titlepage"><div><div>
+			<p>
+			<span>YEAR</span>类型是一个单字节类型用于表示年。</p>
+			<p>
+			<span>MySQL</span>以<span>YYYY</span>格式检索和显示<span>YEAR</span>值。范围是<span>1901</span>到<span>2155</span>。</p>
+			<p>
+			可以指定各种格式的<span>YEAR</span>值：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>四位字符串，范围为<span>&#39;1901&#39;</span>到<span>&#39;2155&#39;</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>四位数字，范围为<span>1901</span>到<span>2155</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>两位字符串，范围为<span>&#39;00&#39;</span>到<span>&#39;99&#39;</span>。<span>&#39;00&#39;</span>到<span>&#39;69&#39;</span>和<span>&#39;70&#39;</span>到<span>&#39;99&#39;</span>范围的值被转换为<span>2000</span>到<span>2069</span>和<span>1970</span>到<span>1999</span>范围的<span>YEAR</span>值。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>两位整数，范围为<span>1</span>到<span>99</span>。<span>1</span>到<span>69</span>和<span>70</span>到<span>99</span>范围的值被转换为<span>2001</span>到<span>2069</span>和<span>1970</span>到<span>1999</span>范围的<span>YEAR</span>值。请注意两位整数范围与两位字符串范围稍有不同，因为你不能直接将零指定为数字并将它解释为<span>2000</span>。你必须将它指定为一个字符串<span>&#39;0&#39;</span>或<span>&#39;00&#39;</span>或它被解释为<span>0000</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>函数返回的结果，其值适合<span>YEAR</span>上下文，例如<span>NOW()</span>。</p>
+			<p>非法<span>YEAR</span>值被转换为<span>0000</span>。</p>
+			<h3 class="title"><a name="y2k-issues"></a>
+			11.3.4.&nbsp;Y2K事宜和日期类型</h3></div></div></div><a class="indexterm" name="id2851772"></a><a class="indexterm" name="id2851779"></a>
+			<p>
+			<span>MySQL</span>本身对于<span>2000</span>年<span>(Y2K)</span>是安全的<span>(</span>参见<a href="introduction.html#year-2000-compliance" title="1.4.5. Year 2000 Compliance">1.4.5节，“2000年兼容性”</a><span>)</span>，但输入给<span>MySQL</span>的值可能不安全。任何包含两位年值的输入都会令人模糊，因为世纪不知道。这些值必须解释为四位形式，因为<span>MySQL</span>内部使用四位来保存年。</p>
+			<p>
+			对于<span>DATETIME</span>、<span><span>DATE</span><span>、<span>TIMESTAMP</span></span></span>和<span>YEAR</span>类型，<span>MySQL</span>使用以下规则解释含模糊年值的日期：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>00-69</span>范围的年值转换为<span>2000-2069</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>70-99</span>范围的年值转换为<span>1970-1999</span>。</p>
+			<p>
+			请记住这些规则只是合理猜测数据值表示什么。如果<span>MySQL</span>使用的启发不能产生正确的值，你应提供包含四位年值的确切输入。</p>
+			<p>
+			<span>ORDER BY</span>可以正确排序有两位年的<span>TIMESTAMP</span>或<span>YEAR</span>值。</p>
+			<p>部分函数如<span>MIN()</span>和<span>MAX()</span>将<span>TIMESTAMP</span>或<span>YEAR</span>转换为一个数字。这说明使用有两位年值的值，这些函数不能工作正确。在这种情况下的修复方法是将<span>TIMESTAMP</span>或<span>YEAR</span>转换为四位年格式或使用<span>MIN(DATE_ADD(TIMESTAMP,INTERVAL 
+			0 DAYS))</span>。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="string-types"></a>
+		11.4.&nbsp;String类型</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="column-types.html#char">
+			11.4.1. CHAR和VARCHAR类型</a></span></dt><dt><span class="section"><a href="column-types.html#binary-varbinary">
+			11.4.2. BINARY和VARBINARY类型</a></span></dt><dt><span class="section"><a href="column-types.html#blob">
+			11.4.3. BLOB和TEXT类型<code class="literal"></code></a></span></dt><dt><span class="section"><a href="column-types.html#enum">
+			11.4.4. ENUM类型</a></span></dt><dt><span class="section"><a href="column-types.html#set">
+			11.4.5. SET类型</a></span></dt></dl></div><a class="indexterm" name="id2851927"></a><a class="indexterm" name="id2851937"></a><a class="indexterm" name="id2851944"></a><a class="indexterm" name="id2851953"></a><a class="indexterm" name="id2851962"></a><a class="indexterm" name="id2851974"></a><div class="section"><div class="titlepage"><div><div>
+			字符串类型指<span><span>CHAR</span><span>、<span>VARCHAR</span>、<span>BINARY</span>、<span>VARBINARY</span>、<span>BLOB</span>、<span>TEXT</span>、<span>ENUM</span></span></span>和<span>SET</span>。该节描述了这些类型如何工作以及如何在查询中使用这些类型。<h3 class="title"><a name="char"></a>
+			11.4.1.&nbsp;CHAR和VARCHAR类型</h3></div></div></div>
+			<p>
+			<span>CHAR</span>和<span>VARCHAR</span>类型类似，但它们保存和检索的方式不同。它们的最大长度和是否尾部空格被保留等方面也不同。在存储或检索过程中不进行大小写转换。</p>
+			<p>
+			<span>CHAR</span>和<span>VARCHAR</span>类型声明的长度表示你想要保存的最大字符数。例如，<span>CHAR(30)</span>可以占用<span>30</span>个字符。</p>
+			<p>
+			<span>CHAR</span>列的长度固定为创建表时声明的长度。长度可以为从<span>0</span>到<span>255</span>的任何值。当保存<span>CHAR</span>值时，在它们的右边填充空格以达到指定的长度。当检索到<span>CHAR</span>值时，尾部的空格被删除掉。在存储或检索过程中不进行大小写转换。</p>
+			<p>
+			<span>VARCHAR</span>列中的值为可变长字符串。长度可以指定为<span>0</span>到<span>65,535</span>之间的值。<span>(</span><span>VARCHAR</span>的最大有效长度由最大行大小和使用的字符集确定。整体最大长度是<span>65,532</span>字节）<span>。</span></p>
+			<p>
+			同<span>CHAR</span>对比，<span>VARCHAR</span>值保存时只保存需要的字符数，另加一个字节来记录长度<span>(</span>如果列声明的长度超过<span>255</span>，则使用两个字节<span>)</span>。</p>
+			<p>
+			<span>VARCHAR</span>值保存时不进行填充。当值保存和检索时尾部的空格仍保留，符合标准<span>SQL</span>。</p>
+			<p>
+			如果分配给<span>CHAR</span>或<span>VARCHAR</span>列的值超过列的最大长度，则对值进行裁剪以使其适合。如果被裁掉的字符不是空格，则会产生一条警告。如果裁剪非空格字符，则会造成错误<span>(</span>而不是警告<span>)</span>并通过使用严格<span>SQL</span>模式禁用值的插入。参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+			<p>下面的表显示了将各种字符串值保存到<span>CHAR(4)</span>和<span>VARCHAR(4)</span>列后的结果，说明了<span>CHAR</span>和<span>VARCHAR</span>之间的差别：</p>
+			<table border="1" cellpadding="0" id="table3">
+				<tr>
+					<td>
+					<p><strong><span>值</span></strong></td>
+					<td>
+					<p>
+					<span>CHAR(4)</span></td>
+					<td>
+					<p><strong><span>
+					存储需求</span></strong></td>
+					<td>
+					<p>
+					<span>VARCHAR(4)</span></td>
+					<td>
+					<p><strong><span>
+					存储需求</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;&#39;</span></td>
+					<td>
+					<p><span
+					<span>&#39;</span><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span>&#39;</span></span></td>
+					<td>
+					<p><span>4</span>个字节</td>
+					<td>
+					<p>
+					<span>&#39;&#39;</span></td>
+					<td>
+					<p><span>1</span>个字节</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;ab&#39;</span></td>
+					<td>
+					<p><span
+					<span>&#39;ab</span><span>&nbsp;&nbsp;</span><span>&#39;</span></span></td>
+					<td>
+					<p><span>4</span>个字节</td>
+					<td>
+					<p>
+					<span>&#39;ab &#39;</span></td>
+					<td>
+					<p><span>3</span>个字节</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;abcd&#39;</span></td>
+					<td>
+					<p>
+					<span>&#39;abcd&#39;</span></td>
+					<td>
+					<p><span>4</span>个字节</td>
+					<td>
+					<p>
+					<span>&#39;abcd&#39;</span></td>
+					<td>
+					<p><span>5</span>个字节</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;abcdefgh&#39;</span></td>
+					<td>
+					<p>
+					<span>&#39;abcd&#39;</span></td>
+					<td>
+					<p><span>4</span>个字节</td>
+					<td>
+					<p>
+					<span>&#39;abcd&#39;</span></td>
+					<td>
+					<p><span>5</span>个字节</td>
+				</tr>
+			</table>
+			<p>
+			请注意上表中最后一行的值只适用<em><span>不使用严格模式</span></em>时；如果<span>MySQL</span>运行在严格模式，超过列长度不的值<i>不<em><span>保存</span></em></i>，并且会出现错误。</p>
+			<p>从<span>CHAR(4)</span>和<span>VARCHAR(4)</span>列检索的值并不总是相同，因为检索时从<span>CHAR</span>列删除了尾部的空格。通过下面的例子说明该差别：</p>
+			<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE vc (v VARCHAR(4), c CHAR(4));</span></b></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.02 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>INSERT INTO vc VALUES (&#39;ab&nbsp; &#39;, &#39;ab&nbsp; &#39;);</span></b></span></pre>
+			<pre><span>Query OK, 1 row affected (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT CONCAT(v, &#39;+&#39;), CONCAT(c, &#39;+&#39;) FROM vc;</span></b></span></pre>
+			<pre><span>+----------------+----------------+</span></pre>
+			<pre><span>| CONCAT(v, &#39;+&#39;) | CONCAT(c, &#39;+&#39;) |</span></pre>
+			<pre><span>+----------------+----------------+</span></pre>
+			<pre><span>| ab&nbsp; +&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | ab+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+			<pre><span>+----------------+----------------+</span></pre>
+			<pre><span>1 row in set (0.00 sec)</span></pre>
+			<p>
+			根据分配给列的字符集校对规则对<span>CHAR</span>和<span>VARCHAR</span>列中的值进行排序和比较。</p>
+			<p>请注意所有<span>MySQL</span>校对规则属于<span>PADSPACE</span>类。这说明在<span>MySQL</span>中的所有<span>CHAR</span>和<span>VARCHAR</span>值比较时不需要考虑任何尾部空格。例如：</p>
+			<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE names (myname CHAR(10), yourname VARCHAR(10));</span></b></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.09 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>INSERT INTO names VALUES (&#39;Monty &#39;, &#39;Monty &#39;);</span></b></span></pre>
+			<pre><span>Query OK, 1 row affected (0.00 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT myname = &#39;Monty&nbsp; &#39;, yourname = &#39;Monty&nbsp; &#39; FROM names;</span></b></span></pre>
+			<pre><span>+--------------------+----------------------+</span></pre>
+			<pre><span>| myname = &#39;Monty&nbsp; &#39; | yourname = &#39;Monty&nbsp; &#39; |</span></pre>
+			<pre><span>+--------------------+----------------------+</span></pre>
+			<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+			<pre><span>+--------------------+----------------------+</span></pre>
+			<pre><span>1 row in set (0.00 sec)</span></pre>
+			<p>
+			请注意所有<span>MySQL</span>版本均如此，并且它不受<span>SQL</span>服务器模式的影响。</p>
+			<p>
+			对于尾部填充字符被裁剪掉或比较时将它们忽视掉的情形，如果列的索引需要唯一的值，在列内插入一个只是填充字符数不同的值将会造成复制键值错误。</p>
+			<p>
+			<span>CHAR BYTE</span>是<span>CHAR 
+			BINARY</span>的别名。这是为了保证兼容性。</p>
+			<p>
+			<span>ASCII</span>属性为<span>CHAR</span>列分配<span>latin1</span>字符集。<span>UNICODE</span>属性分配<span>ucs2</span>字符集。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="binary-varbinary"></a>
+			11.4.2.&nbsp;BINARY和VARBINARY类型</h3></div></div></div><a class="indexterm" name="id2852527"></a><a class="indexterm" name="id2852536"></a><a class="indexterm" name="id2852545"></a><a class="indexterm" name="id2852558"></a>
+			<p>
+			<span>BINARY</span>和<span>VARBINARY</span>类类似于<span>CHAR</span>和<span>VARCHAR</span>，不同的是它们包含二进制字符串而不要非二进制字符串。也就是说，它们包含字节字符串而不是字符字符串。这说明它们没有字符集，并且排序和比较基于列值字节的数值值。</p>
+			<p>
+			<span>BINARY</span>和<span>VARBINARY</span>允许的最大长度一样，如同<span>CHAR</span>和<span>VARCHAR</span>，不同的是<span>BINARY</span>和<span>VARBINARY</span>的长度是字节长度而不是字符长度。</p>
+			<p>
+			<span>BINARY</span>和<span>VARBINARY</span>数据类型不同于<span>CHAR 
+			BINARY</span>和<span>VARCHAR 
+			BINARY</span>数据类型。对于后一种类型，<span>BINARY</span>属性不会将列视为二进制字符串列。相反，它致使使用列字符集的二元
+			校对规则，并且列自身包含非二进制字符字符串而不是二进制字节字符串。例如<span>CHAR(5) 
+			BINARY</span>被视为<span>CHAR(5) 
+			CHARACTER SET latin1 COLLATE latin1_bin</span>，假定默认字符集是<span>latin1</span>。这不同于<span>BINARY(5)</span>，它保存<span>5</span>字节二进制字符串，没有字符集或
+			校对规则。</p>
+			<p>当保存<span>BINARY</span>值时，在它们右边填充值以达到指定长度。填充值是<span>0x00</span><span>(</span>零字节<span>)</span>。插入值时在右侧添加<span>0x00</span><span> 
+			on</span>，并且选择时不删除尾部的字节。比较时所有字节很重要，包括<span>ORDER 
+			BY</span>和<span>DISTINCT</span>操作。比较时<span>0x00</span>字节和空格是不同的，<span>0x00</span><span>&lt;</span>空格。</p>
+			<p>
+			例如：对于一个<span>BINARY(3)</span>列，当插入时 
+			<span>&#39;a&#39; </span>变为 
+			<span
+			<span>&#39;a</span><span>&nbsp;</span><span>\0&#39;</span></span>。<span>&#39;a\0&#39;</span>插入时变为<span>&#39;a\0\0&#39;</span>。当选择时两个插入的值均不更改。</p>
+			<p>
+			对于<span>VARBINARY</span>，插入时不填充字符，选择时不裁剪字节。比较时所有字节很重要，包括<span>ORDER 
+			BY</span>和<span>DISTINCT</span>操作。比较时<span>0x00</span>字节和空格是不同的，<span>0x00</span><span>&lt;</span>空格。</p>
+			<p>
+			对于尾部填充字符被裁剪掉或比较时将它们忽视掉的情形，如果列的索引需要唯一的值，在列内插入一个只是填充字符数不同的值将会造成复制键值错误。</p>
+			<p>如果你计划使用这些数据类型来保存二进制数据并且需要检索的值与保存的值完全相同，应考虑前面所述的填充和裁剪特征。下面的例子说明了用<span>0x00</span>填充的<span>BINARY</span>值如何影响列值比较：</p>
+			<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE t (c BINARY(3));</span></b></span></pre>
+			<pre><span>Query OK, 0 rows affected (0.01 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>INSERT INTO t SET c = &#39;a&#39;;</span></b></span></pre>
+			<pre><span>Query OK, 1 row affected (0.01 sec)</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT HEX(c), c = &#39;a&#39;, c = &#39;a\0\0&#39; from t;</span></b></span></pre>
+			<pre><span>+--------+---------+-------------+</span></pre>
+			<pre><span>| HEX(c) | c = &#39;a&#39; | c = &#39;a\0\0&#39; |</span></pre>
+			<pre><span>+--------+---------+-------------+</span></pre>
+			<pre><span>| 610000 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+			<pre><span>+--------+---------+-------------+</span></pre>
+			<pre><span>1 row in set (0.09 sec)</span></pre>
+			<p>
+			如果检索的值必须与指定进行存储而没有填充的值相同，最好使用<span>BLOB</span>数据类型。</p>
+			<p>创建表时，<span>MySQL</span>可以默默更改<span>BINARY</span>或<span>VARBINARY</span>列的类型。参见<a href="sql-syntax.html#silent-column-changes" title="13.1.5.1. Silent Column Specification Changes">13.1.5.1节，“沉寂的列规格变更”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="blob"></a>
+			11.4.3.&nbsp;BLOB和TEXT类型<code class="literal"></code></h3></div></div></div><a class="indexterm" name="id2852869"></a><a class="indexterm" name="id2852878"></a><a class="indexterm" name="id2852887"></a><a class="indexterm" name="id2852900"></a><a class="indexterm" name="id2852912"></a><a class="indexterm" name="id2852921"></a>
+			<p>
+			<span>BLOB</span>是一个二进制大对象，可以容纳可变数量的数据。有<span>4</span>种<span>BLOB</span>类型：<span><span>TINYBLOB</span><span>、<span>BLOB</span>、<span>MEDIUMBLOB</span></span></span>和<span>LONGBLOB</span>。它们只是可容纳值的最大长度不同。</p>
+			<p>
+			有<span>4</span>种<span>TEXT</span>类型：<span><span>TINYTEXT</span><span>、<span>TEXT</span>、<span>MEDIUMTEXT</span></span></span>和<span>LONGTEXT</span>。这些对应<span>4</span>种<span>BLOB</span>类型，有相同的最大长度和存储需求。</p>
+			<p>
+			参见<a href="column-types.html#storage-requirements" title="11.5. Column Type Storage Requirements">11.5节，“列类型存储需求”</a>。</p>
+			<p>
+			<span>BLOB</span><span>
+			</span>列被视为二进制字符串<span>(</span>字节字符串<span>)</span>。<span>TEXT</span>列被视为非二进制字符串<span>(</span>字符字符串<span>)</span>。<span>BLOB</span>列没有字符集，并且排序和比较基于列值字节的数值值。<span>TEXT</span>列有一个字符集，并且根据字符集的
+			校对规则对值进行排序和比较。</p>
+			<p>
+			在<span>TEXT</span>或<span>BLOB</span>列的存储或检索过程中，不存在大小写转换。</p>
+			<p>
+			当未运行在严格模式时，如果你为<span>BLOB</span>或<span>TEXT</span>列分配一个超过该列类型的最大长度的值值，值被截取以保证适合。如果截掉的字符不是空格，将会产生一条警告。使用严格<span>SQL</span>模式，会产生错误，并且值将被拒绝而不是截取并给出警告。参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>。</p>
+			<p>在大多数方面，可以将<span>BLOB</span>列视为能够足够大的<span>VARBINARY</span>列。同样，可以将<span>TEXT</span>列视为<span>VARCHAR</span>列。<span>BLOB</span>和<span>TEXT</span>在以下几个方面不同于<span>VARBINARY</span>和<span>VARCHAR</span>：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当保存或检索<span>BLOB</span>和<span>TEXT</span>列的值时不删除尾部空格。<span>(</span>这与<span>VARBINARY</span>和<span>VARCHAR</span>列相同）<span>。</span></p>
+			<p>
+			请注意比较时将用空格对<span>TEXT</span>进行扩充以适合比较的对象，正如<span>CHAR</span>和<span>VARCHAR</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>对于<span>BLOB</span>和<span>TEXT</span>列的索引，必须指定索引前缀的长度。对于<span>CHAR</span>和<span>VARCHAR</span>，前缀长度是可选的。参见<a href="optimization.html#indexes" title="7.4.3. Column Indexes">7.4.3节，“列索引”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>BLOB</span>和<span>TEXT</span>列不能有
+			默认值。</p>
+			<p>
+			<span>LONG</span>和<span>LONG 
+			VARCHAR</span>对应<span>MEDIUMTEXT</span>数据类型。这是为了保证兼容性。如果<span>TEXT</span>列类型使用<span>BINARY</span>属性，将为列分配列字符集的二元
+			校对规则。</p>
+			<p>
+			<span>MySQL</span>连接程序<span>/ODBC</span>将<span>BLOB</span>值定义为<span>LONGVARBINARY</span>，将<span>TEXT</span>值定义为<span>LONGVARCHAR</span>。</p>
+			<p><span>由于<span>BLOB</span></span>和<span>TEXT</span>值可能会非常长，使用它们时可能遇到一些约束：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>当排序时只使用该列的前<span>max_sort_length</span>个字节。<span>max_sort_length</span>的
+			默认值是<span>1024</span>；该值可以在启动<strong><span>mysqld</span></strong>服务器时使用<span>--max_sort_length</span>选项进行更改。参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+			<p><span>运行时增加</span><span  >max_sort_length</span><span>的值可以在排序或组合时使更多的字节有意义。任何客</span>户端可以更改其会话<span>max_sort_length</span>变量的值：</p>
+			<pre ><span>mysql&gt; </span><span><b><span>SET max_sort_length = 2000;</span></b></span></pre>
+			<pre ><span>mysql&gt; </span><span><b><span>SELECT id, comment FROM <i>tbl_name</i></span></b></span></pre>
+			<pre ><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>ORDER BY comment;</span></b></span></pre>
+			<p>当你想要使超过<span>max_sort_length</span>的字节有意义，对含长值的<span>BLOB</span>或<span>TEXT</span>列使用<span>GROUP 
+			BY</span>或<span>ORDER 
+			BY</span>的另一种方式是将列值转换为固定长度的对象。标准方法是使用<span>SUBSTRING</span>函数。例如，下面的语句对<span>comment</span>列的<span>2000</span>个字节进行排序：</p>
+			<pre ><span>mysql&gt; </span><span><b><span>SELECT id, SUBSTRING(comment,1,2000) FROM <i>tbl_name</i></span></b></span></pre>
+			<pre ><span>&nbsp;&nbsp;&nbsp; -&gt; </span><span><b><span>ORDER BY SUBSTRING(comment,1,2000);</span></b></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>BLOB</span>或<span>TEXT</span>对象的最大大小由其类型确定，但在客户端和服务器之间实际可以传递的最大值由可用内存数量和通信缓存区大小确定。你可以通过更改<span>max_allowed_packet</span>变量的值更改消息缓存区的大小，但必须同时修改服务器和客户端程序。例如，可以使用 
+			<strong><span>mysql</span></strong>和<strong><span>mysqldump</span></strong>来更改客户端的<span>max_allowed_packet</span>值。参见<a href="optimization.html#server-parameters" title="7.5.2. Tuning Server Parameters">7.5.2节，“调节服务器参数”</a>、<a href="client-side-scripts.html#mysql" title="8.3. mysql — The MySQL Command-Line Tool">8.3节，“mysql：MySQL命令行工具”</a>和<a href="client-side-scripts.html#mysqldump" title="8.8. mysqldump — A Database Backup Program">8.8节，“mysqldump：数据库备份程序”</a>。</p>
+			<p>每个<span>BLOB</span>或<span>TEXT</span>值分别由内部分配的对象表示。这与其它列类型形成对比，后者是当打开表时为每<span>1</span>列分配存储引擎。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="enum"></a>
+			11.4.4.&nbsp;ENUM类型</h3></div></div></div><a class="indexterm" name="id2853488"></a><a class="indexterm" name="id2853497"></a></div><div class="section"><div class="titlepage"><div><div>
+			<p>
+			<span>ENUM</span>是一个字符串对象，其值来自表创建时在列规定中显式枚举的一列值。</p>
+			<p>在某些情况下，<span>ENUM</span>值也可以为空字符串<span>(</span><span>&#39;&#39;</span><span>)</span>或<span>NULL</span>：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果你将一个非法值插入<span>ENUM</span><span>(</span>也就是说，允许的值列之外的字符串<span>)</span>，将插入空字符串以作为特殊错误值。该字符串与“普通”空字符串不同，该字符串有数值值<span>0</span>。后面有详细讨论。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果将<span>ENUM</span>列声明为允许<span>NULL</span>，<span>NULL</span>值则为该列的一个有效值，并且
+			默认值为<span>NULL</span>。如果<span>ENUM</span>列被声明为<span>NOT 
+			NULL</span>，其默认值为允许的值列的第<span>1</span>个元素。</p>
+			<p>每个枚举值有一个索引：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>来自列规定的允许的值列中的值从<span>1</span>开始编号。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>空字符串错误值的索引值是<span>0</span>。这说明你可以使用下面的<span>SELECT</span>语句来找出分配了非法<span>ENUM</span>值的行：</p>
+			<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; </span><span><b><span>SELECT * FROM <i>tbl_name</i> WHERE <i>enum_col</i>=0;</span></b></span></pre>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>
+			<span>NULL</span>值的索引是<span>NULL</span>。</p>
+			<p>例如，定义为<span>ENUM</span>的列<span><span>(&#39;one&#39;</span><span>，<span>&#39;two&#39;</span>，<span>&#39;three&#39;)</span></span></span>可以有下面所示任何值。还显示了每个值的索引：</p>
+			<table border="1" cellpadding="0" id="table4">
+				<tr>
+					<td>
+					<p><strong><span>值</span></strong></td>
+					<td>
+					<p><strong><span>索引</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>NULL</span></td>
+					<td>
+					<p>
+					<span>NULL</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;&#39;</span></td>
+					<td>
+					<p><span>0</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;one&#39;</span></td>
+					<td>
+					<p><span>1</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;two&#39;</span></td>
+					<td>
+					<p><span>2</span></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>&#39;three&#39;</span></td>
+					<td>
+					<p><span>3</span></td>
+				</tr>
+			</table>
+			<p>
+			枚举最多可以有<span>65,535</span>个元素。</p>
+			<p>
+			当创建表时，<span>ENUM</span>成员值的尾部空格将自动被删除。</p>
+			<p>当检索时，保存在<span>ENUM</span>列的值使用列定义中所使用的大小写来显示。请注意可以为<span>ENUM</span>列分配字符集和
+			校对规则。对于二进制或大小写敏感的校对规则，当为列分配值时应考虑大小写。</p>
+			<p>如果在数值上下文中检索一个<span>ENUM</span>值，将返回列值的索引。例如，你可以这样从<span>ENUM</span>列搜索数值值：</p>
+			<pre><span>mysql&gt; </span><span><b><span>SELECT <i>enum_col</i>+0 FROM <i>tbl_name</i>;</span></b></span></pre>
+			<p>如果将一个数字保存到<span>ENUM</span>列，数字被视为索引，并且保存的值是该索引对应的枚举成员。<span>(</span>但是，这不适合<span>LOAD 
+			DATA</span>，它将所有输入视为字符串）<span>。</span>不建议使用类似数字的枚举值来定义一个<span>ENUM</span>列，因为这很容易引起混淆。例如，下面的列含有字符串值<span><span>&#39;0&#39;</span><span>、<span>&#39;1&#39;</span></span></span>和<span>&#39;2&#39;</span>的枚举成员，但数值索引值为<span><span>1</span><span>、<span>2</span></span></span>和<span>3</span>：</p>
+			<pre><span>numbers ENUM(&#39;0&#39;,&#39;1&#39;,&#39;2&#39;)</span></pre>
+			<p>根据枚举成员在列定义中列出的顺序对<span>ENUM</span>值进行排序。<span>(</span>换句话说，<span>ENUM</span>值根据索引编号进行排序）<span>。</span>例如，对于<span><span>ENUM(&#39;a&#39;</span><span>，<span>&#39;b&#39;)</span></span></span>，<span>&#39;a&#39;</span>排在<span>&#39;b&#39;</span>前面，但对于<span><span>ENUM(&#39;b&#39;</span><span>，<span>&#39;a&#39;)</span></span></span>，<span>&#39;b&#39;</span>排在<span>&#39;a&#39;</span>前面。空字符串排在非空字符串前面，并且<span>NULL</span>值排在所有其它枚举值前面。要想防止意想不到的结果，按字母顺序规定<span>ENUM</span>列。还可以使用<span>GROUP 
+			BY&nbsp; CAST(col AS CHAR)</span>或<span>GROUP 
+			BY&nbsp; CONCAT(col)</span>来确保按照词汇对列进行排序而不是用索引数字。</p>
+			<p>如果你想要确定一个<span>ENUM</span>列的所有可能的值，使用<span>SHOW 
+			COLUMNS FROM <i>tbl_name</i> LIKE <i>enum_col</i></span>，并解析输出中第<span>2</span>列的<span>ENUM</span>定义。</p>
+			<h3 class="title"><a name="set"></a>
+			11.4.5.&nbsp;SET类型</h3></div></div></div><a class="indexterm" name="id2853953"></a><a class="indexterm" name="id2853962"></a></div></div><div class="section"><div class="titlepage"><div><div>
+		<p>
+		<span>
+		SET</span>是一个字符串对象，可以有零或多个值，其值来自表创建时规定的允许的一列值。指定包括多个<span>SET</span>成员的<span>SET</span>列值时各成员之间用逗号<span>(</span>‘<span>,</span>’<span>)</span>间隔开。这样<span>SET</span>成员值本身不能包含逗号。</p>
+		<p>例如，指定为<span>SET(&#39;one&#39;, 
+		&#39;two&#39;) NOT NULL</span>的列可以有下面的任何值：</p>
+		<pre><span>&#39;&#39;</span></pre>
+		<pre><span>&#39;one&#39;</span></pre>
+		<pre><span>&#39;two&#39;</span></pre>
+		<pre><span>&#39;one,two&#39;</span></pre>
+		<p>
+		<span>
+		SET</span>最多可以有<span>64</span>个不同的成员。</p>
+		<p>
+		当创建表时，<span>SET</span>成员值的尾部空格将自动被删除。</p>
+		<p>当检索时，保存在<span>SET</span>列的值使用列定义中所使用的大小写来显示。请注意可以为<span>SET</span>列分配字符集和
+		校对规则。对于二进制或大小写敏感的校对规则，当为列分配值时应考虑大小写。</p>
+		<p><span>MySQL</span>用数字保存<span>SET</span>值，所保存值的低阶位对应第<span>1</span>个<span>SET</span>成员。如果在数值上下文中检索一个<span>SET</span>值，检索的值的位设置对应组成列值的<span>SET</span>成员。例如，你可以这样从一个<span>SET</span>列检索数值值：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT <i>set_col</i>+0 FROM <i>tbl_name</i>;</span></b></span></pre>
+		<p>如果将一个数字保存到<span>SET</span>列中，数字中二进制表示中的位确定了列值中的<span>SET</span>成员。对于指定为<span>SET(&#39;a&#39;,&#39;b&#39;,&#39;c&#39;,&#39;d&#39;)</span>的列，成员有下面的十进制和二进制值：</p>
+		<table border="1" cellpadding="0" id="table5">
+			<tr>
+				<td>
+				<p>
+				<span>SET</span><strong><span>成员</span></strong></td>
+				<td>
+				<p><strong><span>十进制值</span></strong></td>
+				<td>
+				<p><strong><span>二进制值</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>&#39;a&#39;</span></td>
+				<td>
+				<p>
+				<span>1</span></td>
+				<td>
+				<p>
+				<span>0001</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>&#39;b&#39;</span></td>
+				<td>
+				<p>
+				<span>2</span></td>
+				<td>
+				<p>
+				<span>0010</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>&#39;c&#39;</span></td>
+				<td>
+				<p>
+				<span>4</span></td>
+				<td>
+				<p>
+				<span>0100</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>&#39;d&#39;</span></td>
+				<td>
+				<p>
+				<span>8</span></td>
+				<td>
+				<p>
+				<span>1000</span></td>
+			</tr>
+		</table>
+		<p>
+		<span>&nbsp;</span></p>
+		<p>
+		如果你为该列分配一个值<span>9</span>，其二进制形式为<span>1001</span>，因此第<span>1</span>个和第<span>4</span>个<span>SET</span>值成员<span>&#39;a&#39;</span>和<span>&#39;d&#39;</span>被选择，结果值为 
+		 
+		<span>
+		&#39;a,d&#39;</span>。</p>
+		<p>对于包含多个<span>SET</span>元素的值，当插入值时元素所列的顺序并不重要。在值中一个给定的元素列了多少次也不重要。当以后检索该值时，值中的每个元素出现一次，根据表创建时指定的顺序列出元素。例如，假定某个列指定为<span>SET(&#39;a&#39;,&#39;b&#39;,&#39;c&#39;,&#39;d&#39;)</span>：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE myset (col SET(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;));</span></b></span></pre>
+		<p>插入值<span><span>&#39;a,d&#39;</span><span>、<span>&#39;d,a&#39;</span>、<span>&#39;a,d,d&#39;</span>、<span>&#39;a,d,a&#39;</span></span></span>和<span>&#39;d,a,d&#39;</span><span>:
+		</span></p>
+		<pre><span>mysql&gt; </span><span><b><span>INSERT INTO myset (col) VALUES </span></b></span></pre>
+		<pre><span>-&gt; (&#39;a,d&#39;), (&#39;d,a&#39;), (&#39;a,d,a&#39;), (&#39;a,d,d&#39;), (&#39;d,a,d&#39;);</span></pre>
+		<pre><span>Query OK, 5 rows affected (0.01 sec)</span></pre>
+		<pre><span>Records: 5&nbsp; Duplicates: 0&nbsp; Warnings: 0</span></pre>
+		<p>当检索时所有这些值显示为 
+		<span>&#39;a,d&#39;</span>：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT col FROM myset;</span></b></span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| col&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>5 rows in set (0.04 sec)</span></pre>
+		<p>如果将<span>SET</span>列设置为一个不支持的值，则该值被忽略并发出警告：</p>
+		<pre><span>mysql&gt; </span><span><b><span>INSERT INTO myset (col) VALUES (&#39;a,d,d,s&#39;);</span></b></span></pre>
+		<pre><span>Query OK, 1 row affected, 1 warning (0.03 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SHOW WARNINGS;</span></b></span></pre>
+		<pre><span>+---------+------+------------------------------------------+</span></pre>
+		<pre><span>| Level&nbsp;&nbsp; | Code | Message&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+---------+------+------------------------------------------+</span></pre>
+		<pre><span>| Warning | 1265 | Data truncated for column &#39;col&#39; at row 1 |</span></pre>
+		<pre><span>+---------+------+------------------------------------------+</span></pre>
+		<pre><span>1 row in set (0.04 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT col FROM myset;</span></b></span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| col&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>| a,d&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>6 rows in set (0.01 sec)</span></pre>
+		<p>
+		<span>
+		SET</span>值按数字顺序排序。<span>NULL</span>值排在非<span>NULL</span><span>
+		</span>
+		<span>SET</span>值的前面。</p>
+		<p>通常情况，可以使用<span>FIND_IN_SET()</span>函数或<span>LIKE</span>操作符搜索<span>SET</span>值：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM <i>tbl_name</i> WHERE FIND_IN_SET(&#39;<i>value</i>&#39;,<i>set_col</i>)&gt;0;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM <i>tbl_name</i> WHERE <i>set_col</i> LIKE &#39;%<i>value</i>%&#39;;</span></b></span></pre>
+		<p>
+		第<span>1</span>个语句找出<span><i><span>SET_col</span></i></span>包含<i><span  >value</span></i><span> 
+		set</span>成员的行。第<span>2</span>个类似，但有所不同：它在其它地方找出<i><span  >set_col</span></i>包含<i><span  >value</span></i>的行，甚至是在另一个<span>SET</span>成员的子字符串中。</p>
+		<p>
+		下面的语句也是合法的：</p>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM <i>tbl_name</i> WHERE <i>set_col</i> &amp; 1;</span></b></span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>SELECT * FROM <i>tbl_name</i> WHERE <i>set_col</i> = &#39;<i>val1</i>,<i>val2</i>&#39;;</span></b></span></pre>
+		<p>
+		第<span>1</span>个语句寻找包含第<span>1</span>个<span>set</span>成员的值。第<span>2</span>个语句寻找一个确切匹配的值。应注意第<span>2</span>类的比较。将<span>set</span>值与<span>&#39;<i>val1</i>,<i>val2</i>&#39;</span>比较返回的结果与同<span>&#39;<i>val2</i>,<i>val1</i>&#39;</span>比较返回的结果不同。指定值时的顺序应与在列定义中所列的顺序相同。</p>
+		<p>
+		如果想要为<span>SET</span>列确定所有可能的值，使用<span  >SHOW 
+		COLUMNS FROM <i>tbl_name</i> LIKE <i>set_col</i></span>并解析输出中第<span>2</span>列的<span>SET</span>定义。</p>
+		<h2 class="title"><a name="storage-requirements"></a>
+		11.5.&nbsp;列类型存储需求</h2></div></div></div><a class="indexterm" name="id2854549"></a><a class="indexterm" name="id2854559"></a>
+		<p>
+		根据类别列出了<span>MySQL</span>支持的每个列类型的存储需求。</p>
+		<p>
+		<span>
+		MyISAM</span>表中行的最大大小为<span>65,534</span>字节。每个<span>BLOB</span>和<span>TEXT</span>列
+		账户只占其中的<span>5</span>至<span>9</span>个字节。</p>
+		<p>
+		如果<span>MyISAM</span>表包括变长列类型，记录格式也是可变长度。当创建表时，在某些条件下，<span>MySQL</span>可以将一个列从变长类型改为固定长度的类型或反之亦然。详细信息参见<a href="sql-syntax.html#silent-column-changes" title="13.1.5.1. Silent Column Specification Changes">13.1.5.1节，“沉寂的列规格变更”</a>。</p>
+		<p><strong><span>数值类型存储需求</span></strong></p>
+		<table border="1" cellpadding="0" id="table6">
+			<tr>
+				<td>
+				<p><strong><span>列类型</span></strong></td>
+				<td>
+				<p><strong><span>存储需求</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TINYINT</span></td>
+				<td>
+				<p><span>1</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>SMALLINT</span></td>
+				<td>
+				<p><span>2</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>MEDIUMINT</span></td>
+				<td>
+				<p><span>3</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>INT</span><span>,
+				</span>
+				<span>INTEGER</span></td>
+				<td>
+				<p><span>4</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>BIGINT</span></td>
+				<td>
+				<p><span>8</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>FLOAT(<i>p</i>)</span></td>
+				<td>
+				<p>如果<span>0 &lt;= </span>
+				<span><i>
+				<span>p</span></i></span><span> 
+				&lt;= 24</span>为<span>4</span>个字节<span>,
+				</span>如果<span>25 &lt;= </span>
+				<span><i>
+				<span>p</span></i></span><span> 
+				&lt;= 53</span>为<span>8</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>FLOAT</span></td>
+				<td>
+				<p><span>4</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>DOUBLE [PRECISION]</span><span>, 
+				item </span>
+				<span>REAL</span></td>
+				<td>
+				<p><span>8</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>DECIMAL(<i>M</i>,<i>D</i>)</span><span>,
+				</span>
+				<span>NUMERIC(<i>M</i>,<i>D</i>)</span></td>
+				<td>
+				<p>变长；参见下面的讨论</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>BIT(<i>M</i>)</span></td>
+				<td>
+				<p>大约<span>(</span><span><i><span>M</span></i></span><span>+7)/8</span>个字节</td>
+			</tr>
+		</table>
+		<p>
+		<span>
+		DECIMAL</span><span>(</span>和<span>NUMERIC</span><span>)</span>的存储需求与具体版本有关：</p>
+		<p>使用二进制格式将<span>9</span>个十进制<span>(</span>基于<span>10)</span>数压缩为<span>4</span>个字节来表示<span>DECIMAL</span>列值。每个值的整数和分数部分的存储分别确定。每个<span>9</span>位数的倍数需要<span>4</span>个字节，并且“剩余的”位需要<span>4</span>个字节的一部分。下表给出了超出位数的存储需求：</p>
+		<table border="1" cellpadding="0" id="table7">
+			<tr>
+				<td>
+				<p><strong><span>剩余的</span></strong></td>
+				<td>
+				<p><strong><span>字节</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p><b>位数</b></td>
+				<td>
+				<p><strong><span>数目</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>0</span></td>
+				<td>
+				<p><span>0</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>1</span></td>
+				<td>
+				<p><span>1</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>2</span></td>
+				<td>
+				<p><span>1</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>3</span></td>
+				<td>
+				<p><span>2</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>4</span></td>
+				<td>
+				<p><span>2</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>5</span></td>
+				<td>
+				<p><span>3</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>6</span></td>
+				<td>
+				<p><span>3</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>7</span></td>
+				<td>
+				<p><span>4</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>8</span></td>
+				<td>
+				<p><span>4</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>9</span></td>
+				<td>
+				<p><span>4</span></td>
+			</tr>
+		</table>
+		<p><strong><span>日期和时间类型的存储需求</span></strong></p>
+		<table border="1" cellpadding="0" id="table8">
+			<tr>
+				<td>
+				<p><strong><span>列类型</span></strong></td>
+				<td>
+				<p><strong><span>存储需求</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>DATE</span></td>
+				<td>
+				<p><span>3</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>DATETIME</span></td>
+				<td>
+				<p><span>8</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TIMESTAMP</span></td>
+				<td>
+				<p><span>4</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TIME</span></td>
+				<td>
+				<p><span>3</span>个字节</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>YEAR</span></td>
+				<td>
+				<p><span>1</span>个字节</td>
+			</tr>
+		</table>
+		<p><strong><span>字符串类型的存储需求</span></strong></p>
+		<table border="1" cellpadding="0" id="table9">
+			<tr>
+				<td>
+				<p><strong><span>列类型</span></strong></td>
+				<td>
+				<p><strong><span>存储需求</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>CHAR(<i>M</i>)</span></td>
+				<td>
+				<p><span><i>
+				<span>M</span></i></span>个字节，<span>0
+				</span>
+				<span>&lt;= <i>M</i> &lt;=</span><span> 
+				255</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>VARCHAR(<i>M</i>)</span></td>
+				<td>
+				<p><span><i>
+				<span>L</span></i></span><span>+1</span>个字节，其中<span><i><span>L</span></i><span> 
+				&lt;= <i>M </i></span></span>且<span>0 </span>
+				<span>&lt;= <i>M</i> &lt;=</span><span> 
+				65535(</span>参见下面的注释<span>)</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>BINARY(<i>M</i>)</span></td>
+				<td>
+				<p><span><i>
+				<span>M</span></i></span>个字节，<span>0
+				</span>
+				<span>&lt;= <i>M</i> &lt;=</span><span> 
+				255</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>VARBINARY(<i>M</i>)</span></td>
+				<td>
+				<p><span><i>
+				<span>L</span></i></span><span>+1</span>个字节，其中<span><i><span>L</span></i><span> 
+				&lt;= <i>M </i></span></span>且<span>0 </span>
+				<span>&lt;= <i>M</i> &lt;=</span><span> 
+				255</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>TINYBLOB</span><span>,
+				</span>
+				<span>TINYTEXT</span></td>
+				<td>
+				<p><span><i>
+				<span>L</span></i></span><span>+1</span>个字节，其中<span><i><span>L</span></i></span><span> 
+				&lt; 2<sup>8</sup></span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>BLOB</span><span>,
+				</span>
+				<span>TEXT</span></td>
+				<td>
+				<p><span><i>
+				<span>L</span></i></span><span>+2</span>个字节，其中<span><i><span>L</span></i></span><span> 
+				&lt; 2<sup>16</sup></span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>MEDIUMBLOB</span><span>,
+				</span>
+				<span>MEDIUMTEXT</span></td>
+				<td>
+				<p><span><i>
+				<span>L</span></i></span><span>+3</span>个字节，其中<span><i><span>L</span></i></span><span> 
+				&lt; 2<sup>24</sup></span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>LONGBLOB</span><span>,
+				</span>
+				<span>LONGTEXT</span></td>
+				<td>
+				<p><span><i>
+				<span>L</span></i></span><span>+4</span>个字节，其中<span><i><span>L</span></i></span><span> 
+				&lt; 2<sup>32</sup></span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>ENUM(&#39;<i>value1</i>&#39;,&#39;<i>value2</i>&#39;,...)</span></td>
+				<td>
+				<p><span>1</span>或<span>2</span>个字节，取决于枚举值的个数<span>(</span>最多<span>65,535</span>个值<span>)</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>SET(&#39;<i>value1</i>&#39;,&#39;<i>value2</i>&#39;,...)</span></td>
+				<td>
+				<p><span>1</span>、<span>2</span>、<span>3</span>、<span>4</span>或者<span>8</span>个字节，取决于<span>set</span>成员的数目<span>(</span>最多<span>64</span>个成员<span>)</span></td>
+			</tr>
+		</table>
+		<p>
+		<span>
+		VARCHAR</span>、<span>BLOB</span>和<span>TEXT</span>类是变长类型。每个类型的存储需求取决于列值的实际长度<span>(</span>用前面的表中的<span><i><span>L</span></i></span>表示<span>)</span>，而不是该类型的最大可能的大小。例如，<span>VARCHAR(10)</span>列可以容纳最大长度为<span>10</span>的字符串。实际存储需求是字符串<span>(</span><span><i><span>L</span></i></span><span>)</span>的长度，加上一个记录字符串长度的字节。对于字符串<span>&#39;abcd&#39;</span>，<span><i><span>L</span></i></span>是<span>4</span>，存储需要<span>5</span>个字节。</p>
+		<p>对于<span>CHAR</span>、<span>VARCHAR</span>和<span>TEXT</span>类型，前面的表中的值<span><i><span>L</span></i></span>和<span><i><span>M</span></i></span>应解释为字符数目，并且列定义中的这些类型的长度表示字符数目。例如，要想保存一个<span>TINYTEXT</span>值需要<span><i><span>L</span></i></span>字符<span>+ 
+		1</span>个字节。</p>
+		<p>
+		要想计算用于保存具体<span><span>CHAR</span><span>、<span>VARCHAR</span></span></span>或者<span>TEXT</span>列值的字节数，需要考虑该列使用的字符集。在具体情况中，当使用<span>Unicode</span>时，必须记住所有<span>Unicode</span>字符使用相同的字节数。为了细分用于不同类<span>Unicode</span>字符使用的存储，参见<a href="charset.html#charset-unicode" title="10.5. Unicode Support">10.5节，“Unicode支持”</a>。</p>
+		<p><strong><span>注释：</span></strong><span>VARCHAR</span>列的<em><span>有效</span></em>最大长度为<span>65,532</span>字符。</p>
+		<p>
+		<span>
+		NDBCLUSTER</span>引擎只支持固定宽度的列。这说明<span>MySQL</span>簇中的表中的<span>VARCHAR</span>列的行为如同类型<span>CHAR</span><span>(</span>不同的是每个记录仍然有一个额外字节空间<span>)</span>。例如，在<span>Cluster</span>表中，声明为<span>VARCHAR(100)</span>的列中的<em><span>每个</span></em>记录存储时将占用<span>101</span>个字节，无论实际存储的记录中的字符串的长度为多少。</p>
+		<p>
+		<span>BLOB</span>和<span>TEXT</span>类需要<span> 
+		1</span>、<span>2</span>、<span>3</span>或者<span>4</span>个字节来记录列值的长度，取决于该类的最大可能的长度。参见<a href="column-types.html#blob" title="11.4.3. The BLOB and TEXT Types">11.4.3节，“BLOB和TEXT类型<code class="literal"></code>”</a>。</p>
+		<p>在<span>NDB Cluster</span>存储引擎中，<span>TEXT</span>和<span>BLOB</span>列的实施是不同的，其中<span>TEXT</span>列中的每个记录由两个单独部分组成。一个是固定大小<span>(256</span>字节<span>)</span>，并且实际上保存在原表中。另一个包括超出<span>256</span>字节的任何数据，保存在隐含的表中。第<span>2</span>个表中的记录总是<span>2,000</span>字节长。这说明如果<span><i><span>size</span></i></span><span>&lt;= 
+		256</span>，<span>TEXT</span>列的大小为<span>256(</span>其中<span><i><span>size</span></i></span>表示记录的大小<span>)</span>；否则，大小是<span>256 
+		+</span><span><i><span>size</span></i></span><span>+(2000</span>–<span>(</span><span><i><span>size</span></i></span>–<span>256)%2000)</span>。</p>
+		<p>
+		<span>
+		ENUM</span>对象的大小由不同的枚举值的数目确定。枚举用一个字节，可以有<span>255</span>个可能的值。当枚举的值位于<span>256</span>和<span>65,535</span>之间时，用两个字节。参见<a href="column-types.html#enum" title="11.4.4. The ENUM Type">11.4.4节，“ENUM类型”</a>。</p>
+		<p>
+		<span>SET</span>对象的大小由不同的<span>set</span>成员的数量确定。如果<span>set</span>大小是<span><i><span>N</span></i></span>，对象占<span>(<i>N</i>+7)/8</span>个字节，四舍五入到<span>1</span>、<span>2</span>、<span>3</span>、<span>4</span>或者<span>8</span>个字节。<span>SET</span>最多可以有<span>64</span>个成员。参见<a href="column-types.html#set" title="11.4.5. The SET Type">11.4.5节，“SET类型”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="choosing-types"></a>
+		11.6.&nbsp;选择正确的列类型</h2></div></div></div><a class="indexterm" name="id2855781"></a><a class="indexterm" name="id2855792"></a>
+		<p>
+		为了优化存储，在任何情况下均应使用最精确的类型。例如，如果列的值的范围为从<span>1</span>到<span>99999</span>，若使用整数，则<span>MEDIUMINT 
+		UNSIGNED</span>是好的类型。在所有可以表示该列值的类型中，该类型使用的存储最少。</p>
+		<p>
+		用精度为<span>65</span>位十进制数<span>(</span>基于<span>10)</span>对<span>DECIMAL</span><span>
+		</span>列进行所有基本计算<span>(</span><span><span>+</span><span>、<span>-</span>、<span>*</span>、<span>/</span></span></span><span>)</span>。参见<a href="column-types.html#numeric-type-overview" title="11.1.1. Overview of Numeric Types">11.1.1节，“数值类型概述”</a>。</p>
+		<p>使用双精度操作对<span>DECIMAL</span>值进行计算。如果准确度不是太重要或如果速度为最高优先级，<span>DOUBLE</span>类型即足够了。为了达到高精度，可以转换到保存在<span>BIGINT</span>中的定点类型。这样可以用<span>64</span>位整数进行所有计算，根据需要将结果转换回浮点值。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="other-vendor-column-types"></a>
+		11.7.&nbsp;使用来自其他数据库引擎的列类型</h2></div></div></div><a class="indexterm" name="id2855869"></a><a class="indexterm" name="id2855879"></a><a class="indexterm" name="id2855890"></a><a class="indexterm" name="id2855900"></a><a class="indexterm" name="id2855912"></a>
+		<p>为了使用由其它卖方编写的<span>SQL</span>执行代码，<span>MySQL</span>按照下表所示对列类型进行映射。通过这些映射，可以很容易地从其它数据库引擎将表定义导入到<span>MySQL</span>中：</p>
+		<table border="1" cellpadding="0" id="table10">
+			<tr>
+				<td>
+				<p><strong><span>其它卖方类型</span></strong></td>
+				<td>
+				<p><strong>
+				<span>MySQL</span><span>类型</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>BOOL</span><span>,</span></td>
+				<td>
+				<p>
+				<span>TINYINT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>BOOLEAN</span></td>
+				<td>
+				<p>
+				<span>TINYINT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>CHAR VARYING(<i>M</i>)</span></td>
+				<td>
+				<p>
+				<span>VARCHAR(<i>M</i>)</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>DEC</span></td>
+				<td>
+				<p>
+				<span>DECIMAL</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>FIXED</span></td>
+				<td>
+				<p>
+				<span>DECIMAL</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>FLOAT4</span></td>
+				<td>
+				<p>
+				<span>FLOAT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>FLOAT8</span></td>
+				<td>
+				<p>
+				<span>DOUBLE</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>INT1</span></td>
+				<td>
+				<p>
+				<span>TINYINT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>INT2</span></td>
+				<td>
+				<p>
+				<span>SMALLINT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>INT3</span></td>
+				<td>
+				<p>
+				<span>MEDIUMINT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>INT4</span></td>
+				<td>
+				<p>
+				<span>INT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>INT8</span></td>
+				<td>
+				<p>
+				<span>BIGINT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>LONG VARBINARY</span></td>
+				<td>
+				<p>
+				<span>MEDIUMBLOB</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>LONG VARCHAR</span></td>
+				<td>
+				<p>
+				<span>MEDIUMTEXT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>LONG</span></td>
+				<td>
+				<p>
+				<span>MEDIUMTEXT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>MIDDLEINT</span></td>
+				<td>
+				<p>
+				<span>MEDIUMINT</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>NUMERIC</span></td>
+				<td>
+				<p>
+				<span>DECIMAL</span></td>
+			</tr>
+		</table>
+		<p>在创建表时对列类型进行映射，然后原来的类型定义被丢弃。如果你使用其它卖方的类型创建一个表，然后执行<span>DESCRIBE
+		<i>tbl_name</i></span>语句，<span>MySQL</span>使用等效的<span>MySQL</span>类型来报告表的结构。例如：</p>
+		<pre><span>mysql&gt; </span><span><b><span>CREATE TABLE t (a BOOL, b FLOAT8, c LONG, d NUMERIC);</span></b></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.08 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; </span><span><b><span>DESCRIBE t;</span></b></span></pre>
+		<pre><span>+-------+---------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| Field | Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Null | Key | Default | Extra |</span></pre>
+		<pre><span>+-------+---------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| a&nbsp;&nbsp;&nbsp;&nbsp; | tinyint(1)&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| b&nbsp;&nbsp;&nbsp;&nbsp; | double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| c&nbsp;&nbsp;&nbsp;&nbsp; | mediumtext&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| d&nbsp;&nbsp;&nbsp;&nbsp; | decimal(10,0) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-------+---------------+------+-----+---------+-------+</span></pre>
+		<pre><span>4 rows in set (0.00 sec)</span></pre>
+	</div></div><div><hr><p>
+      这是MySQL参考手册的翻译版本，关于MySQL参考手册，<span class="GramE">请访问</span><a target="_top" href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。 
+		原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</p></div>
+</body></html>

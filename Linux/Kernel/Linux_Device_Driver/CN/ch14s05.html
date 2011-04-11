@@ -1,0 +1,186 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>14.5.&#160;类-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch14.html" title="第&#160;14&#160;章&#160;Linux 设备模型">
+<link rel="prev" href="ch14s04.html" title="14.4.&#160;总线, 设备, 和驱动">
+<link rel="next" href="ch14s06.html" title="14.6.&#160;集成起来">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">14.5.&#160;类</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch14s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;14&#160;章&#160;Linux 设备模型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch14s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="Classes.sect1"></a>14.5.&#160;类</h2></div></div></div>
+<p>我们在本章中要考察最后的设备模型概念是类.一个类是一个设备的高级视图, 它抽象出低级的实现细节. 驱动可以见到一个SCSI 磁盘或者一个 ATA 磁盘, 在类的级别, 它们都是磁盘. 类允许用户空间基于它们做什么来使用设备, 而不是它们如何被连接或者它们如何工作.</p>
+<p>几乎所有的类都在 sysfs 中在 /sys/class 下出现. 因此, 例如, 所有的网络接口可在 /sys/class/net 下发现, 不管接口类型. 输入设备可在 /sys/class/input 下, 以及串行设备在 /sys/class/tty. 一个例外是块设备, 由于历史的原因在 /sys/block. </p>
+<p>类成员关系常常由高级的代码处理, 不必要驱动的明确的支持. 当 sbull 驱动( 见 16 章) 创建一个虚拟磁盘设备, 它自动出现在 /sys/block. snull 网络驱动(见 17 章)没有做任何特殊事情给它的接口在 /sys/class/net 中出现. 将有多次, 但是, 当驱动结束直接处理类.</p>
+<p>在许多情况, 类子系统是最好的输出信息到用户空间的方法. 当一个子系统创建一个类, 它完全拥有这个类, 因此没有必要担心哪个模块拥有那里发现的属性. 它也用极少的时间徘徊于更加面向硬件的 sysfs 部分来了解, 它不是一个直接浏览的好地方. 用户会更加高兴地在 /sys/class/some-widget 中发现信息, 而不是, /sys/device/pci0000:00/0000:00:10.0/usb2/2-0:1.0.</p>
+<p>驱动核心输出 2 个清晰的接口来管理类. class_simple 函数设计来尽可能容易地添加新类到系统. 它们的主要目的, 常常, 是暴露包含设备号的属性来使能设备节点的自动创建. 常用的类接口更加复杂但是同时提供更多特性. 我们从简单版本开始.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheclasssimpleInterface.sect2"></a>14.5.1.&#160;class_simple 接口</h3></div></div></div>
+<p>class_simple 接口意图是易于使用, 以至于没人会抱怨没有暴露至少一个包含设备的被分配的号的属性. 使用这个接口只不过是一对函数调用, 没有通常的和 Linux 设备模型关联的样板.</p>
+<p>第一步是创建类自身. 使用一个对 class_simple_create 的调用来完成:</p>
+<pre class="programlisting">
+struct class_simple *class_simple_create(struct module *owner, char *name);
+</pre>
+<p>这个函数使用给定的名子创建一个类. 这个操作可能失败, 当然, 因此在继续之前返回值应当一直被检查( 使用 IS_ERR, 在第 1 章的"指针和错误值"一节中描述过).</p>
+<p>一个简单的类可被销毁, 使用:</p>
+<pre class="programlisting">
+void class_simple_destroy(struct class_simple *cs); 
+</pre>
+<p>创建一个简单类的真实目的是添加设备给它; 这个任务使用:</p>
+<pre class="programlisting">
+struct class_device *class_simple_device_add(struct class_simple *cs, dev_t devnum, struct device *device, const char *fmt, ...); 
+</pre>
+<p>这里, cs 是之前创建的简单类, devnum 是分配的设备号, device 是代表这个设备的 struct device, 其他的参数是一个 printk-风格 的格式串和参数来创建设备名子. 这个调用添加一项到类, 包含一个属性, dev, 含有设备号. 如果设备参数是非 NULL, 一个符号连接( 称为 device )指向在 /sys/devices 下的设备的入口.</p>
+<p>可能添加其他的属性到设备入口. 它只是使用 class_device_create_file, 我们在下一节和完整类子系统所剩下的内容讨论.</p>
+<p>当设备进出时类产生热插拔事件. 如果你的驱动需要添加变量到环境中给用户空间事件处理者, 可以建立一个热插拔回调, 使用:</p>
+<pre class="programlisting">
+int class_simple_set_hotplug(struct class_simple *cs,
+ int (*hotplug)(struct class_device *dev,
+ char **envp, int num_envp,
+ char *buffer, int buffer_size)); 
+</pre>
+<p>当你的设备离开时, 类入口应当被去除, 使用:</p>
+<pre class="programlisting">
+void class_simple_device_remove(dev_t dev); 
+</pre>
+<p>注意, 由 class_simple_device_add 返回的 class_device 结构这里不需要; 设备号(它当然应当是唯一的)足够了.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheFullClassInterface.sect2"></a>14.5.2.&#160;完整的类接口</h3></div></div></div>
+<p>class_simple 接口满足许多需要, 但是有时需要更多灵活性. 下面的讨论描述如何使用完整的类机制, class_simple 正是基于此. 它是简短的: 类函数和结构遵循设备模型其他部分相同的模式, 因此这里没有什么真正是新的.</p>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Managingclasses.sect3"></a>14.5.2.1.&#160;管理类</h4></div></div></div>
+<p>一个类由一个 struct class 的实例来定义:</p>
+<pre class="programlisting">
+struct class {
+ char *name;
+ struct class_attribute *class_attrs;
+ struct class_device_attribute *class_dev_attrs;
+ int (*hotplug)(struct class_device *dev, char **envp,
+ int num_envp, char *buffer, int buffer_size);
+ void (*release)(struct class_device *dev);
+ void (*class_release)(struct class *class);
+ /* Some fields omitted */
+};
+</pre>
+<p>每个类需要一个唯一的名子, 它是这个类如何在 /sys/class 中出现. 当这个类被注册, 由 class_attrs 所指向的数组中列出的所有属性被创建. 还有一套缺省属性给每个添加到类中的设备; class_dev_attrs 指向它们. 有通常的热插拔函数来添加变量到环境中, 当事件产生时. 还有 2 个释放方法: release 在无论何时从类中去除一个设备时被调用, 而 class_release 在类自己被释放时调用.</p>
+<p>注册函数是:</p>
+<pre class="programlisting">
+int class_register(struct class *cls);
+void class_unregister(struct class *cls);
+</pre>
+<p>使用属性的接口不应当在这点吓人:</p>
+<pre class="programlisting">
+struct class_attribute {
+ struct attribute attr;
+ ssize_t (*show)(struct class *cls, char *buf);
+ ssize_t (*store)(struct class *cls, const char *buf, size_t count); 
+}; 
+CLASS_ATTR(name, mode, show, store); 
+int class_create_file(struct class *cls, const struct class_attribute *attr);
+void class_remove_file(struct class *cls, const struct class_attribute *attr);
+</pre>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Classdevices.sect3"></a>14.5.2.2.&#160;类设备</h4></div></div></div>
+<p>一个类的真正目的是作为一个是该类成员的设备的容器. 一个成员由 struct class_device 来表示:</p>
+<pre class="programlisting">
+struct class_device {
+struct kobject kobj;
+struct class *class;
+struct device *dev;
+void *class_data;
+char class_id[BUS_ID_SIZE];
+
+ };
+</pre>
+<p>class_id 成员持有设备名子, 如同它在 sysfs 中的一样. class 指针应当指向持有这个设备的类, 并且 dev 应当指向关联的设备结构. 设置 dev 是可选的; 如果它是非 NULL, 它用来创建一个符号连接从类入口到对应的在 /sys/devices 下的入口, 使得易于在用户空间找到设备入口. 类可以使用 class_data 来持有一个私有指针.</p>
+<p>通常的注册函数已经被提供:</p>
+<pre class="programlisting">
+int class_device_register(struct class_device *cd);
+void class_device_unregister(struct class_device *cd);
+</pre>
+<p>类设备接口也允许重命名一个已经注册的入口:</p>
+<pre class="programlisting">
+int class_device_rename(struct class_device *cd, char *new_name); 
+</pre>
+<p>类设备入口有属性:</p>
+<pre class="programlisting">
+struct class_device_attribute {
+ struct attribute attr;
+ ssize_t (*show)(struct class_device *cls, char *buf);
+ ssize_t (*store)(struct class_device *cls, const char *buf,
+ size_t count);
+};
+
+CLASS_DEVICE_ATTR(name, mode, show, store); 
+int class_device_create_file(struct class_device *cls, const struct class_device_attribute *attr);
+void class_device_remove_file(struct class_device *cls, const struct class_device_attribute *attr);
+</pre>
+<p>一个缺省的属性集合, 在类的 class_dev_attrs 成员, 被创建当类设备被注册时; class_device_create_file 可用来创建额外的属性. 属性还可以被加入到由 class_simple 接口创建的类设备.</p>
+</div>
+<div class="sect3" lang="zh-cn">
+<div class="titlepage"><div><div><h4 class="title">
+<a name="Classinterfaces.sect3"></a>14.5.2.3.&#160;类接口</h4></div></div></div>
+<p>类子系统有一个额外的在 Linux 设备模型其他部分找不到的概念. 这个机制称为一个接口, 但是它是, 也许, 最好作为一种触发机制可用来在设备进入或离开类时得到通知.</p>
+<p>一个接口被表示, 使用:</p>
+<pre class="programlisting">
+struct class_interface {
+ struct class *class;
+ int (*add) (struct class_device *cd);
+ void (*remove) (struct class_device *cd); 
+}; 
+</pre>
+<p>接口可被注册或注销, 使用:</p>
+<pre class="programlisting">
+int class_interface_register(struct class_interface *intf);
+void class_interface_unregister(struct class_interface *intf);
+</pre>
+<p>一个接口的功能是简单明了的. 无论何时一个类设备被加入到在 class_interface 结构中指定的类时, 接口的 add 函数被调用. 这个函数可进行任何额外的这个设备需要的设置; 这个设置常常采取增加更多属性的形式, 但是其他的应用都可能. 当设备被从类中去除, remove 方法被调用来进行任何需要的清理.</p>
+<p>可注册多个接口给一个类.</p>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch14s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch14.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch14s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">14.4.&#160;总线, 设备, 和驱动&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;14.6.&#160;集成起来</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

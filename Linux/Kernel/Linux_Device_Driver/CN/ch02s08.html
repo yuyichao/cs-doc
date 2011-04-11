@@ -1,0 +1,96 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>2.8.&#160;模块参数-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="prev" href="ch02s07.html" title="2.7.&#160;初始化和关停">
+<link rel="next" href="ch02s09.html" title="2.9.&#160;在用户空间做">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">2.8.&#160;模块参数</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch02s07.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;2&#160;章&#160;建立和运行模块</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s09.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ModuleParameters.sect1"></a>2.8.&#160;模块参数</h2></div></div></div>
+<p>驱动需要知道的几个参数因不同的系统而不同. 从使用的设备号( 如我们在下一章见到的 )到驱动应当任何操作的几个方面. 例如, SCSI 适配器的驱动常常有选项控制标记命令队列的使用, IDE 驱动允许用户控制 DMA 操作. 如果你的驱动控制老的硬件, 还需要被明确告知哪里去找硬件的 I/O 端口或者 I/O 内存地址. 内核通过在加载驱动的模块时指定可变参数的值, 支持这些要求.  </p>
+<p> 这些参数的值可由 insmod 或者 modprobe 在加载时指定; 后者也可以从它的配置文件(/etc/modprobe.conf)读取参数的值. 这些命令在命令行里接受几类规格的值. 作为演示这种能力的一种方法, 想象一个特别需要的对本章开始的"hello world"模块(称为 hellop)的改进. 我们增加 2 个参数: 一个整型值, 称为 howmany, 一个字符串称为 whom. 我们的特别多功能的模块就在加载时, 欢迎 whom 不止一次, 而是 howmany 次. 这样一个模块可以用这样的命令行加载: </p>
+<pre class="screen">
+insmod hellop howmany=10 whom="Mom" 
+</pre>
+<p> 一旦以那样的方式加载, hellop 会说 "hello, Mom" 10 次.  </p>
+<p> 但是, 在 insmod 可以修改模块参数前, 模块必须使它们可用. 参数用 moudle_param 宏定义来声明, 它定义在 moduleparam.h. module_param 使用了 3 个参数: 变量名, 它的类型, 以及一个权限掩码用来做一个辅助的 sysfs 入口. 这个宏定义应当放在任何函数之外, 典型地是出现在源文件的前面. 因此 hellop 将声明它的参数, 并如下使得对 insmod 可用: </p>
+<pre class="programlisting">
+static char *whom = "world";
+static int howmany = 1;
+module_param(howmany, int, S_IRUGO);
+module_param(whom, charp, S_IRUGO);
+</pre>
+<p> 模块参数支持许多类型: </p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>bool </span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>invbool </span></span></dt>
+<dd><p>一个布尔型( true 或者 false)值(相关的变量应当是 int 类型). invbool 类型颠倒了值, 所以真值变成 false, 反之亦然.  </p></dd>
+<dt><span class="term"><span>charp </span></span></dt>
+<dd><p>一个字符指针值. 内存为用户提供的字串分配, 指针因此设置.  </p></dd>
+<dt><span class="term"><span>int</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>long</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>short</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>uint</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>ulong</span></span></dt>
+<dd></dd>
+<dt><span class="term"><span>ushort </span></span></dt>
+<dd><p>基本的变长整型值. 以 u 开头的是无符号值.  </p></dd>
+</dl></div>
+<p>数组参数, 用逗号间隔的列表提供的值, 模块加载者也支持. 声明一个数组参数, 使用:</p>
+<pre class="programlisting">
+module_param_array(name,type,num,perm);
+</pre>
+<p>这里 name 是你的数组的名子(也是参数名), type 是数组元素的类型, num 是一个整型变量, perm 是通常的权限值. 如果数组参数在加载时设置, num 被设置成提供的数的个数. 模块加载者拒绝比数组能放下的多的值.</p>
+<p> 如果你确实需要一个没有出现在上面列表中的类型, 在模块代码里有钩子会允许你来定义它们; 任何使用它们的细节见 moduleparam.h. 所有的模块参数应当给定一个缺省值; insmod 只在用户明确告知它的时候才改变这些值. 模块可检查明显的参数, 通过对应它们的缺省值检查这些参数.  </p>
+<p> 最后的 module_param 字段是一个权限值; 你应当使用 &lt;linux/stat.h&gt; 中定义的值. 这个值控制谁可以存取这些模块参数在 sysfs 中的表示. 如果 perm 被设为 0, 就根本没有 sysfs 项. 否则, 它出现在 /sys/module<sup>[<a name="id410890" href="ch02s08.html#ftn.id410890">5</a>]</sup> 下面, 带有给定的权限. 使用 S_IRUGO 作为参数可以被所有人读取, 但是不能改变; S_IRUGO|S_IWUSR 允许 root 来改变参数. 注意, 如果一个参数被 sysfs 修改, 你的模块看到的参数值也改变了, 但是你的模块没有任何其他的通知. 你应当不要使模块参数可写, 除非你准备好检测这个改变并且因而作出反应.</p>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id410890" href="ch02s08.html#id410890">5</a>] </sup> 然而, 在本书写作时, 有讨论将参数移出 sysfs.  </p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch02s07.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch02.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s09.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">2.7.&#160;初始化和关停&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.9.&#160;在用户空间做</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

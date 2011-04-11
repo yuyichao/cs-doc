@@ -1,0 +1,181 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>4.5.&#160;调试系统故障-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch04.html" title="第&#160;4&#160;章&#160;调试技术">
+<link rel="prev" href="ch04s04.html" title="4.4.&#160;使用观察来调试">
+<link rel="next" href="ch04s06.html" title="4.6.&#160;调试器和相关工具">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">4.5.&#160;调试系统故障</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch04s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;4&#160;章&#160;调试技术</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch04s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="DebuggingSystemFaults.sect"></a>4.5.&#160;调试系统故障</h2></div></div></div>
+<p>即便你已使用了所有的监视和调试技术, 有时故障还留在驱动里, 当驱动执行时系统出错. 当发生这个时, 能够收集尽可能多的信息来解决问题是重要的.</p>
+<p>注意"故障"不意味着"崩溃". Linux 代码是足够健壮地优雅地响应大部分错误:一个故障常常导致当前进程的破坏而系统继续工作. 系统可能崩溃, 如果一个故障发生在一个进程的上下文之外, 或者如果系统的一些至关重要的部分毁坏了. 但是当是一个驱动错误导致的问题, 它常常只会导致不幸使用驱动的进程的突然死掉. 当进程被销毁时唯一无法恢复的破坏是分配给进程上下文的一些内存丢失了; 例如, 驱动通过 kmalloc 分配的动态列表可能丢失. 但是, 因为内核为任何一个打开的设备在进程死亡时调用关闭操作, 你的驱动可以释放由 open 方法分配的东西.</p>
+<p>尽管一个 oops 常常都不会关闭整个系统, 你很有可能发现在发生一次后需要重启系统. 一个满是错误的驱动能使硬件处于不能使用的状态, 使内核资源处于不一致的状态, 或者, 最坏的情况, 在随机的地方破坏内核内存. 常常你可简单地卸载你的破驱动并且在一次 oops 后重试. 然而, 如果你看到任何东西建议说系统作为一个整体不太好了, 你最好立刻重启.</p>
+<p>我们已经说过, 当内核代码出错, 一个提示性的消息打印在控制台上. 下一节解释如何解释并利用这样的消息. 尽管它们对新手看来相当模糊, 处理器转储是很有趣的信息, 常常足够来查明一个程序错误而不需要附加的测试.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="OopsMessages.scet"></a>4.5.1.&#160;oops 消息</h3></div></div></div>
+<p>大部分 bug 以解引用 NULL 指针或者使用其他不正确指针值来表现自己的. 此类 bug 通常的输出是一个 oops 消息.</p>
+<p>处理器使用的任何地址几乎都是一个虚拟地址, 通过一个复杂的页表结构映射为物理地址(例外是内存管理子系统自己使用的物理地址). 当解引用一个无效的指针, 分页机制无法映射指针到一个物理地址, 处理器发出一个页错误给操作系统. 如果地址无效, 内核无法"页入"缺失的地址; 它(常常)产生一个 oops 如果在处理器处于管理模式时发生这个情况.</p>
+<p>一个 oops 显示了出错时的处理器状态, 包括CPU 寄存器内容和其他看来不可理解的信息. 消息由错误处理的 printk 语句产生( arch/*/kernel/traps.c )并且如同前面 "printk" 一节中描述的被分派.</p>
+<p>我们看一个这样的消息. 这是来自在运行 2.6 内核的 PC 上一个 NULL 指针导致的结果. 这里最相关的信息是指令指针(EIP), 错误指令的地址.</p>
+<pre class="screen">
+Unable to handle kernel NULL pointer dereference at virtual address 00000000
+ printing eip:  
+d083a064  
+Oops: 0002 [#1]  
+SMP  
+CPU:  0  
+EIP:  0060:[&lt;d083a064&gt;]  Not tainted  
+EFLAGS: 00010246  (2.6.6)  
+EIP is at faulty_write+0x4/0x10 [faulty]  
+eax: 00000000  ebx: 00000000  ecx: 00000000  edx: 00000000  
+esi: cf8b2460  edi: cf8b2480  ebp: 00000005  esp: c31c5f74  
+ds: 007b  es: 007b  ss: 0068  
+
+Process bash (pid: 2086, threadinfo=c31c4000 task=cfa0a6c0) 
+Stack: c0150558 cf8b2460 080e9408 00000005 cf8b2480 00000000 cf8b2460 cf8b2460 fffffff7 080e9408 c31c4000 c0150682 cf8b2460 080e9408 00000005 cf8b2480 00000000 00000001 00000005 c0103f8f 00000001 080e9408 00000005 00000005 
+Call Trace:
+ [&lt;c0150558&gt;] vfs_write+0xb8/0x130
+ [&lt;c0150682&gt;] sys_write+0x42/0x70
+ [&lt;c0103f8f&gt;] syscall_call+0x7/0xb
+
+Code: 89 15 00 00 00 00 c3 90 8d 74 26 00 83 ec 0c b8 00 a6 83 d0 
+</pre>
+<p>写入一个由坏模块拥有的设备而产生的消息, 一个故意用来演示失效的模块. faulty.c 的 write 方法的实现是琐细的:</p>
+<pre class="programlisting">
+ssize_t faulty_write (struct file *filp, const char __user *buf, size_t count, loff_t *pos)
+{
+        /* make a simple fault by dereferencing a NULL pointer */
+        *(int *)0 = 0;
+        return 0;
+}
+</pre>
+<p>如你能见, 我们这里做的是解引用一个 NULL 指针. 因为 0 一直是一个无效的指针值, 一个错误发生, 由内核转变为前面展示的 oops 消息. 调用进程接着被杀掉.</p>
+<p>错误模块有不同的错误情况在它的读实现中:</p>
+<pre class="programlisting">
+ssize_t faulty_read(struct file *filp, char __user *buf, size_t count, loff_t *pos)
+{
+    int ret;
+    char stack_buf[4];
+
+    /* Let's try a buffer overflow */
+    memset(stack_buf, 0xff, 20);
+    if (count &gt; 4)
+
+        count = 4; /* copy 4 bytes to the user */
+    ret = copy_to_user(buf, stack_buf, count);
+    if (!ret)
+
+        return count;
+    return ret;
+}
+</pre>
+<p>这个方法拷贝一个字串到一个本地变量; 不幸的是, 字串长于目的数组. 当函数返回时导致的缓存区溢出引起一次 oops . 因为返回指令使指令指针到不知何处, 这类的错误很难跟踪, 并且你得到如下的:</p>
+<pre class="programlisting">
+EIP: 0010:[&lt;00000000&gt;]
+Unable to handle kernel paging request at virtual address ffffffff
+
+ printing eip:  
+ffffffff  
+Oops: 0000 [#5]  
+SMP  
+CPU:  0  
+EIP:  0060:[&lt;ffffffff&gt;]  Not tainted  
+EFLAGS: 00010296  (2.6.6)  
+EIP is at 0xffffffff  
+eax: 0000000c  ebx: ffffffff  ecx: 00000000  edx: bfffda7c  
+esi: cf434f00  edi: ffffffff  ebp: 00002000  esp: c27fff78  
+ds: 007b  es: 007b  ss: 0068  
+
+Process head (pid: 2331, threadinfo=c27fe000 task=c3226150) 
+Stack: ffffffff bfffda70 00002000 cf434f20 00000001 00000286 cf434f00 fffffff7 bfffda70 c27fe000 c0150612 cf434f00 bfffda70 00002000 cf434f20 00000000 00000003 00002000 c0103f8f 00000003 bfffda70 00002000 00002000 bfffda70 
+Call Trace: [&lt;c0150612&gt;] sys_read+0x42/0x70 [&lt;c0103f8f&gt;] syscall_call+0x7/0xb 
+Code: Bad EIP value. 
+</pre>
+<p>这个情况, 我们只看到部分的调用堆栈( vfs_read 和 faulty_read 丢失 ), 内核抱怨一个"坏 EIP 值". 这个抱怨和在开头列出的犯错的地址 ( ffffffff ) 都暗示内核堆栈已被破坏.</p>
+<p>通常, 当你面对一个 oops, 第一件事是查看发生问题的位置, 常常与调用堆栈分开列出. 在上面展示的第一个 oops, 相关的行是:</p>
+<pre class="screen">
+EIP is at faulty_write+0x4/0x10 [faulty] 
+</pre>
+<p>这里我们看到, 我们曾在函数 faulty_write, 它位于 faulty 模块( 在方括号中列出的 ). 16 进制数指示指令指针是函数内 4 字节, 函数看来是 10 ( 16 进制 )字节长. 常常这就足够来知道问题是什么.</p>
+<p>如果你需要更多信息, 调用堆栈展示给你如何得知在哪里坏事的. 堆栈自己是 16 机制形式打印的; 做一点工作, 你经常可以从堆栈的列表中决定本地变量的值和函数参数. 有经验的内核开发者可以从这里的某些模式识别中获益; 例如, 如果你看来自 faulty_read oops 的堆栈列表:</p>
+<pre class="screen">
+Stack: ffffffff bfffda70 00002000 cf434f20 00000001 00000286 cf434f00 fffffff7
+ bfffda70 c27fe000 c0150612 cf434f00 bfffda70 00002000 cf434f20 00000000
+ 00000003 00002000 c0103f8f 00000003 bfffda70 00002000 00002000 bfffda70 
+</pre>
+<p>堆栈顶部的 ffffffff 是我们坏事的字串的一部分. 在 x86 体系, 缺省地, 用户空间堆栈开始于 0xc0000000; 因此, 循环值 0xbfffda70 可能是一个用户堆栈地址; 实际上, 它是传递给 read 系统调用的缓存地址, 每次下传过系统调用链时都被复制. 在 x86 (又一次, 缺省地), 内核空间开始于 0xc0000000, 因此这个之上的值几乎肯定是内核空间的地址, 等等.</p>
+<p>最后, 当看一个 oops 列表, 一直监视本章开始讨论的"slab 毒害"值. 例如,如果你得到一个内核 oops, 里面的犯错地址时 0xa5a5a5a5a5, 你几乎肯定 - 某个地方在初始化动态内存.</p>
+<p>请注意, 只在你的内核是打开 CONFIG_KALLSYMS 选项而编译时可以看到符号的调用堆栈. 否则, 你见到一个裸的, 16 机制列表, 除非你以别的方式对其解码, 它是远远无用的.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="SystemHange.sect"></a>4.5.2.&#160;系统挂起</h3></div></div></div>
+<p>尽管内核代码的大部分 bug 以 oops 消息结束, 有时候它们可能完全挂起系统. 如果系统挂起, 没有消息打印. 例如, 如果代码进入一个无限循环, 内核停止调度,<sup>[<a name="id422785" href="ch04s05.html#ftn.id422785">15</a>]</sup> 并且系统不会响应任何动作, 包括魔术 Ctrl-Alt-Del 组合键. 你有 2 个选择来处理系统挂起-- 或者事先阻止它们, 或者能够事后调试它们.</p>
+<p>你可阻止无限循环通过插入 schedule 引用在战略点上. schedule 调用( 如你可能猜到的 )调度器, 因此, 允许别的进程从当前进程偷取 CPU 数据. 如果一个进程由于你的驱动的bug而在内核空间循环, schedule 调用使你能够杀掉进程在跟踪发生了什么之后.</p>
+<p>你应当知道, 当然, 如何对 schedule 的调用可能创造一个附加的重入调用源到你的驱动, 因为它允许别的进程运行. 这个重入正常地不应当是问题, 假定你在你的驱动中已经使用了合适的加锁. 然而, 要确认在你的驱动持有一个自旋锁的任何时间不能调用 schedule.</p>
+<p>如果你的驱动真正挂起了系统, 并且你不知道在哪里插入 schedule 调用, 最好的方式是加入一些打印消息并且写到控制台(如果需要, 改变 console_loglevel 值).</p>
+<p>有时候系统可能看来被挂起, 但是没有. 例如, 这可能发生在键盘以某个奇怪的方式保持锁住的时候. 这些假挂起可通过查看你为此目的运行的程序的输出来检测. 一个你的显示器上的时钟或者系统负载表是一个好的状态监控器; 只要他继续更新, 调度器就在工作.</p>
+<p>对许多的上锁一个必不可少的工具是"魔术 sysrq 键", 在大部分体系上都可用. 魔键 sysrq 是 PC 键盘上 alt 和 sysrq 键组合来发出的, 或者在别的平台上使用其他特殊键(详见 documentation/sysrq.txt), 在串口控制台上也可用. 一个第三键, 与这 2 个一起按下, 进行许多有用的动作中的一个:</p>
+<p>r	关闭键盘原始模式; 用在一个崩溃的应用程序( 例如 X 服务器 )可能将你的键盘搞成一个奇怪的状态.</p>
+<p>k 调用"安全注意键"( SAK ) 功能. SAK 杀掉在当前控制台的所有运行的进程, 给你一个干净的终端.</p>
+<p>s 进行一个全部磁盘的紧急同步.</p>
+<p>u	umount. 试图重新加载所有磁盘在只读模式. 这个操作, 常常在 s 之后马上调用, 可以节省大量的文件系统检查时间, 在系统处于严重麻烦时.</p>
+<p>b boot. 立刻重启系统. 确认先同步和重新加载磁盘.</p>
+<p>p 打印处理器消息.</p>
+<p>t 打印当前任务列表.</p>
+<p>m 打印内存信息.</p>
+<p>有别的魔术 sysrq 功能存在; 完整内容看内核源码的文档目录中的 sysrq.txt. 注意魔术 sysrq 必须在内核配置中显式使能, 大部分的发布没有使能它, 因为明显的安全理由. 对于用来开发驱动的系统, 然而, 使能魔术 sysrq 值得为它自己建立一个新内核的麻烦. 魔术 sysrq 可能在运行时关闭, 使用如下的一个命令:</p>
+echo 0 &gt; /proc/sys/kernel/sysrq 
+<p>如果非特权用户能够接触你的系统键盘, 你应当考虑关闭它, 来阻止有意或无意的损坏. 一些以前的内核版本缺省关闭 sysrq, 因此你需要在运行时使能它, 通过向同样的 /proc/sys 文件写入 1.</p>
+<p>sysrq 操作是非常有用, 因此它们已经对不能接触到控制台的系统管理员可用. 文件 /proc/sysrq-trigger 是一个只写的入口点, 这里你可以触发一个特殊的 sysrq 动作, 通过写入关联的命令字符; 接着你可收集内核日志的任何输出数据. 这个 sysrq 的入口点是一直工作的, 即便 sysrq 在控制台上被关闭.</p>
+<p>如果你经历一个"活挂", 就是你的驱动粘在一个循环中, 但是系统作为一个整体功能正常, 有几个技术值得了解. 经常地, sysrq p 功能直接指向出错的函数. 如果这个不行, 你还可以使用内核剖析功能. 建立一个打开剖析的内核, 并且用命令行中 profile=2 来启动它. 使用 readprofile 工具复位剖析计数器, 接着使你的驱动进入它的循环. 一会儿后, 使用 readprofile 来看内核在哪里消耗它的时间. 另一个更高级的选择是 oprofile, 你可以也考虑下. 文件 documentation/basic_profiling.txt 告诉你启动剖析器所有需要知道的东西.</p>
+<p>在追逐系统挂起时一个值得使用的防范措施是以只读方式加载你的磁盘(或者卸载它们). 如果磁盘是只读或者卸载的, 就没有风险损坏文件系统或者使它处于不一致的状态. 另外的可能性是使用一个通过 NFS, 网络文件系统, 来加载它的全部文件系统的计算机, 内核的"NFS-Root"功能必须打开, 在启动时必须传递特殊的参数. 在这个情况下, 即便不依靠 sysrq 你也会避免文件系统破坏, 因为文件系统的一致有 NFS 服务器来管理, 你的设备驱动不会关闭它.</p>
+</div>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id422785" href="ch04s05.html#id422785">15</a>] </sup>实际上, 多处理器系统仍然在其他处理器上调度, 甚至一个单处理器的机器可能重新调度, 如果内核抢占被使能. 然而, 对于大部分的通常的情况( 单处理器不使能抢占), 系统一起停止调度.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch04s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch04.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch04s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">4.4.&#160;使用观察来调试&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;4.6.&#160;调试器和相关工具</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

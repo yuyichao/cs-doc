@@ -1,0 +1,186 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+		<title>
+			Bran的内核开发指南：基本内核
+		</title>
+		<link href="layout.css" type="text/css" rel="stylesheet">
+		<style>
+<!--
+table			{ font: 9pt Tahoma, Verdana; color: #000000 }
+.tableborder		{ background: #D6E0EF; border: 1px solid #3399cc } 
+.altbg1			{ background: #EFEFEF }
+-->
+</style>
+	</head>
+
+	<body>
+		<h2 id="pagetop"><font face="Tahoma">基本内核</font></h2>
+		
+		<p>
+			<font face="Tahoma">
+			在这部分，我们将涉及一点汇编的知识，学习创建使用最基本的连接脚本。最后，我们将学习如何使用批处理文件自动进行汇编、编译和连接这个最最基本的保护模式内核。请注意，我将假设你已经安装了NASM和DJGPP在你的操作系统上，并且你已经掌握了最基本的X86汇编语言知识。</font></p>
+		
+		<h3 id="kernelentry"><font face="Tahoma">内核入口</font></h3>
+		
+		<p>
+			<font face="Tahoma">内核的入口就是当引导器加载内核时最先被执行的那段代码。这部分代码一般总是用汇编语言来写的。这是为 
+			完成很多特定功能，比如建立新堆栈和加载新的GDT、IDT 和</font><span style="font-family: Tahoma">段寄存器</span><font face="Tahoma">。这些都是不能用C语言来完成的。在很多入门级的内核，以及一些更大，更专业的内核中，这些汇编代码被写入一个单独的文件，而其它部分则被写入若干C语言文件中。</font></p>
+
+		<p>
+			<span style="font-family: Tahoma">如果你对汇编程序有一点了解</span><font face="Tahoma">，这个文件中的代码就将变得非常直观。正如代码所做的，整个文件就是装载一个新的<span lang="EN-US">8KB</span>堆栈，然后跳转到一个无限循环。堆栈占用很少的内存，但它能被用来存储并传递参数到C语言的函数。它也可被用来存储在函数中使用的局部变量。其它的全局变量被存储在Data和BSS区域中。在下面代码中“mboot”和“stublet”之间的部分组成了一段特殊的代码，它能让GRUB知道这个二进制文件是一个内核。如果你不能理解这个多引导的头部的话，就跳过吧。</font></p>
+		<table border="1" width="100%" id="table1" style="border-collapse: collapse">
+			<tr>
+				<td><font size="2" color="#800000"><font face="Tahoma">; 
+				这是内核入口。我们能够在这里调用main函数。<br>
+				; 我们也能在这里设置堆栈等其它有趣的东东，比如说，<br>
+				; 建立GDT。请注意：中断在这里被禁用了的，后面将设置。<br>
+				[BITS 32]<br>
+				global start<br>
+				start:<br>
+&nbsp;&nbsp;&nbsp; mov esp, _sys_stack&nbsp;&nbsp;&nbsp;&nbsp; ; 这里指示堆栈到我们新的堆栈位置<br>
+&nbsp;&nbsp;&nbsp; jmp stublet<br>
+				<br>
+				; 这里必须是4byte的对齐方式， 因此我们用“ALIGN 4”来处理。<br>
+				ALIGN 4<br>
+				mboot:<br>
+&nbsp;&nbsp;&nbsp; ; 这里定义的多引导宏使后面的某些内容更加的可读。<br>
+&nbsp;&nbsp;&nbsp; MULTIBOOT_PAGE_ALIGN equ 1&lt;&lt;0<br>
+&nbsp;&nbsp;&nbsp; MULTIBOOT_MEMORY_INFO equ 1&lt;&lt;1<br>
+&nbsp;&nbsp;&nbsp; MULTIBOOT_AOUT_KLUDGE equ 1&lt;&lt;16<br>
+&nbsp;&nbsp;&nbsp; MULTIBOOT_HEADER_MAGIC equ 0x1BADB002<br>
+&nbsp;&nbsp;&nbsp; MULTIBOOT_HEADER_FLAGS equ MULTIBOOT_PAGE_ALIGN | 
+				MULTIBOOT_MEMORY_INFO | MULTIBOOT_AOUT_KLUDGE<br>
+&nbsp;&nbsp;&nbsp; MULTIBOOT_CHECKSUM equ -(MULTIBOOT_HEADER_MAGIC + 
+				MULTIBOOT_HEADER_FLAGS)<br>
+&nbsp;&nbsp;&nbsp; EXTERN code, bss, end<br>
+				<br>
+&nbsp;&nbsp;&nbsp; ; 这是GRUB多引导的头部。一个引导标识。<br>
+&nbsp;&nbsp;&nbsp; dd MULTIBOOT_HEADER_MAGIC<br>
+&nbsp;&nbsp;&nbsp; dd MULTIBOOT_HEADER_FLAGS<br>
+&nbsp;&nbsp;&nbsp; dd MULTIBOOT_CHECKSUM<br>
+&nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; ; 关于kludge - 必须是物理地址。 注释：连接脚本将填充这些数据！<br>
+&nbsp;&nbsp;&nbsp; dd mboot<br>
+&nbsp;&nbsp;&nbsp; dd code<br>
+&nbsp;&nbsp;&nbsp; dd bss<br>
+&nbsp;&nbsp;&nbsp; dd end<br>
+&nbsp;&nbsp;&nbsp; dd start<br>
+				<br>
+				; 这是一个无穷循环。 注释：后面，我们将在“jmp $”前插入“extern _main”，然后紧接着插入“call 
+				_main”。<br>
+				stublet:<br>
+&nbsp;&nbsp;&nbsp; jmp $<br>
+				<br>
+				<br>
+				; 后面我将在这里添加GDT的代码!<br>
+				<br>
+				<br>
+				; 仅仅看完了几页指南，我们就将在这里添加</font><span style="font-family: Tahoma">中断服务例程</span><font face="Tahoma">(ISR)!<br>
+				<br>
+				<br>
+				<br>
+				; 这里是BSS区的定义。 我们将用它来存储堆栈。<br>
+				; 记住：一个堆栈的体积实际上是不断减少的，<br>
+				; 所以我们在申明标识“_sys_stack”之前申明数据的大小。<br>
+				SECTION .bss<br>
+&nbsp;&nbsp;&nbsp; resb 8192&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+				; 预留8KBytes的内存空间<br>
+				_sys_stack:</font></font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">内核入口文件： “start.asm”</font></b></td>
+			</tr>
+		</table>
+		
+		<h3 id="linkerscript"><font face="Tahoma">连接脚本</font></h3>
+		
+		<p>
+			<font face="Tahoma">
+			连接器是将所有编译器和汇编器的输出文件连接成一个二进制映象的工具。二进制映象有很多种不同格式，而Flat、AOUT、COFF、PE和ELF是最常见的几种。你是否还记得，我们在选择的连接器是LD，它有很多功能。现在存在很多不同版本的LD，它们都能将产生你需要的二进制映象格式。但无论你选用哪种格式，在输出文件中都会出现三个区域，Text(或者Code)，Data和BSS区。Text(或者Code)区是只读的代码区。Data区是可读可写的数据区，举例来说，你在程序定义了一个变量并给它赋值5，那么这个“5”就被存储在Data区。而BSS区则是可读可写且没有初始化的数据区。它存储着未赋任何值的数组。注意，BSS区是一个虚拟的区域它不存在于二进制映像中，但当二进制映像被加载后，它就存在于内存中了。</font></p>
+		<p>
+			<font face="Tahoma">
+			下面将登场的就是LD连接脚本了。在脚本中，我们需要突出三个关键字：OUTPUT_FORMAT、ENTRY和SECTIONS。OUTPUT_FORMAT告诉LD，要创建什么类型的二进制映象。简便起见，我们就创建plain 
+			binary映象。ENTRY告诉连接器哪个目标文件将第一个被连接。我们希望start.asm编译后的文件start.o第一个被连接，因为这是我们内核的入口。下一行是“phys”。它不是一个关键字，但是是一个将在连接器脚本中被用到的变量。在这种情况下，我们把它用来指向一个地址，它占用1MB空间。我们的映像将被加载到那里并在那里运行。第三个关键字是SECTIONS。如果你仔细研究这个连接器脚本，你将会发现它定义了3个最要的区：.text(代码区)，“.data”(数据区)，“.bss”(BSS区)。同时还定义了4个变量：code，data，bss和end。别被这个几个变量 
+			给弄迷糊了，你看见的是在我们的启动文件start.asm中的实际变量。ALIGN(4096)确保了每个区都以4096byte为界限。这样，每个区都在一个单独的内存页中运行。</font></p>
+		<table border="1" width="100%" id="table2" style="border-collapse: collapse">
+			<tr>
+				<td><font color="#800000" face="Tahoma">OUTPUT_FORMAT(&quot;binary&quot;)<br>
+				ENTRY(start)<br>
+				phys = 0x00100000;<br>
+				SECTIONS<br>
+				{<br>
+&nbsp; .text phys : AT(phys) {<br>
+&nbsp;&nbsp;&nbsp; code = .;<br>
+&nbsp;&nbsp;&nbsp; *(.text)<br>
+&nbsp;&nbsp;&nbsp; . = ALIGN(4096);<br>
+&nbsp; }<br>
+&nbsp; .data : AT(phys + (data - code))<br>
+&nbsp; {<br>
+&nbsp;&nbsp;&nbsp; data = .;<br>
+&nbsp;&nbsp;&nbsp; *(.data)<br>
+&nbsp;&nbsp;&nbsp; . = ALIGN(4096);<br>
+&nbsp; }<br>
+&nbsp; .bss : AT(phys + (bss - code))<br>
+&nbsp; {<br>
+&nbsp;&nbsp;&nbsp; bss = .;<br>
+&nbsp;&nbsp;&nbsp; *(.bss)<br>
+&nbsp;&nbsp;&nbsp; . = ALIGN(4096);<br>
+&nbsp; }<br>
+&nbsp; end = .;<br>
+				}</font></td>
+			</tr>
+			<tr>
+				<td><b><font size="2" face="Tahoma">连接器脚本： 'link.ld'</font></b></td>
+			</tr>
+		</table>
+
+		<h3 id="build"><font face="Tahoma">汇编，然后连接！</font></h3>
+		<p>
+			<font face="Tahoma">
+			现在，我们将使用上面提到的这个连接器脚本来汇编start.asm。这将创建一个能被GRUB加载的内核映像。如果你在Unix环境下，最简单的方法就是创建一个Makefile全自动地来汇编，编译和连接。但包括我在内的大多数人都偏向于使用windows。在win下，我们可以使用批处理文件(.bat)来做这些。所谓批处理文件，就是仅仅是一个DOS命令的集合。但你只需要使用一个命令(就是批处理文件的文件名)就可以运行一整套的命令。甚至更简单，你只需双击批处理文件，就可以在win下编译你的内核了。</font></p>
+		<p>
+			<font face="Tahoma">
+			下面就是我们将要使用的批处理文件。echo是个在屏幕上显示文本的DOS命令。nasm是我们使用的汇编器。这里，我们需要产生一个aout格式的目标文件，因为 
+			LD需要知道其格式以便在连接过程中解释符号。参数-o使start.asm被汇编成start.o。rem是注释命令，表示它后面的内容是注释内容，但在执行时，计算机将忽略此段。ld是连接器。参数-T指定连接脚本的名称。参数-o指定输出文件的文件名。其它的参数可以被理解为我们需要的文件，以便连接起来建立kernel.bin。最后，pause命令将在屏幕上显示“Press 
+			any key to continue...”以等待用户按键继续。这样，我们就能看到汇编器和连接器的输出信息，以便我们查错了。</font></p>
+		<table border="1" width="100%" id="table3" style="border-collapse: collapse">
+			<tr>
+				<td>
+<font face="Tahoma" size="2" color="#800000">echo Now assembling, compiling, and linking your kernel:<br>
+				nasm -f aout -o start.o start.asm<br>
+				rem Remember this spot here: We will add 'gcc' commands here to compile C sources<br>
+				<br>
+				<br>
+				rem This links all your files. Remember that as you add *.o files, you need to<br>
+				rem add them after start.o. If you don't add them at all, they won't be in your kernel!<br>
+				ld -T link.ld -o kernel.bin start.o<br>
+				echo Done!<br>
+				pause</font></td>
+			</tr>
+			<tr>
+				<td><b><font face="Tahoma" size="2">批处理文件： 'build.bat'</font></b></td>
+			</tr>
+		</table>
+		<p>　</p>
+
+		<table cols="200, *, 200" width="100%">
+			<tr>
+				<td align="left" width="200">
+					<font face="Tahoma" size="3">
+					<a href="gettingstarted.htm">&lt;&lt; 开始</a> </font>
+				</td>
+				<td align="center" width="*">
+					<font face="Tahoma" size="3"><a href="mailto:friesenb@gmail.com">
+					联系 Brandon F.</a>
+					</font>
+				</td>
+				<td align="right" width="200">
+					<font face="Tahoma" size="3"><a href="creatingmain.htm">
+					C源代码和main()函数 &gt;&gt;</a>
+					</font>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

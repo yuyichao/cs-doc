@@ -1,0 +1,76 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>2.9.&#160;在用户空间做-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="prev" href="ch02s08.html" title="2.8.&#160;模块参数">
+<link rel="next" href="ch02s10.html" title="2.10.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">2.9.&#160;在用户空间做</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch02s08.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;2&#160;章&#160;建立和运行模块</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s10.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="DoingItinUserSpace.sect1"></a>2.9.&#160;在用户空间做</h2></div></div></div>
+<p> 一个第一次涉及内核问题的 Unix 程序员, 可能会紧张写一个模块. 编写一个用户程序来直接读写设备端口可能容易些.  </p>
+<p> 确实, 有几个论据倾向于用户空间编程, 有时编写一个所谓的用户空间设备驱动对比钻研内核是一个明智的选择. 在本节, 我们讨论几个理由, 为什么你可能在用户空间编写驱动. 本书是关于内核空间驱动的, 但是, 所以我们不超越这个介绍性的讨论.</p>
+<p> 用户空间驱动的好处在于: </p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>完整的 C 库可以连接. 驱动可以进行许多奇怪的任务, 不用依靠外面的程序(实现使用策略的工具程序, 常常随着驱动自身发布).</p></li>
+<li><p>程序员可以在驱动代码上运行常用的调试器, 而不必走调试一个运行中的内核的弯路.  </p></li>
+<li><p>如果一个用户空间驱动挂起了, 你可简单地杀掉它. 驱动的问题不可能挂起整个系统, 除非被控制的硬件真的疯掉了.</p></li>
+<li><p>用户内存是可交换的, 不象内核内存. 一个不常使用的却有很大一个驱动的设备不会占据别的程序可以用到的 RAM, 除了在它实际在用时.  </p></li>
+<li><p>一个精心设计的驱动程序仍然可以, 如同内核空间驱动, 允许对设备的并行存取.  </p></li>
+<li><p>如果你必须编写一个封闭源码的驱动, 用户空间的选项使你容易避免不明朗的许可的情况和改变的内核接口带来的问题.  </p></li>
+</ul></div>
+<p> 例如, USB 驱动能够在用户空间编写; 看(仍然年幼) libusb 项目, 在 libusb.sourceforge.net 和 "gadgetfs" 在内核源码里. 另一个例子是 X 服务器: 它确切地知道它能处理哪些硬件, 哪些不能, 并且它提供图形资源给所有的 X 客户. 注意, 然而, 有一个缓慢但是固定的漂移向着基于 frame-buffer 的图形环境, X 服务器只是作为一个服务器, 基于一个内核空间的真实的设备驱动, 这个驱动负责真正的图形操作.</p>
+<p> 常常, 用户空间驱动的编写者完成一个服务器进程, 从内核接管作为单个代理的负责硬件控制的任务. 客户应用程序就可以连接到服务器来进行实际的操作; 因此, 一个聪明的驱动经常可以允许对设备的并行存取. 这就是 X 服务器如何工作的.  </p>
+<p>但是用户空间的设备驱动的方法有几个缺点. 最重要的是:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>中断在用户空间无法用. 在某些平台上有对这个限制的解决方法, 例如在 IA32 体系上的 vm86 系统调用.</p></li>
+<li><p>只可能通过内存映射 /dev/mem 来使用 DMA, 而且只有特权用户可以这样做.</p></li>
+<li><p>存取 I/O 端口只能在调用 ioperm 或者 iopl 之后. 此外, 不是所有的平台支持这些系统调用, 而存取/dev/port可能太慢而无效率. 这些系统调用和设备文件都要求特权用户.</p></li>
+<li><p>响应时间慢, 因为需要上下文切换在客户和硬件之间传递信息或动作.</p></li>
+<li><p>更不好的是, 如果驱动已被交换到硬盘, 响应时间会长到不可接受. 使用 mlock 系统调用可能会有帮助, 但是常常的你将需要锁住许多内存页, 因为一个用户空间程序依赖大量的库代码. mlock, 也, 限制在授权用户上.</p></li>
+<li><p>最重要的设备不能在用户空间处理, 包括但不限于, 网络接口和块设备.</p></li>
+</ul></div>
+<p>如你所见, 用户空间驱动不能做的事情毕竟太多. 感兴趣的应用程序还是存在: 例如, 对 SCSI 扫描器设备的支持( 由 SANE 包实现 )和 CD 刻录器 ( 由 cdrecord 和别的工具实现 ). 在两种情况下, 用户级别的设备情况依赖 "SCSI gneric" 内核驱动, 它输出了低层的 SCSI 功能给用户程序, 因此它们可以驱动它们自己的硬件.  </p>
+<p> 一种在用户空间工作的情况可能是有意义的, 当你开始处理新的没有用过的硬件时. 这样你可以学习去管理你的硬件, 不必担心挂起整个系统. 一旦你完成了, 在一个内核模块中封装软件就会是一个简单操作了.  
+</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch02s08.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch02.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s10.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">2.8.&#160;模块参数&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.10.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

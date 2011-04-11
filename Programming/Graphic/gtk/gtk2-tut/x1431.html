@@ -1,0 +1,316 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>滚动窗口 Scrolled Windows</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="容器构件 Container Widgets"
+HREF="c1289.html"><LINK
+REL="PREVIOUS"
+TITLE="视角 Viewports"
+HREF="x1415.html"><LINK
+REL="NEXT"
+TITLE="按钮盒 Button Boxes"
+HREF="x1453.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1415.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>容器构件 Container Widgets</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1453.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-SCROLLEDWINDOWS">滚动窗口 Scrolled Windows</H1
+><P
+>滚动窗口(Scrolled windows)用于创建一个可滚动区域，并将其它构件放入其中。可以在滚动窗口中插入任何其它构件，在其内部的构件不论尺寸大小都可以通过滚动条访问到。</P
+><P
+>用下面的函数创建新的滚动窗口。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>GtkWidget *gtk_scrolled_window_new( GtkAdjustment *hadjustment,
+                                    GtkAdjustment *vadjustment );</PRE
+></TD
+></TR
+></TABLE
+><P
+>第一个参数是水平方向的调整对象，第二个参数是垂直方向的调整对象。它们一般都设置为NULL。</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_scrolled_window_set_policy( GtkScrolledWindow *scrolled_window,
+                                     GtkPolicyType      hscrollbar_policy,
+                                     GtkPolicyType      vscrollbar_policy );</PRE
+></TD
+></TR
+></TABLE
+><P
+>这个函数可以设置滚动条出现的方式。第一个参数是要设置的滚动窗口，第二个设置水平滚动条出现的方式，第三个参数设置垂直滚动条出现的方式。</P
+><P
+>滚动条的方式取值可以为<TT
+CLASS="LITERAL"
+>GTK_POLICY_AUTOMATIC</TT
+>或<TT
+CLASS="LITERAL"
+>GTK_POLICY_ALWAYS</TT
+>。当要求滚动条根据需要自动出现时， 可设为<TT
+CLASS="LITERAL"
+>GTK_POLICY_AUTOMATIC</TT
+> ；若设为<TT
+CLASS="LITERAL"
+>GTK_POLICY_ALWAYS</TT
+>，滚动条会一直出现在滚动窗口上。</P
+><P
+>可以用下面的函数将构件放到滚动窗口里：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_scrolled_window_add_with_viewport( GtkScrolledWindow *scrolled_window,
+                                            GtkWidget         *child);</PRE
+></TD
+></TR
+></TABLE
+><P
+>下面是一个简单示例：在滚动窗口构件中放置一个表格构件，并在表格中放100个开关按钮。我将只对那些你可能比较陌生的代码作些注释。</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/scrolledwin.png"></SPAN
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;stdio.h&#62;
+#include &#60;gtk/gtk.h&#62;
+
+void destroy( GtkWidget *widget,
+              gpointer   data )
+{
+    gtk_main_quit ();
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+    static GtkWidget *window;
+    GtkWidget *scrolled_window;
+    GtkWidget *table;
+    GtkWidget *button;
+    char buffer[32];
+    int i, j;
+    
+    gtk_init (&#38;argc, &#38;argv);
+    
+    /* 创建一个新的对话框窗口，滚动窗口就放在这个窗口上 */
+    window = gtk_dialog_new ();
+    g_signal_connect (G_OBJECT (window), "destroy",
+		      G_CALLBACK (destroy), NULL);
+    gtk_window_set_title (GTK_WINDOW (window), "GtkScrolledWindow example");
+    gtk_container_set_border_width (GTK_CONTAINER (window), 0);
+    gtk_widget_set_size_request (window, 300, 300);
+    
+    /* 创建一个新的滚动窗口。 */
+    scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+    
+    gtk_container_set_border_width (GTK_CONTAINER (scrolled_window), 10);
+    
+    /* 滚动条的出现方式可以是GTK_POLICY_AUTOMATIC 或GTK_POLICY_ALWAYS。
+     * 设为GTK_POLICY_AUTOMATIC将自动决定是否需要出现滚动条
+     * 而设为GTK_POLICY_ALWAYS，将一直显示一个滚动条
+     * 第一个是设置水平滚动条，第二个是垂直滚动条 */
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
+                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+    /* 对话框窗口内部包含一个vbox构件 */								
+    gtk_box_pack_start (GTK_BOX (GTK_DIALOG(window)-&#62;vbox), scrolled_window, 
+			TRUE, TRUE, 0);
+    gtk_widget_show (scrolled_window);
+    
+    /* 创建一个包含10×10个格子的表格 */
+    table = gtk_table_new (10, 10, FALSE);
+    
+    /* 设置x和y方向的行间间距为10像素 */
+    gtk_table_set_row_spacings (GTK_TABLE (table), 10);
+    gtk_table_set_col_spacings (GTK_TABLE (table), 10);
+    
+    /* 将表格组装到滚动窗口中 */
+    gtk_scrolled_window_add_with_viewport (
+                   GTK_SCROLLED_WINDOW (scrolled_window), table);
+    gtk_widget_show (table);
+    
+    /* 简单地在表格中添加许多开关按钮以展示滚动窗口 */
+    for (i = 0; i &#60; 10; i++)
+       for (j = 0; j &#60; 10; j++) {
+          sprintf (buffer, "button (%d,%d)\n", i, j);
+	  button = gtk_toggle_button_new_with_label (buffer);
+	  gtk_table_attach_defaults (GTK_TABLE (table), button,
+	                             i, i+1, j, j+1);
+          gtk_widget_show (button);
+       }
+    
+    /* 在对话框的底部添加一个"close"按钮 */
+    button = gtk_button_new_with_label ("close");
+    g_signal_connect_swapped (G_OBJECT (button), "clicked",
+			      G_CALLBACK (gtk_widget_destroy),
+			      window);
+    
+    /* 让按钮能被缺省 */
+    
+    GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+    gtk_box_pack_start (GTK_BOX (GTK_DIALOG (window)-&#62;action_area), button, TRUE, TRUE, 0);
+    
+    /* 将按钮固定为缺省按钮，只要按回车键就相当于点击了这个按钮 */
+    gtk_widget_grab_default (button);
+    gtk_widget_show (button);
+    
+    gtk_widget_show (window);
+    
+    gtk_main();
+    
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+><P
+>尝试改变窗口的大小，可以看到滚动条是如何起作用的。还可以用 gtk_widget_set_size_request() 函数设置窗口或其它构件的缺省尺寸。</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1415.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1453.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>视角 Viewports</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1289.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>按钮盒 Button Boxes</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

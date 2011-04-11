@@ -1,0 +1,103 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>14.8.&#160;处理固件-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch14.html" title="第&#160;14&#160;章&#160;Linux 设备模型">
+<link rel="prev" href="ch14s07.html" title="14.7.&#160;热插拔">
+<link rel="next" href="ch14s09.html" title="14.9.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">14.8.&#160;处理固件</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch14s07.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;14&#160;章&#160;Linux 设备模型</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch14s09.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="DealingwithFirmware.sect1"></a>14.8.&#160;处理固件</h2></div></div></div>
+<p>作为一个驱动作者, 你可能发现你面对一个设备必须在它能支持工作前下载固件到它里面. 硬件市场的许多地方的竞争是如此得强烈, 以至于甚至一点用作设备控制固件的 EEPROM 的成本制造商都不愿意花费. 因此固件发布在随硬件一起的一张 CD 上, 并且操作系统负责传送固件到设备自身.</p>
+<p>你可能想解决固件问题使用这样的一个声明:</p>
+<pre class="programlisting">
+static char my_firmware[] = { 0x34, 0x78, 0xa4, ... }; 
+</pre>
+<p>但是, 这个方法几乎肯定是一个错误. 将固件编码到一个驱动扩大了驱动的代码, 使固件升级困难, 并且非常可能产生许可问题. 供应商不可能已经发布固件映象在 GPL 之下, 因此和 GPL-许可的代码混合常常是一个错误. 为此, 包含内嵌固件的驱动不可能被接受到主流内核或者被 Linux 发布者包含.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="TheKernelFirmwareInterface.sect2"></a>14.8.1.&#160;内核固件接口</h3></div></div></div>
+<p>正确的方法是当你需要它时从用户空间获取它. 但是, 请抵制试图从内核空间直接打开包含固件的文件的诱惑; 那是一个易出错的操作, 并且它安放了策略(以一个文件名的形式)到内核. 相反, 正确的方法时使用固件接口, 它就是为此而创建的:</p>
+<pre class="programlisting">
+#include &lt;linux/firmware.h&gt;
+int request_firmware(const struct firmware **fw, char *name, 
+ struct device *device); 
+</pre>
+<p>调用 request_firmware 要求用户空间定位并提供一个固件映象给内核; 我们一会儿看它如何工作的细节. name 应当标识需要的固件; 正常的用法是供应者提供的固件文件名. 某些象 my_firmware.bin 的名子是典型的. 如果固件被成功加载, 返回值是 0(负责常用的错误码被返回), 并且 fw 参数指向一个这些结构:</p>
+<pre class="programlisting">
+struct firmware {
+ size_t size;
+ u8 *data; 
+}; 
+</pre>
+<p>那个结构包含实际的固件, 它现在可被下载到设备中. 小心这个固件是来自用户空间的未被检查的数据; 你应当在发送它到硬件之前运用任何并且所有的你能够想到的检查来说服你自己它是正确的固件映象. 设备固件常常包含标识串, 校验和, 等等; 在信任数据前全部检查它们.</p>
+<p>在你已经发送固件到设备前, 你应当释放 in-kernel 结构, 使用:</p>
+<pre class="programlisting">
+void release_firmware(struct firmware *fw); 
+</pre>
+<p>因为 request_firmware 请求用户空间来帮忙, 它保证在返回前睡眠. 如果你的驱动当它必须请求固件时不在睡眠的位置, 异步的替代方法可能要使用:</p>
+<pre class="programlisting">
+int request_firmware_nowait(struct module *module,
+ char *name, struct device *device, void *context,
+ void (*cont)(const struct firmware *fw, void *context)); 
+</pre>
+<p>这里额外的参数是 moudle( 它将一直是 THIS_MODULE), context (一个固件子系统不使用的私有数据指针), 和 cont. 如果都进行顺利, request_firmware_nowait 开始固件加载过程并且返回 0. 在将来某个时间, cont 将用加载的结果被调用. 如果由于某些原因固件加载失败, fw 是 NULL.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="HowItWorks.sect2"></a>14.8.2.&#160;它如何工作</h3></div></div></div>
+<p>固件子系统使用 sysfs 和热插拔机制. 当调用 request_firmware, 一个新目录在 /sys/class/firmware 下使用你的驱动的名子被创建. 那个目录包含 3 个属性:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>loading </span></span></dt>
+<dd><p>这个属性应当被加载固件的用户空间进程设置为 1. 当加载进程完成, 它应当设为 0. 写一个值 -1 到 loading 会中止固件加载进程.</p></dd>
+<dt><span class="term"><span>data </span></span></dt>
+<dd><p>data 是一个二进制的接收固件数据自身的属性. 在设置 loading 后, 用户空间进程应当写固件到这个属性.</p></dd>
+<dt><span class="term"><span>device </span></span></dt>
+<dd><p>这个属性是一个符号连接到 /sys/devices 下面的被关联入口项.</p></dd>
+</dl></div>
+<p>一旦创建了 sysfs 入口项, 内核为你的设备产生一个热插拔事件. 传递给热插拔处理者的环境包括一个变量 FIRMWARE, 它被设置为提供给 request_firmware 的名子. 这个处理者应当定位固件文件, 并且拷贝它到内核使用提供的属性. 如果这个文件无法找到, 处理者应当设置 loading 属性为 -1.</p>
+<p>如果一个固件请求在 10 秒内没有被服务, 内核就放弃并返回一个失败状态给驱动. 超时周期可通过 sysfs 属性 /sys/class/firmware/timeout 属性改变.</p>
+<p>使用 request_firmware 接口允许你随你的驱动发布设备固件. 当正确地集成到热插拔机制, 固件加载子系统允许设备简化工作"在盒子之外" 显然这是处理问题的最好方法.</p>
+<p>但是, 请允许我们提出多一条警告: 设备固件没有制造商的许可不应当发布. 许多制造商会同意在合理的条款下许可它们的固件, 如果客气地请求; 一些其他的可能不何在. 无论如何, 在没有许可时拷贝和发布它们的固件是对版权法的破坏并且招致麻烦.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch14s07.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch14.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch14s09.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">14.7.&#160;热插拔&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;14.9.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

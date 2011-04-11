@@ -1,0 +1,645 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>7.4. Kernel Timers</title>
+<link rel="STYLESHEET" type="text/css" href="images/style.css">
+<link rel="STYLESHEET" type="text/css" href="images/docsafari.css">
+</head>
+<body >
+<head>
+<link rel="stylesheet" type="text/css" href="../style/visited-green.css">
+</head>
+<div align=center>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+</div>
+<!-- 
+Hi surfer
+<script type="text/javascript"> 
+	try {
+	document.write(" from <i><b>" + geoip_city()+"</b></i>"); 
+	} catch (e) {
+	}
+</script>, please visit -->
+
+
+<xhr>
+<script type="text/javascript">
+	s = document.location.href.lastIndexOf("/");
+	a = document.location.href.substring(0,s+1);
+	b = document.location.href.substring(s+1);
+if ( document.location == top.location  ) {
+	//alert(a + " -- " + b);
+	document.write("<a href="http://www.makelinux.net/ldd3/+&#32;a&#32;+"?u=" +b + "> &lt; open Table of Content</a>");
+	//top.location = a + "?u=" +b;
+} else {
+	document.write("<a target=_top href="http://www.makelinux.net/ldd3/+document.location&#32;+"> &lt; full page </a>");
+}
+function addLoadEvent(func) 
+{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function') {
+		window.onload = func;
+	} else {
+		window.onload = function() {
+			oldonload();
+			func();
+		}
+	}
+}
+
+addLoadEvent(  function() { 
+		try {
+		} catch (e) {
+	}
+}
+);
+
+
+</script>
+<span style='display:none;background:#BBFFFF;color:black;position:absolute;right:0;' ><a target=_main href=http://www.makelinux.net/kernel_map?src=ldd3>&nbsp;Linux kernel map&nbsp;</a></span><br>
+<script type="text/javascript">
+</script>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript"> </script>
+<script type="text/javascript"> _uacct = "UA-839593-1"; if (typeof(urchinTracker) == 'function') urchinTracker();</script>
+<script type=text/javascript>
+	// document.write("<img src=http://const.homelinux.net/1.png?REF="+top.document.referrer+" height=0 width=0 border=0 />");
+</script>
+
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-7-sect-3.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-7-sect-5.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<br>
+<table width="100%" border="0" cellspacing="0" cellpadding="0"><TR><TD valign="top"><a name="chp-7-sect-4"></a>
+<h3 class="docSection1Title">7.4. Kernel Timers</h3>
+
+<p class="docText">Whenever you need to schedule an <a name="chp-7-ITERM-5563"></a>
+<a name="chp-7-ITERM-5564"></a>
+<a name="chp-7-ITERM-5565"></a>
+<a name="chp-7-ITERM-5566"></a>action to happen later, without blocking
+the current process until that time arrives, kernel timers are the
+tool for you. These timers are used to schedule execution of a
+function at a particular time in the future, based on the clock tick,
+and can be used for a variety of tasks; for example, polling a device
+by checking its state at regular intervals when the hardware
+can't fire interrupts. Other typical uses of kernel
+timers are turning off the floppy motor or finishing another lengthy
+shut down operation. In such cases, delaying the return from
+<span class="docEmphasis">close</span> would impose an unnecessary (and
+surprising) cost on the application program. Finally, the kernel
+itself uses the timers in several situations, including the
+implementation of <span class="docEmphasis">schedule_timeout</span>.</p>
+
+<p class="docText">A kernel timer is a data structure that instructs the kernel to
+execute a user-defined function with a user-defined argument at a
+user-defined time. The implementation resides in
+<span class="docEmphasis">&lt;linux/timer.h&gt;</span> and
+<span class="docEmphasis">kernel/timer.c</span> and is described in detail in the
+<a class="docLink" href="chp-7-sect-4.shtml#chp-7-sect-4.2">Section 7.4.2</a></P>
+
+<p class="docText"><a name="chp-7-ITERM-5567"></a>The functions scheduled to run almost
+certainly do <span class="docEmphasis">not</span> run while the process that
+registered them is executing. They are, instead, run asynchronously.
+Until now, everything we have done in our sample drivers has run in
+the context of a process executing system calls. When a timer runs,
+however, the process that scheduled it could be asleep, executing on
+a different processor, or quite possibly has exited altogether.</p>
+
+<p class="docText"><a name="chp-7-ITERM-5568"></a>
+<a name="chp-7-ITERM-5569"></a>
+<a name="chp-7-ITERM-5570"></a>This asynchronous execution
+resembles what happens when a hardware interrupt happens (which is
+discussed in detail in <a class="docLink" href="chp-10.shtml#chp-10">Chapter 10</a>). In fact, kernel timers are run as the result of a
+"software interrupt." When running
+in this sort of atomic context, your code is subject to a number of
+constraints. Timer functions must be atomic in all the ways we
+discussed 
+in <a class="docLink" href="chp-5.shtml#chp-5">Chapter 5</a>, but there are some
+additional issues brought about by the lack of a process context. We
+will introduce these constraints now; they will be seen again in
+several places in later chapters. Repetition is called for because
+the rules for atomic contexts must be followed assiduously, or the
+system will find itself in deep trouble.</P>
+
+<p class="docText">A number of actions require the context of a process in order to be
+executed. When you are outside of process context (i.e., in interrupt
+context), you must observe the following rules:</P>
+
+<UL><li><p class="docList">No access to user space is allowed. Because there is no process
+context, there is no path to the user space associated with any
+particular process.</p></li><li><p class="docList">The <tt>current</tt> pointer is not meaningful in atomic
+mode and cannot be used since the relevant code has no connection
+with the process that has been interrupted.</P></LI><LI><p class="docList">No sleeping or scheduling may be performed. Atomic code may not call
+<span class="docEmphasis">schedule</span> or a form of
+<span class="docEmphasis">wait_event</span>, nor may it call any other function
+that could sleep. For example, calling <span class="docEmphasis">kmalloc(...,
+GFP_KERNEL)</span> is against the rules. Semaphores also must not
+be used since they can sleep.</p></LI></UL>
+<p class="docText"><a name="chp-7-ITERM-5571"></a>
+<a name="chp-7-ITERM-5572"></a>Kernel
+code can tell if it is running in interrupt context by calling the
+function <span class="docEmphasis">in_interrupt( )</span>, which takes no
+parameters and returns nonzero if the processor is currently running
+in interrupt context, either hardware interrupt or software
+interrupt.</p>
+
+<p class="docText"><a name="chp-7-ITERM-5573"></a>
+<a name="chp-7-ITERM-5574"></a>A
+function related to <span class="docEmphasis">in_interrupt( )</span> is
+<span class="docEmphasis">in_atomic( )</span>. Its return value is nonzero
+whenever scheduling is not allowed; this includes hardware and
+software interrupt contexts as well as any time when a spinlock is
+held. In the latter case, <tt>current</tt> may be valid,
+but access to user space is forbidden, since it can cause scheduling
+to happen. Whenever you are using <span class="docEmphasis">in_interrupt(
+)</span>, you should really consider whether <span class="docEmphasis">in_atomic(
+)</span> is what you actually mean. Both functions are declared
+in <span class="docEmphasis">&lt;asm/hardirq.h&gt;</span></p>
+
+<p class="docText"><a name="chp-7-ITERM-5575"></a>One other important feature of kernel
+timers is that a task can reregister itself to run again at a later
+time. This is possible because each <tt>timer_list</tt>
+structure is unlinked from the list of active timers before being run
+and can, therefore, be immediately re-linked elsewhere. Although
+rescheduling the same task over and over might appear to be a
+pointless operation, it is sometimes useful. For example, it can be
+used to implement the polling of devices.</p>
+
+<p class="docText">It's also worth knowing that in an SMP system, the
+timer function is executed by the same CPU that registered it, to
+achieve better cache locality whenever possible. Therefore, a timer
+that reregisters itself always runs on the same CPU.</p>
+
+<p class="docText"><a name="chp-7-ITERM-5576"></a>An important feature of timers that should
+not be forgotten, though, is that they are a potential source of race
+conditions, even on uniprocessor systems. This is a direct result of
+their being asynchronous with other code. Therefore, any data
+structures accessed by the timer function should be protected from
+concurrent access, either by being atomic types 
+
+
+or by using
+spinlocks.</P>
+
+<a name="chp-7-sect-4.1"></a>
+<h4 class="docSection2Title">7.4.1. The Timer API</h4>
+
+<p class="docText">The kernel provides drivers<a name="chp-7-ITERM-5577"></a>
+<a name="chp-7-ITERM-5578"></a>
+with a number of functions to declare, register, and remove kernel
+timers. The following excerpt shows the basic building
+blocks:<a name="chp-7-ITERM-5579"></a><a name="chp-7-ITERM-5580"></a></P>
+
+<pre>#include &lt;linux/timer.h&gt;
+struct timer_list {
+        /* ... */
+        unsigned long expires;
+        void (*function)(unsigned long);
+        unsigned long data;
+};
+
+void init_timer(struct timer_list *timer);
+struct timer_list TIMER_INITIALIZER(_function, _expires, _data);
+
+void add_timer(struct timer_list * timer);
+int del_timer(struct timer_list * timer);</pre><br>
+
+
+<p class="docText">The data structure includes more fields than the ones shown, but
+those three are the ones that are meant to be accessed from outside
+the timer code iteslf. The <tt>expires</tt> field
+represents the <tt>jiffies</tt> value when the timer is
+expected to run; at that time, the function
+<span class="docEmphasis">function</span> is called with <tt>data</tt>
+as an argument. If you need to pass multiple items in the argument,
+you can bundle them as a single data structure and pass a pointer
+cast to <tt>unsigned</tt> <tt>long</tt>, a safe
+practice on all supported architectures and pretty common in memory
+management (as discussed in <a class="docLink" href="chp-15.shtml#chp-15">Chapter 15</a>). The
+<tt>expires</tt> value is not a
+<tt>jiffies_64</tt> item because timers are not expected to
+expire very far in the future, and 64-bit operations are slow on
+32-bit platforms.</p>
+
+<p class="docText">The structure must be initialized before use. This step ensures that
+all the fields are properly set up, including the ones that are
+opaque to the caller. Initialization can be performed by calling
+<span class="docEmphasis">init_timer</span> or assigning
+<tt>TIMER_INITIALIZER</tt> to a static structure, according
+to your needs. After initialization, you can change the three public
+fields before calling <span class="docEmphasis">add_timer</span>. To disable a
+registered timer before it expires, call
+<span class="docEmphasis">del_timer</span>.</P>
+
+<p class="docText">The <span class="docEmphasis">jit</span> module includes a sample file,
+<i>/proc/jitimer</I> (for "just in
+timer"), that returns one header line and six data
+lines. The data lines represent the current environment where the
+code is running; the first one is generated by the
+<span class="docEmphasis">read</span> file operation and the others by a timer.
+The following output was recorded while compiling a kernel:</p>
+
+<pre>phon% <b>cat /proc/jitimer</b>
+   time   delta  inirq    pid   cpu command
+ 33565837    0     0      1269   0   cat
+ 33565847   10     1      1271   0   sh
+ 33565857   10     1      1273   0   cpp0
+ 33565867   10     1      1273   0   cpp0
+ 33565877   10     1      1274   0   cc1
+ 33565887   10     1      1274   0   cc1</pre><br>
+
+
+<p class="docText">In this output, the <tt>time</tt> field is the value of
+<tt>jiffies</tt> when the code runs,
+<tt>delta</tt> is the change in <tt>jiffies</tt>
+since the previous line, <tt>inirq</tt> is the Boolean
+value returned by <span class="docEmphasis">in_interrupt</span>,
+<tt>pid</tt> and <tt>command</tt> refer to the
+current process, and <tt>cpu</tt> is the number of the CPU
+being used (always <tt>0</tt> on uniprocessor systems).</p>
+
+<p class="docText">If you read <i>/proc/jitimer</i> while the system is
+unloaded, you'll find that the context of the timer
+is process <tt>0</tt>, the idle task, which is called
+"swapper" mainly for historical
+reasons.</p>
+
+<p class="docText">The timer used to generate <i>/proc/jitimer</i> data is
+run every 10 jiffies by default, but you can change the value by
+setting the <tt>tdelay</tt> (timer delay) parameter when
+loading the module.</p>
+
+<p class="docText">The following code excerpt shows the part of <span class="docEmphasis">jit</span>
+related to the <i>jitimer</i> timer. When a process
+attempts to read our file, we set up the timer as follows:</P>
+
+<pre>unsigned long j = jiffies;
+
+/* fill the data for our timer function */
+data-&gt;prevjiffies = j;
+data-&gt;buf = buf2;
+data-&gt;loops = JIT_ASYNC_LOOPS;
+    
+/* register the timer */
+data-&gt;timer.data = (unsigned long)data;
+data-&gt;timer.function = jit_timer_fn;
+data-&gt;timer.expires = j + tdelay; /* parameter */
+add_timer(&amp;data-&gt;timer);
+
+/* wait for the buffer to fill */
+wait_event_interruptible(data-&gt;wait, !data-&gt;loops);</pre><br>
+
+
+<p class="docText">The actual timer function looks like this:</P>
+
+<pre>void jit_timer_fn(unsigned long arg)
+{
+    struct jit_data *data = (struct jit_data *)arg;
+    unsigned long j = jiffies;
+    data-&gt;buf += sprintf(data-&gt;buf, "%9li  %3li     %i    %6i   %i   %s\n",
+                 j, j - data-&gt;prevjiffies, in_interrupt(  ) ? 1 : 0,
+                 current-&gt;pid, smp_processor_id(  ), current-&gt;comm);
+
+    if (--data-&gt;loops) {
+        data-&gt;timer.expires += tdelay;
+        data-&gt;prevjiffies = j;
+        add_timer(&amp;data-&gt;timer);
+    } else {
+        wake_up_interruptible(&amp;data-&gt;wait);
+    }
+}</pre><BR>
+
+
+<p class="docText">The timer API includes a few more functions than the ones introduced
+above. The following set completes the list of kernel offerings:</p>
+
+<a name="chp-7-ITERM-5581"></a><a name="chp-7-ITERM-5582"></a><a name="chp-7-ITERM-5583"></a><a name="chp-7-ITERM-5584"></a><dl class="docList"><dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int mod_timer(struct timer_list *timer, unsigned long expires);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-7-ITERM-5581"></a>
+<a name="chp-7-ITERM-5582"></a>Updates
+the expiration time of a timer, a common task for which a timeout
+timer is used (again, the motor-off floppy timer is a typical
+example). <span class="docEmphasis">mod_timer</span> can be called on inactive
+timers as well, where you normally use
+<span class="docEmphasis">add_timer</span>.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int del_timer_sync(struct timer_list *timer);</span></span></span></dt></P>
+<dd>
+<p class="docList"><a name="chp-7-ITERM-5583"></a>
+<a name="chp-7-ITERM-5584"></a>Works
+like <span class="docEmphasis">del_timer</span>, but also guarantees that when it
+returns, the timer function is not running on any CPU.
+<span class="docEmphasis">del_timer_sync</span> is used to avoid race conditions
+on SMP systems and is the same as <span class="docEmphasis">del_timer</span> in
+UP kernels. This function should be preferred over
+<span class="docEmphasis">del_timer</span> in most situations. This function can
+sleep if it is called from a nonatomic context but busy waits in
+other situations. Be very careful about calling
+<span class="docEmphasis">del_timer_sync</span> while holding locks; if the timer
+function attempts to obtain the same lock, the system can deadlock.
+If the timer function reregisters itself, the caller must first
+ensure that this reregistration will not happen; this is usually
+accomplished by setting a "shutting
+down" flag, which is checked by the timer function.</p>
+</dd>
+<dt><span class="docPubcolor"><span class="docPubcolor"><span class="docMonofont">int timer_pending(const struct timer_list * timer);</span></span></span></dt></p>
+<dd>
+<p class="docList">Returns true or false to indicate whether the timer is currently
+scheduled to run by reading one of the opaque fields of the
+structure.</P>
+</dd>
+</dl>
+
+
+<a name="chp-7-sect-4.2"></a>
+<H4 class="docSection2Title">7.4.2. The Implementation of Kernel Timers</H4>
+
+<p class="docText">Although
+you<a name="chp-7-ITERM-5585"></a>
+won't need to know how kernel timers are implemented
+in order to use them, the implementation is interesting, and a look
+at its internals is worthwhile.</p>
+
+<p class="docText">The implementation of the timers has been designed to meet the
+following requirements and assumptions:</P>
+
+<UL><li><p class="docList">Timer management must be as lightweight as possible.</p></li><li><p class="docList">The design should scale well as the number of active timers increases.</P></li><li><p class="docList">Most timers expire within a few seconds or minutes at most, while
+timers with long delays are pretty rare.</P></li><li><p class="docList">A timer should run on the same CPU that registered it.</P></li></UL>
+<p class="docText">The solution devised by kernel developers is based on a per-CPU data
+structure. The <span class="docEmphasis">timer_list</span> structure includes a
+pointer to that data structure in its <tt>base</tt> field.
+If <tt>base</tt> is <tt>NULL</tt>, the timer is
+not scheduled to run; otherwise, the pointer tells which data
+structure (and, therefore, which CPU) runs it. Per-CPU data items are
+described in <a class="docLink" href="chp-8-sect-5.shtml#chp-8-sect-5">Section 8.5</a> in <a class="docLink" href="chp-7-sect-1.shtml#chp-7-sect-1.1">Section 7.1.1</a>.</p>
+
+<p class="docText">Whenever kernel code registers a timer (via
+<span class="docEmphasis">add_timer</span> or <span class="docEmphasis">mod_timer</span>),
+the operation is eventually performed by
+<span class="docEmphasis">internal_add_timer</span> (in
+<tt>kernel/timer.c</tt>) which, in turn, adds the new timer
+to a double-linked list of timers within a
+"cascading table" associated to the
+current CPU.</p>
+
+<p class="docText">The cascading table works like this: if the timer expires in the next
+to 255 jiffies, it is added to one of the 256 lists devoted to
+short-range timers using the least significant bits of the
+<tt>expires</tt> field. If it expires farther in the future
+(but before 16,384 jiffies), it is added to one of 64 lists based on
+bits 9-14 of the <tt>expires</tt> field. For timers
+expiring even farther, the same trick is used for bits 15-20, 21-26,
+and 27-31. Timers with an expire field pointing still farther in the
+future (something that can happen only on 64-bit platforms) are
+hashed with a delay value of <tt>0xffffffff</tt>, and
+timers with <tt>expires</tt> in the past are scheduled to
+run at the next timer tick. (A timer that is already expired may
+sometimes be registered in high-load situations, especially if you
+run a preemptible kernel.)</p>
+
+<p class="docText">When <span class="docEmphasis">_ _run_timers</span> is fired, it executes all
+pending timers for the current timer tick. If
+<tt>jiffies</tt> is currently a multiple of 256, the
+function also rehashes one of the next-level lists of timers into the
+256 short-term lists, possibly cascading one or more of the other
+levels as well, according to the bit representation of
+<tt>jiffies</tt>.</p>
+
+<p class="docText">This approach, while exceedingly complex at first sight, performs
+very well both with few timers and with a large number of them. The
+time required to manage each active timer is independent of the
+number of timers already registered and is limited to a few logic
+operations on the binary representation of its
+<tt>expires</tt> field. The only cost associated with this
+implementation is the memory for the 512 list heads (256 short-term
+lists and 4 groups of 64 more lists)—i.e., 4 KB of storage.</p>
+
+<p class="docText">The function <span class="docEmphasis">_ _run_timers</span>, as shown by
+<i>/proc/jitimer</i>, is run in atomic context. In
+addition to the limitations we already described, this brings in an
+interesting feature: the timer expires at just the right time, even
+if you are not running a preemptible kernel, and the CPU is busy in
+kernel space. You can see what happens when you read
+<i>/proc/jitbusy</i> in the background and
+<i>/proc/jitimer</i> in the foreground. Although the
+system appears to be locked solid by the busy-waiting system call,
+the kernel timers still work fine.</p>
+
+<p class="docText">Keep in mind, however, that a kernel timer is far from perfect, as it
+suffers from jitter and other artifacts induced by hardware
+interrupts, as well as other timers and other asynchronous tasks.
+While a timer associated with simple digital I/O can be enough for
+simple tasks like running a stepper motor or other amateur
+electronics, it is usually not suitable for production systems in
+industrial environments. For such tasks, you'll most
+likely need to<a name="chp-7-ITERM-5586"></a> <a name="chp-7-ITERM-5587"></a> <a name="chp-7-ITERM-5588"></a> <a name="chp-7-ITERM-5589"></a> resort to a real-time kernel
+extension. <a name="chp-7-ITERM-5590"></a><a name="chp-7-ITERM-5591"></a><a name="chp-7-ITERM-5592"></a><a name="chp-7-ITERM-5593"></a>
+<a name="chp-7-ITERM-5594"></a></p>
+
+
+
+<UL></ul></TD></TR></table>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e6e6e6">
+<tr >
+<td class="v2" align="left" width="30%">
+<a href="chp-7-sect-3.shtml"> &#8678; prev </a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="index.html" target=_parent style="text-decoration:none;text-underline:none"> &#8689; home </a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="chp-7-sect-5.shtml"> next &#8680; </a>
+</td>
+</tr>
+</table>
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<center>
+<table width=100% height=90>
+<tr style='display:none'>
+<td style='display:xnone' id='banner' xalign=center style="background-image:url(/kernel_map.d/LKM3_2048.png);width:100%;height:90;opacity:0;filter:alpha(opacity=0);
+cursor:pointer" onclick="top.location='http://www.makelinux.com/kernel_map?b'" /> 
+</td> </tr>
+<tr style='display:none'>
+<td  id='banner2' style="opacity:0;filter:alpha(opacity=0);text-align:center;" /> 
+<a target=_top href=http://www.makelinux.com/kernel_map_poster?b>
+<span style="font-weight:bold"><span style="display:block;font-size:large" >Poster of Linux kernel</span>The best gift for a Linux geek</span>
+</a>
+</td> </tr>
+<tr style='zdisplay:xnone' >
+<td  id='banner3' align=center /> 
+<a Xtarget=_top href="http://www.makelinux.com/kernel_map_poster?b"> <img target=_top src="http://www.makelinux.net/kernel_map.d/poster2.png" border=0></a>
+</td></tr>
+</table>
+</center>
+<script type='text/javascript' src='../common/fade.js'></script>
+<script type=text/javascript>
+
+	var banner = document.getElementById('banner');
+	banner.style.backgroundPosition="50% 50%";
+	banner.style.backgroundPosition=100*Math.random()+"% "+100*Math.random(100)+"%";
+	//fade('banner');
+    	//setTimeout("fade('banner')",1000);
+    	//setTimeout("fade('banner2')",1000);
+</script>
+
+<script type="text/javascript">
+var a = new Array();
+a[0]='<a href=http://www.linuxdriver.co.il/>www.LinuxDriver.co.il - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot. In Tel-Aviv</a>';
+a[1]='<a href=http://www.MakeLinux.net/>www.MakeLinux.net - Embedded Linux solutions: Drivers, Media Streaming, Fast Boot</a>';
+a[2]='<a href="http://www.amazon.com/gp/product/0672329468?ie=UTF8&tag=makelinux-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0672329468">New book <b>Linux Kernel Development</b> (3rd Edition) 2010</a><img src="http://www.assoc-amazon.com/e/ir?t=makelinux-20&l=as2&o=1&a=0672329468" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />';
+a[3]='';
+google_ad_width = 728;
+google_ad_height = 1;
+if ( 0) { 
+document.write("<center>");
+if (  geoip_country_code()=="IL" ) {
+	if ( Math.random() > 0.5 ) document.write(a[0]+"<br>"); else document.write(a[2]);;
+	google_ad_width = 728;
+	google_ad_height = 1;
+} else { 
+	if ( Math.random() > 0.5 ) {
+		if ( Math.random() > 0.5 ) document.write(a[1]+"<br>"); else document.write(a[2]);
+		google_ad_width = 728;
+		google_ad_height = 1;
+	} else {
+		google_ad_client = "pub-5656623102424572";
+		/* 728x90, created 4/4/08 */
+		google_ad_slot = "6613964975";
+		google_ad_width = 728;
+		google_ad_height = 100;
+	}
+}
+	document.write("</center>");
+}
+</script>
+<!--
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> </script>
+-->
+
+
+
+<script type="text/javascript" src="http://j.maxmind.com/app/geoip.js"></script>
+<script type="text/javascript" >
+{
+	var os, br, ua = navigator.userAgent;
+
+	if (ua.indexOf("Linux")!=-1) os="Linux";
+	if (ua.indexOf("Windows")!=-1) os="Windows";
+	if (ua.indexOf("Mac")!=-1) os="Mac";
+
+	if (ua.indexOf("Gecko")!=-1) br="Gecko";
+	if (ua.indexOf("Firefox")!=-1) br="Firefox";
+	if (ua.indexOf("WebKit")!=-1) br="WebKit";
+	if (ua.indexOf("MSIE")!=-1) br="MSIE";
+	if (ua.indexOf("Safari")!=-1) br="Safari";
+	if (ua.indexOf("Chrome")!=-1) br="Chrome";
+	if (ua.indexOf("Konqueror")!=-1) br="Konqueror";
+	if (ua.indexOf("Opera")!=-1) br="Opera";
+
+	function query_var(query, variable) 
+	{
+		var vars = query.replace(/\?/g,"&").replace(/%20/g,"+").split("&");
+		for (var i=0;i<vars.length;i++) {
+			var pair = vars[i].split("=");
+			if (pair[0] == variable) {
+				return pair[1];
+			}
+
+		} 
+	}
+	var RQ="";
+	q = query_var(top.document.referrer,'q');
+	if ( q != undefined)
+		RQ = ".&Q=" + q
+	else if (top.document.referrer.length)
+	
+		RQ = ".&R=" + top.document.referrer;
+	var traceimg= new Image();
+	try {
+		traceimg.src="http://const.homelinux.net/1.png?U="
+			+ br + "-" + os 
+			+"."+geoip_region_name().replace(/ /g,"_") 
+			+"."+geoip_country_code()
+			+ RQ ;
+	} catch (e) {
+	}
+}
+</script>
+
+
+</body>
+</html>

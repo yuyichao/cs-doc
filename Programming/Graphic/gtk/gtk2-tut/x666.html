@@ -1,0 +1,304 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>“调整对象”的内部机制</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="调整对象 Adjustments"
+HREF="c628.html"><LINK
+REL="PREVIOUS"
+TITLE="轻松使用调整对象"
+HREF="x652.html"><LINK
+REL="NEXT"
+TITLE="范围构件 Range Widgets"
+HREF="c696.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x652.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>调整对象 Adjustments</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c696.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-ADJUSTMENTINTERNALS">“调整对象”的内部机制</H1
+><P
+>你可能要问，如果我想创建一个信号处理函数，当用户调整范围构件或微调按钮时让这个处理函数进行响应，应该从调整对象中取什么值，怎样从中取值呢？要解决这个问题，先看一下 <TT
+CLASS="LITERAL"
+>_GtkAdjustment结构</TT
+>的定义：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>struct _GtkAdjustment
+{
+  GtkObject parent_instance;
+  
+  gdouble lower;
+  gdouble upper;
+  gdouble value;
+  gdouble step_increment;
+  gdouble page_increment;
+  gdouble page_size;
+};</PRE
+></TD
+></TR
+></TABLE
+><P
+>如果你不喜欢像一个 <I
+CLASS="EMPHASIS"
+>real</I
+> C程序员那样直接从结构中取值,你可以使用下面的函数来获取调整对象的<TT
+CLASS="LITERAL"
+>value</TT
+>参数值：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>gdouble	gtk_adjustment_get_value( GtkAdjustment *adjustment);</PRE
+></TD
+></TR
+></TABLE
+><P
+>因为设置调整对象的值时，通常想让每个使用这个调整对象的构件对值的改变做出响应，GTK 提供了下面的函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void gtk_adjustment_set_value( GtkAdjustment *adjustment,
+                               gdouble       value );</PRE
+></TD
+></TR
+></TABLE
+><P
+>前面说过，和其它构件一样，调整对象是Object的子类，因而，它也能够引发信号。这也是为什么当滚动条和其它可调整构件共享调整对象时它们能够自动更新的原因。所有的可调整构件都为它们的调整对象的<TT
+CLASS="LITERAL"
+>value_changed</TT
+>信号设置了一个信号处理函数。下面是这个信号在<TT
+CLASS="LITERAL"
+>_GtkAdjustmentClass结构</TT
+>中的定义：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void (* value_changed) (GtkAdjustment *adjustment);</PRE
+></TD
+></TR
+></TABLE
+><P
+>各种使用调整对象的构件都会在它们的值发生变化时引发它们的调整对象的信号。这种情况发生在当用户用鼠标使范围构件的滑块移动和当程序使用 gtk_adjustment_set_value() 函数显式地改变调整对象的值时。所以，如果有一个比例构件，想在它的值改变时改变一幅画的旋转角度，应该创建像下面这样的回调函数：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void cb_rotate_picture (GtkAdjustment *adj, GtkWidget *picture)
+{
+  set_picture_rotation (picture, gtk_adjustment_get_value (adj));
+...</PRE
+></TD
+></TR
+></TABLE
+><P
+>再将这个回调函数连接到构件的调整对象上：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>g_signal_connect (G_OBJECT (adj), "value_changed",
+	          G_CALLBACK (cb_rotate_picture), picture);</PRE
+></TD
+></TR
+></TABLE
+><P
+>当构件重新配置了它的调整对象的<TT
+CLASS="LITERAL"
+>upper</TT
+>或<TT
+CLASS="LITERAL"
+>lower</TT
+>参数时(比如，用户向文本构件添加了更多的文本时)，发生了什么？在这种情况下，它会引发一个<TT
+CLASS="LITERAL"
+>changed</TT
+>信号：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>void (* changed) (GtkAdjustment *adjustment);</PRE
+></TD
+></TR
+></TABLE
+><P
+>范围构件一般为这个信号设置回调函数，构件会改变它们的外观以反映变化。例如，滚动条上的滑块会根据它的调整对象的<TT
+CLASS="LITERAL"
+>lower</TT
+>和<TT
+CLASS="LITERAL"
+>upper</TT
+>参数之间的差值的变化而伸长或缩短。</P
+><P
+>一般不需要处理这个信号，除非你想要写一个新的范围构件。不过，如果直接改变了调整对象的任何参数，应该引发这个信号，以便相关构件重新配置自己。用下面的函数引发这个信号：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>g_signal_emit_by_name (G_OBJECT (adjustment), "changed");</PRE
+></TD
+></TR
+></TABLE
+><P
+>现在尽情使用调整对象吧！</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x652.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c696.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>轻松使用调整对象</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c628.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>范围构件 Range Widgets</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

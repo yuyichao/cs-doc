@@ -1,0 +1,114 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>5.4.&#160;Completions 机制-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch05.html" title="第&#160;5&#160;章&#160;并发和竞争情况">
+<link rel="prev" href="ch05s03.html" title="5.3.&#160;旗标和互斥体">
+<link rel="next" href="ch05s05.html" title="5.5.&#160;自旋锁">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">5.4.&#160;Completions 机制</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch05s03.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;5&#160;章&#160;并发和竞争情况</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch05s05.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="Completions.sect"></a>5.4.&#160;Completions 机制</h2></div></div></div>
+<p>内核编程的一个普通模式包括在当前线程之外初始化某个动作, 接着等待这个动作结束. 这个动作可能是创建一个新内核线程或者用户空间进程, 对一个存在着的进程的请求, 或者一些基于硬件的动作. 在这些情况中, 很有诱惑去使用一个旗标来同步 2 个任务, 使用这样的代码:</p>
+<pre class="programlisting">
+struct semaphore sem; 
+init_MUTEX_LOCKED(&amp;sem);
+start_external_task(&amp;sem);
+down(&amp;sem);
+</pre>
+<p>外部任务可以接着调用 up(??sem), 在它的工作完成时.</p>
+<p>事实证明, 这种情况旗标不是最好的工具. 正常使用中, 试图加锁一个旗标的代码发现旗标几乎在所有时间都可用; 如果对旗标有很多竞争, 性能会受损并且加锁方案需要重新审视. 因此旗标已经对"可用"情况做了很多的优化. 当用上面展示的方法来通知任务完成, 然而, 调用 down 的线程将几乎是一直不得不等待; 因此性能将受损. 旗标还可能易于处于一个( 困难的 ) 竞争情况, 如果它们表明为自动变量以这种方式使用时. 在一些情况中, 旗标可能在调用 up 的进程用完它之前消失.</p>
+<p>这些问题引起了在 2.4.7 内核中增加了 "completion" 接口. completion 是任务使用的一个轻量级机制: 允许一个线程告诉另一个线程工作已经完成. 为使用 completion, 你的代码必须包含 &lt;linux/completion.h&gt;. 一个 completion 可被创建, 使用:</p>
+<pre class="programlisting">
+DECLARE_COMPLETION(my_completion); 
+</pre>
+<p>或者, 如果 completion 必须动态创建和初始化:</p>
+<pre class="programlisting">
+struct completion my_completion;
+/* ... */
+init_completion(&amp;my_completion);
+</pre>
+<p>等待 completion 是一个简单事来调用:</p>
+<pre class="programlisting">
+void wait_for_completion(struct completion *c); 
+</pre>
+<p>注意这个函数进行一个不可打断的等待. 如果你的代码调用 wait_for_completion 并且没有人完成这个任务, 结果会是一个不可杀死的进程.<sup>[<a name="id427688" href="ch05s04.html#ftn.id427688">18</a>]</sup></p>
+<p>另一方面, 真正的 completion 事件可能通过调用下列之一来发出:</p>
+<pre class="programlisting">
+void complete(struct completion *c);
+void complete_all(struct completion *c);
+</pre>
+<p>如果多于一个线程在等待同一个 completion 事件, 这 2 个函数做法不同. complete 只唤醒一个等待的线程, 而 complete_all 允许它们所有都继续. 在大部分情况下, 只有一个等待者, 这 2 个函数将产生一致的结果.</p>
+<p>一个 completion 正常地是一个单发设备; 使用一次就放弃. 然而, 如果采取正确的措施重新使用 completion 结构是可能的. 如果没有使用 complete_all, 重新使用一个 completion 结构没有任何问题, 只要对于发出什么事件没有模糊. 如果你使用 complete_all, 然而, 你必须在重新使用前重新初始化 completion 结构. 宏定义:</p>
+<pre class="programlisting">
+INIT_COMPLETION(struct completion c); 
+</pre>
+<p>可用来快速进行这个初始化.</p>
+<p>作为如何使用 completion 的一个例子, 考虑 complete 模块, 它包含在例子源码里. 这个模块使用简单的语义定义一个设备: 任何试图从一个设备读的进程将等待(使用 wait_for_completion)直到其他进程向这个设备写. 实现这个行为的代码是:</p>
+<pre class="programlisting">
+DECLARE_COMPLETION(comp);
+ssize_t complete_read (struct file *filp, char __user *buf, size_t count, loff_t *pos)
+{
+    printk(KERN_DEBUG "process %i (%s) going to sleep\n",current-&gt;pid, current-&gt;comm);
+    wait_for_completion(&amp;comp);
+    printk(KERN_DEBUG "awoken %i (%s)\n", current-&gt;pid, current-&gt;comm);
+    return 0; /* EOF */
+}
+
+ssize_t complete_write (struct file *filp, const char __user *buf, size_t count, loff_t *pos)
+{
+    printk(KERN_DEBUG "process %i (%s) awakening the readers...\n", current-&gt;pid, current-&gt;comm);
+    complete(&amp;comp);
+    return count; /* succeed, to avoid retrial */
+}
+</pre>
+<p>有多个进程同时从这个设备"读"是有可能的. 每个对设备的写将确切地使一个读操作完成, 但是没有办法知道会是哪个.</p>
+<p>completion 机制的典型使用是在模块退出时与内核线程的终止一起. 在这个原型例子里, 一些驱动的内部工作是通过一个内核线程在一个 while(1) 循环中进行的. 当模块准备好被清理时, exit 函数告知线程退出并且等待结束. 为此目的, 内核包含一个特殊的函数给线程使用:</p>
+<pre class="programlisting">
+void complete_and_exit(struct completion *c, long retval); 
+</pre>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id427688" href="ch05s04.html#id427688">18</a>] </sup>在本书编写时, 添加可中断版本的补丁已经流行但是还没有合并到主线中.</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch05s03.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch05.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch05s05.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">5.3.&#160;旗标和互斥体&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;5.5.&#160;自旋锁</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,238 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>18.2.&#160;tty_driver 函数指针-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+<link rel="prev" href="ch18.html" title="第&#160;18&#160;章&#160;TTY 驱动">
+<link rel="next" href="ch18s03.html" title="18.3.&#160;TTY 线路设置">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">18.2.&#160;tty_driver 函数指针</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch18.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;18&#160;章&#160;TTY 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch18s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="ttydriverFunctionPointers.sect"></a>18.2.&#160;tty_driver 函数指针</h2></div></div></div>
+<p>最终, tiny_tty 驱动声明了 4 个函数指针.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="openandclose.sect"></a>18.2.1.&#160;open 和 close</h3></div></div></div>
+<p>open 函数被 tty 核心调用, 当一个用户对这个 tty 驱动被分配的设备节点调用 open 时. tty 核心使用一个指向分配给这个设备的 tty_struct 结构的指针调用它, 还用一个文件指针. 这个 open 成员必须被一个 tty 驱动为它能正确工作而设置; 否则, -ENODEV 被返回给用户当调用 open 时.</p>
+<p>当调用这个 open 函数, tty 驱动被期望或者保存一些传递给它的 tty_struct 变量中的数据, 或者保存一个可以基于端口次编号来引用的静态数组中的数据. 这是有必要的, 所以 tty 驱动知道哪个设备在被引用当以后的 close, write, 和其他函数被调用时.</p>
+<p>tiny_tty 驱动保存一个指针在 tty 结构中, 如同下面代码所见到:</p>
+<pre class="programlisting">
+static int tiny_open(struct tty_struct *tty, struct file *file)
+{
+        struct tiny_serial *tiny;
+        struct timer_list *timer;
+        int index;
+
+        /* initialize the pointer in case something fails */
+        tty-&gt;driver_data = NULL;
+
+        /* get the serial object associated with this tty pointer */
+        index = tty-&gt;index;
+        tiny = tiny_table[index];
+        if (tiny == NULL)
+        {
+
+                /* first time accessing this device, let's create it */
+                tiny = kmalloc(sizeof(*tiny), GFP_KERNEL);
+                if (!tiny)
+
+                        return -ENOMEM;
+                init_MUTEX(&amp;tiny-&gt;sem);
+                tiny-&gt;open_count = 0;
+                tiny-&gt;timer = NULL;
+
+                tiny_table[index] = tiny;
+        }
+
+        down(&amp;tiny-&gt;sem);
+        /* save our structure within the tty structure */
+        tty-&gt;driver_data = tiny;
+        tiny-&gt;tty = tty;
+</pre>
+<p>在这个代码中, tiny_serial 结构被保存在 tty 结构中. 这允许 tiny_write, tiny_write_room, 和 tiny_close 函数来获取 tiny_serial 结构和正确操作它.</p>
+<p>tiny_serial 结构定义为:</p>
+<pre class="programlisting">
+struct tiny_serial
+{
+        struct tty_struct *tty; /* pointer to the tty for this device */
+        int open_count; /* number of times this port has been opened */
+        struct semaphore  sem;  /* locks this structure */
+        struct timer_list  *timer;
+};
+</pre>
+<p>如同我们已见到的, open_count 变量初始化为 0 在第一次打开端口的 open 调用中. 这是一个典型的引用计数, 因为一个 tty 驱动的 open 和 close 函数可能对同一个设备多次调用以便多个进程来读写数据. 为正确处理所有的事情, 必须保持一个这个端口被打开或者关闭的次数计数; 这个驱动递增和递减这个计数在打开使用时. 当打开第一次被打开, 任何必要的硬件初始化和内存分配可以做. 当端口被最后一次关闭, 任何必要的硬件关闭和内存清理可以做.</p>
+<p>tiny_open 函数的剩下部分展示了如何跟踪设备被打开的次数:</p>
+<pre class="programlisting">
+++tiny-&gt;open_count;
+if (tiny-&gt;open_count == 1)
+{
+        /* this is the first time this port is opened */
+        /* do any hardware initialization needed here */
+</pre>
+<p>open 函数必须返回或者一个负的错误号如果发生事情阻止了成功打开, 或者一个 0 来表示成功.</p>
+<p>close 函数指针被 tty 核心调用, 在用户对前面使用 open 调用而创建的文件句柄调用 close 时. 这表示设备应当在这次被关闭. 但是, 因为 open 函数可被多次调用, close函数也可多次调用. 因此这个函数应当跟踪它被调用的次数来决定是否硬件应当在此次真正被关闭. tiny_tty 驱动做这个使用下面的代码:</p>
+<pre class="programlisting">
+static void do_close(struct tiny_serial *tiny)
+{
+        down(&amp;tiny-&gt;sem);
+
+        if (!tiny-&gt;open_count)
+        {
+                /* port was never opened */
+                goto exit;
+
+        }
+        --tiny-&gt;open_count;
+        if (tiny-&gt;open_count &lt;= 0)
+        {
+                /* The port is being closed by the last user. */
+                /* Do any hardware specific stuff here */
+
+                /* shut down our timer */
+                del_timer(tiny-&gt;timer);
+        }
+exit:
+        up(&amp;tiny-&gt;sem);
+}
+
+static void tiny_close(struct tty_struct *tty, struct file *file)
+{
+        struct tiny_serial *tiny = tty-&gt;driver_data;
+
+        if (tiny)
+                do_close(tiny);
+}
+</pre>
+<p>tiny_close 函数只是调用 do_close 函数来完成实际的关闭设备工作. 因此关闭逻辑不必在这里和驱动被卸载和端口被打开时重复. close 函数没有返回值, 因为它不被认为会失败.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="FlowofData.sect"></a>18.2.2.&#160;数据流</h3></div></div></div>
+<p>write 函数被用户在有数据发送给硬件时调用. 首先 tty 核心接收到调用, 接着它传递数据到 tty 驱动的 write 函数. tty 核心还告知 tty 驱动要发送的数据大小.</p>
+<p>有时, 因为速度和 tty 硬件的缓冲区容量, 不是所有的写程序要求的字符可以在调用写函数时发送. 这个写函数应当返回能够发送给硬件的字符数( 或者在以后时间可排队发送 ), 因此用户程序可以检查是否所有的数据真正写入. 这种检查在用户空间非常容易完成, 比一个内核驱动站着睡眠直到所有的请求数据能够被发送. 如果任何错误发生在 wirte 调用期间, 一个负的错误值应当被返回代替被写入的字节数. </p>
+<p>write 函数可从中断上下文和用户上下文中被调用. 知道这一点是重要的, 因为 tty 驱动不应当调用任何可能当它在中断上下文中睡眠的函数. 这些包括任何可能调用调度的函数, 例如普通的函数 copy_from_user, kmalloc, 和 printk. 如果你确实想睡眠, 确信去首先检查是否驱动在中断上下文, 通过调用 calling_in_interrupt.</p>
+<p>这个例子 tiny tty 驱动没有连接到任何真实的硬件, 因此它的写函数简单地将要写的什么数据记录到内核调试日志. 它使用下面的代码做这个:</p>
+<pre class="programlisting">
+static int tiny_write(struct tty_struct *tty, const unsigned char *buffer, int count)
+{
+
+        struct tiny_serial *tiny = tty-&gt;driver_data;
+        int i;
+        int retval = -EINVAL;
+        if (!tiny)
+                return -ENODEV;
+
+        down(&amp;tiny-&gt;sem);
+        if (!tiny-&gt;open_count)
+                /* port was not opened */
+                goto exit;
+
+        /* fake sending the data out a hardware port by
+        * writing it to the kernel debug log.
+        */
+        printk(KERN_DEBUG "%s - ", __FUNCTION__);
+        for (i = 0; i &lt; count; ++i)
+
+                printk("%02x ", buffer[i]);
+        printk("\n");
+
+exit:
+        up(&amp;tiny-&gt;sem);
+        return retval;
+
+}
+</pre>
+<p>当 tty 子系统自己需要发送数据到 tty 设备之外, write 函数被调用. 如果 tty 驱动在 tty_struct 中没有实现 put_char 函数, 这会发生. 在这种情况下, tty 核心用一个数据大小为 1 来使用 write 函数回调. 这普遍发生在 tty 核心想转换一个新行字符为一个换行和新行字符. 这里的最大的问题是 tty 驱动的 write 函数必须不返回 0 对于这类的调用. 这意味着驱动必须写那个数据的字节到设备, 因为调用者( tty 核心 ) 不缓冲数据和在之后的时间重试. 因为 write 函数不能知道是否它在被调用来替代 put_char, 即便只有一个字节的数据被发送, 尽力实现 write 函数以至于它一直至少在返回前写一个字节. 许多当前的 USB-到-串口的 tty 驱动没有遵照这个规则, 并且因此, 一些终端类型不能正确工作当连接到它们时.</p>
+<p>write_room 函数被调用当 tty 核心想知道多少空间在写缓冲中 tty 驱动可用. 这个数字时时改变随着字符清空写缓冲以及调用写函数时, 添加字符到这个缓冲.</p>
+<pre class="programlisting">
+static int tiny_write_room(struct tty_struct *tty)
+{
+        struct tiny_serial *tiny = tty-&gt;driver_data;
+        int room = -EINVAL;
+
+        if (!tiny)
+                return -ENODEV;
+
+        down(&amp;tiny-&gt;sem);
+        if (!tiny-&gt;open_count)
+        {
+                /* port was not opened */
+                goto exit;
+
+        }
+        /* calculate how much room is left in the device */
+        room = 255;
+
+exit:
+        up(&amp;tiny-&gt;sem);
+        return room;
+}
+</pre>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="OtherBufferingFunctions.sect"></a>18.2.3.&#160;其他缓冲函数</h3></div></div></div>
+<p>一个工作的 tty 驱动不需要在 tty_driver 结构中的 chars_in_buffer 函数, 但是它被推荐. 这个函数被调用当 tty 核心想知道多少字符仍然保留在 tty 驱动的写缓冲中要被发送. 如果驱动能够存储字符在它发送它们到硬件之前, 它应当实现这个函数为了 tty 核心能够知道是否所有的驱动中的数据已经流出.</p>
+<p>3 个 tty_driver 结构中的函数回调可以用来刷新任何驱动保留的数据. 它们不被要求实现, 但是推荐如果 tty 驱动能够缓冲数据在它发送给硬件之前. 前 2 个函数回调称为 flush_chars 和 wait_until_sent. 这些函数被调用当 tty 核心使用 put_char 函数回调已发送了许多字符给 tty 驱动. flush_chars 函数回调被调用当 tty 核心要 tty 驱动启动发送这些字符到硬件, 如果它尚未启动. 这个函数被允许在所有的数据发送给硬件之前返回. wait_until_sent 函数回调以非常相同的发生工作; 但是它必须等待直到所有的字符在返回到 tty 核心前被发送, 或者知道超时值到时. 如果这个传递给 wait_until_sent 函数回调的超时值设为 0, 函数应当等待直到它完成这个操作.</p>
+<p>剩下的数据刷新函数回调是 flush_buffer. 它被 tty 核心调用当 tty 驱动要刷新所有的仍然在它的写缓冲的数据. 任何保留在缓冲中的数据被丢失并且没发送给设备.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="NoreadFunction.sect"></a>18.2.4.&#160;无 read 函数?</h3></div></div></div>
+<p>只使用这些函数, tiny_tty 驱动可被注册, 可打开一个设备节点, 数据被写入设备, 关闭设备节点, 以驱动注销和从内核中卸载. 但是 tty 核心和 tty_driver 结构没有提供一个 read 函数; 换句话说, 没有函数调用存在来从驱动到 tty 核心获取数据.</p>
+<p>替代一个传统的 read 函数, tty 驱动负责发送任何从硬件收到的数据到 tty 核心. tty 核心缓冲数据直到它被用户请求. 因为 tty 核心提供的缓冲逻辑, 对每个 tty 驱动不必要实现它自己的缓冲逻辑. tty 核心通知 tty 驱动当一个用户要驱动停止和开始发送数据, 但是如果内部的 tty 缓冲满, 没有这样的通知发生.</p>
+<p>tty 核心缓冲由 tty 驱动接收到的数据, 在一个称为 struct tty_flip_buffer 的结构中. 一个 flip 缓冲是一个结构包含 2 个主要数据数组. 从 tty 设备接收到的数据被存储于第一个数组. 当这个数组满, 任何等待数据的用户被通知数据可以读. 当用户从这个数组读数据, 任何新到的数据被存储在第 2 个数组. 当那个数组被读空, 数据再次刷新给用户, 并且驱动开始填充第 1 个数组. 本质上, 被接收的数据 "flips" 从一个缓冲到另一个, 期望不会溢出它们 2 个. 为试图阻止数据丢失, 一个 tty 驱动可以监视到来的数组多大, 并且, 如果它添满, 及时告知 tty 驱动在这个时刻刷新缓冲, 而不是等待下一个可用的机会.</p>
+<p>struct tty_flip_buffer 结构的细节对 tty 驱动没有关系, 只有一个例外, 可用的计数. 这个变量包含多少字节当前留在缓冲里可用来接收数据. 如果这个值等于值 TTY_FLIPBUF_SIZE, 这个 flip 缓冲需要被刷新到用户, 使用一个对 tty_flip_buffer_push 的调用. 这展示在下面的代码:</p>
+<pre class="programlisting">
+for (i = 0; i &lt; data_size; ++i)
+{
+        if (tty-&gt;flip.count &gt;= TTY_FLIPBUF_SIZE)
+                tty_flip_buffer_push(tty);
+        tty_insert_flip_char(tty, data[i], TTY_NORMAL);
+}
+tty_flip_buffer_push(tty);
+</pre>
+<p>从 tty 驱动接收来的要发送给用户的字符被添加到 flip 缓冲, 使用对 tty_insert_flip_char 的调用. 这个函数的第一个参数是数据应当保存入的 struct tty_struct, 第 2 个参数是要保存的字符, 第 3 个参数是任何应当为这个字符设置的标志. 这个标志值应当设为 TTY_NORMAL 如果这个是一个正常的被接收的字符. 如果这是一个特殊类型的指示错误接收数据的字符, 它应当设为 TTY_BREAK, TTY_PARITY, 或者 TTY_OVERRUN, 取决于错误.</p>
+<p>为了"推"数据给用户, 进行一个对 tty_flip_buffer_push 的调用. 这个函数应当也被调用如果 flip 缓冲将要溢出, 如同在这个例子中展示的. 因此无论何时数据被加到 flip 缓冲, 或者当 flip 缓冲满, tty 驱动必须调用 tty_flip_buffer_push. 如果 tty 驱动可高速接收数据, tty-&gt;low_latency 标志应当设置, 它是对 tty_flip_buffer_pus 的调用被立刻执行当调用时. 否则, tty_flip_buffer_push 调用会调度它自己来将数据推出缓冲, 在之后近期的一个时间点.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch18.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch18.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch18s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;18&#160;章&#160;TTY 驱动&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;18.3.&#160;TTY 线路设置</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

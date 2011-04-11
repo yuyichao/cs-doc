@@ -1,0 +1,534 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The Mutt E-Mail Client: Mutt's MIME Support</TITLE>
+ <LINK HREF="manual-6.html" REL=next>
+ <LINK HREF="manual-4.html" REL=previous>
+ <LINK HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc5" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="manual-6.html">Next</A>
+<A HREF="manual-4.html">Previous</A>
+<A HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc5">Contents</A>
+<HR>
+<H2><A NAME="s5">5. Mutt's MIME Support</A></H2>
+
+<P>Quite a bit of effort has been made to make Mutt the premier text-mode
+MIME MUA.  Every effort has been made to provide the functionality that
+the discerning MIME user requires, and the conformance to the standards
+wherever possible.  When configuring Mutt for MIME, there are two extra
+types of configuration files which Mutt uses.  One is the
+<CODE>mime.types</CODE> file, which contains the mapping of file extensions to 
+IANA MIME types.  The other is the <CODE>mailcap</CODE> file, which specifies
+the external commands to use for handling specific MIME types.
+<P>
+<H2><A NAME="ss5.1">5.1 Using MIME in Mutt</A>
+</H2>
+
+<P>There are three areas/menus in Mutt which deal with MIME, they are the
+pager (while viewing a message), the attachment menu and the compose
+menu.
+<P>
+<H3>Viewing MIME messages in the pager</H3>
+
+<P>When you select a message from the index and view it in the pager, Mutt
+decodes the message to a text representation.  Mutt internally supports
+a number of MIME types, including <CODE>text/plain, text/enriched,
+message/rfc822, and message/news</CODE>.  In addition, the export
+controlled version of Mutt recognizes a variety of PGP MIME types,
+including PGP/MIME and application/pgp.
+<P>Mutt will denote attachments with a couple lines describing them.
+These lines are of the form:
+<BLOCKQUOTE><CODE>
+<PRE>
+[-- Attachment #1: Description --]
+[-- Type: text/plain, Encoding: 7bit, Size: 10000 --]
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Where the <CODE>Description</CODE> is the description or filename given for the
+attachment, and the <CODE>Encoding</CODE> is one of
+<CODE>7bit/8bit/quoted-printable/base64/binary</CODE>.
+<P>If Mutt cannot deal with a MIME type, it will display a message like:
+<BLOCKQUOTE><CODE>
+<PRE>
+[-- image/gif is unsupported (use 'v' to view this part) --]
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H3><A NAME="attach_menu"></A> The Attachment Menu</H3>
+
+<P>The default binding for <CODE>view-attachments</CODE> is `v', which displays the
+attachment menu for a message.  The attachment menu displays a list of
+the attachments in a message.  From the attachment menu, you can save,
+print, pipe, delete, and view attachments.  You can apply these
+operations to a group of attachments at once, by tagging the attachments
+and by using the ``tag-prefix'' operator.  You can also reply to the
+current message from this menu, and only the current attachment (or the
+attachments tagged) will be quoted in your reply.  You can view
+attachments as text, or view them using the mailcap viewer definition.
+<P>Finally, you can apply the usual message-related functions (like 
+<A HREF="manual-2.html#resend-message">resend-message</A>, and the reply
+and forward functions) to attachments of type <CODE>message/rfc822</CODE>.
+<P>See the help on the attachment menu for more information.
+<P>
+<H3><A NAME="compose_menu"></A> The Compose Menu</H3>
+
+<P>The compose menu is the menu you see before you send a message.  It
+allows you to edit the recipient list, the subject, and other aspects
+of your message.  It also contains a list of the attachments of your
+message, including the main body.  From this menu, you can print, copy,
+filter, pipe, edit, compose, review, and rename an attachment or a
+list of tagged attachments.  You can also modifying the attachment
+information, notably the type, encoding and description.
+<P>Attachments appear as follows:
+<PRE>
+-   1 [text/plain, 7bit, 1K]             /tmp/mutt-euler-8082-0 &lt;no description>
+    2 [applica/x-gunzip, base64, 422K]   ~/src/mutt-0.85.tar.gz &lt;no description>
+</PRE>
+<P>The '-' denotes that Mutt will delete the file after sending (or
+postponing, or cancelling) the message.  It can be toggled with the
+<CODE>toggle-unlink</CODE> command (default: u).  The next field is the MIME
+content-type, and can be changed with the <CODE>edit-type</CODE> command
+(default: ^T).  The next field is the encoding for the attachment,
+which allows a binary message to be encoded for transmission on 7bit
+links.  It can be changed with the <CODE>edit-encoding</CODE> command
+(default: ^E).  The next field is the size of the attachment,
+rounded to kilobytes or megabytes.  The next field is the filename,
+which can be changed with the <CODE>rename-file</CODE> command (default: R).
+The final field is the description of the attachment, and can be
+changed with the <CODE>edit-description</CODE> command (default: d).
+<P>
+<H2><A NAME="ss5.2">5.2 MIME Type configuration with <CODE>mime.types</CODE></A>
+</H2>
+
+<P>When you add an attachment to your mail message, Mutt searches your
+personal mime.types file at <CODE>${HOME}/.mime.types</CODE>, and then
+the system mime.types file at <CODE>/usr/local/share/mutt/mime.types</CODE> or
+<CODE>/etc/mime.types</CODE>
+<P>The mime.types file consist of lines containing a MIME type and a space
+separated list of extensions.  For example:
+<BLOCKQUOTE><CODE>
+<PRE>
+application/postscript          ps eps
+application/pgp                 pgp
+audio/x-aiff                    aif aifc aiff
+</PRE>
+</CODE></BLOCKQUOTE>
+
+A sample <CODE>mime.types</CODE> file comes with the Mutt distribution, and
+should contain most of the MIME types you are likely to use.  
+<P>If Mutt can not determine the mime type by the extension of the file you
+attach, it will look at the file.  If the file is free of binary
+information, Mutt will assume that the file is plain text, and mark it
+as <CODE>text/plain</CODE>.  If the file contains binary information, then Mutt will
+mark it as <CODE>application/octet-stream</CODE>.  You can change the MIME
+type that Mutt assigns to an attachment by using the <CODE>edit-type</CODE>
+command from the compose menu (default: ^T). The MIME type is actually a
+major mime type followed by the sub-type, separated by a '/'. 6 major
+types: application, text, image, video, audio, and model have been approved
+after various internet discussions. Mutt recognises all of these if the 
+appropriate entry is found in the mime.types file. It also recognises other
+major mime types, such as the chemical type that is widely used in the 
+molecular modelling community to pass molecular data in various forms to 
+various molecular viewers. Non-recognised mime types should only be used 
+if the recipient of the message is likely to be expecting such attachments.
+<P>
+<H2><A NAME="ss5.3">5.3 MIME Viewer configuration with <CODE>mailcap</CODE></A>
+</H2>
+
+<P>Mutt supports RFC 1524 MIME Configuration, in particular the Unix
+specific format specified in Appendix A of RFC 1524.  This file format
+is commonly referred to as the mailcap format.  Many MIME compliant
+programs utilize the mailcap format, allowing you to specify handling
+for all MIME types in one place for all programs.  Programs known to
+use this format include Netscape, XMosaic, lynx and metamail.
+<P>In order to handle various MIME types that Mutt can not handle
+internally, Mutt parses a series of external configuration files to
+find an external handler.  The default search string for these files
+is a colon delimited list set to
+<BLOCKQUOTE><CODE>
+<PRE>
+${HOME}/.mailcap:/usr/local/share/mutt/mailcap:/etc/mailcap:/etc/mailcap:/usr/etc/mailcap:/usr/local/etc/mailcap
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where <CODE>$HOME</CODE> is your home directory.
+<P>In particular, the metamail distribution will install a mailcap file,
+usually as <CODE>/usr/local/etc/mailcap</CODE>, which contains some baseline
+entries.
+<P>
+<H3>The Basics of the mailcap file</H3>
+
+<P>A mailcap file consists of a series of lines which are comments, blank,
+or definitions.
+<P>A comment line consists of a # character followed by anything you want.
+<P>A blank line is blank.
+<P>A definition line consists of a content type, a view command, and any
+number of optional fields.  Each field of a definition line is divided
+by a semicolon ';' character.
+<P>The content type is specified in the MIME standard type/subtype method.
+For example,
+<CODE>text/plain, text/html, image/gif, </CODE>
+etc.  In addition, the mailcap format includes two formats for
+wildcards, one using the special '*' subtype, the other is the implicit
+wild, where you only include the major type.  For example, <CODE>image/*</CODE>, or
+<CODE>video,</CODE> will match all image types and video types,
+respectively.
+<P>The view command is a Unix command for viewing the type specified. There
+are two different types of commands supported. The default is to send
+the body of the MIME message to the command on stdin. You can change
+this behaviour by using %s as a parameter to your view command.
+This will cause Mutt to save the body of the MIME message to a temporary
+file, and then call the view command with the %s replaced by
+the name of the temporary file. In both cases, Mutt will turn over the
+terminal to the view program until the program quits, at which time Mutt
+will remove the temporary file if it exists.
+<P>So, in the simplest form, you can send a text/plain message to the
+external pager more on stdin:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/plain; more
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Or, you could send the message as a file:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/plain; more %s
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Perhaps you would like to use lynx to interactively view a text/html 
+message:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html; lynx %s
+</PRE>
+</CODE></BLOCKQUOTE>
+
+In this case, lynx does not support viewing a file from stdin, so you
+must use the %s syntax.
+<B>Note:</B> <EM>Some older versions of lynx contain a bug where they
+will check the mailcap file for a viewer for text/html.  They will find
+the line which calls lynx, and run it.  This causes lynx to continuously
+spawn itself to view the object.</EM>
+<P>On the other hand, maybe you don't want to use lynx interactively, you
+just want to have it convert the text/html to text/plain, then you can
+use:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html; lynx -dump %s | more
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Perhaps you wish to use lynx to view text/html files, and a pager on
+all other text formats, then you would use the following:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html; lynx %s
+text/*; more
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This is the simplest form of a mailcap file.
+<P>
+<H3>Secure use of mailcap</H3>
+
+<P>The interpretion of shell meta-characters embedded in MIME parameters
+can lead to security problems in general.  Mutt tries to quote parameters
+in expansion of %s syntaxes properly, and avoids risky characters by
+substituting them, see the 
+<A HREF="manual-6.html#mailcap_sanitize">mailcap_sanitize</A> variable.
+<P>Although mutt's procedures to invoke programs with mailcap seem to be
+safe, there are other applications parsing mailcap, maybe taking less care
+of it.  Therefore you should pay attention to the following rules:
+<P><EM>Keep the %-expandos away from shell quoting.</EM>
+Don't quote them with single or double quotes.  Mutt does this for
+you, the right way, as should any other program which interprets
+mailcap.  Don't put them into backtick expansions.  Be highly careful
+with eval statements, and avoid them if possible at all.  Trying to fix
+broken behaviour with quotes introduces new leaks - there is no
+alternative to correct quoting in the first place.
+<P>If you have to use the %-expandos' values in context where you need
+quoting or backtick expansions, put that value into a shell variable
+and reference the shell variable where necessary, as in the following
+example (using <CODE>$charset</CODE> inside the backtick expansion is safe,
+since it is not itself subject to any further expansion):
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+text/test-mailcap-bug; cat %s; copiousoutput; test=charset=%{charset} \
+        &amp;&amp; test "`echo $charset | tr '[A-Z]' '[a-z]'`" != iso-8859-1
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H3>Advanced mailcap Usage</H3>
+
+<P>
+<P>
+<H3>Optional Fields</H3>
+
+<P>In addition to the required content-type and view command fields, you
+can add semi-colon ';' separated fields to set flags and other options.
+Mutt recognizes the following optional fields:
+<DL>
+<DT><B>copiousoutput</B><DD><P>This flag tells Mutt that the command passes possibly large amounts of
+text on stdout.  This causes Mutt to invoke a pager (either the internal
+pager or the external pager defined by the pager variable) on the output
+of the view command.  Without this flag, Mutt assumes that the command
+is interactive.  One could use this to replace the pipe to <CODE>more</CODE>
+in the <CODE>lynx -dump</CODE> example in the Basic section:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html; lynx -dump %s ; copiousoutput
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This will cause lynx to format the text/html output as text/plain
+and Mutt will use your standard pager to display the results.
+<DT><B>needsterminal</B><DD><P>Mutt uses this flag when viewing attachments with 
+<A HREF="manual-5.html#auto_view">autoview</A>, in order to decide whether it should honor the setting
+of the 
+<A HREF="manual-6.html#wait_key">$wait_key</A> variable or
+not.  When an attachment is viewed using an interactive program, and the
+corresponding mailcap entry has a <EM>needsterminal</EM> flag, Mutt will use
+<A HREF="manual-6.html#wait_key">$wait_key</A> and the exit status
+of the program to decide if it will ask you to press a key after the
+external program has exited.  In all other situations it will not prompt
+you for a key.
+<DT><B>compose=&lt;command&gt;</B><DD><P>This flag specifies the command to use to create a new attachment of a
+specific MIME type.  Mutt supports this from the compose menu.
+<DT><B>composetyped=&lt;command&gt;</B><DD><P>This flag specifies the command to use to create a new attachment of a
+specific MIME type.  This command differs from the compose command in
+that mutt will expect standard MIME headers on the data.  This can be
+used to specify parameters, filename, description, etc. for a new
+attachment.   Mutt supports this from the compose menu.
+<DT><B>print=&lt;command&gt;</B><DD><P>This flag specifies the command to use to print a specific MIME type.
+Mutt supports this from the attachment and compose menus.
+<DT><B>edit=&lt;command&gt;</B><DD><P>This flag specifies the command to use to edit a specific MIME type.  
+Mutt supports this from the compose menu, and also uses it to compose
+new attachments.  Mutt will default to the defined editor for text
+attachments.
+<DT><B>nametemplate=&lt;template&gt;</B><DD><P>This field specifies the format for the file denoted by %s in the
+command fields.  Certain programs will require a certain file extension,
+for instance, to correctly view a file.  For instance, lynx will only
+interpret a file as <CODE>text/html</CODE> if the file ends in <CODE>.html</CODE>.
+So, you would specify lynx as a <CODE>text/html</CODE> viewer with a line in
+the mailcap file like:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html; lynx %s; nametemplate=%s.html
+</PRE>
+</CODE></BLOCKQUOTE>
+<DT><B>test=&lt;command&gt;</B><DD><P>This field specifies a command to run to test whether this mailcap
+entry should be used.  The command is defined with the command expansion
+rules defined in the next section.  If the command returns 0, then the
+test passed, and Mutt uses this entry.  If the command returns non-zero,
+then the test failed, and Mutt continues searching for the right entry.
+<B>Note:</B> <EM>the content-type must match before Mutt performs the test.</EM>
+For example:
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html; netscape -remote 'openURL(%s)' ; test=RunningX
+text/html; lynx %s
+</PRE>
+</CODE></BLOCKQUOTE>
+
+In this example, Mutt will run the program RunningX which will return 0
+if the X Window manager is running, and non-zero if it isn't.  If
+RunningX returns 0, then Mutt will call netscape to display the
+text/html object.  If RunningX doesn't return 0, then Mutt will go on
+to the next entry and use lynx to display the text/html object.
+</DL>
+<P>
+<H3>Search Order</H3>
+
+<P>When searching for an entry in the mailcap file, Mutt will search for
+the most useful entry for its purpose.  For instance, if you are
+attempting to print an <CODE>image/gif</CODE>, and you have the following
+entries in your mailcap file, Mutt will search for an entry with the
+print command:
+<BLOCKQUOTE><CODE>
+<PRE>
+image/*;        xv %s
+image/gif;      ; print= anytopnm %s | pnmtops | lpr; \
+                nametemplate=%s.gif
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Mutt will skip the <CODE>image/*</CODE> entry and use the <CODE>image/gif</CODE>
+entry with the print command.
+<P>In addition, you can use this with 
+<A HREF="manual-5.html#auto_view">Autoview</A> 
+to denote two commands for viewing an attachment, one to be viewed
+automatically, the other to be viewed interactively from the attachment
+menu.  In addition, you can then use the test feature to determine which
+viewer to use interactively depending on your environment.
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html;      netscape -remote 'openURL(%s)' ; test=RunningX
+text/html;      lynx %s; nametemplate=%s.html
+text/html;      lynx -dump %s; nametemplate=%s.html; copiousoutput
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For 
+<A HREF="manual-5.html#auto_view">Autoview</A>, Mutt will choose the third
+entry because of the copiousoutput tag.  For interactive viewing, Mutt
+will run the program RunningX to determine if it should use the first
+entry.  If the program returns non-zero, Mutt will use the second entry
+for interactive viewing.
+<P>
+<H3>Command Expansion</H3>
+
+<P>The various commands defined in the mailcap files are passed to the
+<CODE>/bin/sh</CODE> shell using the system() function.  Before the
+command is passed to <CODE>/bin/sh -c</CODE>, it is parsed to expand
+various special parameters with information from Mutt.  The keywords
+Mutt expands are:
+<DL>
+<DT><B>%s</B><DD><P>As seen in the basic mailcap section, this variable is expanded
+to a filename specified by the calling program.  This file contains
+the body of the message to view/print/edit or where the composing
+program should place the results of composition.  In addition, the
+use of this keyword causes Mutt to not pass the body of the message
+to the view/print/edit program on stdin.
+<DT><B>%t</B><DD><P>Mutt will expand %t to the text representation of the content
+type of the message in the same form as the first parameter of the
+mailcap definition line, ie <CODE>text/html</CODE> or
+<CODE>image/gif</CODE>.
+<DT><B>%{&lt;parameter&gt;}</B><DD><P>Mutt will expand this to the value of the specified parameter
+from the Content-Type: line of the mail message.  For instance, if
+Your mail message contains:
+<BLOCKQUOTE><CODE>
+<PRE>
+Content-Type: text/plain; charset=iso-8859-1
+</PRE>
+</CODE></BLOCKQUOTE>
+
+then Mutt will expand %{charset} to iso-8859-1.  The default metamail
+mailcap file uses this feature to test the charset to spawn an xterm
+using the right charset to view the message.
+<DT><B>\%</B><DD><P>This will be replaced by a %
+</DL>
+
+Mutt does not currently support the %F and %n keywords
+specified in RFC 1524.  The main purpose of these parameters is for
+multipart messages, which is handled internally by Mutt.
+<P>
+<H3>Example mailcap files</H3>
+
+<P>This mailcap file is fairly simple and standard:
+<HR>
+<PRE>
+# I'm always running X :)
+video/*;        xanim %s > /dev/null
+image/*;        xv %s > /dev/null
+
+# I'm always running netscape (if my computer had more memory, maybe)
+text/html;      netscape -remote 'openURL(%s)'
+</PRE>
+<HR>
+<P>This mailcap file shows quite a number of examples:
+<P>
+<HR>
+<PRE>
+# Use xanim to view all videos   Xanim produces a header on startup,
+# send that to /dev/null so I don't see it
+video/*;        xanim %s > /dev/null
+
+# Send html to a running netscape by remote
+text/html;      netscape -remote 'openURL(%s)'; test=RunningNetscape
+
+# If I'm not running netscape but I am running X, start netscape on the
+# object
+text/html;      netscape %s; test=RunningX
+
+# Else use lynx to view it as text
+text/html;      lynx %s
+
+# This version would convert the text/html to text/plain
+text/html;      lynx -dump %s; copiousoutput
+
+# enriched.sh converts text/enriched to text/html and then uses 
+# lynx -dump to convert it to text/plain
+text/enriched;  enriched.sh ; copiousoutput
+
+# I use enscript to print text in two columns to a page
+text/*;         more %s; print=enscript -2Gr %s
+
+# Netscape adds a flag to tell itself to view jpegs internally
+image/jpeg;xv %s; x-mozilla-flags=internal
+
+# Use xv to view images if I'm running X
+# In addition, this uses the \ to extend the line and set my editor
+# for images
+image/*;xv %s; test=RunningX; \
+        edit=xpaint %s
+
+# Convert images to text using the netpbm tools
+image/*;  (anytopnm %s | pnmscale -xysize 80 46 | ppmtopgm | pgmtopbm |
+pbmtoascii -1x2 ) 2>&amp;1 ; copiousoutput
+
+# Send excel spreadsheets to my NT box
+application/ms-excel; open.pl %s
+</PRE>
+<HR>
+<P>
+<H2><A NAME="auto_view"></A> <A NAME="ss5.4">5.4 MIME Autoview</A>
+</H2>
+
+<P>In addition to explicitly telling Mutt to view an attachment with the
+MIME viewer defined in the mailcap file, Mutt has support for
+automatically viewing MIME attachments while in the pager.
+<P>To work, you must define a viewer in the mailcap file which uses the 
+<CODE>copiousoutput</CODE> option to denote that it is non-interactive.
+Usually, you also use the entry to convert the attachment to a text
+representation which you can view in the pager.
+<P>You then use the <CODE>auto_view</CODE> muttrc command to list the
+content-types that you wish to view automatically.
+<P>For instance, if you set auto_view to:
+<BLOCKQUOTE><CODE>
+<PRE>
+auto_view text/html text/enriched application/x-gunzip application/postscript image/gif application/x-tar-gz
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Mutt could use the following mailcap entries to automatically view
+attachments of these types.
+<BLOCKQUOTE><CODE>
+<PRE>
+text/html;      lynx -dump %s; copiousoutput; nametemplate=%s.html
+text/enriched;  enriched.sh  ; copiousoutput
+image/*;        anytopnm %s | pnmscale -xsize 80 -ysize 50 | ppmtopgm | pgmtopbm | pbmtoascii ; copiousoutput
+application/x-gunzip;   gzcat; copiousoutput
+application/x-tar-gz; gunzip -c %s | tar -tf - ; copiousoutput
+application/postscript; ps2ascii %s; copiousoutput
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="alternative_order"></A> <A NAME="ss5.5">5.5 MIME Multipart/Alternative</A>
+</H2>
+
+<P>Mutt has some heuristics for determining which attachment of a
+multipart/alternative type to display.  First, mutt will check the 
+alternative_order list to determine if one of the available types
+is preferred.  The alternative_order list consists of a number of
+mimetypes in order, including support for implicit and explicit
+wildcards, for example:
+<BLOCKQUOTE><CODE>
+<PRE>
+alternative_order text/enriched text/plain text application/postscript image/*
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Next, mutt will check if any of the types have a defined 
+<A HREF="manual-5.html#auto_view">auto_view</A>, and use that.  Failing
+that, Mutt will look for any text type.  As a last attempt, mutt will
+look for any type it knows how to handle.
+<P>
+<HR>
+<A HREF="manual-6.html">Next</A>
+<A HREF="manual-4.html">Previous</A>
+<A HREF="http://learn.tsinghua.edu.cn:8080/2001315450/mutt-manual/manual.html#toc5">Contents</A>
+</BODY>
+</HTML>

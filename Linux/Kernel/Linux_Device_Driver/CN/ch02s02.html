@@ -1,0 +1,100 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>2.2.&#160;Hello World 模块-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="prev" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="next" href="ch02s03.html" title="2.3.&#160;内核模块相比于应用程序">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">2.2.&#160;Hello World 模块</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch02.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;2&#160;章&#160;建立和运行模块</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s03.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="TheHelloWorldModule.sect1"></a>2.2.&#160;Hello World 模块</h2></div></div></div>
+<p> 许多编程书籍从一个 "hello world" 例子开始, 作为一个展示可能的最简单的程序的方法. 本书涉及的是内核模块而不是程序; 因此, 对无耐心的读者, 下面的代码是一个完整的 "hello world"模块: </p>
+<pre class="programlisting">
+#include &lt;linux/init.h&gt;
+#include &lt;linux/module.h&gt;
+MODULE_LICENSE("Dual BSD/GPL");
+
+static int hello_init(void)
+{
+        printk(KERN_ALERT "Hello, world\n");
+        return 0;
+}
+static void hello_exit(void)
+{
+
+        printk(KERN_ALERT "Goodbye, cruel world\n");
+}
+
+module_init(hello_init);
+module_exit(hello_exit);
+</pre>
+<p> 这个模块定义了两个函数, 一个在模块加载到内核时被调用( hello_init )以及一个在模块被去除时被调用( hello_exit ). moudle_init 和 module_exit 这几行使用了特别的内核宏来指出这两个函数的角色. 另一个特别的宏 (MODULE_LICENSE) 是用来告知内核, 该模块带有一个自由的许可证; 没有这样的说明, 在模块加载时内核会抱怨.  
+</p>
+<p> printk 函数在 Linux 内核中定义并且对模块可用; 它与标准 C 库函数 printf 的行为相似. 内核需要它自己的打印函数, 因为它靠自己运行, 没有 C 库的帮助. 模块能够调用 printk 是因为, 在 insmod 加载了它之后, 模块被连接到内核并且可存取内核的公用符号 (函数和变量, 下一节详述). 字串 KERN_ALERT 是消息的优先级. <sup>[<a name="id408271" href="ch02s02.html#ftn.id408271">3</a>]</sup></p>
+<p>我们在此模块中指定了一个高优先级, 因为使用缺省优先级的消息可能不会在任何有用的地方显示, 这依赖于你运行的内核版本, klogd 守护进程的版本, 以及你的配置. 现在你可以忽略这个因素; 我们在第 4 章讲解它.  </p>
+<p> 你可以用 insmod 和 rmmod 工具来测试这个模块. 注意只有超级用户可以加载和卸载模块.  </p>
+<pre class="screen">
+% make 
+make[1]: Entering directory `/usr/src/linux-2.6.10'
+ CC [M] /home/ldd3/src/misc-modules/hello.o
+ Building modules, stage 2.
+ MODPOST
+ CC /home/ldd3/src/misc-modules/hello.mod.o
+ LD [M] /home/ldd3/src/misc-modules/hello.ko 
+make[1]: Leaving directory `/usr/src/linux-2.6.10'
+% su
+root# insmod ./hello.ko
+Hello, world
+root# rmmod hello
+Goodbye cruel world
+root#
+</pre>
+<p> 请再一次注意, 为使上面的操作命令顺序工作, 你必须在某个地方有正确配置和建立的内核树, 在那里可以找到 makefile (/usr/src/linux-2.6.10, 在展示的例子里面 ). 我们在 "编译和加载" 这一节深入模块建立的细节.  </p>
+<p> 依据你的系统用来递交消息行的机制, 你的输出可能不同. 特别地, 前面的屏幕输出是来自一个字符控制台; 如果你从一个终端模拟器或者在窗口系统中运行 insmod 和 rmmod, 你不会在你的屏幕上看到任何东西. 消息进入了其中一个系统日志文件中, 例如 /var/log/messages (实际文件名子随 Linux 发布而变化). 内核递交消息的机制在第 4 章描述.  </p>
+<p> 如你能见到的, 编写一个模块不是如你想象的困难 -- 至少, 在模块没有要求做任何有用的事情时. 困难的部分是理解你的设备, 以及如何获得最高性能. 通过本章我们深入模块化内部并且将设备相关的问题留到后续章节.  
+</p>
+<div class="footnotes">
+<br><hr width="100" align="left">
+<div class="footnote"><p><sup>[<a name="ftn.id408271" href="ch02s02.html#id408271">3</a>] </sup> 优先级只是一个字串, 例如 &lt;1&gt;, 前缀于 printk 格式串之前. 注意在 KERN_ALERT 之后缺少一个逗号; 添加一个逗号在那里是一个普通的讨厌的错误 ( 幸运的是, 编译器会捕捉到 ).</p></div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch02.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch02.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s03.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">第&#160;2&#160;章&#160;建立和运行模块&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.3.&#160;内核模块相比于应用程序</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

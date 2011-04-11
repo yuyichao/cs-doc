@@ -1,0 +1,298 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>迭代法 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>迭代法
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="IterationMethods.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="IterationMethods.html#sec1">概述</a>
+  </dt>
+  <dt>
+    <a href="IterationMethods.html#sec2">Arnoldi迭代</a>
+  </dt>
+  <dt>
+    <a href="IterationMethods.html#sec3">GMRES</a>
+  </dt>
+  <dt>
+    <a href="IterationMethods.html#sec4">Lanczos迭代</a>
+  </dt>
+  <dt>
+    <a href="IterationMethods.html#sec5">共轭梯度法 (CG)</a>
+  </dt>
+  <dt>
+    <a href="IterationMethods.html#sec6">预处理</a>
+  </dt>
+</dl>
+</div>
+
+<p>以前所讨论的是适用于一般矩阵计算的直接法,它们适合求解一般的稠密矩阵问题.本章将讨论特别适用于大规模稀疏矩阵特定问题求解的迭代法.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="IterationMethods.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>概述</h2>
+
+<p class="first">以后所介绍的迭代法是基于把<img src="latex/latex2png-IterationMethods_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">维问题投影到低维Krylov子空间这一思想.给定矩阵<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">和向量<img src="latex/latex2png-IterationMethods_41710610_0.gif" alt="$b$" class="latex-inline" style="vertical-align: 0px" width="7" height="12">,相联系的Krylov序列是向量<img src="latex/latex2png-IterationMethods_213182882_-4.gif" alt="$b,Ab,A^2b,\cdots$" class="latex-inline" style="vertical-align: -4px" width="94" height="18">的集合,相应的Krylov子空间是由这些向量顺次组成的集合张成的.</p>
+
+<p>将要讨论的算法可如下表归类:</p>
+
+<p class="image"><img src="latex/latex2png-IterationMethods_29344718_.gif" alt="
+\begin{center}
+\begin{tabular}{|c|c|c|}
+  \hline
+   &$Ax=b$& $Ax=\lambda x$\\\hline
+  $A=A^H$& CG& Lanczos\\ \hline
+  $A\neq A^H$& GMRES& Arnoldi \\\hline
+\end{tabular}
+\end{center}
+" class="latex-display" width="580" height="81">
+在每一问题中,投影到Krylov子空间的结果是把原来的矩阵问题约化到维数为<img src="latex/latex2png-IterationMethods_206358073_-4.gif" alt="$n=1,2,\cdots$" class="latex-inline" style="vertical-align: -4px" width="81" height="15">的矩阵问题的序列.当<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">是Hermite矩阵时,约化的矩阵是三对角矩阵.而在非Hermite矩阵情形下,有Hessenberg形式.例如,用Arnoldi方法逼近大矩阵的特征值,是用计算相继较大维数的某些Hessenberg矩阵的特征值完成的.</p>
+
+
+<h2><a name="sec2" id="sec2"></a>
+<a href="IterationMethods.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Arnoldi迭代</h2>
+
+<p class="first">Arnoldi迭代是基于以下思想:用正交相似变换把<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">完全约化到Hessenberg型可记作<img src="latex/latex2png-IterationMethods_148047561_-4.gif" alt="$A=QHQ^H$" class="latex-inline" style="vertical-align: -4px" width="88" height="18">,或<img src="latex/latex2png-IterationMethods_228952424_-4.gif" alt="$AQ=QH$" class="latex-inline" style="vertical-align: -4px" width="76" height="16">.记
+<img src="latex/latex2png-IterationMethods_182076805_.gif" alt="
+\begin{align*}
+  Q&=\left[q_1,\cdots,q_n,q_{n+1},\cdots,q_m\right],\\
+  Q_n&=\left[q_1,\cdots,q_n\right],\\
+  H&=
+  \begin{bmatrix}
+    \tilde{H}_n& *\\
+    O& *
+  \end{bmatrix}=
+  \begin{bmatrix}
+    H_n& X_1\\
+    X_2& X_3
+  \end{bmatrix}.
+\end{align*}
+" class="latex-display" width="580" height="109">
+<img src="latex/latex2png-IterationMethods_63048644_-2.gif" alt="$\tilde{H}_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="17">为<img src="latex/latex2png-IterationMethods_42628114_0.gif" alt="$H$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的<img src="latex/latex2png-IterationMethods_193431255_-5.gif" alt="$(n+1)\times n$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">阶子阵,<img src="latex/latex2png-IterationMethods_238580756_-2.gif" alt="$H_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">为<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶顺序主子阵.考察等式的前<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">列,得到<img src="latex/latex2png-IterationMethods_246739860_-4.gif" alt="$AQ_n=Q_{n+1}\tilde{H}_n$" class="latex-inline" style="vertical-align: -4px" width="118" height="19">,它的第<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">列可以写为<img src="latex/latex2png-IterationMethods_101746836_.gif" alt="$$Aq_n=h_{1n}q_1+\cdots+h_{nn}q_n+h_{n+1,n}q_{n+1},$$" class="latex-display" width="580" height="18">由此,<img src="latex/latex2png-IterationMethods_249352583_.gif" alt="$$\mathrm{span}\{q_1,\cdots,q_n\}=\mathrm{span}\{q_1,Aq_1,\cdots,A^{n-1}q_1\}\equiv \mathcal{K}_n$$" class="latex-display" width="580" height="20">为<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">阶Krylov子空间,<img src="latex/latex2png-IterationMethods_87782499_-5.gif" alt="$\{q_1,\cdots,q_n\}$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">为一组正交基.</p>
+
+<p>由以上关系可以导出,<img src="latex/latex2png-IterationMethods_9693287_.gif" alt="$$H_n=Q_n^HQ_{n+1}\tilde{H}_n=Q_n^HAQ_n,$$" class="latex-display" width="580" height="19">即<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">在<img src="latex/latex2png-IterationMethods_113482678_-2.gif" alt="$\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="23" height="14">上的投影在基<img src="latex/latex2png-IterationMethods_87782499_-5.gif" alt="$\{q_1,\cdots,q_n\}$" class="latex-inline" style="vertical-align: -5px" width="85" height="18">上的表示.由此我们可以期望<img src="latex/latex2png-IterationMethods_238580756_-2.gif" alt="$H_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">的一些特征值以有效形式与<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的一些特征值有关.<img src="latex/latex2png-IterationMethods_165063292_.gif" alt="$$\lambda (H_n)\equiv \{\theta_j\}$$" class="latex-display" width="580" height="19">称为<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的Arnoldi特征值估计或<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">关于<img src="latex/latex2png-IterationMethods_113482678_-2.gif" alt="$\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="23" height="14">的Ritz值.</p>
+
+<p>下面给出Arnoldi迭代的算法描述:</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(Arnoldi迭代)</span>
+<img src="latex/latex2png-IterationMethods_36917730_.gif" alt="
+\begin{align*}
+ &b=\text{任意值},q_1=b/\|b\|.\text{（迭代开始）}\\
+ &\text{for}~n=1,2,3\ldots\\
+ &~~~~v=Aq_n\\
+ &~~~~\text{~~~~for}~j=1~\text{to}~n\\
+ &~~~~~~~~~~~~h_{jn}=q_j^*v\\
+ &~~~~~~~~~~~~v=v-h_{jn}q_j\\
+ &~~~~h_{n+1,n}=\|v\|\\
+ &~~~~q_{n+1}=v/h_{n+1,n}
+\end{align*}
+" class="latex-display" width="580" height="236">
+(迭代的每一步计算Krylov子空间的正交基.)
+
+
+</div>
+
+<p>若迭代的第<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">步有<img src="latex/latex2png-IterationMethods_11926955_-5.gif" alt="$h_{n+1,n}=0$" class="latex-inline" style="vertical-align: -5px" width="78" height="17">,则迭代中断.但这是一种&quot;良性&quot;的中断,即此时<img src="latex/latex2png-IterationMethods_238580756_-2.gif" alt="$H_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">的特征值都是<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的特征值.可随机选取正交向量<img src="latex/latex2png-IterationMethods_241828697_-4.gif" alt="$q_{n+1}$" class="latex-inline" style="vertical-align: -4px" width="31" height="12">使迭代进行下去.</p>
+
+<p>实际分析表明,Arnoldi迭代往往给出<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的靠近谱边缘的特征值精确的逼近 (常以几何速度收敛),而这正是实际中感兴趣的情形.</p>
+
+<p>最后指出,Arnoldi迭代同如下的多项式逼近问题之间的联系:</p>
+
+<p>Arnoldi-Lanzcos逼近问题:求<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次首一多项式<img src="latex/latex2png-IterationMethods_16042902_-4.gif" alt="$p^n\in P^n$" class="latex-inline" style="vertical-align: -4px" width="60" height="16">使得<img src="latex/latex2png-IterationMethods_56139270_-5.gif" alt="$\|p^n (A)b\|_2$" class="latex-inline" style="vertical-align: -5px" width="70" height="18">为极小值.</p>
+
+<p>有如下定理,其证明可参见<span class="cite"><a class="cite" href="IterationMethods.html#ref-1" name="cite-1">[1]</a></span>:</p>
+
+<div class="theorem">
+<span class="theorem-header">定理1<a name=""></a></span><span class="theorem-name"></span>
+只要Arnoldi迭代不中断,即<img src="latex/latex2png-IterationMethods_113482678_-2.gif" alt="$\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="23" height="14">是满秩<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">,则以上问题有唯一解<img src="latex/latex2png-IterationMethods_237532180_-4.gif" alt="$p^n$" class="latex-inline" style="vertical-align: -4px" width="17" height="15">,即<img src="latex/latex2png-IterationMethods_238580756_-2.gif" alt="$H_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">的特征多项式.
+
+
+</div>
+
+
+<h2><a name="sec3" id="sec3"></a>
+<a href="IterationMethods.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>GMRES</h2>
+
+<p class="first">Arnoldi迭代也可用于求解方程组<img src="latex/latex2png-IterationMethods_67925050_0.gif" alt="$Ax=b$" class="latex-inline" style="vertical-align: 0px" width="51" height="12">,其标准算法称为GMRES,是广义极小剩余 (Generalized Minimal Residuals)的简称.</p>
+
+<p>GMRES的思想如下:在迭代的第<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">步,求<img src="latex/latex2png-IterationMethods_50546125_-2.gif" alt="$x_n\in \mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="62" height="14">使<img src="latex/latex2png-IterationMethods_186102304_-5.gif" alt="$\|r_n\|_2\equiv \|b-Ax_n\|_2$" class="latex-inline" style="vertical-align: -5px" width="142" height="18">最小,则<img src="latex/latex2png-IterationMethods_164072428_-2.gif" alt="$x_n$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">的序列将逼近方程组的精确解<img src="latex/latex2png-IterationMethods_165907436_-2.gif" alt="$x_*$" class="latex-inline" style="vertical-align: -2px" width="15" height="10">.特别地,当迭代中止,即<img src="latex/latex2png-IterationMethods_113482678_-2.gif" alt="$\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="23" height="14">的维数小于<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">时,将有<img src="latex/latex2png-IterationMethods_79906253_-2.gif" alt="$x_*\in \mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="60" height="14">,从而<img src="latex/latex2png-IterationMethods_102697548_-2.gif" alt="$x_n=x_*$" class="latex-inline" style="vertical-align: -2px" width="56" height="10">.</p>
+
+<p>由<img src="latex/latex2png-IterationMethods_50546125_-2.gif" alt="$x_n\in \mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="62" height="14">,存在<img src="latex/latex2png-IterationMethods_157304945_-4.gif" alt="$y\in \mathbb{C}^n$" class="latex-inline" style="vertical-align: -4px" width="49" height="16">使<img src="latex/latex2png-IterationMethods_203630668_-4.gif" alt="$x_n=Q_ny$" class="latex-inline" style="vertical-align: -4px" width="71" height="16">,从而问题化为求<img src="latex/latex2png-IterationMethods_157304945_-4.gif" alt="$y\in \mathbb{C}^n$" class="latex-inline" style="vertical-align: -4px" width="49" height="16">使<img src="latex/latex2png-IterationMethods_9972419_-5.gif" alt="$\|AQ_ny-b\|_2$" class="latex-inline" style="vertical-align: -5px" width="92" height="18">最小.由Arnoldi迭代的过程可知,<img src="latex/latex2png-IterationMethods_20393891_.gif" alt="$$\|AQ_ny-b\|_2=\|Q^*_{n+1}AQ_ny-Q^*_{n+1}b\|_2=\|\tilde{H}_ny-\|b\|_2e_1\|_2,$$" class="latex-display" width="580" height="22">于是在GMRES的第<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">步用标准方法 (对<img src="latex/latex2png-IterationMethods_63048644_-2.gif" alt="$\tilde{H}_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="17">进行<img src="latex/latex2png-IterationMethods_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">分解),求得如上问题中的极小化向量<img src="latex/latex2png-IterationMethods_43217938_-4.gif" alt="$y$" class="latex-inline" style="vertical-align: -4px" width="8" height="12">,然后令<img src="latex/latex2png-IterationMethods_203630668_-4.gif" alt="$x_n=Q_ny$" class="latex-inline" style="vertical-align: -4px" width="71" height="16">.进一步分析指出,由于<img src="latex/latex2png-IterationMethods_64144854_-4.gif" alt="$\tilde{H}_1,\tilde{H}_2,\cdots$" class="latex-inline" style="vertical-align: -4px" width="75" height="19">的关系,不用对每一个矩阵独立构造<img src="latex/latex2png-IterationMethods_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">因子分解,而可以用更新步骤从<img src="latex/latex2png-IterationMethods_258871201_-2.gif" alt="$\tilde{H}_{n-1}$" class="latex-inline" style="vertical-align: -2px" width="38" height="17">的<img src="latex/latex2png-IterationMethods_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">因子分解来得到<img src="latex/latex2png-IterationMethods_63048644_-2.gif" alt="$\tilde{H}_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="17">的<img src="latex/latex2png-IterationMethods_157578258_-4.gif" alt="$QR$" class="latex-inline" style="vertical-align: -4px" width="25" height="16">分解,只需要单个Givens旋转和<img src="latex/latex2png-IterationMethods_210466467_-5.gif" alt="$O (n)$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">工作量.</p>
+
+<p>同样指出,GMRES同多项式逼近之间的联系:事实上,我们已经得到GMRES本质上是求常数项为1的不高于<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次的多项式<img src="latex/latex2png-IterationMethods_238580756_-2.gif" alt="$p_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">,使<img src="latex/latex2png-IterationMethods_150599423_-5.gif" alt="$\|p_n (A)b\|$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">为极小值.</p>
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="IterationMethods.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Lanczos迭代</h2>
+
+<p class="first">Lanczos迭代是限定在<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">是Hermite矩阵情形下的Arnoldi迭代.由于矩阵的对称性,Arnoldi迭代中的Hessenberg矩阵<img src="latex/latex2png-IterationMethods_238580756_-2.gif" alt="$H_n$" class="latex-inline" style="vertical-align: -2px" width="22" height="14">将进而化为三对角矩阵<img src="latex/latex2png-IterationMethods_96963564_-2.gif" alt="$T_n$" class="latex-inline" style="vertical-align: -2px" width="18" height="14">,每步迭代的递推式也从<img src="latex/latex2png-IterationMethods_238777982_-5.gif" alt="$(n+1)$" class="latex-inline" style="vertical-align: -5px" width="49" height="18">项减少为<img src="latex/latex2png-IterationMethods_41251858_-1.gif" alt="$3$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">项,这使得Lanczos迭代所需的运算更少.</p>
+
+<p>但舍入误差对Lanczos迭代有着重要的影响.正由于每步迭代仅对三个向量进行正交化,每步的舍入误差导致正交性的损失,从而算法的稳定性降低.实际计算中发现,经过多步迭代后会有所谓&quot;重像 (Ghost)&quot;特征值出现.这些迭代中出现的表观 (而非真实存在)的重特征值与<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">的实际特征值的重数毫无关系,这些原因使得Lanczos迭代的实用性降低.</p>
+
+
+<h2><a name="sec5" id="sec5"></a>
+<a href="IterationMethods.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>共轭梯度法 (CG)</h2>
+
+<p class="first">现在假设<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">不仅是实的和对称的,而且是正定的.在此假设下,由<img src="latex/latex2png-IterationMethods_261225441_-5.gif" alt="$\|x\|_A\equiv \sqrt{x^TAx}$" class="latex-inline" style="vertical-align: -5px" width="114" height="21">定义的函数<img src="latex/latex2png-IterationMethods_70032170_-5.gif" alt="$\|\cdot\|_A$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">是<img src="latex/latex2png-IterationMethods_67613236_0.gif" alt="$\mathbb{R}^m$" class="latex-inline" style="vertical-align: 0px" width="24" height="12">上的范数,称为<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">-范数.共轭梯度迭代在第<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">步产生唯一的<img src="latex/latex2png-IterationMethods_226025111_.gif" alt="$$\|e_n\|_A\equiv \|x_n-x_*\|_A,(x_n\in \mathcal{K}_n)$$" class="latex-display" width="580" height="18">达到极小这一性质的迭代序列的递推公式系统.</p>
+
+<p>下面首先给出CG迭代步骤,之后证明它具有以上所述的极小性质.</p>
+
+<div class="algorithm">
+<span class="theorem-header">算法2<a name=""></a></span><span class="theorem-name">(CG迭代)</span>
+<img src="latex/latex2png-IterationMethods_119108021_.gif" alt="
+\begin{align*}
+ x_0&=0,r_0=b,p_0=r_0\\
+ \text{for}&~n=1,2,3,\ldots\\
+ &\alpha_n= (r_{n-1}^Tr_{n-1})/ (p_{n-1}^TAp_{n-1}),~~(\text{步长}),\\
+ &x_n=x_{n-1}+\alpha_np_{n-1},\text{(近似解)},\\
+ &r_n=r_{n-1}-\alpha_nAp_{n-1},\text{(剩余)},\\
+ &\beta_n= (r_n^Tr_n) /(r_{n-1}^Tr_{n-1})~~,\text{(扩展此步)},\\
+ &p_n=r_n+\beta_np_{n-1}~~,(\text{搜索方向}).
+\end{align*}
+" class="latex-display" width="580" height="202">
+
+
+</div>
+
+<div class="theorem">
+<span class="theorem-header">定理2<a name="CG"></a></span><span class="theorem-name"></span>
+设在对称正定矩阵问题<img src="latex/latex2png-IterationMethods_67925050_0.gif" alt="$Ax=b$" class="latex-inline" style="vertical-align: 0px" width="51" height="12">上应用CG迭代,只要迭代还不收敛 (即<img src="latex/latex2png-IterationMethods_46326188_-4.gif" alt="$r_{n-1}\neq 0$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">),那么算法就没有用零作除数而继续进行,并且有以下的子空间恒等式:
+<img src="latex/latex2png-IterationMethods_78861345_.gif" alt="
+\begin{equation*}
+\begin{split}
+\mathcal{K}_n&=\mathrm{span}\{x_1,x_2,\cdots,x_n\}=\mathrm{span}\{p_0,p_1,\cdots,p_{n-1}\}\\
+&=\mathrm{span}\{r_0,r_1,\cdots,r_{n-1}\}=\mathrm{span}\{b,Ab,\cdots,A^{n-1}b\}.
+\end{split}
+\end{equation*}
+" class="latex-display" width="580" height="49">而且,剩余是正交的:<img src="latex/latex2png-IterationMethods_185410565_.gif" alt="$$r_n^Tr_j=0,(j<n).$$" class="latex-display" width="580" height="21">以及搜索方向是&quot;<img src="latex/latex2png-IterationMethods_42169362_0.gif" alt="$A$" class="latex-inline" style="vertical-align: 0px" width="12" height="12">-共轭&quot;:<img src="latex/latex2png-IterationMethods_255222613_.gif" alt="$$p_n^TAp_j,(j<n).$$" class="latex-display" width="580" height="21">
+
+
+</div>
+
+<p>由CG迭代的步骤易于归纳地证明该定理.由此,可以得到以下CG迭代的最优性质:
+<div class="theorem">
+<span class="theorem-header">定理3<a name=""></a></span><span class="theorem-name"></span>
+设在对称正定矩阵问题<img src="latex/latex2png-IterationMethods_67925050_0.gif" alt="$Ax=b$" class="latex-inline" style="vertical-align: 0px" width="51" height="12">上应用CG迭代.如果迭代还没有收敛 (即<img src="latex/latex2png-IterationMethods_46326188_-4.gif" alt="$r_{n-1}\neq 0$" class="latex-inline" style="vertical-align: -4px" width="64" height="16">),那么<img src="latex/latex2png-IterationMethods_164072428_-2.gif" alt="$x_n$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">是在<img src="latex/latex2png-IterationMethods_113482678_-2.gif" alt="$\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="23" height="14">中极小化<img src="latex/latex2png-IterationMethods_53151922_-5.gif" alt="$\|e_n\|_A$" class="latex-inline" style="vertical-align: -5px" width="42" height="18">的唯一点.收敛性是单调的:<img src="latex/latex2png-IterationMethods_196441079_.gif" alt="$$\|e_n\|_A\leqslant\|e_{n-1}\|_A.$$" class="latex-display" width="580" height="18">并且对某个<img src="latex/latex2png-IterationMethods_248075192_-3.gif" alt="$n\leqslant m$" class="latex-inline" style="vertical-align: -3px" width="46" height="14">,可以得到<img src="latex/latex2png-IterationMethods_100501867_-2.gif" alt="$e_n=0$" class="latex-inline" style="vertical-align: -2px" width="47" height="13">.</p>
+
+
+</div>
+<div class="proof">
+<span class="proof-header">证明</span>
+由前一定理知道<img src="latex/latex2png-IterationMethods_50546125_-2.gif" alt="$x_n\in \mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="62" height="14">.为了证明<img src="latex/latex2png-IterationMethods_164072428_-2.gif" alt="$x_n$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">是<img src="latex/latex2png-IterationMethods_113482678_-2.gif" alt="$\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="23" height="14">中极小化<img src="latex/latex2png-IterationMethods_97118827_-5.gif" alt="$\|e\|_A$" class="latex-inline" style="vertical-align: -5px" width="33" height="18">的唯一点,考虑任意点<img src="latex/latex2png-IterationMethods_131753787_-2.gif" alt="$x=x_n-\Delta x\in\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="137" height="14">,其误差<img src="latex/latex2png-IterationMethods_21319316_-2.gif" alt="$e=x_*-x=e_n+\Delta x$" class="latex-inline" style="vertical-align: -2px" width="159" height="14">.计算<img src="latex/latex2png-IterationMethods_74853247_.gif" alt="$$\|e\|_A^2= (e_n+\Delta x)^T (e_n+\Delta x)=e_n^TAe_n+ (\Delta x)^TA (\Delta x)+2e_n^TA (\Delta x),$$" class="latex-display" width="580" height="20">因<img src="latex/latex2png-IterationMethods_188977277_-2.gif" alt="$\Delta x\in\mathcal{K}_n$" class="latex-inline" style="vertical-align: -2px" width="67" height="14">,故<img src="latex/latex2png-IterationMethods_79328557_.gif" alt="$$e_n^TA (\Delta x)=r_n^T (\Delta x)=0,$$" class="latex-display" width="580" height="20">从而<img src="latex/latex2png-IterationMethods_141827504_.gif" alt="$$\|e\|_A^2=\|e_n\|_A^2+\|\Delta x\|_A^2\geqslant \|e_n\|_A^2.$$" class="latex-display" width="580" height="20">这样就得到了<img src="latex/latex2png-IterationMethods_164072428_-2.gif" alt="$x_n$" class="latex-inline" style="vertical-align: -2px" width="17" height="10">的极小性与唯一性.迭代的单调性由<img src="latex/latex2png-IterationMethods_144407023_-4.gif" alt="$\mathcal{K}_n\subseteq \mathcal{K}_{n+1}$" class="latex-inline" style="vertical-align: -4px" width="85" height="16">容易得到.
+<span class="proof-end">□</span>
+
+</div>
+
+<p>事实上,以上也得到了CG与多项式逼近问题的联系:</p>
+
+<p>求<img src="latex/latex2png-IterationMethods_14928790_-4.gif" alt="$p_n\in P_n$" class="latex-inline" style="vertical-align: -4px" width="58" height="16">为常数项为<img src="latex/latex2png-IterationMethods_41120786_0.gif" alt="$1$" class="latex-inline" style="vertical-align: 0px" width="6" height="11">的不高于<img src="latex/latex2png-IterationMethods_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次的多项式,使得<img src="latex/latex2png-IterationMethods_48144357_-5.gif" alt="$\|p_n (A)e_0\|_A$" class="latex-inline" style="vertical-align: -5px" width="83" height="18">为极小值.</p>
+
+
+<h2><a name="sec6" id="sec6"></a>
+<a href="IterationMethods.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>预处理</h2>
+
+<p class="first">矩阵迭代的收敛性依赖于矩阵的性质:特征值,奇异值等.人们发现,在许多情况下,可以对感兴趣的问题加以转换使得矩阵的性质获得巨大的改进.&quot;预处理 (preconditioning)&quot;这个过程,对于大多数迭代方法的成功应用是必不可少的.</p>
+
+<p>有多种预处理器可以应用,如对角线缩放式,不完全Cholesky分解等,可以参考<span class="cite"><a class="cite" href="IterationMethods.html#ref-1" name="cite-1">[1]</a></span>.</p>
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="IterationMethods.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Trefethen L.N. and Bau D.,III 著，陆金甫，关治译, </span><span class="ref-title-chs">数值线性代数, </span><span class="ref-publisher">人民邮电出版社, </span><span class="ref-year">2006. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>表组装示例</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"><LINK
+REL="HOME"
+TITLE="GTK+ 2.0 教程"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="组装构件"
+HREF="c418.html"><LINK
+REL="PREVIOUS"
+TITLE="用表组装"
+HREF="x453.html"><LINK
+REL="NEXT"
+TITLE="构件概述"
+HREF="c514.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>GTK+ 2.0 教程</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x453.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>组装构件</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c514.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SEC-TABLEPACKINGEXAMPLES">表组装示例</H1
+><P
+>这里我们创建一个包含一个2x2表的窗口，表中放入三个按钮。前两个按钮将放在上面那行里。而第三个，quit按钮，放在下面那行，并占据了两列。这就是说它看起来应该像这样：</P
+><P
+><SPAN
+CLASS="INLINEMEDIAOBJECT"
+><IMG
+SRC="images/table.png"></SPAN
+></P
+><P
+>这里是源代码：</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>&#13;#include &#60;gtk/gtk.h&#62;
+
+/* 我们的回调。
+ * 传到这个函数的数据被打印到标准输出 */
+void callback( GtkWidget *widget,
+               gpointer   data )
+{
+    g_print ("Hello again - %s was pressed\n", (char *) data);
+}
+
+/* 这个回调退出程序 */
+gint delete_event( GtkWidget *widget,
+                   GdkEvent  *event,
+                   gpointer   data )
+{
+    gtk_main_quit ();
+    return FALSE;
+}
+
+int main( int   argc,
+          char *argv[] )
+{
+    GtkWidget *window;
+    GtkWidget *button;
+    GtkWidget *table;
+
+    gtk_init (&#38;argc, &#38;argv);
+
+    /* 创建一个新窗口 */
+    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+
+    /* 设置窗口标题 */
+    gtk_window_set_title (GTK_WINDOW (window), "Table");
+
+    /* 为delete_event设置一个立即退出GTK的处理函数。 */
+    g_signal_connect (G_OBJECT (window), "delete_event",
+                      G_CALLBACK (delete_event), NULL);
+
+    /* 设置窗口的边框宽度。 */
+    gtk_container_set_border_width (GTK_CONTAINER (window), 20);
+
+    /* 创建一个2x2的表 */
+    table = gtk_table_new (2, 2, TRUE);
+
+    /* 将表放进主窗口 */
+    gtk_container_add (GTK_CONTAINER (window), table);
+
+    /* 创建第一个按钮 */
+    button = gtk_button_new_with_label ("button 1");
+
+    /* 当这个按钮被点击时，我们调用 "callback" 函数，并将一个
+     * 指向"button 1"的指针作为它的参数 */
+    g_signal_connect (G_OBJECT (button), "clicked",
+	              G_CALLBACK (callback), (gpointer) "button 1");
+
+
+    /* 将button 1插入表的左上象限(quadrant) */
+    gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 1, 0, 1);
+
+    gtk_widget_show (button);
+
+    /* 创建第二个按钮 */
+
+    button = gtk_button_new_with_label ("button 2");
+
+    /* 当这个按钮被点击时，我们调用 "callback" 函数，并将一个
+     * 指向"button 2"的指针作为它的参数 */
+    g_signal_connect (G_OBJECT (button), "clicked",
+                      G_CALLBACK (callback), (gpointer) "button 2");
+    /* 将button 2插入表的右上象限 */
+    gtk_table_attach_defaults (GTK_TABLE (table), button, 1, 2, 0, 1);
+
+    gtk_widget_show (button);
+
+    /* 创建"Quit"按钮 */
+    button = gtk_button_new_with_label ("Quit");
+
+    /* 当这个按钮被点击时，我们调用 "delete_event" 函数接着
+     * 程序就退出了 */
+    g_signal_connect (G_OBJECT (button), "clicked",
+                      G_CALLBACK (delete_event), NULL);
+
+    /* 将退出按钮插入表的下面两个象限 */
+    gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 1, 2);
+
+    gtk_widget_show (button);
+
+    gtk_widget_show (table);
+    gtk_widget_show (window);
+
+    gtk_main ();
+
+    return 0;
+}</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x453.html"
+ACCESSKEY="P"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c514.html"
+ACCESSKEY="N"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>用表组装</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c418.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>构件概述</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

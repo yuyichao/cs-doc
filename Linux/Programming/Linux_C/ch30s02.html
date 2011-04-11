@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2. 环境变量</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch30.html" title="第 30 章 进程" /><link rel="prev" href="ch30s01.html" title="1. 引言" /><link rel="next" href="ch30s03.html" title="3. 进程控制" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. 环境变量</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch30s01.html">上一页</a> </td><th width="60%" align="center">第 30 章 进程</th><td width="20%" align="right"> <a accesskey="n" href="ch30s03.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2865687"></a>2. 环境变量</h2></div></div></div><p>先前讲过，<code class="literal">exec</code>系统调用执行新程序时会把命令行参数和环境变量表传递给<code class="literal">main</code>函数，它们在整个进程地址空间中的位置如下图所示。</p><div class="figure"><a id="id2865714"></a><p class="title"><b>图 30.2. 进程地址空间</b></p><div class="figure-contents"><div><img src="images/process.addressspace.png" alt="进程地址空间" /></div></div></div><br class="figure-break" /><p>和命令行参数<code class="literal">argv</code>类似，环境变量表也是一组字符串，如下图所示。</p><div class="figure"><a id="id2865738"></a><p class="title"><b>图 30.3. 环境变量</b></p><div class="figure-contents"><div><img src="images/process.environ.png" alt="环境变量" /></div></div></div><br class="figure-break" /><p><code class="literal">libc</code>中定义的全局变量<code class="literal">environ</code>指向环境变量表，<code class="literal">environ</code>没有包含在任何头文件中，所以在使用时要用<code class="literal">extern</code>声明。例如：</p><div class="example"><a id="id2865781"></a><p class="title"><b>例 30.1. 打印环境变量</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	extern char **environ;
+	int i;
+	for(i=0; environ[i]!=NULL; i++)
+		printf("%s\n", environ[i]);
+	return 0;
+}</pre></div></div><br class="example-break" /><p>执行结果为</p><pre class="screen">$ ./a.out 
+SSH_AGENT_PID=5717
+SHELL=/bin/bash
+DESKTOP_STARTUP_ID=
+TERM=xterm
+...</pre><p>由于父进程在调用<code class="literal">fork</code>创建子进程时会把自己的环境变量表也复制给子进程，所以<code class="literal">a.out</code>打印的环境变量和Shell进程的环境变量是相同的。</p><p>按照惯例，环境变量字符串都是<code class="literal">name=value</code>这样的形式，大多数<code class="literal">name</code>由大写字母加下划线组成，一般把<code class="literal">name</code>的部分叫做环境变量，<code class="literal">value</code>的部分则是环境变量的值。环境变量定义了进程的运行环境，一些比较重要的环境变量的含义如下：</p><div class="variablelist"><dl><dt><span class="term">PATH</span></dt><dd><p>可执行文件的搜索路径。<code class="literal">ls</code>命令也是一个程序，执行它不需要提供完整的路径名<code class="literal">/bin/ls</code>，然而通常我们执行当前目录下的程序<code class="literal">a.out</code>却需要提供完整的路径名<code class="literal">./a.out</code>，这是因为<code class="literal">PATH</code>环境变量的值里面包含了<code class="literal">ls</code>命令所在的目录<code class="literal">/bin</code>，却不包含<code class="literal">a.out</code>所在的目录。<code class="literal">PATH</code>环境变量的值可以包含多个目录，用<code class="literal">:</code>号隔开。在Shell中用<code class="literal">echo</code>命令可以查看这个环境变量的值：</p><pre class="screen">$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games</pre></dd><dt><span class="term">SHELL</span></dt><dd><p>当前Shell，它的值通常是<code class="literal">/bin/bash</code>。</p></dd><dt><span class="term">TERM</span></dt><dd><p>当前终端类型，在图形界面终端下它的值通常是<code class="literal">xterm</code>，终端类型决定了一些程序的输出显示方式，比如图形界面终端可以显示汉字，而字符终端一般不行。</p></dd><dt><span class="term">LANG</span></dt><dd><p>语言和locale，决定了字符编码以及时间、货币等信息的显示格式。</p></dd><dt><span class="term">HOME</span></dt><dd><p>当前用户主目录的路径，很多程序需要在主目录下保存配置文件，使得每个用户在运行该程序时都有自己的一套配置。</p></dd></dl></div><p>用<code class="literal">environ</code>指针可以查看所有环境变量字符串，但是不够方便，如果给出<code class="literal">name</code>要在环境变量表中查找它对应的<code class="literal">value</code>，可以用<code class="literal">getenv</code>函数。</p><pre class="programlisting">#include &lt;stdlib.h&gt;
+char *getenv(const char *name);</pre><p><code class="literal">getenv</code>的返回值是指向<code class="literal">value</code>的指针，若未找到则为<code class="literal">NULL</code>。</p><p>修改环境变量可以用以下函数</p><pre class="programlisting">#include &lt;stdlib.h&gt;
+
+int setenv(const char *name, const char *value, int rewrite);
+void unsetenv(const char *name);</pre><p><code class="literal">putenv</code>和<code class="literal">setenv</code>函数若成功则返回为0，若出错则返回非0。</p><p><code class="literal">setenv</code>将环境变量<code class="literal">name</code>的值设置为<code class="literal">value</code>。如果已存在环境变量<code class="literal">name</code>，那么</p><div class="itemizedlist"><ul type="disc"><li><p>若rewrite非0，则覆盖原来的定义；</p></li><li><p>若rewrite为0，则不覆盖原来的定义，也不返回错误。</p></li></ul></div><p><code class="literal">unsetenv</code>删除<code class="literal">name</code>的定义。即使<code class="literal">name</code>没有定义也不返回错误。</p><div class="example"><a id="id2866145"></a><p class="title"><b>例 30.2. 修改环境变量</b></p><div class="example-contents"><pre class="programlisting">#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+
+int main(void)
+{
+	printf("PATH=%s\n", getenv("PATH"));
+	setenv("PATH", "hello", 1);
+	printf("PATH=%s\n", getenv("PATH"));
+	return 0;
+}</pre></div></div><br class="example-break" /><pre class="screen">$ ./a.out 
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+PATH=hello
+$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games</pre><p>可以看出，Shell进程的环境变量<code class="literal">PATH</code>传给了<code class="literal">a.out</code>，然后<code class="literal">a.out</code>修改了<code class="literal">PATH</code>的值，在<code class="literal">a.out</code>中能打印出修改后的值，但在Shell进程中<code class="literal">PATH</code>的值没变。父进程在创建子进程时会复制一份环境变量给子进程，但此后二者的环境变量互不影响。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch30s01.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch30.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch30s03.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">1. 引言 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 3. 进程控制</td></tr></table></div></body></html>

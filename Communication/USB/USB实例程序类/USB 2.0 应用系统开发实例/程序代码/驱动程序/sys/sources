@@ -1,0 +1,48 @@
+# SOURCES for use with BUILD command
+
+TARGETNAME=ds7
+TARGETPATH=obj
+TARGETTYPE=DRIVER
+DRIVERTYPE=WDM
+
+!IF ("$(DDKBUILDENV)"=="chk") || ("$(DDKBUILDENV)"=="checked")
+BUILDTYPE = CHECKED
+!ELSE
+BUILDTYPE = FREE
+NTDEBUG=
+!ENDIF
+
+TARGETLIBS=$(DRIVERWORKS)\lib\*\$(BUILDTYPE)\vdw_wdm.lib
+
+# Put Win2K DDK specific defines in this section.
+!IF "$(LATEST_WIN32_WINNT_VERSION)" == "0x0500" || "$(LATEST_WIN32_WINNT_VERSION)" == "0x0501"
+
+TARGETLIBS= $(TARGETLIBS) $(DDK_LIB_PATH)\usbd.lib
+
+# Put NT4/Win98 DDK specific defines in this section.
+!ELSE
+
+TARGETLIBS=	$(TARGETLIBS) $(BASEDIR)\lib\*\free\usbd.lib
+
+# Need to create the directory for the output in NT4/Win98
+!	IF [mkdir $(TARGETPATH)\i386\$(BUILDTYPE)] > 1
+!	ERROR Failed to create output directory.
+!	ENDIF
+
+!ENDIF
+
+C_DEFINES=-DNTVERSION='WDM'
+BROWSER_INFO=1
+RCNOFONTMAP=1
+LINK_LIB_IGNORE=4210
+
+INCLUDES=$(DRIVERWORKS)\include;\
+		 $(DRIVERWORKS)\source;\
+		 $(DRIVERWORKS)\..\common\include\stl;\
+		 $(BASEDIR)\inc;\
+		 $(BASEDIR)\src\usb\inc;\
+		 $(BASEDIR)\src\wdm\usb\inc;\
+		 $(DRIVERWORKS)\include\dep_vxd
+
+SOURCES=Ds7.rc Ds7.cpp Ds7Device.cpp 
+

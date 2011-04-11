@@ -1,0 +1,1211 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Appendix A. Problems and Common Errors</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="extending-mysql.html" title="Chapter 27. Extending MySQL"><link rel="next" href="error-handling.html" title="Appendix B. Error Codes and Messages">
+<style>
+<!--
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+span.quote
+	{}
+-->
+</style>
+</head><body><div class="appendix"><div class="titlepage"><div><div><h2 class="title"><a name="problems"></a>
+	附录A：问题和常见错误</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="problems.html#what-is-crashing">
+			A.1. 如何确定导致问题的原因</a></span></dt><dt><span class="section"><a href="problems.html#common-errors">
+			A.2. 使用MySQL程序时的常见错误</a></span></dt><dd><dl><dt><span class="section"><a href="problems.html#error-access-denied">A.2.1. 
+				拒绝访问</a></span></dt><dt><span class="section"><a href="problems.html#can-not-connect-to-server">A.2.2. 
+				无法连接到[local] MySQL服务器</a></span></dt><dt><span class="section"><a href="problems.html#old-client">A.2.3. 
+				客户端不支持鉴定协议</a></span></dt><dt><span class="section"><a href="problems.html#password-too-long">
+				A.2.4. 输入密码时出现密码错误</a></span></dt><dt><span class="section"><a href="problems.html#blocked-host">A.2.5. 
+				主机的hos<em class="replaceable">t_name被屏蔽</em></a></span></dt><dt><span class="section"><a href="problems.html#too-many-connections">A.2.6. 
+				连接数过多</a></span></dt><dt><span class="section"><a href="problems.html#out-of-memory">A.2.7. 
+				内存溢出</a></span></dt><dt><span class="section"><a href="problems.html#gone-away">A.2.8. 
+				MySQL服务器不可用</a></span></dt><dt><span class="section"><a href="problems.html#packet-too-large">A.2.9. 
+				信息包过大</a></span></dt><dt><span class="section"><a href="problems.html#communication-errors">
+				A.2.10. 通信错误和失效连接</a></span></dt><dt><span class="section"><a href="problems.html#full-table">A.2.11. 
+				表已满</a></span></dt><dt><span class="section"><a href="problems.html#cannot-create">A.2.12. 
+				无法创建文件／写入文件</a></span></dt><dt><span class="section"><a href="problems.html#commands-out-of-sync">A.2.13. 
+				命令不同步</a></span></dt><dt><span class="section"><a href="problems.html#ignoring-user">A.2.14. 
+				忽略用户</a></span></dt><dt><span class="section"><a href="problems.html#cannot-find-table">A.2.15. 
+				表tbl_na<em class="replaceable">me不存在</em></a></span></dt><dt><span class="section"><a href="problems.html#cannot-initialize-character-set">A.2.16. 
+				无法初始化字符集</a></span></dt><dt><span class="section"><a href="problems.html#not-enough-file-handles">
+				A.2.17. 文件未找到</a></span></dt></dl></dd><dt><span class="section"><a href="problems.html#installation-issues">A.3. 
+			与安装有关的事宜</a></span></dt><dd><dl><dt><span class="section"><a href="problems.html#link-errors">
+				A.3.1. 与MySQL客户端库的链接问题</a></span></dt><dt><span class="section"><a href="problems.html#changing-mysql-user">
+				A.3.2. 如何以普通用户身份运行MySQL</a></span></dt><dt><span class="section"><a href="problems.html#file-permissions">
+				A.3.3. 与文件许可有关的问题</a></span></dt></dl></dd><dt><span class="section"><a href="problems.html#administration-issues">
+			A.4. 与管理有关的事宜</a></span></dt><dd><dl><dt><span class="section"><a href="problems.html#resetting-permissions">
+				A.4.1. 如何复位根用户密码</a></span></dt><dt><span class="section"><a href="problems.html#crashing">
+				A.4.2. 如果MySQL依然崩溃，应作些什么</a></span></dt><dt><span class="section"><a href="problems.html#full-disk">
+				A.4.3. MySQL处理磁盘满的方式</a></span></dt><dt><span class="section"><a href="problems.html#temporary-files">
+				A.4.4. MySQL将临时文件储存在哪里</a></span></dt><dt><span class="section"><a href="problems.html#problems-with-mysql-sock">
+				A.4.5. 如何保护或更改MySQL套接字文件/tmp/mysql.sock<code class="filename"></code></a></span></dt><dt><span class="section"><a href="problems.html#timezone-problems">
+				A.4.6. 时区问题</a></span></dt></dl></dd><dt><span class="section"><a href="problems.html#query-issues">
+			A.5. 与查询有关的事宜</a></span></dt><dd><dl><dt><span class="section"><a href="problems.html#case-sensitivity">
+				A.5.1. 搜索中的大小写敏感性</a></span></dt><dt><span class="section"><a href="problems.html#using-date">
+				A.5.2. 使用DATE列方面的问题<code class="literal"></code></a></span></dt><dt><span class="section"><a href="problems.html#problems-with-null">
+				A.5.3. 与NULL值有关的问题<code class="literal"></code></a></span></dt><dt><span class="section"><a href="problems.html#problems-with-alias">
+				A.5.4. 与列别名有关的问题</a></span></dt><dt><span class="section"><a href="problems.html#non-transactional-tables">
+				A.5.5. 非事务表回滚失败</a></span></dt><dt><span class="section"><a href="problems.html#deleting-from-related-tables">
+				A.5.6. 从相关表删除行</a></span></dt><dt><span class="section"><a href="problems.html#no-matching-rows">
+				A.5.7. 解决与不匹配行有关的问题</a></span></dt><dt><span class="section"><a href="problems.html#problems-with-float">
+				A.5.8. 与浮点比较有关的问题</a></span></dt></dl></dd><dt><span class="section"><a href="problems.html#optimizer-issues">
+			A.6. 与优化器有关的事宜</a></span></dt><dt><span class="section"><a href="problems.html#table-definition-issues">
+			A.7. 与表定义有关的事宜</a></span></dt><dd><dl><dt><span class="section"><a href="problems.html#alter-table-problems">
+				A.7.1. 与ALTER TABLE有关的问题</a></span></dt><dt><span class="section"><a href="problems.html#change-column-order">
+				A.7.2. 如何更改表中的列顺序</a></span></dt><dt><span class="section"><a href="problems.html#temporary-table-problems">A.7.3. 
+				TEMPORARY TABLE问题</a></span></dt></dl></dd><dt><span class="section"><a href="problems.html#bugs">
+			A.8. MySQL中的已知事宜</a></span></dt><dd><dl><dt><span class="section"><a href="problems.html#open-bugs">
+				A.8.1. MySQL中的打开事宜</a></span></dt></dl></dd></dl></div><a class="indexterm" name="id3073248"></a><a class="indexterm" name="id3073258"></a><div class="section"><div class="titlepage"><div><div>
+		在本附录中，列出了一些你可能会遇到的常见问题和错误消息。并介绍了确定故障原因的方法，以及为解决问题所应采取的措施。<h2 class="title"><a name="what-is-crashing"></a>
+		A.1.&nbsp;如何确定导致问题的原因</h2></div></div></div>
+		<p>当你遇到问题时，首先要做的是找出导致问题的程序和设备部件：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果遇到下述征兆之一，或许是因为硬件问题（如内存、主板、<span>CPU</span>或硬盘）或内核问题：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>键盘不工作。正常情况下可通过按<span>Caps Lock</span>建进行检查。如果<span>Caps 
+		Lock</span>的点亮状态未改变，就需要更换键盘（在此之前，应尝试重启计算机，并检查与键盘相连的所有电缆）。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>鼠标指针不移动。</p>
+		<p><span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>机器未对远程机器的<span>Ping</span>命令做出应答。</p>
+		<p><span>4.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>与<span>MySQL</span>无关的其他程序工作不正常。</p>
+		<p><span>5.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>系统意外重启（有问题的用户级程序应不能使系统出现严重问题）。</p>
+		<p>
+		在该情况下，应检查所有的电缆并运行某些诊断工具，对你的硬件进行检查！此外，还应检查是否有能够解决问题的、适用于你的操作系统的补丁、更新或服务包。请检查所有的库（如<span><span>glibc</span>）是否是最新的。</span></p>
+		<p>使用配备<span>ECC</span>内存的机器以便尽早发现问题总是个好主意。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果键盘已锁定，可从另一台机器登录到你的机器，并执行<span><span>kbd_mode 
+		–a</span>，或许能恢复。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>请检查系统的日志文件（<span>/var/log/messages</span>或类似物）以找出问题的原因。如果你认为问题出在<span>MySQL</span>中，应检查<span>MySQL</span>的日志文件。请参见<a href="database-administration.html#log-files" title="5.11. The MySQL Log Files">5.11节，“MySQL日志文件”</a>。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果你不认为存在硬件问题，应尝试找出导致问题的原因。请使用<strong><span>top</span></strong>、<strong><span>ps</span></strong>、任务管理器或类似程序，以检查哪个程序占用了所有<span>CPU</span>时间或锁定了机器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>使用<strong><span>top</span></strong>、<strong><span>df</span></strong>或类似程序检查是否内存不够、磁盘空间不足、文件描述符缺乏、或其他关键资源缺少。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果问题是失去控制的进程，应尝试杀死它。如果杀不死进程，或许是因为操作系统中存在缺陷。</p>
+		<p>如果在检查了所有其他可能性之后，并得出结论问题是由<span>MySQL</span>服务器或<span>MySQL</span>客户端导致的，应创建提供给我方的邮件列表或支持团队的缺陷报告。在缺陷报告中，请详细描述系统的行为，以及你认为发生了什么情况。<span>+3.</span></p>
+		<p>还应阐明为什么你认为是<span>MySQL</span>导致了问题。请考虑本章介绍的所有情况。准确阐明当你检查系统时问题是如何出现的。对于程序和日志文件的任何输出和错误消息，请使用“复制和粘贴”方法。</p>
+		<p>尽量详细描述不工作的程序，以及你所见到的所有征兆。我们过去收到过很多仅说明“系统不工作”的缺陷报告。这不会为我们提供有助于解决问题的信息。</p>
+		<p>如果程序失败，了解下述信息总是有用的：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>有嫌疑的程序是否出现了分段故障（是否转储内核）？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>程序是否占用了所有可用的<span>CPU</span>时间？用<strong><span>top</span></strong><span>.</span>进行检查。让程序运行一段时间，或许能简单地评估某些事是否是计算密集性的。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果问题是因<strong><span>mysqld</span></strong>服务器导致的，使用<strong><span>mysqladmin 
+		-u root ping</span></strong>或<strong><span>mysqladmin 
+		-u root processlist</span></strong>是否能获得服务器的响应？</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>当你尝试连接到<span>MySQL</span>服务器（例如，<span>mysql</span>）时，客户端程序给出的信息是什么？客户端是否堵塞？是否获得了来自程序的任何输出？</p>
+		<p>发送缺陷报告时，请遵循<a href="introduction.html#asking-questions" title="1.7.1.2. Asking Questions or Reporting Bugs">1.7.1.2节，“请教问题或通报缺陷”</a>中给出的说明。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="common-errors"></a>
+		A.2.&nbsp;使用MySQL程序时的常见错误</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="problems.html#error-access-denied">A.2.1. 
+			拒绝访问</a></span></dt><dt><span class="section"><a href="problems.html#can-not-connect-to-server">A.2.2. 
+			无法连接到[local] MySQL服务器</a></span></dt><dt><span class="section"><a href="problems.html#old-client">A.2.3. 
+			客户端不支持鉴定协议</a></span></dt><dt><span class="section"><a href="problems.html#password-too-long">
+			A.2.4. 输入密码时出现密码错误</a></span></dt><dt><span class="section"><a href="problems.html#blocked-host">A.2.5. 
+			主机的hos<em class="replaceable">t_name被屏蔽</em></a></span></dt><dt><span class="section"><a href="problems.html#too-many-connections">A.2.6. 
+			连接数过多</a></span></dt><dt><span class="section"><a href="problems.html#out-of-memory">A.2.7. 
+			内存溢出</a></span></dt><dt><span class="section"><a href="problems.html#gone-away">A.2.8. 
+			MySQL服务器不可用</a></span></dt><dt><span class="section"><a href="problems.html#packet-too-large">A.2.9. 
+			信息包过大</a></span></dt><dt><span class="section"><a href="problems.html#communication-errors">
+			A.2.10. 通信错误和失效连接</a></span></dt><dt><span class="section"><a href="problems.html#full-table">A.2.11. 
+			表已满</a></span></dt><dt><span class="section"><a href="problems.html#cannot-create">A.2.12. 
+			无法创建文件／写入文件</a></span></dt><dt><span class="section"><a href="problems.html#commands-out-of-sync">A.2.13. 
+			命令不同步</a></span></dt><dt><span class="section"><a href="problems.html#ignoring-user">A.2.14. 
+			忽略用户</a></span></dt><dt><span class="section"><a href="problems.html#cannot-find-table">A.2.15. 
+			表tbl_na<em class="replaceable">me不存在</em></a></span></dt><dt><span class="section"><a href="problems.html#cannot-initialize-character-set">A.2.16. 
+			无法初始化字符集</a></span></dt><dt><span class="section"><a href="problems.html#not-enough-file-handles">
+			A.2.17. 文件未找到</a></span></dt></dl></div><a class="indexterm" name="id3073561"></a>
+		<p>本节列出了用户运行<span>MySQL</span>服务器时常会遇到的一些错误。尽管问题是在你尝试运行客户端时出现的，但对很多问题的解决方案来说，需要更改<span>MySQL</span>服务器的配置。</p>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="error-access-denied"></a>A.2.1. 拒绝访问</h3></div></div></div><a class="indexterm" name="id3073591"></a><a class="indexterm" name="id3073601"></a><a class="indexterm" name="id3073611"></a><p>
+        <span>
+		导致拒绝访问错误的原因很多。该错误常与连接时服务器允许客户端使用的<span>MySQL</span>账户有关。请参见</span><a href="database-administration.html#access-denied" title="5.7.8. Causes of Access denied Errors">5.7.8节，“拒绝访问错误的原因<code class="literal"></code>”</a><span>。请参见</span><a href="database-administration.html#privileges" title="5.7.2. How the Privilege System Works">5.7.2节，“权限系统工作原理”</a>。
+      </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="can-not-connect-to-server"></a>A.2.2. 无法连接到[local] 
+			MySQL服务器</h3></div></div></div><div class="toc"><dl><dt><span class="section"><a href="problems.html#can-not-connect-to-server-on-windows">A.2.2.1. 
+				在Windows上与MySQL服务器的连接失败</a></span></dt></dl></div>
+			<p><span>Unix</span>平台上的<span>MySQL</span>客户端能够以两种不同的方式连接到<strong><span>mysqld</span></strong>服务器：通过文件系统中的文件（默认为<span><span>/tmp/mysql.sock</span>）使用<span>Unix</span>套接字进行连接，或通过端口号使用</span><span>TCP/IP</span>进行连接。<span>Unix</span>套接字文件的连接速度比<span>TCP/IP</span>快，但仅能在与相同计算机上的服务器相连时使用。如果未指定指定主机名或指定了特殊的主机名<span>localhost</span>，将使用<span>Unix</span>套接字。</p>
+			<p>如果<span>MySQL</span>服务器运行在<span>Windows 9x</span>或<span>Me</span>上，仅能通过<span>TCP/IP</span>进行连接。如服务器运行在<span>Windows 
+			NT</span>、<span>2000</span>、<span>XP</span>或<span>2003</span>上，而且使用<span><span>--enable-named-pipe</span>选项启动，如果在运行服务器的机器上运行客户端，也能使用命名管道进行连接。</span>默认情况下，命名管道的名称为<span>MySQL</span>。如果在连接到<span>mysqld</span>时未给定主机名，<span>MySQL</span>客户端首先会尝试连接到命名管道。如果不能工作，将连接到<span>TCP/IP</span>端口。使用“<span>.</span>”作为主机名，可在<span>Windows</span>平台上强制使用命名管道。</p>
+			<p>错误<span>(2002)</span>“无法连接到…”<span>通常意味着在系统没有运行的<span>MySQL</span>服务器，或在连接到服务器时使用了不正确的<span>Unix</span>套接字文件名或<span>TCP/IP</span>端口号。</span></p>
+			<p>首先检查服务器主机上是否有名为<span>mysqld</span>的进程（在<span>Unix</span>平台上使用<strong><span>ps 
+			xa | grep mysqld</span></strong>，或在<span>Windows</span>平台上使用任务管理器）。如果没有这类进程，应启动服务器。请参见<a href="installing.html#starting-server" title="2.9.2.3. Starting and Troubleshooting the MySQL Server">2.9.2.3节，“启动MySQL服务器以及其故障诊断和排除”</a>。</p>
+			<p>如果<strong><span>mysqld</span></strong>进程正在运行，可使用下述命令检查。在你的具体设置中，端口号或<span>Unix</span>套接字文件名可能会有所不同。<span><span>host_ip</span>代表运行服务器的机器的<span>IP</span>编号。</span></p>
+			<pre><span>shell&gt; <span><b>mysqladmin version</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysqladmin variables</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysqladmin -h `hostname` version variables</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysqladmin -h `hostname` --port=3306 version</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysqladmin -h host_ip version</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysqladmin --protocol=socket --socket=/tmp/mysql.sock version</b></span></span></pre>
+			<p>注意，应与主机名命令一起使用“<span>`</span>”而不是“’”，这会使主机名输出（当前主机名）被代入<strong><span>mysqladmin</span></strong>命令。如果没有主机名命令或正运行在<span>Windows</span>平台上，应以手动方式输入机器的主机名（无“<span>`</span>”符号），后跟<span><span>-h</span>选项。</span>也可以使用<span>TCP/IP</span>协议用<span>-h 
+			127.0.0.1</span>连接到本地主机。</p>
+			<p>下面给出了一些“无法连接到本地<span>MySQL</span>服务器”错误的可能原因：</p>
+			<p>
+			<span>1.<span>&nbsp;&nbsp;&nbsp;
+			</span></span><strong><span>Mysqld</span></strong>未运行。请检查操作系统的进程列表以确保<strong><span>mysqld</span></strong>进程正在运行。</p>
+			<p>
+			<span>2.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>你正在具有很多<span>TCP/IP</span>连接的<span>Windows</span>平台上运行<span>MySQL</span>服务器。如果你的客户端经常出现错误，请参见<a href="problems.html#can-not-connect-to-server-on-windows" title="A.2.2.1. Connection to MySQL Server Failing on Windows">A.2.2.1节，“在Windows上与MySQL服务器的连接失败”</a>，以找出规避方法。</p>
+			<p>
+			<span>3.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>你正在使用<span>MIT-pthreads</span>的系统上运行。如果你正在运行不具有固有线程的操作系统，<strong><span>mysqld</span></strong>将使用<span>MIT-pthreads</span>软件包。请参见<a href="installing.html#which-os" title="2.1.1. Operating Systems Supported by MySQL">2.1.1节，“MySQL支持的操作系统”</a>。但是，并非所有的<span>MIT-pthreads</span>版本均支持<span>Unix</span>套接字文件。在不支持套接字文件的系统上，连接到服务器时，必须明确指定主机名。请使用下述命令来检查是否连接到了服务器：</p>
+			<pre><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>shell&gt; <span><b>mysqladmin -h `hostname` version</b></span></span></pre>
+			<p>
+			<span>5.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>某人移动了<strong><span>mysqld</span><span>使用的</span></strong><span>Unix</span>套接字文件（默认为<span>/tmp/mysql.sock</span>）。例如，你可能执行了将旧文件从<span><span>/tmp</span>目录删除的</span><strong><span>cron</span></strong>任务。你总能执行<strong><span>mysqladmin 
+			version</span></strong>来检查<strong><span>mysqladmin</span><span>试图</span></strong>使用的<span>Unix</span>套接字文件是否的确存在。在该情况下，更正方式是更改<strong><span>cron</span></strong>任务，不删除<span><span>mysql.sock</span>文件，或将套接字文件置于其他地方。</span>请参见<a href="problems.html#problems-with-mysql-sock" title="A.4.5. How to Protect or Change the MySQL Socket File /tmp/mysql.sock">A.4.5节，“如何保护或更改MySQL套接字文件/tmp/mysql.sock<code class="filename"></code>”</a>。</p>
+			<p>
+			<span>6.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>你使用<span><span>--socket=/path/to/socket</span>选项启动了</span><strong><span>mysqld</span></strong>服务器，当忘记将套接字文件的新名称通知客户端程序<span>。如果更改了关于服务器的套接字路径，也必须通知</span><span>MySQL</span>客户端。可在运行客户端程序时使用相同的<span><span>—socket</span>选项来完成该任务。此外，你还应确保客户端具有访问</span>文件<span><span>mysql.sock</span>的权限。要想找出套接字文件的位置，可使用：</span></p>
+			<pre><span>7.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>shell&gt; <span><b>netstat -ln | grep mysql</b></span></span></pre>
+			<p>请参见<a href="problems.html#problems-with-mysql-sock" title="A.4.5. How to Protect or Change the MySQL Socket File /tmp/mysql.sock">A.4.5节，“如何保护或更改MySQL套接字文件/tmp/mysql.sock<code class="filename"></code>”</a>。</p>
+			<p>
+			<span>8.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>你正在使用<span>Linux</span>而且<span>1</span>个服务器线程已死亡（内核已清除）。在此情况下，在重启<span>MySQL</span>服务器之前，必须杀死其他<strong><span>mysqld</span></strong>线程（例如，使用<span>kill</span>或<span><span>mysql_zap</span>脚本）。</span>请参见<a href="problems.html#crashing" title="A.4.2. What to Do If MySQL Keeps Crashing">A.4.2节，“如果MySQL依然崩溃，应作些什么”</a>。</p>
+			<p>
+			<span>9.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>服务器或客户端程序不具有访问包含<span>Unix</span>套接字文件的目录或套接字文件本身的恰当权限。在该情况下，必须更改目录或套接字文件的访问权限，以便服务器或客户端程序能够访问它们，或用<span><span>–socket</span>选项重启</span><strong><span>mysqld</span></strong>，在该选项中指定服务器能创建、而且客户端可访问的目录下的套接字文件名。</p>
+			<p>如果遇到错误消息“无法连接到<span><span>some_host</span>上的<span>MySQL</span>服务器</span>”，可尝试采取下述步骤以找出问题所在：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>执行“<span><span>telnet 
+			some_host 3306<span>”</span></span>并按两次回车键，检查服务器是否运行在该主机上（</span><span>3306</span>是默认的<span>MySQL</span>端口号。如果你的服务器正在监听不同的端口，请更改该值）。如果有<span>1</span>个<span>MySQL</span>服务器正在运行并监听该端口，你应收到包含服务器版本号的回应。如果遇到错误，如“<span><span>telnet:</span>无法连接到远程主机<span>:</span>拒绝连接<span>”</span>，表示在该定端口上没有运行的服务器。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果服务器正运行在本地主机上，请使用<span>Unix</span>套接字文件，并使用<strong><span>mysqladmin 
+			-h localhost variables</span></strong>进行连接。验证服务器监听的<span>TCP/IP</span>端口号（它是<span>port</span>变量的值）。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>确保你的<strong><span>mysqld</span></strong>服务器未用<span><span>--skip-networking</span>选项启动。</span>如果使用了该选项，将无法使用<span>TCP/IP</span>连接到它。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>检查并确认不存在屏蔽了对<span>MySQL</span>访问的防火墙。需要配置诸如<span>ZoneAlarm</span>和<span>Windows 
+			XP</span>个人防火墙等应用程序，以允许对<span>MySQL</span>服务器的外部访问。</p>
+			<div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="can-not-connect-to-server-on-windows"></a>A.2.2.1. 在Windows上与MySQL服务器的连接失败</h4></div></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		当你在具有很多<span>TCP/IP</span>连接的<span>Windows</span>上运行<span>MySQL</span>服务器，并经常在客户端上遇到“无法连接到<span>MySQL</span>服务器”错误时，可能是因为<span>Windows</span>不允许足够的临时（短命）端口用于这类连接。<p>
+		默认情况下，<span>Windows</span>允许用于使用<span>5000</span>个临时（短命）<span>TCP</span>端口。任何端口关闭后，它将在<span><span>TIME_WAIT</span>状态保持<span>120</span>秒。与重新初始化全新的连接相比，该状态允许以更低的开销重新使用连接。</span>但是，在该时间逝去前，无法再次使用该端口。</p>
+		<p>对于小的可用<span>TCP</span>端口堆栈（<span>5000</span>），以及具有<span><span>TIME_WAIT</span>状态的大量在短时间内打开和关闭的</span><span>TCP</span>端口，你很可能遇到端口耗尽问题。处理该问题的方法有两种：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>通过调查连接池以及可能的持久连接，减少快速消耗的<span>TCP</span>端口数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>调整<span>Windows</span>注册表中的某些设置（请参见下面）。</p>
+		<p><strong><span>要点：下述步骤涉及更改<span>Windows
+		</span>注册表。更改注册表之前，请备份注册表，并确认你已掌握在出现问题时恢复注册表的方法。关于备份年、恢复和编辑注册表的更多信息，请请参见<span>Microsoft</span>知识库中的下述文献：<span><a target="_top"  href="http://support.microsoft.com/kb/256986/EN-US/">http://support.microsoft.com/kb/256986/EN-US/</a></span>。</span></strong></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>启动注册表编辑器（<span>Regedt32.exe</span>）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在注册表中确定下述键值的位置：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters</span></pre>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在“编辑”菜单上点击“添加值”，然后增加下述注册值：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Value Name: MaxUserPort</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Data Type: REG_DWORD</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Value: 65534</span></pre>
+		<p>它用于设置为任何用户提供的临时端口数。有效范围介于<span>5000</span>和<span>65534</span>之间（十进制）。默认值为<span>0x1388</span>（<span>5000</span>，十进制）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>在“编辑”菜单上点击“添加值”，然后增加下述注册值：</p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Value Name: TcpTimedWaitDelay</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Data Type: REG_DWORD</span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>Value: 30</span></pre>
+		<p>它用于设置关闭之前将<span>TCP</span>端口连接保持在<span><span>TIME_WAIT</span>状态的秒数。</span>有效范围介于<span>0</span>秒和<span>300</span>秒之间。默认值为<span>0x78</span>（<span>120</span>秒）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>退出注册表编辑器。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>重新引导机器。</p>
+		<p>注释：撤销上述设置十分简单，就像删除你创建的注册表一样。</p>
+		<h3 class="title"><a name="old-client"></a>A.2.3. 客户端不支持鉴定协议</h3></div></div></div>
+		<p><span>MySQL 5.1</span>采用了基于密码混编算法的鉴定协议，它与早期客户端（<span>4.1</span>之前）使用的协议不兼容。如果你将服务器升级到<span>4.1</span>之上，用早期的客户端进行连接可能失败，并给出下述消息：</p>
+		<pre><span>shell&gt; <span><b>mysql</b></span></span></pre>
+		<pre>客户端不支持服务器请求的鉴定协议：请考虑升级<span>MySQL</span>客户端。</pre>
+		<p>要想解决该问题，应使用下述方法之一：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>升级所有的客户端程序，以使用<span>4.1.1</span>或更新的客户端库。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>用<span>4.1</span>版之前的客户端连接到服务器时，请使用仍具有<span>4.1</span>版之前风格密码的账户。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于需要使用<span>4.1</span>版之前的客户端的每位用户，将密码恢复为<span>4.1</span>版之前的风格。可以使用<span><span>SET 
+		PASSWORD</span>语句和<span>OLD_PASSWORD()</span>函数完成该任务：</span></p>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>SET PASSWORD FOR</b></span></span></pre>
+		<pre><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>&#39;<i>some_user</i>&#39;@&#39;<i>some_host</i>&#39; = OLD_PASSWORD(&#39;<i>newpwd</i>&#39;);</b></span></span></pre>
+		<p>也可以使用<span>UPDATE</span>和<span>FLUSH 
+		PRIVILEGES</span>：</p>
+		<pre><span>mysql&gt; <span><b>UPDATE mysql.user SET Password = OLD_PASSWORD(&#39;<i>newpwd</i>&#39;)</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>WHERE Host = &#39;<i>some_host</i>&#39; AND User = &#39;<i>some_user</i>&#39;;</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>FLUSH PRIVILEGES;</b></span></span></pre>
+		<p>用你打算使用的密码替换前例中的“<span><i><span>newpwd</span></i></span>”。<span>MySQL</span>不能告诉你原来的密码是什么，因此，你需要选择新的密码。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>通知服务器使用旧的密码混编算法：</p>
+		<p><span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>使用“<span>--old-passwords</span>”选项启动<strong><span>mysqld</span></strong>。</p>
+		<p><span>2.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>对于已将密码更新为较长<span>4.1</span>格式的每个账户，为其指定具有旧格式的密码。可以使用下述查询确定这些账户：</p>
+		<pre><span>3.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>mysql&gt; <span><b>SELECT Host, User, Password FROM mysql.user</b></span></span></pre>
+		<pre><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>WHERE LENGTH(Password) &gt; 16;</b></span></span></pre>
+		<p>对于查询显示的每个账户记录，请使用<span>Host</span>和<span><span>User</span>值，并使用<span>OLD_PASSWORD()</span>函数以及<span>SET 
+		PASSWORD</span></span>或<span><span>UPDATE</span>之一指定密码，如前面所介绍的那样。</span></p>
+		<p><strong><span>注释：</span></strong>在早期的<span>PHP</span>版本中，<span><span>mysql</span>扩展不支持</span><span>MySQL 
+		4.1.1</span>和更高版中的鉴定协议。无论使用的<span>PHP</span>版本是什么，它均是正确的。如果你打算与<span>MySQL 
+		4.1</span>或更高版本一起使用<span><span>mysql</span>扩展，需要使用前面介绍的选项之一，配置</span><span>MySQL</span>，以便与较早的客户端一起使用。<span><span>mysqli</span>扩展（支持<span>“</span>改进的<span>MySQL”</span>，在</span><span>PHP 
+		5</span>中增加）与<span>MySQL 4.1</span>和更高版本中使用的改进的密码混编算法兼容，不需要对<span>MySQL</span>进行特殊配置就能使用该<span>MySQL</span>客户端库。关于<span>mysqli</span>扩展的更多信息，请参见<span><a target="_top"  href="http://php.net/mysqli">http://php.net/mysqli</a></span>。</p>
+		<p>关于密码混编和鉴定功能的额外背景知识，请参见<a href="database-administration.html#password-hashing" title="5.7.9. Password Hashing in MySQL 4.1">5.7.9节，“MySQL 4.1中的密码哈希处理”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="password-too-long"></a>
+			A.2.4.&nbsp;输入密码时出现密码错误</h3></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+			使用无下述密码值的“<span><span>—password”</span>或</span>“<span>-p”</span>选项调用时，<span>MySQL</span>客户端程序将提示输入密码：<pre><span>shell&gt; <span><b>mysql -u <i>user_name</i> -p</b></span></span></pre>
+			<pre><span>Enter password:</span></pre>
+			<p>在某些系统上，当你在选项文件或命令行上指定时，你可能会发现密码能够工作，但是当你在“<span>Enter 
+			password:</span>”提示下以交互方式输入密码时，你可能会发现输入的密码不工作。当系统所提供的用于读取密码的库将密码值限定在少数字符时（典型情况下为<span>8</span>个），就会出现该问题。这是与系统库有关的问题，与<span>MySQL</span>无关。要想处理该问题，可将<span>MySQL</span>密码更改为由<span>8</span>个字符或更少字符构成的值，或将密码置于选项文件中。</p>
+			<h3 class="title"><a name="blocked-host"></a>A.2.5. 主机的hos<em class="replaceable">t_name被屏蔽</em></h3></div></div></div>
+			<p>如果遇到下述错误，表示<strong><span>mysqld</span></strong>已收到来来自主机“<span><i><span>host_name</span></i></span>”的很多连接请求，但该主机却在中途中断。</p>
+			<pre>由于出现很多连接错误，主机<span>&#39;<span><i>host_name</i></span>&#39;</span>被屏蔽。</pre>
+			<pre>可使用<span>&#39;mysqladmin flush-hosts&#39;</span>解除屏蔽。</pre>
+			<p>允许的中断连接请求的数目由<span><span>max_connect_errors</span>系统变量的值决定。</span>当超出<span><span>max_connect_errors</span>规定的连接请求时，</span><strong><span>mysqld</span></strong>将认为某处出错（例如，某人正试图插入），并屏蔽主机的进一步连接请求，直至执行了<strong><span>mysqladmin 
+			flush-hosts</span></strong>命令，或发出了<span><span>FLUSH 
+			HOSTS</span>语句为止</span>。请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+			<p>在默认情况下，<strong><span>mysqld</span></strong>会在<span>10</span>次连接错误后屏蔽主机。你可以通过下述方式启动服务器来调整该值：</p>
+			<pre><span>shell&gt; <span><b>mysqld_safe --max_connect_errors=10000 &amp;</b></span></span></pre>
+			<p>如果在给定主机上遇到该错误，首先应核实该主机的<span>TCP/IP</span>连接是否正确。如果存在网络问题，增加<span><span>max_connect_errors</span>变量的值不会有任何好处。</span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="too-many-connections"></a>A.2.6. 连接数过多</h3></div></div></div>
+			<p>当你试图连接到<strong><span>mysqld</span></strong>服务器时遇到“过多连接”错误，这表示所有可用的连接均已被其他客户端使用。</p>
+			<p>允许的连接数由<span><span>max_connections</span>系统变量控制。</span>默认值为<span>100</span>。如果需要支持更多的连接，应使用该变量的较大值重启<strong><span>mysqld</span></strong>。</p>
+			<p><strong><span>mysqld</span></strong>实际上允许<span><span>max_connections+1</span>个客户端进行连接。</span>额外的连接保留给具有<span><span>SUPER</span>权限的账户。通过为系统管理员而不是普通用户授予<span>SUPER</span>权限（普通用户不应具有该权限），系统管理员能够连接到服务器，</span>并使用<span><span>SHOW 
+			PROCESSLIST</span>来诊断问题，即使已连接的无特权客户端数已达到最大值也同样。</span>请参见<a href="sql-syntax.html#show-processlist" title="13.5.4.16. SHOW PROCESSLIST Syntax">13.5.4.16节，“SHOW 
+		PROCESSLIST语法”</a>。</p>
+			<p><span>MySQL</span>能支持的最大连接数取决于给定平台上线程库的质量。<span>Linux</span>或<span>Solaris</span>应能支持<span>500-1000</span>个并发连接，具体情况取决于<span>RAM</span>容量，以及客户端正在作什么。<span>MySQL 
+			AB</span>提供的静态<span>Linux</span>库能支持高达<span>4000</span>个连接。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="out-of-memory"></a>A.2.7. 内存溢出</h3></div></div></div>
+			<p>如果使用<strong><span>mysql</span></strong>客户端程序发出了查询，并收到下述错误之一，则表示<strong><span>mysql</span></strong>没有足够内存来保存全部查询结果：</p>
+			<pre><span>mysql: Out of memory at line 42, &#39;malloc.c&#39;</span></pre>
+			<pre><span>mysql: needed 8136 byte (8k), memory in use: 12481367 bytes (12189k)</span></pre>
+			<pre>错误<span>2008: MySQL client ran out of memory</span></pre>
+			<p>要想更正该问题，首先应检查查询是否正确。返回这么多行是否合理？如果不合理，更正查询并再次尝试。否则，应使用“<span>--quick</span>”选项调用<strong><span>mysql</span></strong>。这样，将使用<span>mysql_use_result()</span><span> 
+			C API</span>函数来检索结果集，这类函数能够降低客户端上的负载（但会加重服务器上的负载）。</p>
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="gone-away"></a>A.2.8. MySQL服务器不可用</h3>
+					</div></div></div><a class="indexterm" name="id3074891"></a>
+			<a class="indexterm" name="id3074900"></a>
+			<p>在本节中，还介绍了出现查询错误期间，与丢失了服务器连接有关的事宜。</p>
+			<p><span>MySQL</span>服务器不可用错误的最常见原因是服务器超时以及连接已关闭。在该情况下，通常能见到下述错误代码之一（具体的错误代码与操作系统有关）：</p>
+			<table border="1" cellpadding="0" id="table1">
+				<tr>
+					<td>
+					<p><strong><span>
+					错误代码</span></strong></td>
+					<td>
+					<p><strong><span>
+					描述</span></strong></td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CR_SERVER_GONE_ERROR</span></td>
+					<td>
+					<p>客户端无法将问题发送至服务器。</td>
+				</tr>
+				<tr>
+					<td>
+					<p>
+					<span>CR_SERVER_LOST</span></td>
+					<td>
+					<p>写入服务器时客户端未收到错误，但也未获得问题的完整答案（或任何答案）。</td>
+				</tr>
+			</table>
+			<p>在默认情况下，如果未发生任何事，<span>8</span>小时后服务器将关闭连接。也可以在启动<strong><span>mysqld</span></strong>时，通过设置<span><span>wait_timeout</span>变量更改时间限制</span>。请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a><span>. </span></p>
+			<p>如果有<span>1</span>个脚本，你仅需要再次发出查询，让客户端再次进行自动连接即可。其中，假定在客户端中启用了自动再连接功能（对于<span>mysql</span>命令行客户端，这是默认设置）。</p>
+			<p><span>MySQL</span>服务器不可用错误的一些其他常见原因如下：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你（或<span>db</span>系统管理员）使用<span>KILL</span>语句或<strong><span>mysqladmin 
+			kill</span></strong>命令杀死了正在运行的线程。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你试图在关闭了与服务器的连接后运行查询。这表明应更正应用程序中的逻辑错误。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你在客户端一侧遇到<span>TCP/IP</span>连接超时错误。如果你使用了命令：<span>mysql_options(..., 
+			MYSQL_OPT_READ_TIMEOUT,...)</span>或<span><span>mysql_options(..., 
+			MYSQL_OPT_WRITE_TIMEOUT,...)</span>，就可能出现该问题。</span>在该情况下，增加超时值可能有助于问题的解决。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你在服务器端遇到超时错误，而且禁止了客户端中的自动再连接功能（<span><span>MYSQL</span>结构中的再连接标志等于<span>0</span>）。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你正在使用<span>Windows</span>客户端，而且在发出命令之前服务器撤销了连接（或许是因为已超过<span><span>wait_timeout</span>）</span>。</p>
+			<p>在<span>Windows</span>平台上出现问题的原因，在某些情况下，将<span>TCP/IP</span>连接写入服务器时，<span>MySQL</span>未收到来自操作系统的错误，但当试图从连接读取答案时出现错误。</p>
+			<p>在该情况下，即使<span><span>MYSQL</span>结构中的再连接标志等于<span>1</span>，</span><span>MySQL</span>也不会执行自动再连接并再次发出查询，这是因为它不知道服务器是否收到原始查询。</p>
+			<p>对此的解决方式是：如果自上一次查询以来经过了较长时间，在连接上执行<span>mysql_ping</span>（正是<span><span>MyODBC</span>所作的）；或在</span><strong><span>mysqld</span></strong>服务器上将<span><span>wait_timeout</span>设置得很高，使之实际上不存在超时。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果你向服务器发出了不正确或过大的查询，也会遇到这类问题。如果<strong><span>mysqld</span></strong>收到过大或无序的信息包，它会认为客户端出错，并关闭连接。如果需要执行较大的查询（例如，正在处理大的<span><span>BLOB</span>列），</span>可通过设置服务器的<span><span>max_allowed_packet</span>变量，增加查询限制值，该变量的默认值为</span><span>1MB</span>。或许，你还需增加客户端上的最大信息包大小。关于设置信息包大小的更多信息，请参见<a href="problems.html#packet-too-large" title="A.2.9. Packet too large">A.2.9节，“信息包过大”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果你的客户端低于<span>4.0.8</span>而且你的服务器高于<span>4.0.8</span>，当你接收<span>16MB</span>或更大的信息包时，可能会丢失连接。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>如果<span>MySQL</span>是用“<span>--skip-networking</span>”选项启动的，也会见到<span>MySQL</span>服务器不可用错误。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你遇到了执行查询时服务器宕机的缺陷。</p>
+			<p>通过执行<strong><span>mysqladmin 
+			version</span></strong>并检查服务器的正常工作时间，可检查服务器是否宕机并重启。如果客户端连接是因<strong><span>mysqld</span></strong>崩溃和重启而断开的，应将重点放在查找崩溃你方面。首先应再次检查发出的查询是否再次杀死了服务器。请参见<a href="problems.html#crashing" title="A.4.2. What to Do If MySQL Keeps Crashing">A.4.2节，“如果MySQL依然崩溃，应作些什么”</a>。</p>
+			<p>用“<span><span>--log-warnings=2<span>”</span></span>选项启动</span><span>mysqld</span>，可获得关于连接的更多信息。这样，就能将某些断开连接错误记录到<span><span>hostname.err</span>文件中</span>。请参见<a href="database-administration.html#error-log" title="5.11.1. The Error Log">5.11.1节，“错误日志”</a>。</p>
+			<p>如果你打算创建与该问题有关的缺陷报告，务必包含下述信息：</p>
+			<p>
+			<span>1.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>指明<span>MySQL</span>服务器是否宕机。通过服务器错误日志可发现这方面的信息。请参见<a href="problems.html#crashing" title="A.4.2. What to Do If MySQL Keeps Crashing">A.4.2节，“如果MySQL依然崩溃，应作些什么”</a>。</p>
+			<p>
+			<span>2.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>如果特定查询杀死了<strong><span>mysqld</span></strong>，而且在运行查询前用<span><span>CHECK 
+			TABLE</span>检查了涉及的表，你是否能提供可重复的测试范例？</span>请参见<a href="porting.html#reproduceable-test-case" title="E.1.6. Making a Test Case If You Experience Table Corruption">E.1.6节，“如果出现表崩溃，请生成测试案例”</a>。</p>
+			<p>
+			<span>3.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>在<span>MySQL</span>服务器中，系统变量<span><span>wait_timeout</span>的值是什么？</span>（<strong><span>mysqladmin 
+			variables</span></strong>给出了该变量的值）。</p>
+			<p>
+			<span>4.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>你是否尝试使用“<span>--log</span>”选项来运行<strong><span>mysqld</span></strong>，以确定是否在日志中出现问题？</p>
+			<p>另请参见<a href="problems.html#communication-errors" title="A.2.10. Communication Errors and Aborted Connections">A.2.10节，“通信错误和失效连接”</a>。</p>
+			<p>请参见<a href="introduction.html#asking-questions" title="1.7.1.2. Asking Questions or Reporting Bugs">1.7.1.2节，“请教问题或通报缺陷”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="packet-too-large"></a>A.2.9. 信息包过大</h3></div></div></div>
+			<p>通信信息包是发送至<span>MySQL</span>服务器的单个<span>SQL</span>语句，或发送至客户端的单一行。</p>
+			<p>在<span>MySQL 5.1</span>服务器和客户端之间最大能发送的可能信息包为<span>1GB</span>。</p>
+			<p>当<span>MySQL</span>客户端或<strong><span>mysqld</span></strong>服务器收到大于<span><span>max_allowed_packet</span>字节的信息包时，将发出<span>“</span>信息包过大<span>”</span>错误，并关闭连接。对于某些客户端，如果通信信息包过大，在执行查询期间，了能回遇到<span>“</span>丢失与<span>MySQL</span>服务器的连接<span>”</span>错误。</span></p>
+			<p>客户端和服务器均有自己的<span><span>max_allowed_packet</span>变量，</span>因此，如你打算处理大的信息包，必须增加客户端和服务器上的该变量。</p>
+			<p>如果你正在使用<strong><span>mysql</span></strong>客户端程序，其<span><span>max_allowed_packet</span>变量的默认值为</span><span>16MB</span>。要想设置较大的值，可用下述方式启动<strong><span>mysql</span></strong>：</p>
+			<pre><span>mysql&gt; <span><b>mysql --max_allowed_packet=32M</b></span></span></pre>
+			<p>它将信息包的大小设置为<span>32MB</span>。</p>
+			<p>服务器的默认<span><span>max_allowed_packet</span>值为</span><span>1MB</span>。如果服务器需要处理大的查询，可增加该值（例如，如果准备处理大的<span>BLOB</span>列）。例如，要想将该设置为<span>16MB</span>，可采用下述方式启动服务器：</p>
+			<pre><span>mysql&gt; <span><b>mysqld --max_allowed_packet=16M</b></span></span></pre>
+			<p>也能使用选项文件来设置<span><span>max_allowed_packet</span>。</span>要想将服务器的该变量设置为<span>16MB</span>，可在选项文件中增加下行内容：</p>
+			<pre><span>[mysqld]</span></pre>
+			<pre><span>max_allowed_packet=16M</span></pre>
+			<p>增加该变量的值十分安全，这是因为仅当需要时才会分配额外内存。例如，仅当你发出长查询或<strong><span>mysqld</span></strong>必须返回大的结果行时<strong><span>mysqld</span></strong>才会分配更多内存。该变量之所以取较小默认值是一种预防措施，以捕获客户端和服务器之间的错误信息包，并确保不会因偶然使用大的信息包而导致内存溢出。</p>
+			<p>如果你正是用大的<span>BLOB</span>值，而且未为<strong><span>mysqld</span></strong>授予为处理查询而访问足够内存的权限，也会遇到与大信息包有关的奇怪问题。如果怀疑出现了该情况，请尝试在<strong><span>mysqld_safe</span></strong>脚本开始增加<strong><span>ulimit 
+			-d 256000</span></strong>，并重启<strong><span>mysqld</span></strong>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="communication-errors"></a>
+			A.2.10.&nbsp;通信错误和失效连接</h3></div></div></div><a class="indexterm" name="id3075540"></a><a class="indexterm" name="id3075546"></a><a class="indexterm" name="id3075553"></a>
+			<p>对于连接问题，服务器错误日志是有用的信息源。请参见<a href="database-administration.html#error-log" title="5.11.1. The Error Log">5.11.1节，“错误日志”</a>。如果服务器是用“<span>--log-warnings</span>”选项启动的，在错误日志中可能会发现下述消息：</p>
+			<pre><span>010301 14:38:23&nbsp; Aborted connection 854 to db: &#39;users&#39; user: &#39;josh&#39;</span></pre>
+			<p>如果“<span><span>Aborted 
+			connections”</span>（放弃连接）消息出现在错误日志中，可能的原因是：</span></p>
+			<p>
+			<span>1.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>客户端程序在退出之前未调用<span><span>mysql_close()</span>。</span></p>
+			<p>
+			<span>2.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>客户端的空闲时间超过<span><span>wait_timeout</span>或<span>interactive_timeout</span>秒，未向服务器发出任何请求。</span>请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+			<p>
+			<span>3.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>客户端在数据传输中途突然结束。</p>
+			<p>出现这类情况时，服务器将增加“<span><span>Aborted_clients”</span>（放弃客户端）状态变量。</span></p>
+			<p>出现下述情况时，服务器将增加“<span><span>Aborted_clients”</span>（放弃客户端）状态变量。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>客户端不具有连接至数据库的权限。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>客户端采用了不正确的密码。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>连接信息包不含正确信息。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>获取连接信息包的时间超过<span><span>connect_timeout</span>秒。</span>请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+			<p>如果出现这类情况，可能表明某人正试图侵入你的服务器！</p>
+			<p>对于放弃客户端或放弃连接问题，其他可能的源应包括：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>与<span>Linux</span>一起使用以太网协议，半双工或全双工。很多<span>Linux</span>以太网驱动均存在该缺陷。应通过<span>FTP</span>在客户端和服务器机器之间传输大文件来测试该缺陷。如果传输处于<span>burst-pause-burst-pause</span>（爆发<span>-</span>暂停<span>-</span>爆发<span>-</span>暂停）模式，表明你遇到了<span>Linux</span>双工故障。唯一的解决方法是，将网卡和<span>Hub/</span>交换器的双工模式切换为全双工或半双工，并对结果进行测试以确定最佳设置。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>与线程库有关的某些问题导致读取中断。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>配置不良的<span>TCP/IP</span>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>有问题的以太网、<span>Hub</span>、交换器、电缆等。仅能通过更换硬件才能恰当诊断。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>变量<span><span>max_allowed_packet</span>过小或</span>查询要求的内存超过为<strong><span>mysqld</span></strong>分配的内存。请参见<a href="problems.html#packet-too-large" title="A.2.9. Packet too large">A.2.9节，“信息包过大”</a>。</p>
+			<p>另请参见<a href="problems.html#gone-away" title="A.2.8. MySQL server has gone away">A.2.8节，“MySQL服务器不可用”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="full-table"></a>A.2.11. 表已满</h3></div></div></div><a class="indexterm" name="id3075795"></a>
+			<p>表已满错误出现的方式有数种：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你正在使用低于<span>3.23</span>版的<span>MySQL</span>服务器，而且“内存中”临时表超过了<span><span>tmp_table_size</span>字节。</span>要想避免该问题，可使用“<span>-O 
+			tmp_table_size=<i>val</i></span>”选项以便<strong><span>mysqld</span></strong>增加临时表的大小，或在发出有问题的查询之前，使用<span>SQL</span>选项<span><span>SQL_BIG_TABLES</span>。</span>请参见<a href="sql-syntax.html#set-option" title="13.5.3. SET Syntax">13.5.3节，“SET语法”</a>。</p>
+			<p>也可以使用“<span>--big-tables</span>”选项启动<strong><span>mysqld</span></strong>。它与使用针对所有查询的<span><span>SQL_BIG_TABLES</span>完全相同。</span></p>
+			<p>自<span>MySQL 3.23</span>起，该问题应不再出现。如果“内存中”临时表超过<span>tmp_table_size</span>，服务器会自动将其转换为基于磁盘的<span>MyISAM</span>表。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你正在使用<span><span>InnoDB</span>表，</span>并超出了<span><span>InnoDB</span>表空间。</span>在该情况下，解决方法是增加<span>InnoDB</span>表空间。请参见<a href="storage-engines.html#adding-and-removing" title="15.2.7. Adding and Removing InnoDB Data and Log Files">15.2.7节，“添加和删除InnoDB数据和日志文件<code class="literal"></code>”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你正在仅支持<span>2GB</span>文件的操作系统上使用<span>ISAM</span>或<span><span>MyISAM</span>表，数据文件或索引文件达到了该限制值。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>你正在使用<span><span>MyISAM</span>表，而且表所需的空间超过内部指针允许的大小。如果在创建表时未指定<span>MAX_ROWS</span>表，</span><span>MySQL</span>将使用<span><span>myisam_data_pointer_size</span>系统变量。</span>默认值为<span>6</span>字节，它足以容纳<span>65536TB</span>数据。请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</p>
+			<p>使用该语句，可检查最大数据<span>/</span>索引大小：</p>
+			<pre><span>SHOW TABLE STATUS FROM database LIKE &#39;<span><i>tbl_name</i></span>&#39;;</span></pre>
+			<p>也可以使用<strong><span>myisamchk 
+			-dv /path/to/table-index-file</span></strong>。</p>
+			<p>如果指针大小过小，可使用<span>ALTER 
+			TABLE</span>更正该问题：</p>
+			<pre><span>ALTER TABLE <span><i>tbl_name</i></span> MAX_ROWS=1000000000 AVG_ROW_LENGTH=<span><i>nnn</i></span>;</span></pre>
+			<p>仅应为具有<span>BLOB</span>或<span><span>TEXT</span>列的表指定<span>AVG_ROW_LENGTH</span>。</span>在该情况下，<span>MySQL</span>不能仅根据行数优化所需的空间。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="cannot-create"></a>A.2.12. 无法创建文件／写入文件</h3></div></div></div><a class="indexterm" name="id3076019"></a>
+			<p>如果对某些查询遇到下述类型的错误，它意味着<span>MySQL</span>不能为临时目录下的结果集创建临时文件：</p>
+			<pre>无法创建<span>/</span>写入文件<span>&#39;\\sqla3fe_0.ism&#39;</span>。</pre>
+			<p>前述错误是<span>Windows</span>平台上的典型消息，<span>Unix</span>平台上的消息与之类似。</p>
+			<p>一种更正方式是使用“<span>--tmpdir</span>”选项启动<strong><span>mysqld</span></strong>，或在选项文件的<span><span>[mysqld]</span>部分增加该选项。</span>例如，要想指定目录<span>C:\temp</span>，可使用：</p>
+			<pre><span>[mysqld]</span></pre>
+			<pre><span>tmpdir=C:/temp</span></pre>
+			<p>目录<span><span>C:\temp</span>必须存在，</span>并有足够的空间允许<span>MySQL</span>写入它。请参见<a href="using-mysql-programs.html#option-files" title="4.3.2. Using Option Files">4.3.2节，“使用选项文件”</a>。</p>
+			<p>该错误的另一个原因可能是许可事宜。请确认<span>MySQL</span>服务器能够写入<span>tmpdir</span>目录。</p>
+			<p>此外，还用使用<strong><span>perror</span></strong>检查错误代码。服务器无法写入表的一个原因是文件系统已满。</p>
+			<pre><span>shell&gt; <span><b>perror 28</b></span></span></pre>
+			<pre>错误代码<span>28</span>：磁盘上无剩余空间。</pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="commands-out-of-sync"></a>A.2.13. 命令不同步</h3></div></div></div><a class="indexterm" name="id3076120"></a></div><div class="section"><div class="titlepage"><div><div>
+		如果遇到“命令不同步”错误，将无法在你的客户端代码中运行该命令，你正在以错误顺序调用客户端函数。<p>例如，如果你正使用<span><span>mysql_use_result()</span>，并打算在调用<span>mysql_free_result()</span>之前执行新查询，就会出现该问题。如果你试图执行两次查询，但并未在两次查询之间调用<span>mysql_use_result()</span></span>或<span><span>mysql_store_result()</span>，也会出现该问题。</span></p>
+		<h3 class="title"><a name="ignoring-user"></a>A.2.14. 忽略用户</h3></div></div></div>
+		<p>如果遇到下述错误，表示当启动<strong><span>mysqld</span></strong>时或重新加载授权表时，在用户表中发现具有非法密码的账户。</p>
+		<p><span>发现用户<span>&#39;<i>some_user</i>&#39;@&#39;<i>some_host</i>&#39;</span>密码错误：忽略用户。</span></p>
+		<p>作为其结果，许可系统将简单忽略账户。</p>
+		<p>在下面的介绍中，指明了可能的原因和问题的更正措施：</p>
+		<p>
+		<span>1.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>或许，你正打算用旧的用户表运行新版本的<strong><span>mysqld</span></strong>。执行<strong><span>mysqlshow 
+		mysql user</span></strong>检查<span>Password</span>（密码）列是否短于<span>16</span>个字符，通过该方式可检查该问题。如果结果是肯定的，可运行脚本<span><span>/add_long_password</span>脚本更正该问题。</span></p>
+		<p><span>
+		2.<span>&nbsp;&nbsp;&nbsp; </span>
+		</span>账户具有旧的密码（<span>8</span>字符长），而且未使用“<span>--old-protocol</span>”选项启动<strong><span>mysqld</span></strong>。更新用户表中的账户，使之具有新的密码，或使用“<span>--old-protocol</span>”选项重启<strong><span>mysqld</span></strong>。</p>
+		<p>
+		<span>3.<span>&nbsp;&nbsp;&nbsp;
+		</span></span>
+            <a class="indexterm" name="id3081907"></a>
+
+            在用户表中未使用<span><span>PASSWORD()</span>函数指定了密码。</span>使用<strong><span>mysql</span></strong>用新密码更新用户表中的账户，务必使用<span><span>PASSWORD()</span>函数：</span></p>
+		<pre><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span>mysql&gt; <span><b>UPDATE user SET Password=PASSWORD(&#39;<i>newpwd</i>&#39;)</b></span></span></pre>
+		<pre><span>5.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span><b>WHERE User=&#39;<i>some_user</i>&#39; AND Host=&#39;<i>some_host</i>&#39;;</b></span></span></pre>
+		</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="cannot-find-table"></a>A.2.15. 表tbl_na<em class="replaceable">me不存在</em></h3></div></div></div>
+			<p>如果遇到下述错误之一，通常意味着当前数据库中不存在具有给定名称的表：</p>
+			<pre>表<span>&#39;<span><i>tbl_name</i></span>&#39;</span>不存在</pre>
+			<pre>无法找到文件：<span>&#39;<span><i>tbl_name</i></span>&#39; (errno: 2)</span></pre>
+			<p>在某些情况下，表或许存在，但未正确引用它：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>由于<span>MySQL</span>使用目录和文件来保存数据库和表，如果它们位于区分文件名大小写的文件系统上，数据库和表名也区分文件大小写。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>即使对于不区分大小写的文件系统，如<span>Windows</span>，在查询内对给定表的所有引用必须使用相同的大小写。</p>
+			<p>可以使用<span><span>SHOW TABLES</span>检查位于当前数据库中的表</span>。请参见<a href="sql-syntax.html#show" title="13.5.4. SHOW Syntax">13.5.4节，“SHOW语法”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="cannot-initialize-character-set"></a>A.2.16. 无法初始化字符集</h3></div></div></div><a class="indexterm" name="id3076423"></a>
+			<p>如果存在字符集问题，可能会遇到下述错误：</p>
+			<pre><span>MySQL</span>连接失败：无法初始化字符集<span>charset_name</span>。</pre>
+			<p>导致该错误的原因：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>字符集为多字节字符集，但客户端不支持该字符集。在该情况下，需要使用“<span>--with-charset=<i>charset_name</i></span>”或“<span>--with-extra-charsets=<i>charset_name</i></span>”选项运行<strong><span>configure</span></strong>以重新编译客户端。请参见<a href="installing.html#configure-options" title="2.8.2. Typical configure Options">2.8.2节，“典型配置选项<span><strong class="command"></strong></span>”</a>。</p>
+			<p>所有的标准<span>MySQL</span>二进制文件均是采用“<span>--with-extra-character-sets=complex</span>”编译的，能够支持所有的多字节字符集。请参见<a href="database-administration.html#character-sets" title="5.10.1. The Character Set Used for Data and Sorting">5.10.1节，“数据和排序用字符集”</a>。</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>字符集是未编译到<strong><span>mysqld</span></strong>中的简单字符集，而且字符集定义文件不在客户端预期的位置。</p>
+			<p>在该情况下，需要采取下述方法之一解决问题：</p>
+			<p>
+			<span>1.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>重新编译客户端，使之支持字符集。请参见<a href="installing.html#configure-options" title="2.8.2. Typical configure Options">2.8.2节，“典型配置选项<span><strong class="command"></strong></span>”</a>。</p>
+			<p>
+			<span>2.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>为客户端指定字符集定义文件所在的目录。对于很多客户端，可使用“<span>--character-sets-dir</span>”选项完成该任务。</p>
+			<p>
+			<span>3.<span>&nbsp;&nbsp;&nbsp;
+			</span></span>将字符集定义文件复制到客户端预期的位置。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="not-enough-file-handles"></a>
+			A.2.17.&nbsp;文件未找到</h3></div></div></div>
+			<p>如果遇到“<span><span>ERROR &#39;...&#39;</span>未发现<span>(errno: 
+			23)”</span>，<span>“</span>无法打开文件：<span>... (errno: 
+			24)”</span>，或来自<span>MySQL</span>的具有<span>errno 
+			23</span></span>或<span><span>errno 
+			24</span>的其它错误，它表示未为<span>MySQL</span>服务器分配足够的文件描述符</span>。你可以使用<strong><span>perror</span></strong>实用工具来了解错误编号的含义：</p>
+			<pre><span>shell&gt; <span><b>perror 23</b></span></span></pre>
+			<pre>错误代码<span>23</span>：文件表溢出</pre>
+			<pre><span>shell&gt; <span><b>perror 24</b></span></span></pre>
+			<pre>错误代码<span>24</span>：打开文件过多</pre>
+			<pre><span>shell&gt; <span><b>perror 11</b></span></span></pre>
+			<pre>错误代码<span>11</span>：资源暂时不可用</pre>
+			<p>这里的问题是，<strong><span>mysqld</span></strong>正试图同时打开过多的文件。你可以通知<strong><span>mysqld</span></strong>不要一次打开过多文件，或增加<strong><span>mysqld</span></strong>可用文件描述符的数目。</p>
+			<p>要想通知<strong><span>mysqld</span></strong>将一次打开的文件控制在较小的数目上，可降低<span><span>table_cache</span>系统变量的值（），从而减少表高速缓冲（默认值为<span>64</span>）。降低<span>max_connections</span>的值也能降低</span>打开文件的数目（默认值为<span>100</span>）。</p>
+			<p>要想更改<strong><span>mysqld</span></strong>可用的文件描述符的数目，可在<strong><span>mysqld_safe</span></strong>上使用“<span><span>--open-files-limit”</span>选项或设置</span>（自<span>MySQL 
+			3.23.30<span>开始）</span><span>open_files_limit</span></span>系统变量。请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。设置这些值的最简单方式是在选项文件中增加<span>1</span>个选项。请参见<a href="using-mysql-programs.html#option-files" title="4.3.2. Using Option Files">4.3.2节，“使用选项文件”</a>。如果<strong><span>mysqld</span></strong>的版本较低，不支持设置打开文件的数目，可编辑<strong><span>mysqld_safe</span></strong>脚本。在脚本中有<span>1</span>个注释掉的行<strong><span>ulimit 
+			-n 256</span><span>。你可以删除</span></strong>‘<span>#</span>’字符取消对该行的注释，更改数值<span><span>256</span>，以设置</span><strong><span>mysqld</span></strong>可用的文件描述符数目。</p>
+			<p><span><span>
+			“--open-files-limit”</span>和</span><strong><span>ulimit</span></strong>能够增加文件描述符的数目，但最高不能超过操作系统限制的数目。此外还有<span>1</span>个“硬”限制，仅当以根用户身份启动<strong><span>mysqld_safe</span></strong>或<strong><span>mysqld</span></strong>时才能覆盖它（请记住，在该情况下，还需使用“<span>--user</span>”选项启动服务器，以便在启动后不再以根用户身份继续运行）。如果需要增加操作系统限制的对各进程可用文件描述符的数目，请参阅系统文档。</p>
+			<p><strong><span>注释：</span></strong>如果运行<strong><span>tcsh</span></strong><span> 
+			shell</span>，<strong><span>ulimit</span></strong>不工作！请求当前限制值时，<strong><span>tcsh</span></strong>还能通报不正确的值。在该情况下，应使用<strong><span>sh</span></strong>启动<strong><span>mysqld_safe</span><span>。</span></strong></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="installation-issues"></a>A.3. 与安装有关的事宜</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="problems.html#link-errors">
+		A.3.1. 与MySQL客户端库的链接问题</a></span></dt><dt><span class="section"><a href="problems.html#changing-mysql-user">
+		A.3.2. 如何以普通用户身份运行MySQL</a></span></dt><dt><span class="section"><a href="problems.html#file-permissions">
+		A.3.3. 与文件许可有关的问题</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="link-errors"></a>
+			A.3.1.&nbsp;与MySQL客户端库的链接问题</h3></div></div></div><a class="indexterm" name="id3076813"></a><a class="indexterm" name="id3076823"></a><a class="indexterm" name="id3076833"></a>
+			<p>当你链接到应用程序以使用<span>MySQL</span>客户端库时，可能会遇到以<span><span>mysql_</span>开始的未定义引用错误，如下所示：</span></p>
+			<pre><span>/tmp/ccFKsdPa.o: </span>在函数<span>`main&#39;</span>中<span>:</span></pre>
+			<pre><span>/tmp/ccFKsdPa.o(.text+0xb): </span>对<span>`mysql_init&#39;</span>的未定义引用。</pre>
+			<pre><span>/tmp/ccFKsdPa.o(.text+0x31): </span>对<span>`mysql_real_connect&#39;</span>的未定义引用。</pre>
+			<pre><span>/tmp/ccFKsdPa.o(.text+0x57): </span>对<span>`mysql_real_connect&#39;</span>的未定义引用。</pre>
+			<pre><span>/tmp/ccFKsdPa.o(.text+0x69): </span>对<span>`mysql_error&#39;</span>的未定义引用。</pre>
+			<pre><span>/tmp/ccFKsdPa.o(.text+0x9a): </span>对<span>`mysql_close&#39;</span>的未定义引用。</pre>
+			<p>通过在链接命令后增加“<span>-Ldir_path 
+			-lmysqlclient</span>”选项，应能解决该问题，其中，<span>dir_path</span>代表客户端库所在目录的路径名。要想确定正确的目录，可尝试下述命令：</p>
+			<pre><span>shell&gt; <span><b>mysql_config --libs</b></span></span></pre>
+			<p>来自<strong><span>mysql_config</span></strong>的输出可能会指明应在链接命令上指定的其他库。</p>
+			<p>对于非压缩或压缩函数，如果遇到未定义引用错误，可在链接命令后添加<span><span>-lz</span>，并再次尝试。</span></p>
+			<p>对于应在系统上存在的函数（如<span>connect</span>），如果遇到未定义引用错误，请检查相关函数的手册页，以便确定应在链接命令上增加哪些库。</p>
+			<p>对于系统上不存在的函数，可能会遇到未定义引用错误，如下所示：</p>
+			<pre><span>mf_format.o(.text+0x201): </span>对<span>`__lxstat&#39;</span>的未定义引用。</pre>
+			<p>它通常意味着你的<span>MySQL</span>客户端库是在与你的系统不<span>100</span>％兼容的系统上编译的。在该情况下，应下载最新的<span>MySQL</span>源码分发版，并自己编译<span>MySQL</span>。请参见<a href="installing.html#installing-source" title="2.8. MySQL Installation Using a Source Distribution">2.8节，“使用源码分发版安装MySQL”</a>。</p>
+			<p>当你试图执行<span>MySQL</span>程序时，可能会遇到运行时未定义引用错误。如果这类错误指明了以<span><span>mysql_</span>开始的符号，</span>或指明未发现<span><span>mysqlclient</span>库</span>，这意味着你的系统无法找到共享的<span><span>libmysqlclient.so</span>库。</span>对其的更正方式是，通知系统在库所在位置搜索共享库。请使用与系统相适应的下述方法：</p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>将<span><span>libmysqlclient.so</span>所在目录的路径添加到<span>LD_LIBRARY_PATH</span>环境变量中。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>将<span><span>libmysqlclient.so</span>所在目录的路径添加到<span>LD_LIBRARY</span>环境变量中。</span></p>
+			<p>
+			<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</span></span>将<span><span>libmysqlclient.so</span>拷贝到可被系统搜索的目录下，如<span>/lib</span></span>，然后通过执行<span>ldconfig</span>更新共享库信息。</p>
+			<p>解决该问题的另一种方法是，以静态方式将你的程序与“<span>-static</span>”选项链接在一起，或在链接代码之前删除动态<span>MySQL</span>库。使用第<span>2</span>种方法之前，应确保没有使用动态库的其它程序。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="changing-mysql-user"></a>
+			A.3.2.&nbsp;如何以普通用户身份运行MySQL</h3></div></div></div><a class="indexterm" name="id3077058"></a><a class="indexterm" name="id3077070"></a>
+			<p>在<span>Windows</span>平台上，能够使用普通用户账户以<span>Windows</span>服务方式运行服务器。</p>
+			<p>在<span>Unix</span>平台上，不是任何用户都能启动并运行<span>MySQL</span>服务器<strong><span>mysqld</span><span>的</span></strong>。但是，处于安全方面的原因，应避免以<span>Unix</span>根用户身份运行服务器。要想更改<strong><span>mysqld</span></strong>，使之能以正常的无特权<span>Unix</span>用户<span><i><span>user_name</span></i></span>身份运行，必须采取下述步骤：</p>
+			<p>如果服务器正在运行，停止它（使用<strong><span>mysqladmin 
+			shutdown</span></strong>）。</p>
+			<p>更改数据库目录和文件，允许<span><i><span>user_name</span></i></span>读写其中的文件（可能需要以<span>Unix</span>根用户身份完成这类设置）：</p>
+			<pre><span>shell&gt; <span><b>chown -R <i>user_name</i> <i>/path/to/mysql/datadir</i></b></span></span></pre>
+			<p>如果未这样做，当以<span><i><span>user_name</span></i></span>身份运行时，服务器无法访问数据库或表。</p>
+			<p>如果<span>MySQL</span>数据目录下的目录或文件采用的是符号链接，还需跟踪这些链接，并更改它们指向的目录和文件。<span><span>chown 
+			–R</span>可帮助你跟踪符号链接。</span></p>
+			<p>以<span><i><span>user_name</span></i></span>身份启动服务器。如果你正在使用<span>MySQL 
+			3.22</span>或更高版本，另一种可选方式是，以<span>Unix</span>根用户身份启动<strong><span>mysqld</span></strong>，并使用<span>--user=<i>user_name</i></span>选项。<strong><span>mysqld</span></strong>启动，然后在接受任何连接前，切换至<span>Unix</span>用户<span><i><span>user_name</span></i></span>并以该用户身份运行。</p>
+			<p>要想在系统启动时自动以给定的用户身份启动服务器，可在服务器数据目录下的<span>/etc/my.cnf</span>选项文件或<span><span>my.cnf</span>选项文件的<span>[mysqld]</span>组中，通过增加用户选项来指定用户名。</span>。例如：</p>
+			<pre><span>[mysqld]</span></pre>
+			<pre><span>user=<span><i>user_name</i></span></span></pre>
+			<p>如果你的<span>Unix</span>机器本身并不安全，应在授权表中为<span>MySQL</span>根账户指定密码。如不然，任何在该机器上具有登录账户的用户都能使用“<span>--user=root</span>”选项运行<strong><span>mysql</span></strong>客户端，并执行任何操作。在任何情况下均应为<span>MySQL</span>账户指定密码，这是个好主意，尤其是在服务器主机上存在其他登录账户时，更是如此。请参见<a href="installing.html#post-installation" title="2.9. Post-Installation Setup and Testing">2.9节，“安装后的设置和测试”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="file-permissions"></a>
+			A.3.3.&nbsp;与文件许可有关的问题</h3></div></div></div><a class="indexterm" name="id3077282"></a><a class="indexterm" name="id3077292"></a><a class="indexterm" name="id3077303"></a><a class="indexterm" name="id3077313"></a><a class="indexterm" name="id3077322"></a>
+			<p>如果遇到与文件许可有关的问题，可能数启动<span>mysqld</span>时<span><span>UMASK</span>环境变量设置得不正确。例如，</span>当你创建表时，<span>MySQL</span>可能会发出下述错误消息：</p>
+			<pre><span>ERROR: </span>无法找到文件：<span>&#39;path/with/filename.frm&#39; (Errcode: 13)</span></pre>
+			<p><span><span>UMASK</span>的默认值是<span>0660</span></span>。通过下述方式启动<strong><span>mysqld_safe</span></strong>，可改变该情况：</p>
+			<pre><span>shell&gt; <span><b>UMASK=384&nbsp; # = 600 in octal</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>export UMASK</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysqld_safe &amp;</b></span></span></pre>
+			<p>在默认情况下，<span>MySQL</span>用<span>0700</span>的许可创建数据库和<span><span>RAID</span>目录。你可以通过设置<span>UMASK_DIR</span>变量更改该行为。如果你设置了它的值，将使用组合的<span>UMASK</span></span>和<span><span>UMASK_DIR</span>值创建新目录。例如</span>，如果你打算为所有新的目录授予组访问权限，可：</p>
+			<pre><span>shell&gt; <span><b>UMASK_DIR=504&nbsp; # = 770 in octal</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>export UMASK_DIR</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysqld_safe &amp;</b></span></span></pre>
+			<p>在<span>MySQL 3.23.25</span>和更高版本中，如果是以<span>0</span>开始的，<span>MySQL</span>将认为<span>UMASK</span>和<span><span>UMASK_DIR</span>的值均采用八进制形式。</span></p>
+			<p>请参见<a href="environment-variables.html">附录F：</a><a href="environment-variables.html" title="Appendix F. Environment Variables"><i>环境变量</i></a>。</p>
+			<div>
+				<div>
+					<h2 class="title">
+					<a name="administration-issues"></a>A.4.&nbsp;与管理有关的事宜</h2>
+				</div></div></div>
+		<div class="toc">
+			<dl>
+				<dt><span class="section">
+				<a href="problems.html#resetting-permissions">A.4.1. 如何复位根用户密码</a></span></dt>
+				<dt><span class="section"><a href="problems.html#crashing">A.4.2. 如果MySQL依然崩溃，应作些什么</a></span></dt>
+				<dt><span class="section"><a href="problems.html#full-disk">A.4.3. MySQL处理磁盘满的方式</a></span></dt>
+				<dt><span class="section">
+				<a href="problems.html#temporary-files">A.4.4. MySQL将临时文件储存在哪里</a></span></dt>
+				<dt><span class="section">
+				<a href="problems.html#problems-with-mysql-sock">A.4.5. 如何保护或更改MySQL套接字文件/tmp/mysql.sock<code class="filename"></code></a></span></dt>
+				<dt><span class="section">
+				<a href="problems.html#timezone-problems">A.4.6. 时区问题</a></span></dt>
+			</dl></div>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="resetting-permissions"></a>A.4.1.&nbsp;如何复位根用户密码</h3>
+					</div></div></div><a class="indexterm" name="id3077496"></a>
+			<a class="indexterm" name="id3077507"></a>
+			<a class="indexterm" name="id3077517"></a>
+			<a class="indexterm" name="id3077527"></a>
+			<p>如果你从未为<span>MySQL</span>设置根用户密码，服务器在以根用户身份进行连接时不需要密码。但是，建议你为每个账户设置密码。请参见<a href="database-administration.html#security-guidelines" title="5.6.1. General Security Guidelines">5.6.1节，“通用安全指南”</a>。</p>
+			<p>如果你以前设置了根用户密码，但却忘记了该密码，可设置新的密码。下述步骤是针对<span>Windows</span>平台的。在本节后面的内容中，介绍了针对<span>Unix</span>平台的步骤。</p>
+			<p>在<span>Windows</span>平台下，该步骤是：</p>
+			<p>以系统管理员身份登录到系统。</p>
+			<p>如果<span>MySQL</span>服务器正在运行，停止它。对于作为<span>Windows</span>服务运行的服务器，进入服务管理器：</p>
+			<pre>开始菜单<span>-&gt;</span>控制面板<span>-&gt;</span>管理工具<span>-&gt;</span>服务</pre>
+			<p>然后在列表中找出<span>MySQL</span>服务器，并停止它。</p>
+			<p>如果服务器不是作为服务而运行的，可能需要使用任务管理器来强制停止它。</p>
+			<p>创建<span>1</span>个文本文件，并将下述命令置于单一行中：</p>
+			<pre><span>SET PASSWORD FOR &#39;root&#39;@&#39;localhost&#39; = PASSWORD(&#39;MyNewPassword&#39;);</span></pre>
+			<p>用任意名称保存该文件。在本例中，该文件为<span>C:\mysql-init.txt</span>。</p>
+			<p>打开控制台窗口，进入<span>DOS</span>命令提示：</p>
+			<pre>开始菜单<span>-&gt;</span>运行<span>-&gt; cmd</span></pre>
+			<p>假定你已将<span>MySQL</span>安装到<span>C:\mysql</span>。如果你将<span>MySQL</span>安装到了另一位置，请对下述命令进行相应的调整。</p>
+			<p>在<span>DOS</span>命令提示符下，执行命令：</p>
+			<pre><span>C:\&gt; <span><b>C:\mysql\bin\mysqld-nt --init-file=C:\mysql-init.txt</b></span></span></pre>
+			<p>在服务器启动时，执行由“<span>--init-file</span>”选项命名的文件的内容，更改根用户密码。当服务器成功启动后，应删除<span>C:\mysql-init.txt</span>。</p>
+			<p>如果你使用<span>MySQL</span>安装向导安装了<span>MySQL</span>，或许需要指定“<span><span>--defaults-file”</span>选项：</span></p>
+			<pre><span>C:\&gt; <span><b>C:\Program Files\MySQL\MySQL Server 5.1\bin\mysqld-nt.exe</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --defaults-file=&quot;C:\Program Files\MySQL\MySQL Server 5.1\my.ini&quot;</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --init-file=C:\mysql-init.txt</span></pre>
+			<p>使用服务管理器，可找到恰当的“<span><span>--defaults-file”</span>设置：</span></p>
+			<pre>开始菜单<span>-&gt;</span>控制面板<span>-&gt;</span>管理工具<span>-&gt;</span>服务</pre>
+			<p>在列表中找出<span>MySQL</span>服务，右击，并选择“属性”选项。在可执行字段的<span><span>Path</span>（路径）中包含<span>“--defaults-file”</span>设置。</span></p>
+			<p>停止<span>MySQL</span>服务器，然后在正常模式下重启它。如果以服务方式运行服务器，应从<span>Windows</span>服务窗口启动它。如果以手动方式启动了服务器，能够像正常情形下一样使用命令。</p>
+			<p>应能使用新密码进行连接。</p>
+			<p>在<span>Unix</span>环境下，重置根用户密码的步骤如下：</p>
+			<p>以<span>Unix</span>根用户身份、或以运行<span>mysqld</span>服务器的相同身份登录到系统。</p>
+			<p>找到包含服务器进程<span>ID</span>的<span><span>.pid</span>文件。该文件的准确位置和名称取决于你的分发版、主机名和配置。常见位置是<span>/var/lib/mysql/</span></span>、<span>/var/run/mysqld/</span>和<span><span>/usr/local/mysql/data/</span>。</span>一般情况下，文件名的扩展名为<span><span>.pid</span>，并以<span>mysqld</span></span>或系统的主机名开始。</p>
+			<p>在下述命令中使用<span>.pid</span>文件的路径名，向<strong><span>mysqld</span></strong>进程发出正常的<span>kill</span>（而不是<span>kill 
+			-9</span>），可停止<span>MySQL</span>服务器：</p>
+			<pre><span>shell&gt; <span><b>kill `cat /mysql-data-directory/host_name.pid`</b></span></span></pre>
+			<p>注意，<span>cat</span>命令使用符号“<span>`</span>”而不是“’”：这会使<span>cat</span>的输出代入到<span>kill</span>命令中。</p>
+			<p>创建文本文件，并将下述命令放在文件内的<span>1</span>行上：</p>
+			<pre><span>SET PASSWORD FOR &#39;root&#39;@&#39;localhost&#39; = PASSWORD(&#39;MyNewPassword&#39;);</span></pre>
+			<p>用任意名称保存文件。对于本例，文件为<span>~/mysql-init</span>。</p>
+			<p>用特殊的“<span>--init-file=~/mysql-init</span>”选项重启<span>MySQL</span>服务器：</p>
+			<pre><span>shell&gt; <span><b>mysqld_safe --init-file=~/mysql-init &amp;</b></span></span></pre>
+			<p>文件<span>init-file</span>的内容在服务器启动时执行，更改根用户密码。服务器成功启动后，应删除<span>~/mysql-init</span>。</p>
+			<p>应能使用新密码进行连接。</p>
+			<p>作为可选方式，在任何平台上，可使用<strong><span>mysql</span></strong>客户端设置新密码（但该方法不够安全）：</p>
+			<p>停止<strong><span>mysqld</span></strong>，并用“<span><span>--skip-grant-tables 
+			--user=root”</span>选项重启它</span>（<span>Windows</span>用户可省略<span><span>--user=root</span>部分）。</span></p>
+			<p>使用下述命令连接到<strong><span>mysqld</span></strong>服务器：</p>
+			<pre><span>shell&gt; <span><b>mysql -u root</b></span></span></pre>
+			<p>在<strong><span>mysql</span></strong>客户端发出下述语句：</p>
+			<pre><span>mysql&gt; <span><b>UPDATE mysql.user SET Password=PASSWORD(&#39;<i>newpwd</i>&#39;)</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span><b>WHERE User=&#39;root&#39;;</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>FLUSH PRIVILEGES;</b></span></span></pre>
+			<p>用打算使用的实际根用户密码替换“<span><i><span>newpwd</span></i></span>”。</p>
+			<p>应能使用新密码进行连接。</div>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="crashing"></a>A.4.2.&nbsp;如果MySQL依然崩溃，应作些什么</h3>
+					</div></div></div><a class="indexterm" name="id3078037"></a>
+			<p>正式发布之前，每个<span>MySQL</span>版本均在很多平台上进行了测试。这不表示<span>MySQL</span>中不存在缺陷，但是，如果存在缺陷，它们应很少，而且很难发现。如果你遇到问题，如果你尝试找出导致系统崩溃的准确原因，这始终很有帮助，这是因为，如果这样的话，快速解决问题的机会很大。</p>
+			<p>首先，应尝试找出问题是否与<strong><span>mysqld</span></strong>服务器有关，或是否与客户端有关。通过执行<strong><span>mysqladmin 
+			version</span></strong>，可检查<strong><span>mysqld</span></strong>服务器运行了多长时间。如果<strong><span>mysqld</span></strong>宕机并重启，应查看服务器的错误日志以找出原因。请参见<a href="database-administration.html#error-log" title="5.11.1. The Error Log">5.11.1节，“错误日志”</a>。</p>
+			<p>在某些系统上，在错误日志中，可发现<strong><span>mysqld</span></strong>宕机的堆栈跟踪，可使用<span><span>resolve_stack_dump</span>程序解决它</span>。请参见<a href="porting.html#using-stack-trace" title="E.1.4. Using a Stack Trace">E.1.4节，“使用堆栈跟踪”</a>。注意，错误日志中的变量值并非始终是<span>100</span>％正确的。</p>
+			<p>很多服务器崩溃是因损坏的数据文件或索引文件而导致的，每次执行完<span>SQL</span>语句之后并在向客户端通告结果之前，<span>MySQL</span>将使用<span><span>write()</span>系统调用</span>更新磁盘上的文件（如果你使用了“<span>--delay-key-write</span>”选项，情况并非如此，此时将写入数据文件而不是索引文件）。这意味着，即使<span>mysqld</span>崩溃，数据文件的内容也是安全的，这是因为操作系统能保证将未刷新的数据写入磁盘。使用“<span>--flush</span>”选项启动<strong><span>mysqld</span></strong>，这样，每次执行完<span>SQL</span>语句后，可强制<span>MySQL</span>将所有内容写入磁盘。</p>
+			<p>前述介绍表明，在正常情况下不会出现损坏的表，除非出现了下述情况之一：</p>
+			<p>在更新过程中，<span>MySQL</span>服务器或服务器主机被停止。</p>
+			<p>你发现了<strong><span>mysqld</span></strong>中存在的<span>1</span>个缺陷，该缺陷导致<strong><span>mysqld</span></strong>在更新中途中止。</p>
+			<p>在<strong><span>mysqld</span></strong>操作的同时，某些外部程序正在操控数据文件或索引文件，未恰当锁定表。</p>
+			<p>你正使用系统上的相同数据目录运行很多<strong><span>mysqld</span></strong>服务器，该系统不支持良好的文件系统锁定（通常是由<span><span>lockd</span>锁定管理器负责的</span>），或使用“<span>--skip-external-locking</span>”选项运行了多个服务器。</p>
+			<p>崩溃的数据文件或索引文件，其中包含导致<span>mysqld</span>混乱的损坏很严重的数据。</p>
+			<p>在数据存储节点发现缺陷。这种可能性不大，但至少是可能的。在该情况下，可在修复的表副本上，通过使用<span><span>ALTER 
+			TABLE</span>，</span>尝试将表类型更改为另一种存储引擎。</p>
+			<p>由于很难得知为什么某事会出现崩溃，首先请检查用于其他方面的事项是否崩溃。请尝试采取下述措施：</p>
+			<p>用<strong><span>mysqladmin 
+			shutdown</span></strong>停止<strong><span>mysqld</span></strong>服务器，从数据目录运行<strong><span>myisamchk 
+			--silent --force */*.MYI</span></strong>，检查所有的<span><span>MyISAM</span>表，并重启</span><strong><span>mysqld</span></strong>。这样，就能确保从干净的状态运行服务器。请参见<a href="database-administration.html" title="Chapter 5. Database Administration">第5章：数据库管理</a>。</p>
+			<p>使用“<span>--log</span>”选项启动<strong><span>mysqld</span></strong>，并根据写入日志的信息确定是否某些特殊的查询杀死了服务器。约<span>95%</span>的缺陷与特定的查询有关。正常情况下，这是服务器重启前日志文件中最够数个查询中的<span>1</span>个。请参见<a href="database-administration.html#query-log" title="5.11.2. The General Query Log">5.11.2节，“通用查询日志”</a>。如果能够用特殊查询重复杀死<span>MySQL</span>，即使在发出查询前检查了所有表的情况下也同样，那么你就应能确定缺陷，并应提交关于该缺陷的缺陷报告。请参见<a href="introduction.html#bug-reports" title="1.7.1.3. How to Report Bugs or Problems">1.7.1.3节，“如何通报缺陷和问题”</a>。</p>
+			<p>尝试提供一个测试范例，我们应能利用该范例重复问题。请参见<a href="porting.html#reproduceable-test-case" title="E.1.6. Making a Test Case If You Experience Table Corruption">E.1.6节，“如果出现表崩溃，请生成测试案例”</a>。</p>
+			<p>请在<span><span>mysql-test</span>目录下并根据<span>MySQL</span>基准进行测试。</span>请参见<a href="extending-mysql.html#mysql-test-suite" title="27.1.2. MySQL Test Suite">27.1.2节，“MySQL测试套件”</a>。它们能相当良好地测试<span>MySQL</span>。你也可以为基准测试增加代码，以模拟你的应用程序。基准测试可在源码分发版的<span><span>sql-bench</span>目录下找到，对于</span>二进制分发版，可在<span>MySQL</span>安装目录下的<span>sql-bench</span>目录下找到。</p>
+			<p>尝试使用<span><span>fork_big.pl</span>脚本</span>（它位于源码分发版的测试目录下）。</p>
+			<p>如果你将<span>MySQL</span>配置为调试模式，如果某事出错，可更为容易地搜集关于可能错误的信息。如果将<span>MySQL</span>配置为调试模式，可生成<span>1</span>个安全的内存分配程序，可使用它发现某些错误。此外，它还提供了很多输出，这类输出与出现的问题相关。在<strong><span>configure</span></strong>上使用“<span>--with-debug</span>”或“<span>--with-debug=full</span>”选项重新配置<span>MySQL</span>，然后再编译它。请参见<a href="porting.html#debugging-server" title="E.1. Debugging a MySQL Server">E.1节，“调试MySQL服务器”</a>。</p>
+			<p>确保为你的操作系统应用了最新的补丁。</p>
+			<p>对<strong><span>mysqld</span></strong>使用“<span>--skip-external-locking</span>”选项。在某些系统上，<span><span>lockd</span>锁定管理器不能正确工作，</span>“<span><span>--skip-external-locking”</span>选项通知</span><strong><span>mysqld</span></strong>不使用外部锁定。（这意味着，你不能在相同的数据目录上运行<span>2</span>个<strong><span>mysqld</span></strong>服务器，如果使用<strong><span>myisamchk</span></strong>，必须谨慎。然而，尝试将该选项用作测试也是有益的）。</p>
+			<p>当<span>mysqld</span>看上去正在运行但并未响应时，是否运行了<strong><span>mysqladmin 
+			-u root processlist</span></strong>？某些时候，即使你认为<strong><span>mysqld</span></strong>处于闲置状态时，实际情况并非如此。问题可能是因为所有连接均已使用，或存在某些内部锁定问题。即使在该情况下，<strong><span>mysqladmin 
+			-u root processlist</span></strong>通常能够进行连接，并能提供关于当前连接数以及其状态的有用信息。</p>
+			<p>在运行其他查询的同时，在单独的窗口中运行命令<strong><span>mysqladmin 
+			-i 5 status</span></strong>或<strong><span>mysqladmin 
+			-i 5 -r status</span></strong>，以生成统计信息。</p>
+			<p>尝试采用下述方法：</p>
+			<p>从<span>gdb</span>（或另一个调试器）启动<strong><span>mysqld</span></strong>。请参见<a href="porting.html#using-gdb-on-mysqld" title="E.1.3. Debugging mysqld under gdb">E.1.3节，“在gdb环境下调试m<span><strong class="command">ysqld</strong></span>”</a>。</p>
+			<p>运行测试脚本。</p>
+			<p>在<span>3</span>个较低层面上输出<span>backtrace</span>（向后跟踪）和局部变量。在<strong><span>gdb</span></strong>中，当<span>mysqld</span>在<span>gdb</span>内崩溃时，可使用下述命令完成该任务：</p>
+			<pre><span>backtrace</span></pre>
+			<pre><span>info local</span></pre>
+			<pre><span>up</span></pre>
+			<pre><span>info local</span></pre>
+			<pre><span>up</span></pre>
+			<pre><span>info local</span></pre>
+			<p>使用<strong><span>gdb</span></strong>，你还能检查与<span>info</span>线程共存的线程，并切换至特定的线程<span>N</span>，其中，<span>N</span>是线程<span>ID</span>。</p>
+			<p>尝试用<span>Perl</span>脚本模拟你的应用程序，强制<span>MySQL</span>崩溃或行为异常。</p>
+			<p>发送正常的缺陷报告。请参见<a href="introduction.html#bug-reports" title="1.7.1.3. How to Report Bugs or Problems">1.7.1.3节，“如何通报缺陷和问题”</a>。应比通常的报告更详细。由于<span>MySQL</span>是为很多人提供服务的，它可能因仅存在于你的计算机上的某事崩溃（例如，与你的特定系统库有关的错误）。</p>
+			<p>如果你遇到与包含动态长度行的表有关的问题，而且你仅使用<span><span>VARCHAR</span>列</span>（而不是<span>BLOB</span>或<span><span>TEXT</span>列），可尝试用<span>ALTER 
+			TABLE</span>将所有<span>VARCHAR</span>列更改为<span>CHAR</span>列。这样，就会强制</span><span>MySQL</span>使用固定大小的行。固定大小的行占用的空间略多，但对损坏的容忍度更高。</p>
+			<p>目前的动态行代码在<span>MySQL AB</span>已使用多年，很少遇到问题，但从本质上看，动态长度行更倾向于出现错误，因此，不妨尝试采用该策略以查看它是否有帮助，这不失为一个好主意。</p>
+			<p>诊断问题时不要将你的服务器硬件排除在外。有缺陷的硬件能够导致数据损坏。对硬件进行故障诊断与排除操作时，尤其应注意<span>RAM</span>和硬盘驱动器。</div>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="full-disk"></a>A.4.3.&nbsp;MySQL处理磁盘满的方式</h3>
+					</div></div></div><a class="indexterm" name="id3078668"></a>
+			<a class="indexterm" name="id3078675"></a>
+			<p>在本节中，介绍了<span>MySQL</span>响应磁盘满错误的方式（如“设备上无剩余空间”），以及响应超配额错误的方式（如“写入失败”或“达到了用户屏蔽限制”）。</p>
+			<p>本节介绍的内容与写入<span><span>MyISAM</span>表有关。它也适用于写入二进制日志文件和二进制索引文件，但对</span>“<span class="quote"><span>row</span></span>”和“<span class="quote"><span>record</span></span>”的应用应被视为“<span class="quote"><span>event</span></span>”。</p>
+			<p>出现磁盘满状况时，<span>MySQL</span>将：</p>
+			<p>每分钟检查一次，查看是否有足够空间写入当前行。如果有足够空间，将继续，就像什么也未发生一样。</p>
+			<p>每<span>10</span>分钟将<span>1</span>个条目写入日志文件，提醒磁盘满状况。</p>
+			<p>为了减轻问题，可采取下述措施：</p>
+			<p>要想继续，仅需有足够的磁盘空间以插入所有记录。</p>
+			<p>要想放弃线程，必须使用<strong><span>mysqladmin 
+			kill</span></strong>。下次检查磁盘时将放弃线程（<span>1</span>分钟）。</p>
+			<p>其他线程可能会正在等待导致磁盘满状况的表。如果有数个“已锁定”的线程，杀死正在磁盘满状况下等待的某一线程，以便允许其他线程继续。</p>
+			<p>对前述行为的例外是，当你使用<span>REPAIR 
+			TABLE</span>或<span><span>OPTIMIZE 
+			TABLE</span>时，或当索引是在<span>LOAD DATA INFILE</span></span>或<span><span>ALTER 
+			TABLE</span>语句后、在批操作中创建的。所有这些语句能创建大的临时文件，如果保留这些文件，会导致系统其他部分出现大问题。如果在<span>MySQL</span>执行这类操作的同时磁盘已满，它将删除大的临时文件，并将表标注为崩溃。但对于<span>ALTER 
+			TABLE</span>例外，旧表保持不变。</span></div>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="temporary-files"></a>A.4.4.&nbsp;MySQL将临时文件储存在哪里</h3>
+					</div></div></div>
+			<p><span>MySQL</span>使用环境变量<span><span>TMPDIR</span>的值作为保存临时文件的目录的路径名。如果未设置<span>TMPDIR</span>，</span><span>MySQL</span>将使用系统的默认值，通常为<span>/tmp</span>、<span>/var/tmp</span>或<span>/usr/tmp</span>。如果包含临时文件目录的文件系统过小，可对<span>mysqld</span>使用“<span><span>—tmpdir”</span>选项，</span>在具有足够空间的文件系统内指定<span>1</span>个目录。</p>
+			<p>在<span>MySQL 5.1</span>中，“<span><span>—tmpdir”</span>选项可被设置为数个路径的列表，以循环方式使用。在<span>Unix</span>平台上，路径用冒号字符<span>“:”</span>隔开，在</span><span>Windows</span>、<span>NetWare</span>和<span>OS/2</span>平台上，<span>路径用分号字符<span>“;”</span>隔开。注意，</span>为了有效分布负载，这些路径应位于不同的物理磁盘上，而不是位于相同磁盘的不同分区中。</p>
+			<p>如果<span>MySQL</span>服务器正作为复制从服务器使用，不应将“<span><span>--tmpdir”</span>设置为指向基于内存的文件系统的目录，或当服务器主机重启时将清空的目录。对于复制从服务器，</span>需要在机器重启时仍保留一些临时文件，以便能够复制临时表或执行<span><span>LOAD 
+			DATA INFILE</span>操作。如果在服务器重启时丢失了临时文件目录下的文件，复制将失败。</span></p>
+			<p><span>MySQL</span>会以隐含方式创建所有的临时文件。这样，就能确保中止<strong><span>mysqld</span></strong>时会删除所有临时文件。使用隐含文件的缺点在于，在临时文件目录所在的位置中，看不到占用了文件系统的大临时文件。</p>
+			<p>进行排序时（<span>ORDER BY</span>或<span>GROUP 
+			BY</span>），<span>MySQL</span>通常会使用<span>1</span>个或多个临时文件。所需的最大磁盘空间由下述表达式决定：</p>
+			<pre><span>(length of what is sorted + sizeof(row pointer))</span></pre>
+			<pre><span>* number of matched rows</span></pre>
+			<pre><span>* 2</span></pre>
+			<p>“<span>row pointer</span>”（行指针）的大小通常是<span>4</span>字节，但在以后，对于大的表，该值可能会增加。</p>
+			<p>对于某些<span><span>SELECT</span>查询，</span><span>MySQL</span>还会创建临时<span>SQL</span>表。它们不是隐含表，并具有<span>SQL_*</span>形式的名称。</p>
+			<p><span><span>ALTER TABLE</span>会在与原始表目录相同的目录下创建临时表。</span></div>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="problems-with-mysql-sock">
+						</a>A.4.5.&nbsp;如何保护或更改MySQL套接字文件/tmp/mysql.sock<code class="filename"></code></h3>
+					</div></div></div><a class="indexterm" name="id3078995"></a>
+			<a class="indexterm" name="id3079006"></a>
+			<p>对于服务器用来与本地客户端进行通信的<span>Unix</span>套接字文件，其默认位置是<span>/tmp/mysql.sock</span>。这有可能导致问题，原因在于，在某些版本的<span>Unix</span>上，任何人都能删除<span><span>/tmp</span>目录下的文件。</span></p>
+			<p>在大多数<span>Unix</span>版本中，可对<span><span>/tmp</span>目录进行保护，使得文件只能被其所有这或超级用户（根用户）删除。为此，以根用户身份登录，并使用下述命令在<span>/tmp</span>目录上设置粘着位：</span></p>
+			<pre><span>shell&gt; <span><b>chmod +t /tmp</b></span></span></pre>
+			<p>通过执行<span><span>ls -ld /tmp</span>，可检查是否设置了粘着位。如果最后一个许可字符是<span>“t”</span>，表明设置了粘着位。</span></p>
+			<p>另一种方法是改变服务器创建<span>Unix</span>套接字文件的位置。如果进行了这类操作，还应让客户端程序知道文件的位置。能够以多种不同方式指定文件位置：</p>
+			<p>在全局或局部选项文件中指定路径。例如，将下述行置于文件<span>/etc/my.cnf</span>中：</p>
+			<pre><span>[mysqld]</span></pre>
+			<pre><span>socket=/path/to/socket</span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>[client]</span></pre>
+			<pre><span>socket=/path/to/socket</span></pre>
+			<p>请参见<a href="using-mysql-programs.html#option-files" title="4.3.2. Using Option Files">4.3.2节，“使用选项文件”</a>。</p>
+			<p>在运行客户端程序时，在命令行上为<strong><span>mysqld_safe</span><span>指定</span></strong>“<span><span>--socket”</span>选项。</span></p>
+			<p>将<span><span>MYSQL_UNIX_PORT</span>环境变量设置为<span>Unix</span>套接字文件的路径。</span></p>
+			<p>重新从源码编译<span>MySQL</span>，以使用不同的默认<span>Unix</span>套接字文件位置。运行<strong><span>configure</span></strong>时，用“<span>--with-unix-socket-path</span>”选项定义文件路径。请参见<a href="installing.html#configure-options" title="2.8.2. Typical configure Options">2.8.2节，“典型配置选项<span><strong class="command"></strong></span>”</a>。</p>
+			<p>用下述命令连接服务器，能够测试新的套接字位置是否工作：</p>
+			<pre><span>shell&gt; <span><b>mysqladmin --socket=/path/to/socket version</b></span></span></pre>
+		</div>
+		<div class="section">
+			<div class="titlepage">
+				<div>
+					<div>
+						<h3 class="title"><a name="timezone-problems"></a>A.4.6.&nbsp;时区问题</h3>
+					</div></div></div><a class="indexterm" name="id3079200"></a>
+			<a class="indexterm" name="id3079207"></a>
+			<a class="indexterm" name="id3079217"></a>
+			<a class="indexterm" name="id3079226"></a>
+			<p>如果遇到与<span><span>SELECT NOW()</span>有关的问题，它返回</span><span>GMT</span>值而不是当地时间，就应通知服务器你的当前失去。如果<span><span>UNIX_TIMESTAMP()</span>返回错误值，上述方式同样适用。应为服务器所运行的环境进行这类设置，例如，在</span><strong><span>mysqld_safe</span></strong>或<strong><span>mysql.server</span></strong>中。请参见<a href="environment-variables.html">附录F：</a><a href="environment-variables.html" title="Appendix F. Environment Variables"><i>环境变量</i></a>。</p>
+			<p>也可以对<strong><span>mysqld_safe</span></strong>使用“<span>--timezone=<i>timezone_name</i></span>”选项，为服务器设置失去。也可以在启动<span>mysqld</span>之前，通过设置<span>TZ</span>环境变量完成该设置。</p>
+			<p>“<span>--timezone</span>”或<span>TZ</span>的允许值与系统有关。关于可接受的值，请参见操作系统文档。</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="query-issues"></a>
+		A.5.&nbsp;与查询有关的事宜</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="problems.html#case-sensitivity">
+			A.5.1. 搜索中的大小写敏感性</a></span></dt><dt><span class="section"><a href="problems.html#using-date">
+			A.5.2. 使用DATE列方面的问题<code class="literal"></code></a></span></dt><dt><span class="section"><a href="problems.html#problems-with-null">
+			A.5.3. 与NULL值有关的问题<code class="literal"></code></a></span></dt><dt><span class="section"><a href="problems.html#problems-with-alias">
+			A.5.4. 与列别名有关的问题</a></span></dt><dt><span class="section"><a href="problems.html#non-transactional-tables">
+			A.5.5. 非事务表回滚失败</a></span></dt><dt><span class="section"><a href="problems.html#deleting-from-related-tables">
+			A.5.6. 从相关表删除行</a></span></dt><dt><span class="section"><a href="problems.html#no-matching-rows">
+			A.5.7. 解决与不匹配行有关的问题</a></span></dt><dt><span class="section"><a href="problems.html#problems-with-float">
+			A.5.8. 与浮点比较有关的问题</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="case-sensitivity"></a>
+			A.5.1.&nbsp;搜索中的大小写敏感性</h3></div></div></div><a class="indexterm" name="id3079327"></a><a class="indexterm" name="id3079338"></a><a class="indexterm" name="id3079348"></a><a class="indexterm" name="id3079355"></a>
+			<p>在默认情况下，<span>MySQL</span>搜索不区分大小写（但某些字符集始终区分大小写，如<span>czech</span>）。这意味着，如果你使用<span><i><span>col_name</span></i><span> 
+			LIKE &#39;a%&#39;</span>进行搜索，你将获得以<span>A</span>或<span>a</span>开始的所有列。如果打算使搜索区分大小写，</span>请确保操作数之一具有区分大小写的或二进制校对。例如，如果你正在比较均适用<span>latin1</span>字符集的列和字符串，可使用<span><span>COLLATE</span>操作符</span>，使<span>1</span>个操作数具有<span>latin1_general_cs</span>或<span><span>latin1_bin</span>校对</span>特性。例如：</p>
+			<pre><span><i><span>col_name</span></i></span><span> COLLATE latin1_general_cs LIKE &#39;a%&#39;</span></pre>
+			<pre><span><i><span>col_name</span></i></span><span> LIKE &#39;a%&#39; COLLATE latin1_general_cs</span></pre>
+			<pre><span><i><span>col_name</span></i></span><span> COLLATE latin1_bin LIKE &#39;a%&#39;</span></pre>
+			<pre><span><i><span>col_name</span></i></span><span> LIKE &#39;a%&#39; COLLATE latin1_bin</span></pre>
+			<p>如果希望总是以区分大小写的方式处理列，可使用区分大小写的或二进制校对声明它。请参见<a href="sql-syntax.html#create-table" title="13.1.5. CREATE TABLE Syntax">13.1.5节，“CREATE 
+		TABLE语法”</a>。</p>
+			<p>简单的比较操作（<span>&gt;=, &gt;, =, 
+			&lt;, &lt;=</span><span>, </span>
+			排序和分组）基于每个字符的“排序值”。具有相同排序值的字符（如‘<span>E</span>’<span>,
+			</span>‘<span>e</span>’<span>,</span>和‘<span>Ã©</span>’）将被当作相同的写字符。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="using-date"></a>
+			A.5.2.&nbsp;使用DATE列方面的问题<code class="literal"></code></h3></div></div></div><a class="indexterm" name="id3079478"></a><a class="indexterm" name="id3079487"></a><a class="indexterm" name="id3079497"></a>
+			<p><span><span>DATE</span>值的格式是<span>&#39;YYYY-MM-DD&#39;</span>。</span>按照标准的<span>SQL</span>，不允许其他格式。在<span><span>UPDATE</span>表达式以及<span>SELECT</span>语句的<span>WHERE</span>子句中应使用该格式。例如：</span></p>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM <i>tbl_name</i> WHERE date &gt;= &#39;2003-05-05&#39;;</b></span></span></pre>
+			<p>为了方便，如果日期是在数值环境下使用的，<span>MySQL</span>会自动将日期转换为数值（反之亦然）。它还具有相当的智能，在更新时或在与<span>TIMESTAMP</span>、<span>DATE</span>或<span><span>DATETIME</span>列比较日期的<span>WHERE</span>子句中，允许<span>“</span>宽松的<span>”</span>字符串形式（<span>“</span>宽松形式<span>”</span>表示，任何标点字符均能用作各部分之间的分隔符。例如，<span>&#39;2004-08-15&#39;</span></span>和<span><span>&#39;2004#08#15&#39;</span>是等同的）。</span><span>MySQL</span>还能转换不含任何分隔符的字符串（如<span><span>&#39;20040815&#39;</span>），前体是它必须是有意义的日期。</span></p>
+			<p>使用<span>&lt;</span>、<span>&lt;=</span>、<span>=</span>、<span>&gt;=</span>、<span>&gt;</span>、或<span><span>BETWEEN</span>操作符将<span>DATE</span></span>、<span>TIME</span>、<span>DATETIME</span>或<span><span>TIMESTAMP</span>与常量字符串进行比较时，</span><span>MySQL</span>通常会将字符串转换为内部长整数，以便进行快速比较（以及略为“宽松”的字符串检查）。但是，该转换具有下述例外：</p>
+			<p>比较两列时</p>
+			<p>将<span>DATE</span>、<span>TIME</span>、<span>DATETIME</span>或<span><span>TIMESTAMP</span>列与表达式进行比较时</span></p>
+			<p>使用其他比较方法时，如<span>IN</span>或<span>STRCMP()</span>。</p>
+			<p>对于这些例外情形，会将对象转换为字符串并执行字符串比较，采用该方式进行比较。</p>
+			<p>为了保持安全，假定按字符串比较字符串，如果你打算比较临时值和字符串，将使用恰当的字符串函数。</p>
+			<p>对于特殊日期<span><span>&#39;0000-00-00&#39;</span>，能够以<span>&#39;0000-00-00&#39;</span>形式保存和检索。在</span><span>MyODBC</span>中使用<span><span>&#39;0000-00-00&#39;</span>日期时，对于</span><span>MyODBC 
+			2.50.12</span>或更高版本，该日期将被自动转换为<span>NULL</span>，这是因为<span>ODBC</span>不能处理这类日期。</p>
+			<p>由于<span>MySQL</span>能够执行前面所介绍的转换，下述语句均能正常工作：</p>
+			<pre><span>mysql&gt; <span><b>INSERT INTO <i>tbl_name</i> (idate) VALUES (19970505);</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO <i>tbl_name</i> (idate) VALUES (&#39;19970505&#39;);</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO <i>tbl_name</i> (idate) VALUES (&#39;97-05-05&#39;);</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO <i>tbl_name</i> (idate) VALUES (&#39;1997.05.05&#39;);</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO <i>tbl_name</i> (idate) VALUES (&#39;1997 05 05&#39;);</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO <i>tbl_name</i> (idate) VALUES (&#39;0000-00-00&#39;);</b></span></span></pre>
+			<pre><span>&nbsp;</span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT idate FROM <i>tbl_name</i> WHERE idate &gt;= &#39;1997-05-05&#39;;</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT idate FROM <i>tbl_name</i> WHERE idate &gt;= 19970505;</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT MOD(idate,100) FROM <i>tbl_name</i> WHERE idate &gt;= 19970505;</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT idate FROM <i>tbl_name</i> WHERE idate &gt;= &#39;19970505&#39;;</b></span></span></pre>
+			<p>但是，下述语句不能正常工作：</p>
+			<pre><span>mysql&gt; <span><b>SELECT idate FROM <i>tbl_name</i> WHERE STRCMP(idate,&#39;20030505&#39;)=0;</b></span></span></pre>
+			<p><span>STRCMP()</span>是一种字符串函数，它能将<span><span>idate</span>转换为<span>&#39;YYYY-MM-DD&#39;</span>格式的字符串，</span>并执行字符串比较。它不能将<span><span>&#39;20030505&#39;</span>转换为</span>日期<span><span>&#39;2003-05-05&#39;</span>并进行日期比较。</span></p>
+			<p>如果你正在使用<span>ALLOW_INVALID_DATES</span><span> 
+			SQL</span>模式，<span>MySQL</span>允许以仅执行给定的有限检查方式保存日期：<span>MySQL</span>仅保证天位于<span>1</span>～<span>31</span>的范围内，月位于<span>1</span>～<span>12</span>的范围内。</p>
+			<p>这样就使得<span>MySQL</span>很适合于<span>Web</span>应用程序，其中，你能获得三个不同字段中的年、月、日值，也能准确保存用户插入的值（无日期验证）。</p>
+			<p>如果未使用<span>NO_ZERO_IN_DATE</span><span> 
+			SQL</span>模式，“天”和“月”部分可能为<span>0</span>。如果你打算将生日保存在<span>DATE</span>列而且仅知道部分日期，它十分方便。</p>
+			<p>如果未使用<span>NO_ZERO_DATE</span><span> 
+			SQL</span>模式，<span>MySQL</span>也允许你将<span>&#39;0000-00-00&#39;</span>保存为“伪日期”。在某些情况下，它比使用<span>NULL</span>值更方便。</p>
+			<p>如果无法将日期转换为任何合理值，“<span>0</span>”将保存在<span><span>DATE</span>列中，并被检索为<span>&#39;0000-00-00&#39;</span>。这是兼顾速度和便利性的事宜。我们认为，数据库服务器的职责是检索与你保存的日期相同的日期</span>（即使在任何情况下，数据在逻辑上不正确也同样）。我们认为，对日期的检查应由应用程序而不是服务器负责。</p>
+			<p>如果你希望<span>MySQL</span>检查所有日期并仅接受合法日期（除非由<span>IGNORE</span>覆盖），应将<span><span>sql_mode</span>设置为<span>&quot;NO_ZERO_IN_DATE,NO_ZERO_DATE&quot;</span></span>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="problems-with-null"></a>
+			A.5.3.&nbsp;与NULL值有关的问题<code class="literal"></code></h3></div></div></div><a class="indexterm" name="id3079960"></a><a class="indexterm" name="id3079972"></a>
+			<p>对于<span>SQL</span>的新手，<span>NULL</span>值的概念常常会造成混淆，他们常认为<span><span>NULL</span>是与空字符串<span>&#39;&#39;</span>相同的事。</span>情况并非如此。例如，下述语句是完全不同的：</p>
+			<pre><span>mysql&gt; <span><b>INSERT INTO my_table (phone) VALUES (NULL);</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>INSERT INTO my_table (phone) VALUES (&#39;&#39;);</b></span></span></pre>
+			<p>这两条语句均会将值插入<span><span>phone</span>（电话）列，</span>但第<span>1</span>条语句插入的是<span>NULL</span>值，第<span>2</span>条语句插入的是空字符串。第<span>1</span>种情况的含义可被解释为“电话号码未知”，而第<span>2</span>种情况的含义可被解释为“该人员没有电话，因此没有电话号码”。</p>
+			<p>为了进行<span><span>NULL</span>处理，可使用<span>IS 
+			NULL</span></span>和<span><span>IS 
+			NOT NULL</span>操作符以及<span>IFNULL()</span></span>函数。</p>
+			<p>在<span>SQL</span>中，<span><span>NULL</span>值</span>与任何其它值的比较（即使是<span>NULL</span>）永远不会为“真”。包含<span>NULL</span>的表达式总是会导出<span>NULL</span>值，除非在关于操作符的文档中以及表达式的函数中作了其他规定。下述示例中的所有列均返回<span>NULL</span>：</p>
+			<pre><span>mysql&gt; <span><b>SELECT NULL, 1+NULL, CONCAT(&#39;Invisible&#39;,NULL);</b></span></span></pre>
+			<p>如果打算搜索列值为<span>NULL</span>的列，不能使用<span><span>expr 
+			= NULL</span>测试。下述语句不返回任何行，</span>这是因为，对于任何表达式，<span><span>expr 
+			= NULL</span>永远不为<span>“</span>真<span>”</span>：</span></p>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM my_table WHERE phone = NULL;</b></span></span></pre>
+			<p>要想查找<span>NULL</span>值，必须使用<span><span>IS 
+			NULL</span>测试。</span>在下面的语句中，介绍了查找<span>NULL</span>电话号码和空电话号码的方式：</p>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM my_table WHERE phone IS NULL;</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM my_table WHERE phone = &#39;&#39;;</b></span></span></pre>
+			<p>更多信息和示例，请参见<a href="tutorial.html#working-with-null" title="3.3.4.6. Working with NULL Values">3.3.4.6节，“使用NULL值”</a>。</p>
+			<p>如果你正在使用<span>MyISAM</span>、<span>InnoDB</span>、<span>BDB</span>、或<span><span>MEMORY</span>存储引擎，能够在可能具有<span>NULL</span>值的列上增加<span>1</span>条索引。如不然，必须声明索引列为<span>NOT 
+			NULL</span>，而且不能将<span>NULL</span>插入到列中。</span></p>
+			<p>用<span><span>LOAD DATA INFILE</span>读取数据时，对于空的或丢失的列，将用<span>&#39;&#39;</span>更新它们。如果希望在列中具有<span>NULL</span>值，</span>应在数据文件中使用<span>\N</span>。在某些情况下，也可以使用文字性单词“<span>NULL</span>”。请参见<span><a title="13.2.5.&nbsp;LOAD DATA INFILE Syntax"  href="../../../../../../澶╂渤/2006.1/1/third/sql-syntax.html#load-data">13.2.5
+			<span>“</span><span>LOAD DATA 
+			INFILE</span><span>语法”</span></a></span>。</p>
+			<p>使用<span>DISTINCT</span>、<span>GROUP 
+			BY</span>或<span><span>ORDER 
+			BY</span>时，所有<span>NULL</span>值将被视为等同的。</span></p>
+			<p>使用<span><span>ORDER BY</span>时，首先将显示<span>NULL</span>值，</span>如果指定了<span>DESC</span>按降序排列，<span>NULL</span>值将最后显示。</p>
+			<p>对于聚合（累计）函数，如<span>COUNT()</span>、<span>MIN()</span>和<span><span>SUM()</span>，将忽略<span>NULL</span>值。</span>对此的例外是<span><span>COUNT(*)</span>，它将计数行而不是单独的</span>列值。例如，下述语句产生两个计数。首先计数表中的行数，其次计数<span>age</span>列中的非<span>NULL</span>值数目：</p>
+			<pre><span>mysql&gt; <span><b>SELECT COUNT(*), COUNT(age) FROM person;</b></span></span></pre>
+			<p>对于某些列类型，<span>MySQL</span>将对<span>NULL</span>值进行特殊处理。如果将<span>NULL</span>插入<span><span>TIMESTAMP</span>列，将插入当前日期和时间。如果将<span>NULL</span>插入具有<span>AUTO_INCREMENT</span>属性的整数列，将插入序列中的下一个编号。</span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="problems-with-alias"></a>
+			A.5.4.&nbsp;与列别名有关的问题</h3></div></div></div><a class="indexterm" name="id3080404"></a></div><div class="section"><div class="titlepage"><div><div>
+			可以使用别名来引用<span>GROUP BY</span>、<span>ORDER 
+			BY</span>或<span><span>HAVING</span>子句中的列。别名也能用于为列提供更好的名称：</span><pre><span>SELECT SQRT(a*b) AS root FROM <span><i>tbl_name</i></span> GROUP BY root HAVING root &gt; 0;</span></pre>
+			<pre><span>SELECT id, COUNT(*) AS cnt FROM <span><i>tbl_name</i></span> GROUP BY id HAVING cnt &gt; 0;</span></pre>
+			<pre><span>SELECT id AS &#39;Customer identity&#39; FROM <span><i>tbl_name</i></span>;</span></pre>
+			<p>标准<span>SQL</span>不允许在<span>WHERE</span>子句中已用列别名。这是因为，执行<span>WHERE</span>代码时，可能尚未确定列值。例如，下述查询是非法的：</p>
+			<pre><span>SELECT id, COUNT(*) AS cnt FROM <span><i>tbl_name</i></span> WHERE cnt &gt; 0 GROUP BY id;</span></pre>
+			<p>执行<span><span>WHERE</span>语句以确定</span>哪些行应被包含在<span><span>GROUP 
+			BY</span>部分中，而<span>HAVING</span></span>用于确定应使用结果集中的哪些行。</p>
+			<h3 class="title"><a name="non-transactional-tables"></a>
+			A.5.5.&nbsp;非事务表回滚失败</h3></div></div></div><a class="indexterm" name="id3080504"></a>
+			<p>执行<span><span>ROLLBACK</span>（回滚）时，如果收到下述消息，表示事务中使用的<span>1</span>个或多个表不支持事务：</span></p>
+			<pre>警告：某些更改的非事务性表不能被回滚。</pre>
+			<p>这些非事务性表不受<span><span>ROLLBACK</span>语句的影响。</span></p>
+			<p>如果在事务中意外地混合了事务性表和非事务性表，导致该消息的最可能原因是，你认为本应是事务性的表实际上不是。如你试图使用<span>mysqld</span>服务器不支持的事务性存储引擎（或用启动选项禁止了它）创建表，就可能出现该情况。如果<strong><span>mysqld</span></strong>不支持存储引擎，它将以<span><span>MyISAM</span>表创建表，这是非事务性表。</span></p>
+			<p>可使用下述语句之一检查表的标类型：</p>
+			<pre><span>SHOW TABLE STATUS LIKE &#39;<span><i>tbl_name</i></span>&#39;;</span></pre>
+			<pre><span>SHOW CREATE TABLE <span><i>tbl_name</i></span>;</span></pre>
+			<p>请参见<a href="sql-syntax.html#show-table-status" title="13.5.4.18. SHOW TABLE STATUS Syntax">13.5.4.18节，“SHOW 
+		TABLE STATUS语法</a>以及<a href="sql-syntax.html#show-create-table" title="13.5.4.5. SHOW CREATE TABLE Syntax">13.5.4.5节，“SHOW 
+		CREATE TABLE语法”</a>。</p>
+			<p>使用下述语句，可检查<span>mysqld</span>服务器支持的存储引擎：</p>
+			<pre><span>SHOW ENGINES;</span></pre>
+			<p>也可以使用下述语句，检查与你感兴趣的存储引擎有关的变量值：</p>
+			<pre><span>SHOW VARIABLES LIKE &#39;have_%&#39;;</span></pre>
+			<p>例如，要想确定<span><span>InnoDB</span>存储引擎是否可用，可检查<span>have_innodb</span></span>变量的值。</p>
+			<p>请参见<a href="sql-syntax.html#show-engines" title="13.5.4.8. SHOW ENGINES Syntax">13.5.4.8节，“SHOW 
+		ENGINES语法”</a>和<a href="sql-syntax.html#show-variables" title="13.5.4.21. SHOW VARIABLES Syntax">13.5.4.21节，“SHOW 
+		VARIABLES语法”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="deleting-from-related-tables"></a>
+			A.5.6.&nbsp;从相关表删除行</h3></div></div></div><a class="indexterm" name="id3080648"></a><a class="indexterm" name="id3080658"></a><a class="indexterm" name="id3080669"></a></div><div class="section"><div class="titlepage"><div><div>
+			如果针对<span><span>related_table</span>的<span>DELETE</span>语句的总长度超过<span>1MB</span></span>（系统变量<span><span>max_allowed_packet</span>的默认值），应将其分为较小的部分，并执行多个<span>DELETE</span>语句。如果<span>related_column</span>是索引列，为每条语句指定<span>100</span>～<span>1000</span>个<span>related_column</span>值，或许能获得更快的<span>DELETE</span>速度。如果<span>related_column</span></span>不是索引列，速度与<span>IN</span>子句中的参量数目无关。<h3 class="title"><a name="no-matching-rows"></a>
+			A.5.7.&nbsp;解决与不匹配行有关的问题</h3></div></div></div><a class="indexterm" name="id3080735"></a><a class="indexterm" name="id3080742"></a>
+			<p>如果有使用了很多表的复杂查询，但未返回任何行，应采用下述步骤找出什么出错：</p>
+			<p>用<span><span>EXPLAIN</span>测试查询，以检查</span>是否发现某事显然出错。请参见<a href="optimization.html#explain" title="7.2.1. EXPLAIN Syntax (Get Information About a SELECT)">7.2.1节，“EXPLAIN语法（获取关于SELECT的信息）<code class="literal"></code>”</a>。</p>
+			<p>仅选择在<span>WHERE</span>子句中使用的列。</p>
+			<p>从查询中<span>1</span>次删除<span>1</span>个表，直至返回了某些行为止。如果表很大，较好的主意是在查询中使用<span><span>LIMIT 
+			10</span>。</span></p>
+			<p>对于具有与上次从查询中删除的表匹配的行的列，发出<span><span>SELECT</span>查询。</span></p>
+			<p>如果将<span>FLOAT</span>或<span><span>DOUBLE</span>列与具有数值类型的数值进行比较，不能使用</span>等式<span>(<span>=</span>)</span>比较。在大多数计算机语言中，该问题很常见，这是因为，并非所有的浮点值均能以准确的精度保存。在某些情况下，将<span><span>FLOAT</span>更改为<span>DOUBLE</span>可更正该问题。</span>请参见<a href="problems.html#problems-with-float" title="A.5.8. Problems with Floating-Point Comparisons">A.5.8节，“与浮点比较有关的问题”</a>。</p>
+			<p>如果仍不能找出问题之所在，请创建能与显示问题的“<span>mysql 
+			test &lt; query.sql</span>”一起运行的最小测试。通过使用<strong><span>mysqldump 
+			--quick db_name </span></strong><span><b><i>
+			<span>tbl_name_1</span></i></b></span><strong><span> 
+			... </span></strong><span><b><i>
+			<span>tbl_name_n</span></i></b></span><strong><span> 
+			&gt; query.sql</span></strong>转储表，可创建测试文件。在编辑器中打开文件，删除某些插入的行（如果有超出演示问题所需的行），并在文件末尾添加<span>SELECT</span>语句。</p>
+			<p>通过执行下述命令，验证测试文件能演示问题：</p>
+			<pre><span>shell&gt; <span><b>mysqladmin create test2</b></span></span></pre>
+			<pre><span>shell&gt; <span><b>mysql test2 &lt; query.sql</b></span></span></pre>
+			<p>使用<strong><span>mysqlbug</span></strong>将测试文件张贴到哟娜通用<span>MySQL</span>邮件列表。请参见<a href="introduction.html#mailing-list" title="1.7.1.1. The MySQL Mailing Lists">1.7.1.1节，“The MySQL邮件列表”</a>。</div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="problems-with-float"></a>
+			A.5.8.&nbsp;与浮点比较有关的问题</h3></div></div></div></div></div><div class="section"><div class="titlepage"><div><div>
+		注意，下述部分主要与<span><span>DOUBLE</span>和<span>FLOAT</span>列相关，原因在于浮点数的不准确本质。</span><span>MySQL</span>使用<span>64</span>位十进制数值的精度执行<span><span>DECIMAL</span>操作，当处理<span>DECIMAL</span>列时，应能解决大多数常见的不准确问题。</span><p>
+		浮点数有时会导致混淆，这是因为它们无法以准确值保存在计算机体系结构中。你在屏幕上所看到的值通常不是数值的准确值。对于<span>FLOAT</span>和<span><span>DOUBLE</span>列类型，情况就是如此。<span>DECIMAL</span>列能保存具有准确精度的值，这是因为它们是由字符串表示的。</span></p>
+		<p>在下面的示例中，介绍了使用<span><span>DOUBLE</span>时的问题：</span></p>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t1 (i INT, d1 DOUBLE, d2 DOUBLE);</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO t1 VALUES (1, 101.40, 21.40), (1, -80.00, 0.00),</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>(2, 0.00, 0.00), (2, -13.20, 0.00), (2, 59.60, 46.40),</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>(2, 30.40, 30.40), (3, 37.00, 7.40), (3, -29.60, 0.00),</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>(4, 60.00, 15.40), (4, -10.60, 0.00), (4, -34.00, 0.00),</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>(5, 33.00, 0.00), (5, -25.80, 0.00), (5, 0.00, 7.20),</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>(6, 0.00, 0.00), (6, -51.40, 0.00);</b></span></span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT i, SUM(d1) AS a, SUM(d2) AS b</b></span></span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>FROM t1 GROUP BY i HAVING a &lt;&gt; b;</b></span></span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>+------+-------+------+</span></pre>
+		<pre><span>| i&nbsp;&nbsp;&nbsp; | a&nbsp;&nbsp;&nbsp;&nbsp; | b&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+------+-------+------+</span></pre>
+		<pre><span>| &nbsp;&nbsp;&nbsp;1 |&nbsp; 21.4 | 21.4 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 2 |&nbsp; 76.8 | 76.8 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp; 7.4 |&nbsp; 7.4 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 4 |&nbsp; 15.4 | 15.4 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 5 |&nbsp;&nbsp; 7.2 |&nbsp; 7.2 |</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp; 6 | -51.4 |&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>+------+-------+------+</span></pre>
+		<p>结果是正确的。尽管前<span>5</span>个记录看上去不应能进行比较测试（<span>a</span>和<span>b</span>的值看上去没有什么不同），但它们能进行比较，这是因为显示的数值间的差异在十分位左右，具体情况取决于计算机的体系结构。</p>
+		<p>如果列<span>d1</span>和<span><span>d2</span>定义为<span>DECIMAL</span>而不是<span>DOUBLE</span>，<span>SELECT</span>查询的结果仅包含<span>1</span>行，即上面显示的最后<span>1</span>行。</span></p>
+		<h2 class="title"><a name="optimizer-issues"></a>
+		A.6.&nbsp;与优化器有关的事宜</h2></div></div></div>
+		<p><span>MySQL</span>采用了基于开销的优化器，以确定处理查询的最解方式。在很多情况下，<span>MySQL</span>能够计算最佳的可能查询计划，但在某些情况下，<span>MySQL</span>没有关于数据的足够信息，不得不就数据进行“有教养”的估测。</p>
+		<p>当<span>MySQL</span>未能做“正确的”事时，可使用下述工具来帮助<span>MySQL</span>：</p>
+		<p>使用<span><span>EXPLAIN</span>语句获取关于</span><span>MySQL</span>如何处理查询的信息。要想使用它，可在<span>SELECT</span>语句前添加关键字<span><span>EXPLAIN</span>：</span></p>
+		<pre><span>mysql&gt; <span><b>EXPLAIN SELECT * FROM t1, t2 WHERE t1.i = t2.i;</b></span></span></pre>
+		<p><span>关于<span>EXPLAIN</span>的详细讨论，请参见</span><a href="optimization.html#explain" title="7.2.1. EXPLAIN Syntax (Get Information About a SELECT)">7.2.1节，“EXPLAIN语法（获取关于SELECT的信息）<code class="literal"></code>”</a>。</p>
+		<p>使用<span>ANALYZE TABLE <i>
+		tbl_name</i></span>，为已扫描的表更新键分配。请参见<a href="sql-syntax.html#analyze-table" title="13.5.2.1. ANALYZE TABLE Syntax">13.5.2.1节，“ANALYZE 
+			TABLE语法”</a>。</p>
+		<p>为已扫描的表使用<span>FORCE INDEX</span>，通知<span>MySQL</span>：与使用给定的索引相比，表扫描开销昂贵。请参见<a href="sql-syntax.html#select" title="13.2.7. SELECT Syntax">13.2.7节，“SELECT语法”</a>。</p>
+		<pre><span>SELECT * FROM t1, t2 FORCE INDEX (index_for_column)</span></pre>
+		<pre><span>WHERE t1.col_name=t2.col_name;</span></pre>
+		<p>
+          <a class="indexterm" name="id3081908"></a>
+
+          <span><span>USE INDEX</span>和<span>IGNORE 
+		INDEX</span>也有一定的帮助。</span></p>
+		<p>关于全局和表级别的<span>STRAIGHT_JOIN</span>。请参见<a href="sql-syntax.html#select" title="13.2.7. SELECT Syntax">13.2.7节，“SELECT语法”</a>。</p>
+		<p>你可以调节全局或线程类系统变量。例如，用“<span><span>--max-seeks-for-key=1000<span>”</span></span>选项启动</span><strong><span>mysqld</span></strong>，或使用<span><span>“SET 
+		max_seeks_for_key=1000”</span>来通知优化器：假定任何表扫描均不会导致<span>1000</span>个以上的键搜索。</span>请参见<a href="database-administration.html#server-system-variables" title="5.3.3. Server System Variables">5.3.3节，“服务器系统变量”</a>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="table-definition-issues"></a>
+		A.7.&nbsp;与表定义有关的事宜</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="problems.html#alter-table-problems">
+			A.7.1. 与ALTER TABLE有关的问题</a></span></dt><dt><span class="section"><a href="problems.html#change-column-order">
+			A.7.2. 如何更改表中的列顺序</a></span></dt><dt><span class="section"><a href="problems.html#temporary-table-problems">A.7.3. 
+			TEMPORARY TABLE问题</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="alter-table-problems"></a>
+			A.7.1.&nbsp;与ALTER TABLE有关的问题</h3></div></div></div><a class="indexterm" name="id3081318"></a><a class="indexterm" name="id3081327"></a><a class="indexterm" name="id3081337"></a>
+			<p><span>ALTER TABLE</span>将表更改为当前字符集。如果在执行<span><span>ALTER 
+			TABLE</span>操作期间遇到</span>重复键错误，原因在于新的字符集将<span>2</span>个键映射到了相同值，或是表已损坏。在后一种情况下，应在表上运行<span><span>REPAIR 
+			TABLE</span>。</span></p>
+			<p>如果<span><span>ALTER TABLE</span>失败并给出下述错误，问题可能是因为在<span>ALTER 
+			TABLE</span>操作的早期阶段出现</span><span>MySQL</span>崩溃，没有名为<span>A-<i>xxx</i></span>或<span>B-<i>xxx</i></span>的旧表：</p>
+			<pre><span>Error on rename of &#39;./database/name.frm&#39;</span></pre>
+			<pre><span>to &#39;./database/B-<span><i>xxx</i></span>.frm&#39; (Errcode: 17)</span></pre>
+			<p>在该情况下，进入<span>MySQL</span>数据目录，并删除其名称为以<span><span>A-</span>或<span>B-</span>开始的所有文件</span>（或许你希望将它们移动到其他地方而不是删除它们）。</p>
+			<p><span><span>ALTER TABLE</span>的工作方式如下：</span></p>
+			<ul>
+				<li>用请求的结构变化创建名为<span>A-<i>xxx</i></span>的新表。</li>
+				<li>将所有行从原始表拷贝到<span>A-<i>xxx</i></span>。</li>
+				<li>将原始表重命名为<span>B-<i>xxx</i></span>。</li>
+				<li>将<span>A-<i>xxx</i></span>重命名为原始表的名称。</li>
+				<li>删除<span>B-<i>xxx</i></span>。</li>
+			</ul>
+			<p>如果在重命名操作中出错，<span>MySQL</span>将尝试撤销更改。如果错误很严重（尽管这不应出现），<span>MySQL</span>会将旧表保留为<span>B-<i>xxx</i></span>。简单地在系统级别上重命名表文件，应能使数据复原。</p>
+			<p>如果在事务性表上使用<span><span>ALTER 
+			TABLE</span>，或正在使用</span><span>Windows</span>或<span>OS/2</span>操作系统，如果已在表上执行了<span><span>LOCK 
+			TABLE</span>操作，<span>ALTER TABLE</span>将对表执行解锁操作。这是因为<span>InnoDB</span>和这类操作系统不能撤销正在使用的表。</span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="change-column-order"></a>
+			A.7.2.&nbsp;如何更改表中的列顺序</h3></div></div></div><a class="indexterm" name="id3081539"></a><a class="indexterm" name="id3081549"></a><a class="indexterm" name="id3081559"></a><a class="indexterm" name="id3081569"></a>
+			<p>首先，请考虑是否的确需要更改表中的列顺序。<span>SQL</span>的核心要点是从数据存储格式获取应用。总应指定检索数据的顺序。在下面的第<span>1</span>条语句中，以<span><i><span>col_name1</span></i></span>、<span><i><span>col_name2</span></i></span>、<span><i><span>col_name3</span></i></span>顺序返回列；在第<span>2</span>条语句中，以<span><i><span>col_name1</span></i></span>、<span><i><span>col_name3</span></i></span>、<span><i><span>col_name2</span></i></span>顺序返回列：</p>
+			<pre><span>mysql&gt; <span><b>SELECT <i>col_name1</i>, <i>col_name2</i>, <i>col_name3</i> FROM <i>tbl_name</i>;</b></span></span></pre>
+			<pre><span>mysql&gt; <span><b>SELECT <i>col_name1</i>, <i>col_name3</i>, <i>col_name2</i> FROM <i>tbl_name</i>;</b></span></span></pre>
+			<p>如果决定更改表列的顺序，可执行下述操作：</p>
+			<ol>
+				<li>用具有新顺序的列创建新表。</li>
+				<li>执行该语句：</li>
+			</ol>
+			<pre><span>mysql&gt; <span><b>INSERT INTO new_table</b></span></span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp; -&gt; <span><b>SELECT columns-in-new-order FROM old_table;</b></span></span></pre>
+			<ol start="3">
+				<li>撤销或重命名<span>old_table</span>。</li>
+				<li>将新表重命名为原始名称：</li>
+			</ol>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE new_table RENAME old_table;</b></span></span></pre>
+			<p><span>SELECT *</span>十分适合于测试查询。但是，在应用程序中，永远不要依赖<span><span>SELECT 
+			*</span>的使用，不要依赖根据其位置检索列。如果添加、移动或删除了列，所返回的列的顺序和位置不会保持相同。对表结构的简单更改也会导致应用程序失败。</span></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="temporary-table-problems"></a>A.7.3. TEMPORARY 
+			TABLE问题</h3></div></div></div><a class="indexterm" name="id3081748"></a>
+			<p>下面介绍了对使用<span>TEMPORARY</span>表的限制：</p>
+			<ul>
+				<li><span><span>TEMPORARY</span>表只能是<span>HEAP</span></span>、<span>ISAM</span>、<span>MyISAM</span>、<span>MERGE</span>、或<span>InnoDB</span>类型。</li>
+				<li>在相同的查询中，不能引用<span><span>TEMPORARY</span>表<span>1</span>次以上。例如，下例不能正常工作：</span></li>
+			</ul>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM temp_table, temp_table AS t2;</b></span></span></pre>
+			<pre>错误<span>1137</span>：不能再次打开表：<span>&#39;temp_table&#39;</span></pre>
+			<ul>
+				<li><span><span>SHOW TABLES</span>语句</span>不会列出<span>TEMPORARY</span>表。</li>
+				<li>不能使用<span><span>RENAME</span>重命名<span>TEMPORARY</span>表。</span>但能使用<span>ALTER 
+				TABLE</span>取而代之：</li>
+			</ul>
+			<pre><span>mysql&gt; <span><b>ALTER TABLE orig_name RENAME new_name;</b></span></span></pre>
+		</div></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="bugs"></a>
+		A.8.&nbsp;MySQL中的已知事宜</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="problems.html#open-bugs">
+			A.8.1. MySQL中的打开事宜</a></span></dt></dl></div><a class="indexterm" name="id3081875"></a><a class="indexterm" name="id3081885"></a><a class="indexterm" name="id3081896"></a><a class="indexterm" name="id3081906"></a>
+		<p>在本节中，列出了当前<span>MySQL</span>版本中的已知事宜。</p>
+		<p>关于平台相关事宜的更多信息，请参见<a href="installing.html#operating-system-specific-notes" title="2.12. Operating System-Specific Notes">2.12节，“具体操作系统相关的注意事项”</a>和<a href="porting.html">附录E：</a><a href="porting.html" title="Appendix E. Porting to Other Systems"><i>移植到其他系统</i></a>中的安装和移植说明。</p>
+		<div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="open-bugs"></a>
+			A.8.1.&nbsp;MySQL中的打开事宜</h3></div></div></div>
+			<p>下面列出了已知问题，更正它们具有较高的优先级：</p>
+			<ul>
+				<li>如果将<span><span>NULL</span>值与</span>使用<span><span>ALL/ANY/SOME</span>的子查询进行比较，而且子查询返回</span>空的结果，比较操作会评估<span>NULL</span>的非标准结果而不是<span>TRUE</span>或<span>FALSE</span>。在<span>MySQL 
+				5.1</span>中将更正该问题。</li>
+				<li>对于<span>IN</span>的线子查询优化不像“<span>=</span>”那样有效。</li>
+				<li>即使使用了<span>lower_case_table_names=2</span>（允许<span>MySQL</span>记住数据库名和表名使用的大小写），对于函数<span><span>DATABASE()</span>或在各种日志内（在不区分大小写的系统上），</span><span>MySQL</span>也不会记住数据库名使用的大小写情况。</li>
+				<li>在复制操作中，撤销<span><span>FOREIGN 
+				KEY</span>约束不工作，这是因为约束可能在从服务器上有另一个名称。</span></li>
+				<li><span><span>REPLACE</span>（以及具有<span>REPLACE</span>选项的<span>LOAD 
+				DATA</span>）不会触发<span>ON DELETE CASCADE</span></span>。</li>
+				<li><span>如果未使用所有列而且仅使用<span>DISTINCT</span>列表中的列，在<span>GROUP_CONCAT()</span>中，<span>DISTINCT</span></span>不能与<span><span>ORDER 
+				BY</span>一起工作。</span></li>
+				<li>如果<span>1</span>位用户拥有长时间运行的事务，而且另<span>1</span>位用户撤销了在事务中更新的某<span>1</span>表，那么在表用于事务本身之前，存在较小的机会，会在二进制日志中包含<span><span>DROP 
+				TABLE</span>命令。我们计划更正该问题，方法是让<span>DROP TABLE</span>命令等待，直至表未在任何事务中使用为止。</span></li>
+				<li>将大的整数值（介于<span>2<sup>63</sup></span>和<span>2<sup>64</sup></span>–<span>1</span>之间）插入数值或字符串列时，它将作为负值插入，这是因为该数值是在有符号整数环境下评估的。</li>
+				<li><span>如果服务器运行在不具备二进制日志功能的条件下，<span>FLUSH 
+				TABLES WITH READ LOCK</span></span>不能屏蔽<span><span>COMMIT</span>，执行完整备份时这可能会导致问题（表间的一致性问题）。</span></li>
+				<li><span>在某些情况下，作用在<span>BDB</span>表上的<span>ANALYZE 
+				TABLE</span>会导致表不可用，直至重启</span><strong><span>mysqld</span></strong>为止。如果出现该情况，请在<span>MySQL</span>错误文件中查找下述形式的错误：</li>
+			</ul>
+			<pre><span>001207 22:07:56&nbsp; bdb:&nbsp; log_flush: LSN past current end-of-log</span></pre>
+			<ul>
+				<li>在所有事务完成之前，不要在<span>BDB</span>表（正在其上运行多语句事务）上执行<span><span>ALTER 
+				TABLE</span>（可能会忽略事务）。</span></li>
+				<li><span>对于正在使用<span>INSERT 
+				DELAYED</span>的表，在其上执行<span>ANALYZE TABLE</span></span>、<span><span>OPTIMIZE 
+				TABLE</span>和<span>REPAIR TABLE</span>时，可能会导致问题。</span></li>
+				<li>在表上执行<span>LOCK 
+				TABLE ...</span>和<span><span>FLUSH 
+				TABLES ...</span>时，不保证没有完成一半的事务。</span></li>
+				<li><span><span>BDB</span>表</span>打开的速度相对较慢。如果你在数据库上有很多<span><span>BDB</span>表，如果未使用<span>“-A”</span>选项或正使用再混编功能，要想在数据库上使用<span>mysql</span>客户端，需要花费较长的时间。当你有大的表高速缓冲时，这点尤其明显。</span></li>
+				<li>
+				复制功能采用了查询级日志功能：主服务器将已执行的查询写入二进制日志。这是一种速度很快、简洁和有效的记录方法，在大多数情况下工作良好。</li>
+			</ul>
+			<p>
+			如果以特定的方式设计查询，使得数据更改是非决定性（通常不推荐，即使在复制之外也同样），主服务器和从服务器上的数据将变得不同。</p>
+			<p>例如：</p>
+			<blockquote>
+				<ul>
+					<li>将0或NULL值插入AUTO_INCREMENT列中的CREATE ... SELECT或INSERT ... 
+					SELECT语句。</li>
+					<li>DELETE，如果从具有ON DELETE CASCADE属性的外键的表中删除行。</li>
+					<li>REPLACE ... SELECT、INSERT IGNORE ... 
+					SELECT，如果在插入的数据中具有重复键。</li>
+				</ul>
+			</blockquote>
+			<p><strong>
+			<span>当且仅当前述查询没有保证决定行顺序的</span></strong><span><b><span>ORDER 
+			BY</span>子句时。</b></span></p>
+			<p>例如，对于不具有<span><span>ORDER 
+			BY</span>的<span>INSERT ... SELECT</span></span>，<span><span>SELECT</span>可能会以不同的顺序返回行</span>（它会导致具有不同等级的行，从而导致<span><span>AUTO_INCREMENT</span>列中的不同数值），具体情况取决于优化器在主服务器和从服务器上所作的选择。</span></p>
+			<p>在主服务器和从服务器上，查询将进行不同的优化，仅当：</p>
+			<blockquote>
+				<ul>
+					<li>
+					使用不同的存储引擎在主服务器上而不是从服务器上保存表。（能够在主服务器和从服务器上使用不同的存储引擎。例如，如果从服务器具有较少的可用磁盘空间，可以在主服务器上使用<span><span>InnoDB</span>，但在</span> 
+					从服务器桑使用<span><span>MyISAM</span>）。</span></li>
+					<li>在主服务器和从服务器上，<span>MySQL</span>缓冲区大小是不同的（<span>key_buffer_size</span>等）。</li>
+					<li>在主服务器和从服务器上运行不同的<span>MySQL</span>版本，版本间的优化器代码也不同。</li>
+				</ul>
+			</blockquote>
+			<p>该问题也会影响使用<strong><span>mysqlbinlog|mysql</span></strong>的数据库恢复。</p>
+			<p>避免该问题的最简单方法是，为前述的非决定性查询增加<span>ORDER 
+			BY</span>子句，以确保总是以相同的顺序保存或更改行。</p>
+			<p>在将来的<span>MySQL</span>版本中，需要时，我们将自动增加<span><span>ORDER 
+			BY</span>子句。</span></p>
+			<p>下面列出了已知的事宜，这些事宜将在恰当的时候更正：</p>
+			<ul>
+				<li>日志文件名基于服务器主机名（如果未使用启动选项指定文件名的话）。如果更改了主机名，你将不得不使用诸如“<span>--log-bin=<i>old_host_name</i>-bin</span>”等选下美国。另一种选择是重命名旧文件，以反映主机名变更情况（如果是二进制日志，需要编辑二进制日志索引文件，并更正<span>binlog</span>名称）。请参见<a href="database-administration.html#server-options" title="5.3.1. mysqld Command-Line Options">5.3.1节，“<span><strong class="command">mysqld</strong></span>命令行选项”</a>。</li>
+				<li><strong><span>Mysqlbinlog</span></strong>不删除执行<span><span>LOAD 
+				DATA INFILE</span>命令后遗留的临时文件</span>。请参见<a href="client-side-scripts.html#mysqlbinlog" title="8.6. mysqlbinlog — Utility for Processing Binary Log Files">8.6节，“mysqlbinlog：用于处理二进制日志文件的实用工具”</a>。</li>
+				<li><span>RENAME</span>不能与<span><span>TEMPORARY</span>表一起工作，也不能与<span>MERGE</span>表中使用的表一起工作。</span></li>
+				<li>由于表定义文件的保存方式，不能在表名、列名或枚举中使用字符<span>255</span>（<span>CHAR(255)</span>）。按照安排，当我们实施了新的表定义格式文件时，将在<span>5.1</span>版中更正该问题。</li>
+				<li>使用<span><span>SET 
+				CHARACTER SET</span>时，不能在数据库、表和列名中使用</span>转换的字符。</li>
+				<li>不能在<span><span>LIKE ... 
+				ESCAPE</span>中与<span>ESCAPE</span>一起使用</span>‘<span>_</span>’或‘<span>%</span>’。</li>
+				<li>如果你有<span>1</span>个<span><span>DECIMAL</span>列，其中，相同的数值以不同的格式保存（例如，<span>+01.00</span></span>、<span>1.00</span>、<span>01.00</span>），<span>GROUP 
+				BY</span>可能会将每个值当作不同的值。</li>
+				<li>使用<span>MIT-pthreads</span>时，不能在另一个目录下创建服务器。这是因为它需要更改<span>MIT-pthreads</span>，我们不太会更正该问题。请参见<span><a title="2.8.5.&nbsp;MIT-pthreads Notes"  href="../../../third/installing.html#mit-pthreads">2.8.5
+				<span>“</span>MIT-pthreads<span>注意事项”</span></a></span>。</li>
+				<li><span>在<span>GROUP BY</span></span>、<span>ORDER 
+				BY</span>或<span><span>DISTINCT</span>中，不能可靠地使用<span>BLOB</span>和<span>TEXT</span>值。在这类情况下，与<span>BLOB</span>值进行比较时，仅使用最前的<span>max_sort_length</span></span>字节。<span><span>max_sort_length</span>的默认值是</span><span>1024</span>，可在服务器启动时或运行时更改它。</li>
+				<li>数值计算是使用<span>BIGINT</span>或<span><span>DOUBLE</span>（正常情况下均为<span>64</span>位长）进行的。</span>你所能获得的精度取决于函数。通用规则是位函数是按<span><span>BIGINT</span>精度执行的，<span>IF</span>和<span>ELT()</span>是按<span>BIGINT</span>或<span>DOUBLE</span>精度执行的，其余的函数是按<span>DOUBLE</span>精度执行的。对于除位字段外的其他数，如果大于<span>63</span>位（</span><span>9223372036854775807</span><span>），应避免使用</span>无符号长<span>long</span>值。</li>
+				<li>在<span>1</span>个表中，最多能有<span>255</span>个<span><span>ENUM</span>和<span>SET</span>列。</span></li>
+				<li>在<span>MIN()</span>、<span>MAX()</span>以及其他聚合函数中，<span>MySQL</span>目前会根据其字符串值比较<span>ENUM</span>和<span><span>SET</span>列，而不是根据字符串在集合中的相对位置。</span></li>
+				<li><strong><span>mysqld_safe</span></strong>会将来自<strong><span>mysqld</span></strong>的所有消息再定向到<strong><span>mysqld</span></strong>日志。与之相关的<span>1</span>个问题是，如果你执行<strong><span>mysqladmin 
+				refresh</span></strong>关闭并再次打开日志，<span>stdout</span>和<span><span>stderr</span>仍会被重定向到旧的日志。</span>如果你以广义方式使用“<span><span>--log”</span>，</span>应编辑<strong><span>mysqld_safe</span></strong>以记录到<span><i><span>host_name</span></i><span>.err</span></span>而不是<span><i><span>host_name</span></i><span>.log</span></span>，以便通过删除它并执行<strong><span>mysqladmin 
+				refresh</span></strong>，方便地收回为旧日志分配的空间。</li>
+				<li>在<span><span>UPDATE</span>语句中，列从左向右更新。如果引用了已更新的列，你将得到更新值而不是原始值。例如，</span>下述语句会将<span><span>KEY</span>增加<span>2</span>，而不是<span>1</span>：</span></li>
+			</ul>
+			<pre><span>mysql&gt; <span><b>UPDATE <i>tbl_name</i> SET KEY=KEY+1,KEY=KEY+1;</b></span></span></pre>
+			<ul>
+				<li>你可以在相同查询中引用多个临时表，但不能引用任何给定的临时表<span>1</span>次以上。例如，下述语句不能正常工作：</li>
+			</ul>
+			<pre><span>mysql&gt; <span><b>SELECT * FROM temp_table, temp_table AS t2;</b></span></span></pre>
+			<pre>错误<span>1137</span>：不能再次打开表：<span>&#39;temp_table&#39;</span></pre>
+			<ul>
+				<li>当你在联合操作中使用“隐含”列时，与未使用隐含列相比，优化器将以不同的方式处理<span>DISTINCT</span>。在联合操作中，隐含列将作为结果的组成部份计数（即使未显示），但在正常查询中，隐含列不参与<span><span>DISTINCT</span>比较。在以后，我们可能会更改该情况，</span>在执行<span>DISTINCT</span>时不比较隐含列。</li>
+			</ul>
+			<p>例如：</p>
+			<pre><span>SELECT DISTINCT mp3id FROM band_downloads</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE userid = 9 ORDER BY id DESC;</span></pre>
+			<p>以及</p>
+			<pre><span>SELECT DISTINCT band_downloads.mp3id</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM band_downloads,band_mp3</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE band_downloads.userid = 9</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND band_mp3.id = band_downloads.mp3id</span></pre>
+			<pre><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ORDER BY band_downloads.id DESC;</span></pre>
+			<p>在第<span>2</span>种情况下，使用<span>MySQL</span>服务器<span>3.23.x</span>，可在结果集中获得<span>2</span>个等同行（这是因为，隐藏<span>ID</span>列中的值可能不同）。</p>
+			<p>注意，在结果集中，仅对不含<span><span>ORDER 
+			BY</span>列的查询才会出现该情况。</span></p>
+			<ul>
+				<li>如果在返回空集的查询上执行<span><span>PROCEDURE</span>，在某些情况下，<span>PROCEDURE</span>不转换列。</span></li>
+				<li>创建具有<span>MERGE</span>类型的表时，不检查基本表是否具有兼容的类型。</li>
+				<li>如果使用<span><span>ALTER 
+				TABLE</span>为<span>MERGE</span>表中使用的表增加了<span>UNIQUE</span>索引，然后在<span>MERGE</span>表上增加了正常索引，如果在表中存在旧的、非<span>UNIQUE</span>键，对于这些表，键顺序是不同的。这是因为，<span>ALTER 
+				TABLE</span>会将<span>UNIQUE</span>索引放在</span>正常索引之前，以便能尽早检测到重复的键。</li>
+			</ul>
+			<div class="itemizedlist">&nbsp;</div></div></div></div><div><hr>
+	<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。</div>
+</body></html>

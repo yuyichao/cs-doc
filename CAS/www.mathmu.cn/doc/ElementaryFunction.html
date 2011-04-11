@@ -1,0 +1,419 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+   "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="generator" content="Muse">
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" charset="utf-8" media="all"
+          href="../main.css" >
+    <link rel="shortcut icon" href="../favicon.ico" type="image/vnd.microsoft.icon">
+    <script type="text/javascript" charset="utf-8" src="../main.js"></script>
+    <title>初等函数 - maTH&mu; - 计算机代数系统</title>
+  </head>
+  <body>
+<div id="banner"></div><!-- banner -->    
+<div id="header">
+    <h1>初等函数
+  </h1>
+  <a name="top"></a>
+  <div id="tab">
+  <ul>
+    <li><a href="../index.html" title="主页"><span>主页</span></a></li>
+    <li><a href="../Doc.html" title="文档"><span>文档</span></a></li>
+    <li><a href="../Dev.html" title="开发"><span>开发</span></a></li>
+    <li><a href="http://groups.google.com/group/maTHmU?hl=zh-CN" title="论坛"><span>论坛</span></a></li>
+    <li><a href="../JoinUs.html" title="加入我们"><span>加入我们</span></a></li>
+  </ul>
+  </div><!-- tab -->
+</div><!-- header -->
+<div id="container">
+  <div id="body">
+    <div id="leftshadow">
+      <div id="page"> 
+ <!-- Page published by Emacs Muse begins here -->
+<a href="ElementaryFunction.html#" onClick="ShowHide(content)">隐藏目录</a>
+<div id="content" class="contents">
+<dl>
+  <dt>
+    <a href="ElementaryFunction.html#sec1">幂函数</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="ElementaryFunction.html#sec2">迭代法</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="ElementaryFunction.html#sec3">Newton迭代</a>
+  </dt>
+  <dt>
+    <a href="ElementaryFunction.html#sec4">对数函数</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="ElementaryFunction.html#sec5">级数法</a>
+      </dt>
+      <dt>
+	<a href="ElementaryFunction.html#sec6">迭代法</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="ElementaryFunction.html#sec7">指数函数</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="ElementaryFunction.html#sec8">级数法</a>
+      </dt>
+      <dt>
+	<a href="ElementaryFunction.html#sec9">迭代法</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="ElementaryFunction.html#sec10">矩形求和</a>
+  </dt>
+  <dt>
+    <a href="ElementaryFunction.html#sec11">三角函数与反三角函数</a>
+  </dt>
+  <dt>
+    <a href="ElementaryFunction.html#sec12">折半求和的应用</a>
+  </dt>
+  <dd>
+    <dl>
+      <dt>
+	<a href="ElementaryFunction.html#sec13">指数函数</a>
+      </dt>
+      <dt>
+	<a href="ElementaryFunction.html#sec14">余弦函数</a>
+      </dt>
+    </dl>
+  </dd>
+  <dt>
+    <a href="ElementaryFunction.html#sec15">其他函数</a>
+  </dt>
+</dl>
+</div>
+
+<p>函数是数学中的核心概念,符号计算中许多数值问题都可以归结到函数求值上,因此一个友好的计算机代数系统应该提供大部分基本数学函数的计算方法.如果对精度要求不是太高,譬如说机器精度时,可以利用直接查表并结合函数的多项式逼近,有理分式(Pade)逼近或者将函数转化为数值积分等方法来计算函数值,这些都是数值计算中的重要技术.在这里我们主要讨论的是如何将函数值计算到任意精度,总的来看,与数学常数的情形类似,计算的方法大致分为级数法和迭代法两类,关于它们更多更详尽的讨论可以在Borwein的书<span class="cite"><a class="cite" href="ElementaryFunction.html#ref-1" name="cite-1">[1]</a></span>中找到.</p>
+
+<h2><a name="sec1" id="sec1"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>幂函数</h2>
+
+<p class="first">正整数幂在基础数论算法中有详细的讨论,实用中一般采用简单的基于<img src="latex/latex2png-ElementaryFunction_53138635_.gif" alt="$$x^{2n}=(x^n)^2,\quad x^{2n+1}=x(x^n)^2$$" class="latex-display" width="580" height="20">的二分法,有理数幂<img src="latex/latex2png-ElementaryFunction_135346033_.gif" alt="$$x^{q\over p}=(\sqrt[ p]{x})^q$$" class="latex-display" width="580" height="22">归结到开方计算,更一般的幂函数<img src="latex/latex2png-ElementaryFunction_165186540_0.gif" alt="$x^m$" class="latex-inline" style="vertical-align: 0px" width="21" height="11">则利用恒等式<img src="latex/latex2png-ElementaryFunction_262480037_.gif" alt="$$x^m=e^{m\ln{x}}$$" class="latex-display" width="580" height="15">归结到对数函数与指数函数的计算,因此接下来主要讨论的是开方.</p>
+
+<h3><a name="sec2" id="sec2"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>迭代法</h3>
+
+<p class="first">计算开方最有效的方法是Newton迭代法,设<img src="latex/latex2png-ElementaryFunction_250044104_-5.gif" alt="$f(x)=x^n-a$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,<img src="latex/latex2png-ElementaryFunction_165514220_-3.gif" alt="$x_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">是<img src="latex/latex2png-ElementaryFunction_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">的一个近似根且<img src="latex/latex2png-ElementaryFunction_124476004_-5.gif" alt="$f'(x_0)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,那么迭代公式为<img src="latex/latex2png-ElementaryFunction_52418605_.gif" alt="$$x_{k+1}=(1-{1\over n})x_k+{a\over nx_k^{n-1}},\quad k=0,1,\ldots,$$" class="latex-display" width="580" height="40">其中<img src="latex/latex2png-ElementaryFunction_212898296_.gif" alt="$$\lim_{k\rightarrow\infty}x_k=\sqrt[ n]{a}.$$" class="latex-display" width="580" height="25">特别地,当<img src="latex/latex2png-ElementaryFunction_168064020_0.gif" alt="$n=2$" class="latex-inline" style="vertical-align: 0px" width="40" height="11">时迭代公式化为<img src="latex/latex2png-ElementaryFunction_131487869_.gif" alt="$$x_{k+1}={x_k\over 2}+{a\over 2x_k},$$" class="latex-display" width="580" height="33">每迭代一次只需要做一次除法.有时候为了避免除法也可以先求倒数的开方,设<img src="latex/latex2png-ElementaryFunction_83889118_-6.gif" alt="$f(x)={1\over x^n}-a$" class="latex-inline" style="vertical-align: -6px" width="101" height="21">,对应的迭代公式为<img src="latex/latex2png-ElementaryFunction_162115762_.gif" alt="$$x_{k+1}=(1+{1\over n})x_k-{ax^{n+1}\over n},$$" class="latex-display" width="580" height="37">最后再利用<img src="latex/latex2png-ElementaryFunction_41361145_.gif" alt="$$\sqrt[ n]{a}=a({1\over\sqrt[ n]{a}})^{n-1}$$" class="latex-display" width="580" height="38">也可以求出<img src="latex/latex2png-ElementaryFunction_154758776_-4.gif" alt="$\sqrt[ n]{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">.特别地,当<img src="latex/latex2png-ElementaryFunction_168064020_0.gif" alt="$n=2$" class="latex-inline" style="vertical-align: 0px" width="40" height="11">时迭代公式化为<img src="latex/latex2png-ElementaryFunction_235187621_.gif" alt="$$x_{k+1}=x_k+x_k{1-ax_k^2\over 2},$$" class="latex-display" width="580" height="37">最后一步只需要计算<img src="latex/latex2png-ElementaryFunction_63354918_-9.gif" alt="$\sqrt{a}=a{1\over\sqrt{a}}$" class="latex-inline" style="vertical-align: -9px" width="74" height="24">.</p>
+
+<p>Newton迭代法是二阶收敛并且自修正的,因此迭代过程中有效精度以2的幂次增长,这样一来,开方时大部分时间都是在计算最后一步迭代中的全精度乘(除)法,巧妙地将最后一步迭代和最后的乘法合成为一步可以加速开方的计算.以<img src="latex/latex2png-ElementaryFunction_168064020_0.gif" alt="$n=2$" class="latex-inline" style="vertical-align: 0px" width="40" height="11">为例,设<img src="latex/latex2png-ElementaryFunction_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">是倒数第二步迭代后得到的<img src="latex/latex2png-ElementaryFunction_116937887_-9.gif" alt="$1\over\sqrt{a}$" class="latex-inline" style="vertical-align: -9px" width="19" height="24">的近似值,则<img src="latex/latex2png-ElementaryFunction_131888146_0.gif" alt="$ar$" class="latex-inline" style="vertical-align: 0px" width="16" height="8">是<img src="latex/latex2png-ElementaryFunction_149847055_-4.gif" alt="$\sqrt{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">具有相同精度的近似值,将<img src="latex/latex2png-ElementaryFunction_149847055_-4.gif" alt="$\sqrt{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">的迭代公式改写成<img src="latex/latex2png-ElementaryFunction_35426893_.gif" alt="$$x_{k+1}=x_k+{1\over x_k}{a-x_k^2\over 2}$$" class="latex-display" width="580" height="39">的形式,用<img src="latex/latex2png-ElementaryFunction_131888146_0.gif" alt="$ar$" class="latex-inline" style="vertical-align: 0px" width="16" height="8">代替<img src="latex/latex2png-ElementaryFunction_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">,<img src="latex/latex2png-ElementaryFunction_42759186_0.gif" alt="$r$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">代替<img src="latex/latex2png-ElementaryFunction_39438802_-7.gif" alt="$1\over x_k$" class="latex-inline" style="vertical-align: -7px" width="15" height="22">,迭代一步后得到的<img src="latex/latex2png-ElementaryFunction_26604967_-4.gif" alt="$x_{k+1}$" class="latex-inline" style="vertical-align: -4px" width="33" height="12">就是<img src="latex/latex2png-ElementaryFunction_149847055_-4.gif" alt="$\sqrt{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">的全精度近似值.</p>
+
+<p>对于负幂的情形,只需要计算<img src="latex/latex2png-ElementaryFunction_6790517_0.gif" alt="$x^{-1}$" class="latex-inline" style="vertical-align: 0px" width="25" height="14">,即<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的倒数.设<img src="latex/latex2png-ElementaryFunction_26765481_-6.gif" alt="$f(x)={1\over x}-a$" class="latex-inline" style="vertical-align: -6px" width="93" height="21">,<img src="latex/latex2png-ElementaryFunction_165514220_-3.gif" alt="$x_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">是<img src="latex/latex2png-ElementaryFunction_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">的一个近似根且<img src="latex/latex2png-ElementaryFunction_124476004_-5.gif" alt="$f'(x_0)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,那么对应的Newton迭代公式为<img src="latex/latex2png-ElementaryFunction_43175052_.gif" alt="$$x_{k+1}=2x_k-ax_k^2,\quad k=0,1,\ldots,$$" class="latex-display" width="580" height="19">其中<img src="latex/latex2png-ElementaryFunction_15195482_.gif" alt="$$\lim_{k\rightarrow\infty}x_k={1\over a}.$$" class="latex-display" width="580" height="34"></p>
+
+<p>数论中常常还会用到整数开方<img src="latex/latex2png-ElementaryFunction_197817389_-5.gif" alt="$[\sqrt[ n]{a}],a\in\mathbb{Z}$" class="latex-inline" style="vertical-align: -5px" width="81" height="18">,这时候可以将Newton迭代公式中的除法全部换成整数带余除法.以<img src="latex/latex2png-ElementaryFunction_168064020_0.gif" alt="$n=2$" class="latex-inline" style="vertical-align: 0px" width="40" height="11">为例,新的迭代公式为<img src="latex/latex2png-ElementaryFunction_240354753_.gif" alt="$$x_{k+1}=\left[{x_k+[{a\over x_k}]\over 2}\right].$$" class="latex-display" width="580" height="50">可以证明,如果迭代初始值<img src="latex/latex2png-ElementaryFunction_167539995_-5.gif" alt="$x_0<[\sqrt[ n]{a}]$" class="latex-inline" style="vertical-align: -5px" width="72" height="18">,那么<img src="latex/latex2png-ElementaryFunction_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">将单调上升,并且趋向于<img src="latex/latex2png-ElementaryFunction_211907301_-5.gif" alt="$[\sqrt[ n]{a}]$" class="latex-inline" style="vertical-align: -5px" width="32" height="18">,因此一般取<img src="latex/latex2png-ElementaryFunction_43435_.gif" alt="$$x_0=2^{[{\log_2{a}\over n}]}.$$" class="latex-display" width="580" height="23"></p>
+
+<p>最后值得一提的是一种类似于除法而可以借助纸笔计算的开方方法,它可以从方根的最高位开始依次给出各位上的数字.以二进制下的开平方这种最简单的情形为例,设<img src="latex/latex2png-ElementaryFunction_4707381_-5.gif" alt="$N=[\log_2{a}]$" class="latex-inline" style="vertical-align: -5px" width="86" height="18">,即<img src="latex/latex2png-ElementaryFunction_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">在二进制下共有<img src="latex/latex2png-ElementaryFunction_43021330_0.gif" alt="$N$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">位,那么<img src="latex/latex2png-ElementaryFunction_149847055_-4.gif" alt="$\sqrt{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">在二进制下将有<img src="latex/latex2png-ElementaryFunction_249269228_-5.gif" alt="$N/2$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">位,即第<img src="latex/latex2png-ElementaryFunction_249269228_-5.gif" alt="$N/2$" class="latex-inline" style="vertical-align: -5px" width="30" height="18">上的数字是1.令<img src="latex/latex2png-ElementaryFunction_183993270_0.gif" alt="$u=2^{N/2}$" class="latex-inline" style="vertical-align: 0px" width="64" height="15">,<img src="latex/latex2png-ElementaryFunction_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">可以看成<img src="latex/latex2png-ElementaryFunction_149847055_-4.gif" alt="$\sqrt{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">的1位近似值,再令<img src="latex/latex2png-ElementaryFunction_40872998_0.gif" alt="$v=2^{N/2-1}$" class="latex-inline" style="vertical-align: 0px" width="80" height="15">,比较<img src="latex/latex2png-ElementaryFunction_253157650_-5.gif" alt="$(u+v)^2$" class="latex-inline" style="vertical-align: -5px" width="56" height="19">与<img src="latex/latex2png-ElementaryFunction_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的大小,若<img src="latex/latex2png-ElementaryFunction_12819016_-5.gif" alt="$(u+v)^2\ge a$" class="latex-inline" style="vertical-align: -5px" width="88" height="19">,那么<img src="latex/latex2png-ElementaryFunction_41645074_0.gif" alt="$a$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">的第<img src="latex/latex2png-ElementaryFunction_84113059_-5.gif" alt="$N/2-1$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">位上的数字就是1,否则是0.接下来的每一步都让<img src="latex/latex2png-ElementaryFunction_42955794_0.gif" alt="$u$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">等于<img src="latex/latex2png-ElementaryFunction_149847055_-4.gif" alt="$\sqrt{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">已经求出的近似值,<img src="latex/latex2png-ElementaryFunction_105935890_0.gif" alt="$ v$" class="latex-inline" style="vertical-align: 0px" width="8" height="8">等于近似值最低位的下一位,这样就可以顺次求出<img src="latex/latex2png-ElementaryFunction_149847055_-4.gif" alt="$\sqrt{a}$" class="latex-inline" style="vertical-align: -4px" width="22" height="17">各位上的数字.</p>
+
+
+
+
+
+
+<h2><a name="sec3" id="sec3"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>Newton迭代</h2>
+
+<p class="first">从几何的角度来看,方程<img src="latex/latex2png-ElementaryFunction_218274847_-5.gif" alt="$f(x)=0$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">的根<img src="latex/latex2png-ElementaryFunction_166956012_0.gif" alt="$x^*$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">是曲线<img src="latex/latex2png-ElementaryFunction_220962147_-5.gif" alt="$y=f(x)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">与x轴的交点的横坐标,设<img src="latex/latex2png-ElementaryFunction_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">是根<img src="latex/latex2png-ElementaryFunction_166956012_0.gif" alt="$x^*$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">的某个近似值且<img src="latex/latex2png-ElementaryFunction_124398180_-5.gif" alt="$f'(x_k)\neq 0$" class="latex-inline" style="vertical-align: -5px" width="74" height="18">,过曲线<img src="latex/latex2png-ElementaryFunction_220962147_-5.gif" alt="$y=f(x)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">上横坐标为<img src="latex/latex2png-ElementaryFunction_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">的点<img src="latex/latex2png-ElementaryFunction_164269036_-2.gif" alt="$P_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">引切线,并将该切线与x轴的交点的横坐标<img src="latex/latex2png-ElementaryFunction_26604967_-4.gif" alt="$x_{k+1}$" class="latex-inline" style="vertical-align: -4px" width="33" height="12">作为<img src="latex/latex2png-ElementaryFunction_166956012_0.gif" alt="$x^*$" class="latex-inline" style="vertical-align: 0px" width="15" height="12">新的近似值,根据切线方程<img src="latex/latex2png-ElementaryFunction_19429150_.gif" alt="$$y=f(x_k)+f'(x_k)(x-x_k)$$" class="latex-display" width="580" height="19">可以解出<img src="latex/latex2png-ElementaryFunction_197975046_.gif" alt="$$x_{k+1}=x_k-{f(x_k)\over f'(x_k)},$$" class="latex-display" width="580" height="41">这就是Newton迭代,关于它的收敛性有<img src="latex/latex2png-ElementaryFunction_96331710_.gif" alt="$$\lim_{k\rightarrow\infty}{x_{k+1}-x^*\over(x_k-x^*)^2}={f''(x^*)\over 2f'(x^*)},$$" class="latex-display" width="580" height="41">因此有时也称之为二阶Newton迭代法或者切线法.设<img src="latex/latex2png-ElementaryFunction_61212801_.gif" alt="$$g(x)={f(x)\over \sqrt{|f'(x)|}},$$" class="latex-display" width="580" height="44">那么<img src="latex/latex2png-ElementaryFunction_47483846_-5.gif" alt="$g(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">对应的Newton迭代公式为<img src="latex/latex2png-ElementaryFunction_115929189_.gif" alt="$$x_{k+1}=x_k-{2f(x_k)f'(x_k)\over 2(f'(x_k))^2-f(x_k)f''(x_k)},$$" class="latex-display" width="580" height="41">它是三阶收敛的,比<img src="latex/latex2png-ElementaryFunction_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">对应的原始Newton迭代公式要快,使用这种迭代公式的迭代方法称为Halley迭代法.以开方为例,设<img src="latex/latex2png-ElementaryFunction_250044104_-5.gif" alt="$f(x)=x^n-a$" class="latex-inline" style="vertical-align: -5px" width="100" height="18">,那么<img src="latex/latex2png-ElementaryFunction_220951610_-5.gif" alt="$f(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">对应的Halley迭代公式为<img src="latex/latex2png-ElementaryFunction_153405251_.gif" alt="$$x_{k+1}=x_k\cdot{n(a+x_k^n)+(a-x_k^n)\over n(a+x_k^n)-(a-x_k^n)}.$$" class="latex-display" width="580" height="41"></p>
+
+<p>Newton迭代法是数值稳定的,它常常被用来计算反函数的值.如果已知<img src="latex/latex2png-ElementaryFunction_122323263_-5.gif" alt="$f(x)=y_0$" class="latex-inline" style="vertical-align: -5px" width="67" height="18">,改写成<img src="latex/latex2png-ElementaryFunction_183361013_-5.gif" alt="$g(x)=f(x)-y_0=0$" class="latex-inline" style="vertical-align: -5px" width="151" height="18">的形式,那么<img src="latex/latex2png-ElementaryFunction_47483846_-5.gif" alt="$g(x)$" class="latex-inline" style="vertical-align: -5px" width="29" height="18">对应的迭代公式为<img src="latex/latex2png-ElementaryFunction_122456509_.gif" alt="$$x_{k+1}=x_k-{f(x_k)-y_0\over f'(x_k)},$$" class="latex-display" width="580" height="41">这样就可以求出<img src="latex/latex2png-ElementaryFunction_163679566_-5.gif" alt="$x^*\approx f^{-1}(y_0)$" class="latex-inline" style="vertical-align: -5px" width="94" height="19">.
+实际计算中应该利用迭代公式的自修正性质适当安排中间精度,一般情况下每一步迭代计算时使用的精度可以只是下一步的一半,据此还可以证明如果使用FFT乘法等快速乘法算法,浮点数除法的计算复杂度与乘法相同.</p>
+
+<p>如果在<img src="latex/latex2png-ElementaryFunction_164269036_-2.gif" alt="$P_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">处引<img src="latex/latex2png-ElementaryFunction_220962147_-5.gif" alt="$y=f(x)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">的二次切线或三次切线,相应地可以得到三阶和四阶的Newton迭代法.以三次Newton迭代法为例,二次切线的抛物线方程对应于<img src="latex/latex2png-ElementaryFunction_220962147_-5.gif" alt="$y=f(x)$" class="latex-inline" style="vertical-align: -5px" width="61" height="18">在<img src="latex/latex2png-ElementaryFunction_164269036_-2.gif" alt="$x_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">处的二阶Taylor近似<img src="latex/latex2png-ElementaryFunction_212657232_.gif" alt="$$y=f(x)\approx f(x_k)+f'(x_k)(x-x_k)+{f''(x_k)\over 2}(x-x_k)^2,$$" class="latex-display" width="580" height="36">可以解出<img src="latex/latex2png-ElementaryFunction_172049616_.gif" alt="$$x_{k+1}-x_k=-{f'(x_k)\over f''(x_k)}(1-\sqrt{1-{2f(x_k)f''(x_k)\over(f'(x_k))^2}}),$$" class="latex-display" width="580" height="51">利用近似关系<img src="latex/latex2png-ElementaryFunction_34532906_.gif" alt="$$1-\sqrt{1-\alpha}\approx{\alpha\over 2}+{\alpha^2\over 8}$$" class="latex-display" width="580" height="38">可以将迭代公式化为<img src="latex/latex2png-ElementaryFunction_261963330_.gif" alt="$$x_{k+1}-x_k=-{f(x_k)\over f'(x_k)}(1+{f(x_k)f''(x_k)\over 2(f'(x_k))^2}).$$" class="latex-display" width="580" height="41"></p>
+
+<p>更高阶的迭代公式可以使用Shroeder方法或Householder方法来系统地构造,以<img src="latex/latex2png-ElementaryFunction_116937887_-9.gif" alt="$1\over\sqrt{a}$" class="latex-inline" style="vertical-align: -9px" width="19" height="24">为例,设<img src="latex/latex2png-ElementaryFunction_104711250_-4.gif" alt="$y=1-ax^2$" class="latex-inline" style="vertical-align: -4px" width="83" height="18">,那么Taylor展开式<img src="latex/latex2png-ElementaryFunction_72917854_.gif" alt="$${1\over\sqrt{a}}={x\over\sqrt{1-y}}=x(1+{y\over 2}+{3y^2\over 8}+\cdots)$$" class="latex-display" width="580" height="41">给出了迭代公式序列<img src="latex/latex2png-ElementaryFunction_216471018_.gif" alt="$$x_{k+1}=x_k(1+{1-ax_k^2\over 2}+{3(1-ax_k^2)^2\over 8}+\cdots).$$" class="latex-display" width="580" height="38">在介绍AGM迭代曾经提到过<img src="latex/latex2png-ElementaryFunction_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">阶迭代公式每迭代一步,有效位数变为原来的<img src="latex/latex2png-ElementaryFunction_42431506_0.gif" alt="$m$" class="latex-inline" style="vertical-align: 0px" width="14" height="8">倍,如果要求结果的有效位数是<img src="latex/latex2png-ElementaryFunction_106066962_0.gif" alt="$ P$" class="latex-inline" style="vertical-align: 0px" width="13" height="12">,总的迭代次数就近似为<img src="latex/latex2png-ElementaryFunction_179438241_.gif" alt="$$\ln{P}\over\ln{m}.$$" class="latex-display" width="580" height="35">迭代算法的复杂度在<img src="latex/latex2png-ElementaryFunction_182669536_0.gif" alt="$m\approx 1$" class="latex-inline" style="vertical-align: 0px" width="44" height="11">到<img src="latex/latex2png-ElementaryFunction_151286804_0.gif" alt="$m=2$" class="latex-inline" style="vertical-align: 0px" width="45" height="11">之间有一个飞跃,而当<img src="latex/latex2png-ElementaryFunction_255171778_-3.gif" alt="$m\ge 3$" class="latex-inline" style="vertical-align: -3px" width="45" height="14">时不同阶的迭代公式所需迭代次数大致是同一个数量级,因此实用中很少使用超过4阶的迭代公式.</p>
+
+
+<h2><a name="sec4" id="sec4"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>对数函数</h2>
+
+<p class="first">一般的对数函数<img src="latex/latex2png-ElementaryFunction_184024932_-4.gif" alt="$\log_a{x}$" class="latex-inline" style="vertical-align: -4px" width="41" height="16">可以利用恒等式<img src="latex/latex2png-ElementaryFunction_229445100_.gif" alt="$$\log_a{x}={\ln{x}\over\ln{a}}$$" class="latex-display" width="580" height="35">归结到自然对数<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">的计算,因此接下来所说的对数函数特指自然对数<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">.在实际计算前可以利用一些函数关系,譬如说
+<img src="latex/latex2png-ElementaryFunction_125010228_.gif" alt="
+\begin{align*}
+\ln{x}&=2^k\ln{x^{2^{-k}}},\\
+\ln{x}&=k\ln{2}+\ln(2^{-k}x),
+\end{align*}
+" class="latex-display" width="580" height="54">
+这样一来可以大大加快级数的收敛速度.</p>
+
+<h3><a name="sec5" id="sec5"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>级数法</h3>
+
+<p class="first"><img src="latex/latex2png-ElementaryFunction_39156893_-5.gif" alt="$\ln(1-x)$" class="latex-inline" style="vertical-align: -5px" width="63" height="18">在<img src="latex/latex2png-ElementaryFunction_201165804_-1.gif" alt="$x=0$" class="latex-inline" style="vertical-align: -1px" width="40" height="12">处的Taylor展开式为<img src="latex/latex2png-ElementaryFunction_267660120_.gif" alt="$$-\ln(1-x)=x+{x^2\over 2}+{x^3\over 3}+\cdots,\quad 0<x<1,$$" class="latex-display" width="580" height="38">除非<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">很小,否则这个级数的收敛速度相当慢,只适用于较低精度的计算.由<img src="latex/latex2png-ElementaryFunction_91513576_.gif" alt="$$\ln{x+1\over x-1}=2({1\over x}+{1\over 3x^3}+{1\over 5x^5}+\cdots),\quad |x|>1,$$" class="latex-display" width="580" height="35">也可以得到<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">的有理分式级数展开<img src="latex/latex2png-ElementaryFunction_143612513_.gif" alt="$$\ln{x}=2({x-1\over x+1}+{1\over 3}({x-1\over x+1})^3+{1\over 5}({x-1\over x+1})^5+\cdots),$$" class="latex-display" width="580" height="36">可以采用Taylor级数的矩形求和方法或超几何级数的折半求和方法来计算这些级数.</p>
+
+
+<h3><a name="sec6" id="sec6"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>迭代法</h3>
+
+<p class="first">计算<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">更正式与更快的方法总是基于迭代的,如果有快速计算<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">的方法,那么可以利用反函数关系<img src="latex/latex2png-ElementaryFunction_26997776_.gif" alt="$$e^y=x\Leftrightarrow y=\ln{x}$$" class="latex-display" width="580" height="16">使用Newton迭代来计算<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">.二阶和三阶的Newton迭代公式分别是
+<img src="latex/latex2png-ElementaryFunction_168369752_.gif" alt="
+\begin{align*}
+y_{k+1}&=y_k-1+{x\over e^{y_k}},\\
+y_{k+1}&=y_k-2\frac{e^{y_k}-x}{e^{y_k}+x},
+\end{align*}
+" class="latex-display" width="580" height="73">
+迭代过程中主要计算量在<img src="latex/latex2png-ElementaryFunction_209062070_0.gif" alt="$e^{y_k}$" class="latex-inline" style="vertical-align: 0px" width="21" height="11">上,因此常常选择更快的三阶迭代公式,迭代的初始值取为<img src="latex/latex2png-ElementaryFunction_10366927_-5.gif" alt="$[\log_2{x}]\ln{2}$" class="latex-inline" style="vertical-align: -5px" width="77" height="18">的近似值.</p>
+
+<p>计算对数常数<img src="latex/latex2png-ElementaryFunction_137655986_0.gif" alt="$\ln 2$" class="latex-inline" style="vertical-align: 0px" width="25" height="12">时曾经用到过代数几何平均值(AGM)迭代,记<img src="latex/latex2png-ElementaryFunction_206203839_.gif" alt="$${1\over R(a,b)}=1-\sum_{n=0}^\infty2^{n-1}(a_n^2-b_n^2),$$" class="latex-display" width="580" height="46">
+可以看出<img src="latex/latex2png-ElementaryFunction_3433123_-5.gif" alt="$R(a,b)$" class="latex-inline" style="vertical-align: -5px" width="47" height="18">实际上就是<img src="latex/latex2png-ElementaryFunction_101597392_-9.gif" alt="$\pi\over 2AGM(a,b)$" class="latex-inline" style="vertical-align: -9px" width="69" height="21">.那么<img src="latex/latex2png-ElementaryFunction_116417789_.gif" alt="$$|\ln x-R(1,10^{-N})+R(1,10^{-N}x)|\le {N\over 10^{2(N-2)}}.$$" class="latex-display" width="580" height="36">
+取<img src="latex/latex2png-ElementaryFunction_227447519_-5.gif" alt="$R(1,10^{-N})-R(1,10^{-N}x)$" class="latex-inline" style="vertical-align: -5px" width="190" height="19">作为<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">的近似值,依然借用计算<img src="latex/latex2png-ElementaryFunction_798707_-5.gif" alt="$AGM(a,b)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">时的迭代结构,那么在计算<img src="latex/latex2png-ElementaryFunction_798707_-5.gif" alt="$AGM(a,b)$" class="latex-inline" style="vertical-align: -5px" width="78" height="18">的同时就可以计算出<img src="latex/latex2png-ElementaryFunction_3863371_-4.gif" alt="$a_n,b_n$" class="latex-inline" style="vertical-align: -4px" width="40" height="16">,进而可以计算出<img src="latex/latex2png-ElementaryFunction_3433123_-5.gif" alt="$R(a,b)$" class="latex-inline" style="vertical-align: -5px" width="47" height="18">,这样就得到了计算<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">的一个二阶收敛的迭代算法.这个算法用于计算<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">时更常用的形式是以渐进关系<img src="latex/latex2png-ElementaryFunction_121652181_.gif" alt="$$\ln{x}=\pi x\frac{1+4x^{-2}(1-1/\ln{x})+O(x^{-4})}{2AGM(x,4)}$$" class="latex-display" width="580" height="42">给出的,当<img src="latex/latex2png-ElementaryFunction_111774700_-5.gif" alt="$|x|$" class="latex-inline" style="vertical-align: -5px" width="16" height="18">很大时,譬如说<img src="latex/latex2png-ElementaryFunction_7474199_-1.gif" alt="$4x^{-2}<\epsilon$" class="latex-inline" style="vertical-align: -1px" width="65" height="15">,其中<img src="latex/latex2png-ElementaryFunction_119376415_0.gif" alt="$\epsilon$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">为需要计算的精度,渐进关系中的分子可以直接用1来代替,即<img src="latex/latex2png-ElementaryFunction_100412616_.gif" alt="$$\ln{x}=\frac{\pi x}{2AGM(x,4)},$$" class="latex-display" width="580" height="36">实际计算中根据精度要求可以利用函数关系
+<img src="latex/latex2png-ElementaryFunction_189298315_.gif" alt="
+\begin{align*}
+\ln{x}&=2^{-k}\ln{x^{2^k}},\\
+\ln{x}&=-k\ln{2}+\ln(2^kx),
+\end{align*}
+" class="latex-display" width="580" height="54">
+扩大<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">以满足<img src="latex/latex2png-ElementaryFunction_111310390_-9.gif" alt="$x>{2\over\sqrt{\epsilon}}$" class="latex-inline" style="vertical-align: -9px" width="51" height="24">的近似条件.</p>
+
+
+
+<h2><a name="sec7" id="sec7"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>指数函数</h2>
+
+<p class="first">与对数函数类似,一般的指数函数<img src="latex/latex2png-ElementaryFunction_13470700_0.gif" alt="$a^x$" class="latex-inline" style="vertical-align: 0px" width="16" height="11">可以利用恒等式<img src="latex/latex2png-ElementaryFunction_6582282_.gif" alt="$$a^x=e^{x\ln{a}}$$" class="latex-display" width="580" height="15">归结到<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">的计算,因此接下来可以只讨论<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">.在实际计算前可以利用一些函数关系缩小<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,譬如说
+<img src="latex/latex2png-ElementaryFunction_233126374_.gif" alt="
+\begin{align*}
+e^x&=(e^{2^{-k}x})^{2^k},\\
+e^x-1&=(e^{2^{-1}x}+1)(e^{2^{-2}x}+1)\cdots(e^{2^{-k}x}+1)(e^{2^{-k}x}-1),
+\end{align*}
+" class="latex-display" width="580" height="54">
+使用第二个函数关系将产生更小的截断误差.</p>
+
+<h3><a name="sec8" id="sec8"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>级数法</h3>
+
+<p class="first">和计算自然对数底<img src="latex/latex2png-ElementaryFunction_41907218_0.gif" alt="$e$" class="latex-inline" style="vertical-align: 0px" width="7" height="8">一样,可以直接利用<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">的Taylor展开式<img src="latex/latex2png-ElementaryFunction_147451905_.gif" alt="$$e^x=1+{1\over 1!}x+{1\over 2!}x^2+\cdots,$$" class="latex-display" width="580" height="34">取<img src="latex/latex2png-ElementaryFunction_58780297_.gif" alt="$$s_n(x)=\sum_{k=0}^n{x^n\over n!}$$" class="latex-display" width="580" height="46">作为<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">的近似值.除此之外,定义<img src="latex/latex2png-ElementaryFunction_166567110_.gif" alt="$$r_{m,n}(x)=\frac{\int_0^\infty t^n(t+z)^me^{-t}\,dt}{\int_0^\infty (t-z)^nt^me^{-t}\,dt},$$" class="latex-display" width="580" height="46">它的闭形式表达式为<img src="latex/latex2png-ElementaryFunction_47077436_.gif" alt="$$r_{m,n}(x)=\frac{\sum_{k=0}^m{C_m^k\over C_{n+m}^k}\cdot{x^k\over k!}}{\sum_{k=0}^n{C_n^k\over C_{m+n}^k}\cdot{(-x)^k\over k!}},$$" class="latex-display" width="580" height="66">则<img src="latex/latex2png-ElementaryFunction_103803933_-5.gif" alt="$r_{m,n}(x)$" class="latex-inline" style="vertical-align: -5px" width="52" height="18">是<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">的有理分式级数展开.多项式逼近与有理分式逼近的误差估计分别为
+<img src="latex/latex2png-ElementaryFunction_59108683_.gif" alt="
+\begin{align*}
+|e^x-s_n(x)|&\le{1\over(n+1)!}(1+{2\over n+1}),\\
+|e^x-r_{n,n}(x)|&\le{8(n!)^2\over(2n+1)((2n)!)^2}.
+\end{align*}
+" class="latex-display" width="580" height="86">
+类似的,也可以采用Taylor级数的矩形求和方法或超几何级数的折半求和方法来计算这些级数.</p>
+
+
+<h3><a name="sec9" id="sec9"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>迭代法</h3>
+
+<p class="first"><img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">没有很好的AGM迭代公式,如果有快速计算自然对数<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">的方法,那么可以利用反函数关系<img src="latex/latex2png-ElementaryFunction_6491406_.gif" alt="$$y=e^x\Leftrightarrow x=\ln{y}$$" class="latex-display" width="580" height="16">使用Newton迭代法来计算<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">.其中二阶的Newton迭代公式为<img src="latex/latex2png-ElementaryFunction_183655617_.gif" alt="$$y_{n+1}=y_n(x+1-\ln{y_n}),$$" class="latex-display" width="580" height="18">三阶的Halley迭代公式为<img src="latex/latex2png-ElementaryFunction_75159716_.gif" alt="$$y_{n+1}=y_n\frac{1+(x+1-\ln{y_n})^2}{2}.$$" class="latex-display" width="580" height="37">进一步地,设<img src="latex/latex2png-ElementaryFunction_29992730_-4.gif" alt="$z=x-\ln{y}$" class="latex-inline" style="vertical-align: -4px" width="85" height="16">,那么Taylor展开式<img src="latex/latex2png-ElementaryFunction_178518278_.gif" alt="$$e^x=ye^z=y(1+{z\over 1!}+{z^2\over 2!}+\cdots)$$" class="latex-display" width="580" height="37">给出了迭代公式序列<img src="latex/latex2png-ElementaryFunction_55843962_.gif" alt="$$y_{k+1}=y_k(1+(x-\ln{y_k})+{(x-\ln{y_k})^2\over 2!}+\cdots),$$" class="latex-display" width="580" height="37">实际计算中迭代公式的最佳阶数取决于自然对数<img src="latex/latex2png-ElementaryFunction_128475622_0.gif" alt="$\ln{x}$" class="latex-inline" style="vertical-align: 0px" width="26" height="12">的计算速度.</p>
+
+
+
+<h2><a name="sec10" id="sec10"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>矩形求和</h2>
+
+<p class="first">截断后的Taylor级数一般形式为<img src="latex/latex2png-ElementaryFunction_40141314_.gif" alt="$$s_n(x)=\sum_{k=0}^na_kx^k,$$" class="latex-display" width="580" height="46">其中<img src="latex/latex2png-ElementaryFunction_13274092_-2.gif" alt="$a_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">常常可以表示成<img src="latex/latex2png-ElementaryFunction_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的有理函数,因此可以事先写出<img src="latex/latex2png-ElementaryFunction_243061372_-5.gif" alt="$a_{k+1}/a_k$" class="latex-inline" style="vertical-align: -5px" width="58" height="18">的通项公式.如果<img src="latex/latex2png-ElementaryFunction_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">不是很大,可以直接把它看成<img src="latex/latex2png-ElementaryFunction_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次多项式来求值,例如使用类似于Horner法则的<img src="latex/latex2png-ElementaryFunction_86744876_.gif" alt="$$s_n(x)=a_0(1+{a_1\over a_0}x(1+{a_2\over a_1}x(1+{a_3\over a_2}x(\cdots+{a_n\over a_{n-1}}x)))),$$" class="latex-display" width="580" height="34">这个法则更常用的形式可以表示成如下算法.
+<div class="algorithm">
+<span class="theorem-header">算法1<a name=""></a></span><span class="theorem-name">(Taylor级数求和)</span></p>
+
+<p>输入:求值点<img src="latex/latex2png-ElementaryFunction_165514220_-3.gif" alt="$x_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">与级数<img src="latex/latex2png-ElementaryFunction_42238466_.gif" alt="$$s_n(x)=\sum_{k=0}^na_kx^k.$$" class="latex-display" width="580" height="46"></p>
+
+<p>输出:<img src="latex/latex2png-ElementaryFunction_39094175_-5.gif" alt="$s_n(x_0)$" class="latex-inline" style="vertical-align: -5px" width="44" height="18">.</p>
+
+<ol>
+<li>令<img src="latex/latex2png-ElementaryFunction_13527261_-4.gif" alt="$t=a_0,s=a_0$" class="latex-inline" style="vertical-align: -4px" width="97" height="15">.</li>
+<li><img src="latex/latex2png-ElementaryFunction_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">从<img src="latex/latex2png-ElementaryFunction_41055250_-1.gif" alt="$0$" class="latex-inline" style="vertical-align: -1px" width="8" height="12">到<img src="latex/latex2png-ElementaryFunction_151221268_0.gif" alt="$n-1$" class="latex-inline" style="vertical-align: 0px" width="37" height="11">,顺次计算<img src="latex/latex2png-ElementaryFunction_68820835_-7.gif" alt="$t={a_{k+1}\over a_k}x_0\cdot t$" class="latex-inline" style="vertical-align: -7px" width="95" height="20">,<img src="latex/latex2png-ElementaryFunction_33655135_-2.gif" alt="$s=s+t$" class="latex-inline" style="vertical-align: -2px" width="62" height="13">,若<img src="latex/latex2png-ElementaryFunction_42890258_0.gif" alt="$t$" class="latex-inline" style="vertical-align: 0px" width="5" height="11">达到指定精度,终止循环.</li>
+<li>返回<img src="latex/latex2png-ElementaryFunction_42824722_0.gif" alt="$s$" class="latex-inline" style="vertical-align: 0px" width="6" height="8">.</li>
+</ol>
+
+
+</div>
+这个算法用于Taylor级数求值一共需要<img src="latex/latex2png-ElementaryFunction_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">次短乘法.
+
+<p>更好的方法是矩形求和,设<img src="latex/latex2png-ElementaryFunction_222456_0.gif" alt="$n=r\cdot c-1$" class="latex-inline" style="vertical-align: 0px" width="87" height="11">,那么多项式<img src="latex/latex2png-ElementaryFunction_220962085_-5.gif" alt="$s_n(x)$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">可以写成嵌套求和的形式
+<img src="latex/latex2png-ElementaryFunction_263533697_.gif" alt="
+\begin{align*}
+s_n(x)&=(a_0+a_rx^r+\cdots+a_{(c-1)r}x^{(c-1)r})\\
+&+x(a_1+a_{r+1}x^r+\cdots+a_{(c-1)r+1}x^{(c-1)r})\\
+&+\cdots\\
+&+x^{r-1}(a_{r-1}+a_{2r-1}x^r+\cdots+a_{cr-1}x^{(c-1)r}),
+\end{align*}
+" class="latex-display" width="580" height="113">
+先使用快速求幂算法计算出<img src="latex/latex2png-ElementaryFunction_164858860_0.gif" alt="$x^r$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">及<img src="latex/latex2png-ElementaryFunction_140200934_-4.gif" alt="$x^{2r},\ldots,x^{(c-1)r}$" class="latex-inline" style="vertical-align: -4px" width="108" height="19">,然后再对外层的<img src="latex/latex2png-ElementaryFunction_218330132_0.gif" alt="$r-1$" class="latex-inline" style="vertical-align: 0px" width="35" height="11">次多项式使用Horner法则求值,计算各行时可以利用<img src="latex/latex2png-ElementaryFunction_13274092_-2.gif" alt="$a_k$" class="latex-inline" style="vertical-align: -2px" width="16" height="10">与<img src="latex/latex2png-ElementaryFunction_26610855_-4.gif" alt="$a_{k+1}$" class="latex-inline" style="vertical-align: -4px" width="32" height="12">之间的函数关系.</p>
+
+<p>如果不计常系数乘法和计算<img src="latex/latex2png-ElementaryFunction_164858860_0.gif" alt="$x^r$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">的过程,矩形求和的过程只需要大约<img src="latex/latex2png-ElementaryFunction_32999793_-2.gif" alt="$c+r<n$" class="latex-inline" style="vertical-align: -2px" width="68" height="12">次乘法,这是因为它将大量乘以<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">的短乘法转化为大数之间的长乘法,这样就可以充分发挥快速乘法算法的威力.</p>
+
+<p>现在将矩形的长和宽对换,那么多项式<img src="latex/latex2png-ElementaryFunction_220962085_-5.gif" alt="$s_n(x)$" class="latex-inline" style="vertical-align: -5px" width="36" height="18">可以写成另一种嵌套求和的形式
+<img src="latex/latex2png-ElementaryFunction_221635667_.gif" alt="
+\begin{align*}
+s_n(x)&=(a_0+a_1x+\cdots+a_{r-1}x^{r-1})\\
+&+x^r(a_{r+1}+a_{r+2}x+\cdots+a_{2r-1}x^{r-1})\\
+&+\cdots\\
+&+x^{(c-1)r}(a_{(c-1)r}+a_{(c-1)r+1}x+\cdots+a_{cr-1}x^{r-1})\\
+&=\sum_{k=0}^{c-1}x^{kr}p_{k,r}(x).
+\end{align*}
+" class="latex-display" width="580" height="172">
+对于特别的Taylor级数,<img src="latex/latex2png-ElementaryFunction_101706273_-5.gif" alt="$p_{k,r}(x)$" class="latex-inline" style="vertical-align: -5px" width="48" height="18">可以表示成仅关于<img src="latex/latex2png-ElementaryFunction_101872660_-4.gif" alt="$k,x$" class="latex-inline" style="vertical-align: -4px" width="26" height="16">的函数,即<img src="latex/latex2png-ElementaryFunction_88825556_.gif" alt="$$p_{k,r}(x)=p_r(k,x).$$" class="latex-display" width="580" height="19">以<img src="latex/latex2png-ElementaryFunction_131624507_.gif" alt="$$-\ln(1-x)=x+{x^2\over 2}+{x^3\over 3}+\cdots$$" class="latex-display" width="580" height="38">为例,对应的<img src="latex/latex2png-ElementaryFunction_83946121_.gif" alt="$$s_n(x)=\sum_{k=1}^n{x^k\over k},$$" class="latex-display" width="580" height="45">那么<img src="latex/latex2png-ElementaryFunction_4463133_.gif" alt="$$s_{cr}(x)=\sum_{k=0}^{c-1}x^{kr}p_r(k),$$" class="latex-display" width="580" height="49">其中<img src="latex/latex2png-ElementaryFunction_157291891_.gif" alt="$$p_r(k)=\sum_{j=1}^r{x^j\over j+r\cdot k}.$$" class="latex-display" width="580" height="48">将<img src="latex/latex2png-ElementaryFunction_207330549_-5.gif" alt="$p_r(k)$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">看作关于<img src="latex/latex2png-ElementaryFunction_42300434_0.gif" alt="$k$" class="latex-inline" style="vertical-align: 0px" width="9" height="12">的有理分式函数<img src="latex/latex2png-ElementaryFunction_37315923_.gif" alt="$$p_r(k)={w_r(k)\over v_r(k)},$$" class="latex-display" width="580" height="41">利用多项式快速多点求值算法就可以同时求出<img src="latex/latex2png-ElementaryFunction_207330549_-5.gif" alt="$p_r(k)$" class="latex-inline" style="vertical-align: -5px" width="37" height="18">在<img src="latex/latex2png-ElementaryFunction_763727_-4.gif" alt="$0,1,\ldots,c-1$" class="latex-inline" style="vertical-align: -4px" width="95" height="15">处的值,进而可以使用Horner法则计算出<img src="latex/latex2png-ElementaryFunction_234884398_.gif" alt="$$s_{cr}(x)=\sum_{k=0}^{c-1}p_r(k)(x^r)^k.$$" class="latex-display" width="580" height="49">事实上大部分初等函数的Taylor级数都满足上面的条件,这种基于多项式快速多点求值的算法的计算复杂度为<img src="latex/latex2png-ElementaryFunction_236045448_-5.gif" alt="$O(\sqrt{n}(\log n)^2M(n))$" class="latex-inline" style="vertical-align: -5px" width="142" height="19">,其中<img src="latex/latex2png-ElementaryFunction_57969606_-5.gif" alt="$M(n)$" class="latex-inline" style="vertical-align: -5px" width="39" height="18">表示两个<img src="latex/latex2png-ElementaryFunction_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位整数相乘的计算复杂度.</p>
+
+
+<h2><a name="sec11" id="sec11"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>三角函数与反三角函数</h2>
+
+<p class="first">从复分析中我们知道所有的初等函数都可以用<img src="latex/latex2png-ElementaryFunction_53769236_0.gif" alt="$e^z$" class="latex-inline" style="vertical-align: 0px" width="14" height="11">及其反函数<img src="latex/latex2png-ElementaryFunction_126378470_0.gif" alt="$\ln{z}$" class="latex-inline" style="vertical-align: 0px" width="25" height="12">表示出来,因此理论上我们只需要讨论对数函数和指数函数就可以解决所有的初等函数,关于这两个函数的计算已经涵盖了函数求值的主要方法,这里对三角函数与反三角函数的讨论将主要是一些技术性或描述性的内容.</p>
+
+<p>除开具有直接倒数关系的函数,常用的三角函数和反三角函数共有3对,它们之间由简单的函数关系联系着,只需要计算出其中一个函数值就很容易求出其余两个函数值,通常选择三角函数中的<img src="latex/latex2png-ElementaryFunction_140121102_0.gif" alt="$\cos{x}$" class="latex-inline" style="vertical-align: 0px" width="34" height="8">和反三角函数中的<img src="latex/latex2png-ElementaryFunction_130831806_0.gif" alt="$\tan^{-1}{x}$" class="latex-inline" style="vertical-align: 0px" width="54" height="14">作为标准函数,这种计算体系对应的函数关系为
+<img src="latex/latex2png-ElementaryFunction_240743883_.gif" alt="
+\begin{align*}
+\sin{x}&=\sqrt{1-\cos^2{x}},\\
+\tan{x}&=\sqrt{{1\over\cos^2{x}}-1},\\
+\sin^{-1}{x}&=\tan^{-1}{x\over\sqrt{1-x^2}},\\
+\cos^{-1}{x}&=\tan^{-1}{\sqrt{1-x^2}\over x}.
+\end{align*}
+" class="latex-display" width="580" height="157"></p>
+
+<p><img src="latex/latex2png-ElementaryFunction_140121102_0.gif" alt="$\cos{x}$" class="latex-inline" style="vertical-align: 0px" width="34" height="8">一般直接通过Taylor展开式<img src="latex/latex2png-ElementaryFunction_109195635_.gif" alt="$$\cos{x}=1-{x^2\over 2!}+{x^4\over 4!}-\cdots$$" class="latex-display" width="580" height="37">来计算,先利用诱导公式将参数<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">限定到<img src="latex/latex2png-ElementaryFunction_68348231_-6.gif" alt="$(0,{\pi\over 2})$" class="latex-inline" style="vertical-align: -6px" width="38" height="19">上,然后利用函数关系
+<img src="latex/latex2png-ElementaryFunction_253848544_.gif" alt="
+\begin{align*}
+\cos{x}&=2\cos^2{x\over 2}-1,\\
+1-\cos{x}&=4(1-\cos{x\over 2})-2(1-\cos{x\over 2})^2,
+\end{align*}
+" class="latex-display" width="580" height="67">
+缩小<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">,这样可以大大加快级数的收敛速度.</p>
+
+<p>如果使用Taylor展开式<img src="latex/latex2png-ElementaryFunction_139395691_.gif" alt="$$\tan^{-1}{x}=x-{x^3\over 3}+{x^5\over 5}-\cdots$$" class="latex-display" width="580" height="38">来计算<img src="latex/latex2png-ElementaryFunction_130831806_0.gif" alt="$\tan^{-1}{x}$" class="latex-inline" style="vertical-align: 0px" width="54" height="14">,先根据<img src="latex/latex2png-ElementaryFunction_220548593_.gif" alt="$$\tan^{-1}{x}+\tan^{-1}{1\over x}={\pi\over 2},\quad x>0$$" class="latex-display" width="580" height="34">将参数<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">限定到<img src="latex/latex2png-ElementaryFunction_255555197_-5.gif" alt="$(0,1)$" class="latex-inline" style="vertical-align: -5px" width="34" height="18">上,类似地,也可以利用函数关系<img src="latex/latex2png-ElementaryFunction_264406230_.gif" alt="$$\tan^{-1}{x}=2\tan^{-1}{x\over 1+\sqrt{1+x^2}}$$" class="latex-display" width="580" height="35">缩小<img src="latex/latex2png-ElementaryFunction_43152402_0.gif" alt="$x$" class="latex-inline" style="vertical-align: 0px" width="9" height="8">以加快级数的收敛速度.除此之外,由于<img src="latex/latex2png-ElementaryFunction_176157521_.gif" alt="$$\tan^{-1}{x}={1\over 2i}\ln{1+ix\over 1-ix},$$" class="latex-display" width="580" height="35">可以通过计算对数函数的快速AGM迭代来计算反正切函数,或者也可以直接据此构造出<img src="latex/latex2png-ElementaryFunction_130831806_0.gif" alt="$\tan^{-1}{x}$" class="latex-inline" style="vertical-align: 0px" width="54" height="14">的迭代算法,AGM迭代的计算复杂度比级数方法低.如果再利用反函数的Newton迭代计算出<img src="latex/latex2png-ElementaryFunction_128314097_0.gif" alt="$\tan{x}$" class="latex-inline" style="vertical-align: 0px" width="36" height="11">,就可以在<img src="latex/latex2png-ElementaryFunction_72640302_-5.gif" alt="$O(M(n)\log n)$" class="latex-inline" style="vertical-align: -5px" width="101" height="18">的时间内计算出所有三角函数的<img src="latex/latex2png-ElementaryFunction_42497042_0.gif" alt="$n$" class="latex-inline" style="vertical-align: 0px" width="10" height="8">位有效数字.<span class="cite"><a class="cite" href="ElementaryFunction.html#ref-2" name="cite-2">[2]</a></span></p>
+
+
+<h2><a name="sec12" id="sec12"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>折半求和的应用</h2>
+
+<p class="first">折半求和<span class="cite"><a class="cite" href="ElementaryFunction.html#ref-3" name="cite-3">[3]</a></span>是用来计算超几何级数在有理点处的值的一项重要技术,大部分初等函数都具有超几何级数的展开式.</p>
+
+<h3><a name="sec13" id="sec13"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>指数函数</h3>
+
+<p class="first">设求值点<img src="latex/latex2png-ElementaryFunction_123120022_-9.gif" alt="$x_0={q\over p}$" class="latex-inline" style="vertical-align: -9px" width="48" height="21">,其中<img src="latex/latex2png-ElementaryFunction_139976729_-5.gif" alt="$0\le x_0<1,(p,q)=1$" class="latex-inline" style="vertical-align: -5px" width="151" height="18">.如果<img src="latex/latex2png-ElementaryFunction_185299988_-4.gif" alt="$p,q$" class="latex-inline" style="vertical-align: -4px" width="25" height="12">都不是很大,可以直接代入折半求和公式进行计算,否则先将<img src="latex/latex2png-ElementaryFunction_165514220_-3.gif" alt="$x_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">写成<img src="latex/latex2png-ElementaryFunction_6972489_.gif" alt="$$x_0=\sum_{k=0}^m2^{-2^k}u_k$$" class="latex-display" width="580" height="46">的形式,其中<img src="latex/latex2png-ElementaryFunction_10663194_-3.gif" alt="$0\le u_k<2^{2^{k-1}}$" class="latex-inline" style="vertical-align: -3px" width="106" height="20">.记<img src="latex/latex2png-ElementaryFunction_191761521_-2.gif" alt="$r_k=2^{-2^k}u_k$" class="latex-inline" style="vertical-align: -2px" width="88" height="19">,则<img src="latex/latex2png-ElementaryFunction_264932332_-2.gif" alt="$r_k$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">的分母是<img src="latex/latex2png-ElementaryFunction_42593352_0.gif" alt="$2^{2^k}$" class="latex-inline" style="vertical-align: 0px" width="21" height="17">,使用折半求和计算<img src="latex/latex2png-ElementaryFunction_59373386_0.gif" alt="$e^{r_k}$" class="latex-inline" style="vertical-align: 0px" width="20" height="11">时可以用移位来代替除法,最后再计算<img src="latex/latex2png-ElementaryFunction_198586444_.gif" alt="$$e^{x_0}=e^{r_0}e^{r_1}\cdots e^{r_m}$$" class="latex-display" width="580" height="12">就求出了<img src="latex/latex2png-ElementaryFunction_53638164_0.gif" alt="$e^x$" class="latex-inline" style="vertical-align: 0px" width="15" height="11">在有理点<img src="latex/latex2png-ElementaryFunction_165514220_-3.gif" alt="$x_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">处的值.</p>
+
+
+<h3><a name="sec14" id="sec14"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>余弦函数</h3>
+
+<p class="first">类似的,先将<img src="latex/latex2png-ElementaryFunction_165514220_-3.gif" alt="$x_0$" class="latex-inline" style="vertical-align: -3px" width="15" height="11">写成<img src="latex/latex2png-ElementaryFunction_6972489_.gif" alt="$$x_0=\sum_{k=0}^m2^{-2^k}u_k$$" class="latex-display" width="580" height="46">的形式,其中<img src="latex/latex2png-ElementaryFunction_10663194_-3.gif" alt="$0\le u_k<2^{2^{k-1}}$" class="latex-inline" style="vertical-align: -3px" width="106" height="20">.记<img src="latex/latex2png-ElementaryFunction_191761521_-2.gif" alt="$r_k=2^{-2^k}u_k$" class="latex-inline" style="vertical-align: -2px" width="88" height="19">,则<img src="latex/latex2png-ElementaryFunction_264932332_-2.gif" alt="$r_k$" class="latex-inline" style="vertical-align: -2px" width="14" height="10">的分母是<img src="latex/latex2png-ElementaryFunction_42593352_0.gif" alt="$2^{2^k}$" class="latex-inline" style="vertical-align: 0px" width="21" height="17">,并令
+<img src="latex/latex2png-ElementaryFunction_264084493_.gif" alt="
+\begin{align*}
+x_j&=\sum_{k=j}^mr_k,\\
+S_j&=\sin{r_j},\\
+C_j&=\cos{r_j},
+\end{align*}
+" class="latex-display" width="580" height="111">
+那么
+<img src="latex/latex2png-ElementaryFunction_180324484_.gif" alt="
+\begin{align*}
+\sin x_j&=S_j\cos x_{j+1}+C_j\sin x_{j+1},\\
+\cos x_j&=C_j\cos x_{j+1}-S_j\sin x_{j+1}.
+\end{align*}
+" class="latex-display" width="580" height="49">
+使用折半求和计算<img src="latex/latex2png-ElementaryFunction_114002924_-5.gif" alt="$S_j$" class="latex-inline" style="vertical-align: -5px" width="15" height="17">和<img src="latex/latex2png-ElementaryFunction_154432532_-5.gif" alt="$C_j$" class="latex-inline" style="vertical-align: -5px" width="17" height="17">时可以用移位来代替除法,这样就可以递推地计算出<img src="latex/latex2png-ElementaryFunction_83324954_-3.gif" alt="$\cos{x_0}$" class="latex-inline" style="vertical-align: -3px" width="40" height="11">和<img src="latex/latex2png-ElementaryFunction_83388874_-3.gif" alt="$\sin{x_0}$" class="latex-inline" style="vertical-align: -3px" width="38" height="15">来.</p>
+
+
+
+
+
+
+
+
+
+<h2><a name="sec15" id="sec15"></a>
+<a href="ElementaryFunction.html#top" class="toplink"><img src="../images/top.gif" border="0" alt="回到顶部" width="40" height="15"></a>其他函数</h2>
+
+<p class="first">下面给出了一些其他常用初等函数的定义或计算公式.</p>
+
+<ul>
+<li>双曲三角函数
+<img src="latex/latex2png-ElementaryFunction_161091360_.gif" alt="
+\begin{align*}
+\cosh{x}&={1\over 2}(e^x+e^{-x})\\
+\sinh{x}&={1\over 2}(e^x-e^{-x})\\
+\tanh{x}&=1-{2\over e^{2x}+1}\\
+\cosh^{-1}{x}&=\ln(x+\sqrt{x^2-1})\\
+\sinh^{-1}{x}&=\ln(x+\sqrt{x^2+1})\\
+\tanh^{-1}{x}&={1\over 2}\ln{1+x\over 1-x}
+\end{align*}
+" class="latex-display" width="580" height="219"></li>
+</ul>
+
+
+
+<h4 class="ref">参考文献</h4><p class="ref"><a class="ref" href="ElementaryFunction.html#cite-1" name="ref-1">[1]</a><span class="ref-author">Borwein, </span><span class="ref-title">Pi and the AGM, </span><span class="ref-publisher">Addison-Wesley Longman Publishing Co., Inc., </span><span class="ref-year">1987. </span></p>
+<p class="ref"><a class="ref" href="ElementaryFunction.html#cite-2" name="ref-2">[2]</a><span class="ref-author">Brent, Richard, </span><span class="ref-title">Multiple-precision zero-finding methods and the complexity of elementary function evaluation, </span><span class="ref-journal">Analytic Computational Complexity </span><span class="ref-year">(1975), </span><span class="ref-pages">151-176. </span></p>
+<p class="ref"><a class="ref" href="ElementaryFunction.html#cite-3" name="ref-3">[3]</a><span class="ref-author">David V. Chudnovsky and Gregory V. Chudnovsky, </span><span class="ref-title">Computer algebra in the service of mathematical physics and number theory, </span><span class="ref-journal">Computers and Mathematics </span><span class="ref-volume">09 </span><span class="ref-year">(1990), </span><span class="ref-pages">232. </span></p>
+<!-- Page published by Emacs Muse ends here -->
+      </div><!-- page -->
+    </div><!-- left -->
+    <div id="bottomshadow"></div><!-- bottom -->
+  </div><!-- body -->
+  <div id="links">
+    <h4>文档列表</h4>
+<a href="Arithmetic.html">高精度运算</a>
+<a href="PrimeTest.html">素数判定</a>
+<a href="IntegerFactorization.html">整数因子分解</a>
+<a href="NumberTheory.html">基础数论算法</a>
+<a href="Constant.html">数学常数</a>
+<a href="ElementaryFunction.html">初等函数</a>
+<a href="BasicConceptsNLA.html">数值线性代数基础</a>
+<a href="MatrixMultiplication.html">矩阵乘法</a>
+<a href="GaussElimination.html">线性方程组与Gauss消元法</a>
+<a href="SpecialLinearEquation.html">特殊线形方程组</a>
+<a href="QRLS.html">正交化与最小二乘法</a>
+<a href="EigenvalueProblem.html">非对称特征值问题</a>
+<a href="SymmetricEigenvalueProblem.html">对称特征值问题</a>
+<a href="MatrixFunction.html">矩阵函数</a>
+<a href="IterationMethods.html">稀疏矩阵中的迭代法</a>
+<a href="ExactLinearAlgebra.html">精确线性代数</a>
+<a href="PolyEval.html">一元多项式求值和插值</a>
+<a href="PolyGCD.html">一元多项式的最大公因子</a>
+<a href="PolyFacZp.html">多项式因子分解(有限域)</a>
+<a href="PolyFacZ.html">多项式因子分解(Z[x])</a>
+<a href="MultiPoly.html">多元多项式最大公因子及因子分解</a>
+<a href="FindRoot.html">一元代数方程求解</a>
+<a href="EqSolving.html">代数方程组求解</a>
+<a href="Summation.html">符号求和</a>
+<a href="Integration.html">符号积分</a>
+<a href="DifferentialEquation.html">微分方程符号解</a>
+  </div><!-- links -->
+    <div class="navfoot">
+      <hr>
+      <table width="100%" border="0" summary="Footer navigation">
+	<tr>
+	  <td width="33%" align="left">
+	    <span class="footdate">最后更新：
+			2009年01月28日 22:41:14
+		</span>
+	  </td>
+	  <td width="34%" align="center">
+	    <span class="foothome">
+	      <a href="../index.html">返回主页</a> / <a href="../RecentChanges.html">更新记录</a> /  <a href="http://cn.creativecommons.org/index.php/licenses/licenses_exp">许可协议</a>
+	    </span>
+	  </td>
+	  <td width="33%" align="right">
+	    <span class="footcopy">Copyright &copy; 2007,2008 <a href="../JoinUs.html#contact">maTH&mu; Project Group</a></span>
+	  </td>
+	</tr>
+      </table>
+  </div><!-- nav -->
+</div><!-- container -->
+<p align="center">
+<script language="javascript" type="text/javascript" src="http://js.users.51.la/2320853.js"></script></p>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6285506-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>2.5.&#160;内核符号表-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch02.html" title="第&#160;2&#160;章&#160;建立和运行模块">
+<link rel="prev" href="ch02s04.html" title="2.4.&#160;编译和加载">
+<link rel="next" href="ch02s06.html" title="2.6.&#160;预备知识">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">2.5.&#160;内核符号表</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch02s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;2&#160;章&#160;建立和运行模块</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="TheKernelSymbolTable.sect1"></a>2.5.&#160;内核符号表</h2></div></div></div>
+<p> 我们已经看到 insmod 如何对应共用的内核符号来解决未定义的符号. 表中包含了全局内核项的地址 -- 函数和变量 -- 需要来完成模块化的驱动. 当加载一个模块, 如何由模块输出的符号成为内核符号表的一部分. 通常情况下, 一个模块完成它自己的功能不需要输出如何符号. 你需要输出符号, 但是, 在任何别的模块能得益于使用它们的时候.  </p>
+<p> 新的模块可以用你的模块输出的符号, 你可以堆叠新的模块在其他模块之上. 模块堆叠在主流内核源码中也实现了: msdos 文件系统依赖 fat 模块输出的符号, 某一个输入 USB 设备模块堆叠在 usbcore 和输入模块之上.  </p>
+<p> 模块堆叠在复杂的工程中有用处. 如果一个新的抽象以驱动程序的形式实现, 它可能提供一个特定硬件实现的插入点. 例如, video-for-linux 系列驱动分成一个通用模块, 输出了由特定硬件的低层设备驱动使用的符号. 根据你的设置, 你加载通用的视频模块和你的已安装硬件对应的特定模块. 对并口的支持和众多可连接设备以同样的方式处理, 如同 USB 内核子系统. 在并口子系统的堆叠在图 <a href="ch02s05.html#ldd3-2-2.fig" title="图&#160;2.2.&#160;并口驱动模块的堆叠">并口驱动模块的堆叠</a> 中显示; 箭头显示了模块和内核编程接口间的通讯.  
+</p>
+<div class="figure">
+<a name="ldd3-2-2.fig"></a><p class="title"><b>图&#160;2.2.&#160;并口驱动模块的堆叠</b></p>
+<div><img src="images/snagitldd3/ldd3-2-2.png" alt="并口驱动模块的堆叠"></div>
+</div>
+<p> 当使用堆叠的模块时, 熟悉 modprobe 工具是有帮助的. 如我们前面讲的, modprobe 函数很多地方与 insmod 相同, 但是它也加载任何你要加载的模块需要的其他模块. 所以, 一个 modprobe 命令有时可能代替几次使用 insmod( 尽管你从当前目录下加载你自己模块仍将需要 insmod, 因为 modprobe 只查找标准的已安装模块目录 ).  </p>
+<p> 使用堆叠来划分模块成不同层, 这有助于通过简化每一层来缩短开发时间. 这同我们在第 1 章讨论的区分机制和策略是类似的.  </p>
+<p> linux 内核头文件提供了方便来管理你的符号的可见性, 因此减少了命名空间的污染( 将与在内核别处已定义的符号冲突的名子填入命名空间), 并促使了正确的信息隐藏. 如果你的模块需要输出符号给其他模块使用, 应当使用下面的宏定义: </p>
+<pre class="programlisting">
+EXPORT_SYMBOL(name);
+EXPORT_SYMBOL_GPL(name);
+</pre>
+<p> 上面宏定义的任一个使得给定的符号在模块外可用. _GPL 版本的宏定义只能使符号对 GPL 许可的模块可用. 符号必须在模块文件的全局部分输出, 在任何函数之外, 因为宏定义扩展成一个特殊用途的并被期望是全局存取的变量的声明. 这个变量存储于模块的一个特殊的可执行部分( 一个 "ELF 段" ), 内核用这个部分在加载时找到模块输出的变量. ( 感兴趣的读者可以看 &lt;linux/module.h&gt; 获知详情, 尽管并不需要这些细节使东西动起来. ) 
+</p>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch02s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch02.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">2.4.&#160;编译和加载&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.6.&#160;预备知识</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

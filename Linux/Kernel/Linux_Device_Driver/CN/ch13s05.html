@@ -1,0 +1,188 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>13.5.&#160;无 urb 的 USB 传送-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="ch13.html" title="第&#160;13&#160;章&#160;USB 驱动">
+<link rel="prev" href="ch13s04.html" title="13.4.&#160;编写一个 USB 驱动">
+<link rel="next" href="ch13s06.html" title="13.6.&#160;快速参考">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">13.5.&#160;无 urb 的 USB 传送</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch13s04.html">上一页</a>&#160;</td>
+<th width="60%" align="center">第&#160;13&#160;章&#160;USB 驱动</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch13s06.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="USBTransfersWithoutUrbs.sect1"></a>13.5.&#160;无 urb 的 USB 传送</h2></div></div></div>
+<p>有时一个 USB 驱动必须经过所有的步骤创建一个 struct urb, 初始化它, 再等待 urb 完成函数运行, 只是要发送或者接受一些简单的 USB 数据. 有 2 个函数用来提供一个简单的接口.</p>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="usb_bulk_msg.sect2"></a>13.5.1.&#160;usb_bulk_msg 接口</h3></div></div></div>
+<p>usb_bulk_msg 创建一个 USB 块 urb 并且发送它到特定的设备, 接着在返回到调用者之前等待完成. 它定义为:</p>
+<pre class="programlisting">
+int usb_bulk_msg(struct usb_device *usb_dev, unsigned int pipe,
+                 void *data, int len, int *actual_length,
+                 int timeout);
+</pre>
+<p>这个函数的参数是:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct usb_device *usb_dev </span></span></dt>
+<dd><p>发送块消息去的 USB 设备的指针</p></dd>
+<dt><span class="term"><span>unsigned int pipe </span></span></dt>
+<dd><p>这个块消息要发送到的 USB 设备的特定端点. 这个值被创建, 使用一个对 usb_sndbulkpipe 或者usb_rcvbulkpipe 的调用.</p></dd>
+<dt><span class="term"><span>void *data </span></span></dt>
+<dd><p>如果这是一个 OUT 端点, 指向要发送到设备的数据的指针. 如果是一个 IN 端点, 这是一个在被从设备读出后数据应当被放置的地方的指针.</p></dd>
+<dt><span class="term"><span>int len </span></span></dt>
+<dd><p>被 data 参数指向的缓冲的长度</p></dd>
+<dt><span class="term"><span>int *actual_length </span></span></dt>
+<dd><p>指向函数放置真实字节数的指针, 这些字节要么被发送到设备要么从设备中获取, 根据端点方向.</p></dd>
+<dt><span class="term"><span>int timeout </span></span></dt>
+<dd><p>时间量, 以嘀哒计, 应当在超时前等待的. 如果这个值是 0, 函数永远等待消息完成.</p></dd>
+</dl></div>
+<p>如果函数成功, 返回值是 0; 否则, 一个负错误值被返回. 这错误号匹配之前在"urb结构"一节中描述的错误号. 如果成功, actual_length 参数包含被传送或从消息中获取的字节数.</p>
+<p>下面是一个使用这个函数调用的例子:</p>
+<pre class="programlisting">
+/* do a blocking bulk read to get data from the device */
+retval = usb_bulk_msg(dev-&gt;udev,
+                      usb_rcvbulkpipe(dev-&gt;udev, dev-&gt;bulk_in_endpointAddr),
+                      dev-&gt;bulk_in_buffer,
+                      min(dev-&gt;bulk_in_size, count),
+                      &amp;count, HZ*10);
+
+/* if the read was successful, copy the data to user space */
+if (!retval) {
+        if (copy_to_user(buffer, dev-&gt;bulk_in_buffer, count))
+                retval = -EFAULT;
+        else
+                retval = count;
+}
+</pre>
+<p>这个例子展示了一个简单的从一个 IN 端点的块读. 如果读取成功, 数据接着被拷贝到用户空间. 这个典型地是在 USB 驱动的读函数中完成.</p>
+<p>usb_bulk_msg 函数不能被从中断上下文调用, 或者持有一个自旋锁. 还有, 这个函数不能被任何其他函数取消, 因此当使用它时小心; 确认你的驱动的去连接知道足够多来等待调用结束, 在允许它自己被从内存中卸载之前.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="usb_control_msg.sect2"></a>13.5.2.&#160;usb_control_msg 接口</h3></div></div></div>
+<p>usb_control_msg 函数就像 usb_bulk_msg 函数, 除了它允许一个驱动发送和结束 USB 控制信息:</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>int usb_control_msg(struct usb_device *dev, unsigned int pipe,
+ __u8 request, __u8 requesttype,
+ __u16 value, __u16 index,
+ void *data, __u16 size, int timeout);</span></span></dt>
+<dd><p>这个函数的参数几乎和 usb_bulk_msg 的相同, 有几个这样的不同:</p></dd>
+<dt><span class="term"><span>struct usb_device *dev 
+</span></span></dt>
+<dd><p>指向发送控制消息去的 USB 设备的指针.</p></dd>
+<dt><span class="term"><span>unsigned int pipe 
+</span></span></dt>
+<dd><p>控制消息要发送到的 USB 设备的特定端点. 这个值在 usb_sndctrlpipe 或者 usb_rcvctrlpipe 函数中被创建.</p></dd>
+<dt><span class="term"><span>__u8 request 
+</span></span></dt>
+<dd><p>这个控制消息的 USB 请求值.</p></dd>
+<dt><span class="term"><span>__u8 requesttype 
+</span></span></dt>
+<dd><p>这个控制消息的 USB 请求类型.</p></dd>
+<dt><span class="term"><span>__u16 value 
+</span></span></dt>
+<dd><p>这个控制消息的 USB 消息值.</p></dd>
+<dt><span class="term"><span>__u16 index 
+</span></span></dt>
+<dd><p>这个控制消息的 USB 消息索引值.</p></dd>
+<dt><span class="term"><span>void *data 
+</span></span></dt>
+<dd><p>如果是一个 OUT 端点, 是一个指向要发送到设备的数据的指针. 如果是一个 IN 端点, 是一个在被从设备读取后数据被放置的地方的指针.</p></dd>
+<dt><span class="term"><span>__u16 size 
+</span></span></dt>
+<dd><p>被 data 参数指向的缓冲的大小.</p></dd>
+<dt><span class="term"><span>int timeout 
+</span></span></dt>
+<dd><p>时间量, 以嘀哒计, 应当在超时前等待的. 如果这个值是 0, 这个函数将等待消息结束.</p></dd>
+</dl></div>
+<p>如果函数是成功的, 它返回被传送到或从这个设备的字节数. 如果它不成功, 它返回一个负错误码.</p>
+<p>参数 request, requesttype, value, 和 index 都直接映射到 USB 规范给一个 USB 控制消息如何被定义. 对于更多的关于这些参数的有效值的信息和它们如何被使用, 见 USB 规范的第 9 章.</p>
+<p>象 usb_bulk_msg 函数, 函数 usb_control_msg 不能被从中断上下文或者持有自旋锁中被调用. 还有, 这个函数不能被任何其他函数取消, 所以当使用它时要小心; 确认你的驱动的 disconnect 函数了解足够多, 在允许它自己被从内存卸载之前完成等待调用.</p>
+</div>
+<div class="sect2" lang="zh-cn">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="OtherUSBDataFunctions.sect2"></a>13.5.3.&#160;使用 USB 数据函数</h3></div></div></div>
+<p>USB 核心中的几个帮忙函数可用来从所有的 USB 设备中存取标准信息. 这些函数不能从中断上下文或者持有自旋锁时调用.</p>
+<p>函数 usb_get_descriptor 获取指定的 USB 描述符从特定的设备. 这个函数被定义为:</p>
+<pre class="programlisting">
+int usb_get_descriptor(struct usb_device *dev, unsigned char type, unsigned char index, void *buf, int size);
+</pre>
+<p>这个函数可被一个 USB 驱动用来从 struct usb_device 结构中, 获取任何还没有在 struct usb_device 和 struct usb_interface 结构中出现的设备描述符, 例如声音描述符或者其他类的特定消息. 这个函数的参数是: </p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span>struct usb_device *usb_dev </span></span></dt>
+<dd><p>指向应当从中获取描述符的 USB 设备的指针</p></dd>
+<dt><span class="term"><span>unsigned char type </span></span></dt>
+<dd>
+<p>描述符类型. 这个类型在 USB 规范中描述, 并且是下列类型之一:</p>
+<p>
+USB_DT_DEVICE
+USB_DT_CONFIG
+USB_DT_STRING
+USB_DT_INTERFACE
+USB_DT_ENDPOINT
+USB_DT_DEVICE_QUALIFIER
+USB_DT_OTHER_SPEED_CONFIG
+USB_DT_INTERFACE_POWER
+USB_DT_OTG
+USB_DT_DEBUG
+USB_DT_INTERFACE_ASSOCIATION
+USB_DT_CS_DEVICE
+USB_DT_CS_CONFIG
+USB_DT_CS_STRING
+USB_DT_CS_INTERFACE
+USB_DT_CS_ENDPOINT
+</p>
+</dd>
+<dt><span class="term"><span>unsigned char index </span></span></dt>
+<dd><p>应当从设备获取的描述符的数目.</p></dd>
+<dt><span class="term"><span>void *buf </span></span></dt>
+<dd><p>你拷贝描述符到的缓冲的指针.</p></dd>
+<dt><span class="term"><span>int size</span></span></dt>
+<dd><p>由 buf 变量指向的内存的大小.</p></dd>
+</dl></div>
+<p>如果这个函数成功, 它返回从设备读取的字节数, 否则, 它返回由它所调用的底层函数 usb_control_msg 所返回的一个负错误值.</p>
+<p>usb_get_descripter 调用的一项最普遍的用法是从 USB 设备获取一个字符串. 因为这个是非常普遍, 有一个帮忙函数称为 usb_get_string:</p>
+<pre class="programlisting">
+int usb_get_string(struct usb_device *dev, unsigned short langid, unsigned char index, void *buf, int size);
+</pre>
+<p>如果成功, 这个函数返回设备收到的给这个字符串的字节数. 否则, 它返回一个由这个函数调用的底层函数 usb_control_msg 返回的负错误值.</p>
+<p>如果这个函数成功, 它返回一个以 UTF-16LE 格式编码的字符串(Unicode, 16位每字符, 小端字节序)在 buf 参数指向的缓冲中. 因为这个格式不是非常有用, 有另一个函数, 称为 usb_string, 它返回一个从一个 USB 设备读来的字符串, 并且已经转换为一个 ISO 8859-1 格式字符串. 这个字符集是一个 8 位的 UICODE 的子集, 并且是最普遍的英文和其他西欧字符串格式. 因为这是 USB 设备的字符串的典型格式, 建议 usb_string 函数来替代 usb_get_string 函数.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch13s04.html">上一页</a>&#160;</td>
+<td width="20%" align="center"><a accesskey="u" href="ch13.html">上一级</a></td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch13s06.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">13.4.&#160;编写一个 USB 驱动&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;13.6.&#160;快速参考</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

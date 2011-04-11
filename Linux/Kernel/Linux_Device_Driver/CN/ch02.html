@@ -1,0 +1,101 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;2&#160;章&#160;建立和运行模块-Linux设备驱动第三版（中文版）</title>
+<meta name="description" content="驱动开发" />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发,开发频道" />
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch01s08.html" title="1.8.&#160;本书的内容">
+<link rel="next" href="ch02s02.html" title="2.2.&#160;Hello World 模块">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;2&#160;章&#160;建立和运行模块</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch01s08.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch02s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="BuildingandRunningModules.chap"></a>第&#160;2&#160;章&#160;建立和运行模块</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch02.html#SettingUpYourTestSystem.sect1">2.1. 设置你的测试系统</a></span></dt>
+<dt><span class="sect1"><a href="ch02s02.html">2.2. Hello World 模块</a></span></dt>
+<dt><span class="sect1"><a href="ch02s03.html">2.3. 内核模块相比于应用程序</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch02s03.html#UserSpaceandKernelSpace.sect2">2.3.1. 用户空间和内核空间</a></span></dt>
+<dt><span class="sect2"><a href="ch02s03.html#ConcurrencyintheKernel.sect2">2.3.2. 内核的并发</a></span></dt>
+<dt><span class="sect2"><a href="ch02s03.html#TheCurrentProcess.sect2">2.3.3. 当前进程</a></span></dt>
+<dt><span class="sect2"><a href="ch02s03.html#AFewOtherDetails.sect2">2.3.4. 几个别的细节</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch02s04.html">2.4. 编译和加载</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch02s04.html#CompilingModules.sect2">2.4.1. 编译模块</a></span></dt>
+<dt><span class="sect2"><a href="ch02s04.html#LoadingandUnloadingModules.sect2">2.4.2. 加载和卸载模块</a></span></dt>
+<dt><span class="sect2"><a href="ch02s04.html#VersionDependency.sect2">2.4.3. 版本依赖</a></span></dt>
+<dt><span class="sect2"><a href="ch02s04.html#PlatformDependency.sect2">2.4.4. 平台依赖性</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch02s05.html">2.5. 内核符号表</a></span></dt>
+<dt><span class="sect1"><a href="ch02s06.html">2.6. 预备知识</a></span></dt>
+<dt><span class="sect1"><a href="ch02s07.html">2.7. 初始化和关停</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch02s07.html#TheCleanupFunction.sect2">2.7.1. 清理函数</a></span></dt>
+<dt><span class="sect2"><a href="ch02s07.html#ErrorHandlingDuringInitialization.sect2">2.7.2. 初始化中的错误处理</a></span></dt>
+<dt><span class="sect2"><a href="ch02s07.html#ModuleLoadingRaces.sect2">2.7.3. 模块加载竞争</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch02s08.html">2.8. 模块参数</a></span></dt>
+<dt><span class="sect1"><a href="ch02s09.html">2.9. 在用户空间做</a></span></dt>
+<dt><span class="sect1"><a href="ch02s10.html">2.10. 快速参考</a></span></dt>
+</dl>
+</div>
+<p> 时间差不多该开始编程了. 本章介绍所有的关于模块和内核编程的关键概念. 在这几页里, 我们建立并运行一个完整(但是相对地没有什么用处)的模块, 并且查看一些被所有模块共用的基本代码. 开发这样的专门技术对任何类型的模块化的驱动都是重要的基础. 为避免一次抛出太多的概念, 本章只论及模块, 不涉及任何特别的设备类型.</p>
+<p>在这里介绍的所有的内核项 ( 函数, 变量, 头文件, 和宏 )在本章的结尾的参考一节里有说明.</p>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="SettingUpYourTestSystem.sect1"></a>2.1.&#160;设置你的测试系统</h2></div></div></div>
+<p> 在本章开始, 我们提供例子模块来演示编程概念. ( 所有的例子都可从 O' Reilly' s 的 FTP 网站上得到, 如第 1 章解释的那样 )建立, 加载, 和修改这些例子, 是提高你对驱动如何工作以及如何与内核交互的理解的好方法.  </p>
+<p> 例子模块应该可以在大部分的 2.6.x 内核上运行, 包括那些由发布供应商提供的. 但是, 我们建议你获得一个主流内核, 直接从 kernel.org 的镜像网络, 并把它安装到你的系统中. 供应商的内核可能是主流内核被重重地打了补丁并且和主流内核有分歧; 偶尔, 供应商的补丁可能改变了设备驱动可见的内核 API. 如果你在编写一个必须在特别的发布上运行的驱动, 你当然要在相应的内核上建立和测试. 但是, 处于学习驱动编写的目的, 一个标准内核是最好的.  </p>
+<p>不管你的内核来源, 建立 2.6.x 的模块需要你有一个配置好并建立好的内核树在你的系统中. 这个要求是从之前内核版本的改变, 之前只要有一套当前版本的头文件就足够了. 2.6 模块针对内核源码树里找到的目标文件连接; 结果是一个更加健壮的模块加载器, 还要求那些目标文件也是可用的. 因此你的第一个商业订单是具备一个内核源码树( 或者从 krenel.org 网络或者你的发布者的内核源码包), 建立一个新内核, 并且安装到你的系统. 因为我们稍后会见到的原因, 生活通常是最容易的如果当你建立模块时真正运行目标内核, 尽管这不是需要的.</p>
+<div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note">
+<tr>
+<td rowspan="2" align="center" valign="top" width="25"><img alt="[注意]" src="images/note.png"></td>
+<th align="left">注意</th>
+</tr>
+<tr><td align="left" valign="top"><p> 你应当也考虑一下在哪里进行你的模块试验, 开发和测试. 我们已经尽力使我们的例子模块安全和正确, 但是 bug 的可能性是经常会有的. 内核代码中的错误可能会引起一个用户进程的死亡, 或者偶尔, 瘫痪整个系统. 它们正常地不会导致更严重地后果, 例如磁盘损伤. 然而, 还是建议你进行你的内核试验在一个没有包含你负担不起丢失的数据的系统, 并且没有进行重要的服务. 内核开发者典型地会保留一台"牺牲"系统来测试新的代码.  </p></td></tr>
+</table></div>
+<p> 因此, 如果你还没有一个合适的系统, 带有一个配置好并建立好的源码树在磁盘上, 现在是时候建立了. 我们将等待. 一旦这个任务完成, 你就准备好开始摆布内核模块了.  
+</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch01s08.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch02s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">1.8.&#160;本书的内容&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;2.2.&#160;Hello World 模块</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

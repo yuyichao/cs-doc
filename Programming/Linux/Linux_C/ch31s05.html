@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5. Shell脚本语法</title><link rel="stylesheet" href="styles.css" type="text/css" /><meta name="generator" content="DocBook XSL Stylesheets V1.73.2" /><link rel="start" href="index.html" title="Linux C编程一站式学习" /><link rel="up" href="ch31.html" title="第 31 章 Shell脚本" /><link rel="prev" href="ch31s04.html" title="4. bash启动脚本" /><link rel="next" href="ch31s06.html" title="6. Shell脚本的调试方法" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">5. Shell脚本语法</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch31s04.html">上一页</a> </td><th width="60%" align="center">第 31 章 Shell脚本</th><td width="20%" align="right"> <a accesskey="n" href="ch31s06.html">下一页</a></td></tr></table><hr /></div><div class="sect1" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id2873718"></a>5. Shell脚本语法</h2></div></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2873722"></a>5.1. 条件测试：test [</h3></div></div></div><p>命令<code class="literal">test</code>或<code class="literal">[</code>可以测试一个条件是否成立，如果测试结果为真，则该命令的Exit Status为0，如果测试结果为假，则命令的Exit Status为1（注意与C语言的逻辑表示正好相反）。例如测试两个数的大小关系：</p><pre class="programlisting">$ VAR=2
+$ test $VAR -gt 1
+$ echo $?
+0
+$ test $VAR -gt 3
+$ echo $?
+1
+$ [ $VAR -gt 3 ]
+$ echo $?
+1</pre><p><span class="emphasis"><em>虽然看起来很奇怪，但左方括号<code class="literal">[</code>确实是一个命令的名字，传给命令的各参数之间应该用空格隔开</em></span>，比如，<code class="literal">$VAR</code>、<code class="literal">-gt</code>、<code class="literal">3</code>、<code class="literal">]</code>是<code class="literal">[</code>命令的四个参数，它们之间必须用空格隔开。命令<code class="literal">test</code>或<code class="literal">[</code>的参数形式是相同的，只不过<code class="literal">test</code>命令不需要<code class="literal">]</code>参数。以<code class="literal">[</code>命令为例，常见的测试命令如下表所示：</p><div class="table"><a id="id2873825"></a><p class="title"><b>表 31.2. 测试命令</b></p><div class="table-contents"><table summary="测试命令" border="1"><colgroup><col /><col /></colgroup><tbody><tr><td><code class="literal">[ -d DIR ]</code></td><td>如果<code class="literal">DIR</code>存在并且是一个目录则为真</td></tr><tr><td><code class="literal">[ -f FILE ]</code></td><td>如果<code class="literal">FILE</code>存在且是一个普通文件则为真</td></tr><tr><td><code class="literal">[ -z STRING ]</code></td><td>如果<code class="literal">STRING</code>的长度为零则为真</td></tr><tr><td><code class="literal">[ -n STRING ]</code></td><td>如果<code class="literal">STRING</code>的长度非零则为真</td></tr><tr><td><code class="literal">[ STRING1 = STRING2 ]</code></td><td>如果两个字符串相同则为真</td></tr><tr><td><code class="literal">[ STRING1 != STRING2 ]</code></td><td>如果字符串不相同则为真</td></tr><tr><td><code class="literal">[ ARG1 OP ARG2 ]</code></td><td><code class="literal">ARG1</code>和<code class="literal">ARG2</code>应该是整数或者取值为整数的变量，<code class="literal">OP</code>是<code class="literal">-eq</code>（等于）<code class="literal">-ne</code>（不等于）<code class="literal">-lt</code>（小于）<code class="literal">-le</code>（小于等于）<code class="literal">-gt</code>（大于）<code class="literal">-ge</code>（大于等于）之中的一个</td></tr></tbody></table></div></div><br class="table-break" /><p>和C语言类似，测试条件之间还可以做与、或、非逻辑运算：</p><div class="table"><a id="id2873997"></a><p class="title"><b>表 31.3. 带与、或、非的测试命令</b></p><div class="table-contents"><table summary="带与、或、非的测试命令" border="1"><colgroup><col /><col /></colgroup><tbody><tr><td><code class="literal">[ ! EXPR ]</code></td><td><code class="literal">EXPR</code>可以是上表中的任意一种测试条件，!表示逻辑反</td></tr><tr><td><code class="literal">[ EXPR1 -a EXPR2 ]</code></td><td><code class="literal">EXPR1</code>和<code class="literal">EXPR2</code>可以是上表中的任意一种测试条件，<code class="literal">-a</code>表示逻辑与</td></tr><tr><td><code class="literal">[ EXPR1 -o EXPR2 ]</code></td><td><code class="literal">EXPR1</code>和<code class="literal">EXPR2</code>可以是上表中的任意一种测试条件，<code class="literal">-o</code>表示逻辑或</td></tr></tbody></table></div></div><br class="table-break" /><p>例如：</p><pre class="programlisting">$ VAR=abc
+$ [ -d Desktop -a $VAR = 'abc' ]
+$ echo $?
+0</pre><p>注意，如果上例中的<code class="literal">$VAR</code>变量事先没有定义，则被Shell展开为空字符串，会造成测试条件的语法错误（展开为<code class="literal">[ -d Desktop -a  = 'abc' ]</code>），作为一种好的Shell编程习惯，应该总是把变量取值放在双引号之中（展开为<code class="literal">[ -d Desktop -a "" = 'abc' ]</code>）：</p><pre class="programlisting">$ unset VAR
+$ [ -d Desktop -a $VAR = 'abc' ]
+bash: [: too many arguments
+$ [ -d Desktop -a "$VAR" = 'abc' ]
+$ echo $?
+1</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2874121"></a>5.2. if/then/elif/else/fi</h3></div></div></div><p>和C语言类似，在Shell中用<code class="literal">if</code>、<code class="literal">then</code>、<code class="literal">elif</code>、<code class="literal">else</code>、<code class="literal">fi</code>这几条命令实现分支控制。这种流程控制语句本质上也是由若干条Shell命令组成的，例如先前讲过的</p><pre class="programlisting">if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi</pre><p>其实是三条命令，<code class="literal">if [ -f ~/.bashrc ]</code>是第一条，<code class="literal">then . ~/.bashrc</code>是第二条，<code class="literal">fi</code>是第三条。如果两条命令写在同一行则需要用;号隔开，一行只写一条命令就不需要写;号了，另外，<code class="literal">then</code>后面有换行，但这条命令没写完，Shell会自动续行，把下一行接在<code class="literal">then</code>后面当作一条命令处理。和<code class="literal">[</code>命令一样，要注意命令和各参数之间必须用空格隔开。<code class="literal">if</code>命令的参数组成一条子命令，如果该子命令的Exit Status为0（表示真），则执行<code class="literal">then</code>后面的子命令，如果Exit Status非0（表示假），则执行<code class="literal">elif</code>、<code class="literal">else</code>或者<code class="literal">fi</code>后面的子命令。<code class="literal">if</code>后面的子命令通常是测试命令，但也可以是其它命令。Shell脚本没有{}括号，所以用<code class="literal">fi</code>表示<code class="literal">if</code>语句块的结束。见下例：</p><pre class="programlisting">#! /bin/sh
+
+if [ -f /bin/bash ]
+then echo "/bin/bash is a file"
+else echo "/bin/bash is NOT a file"
+fi
+if :; then echo "always true"; fi</pre><p><code class="literal">:</code>是一个特殊的命令，称为空命令，该命令不做任何事，但Exit Status总是真。此外，也可以执行<code class="literal">/bin/true</code>或<code class="literal">/bin/false</code>得到真或假的Exit Status。再看一个例子：</p><pre class="programlisting">#! /bin/sh
+
+echo "Is it morning? Please answer yes or no."
+read YES_OR_NO
+if [ "$YES_OR_NO" = "yes" ]; then
+  echo "Good morning!"
+elif [ "$YES_OR_NO" = "no" ]; then
+  echo "Good afternoon!"
+else
+  echo "Sorry, $YES_OR_NO not recognized. Enter yes or no."
+  exit 1
+fi
+exit 0</pre><p>上例中的<code class="literal">read</code>命令的作用是等待用户输入一行字符串，将该字符串存到一个Shell变量中。</p><p>此外，Shell还提供了&amp;&amp;和||语法，和C语言类似，具有Short-circuit特性，很多Shell脚本喜欢写成这样：</p><pre class="programlisting">test "$(whoami)" != 'root' &amp;&amp; (echo you are using a non-privileged account; exit 1)</pre><p>&amp;&amp;相当于“<span class="quote">if...then...</span>”，而||相当于“<span class="quote">if not...then...</span>”。&amp;&amp;和||用于连接两个命令，而上面讲的<code class="literal">-a</code>和<code class="literal">-o</code>仅用于在测试表达式中连接两个测试条件，要注意它们的区别，例如，</p><pre class="programlisting">test "$VAR" -gt 1 -a "$VAR" -lt 3</pre><p>和以下写法是等价的</p><pre class="programlisting">test "$VAR" -gt 1 &amp;&amp; test "$VAR" -lt 3</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2874366"></a>5.3. case/esac</h3></div></div></div><p><code class="literal">case</code>命令可类比C语言的<code class="literal">switch</code>/<code class="literal">case</code>语句，<code class="literal">esac</code>表示<code class="literal">case</code>语句块的结束。C语言的<code class="literal">case</code>只能匹配整型或字符型常量表达式，而Shell脚本的<code class="literal">case</code>可以匹配字符串和Wildcard，每个匹配分支可以有若干条命令，末尾必须以;;结束，执行时找到第一个匹配的分支并执行相应的命令，然后直接跳到<code class="literal">esac</code>之后，不需要像C语言一样用<code class="literal">break</code>跳出。</p><pre class="programlisting">#! /bin/sh
+
+echo "Is it morning? Please answer yes or no."
+read YES_OR_NO
+case "$YES_OR_NO" in
+yes|y|Yes|YES)
+  echo "Good Morning!";;
+[nN]*)
+  echo "Good Afternoon!";;
+*)
+  echo "Sorry, $YES_OR_NO not recognized. Enter yes or no."
+  exit 1;;
+esac
+exit 0</pre><p>使用<code class="literal">case</code>语句的例子可以在系统服务的脚本目录<code class="literal">/etc/init.d</code>中找到。这个目录下的脚本大多具有这种形式（以<code class="literal">/etc/apache2</code>为例）：</p><pre class="programlisting">case $1 in
+	start)
+		...
+	;;
+	stop)
+		...
+	;;
+	reload | force-reload)
+		...
+	;;
+	restart)
+	...
+	*)
+		log_success_msg "Usage: /etc/init.d/apache2 {start|stop|restart|reload|force-reload|start-htcacheclean|stop-htcacheclean}"
+		exit 1
+	;;
+esac</pre><p>启动<code class="literal">apache2</code>服务的命令是</p><pre class="screen">$ sudo /etc/init.d/apache2 start</pre><p><code class="literal">$1</code>是一个特殊变量，在执行脚本时自动取值为第一个命令行参数，也就是<code class="literal">start</code>，所以进入<code class="literal">start)</code>分支执行相关的命令。同理，命令行参数指定为<code class="literal">stop</code>、<code class="literal">reload</code>或<code class="literal">restart</code>可以进入其它分支执行停止服务、重新加载配置文件或重新启动服务的相关命令。</p></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2874526"></a>5.4. for/do/done</h3></div></div></div><p>Shell脚本的<code class="literal">for</code>循环结构和C语言很不一样，它类似于某些编程语言的<code class="literal">foreach</code>循环。例如：</p><pre class="programlisting">#! /bin/sh
+
+for FRUIT in apple banana pear; do
+  echo "I like $FRUIT"
+done</pre><p><code class="literal">FRUIT</code>是一个循环变量，第一次循环<code class="literal">$FRUIT</code>的取值是<code class="literal">apple</code>，第二次取值是<code class="literal">banana</code>，第三次取值是<code class="literal">pear</code>。再比如，要将当前目录下的<code class="literal">chap0</code>、<code class="literal">chap1</code>、<code class="literal">chap2</code>等文件名改为<code class="literal">chap0~</code>、<code class="literal">chap1~</code>、<code class="literal">chap2~</code>等（按惯例，末尾有~字符的文件名表示临时文件），这个命令可以这样写：</p><pre class="screen">$ for FILENAME in chap?; do mv $FILENAME $FILENAME~; done</pre><p>也可以这样写：</p><pre class="screen">$ for FILENAME in `ls chap?`; do mv $FILENAME $FILENAME~; done</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2874637"></a>5.5. while/do/done</h3></div></div></div><p><code class="literal">while</code>的用法和C语言类似。比如一个验证密码的脚本：</p><pre class="programlisting">#! /bin/sh
+
+echo "Enter password:"
+read TRY
+while [ "$TRY" != "secret" ]; do
+  echo "Sorry, try again"
+  read TRY
+done</pre><p>下面的例子通过算术运算控制循环的次数：</p><pre class="programlisting">#! /bin/sh
+
+COUNTER=1
+while [ "$COUNTER" -lt 10 ]; do
+  echo "Here we go again"
+  COUNTER=$(($COUNTER+1))
+done</pre><p>Shell还有until循环，类似C语言的do...while循环。本章从略。</p><div class="simplesect" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h4 class="title"><a id="id2874672"></a>习题</h4></div></div></div><p>1、把上面验证密码的程序修改一下，如果用户输错五次密码就报错退出。</p></div></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2874685"></a>5.6. 位置参数和特殊变量</h3></div></div></div><p>有很多特殊变量是被Shell自动赋值的，我们已经遇到了<code class="literal">$?</code>和<code class="literal">$1</code>，现在总结一下：</p><div class="table"><a id="id2874706"></a><p class="title"><b>表 31.4. 常用的位置参数和特殊变量</b></p><div class="table-contents"><table summary="常用的位置参数和特殊变量" border="1"><colgroup><col /><col /></colgroup><tbody><tr><td><code class="literal">$0</code></td><td>相当于C语言<code class="literal">main</code>函数的<code class="literal">argv[0]</code></td></tr><tr><td><code class="literal">$1</code>、<code class="literal">$2</code>...</td><td>这些称为位置参数（Positional Parameter）<a id="id2874755" class="indexterm"></a>，相当于C语言<code class="literal">main</code>函数的<code class="literal">argv[1]</code>、<code class="literal">argv[2]</code>...</td></tr><tr><td><code class="literal">$#</code></td><td>相当于C语言<code class="literal">main</code>函数的<code class="literal">argc - 1</code>，注意这里的<code class="literal">#</code>后面不表示注释</td></tr><tr><td><code class="literal">$@</code></td><td>表示参数列表<code class="literal">"$1" "$2" ...</code>，例如可以用在<code class="literal">for</code>循环中的<code class="literal">in</code>后面。</td></tr><tr><td><code class="literal">$?</code></td><td>上一条命令的Exit Status</td></tr><tr><td><code class="literal">$$</code></td><td>当前Shell的进程号</td></tr></tbody></table></div></div><br class="table-break" /><p>位置参数可以用<code class="literal">shift</code>命令左移。比如<code class="literal">shift 3</code>表示原来的<code class="literal">$4</code>现在变成<code class="literal">$1</code>，原来的<code class="literal">$5</code>现在变成<code class="literal">$2</code>等等，原来的<code class="literal">$1</code>、<code class="literal">$2</code>、<code class="literal">$3</code>丢弃，<code class="literal">$0</code>不移动。不带参数的<code class="literal">shift</code>命令相当于<code class="literal">shift 1</code>。例如：</p><pre class="programlisting">#! /bin/sh
+
+echo "The program $0 is now running"
+echo "The first parameter is $1"
+echo "The second parameter is $2"
+echo "The parameter list is $@"
+shift
+echo "The first parameter is $1"
+echo "The second parameter is $2"
+echo "The parameter list is $@"</pre></div><div class="sect2" lang="zh-cn" xml:lang="zh-cn"><div class="titlepage"><div><div><h3 class="title"><a id="id2874943"></a>5.7. 函数</h3></div></div></div><p>和C语言类似，Shell中也有函数的概念，但是函数定义中没有返回值也没有参数列表。例如：</p><pre class="programlisting">#! /bin/sh
+
+foo(){ echo "Function foo is called";}
+echo "-=start=-"
+foo
+echo "-=end=-"</pre><p>注意函数体的左花括号{和后面的命令之间必须有空格或换行，如果将最后一条命令和右花括号<code class="literal">}</code>写在同一行，命令末尾必须有;号。</p><p>在定义<code class="literal">foo()</code>函数时并不执行函数体中的命令，就像定义变量一样，只是给<code class="literal">foo</code>这个名字一个定义，到后面调用<code class="literal">foo</code>函数的时候（注意Shell中的函数调用不写括号）才执行函数体中的命令。Shell脚本中的函数必须先定义后调用，一般把函数定义都写在脚本的前面，把函数调用和其它命令写在脚本的最后（类似C语言中的<code class="literal">main</code>函数，这才是整个脚本实际开始执行命令的地方）。</p><p>Shell函数没有参数列表并不表示不能传参数，事实上，函数就像是迷你脚本，调用函数时可以传任意个参数，在函数内同样是用<code class="literal">$0</code>、<code class="literal">$1</code>、<code class="literal">$2</code>等变量来提取参数，函数中的位置参数相当于函数的局部变量，改变这些变量并不会影响函数外面的<code class="literal">$0</code>、<code class="literal">$1</code>、<code class="literal">$2</code>等变量。函数中可以用<code class="literal">return</code>命令返回，如果<code class="literal">return</code>后面跟一个数字则表示函数的Exit Status。</p><p>下面这个脚本可以一次创建多个目录，各目录名通过命令行参数传入，脚本逐个测试各目录是否存在，如果目录不存在，首先打印信息然后试着创建该目录。</p><pre class="programlisting">#! /bin/sh
+
+is_directory()
+{
+  DIR_NAME=$1
+  if [ ! -d $DIR_NAME ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+for DIR in "$@"; do
+  if is_directory "$DIR"
+  then :
+  else
+    echo "$DIR doesn't exist. Creating it now..."
+    mkdir $DIR &gt; /dev/null 2&gt;&amp;1
+    if [ $? -ne 0 ]; then
+      echo "Cannot create directory $DIR"
+      exit 1
+    fi
+  fi
+done</pre><p>注意<code class="literal">is_directory()</code>返回0表示真返回1表示假。</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch31s04.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="ch31.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ch31s06.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">4. bash启动脚本 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 6. Shell脚本的调试方法</td></tr></table></div></body></html>

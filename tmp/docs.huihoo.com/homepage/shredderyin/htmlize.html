@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!-- Created by htmlize-0.67 in css mode. -->
+<html>
+  <head>
+    <title>main.c</title>
+    <style type="text/css">
+    <!--
+      body {
+        color: #000000;
+        background-color: #ffffff;
+      } /* default */
+      .comment {
+        color: #b22222;
+        background-color: #ffffff;
+      } /* font-lock-comment-face */
+      .function-name {
+        color: #0000ff;
+        background-color: #ffffff;
+      } /* font-lock-function-name-face */
+      .keyword {
+        color: #a020f0;
+        background-color: #ffffff;
+      } /* font-lock-keyword-face */
+      .variable-name {
+        color: #b8860b;
+        background-color: #ffffff;
+      } /* font-lock-variable-name-face */
+      .type {
+        color: #228b22;
+        background-color: #ffffff;
+      } /* font-lock-type-face */
+      .string {
+        color: #bc8f8f;
+        background-color: #ffffff;
+      } /* font-lock-string-face */
+      .builtin {
+        color: #da70d6;
+        background-color: #ffffff;
+      } /* font-lock-builtin-face */
+      a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    -->
+    </style>
+  </head>
+  <body>
+    <pre>
+#<span class="builtin">include</span> <span class="string">&lt;stdio.h&gt;</span>
+#<span class="builtin">include</span> <span class="string">&lt;stdlib.h&gt;</span>
+#<span class="builtin">include</span> <span class="string">&quot;data.h&quot;</span>
+
+<span class="type">int</span> <span class="variable-name">finished</span>=0;
+<span class="type">float</span> <span class="variable-name">xmin</span>, <span class="variable-name">xmax</span>, <span class="variable-name">ymin</span>, <span class="variable-name">ymax</span>;
+<span class="type">int</span> <span class="variable-name">nsites</span>, <span class="variable-name">ndtedges</span>, <span class="variable-name">ntriples</span>, <span class="variable-name">sqrt_nsites</span>, <span class="variable-name">siteidx</span>; 
+<span class="type">Freelist</span> <span class="variable-name">wavefront_fl</span>;
+<span class="type">Site</span> *<span class="variable-name">sites</span>;
+<span class="type">int</span> *<span class="variable-name">main_ac</span>; 
+<span class="type">char</span> **<span class="variable-name">main_av</span>;
+<span class="type">float</span> <span class="variable-name">sweep_line</span>;
+<span class="type">VarArray</span> <span class="variable-name">dtedge_va</span>, <span class="variable-name">triple_va</span>, <span class="variable-name">rectangle_va</span>;
+
+<span class="type">int</span> <span class="variable-name">b_debug</span>;
+
+<span class="keyword">extern</span> <span class="type">int</span> <span class="variable-name">screen_number</span>;
+
+<span class="type">int</span> <span class="function-name">main</span>(<span class="type">int</span> <span class="variable-name">ac</span>, <span class="type">char</span> **<span class="variable-name">av</span>)
+{
+	<span class="type">int</span> <span class="variable-name">i</span>;
+	<span class="type">char</span> <span class="variable-name">c</span>;
+	<span class="type">int</span> *<span class="variable-name">t</span>;
+	
+	main_ac = &amp;ac; main_av = av;
+	x_init();
+	x_parse_options();
+	x_openwin();
+
+	t = &amp;screen_number;
+	<span class="keyword">while</span> ((c = getopt(ac, av, <span class="string">&quot;d&quot;</span>)) != EOF) {
+		<span class="keyword">switch</span>(c) {
+		<span class="keyword">case</span> <span class="string">'d'</span>:
+			b_debug = 1 ;
+			<span class="keyword">break</span> ;
+		}
+        }
+
+	<span class="keyword">if</span> (ac&gt;1) nsites = atoi(av[1]);
+
+	sites = myalloc(nsites * <span class="keyword">sizeof</span> (Site));
+	siteidx = 0;
+
+	gen_sites (sites, nsites);
+	warn(<span class="string">&quot;the original sites\n&quot;</span>);
+	dump_sites();
+	qsort(sites, nsites, <span class="keyword">sizeof</span>(Site), scomp) ;
+
+	warn(<span class="string">&quot;the sorted sites\n&quot;</span>);
+	dump_sites();
+
+	ymin = sites[0].coord[Y];
+	ymin = sites[0].coord[Y];
+
+	<span class="keyword">for</span> (i=0; i&lt;nsites; i++) {
+		<span class="keyword">if</span> (sites[i].coord[Y] &lt; ymin) ymin = sites[i].coord[Y]; 
+		<span class="keyword">if</span> (sites[i].coord[Y] &gt; ymax) ymax = sites[i].coord[Y]; 
+	}
+
+	geominit();
+	memoryinit();
+	EQinit();
+	WFinit();
+	x_mainloop();
+	<span class="keyword">return</span> 0;
+}
+
+<span class="comment">/* generate n sites from the start location base */</span>
+<span class="type">void</span> <span class="function-name">gen_sites</span>(Site *base, <span class="type">int</span> <span class="variable-name">n</span>)
+{
+
+	<span class="type">FILE</span> *<span class="variable-name">randdev</span>;
+	<span class="keyword">struct</span> <span class="type">timeval</span> <span class="variable-name">tv</span>;
+	<span class="type">int</span> <span class="variable-name">i</span>;
+
+	warn(<span class="string">&quot;[%s] generating %d sites\n&quot;</span>, __func__, nsites);
+
+	<span class="comment">/* seed the random number generator
+	 * first try the random file /dev/random
+	 * if there isn't such a file in the system
+	 * use current time to seed the RNG.
+	 */</span>
+	<span class="keyword">if</span> ((randdev = fopen(<span class="string">&quot;/dev/random&quot;</span>,<span class="string">&quot;r&quot;</span>)) == NULL) {
+		gettimeofday(&amp;tv, NULL);
+		i = tv.tv_usec;
+	} <span class="keyword">else</span> i = getc(randdev);
+	srand(10);
+
+	<span class="keyword">for</span> (i=0; i&lt;n; i++) {
+
+		<span class="comment">/* floating point version */</span>
+#<span class="builtin">ifdef</span> <span class="variable-name">RANDFLOAT</span>
+		sites[i].coord[X] = 1.0 + WIDTH *(rand()/(RAND_MAX+1.0));
+		sites[i].coord[Y] = 1.0 + HEIGHT*(rand()/(RAND_MAX+1.0));
+
+#<span class="builtin">else</span>
+		<span class="comment">/* integer version */</span>
+		sites[i].coord[X] = 1 + (<span class="type">int</span>)((<span class="type">float</span>)WIDTH *rand()/(RAND_MAX+1.0));
+		sites[i].coord[Y] = 1 + (<span class="type">int</span>)((<span class="type">float</span>)HEIGHT*rand()/(RAND_MAX+1.0));
+
+#<span class="builtin">endif</span>
+		<span class="comment">//warn(&quot;(%f, %f) &quot;, sites[i].coord[X], sites[i].coord[Y]);
+</span>		sites[i].sitenbr = i;
+	}
+}
+
+<span class="type">int</span> <span class="function-name">scomp</span>(<span class="keyword">const</span> <span class="type">void</span> *<span class="variable-name">vs1</span>, <span class="keyword">const</span> <span class="type">void</span> *<span class="variable-name">vs2</span>)
+{
+	Site *s1 = (Site *)vs1 ;
+	Site *s2 = (Site *)vs2 ;
+
+	<span class="comment">/* compare X coordinate first */</span>
+	<span class="keyword">if</span> (s1-&gt;coord[X] &lt; s2-&gt;coord[X]) <span class="keyword">return</span> -1;
+	<span class="keyword">else</span> <span class="keyword">if</span> (s1-&gt;coord[X] &gt; s2-&gt;coord[X]) <span class="keyword">return</span> 1;
+
+	<span class="comment">/* if there are ties, use Y coordinate */</span>
+	<span class="keyword">if</span> (s1-&gt;coord[Y] &lt; s2-&gt;coord[Y]) <span class="keyword">return</span> -1;
+	<span class="keyword">else</span> <span class="keyword">if</span> (s1-&gt;coord[Y] &gt; s2-&gt;coord[Y]) <span class="keyword">return</span> 1;
+	<span class="keyword">return</span> 0;
+}
+
+<span class="type">float</span> <span class="function-name">peek_next_site</span>()
+{
+	<span class="keyword">if</span> (siteidx &gt;= nsites) <span class="keyword">return</span> -1;
+	<span class="keyword">return</span> sites[siteidx].coord[X];
+}
+
+<span class="type">float</span> <span class="function-name">trigger_next_event</span>() 
+{
+	Wavefront *inact_event, *lowerbnd;
+	Wavefront *new_wf;
+	Site *newsite;
+	<span class="type">float</span> <span class="variable-name">ret</span>, <span class="variable-name">site_loc</span>, <span class="variable-name">inact_loc</span>;
+
+	site_loc = peek_next_site();
+	inact_loc = EQ_min();
+
+	warn(<span class="string">&quot;site location %f, inact location %f\n&quot;</span>, 
+			site_loc, inact_loc);
+
+	<span class="keyword">if</span> (site_loc &gt;= 0 &amp;&amp; 
+		(inact_loc &lt; 0 || site_loc &lt; inact_loc)) {
+
+		<span class="comment">/* new site is the next event */</span>
+		newsite = extractsite();
+		warn(<span class="string">&quot;site event %d(%f,%f) \n&quot;</span>, newsite-&gt;sitenbr, newsite-&gt;coord[X],newsite-&gt;coord[Y]);
+
+		<span class="comment">/* add the new wave front to the list */</span>
+		new_wf = WFcreate(newsite);
+		lowerbnd = WFlowerneighbor(new_wf);
+
+		<span class="keyword">if</span> (lowerbnd-&gt;site-&gt;sitenbr &gt;= 0) 
+			report_edge(newsite, lowerbnd-&gt;site);
+		<span class="keyword">if</span> (lowerbnd-&gt;WFup-&gt;site-&gt;sitenbr &gt;= 0)
+			report_edge(newsite, lowerbnd-&gt;WFup-&gt;site);
+		<span class="keyword">if</span> (lowerbnd-&gt;site-&gt;sitenbr &gt;= 0 
+			&amp;&amp; lowerbnd-&gt;WFup-&gt;site-&gt;sitenbr &gt;= 0)
+			report_triple(lowerbnd-&gt;site, lowerbnd-&gt;WFup-&gt;site, new_wf-&gt;site);
+
+		WFinsert(lowerbnd, new_wf);
+		update_act_record(new_wf-&gt;WFup, UP);
+		update_act_record(new_wf-&gt;WFdown, DOWN);
+
+		ret = site_loc;
+
+	} <span class="keyword">else</span> <span class="keyword">if</span> (inact_loc &gt;= 0) { 
+		<span class="comment">/* an inactivation record should be processed */</span>
+
+		inact_event = EQextractmin();
+		warn(<span class="string">&quot;[%s] inactivation event for site %d(%f,%f) occured at %f!\n&quot;</span>,__func__, inact_event-&gt;site-&gt;sitenbr, inact_event-&gt;site-&gt;coord[X],inact_event-&gt;site-&gt;coord[Y], inact_event-&gt;inact);
+
+		Wavefront *pre = inact_event-&gt;WFdown;
+
+		report_triple(inact_event-&gt;site, pre-&gt;site, inact_event-&gt;WFup-&gt;site);
+		WFdelete(inact_event);
+
+		<span class="comment">/* new edge created */</span>
+		report_edge(pre-&gt;site, pre-&gt;WFup-&gt;site);
+
+		update_act_record(pre, DOWN);
+		update_act_record(pre-&gt;WFup, UP);
+
+		ret = inact_loc;
+	} <span class="keyword">else</span> <span class="keyword">if</span> (finished) ret = NOEVENT;
+	<span class="keyword">else</span> finished=1,ret = LASTEVENT;		<span class="comment">/* for the last event */</span>
+	warn(<span class="string">&quot;[%s] event at %f!\n&quot;</span>, __func__, ret);
+	<span class="keyword">return</span> ret;
+}
+
+<span class="type">Site</span> *<span class="function-name">extractsite</span>()
+{
+	<span class="keyword">if</span> (siteidx &gt;= nsites) <span class="keyword">return</span> NULL;
+	<span class="keyword">return</span> &amp;sites[siteidx++];
+}
+
+<span class="type">void</span> <span class="function-name">report_edge</span> (Site *s1, Site *s2)
+{
+	DTedge *e;
+	e = var_array_elem(&amp;dtedge_va, ndtedges++);
+	e-&gt;ends[0] = s1;
+	e-&gt;ends[1] = s2;
+	warn(<span class="string">&quot;edge %d between site %d(%f,%f) and %d(%f,%f)\n&quot;</span>, ndtedges, s1-&gt;sitenbr, s1-&gt;coord[X], s1-&gt;coord[Y], s2-&gt;sitenbr, s2-&gt;coord[X], s2-&gt;coord[Y]);
+}
+
+<span class="type">void</span> <span class="function-name">report_triple</span>(Site *s1, Site *s2, Site *s3)
+{
+	Triple *t;
+	bounding_rectangle(var_array_elem(&amp;rectangle_va,ntriples), 
+			   s1, s2, s3, 1);	
+	t = var_array_elem(&amp;triple_va, ntriples++);
+	t-&gt;sites[0] = s1;
+	t-&gt;sites[1] = s2;
+	t-&gt;sites[2] = s3;
+	warn(<span class="string">&quot;triple (%d, %d, %d)\n&quot;</span>,
+	     t-&gt;sites[0]-&gt;sitenbr,	     
+	     t-&gt;sites[1]-&gt;sitenbr,
+	     t-&gt;sites[2]-&gt;sitenbr);	
+}
+
+<span class="type">void</span> <span class="function-name">update_act_record</span>(Wavefront *w, <span class="type">int</span> <span class="variable-name">dir</span>)
+{
+	<span class="type">float</span> <span class="variable-name">offset</span>, <span class="variable-name">inact_location</span>, <span class="variable-name">rightmost</span>;
+	Wavefront *upper = w-&gt;WFup;
+	Wavefront *lower = w-&gt;WFdown;
+
+	<span class="comment">/* There aren't any inactivations that can occur */</span>
+	<span class="keyword">if</span> (!upper || ! lower 
+		|| upper-&gt;site-&gt;coord[X] &lt; w-&gt;site-&gt;coord[X]
+		|| lower-&gt;site-&gt;coord[X] &lt; w-&gt;site-&gt;coord[X]) 
+		<span class="keyword">return</span>;
+
+	EQdelete(w);
+
+	offset = upper-&gt;site-&gt;coord[Y] - lower-&gt;site-&gt;coord[Y];
+	inact_location = w-&gt;site-&gt;coord[X] + offset;
+
+	rightmost = upper-&gt;site-&gt;coord[X] &gt; lower-&gt;site-&gt;coord[X] ?
+		upper-&gt;site-&gt;coord[X]: lower-&gt;site-&gt;coord[X];
+
+
+	<span class="keyword">if</span> (inact_location &lt;= rightmost) {
+		Wavefront *pre = w-&gt;WFdown;
+		warn (<span class="string">&quot;[%s] inactivaton record for site %d activated prematurely at %f\n&quot;</span>, __func__, w-&gt;site-&gt;sitenbr, inact_location);
+		report_triple(w-&gt;site,pre-&gt;site,w-&gt;WFup-&gt;site);
+		WFdelete(w);
+		report_edge(pre-&gt;site, pre-&gt;WFup-&gt;site);
+		<span class="keyword">if</span> (dir == UP) update_act_record(pre-&gt;WFup, UP);
+		<span class="keyword">else</span> update_act_record(pre, DOWN);
+	} <span class="keyword">else</span> {
+		EQinsert(w, inact_location);
+		warn(<span class="string">&quot;[%s] inactivation record for site %d at %f generated by %d and %d\n&quot;</span>, __func__, w-&gt;site-&gt;sitenbr, inact_location, upper-&gt;site-&gt;sitenbr, lower-&gt;site-&gt;sitenbr);
+	}
+}
+
+<span class="type">void</span> <span class="function-name">dump_sites</span>()
+{
+	<span class="type">int</span> <span class="variable-name">i</span>;
+	<span class="keyword">for</span> (i=0; i&lt;nsites; i++)
+		warn(<span class="string">&quot;%d (%f,%f)\n&quot;</span>, sites[i].sitenbr, sites[i].coord[X], sites[i].coord[Y]);
+	warn (<span class="string">&quot;\n&quot;</span>);
+}
+</pre>
+  </body>
+</html>

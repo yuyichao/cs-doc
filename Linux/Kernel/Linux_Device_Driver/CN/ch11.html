@@ -1,0 +1,107 @@
+<html xmlns:cf="http://docbook.sourceforge.net/xmlns/chunkfast/1.0">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>第&#160;11&#160;章&#160;内核中的数据类型-Linux设备驱动第三版（中文版）- - </title>
+<meta name="description" content="驱动开发- - " />
+<meta name="keywords" content="Linux设备驱动,中文版,第三版,ldd,linux device driver,驱动开发,电子版,程序设计,软件开发, " />
+<meta name="author" content="  www.21cstar.com QQ:610061171" /> 
+<meta name="verify-v1" content="5asbXwkS/Vv5OdJbK3Ix0X8osxBUX9hutPyUxoubhes=" />
+<link rel="stylesheet" href="http://oss.org.cn/kernel-book/ldd3/docbook.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.69.0">
+<link rel="start" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="up" href="index.html" title="Linux 设备驱动 Edition 3">
+<link rel="prev" href="ch10s06.html" title="10.6.&#160;快速参考">
+<link rel="next" href="ch11s02.html" title="11.2.&#160;安排一个明确大小给数据项">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">第&#160;11&#160;章&#160;内核中的数据类型</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="ch10s06.html">上一页</a>&#160;</td>
+<th width="60%" align="center">&#160;</th>
+<td width="20%" align="right">&#160;<a accesskey="n" href="ch11s02.html">下一页</a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="chapter" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title">
+<a name="DataTypeintheKernel.chap"></a>第&#160;11&#160;章&#160;内核中的数据类型</h2></div></div></div>
+<div class="toc">
+<p><b>目录</b></p>
+<dl>
+<dt><span class="sect1"><a href="ch11.html#UseofStandardCTypes.sect">11.1. 标准 C 类型的使用</a></span></dt>
+<dt><span class="sect1"><a href="ch11s02.html">11.2. 安排一个明确大小给数据项</a></span></dt>
+<dt><span class="sect1"><a href="ch11s03.html">11.3. 接口特定的类型</a></span></dt>
+<dt><span class="sect1"><a href="ch11s04.html">11.4. 其他移植性问题</a></span></dt>
+<dd><dl>
+<dt><span class="sect2"><a href="ch11s04.html#TimeIntervals.sect">11.4.1. 时间间隔</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#PageSize.sect">11.4.2. 页大小</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#ByteOrder.sect">11.4.3. 字节序</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#DataAlignment.sect">11.4.4. 数据对齐</a></span></dt>
+<dt><span class="sect2"><a href="ch11s04.html#PointersandErrorValues.sect">11.4.5. 指针和错误值</a></span></dt>
+</dl></dd>
+<dt><span class="sect1"><a href="ch11s05.html">11.5. 链表</a></span></dt>
+<dt><span class="sect1"><a href="ch11s06.html">11.6. 快速参考</a></span></dt>
+</dl>
+</div>
+<p>在我们进入更高级主题之前, 我们需要停下来快速关注一下可移植性问题. 现代版本的 Linux 内核是高度可移植的, 它正运行在很多不同体系上. 由于 Linux 内核的多平台特性, 打算做认真使用的驱动应当也是可移植的.</p>
+<p>但是内核代码的一个核心问题是不但能够存取已知长度的数据项(例如, 文件系统数据结构或者设备单板上的寄存器), 而且可以使用不同处理器的能力(32-位 和 64-位 体系, 并且也可能是 16 位).</p>
+<p>内核开发者在移植 x86 代码到新体系时遇到的几个问题与不正确的数据类型相关. 坚持严格的数据类型和使用 -Wall -Wstrict-prototypes 进行编译可能避免大部分的 bug.</p>
+<p>内核数据使用的数据类型分为 3 个主要类型: 标准 C 类型例如 int, 明确大小的类型例如 u32, 以及用作特定内核对象的类型, 例如 pid_t. 我们将看到这 3 个类型种类应当什么时候以及应当如何使用. 本章的最后的节谈论一些其他的典型问题, 你在移植 x86 的驱动到其他平台时可能遇到的问题, 并且介绍近期内核头文件输出的链表的常用支持.</p>
+<p>如果你遵照我们提供的指引, 你的驱动应当编译和运行在你无法测试的平台上.</p>
+<div class="sect1" lang="zh-cn">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="UseofStandardCTypes.sect"></a>11.1.&#160;标准 C 类型的使用</h2></div></div></div>
+<p>尽管大部分程序员习惯自由使用标准类型, 如 int 和 long, 编写设备驱动需要一些小心来避免类型冲突和模糊的 bug.</p>
+<p>这个问题是你不能使用标准类型, 当你需要"一个 2-字节 填充者"或者"一个东西来代表一个4-字节 字串", 因为正常的 C 数据类型在所有体系上不是相同大小. 为展示各种 C 类型的数据大小, datasize 程序已包含在例子文件 misc-progs 目录中, 由 O' Reilly's FTP 站点提供. 这是一个程序的样例运行, 在一个 i386 系统上(显示的最后 4 个类型在下一章介绍):</p>
+<pre class="screen">
+morgana% misc-progs/datasize
+arch Size: char short int long ptr long-long u8 u16 u32 u64
+i686       1    2     4   4    4   8         1  2   4   8
+</pre>
+<p>这个程序可以用来显示长整型和指针在 64-位 平台上的不同大小, 如同在不同 Linux 计算机上运行程序所演示的:</p>
+<pre class="screen">
+arch  Size:  char  short  int  long  ptr long-long  u8 u16 u32 u64 
+i386         1     2      4    4     4   8          1  2   4   8  
+alpha        1     2      4    8     8   8          1  2   4   8  
+armv4l       1     2      4    4     4   8          1  2   4   8  
+ia64         1     2      4    8     8   8          1  2   4   8  
+m68k         1     2      4    4     4   8          1  2   4   8  
+mips         1     2      4    4     4   8          1  2   4   8  
+ppc          1     2      4    4     4   8          1  2   4   8  
+sparc        1     2      4    4     4   8          1  2   4   8  
+sparc64      1     2      4    4     4   8          1  2   4   8  
+x86_64       1     2      4    8     8   8          1  2   4   8  
+</pre>
+<p>注意有趣的是 SPARC 64 体系在一个 32-位 用户空间运行, 因此那里指针是 32 位宽, 尽管它们在内核空间是 64 位宽. 这可用加载 kdatasize 模块(在例子文件的 misc-modules 目录里)来验证. 这个模块在加载时使用 printk 来报告大小信息, 并且返回一个错误( 因此没有必要卸载它 ):</p>
+<pre class="screen">
+kernel: arch Size: char short int long ptr long-long u8 u16 u32 u64
+kernel: sparc64    1    2     4   8    8   8         1  2   4   8
+</pre>
+<p>尽管在混合不同数据类型时你必须小心, 有时有很好的理由这样做. 一种情况是因为内存存取, 与内核相关时是特殊的. 概念上, 尽管地址是指针, 内存管理常常使用一个无符号的整数类型更好地完成; 内核对待物理内存如同一个大数组, 并且内存地址只是一个数组索引. 进一步地, 一个指针容易解引用; 当直接处理内存存取时, 你几乎从不想以这种方式解引用. 使用一个整数类型避免了这种解引用, 因此避免了 bug. 因此, 内核中通常的内存地址常常是 unsigned long, 利用了指针和长整型一直是相同大小的这个事实, 至少在 Linux 目前支持的所有平台上.</p>
+<p>因为其所值的原因, C99 标准定义了 intptr_t 和 uintptr_t 类型给一个可以持有一个指针值的整型变量. 但是, 这些类型几乎没在 2.6 内核中使用.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="ch10s06.html">上一页</a>&#160;</td>
+<td width="20%" align="center">&#160;</td>
+<td width="40%" align="right">&#160;<a accesskey="n" href="ch11s02.html">下一页</a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">10.6.&#160;快速参考&#160;</td>
+<td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td>
+<td width="40%" align="right" valign="top">&#160;11.2.&#160;安排一个明确大小给数据项</td>
+</tr>
+</table>
+</div>
+</body></html>
+<div style="display:none"><script language="JavaScript" src="http://oss.org.cn/kernel-book/ldd3/script.js"></script> </div>

@@ -1,0 +1,460 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>Chapter 24. Precision Math</title><meta name="generator" content="DocBook XSL Stylesheets V1.69.1"><link rel="start" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="up" href="index.html" title="MySQL 5.1 Reference Manual"><link rel="prev" href="information-schema.html" title="Chapter 23. The INFORMATION_SCHEMA Information Database"><link rel="next" href="apis.html" title="Chapter 25. APIs and Libraries">
+<style>
+<!--
+ table.MsoNormalTable
+	{mso-style-parent:"";
+	font-size:10.0pt;
+	
+	}
+ div.MsoNormal
+	{mso-style-parent:"";
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	
+	; margin-left:0cm; margin-right:0cm; margin-top:0cm}
+-->
+</style>
+</head><body><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="precision-math"></a>
+	第24章：精度数学</h2></div></div></div><div class="toc"><p><b>
+	目录</b></p><dl><dt><span class="section"><a href="precision-math.html#precision-math-numbers">
+			24.1. 数值的类型</a></span></dt><dt><span class="section"><a href="precision-math.html#precision-math-decimal-changes">24.2. 
+			DECIMAL数据类型更改</a></span></dt><dt><span class="section"><a href="precision-math.html#precision-math-expressions">
+			24.3. 表达式处理</a></span></dt><dt><span class="section"><a href="precision-math.html#precision-math-rounding">
+			24.4. 四舍五入</a></span></dt><dt><span class="section"><a href="precision-math.html#precision-math-examples">24.5. 
+			精度数学示例</a></span></dt></dl></div><a class="indexterm" name="id3004790"></a><a class="indexterm" name="id3004797"></a><a class="indexterm" name="id3004803"></a><a class="indexterm" name="id3004810"></a><a class="indexterm" name="id3004817"></a><a class="indexterm" name="id3004824"></a><a class="indexterm" name="id3004830"></a><a class="indexterm" name="id3004841"></a><a class="indexterm" name="id3004851"></a><a class="indexterm" name="id3004858"></a><a class="indexterm" name="id3004865"></a><a class="indexterm" name="id3004874"></a>
+	<p><span>MySQL 5.1</span>提供了对精度数学的支持，也就是说，数值处理功能，它能给出极其精确的结果，并能对无效值进行高度控制。精度数学基于下述两种特性：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><span>SQL</span>模式，控制服务器接受或拒绝无效值的严格程度（请参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>）。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span>用于定点算法的<span>MySQL</span>库。</p>
+	<p>对于数值操作，这些特性具有数种隐含意义：</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><strong><span>精确计算：</span></strong>对于准确值数值，计算不会引入浮点错误。相反，将使用准确的精度。例如，对于数值<span><span>.0001</span>，会将其当作准确值予以处理，而不是近似值，将其加<span>10000</span>次可获得准确的结果<span>1</span>，而不是近似于<span>1</span>的值。</span></p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><strong><span>定义良好的四舍五入特性：</span></strong>对于准确值数值，<span><span>ROUND()</span>的结果取决于</span>其参量，而不是环境因素，如底层<span>C</span>库的工作方式等。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><strong><span>平台无关性：</span></strong>对准确数值的操作在不同平台上（如<span>Unix</span>和<span>Windows</span>）是相同的。</p>
+	<p>
+	<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	</span></span><strong><span>对无效值处理的控制：</span></strong>能够检测到溢出和除<span>0</span>情况，并会将其当作错误加以处理。例如，能够将对于某列来说过大的值当作错误对待，而不是对该值进行截短使之位于列数据类型的范围内。同样，也会将除<span>0</span>当作错误，而不是会获得<span>NULL</span>结果的操作。至于选择那种方式，它是由系统变量<span><span>sql_mode</span>的设置决定的</span>（请参见<a href="database-administration.html#server-sql-mode" title="5.3.2. The Server SQL Mode">5.3.2节，“SQL服务器模式”</a>）。</p>
+	<p>这类特性的一个重要结果是，<span>MySQL 5.1</span>提供了与标准<span>SQL</span>的高度兼容性。</p>
+	<p>在下面的讨论中，介绍了精度数学的数种工作方式（包括与早期应用程序的可能的不兼容性）。在最后，给出了一些示例，演示了<span>MySQL 
+	5.1</span>是如何精确处理数值操作的。</p>
+	<div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="precision-math-numbers"></a>
+		24.1.&nbsp;数值的类型</h2></div></div></div>
+		<p>对于准确值操作，精度数学的范围包括准确值的数据类型（<span><span>DECIMAL</span>和整数类型）以及</span>准确值数值文字。对于近似值数据类型和数值文字，仍会将其当作浮点数值予以处理。</p>
+		<p>准确值数值文字具有整数部分和小数部分，或两者。它们可以是有符号的。例如：<span>1</span>、<span>.2</span>、<span>3.4</span>、<span>-5</span>、<span>-6.78</span>、<span>+9.10</span>。</p>
+		<p>近似值数值文字采用科学计数法表示，包含尾数和指数。任意部分或两者均可以是带符号的。例如，<span>1.2E3</span>、<span>1.2E-3</span>、<span>-1.2E3</span>、<span>-1.2E-3</span>。</p>
+		<p>对于看上去类似的数值，不需要均为准确值或近似值。例如，<span><span>2.34</span>是准确值</span>（定点）数值，而<span><span>2.34E0</span>是近似值（浮点）数值。</span></p>
+		<p><span><span>DECIMAL</span>数据类型是定点类型，其计算是准确的。在</span><span>MySQL</span>中，<span><span>DECIMAL</span>类型有多个同义词：<span>NUMERIC</span></span>、<span>DEC</span>、<span>FIXED</span>。整数类型也是准确值类型。</p>
+		<p><span><span>FLOAT</span>和<span>DOUBLE</span>数据类型是浮点类型</span>，其计算是近似的。在<span>MySQL</span>中，与<span>FLOAT</span>或<span><span>DOUBLE</span>同义的类型是<span>DOUBLE 
+		PRECISION</span></span>和<span>REAL</span>。</div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="precision-math-decimal-changes"></a>24.2. DECIMAL数据类型更改</h2></div></div></div>
+		<p>本节讨论了<span>MySQL 5.1</span>中<span><span>DECIMAL</span>数据类型（以及其同义类型）的特性，尤其是下述方面：</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>数字的最大数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>存储格式。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>存储要求。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对<span>DECIMAL</span>列上界 的非标准<span>MySQL</span>扩展。</p>
+		<p>在本节中，对于为较早<span>MySQL</span>版本编写的应用程序，在相应的地方指出了可能的不兼容性。</p>
+		<p><span><span>DECIMAL</span>列的声明语法是<span>DECIMAL(<i>M</i>,<i>D</i>)</span></span>。在<span>MySQL 
+		5.1</span>中，参量的取值范围如下：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><i><span>M</span></i></span>是数字的最大数（精度）。其范围为<span>1</span>～<span>65</span>（在较旧的<span>MySQL</span>版本中，允许的范围是<span>1</span>～<span>254</span>）。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span><span><i><span>D</span></i></span>是小数点右侧数字的数目（标度）。其范围是<span>0</span>～<span>30</span>，但不得超过<span><i><span>M</span></i></span>。</p>
+		<p>对于<span>M</span>，最大值<span>65</span>意味着，对<span><span>DECIMAL</span>值的计算能精确到<span>65</span>位数字。这种<span>65</span>位数字的精度限制也适用于准确值数值文字，因此，这类文字值的最大范围不同于以前的范围（</span>在较早的<span>MySQL</span>版本中，十进制值能达到<span>254</span>位。不过，采用的是浮点计算，因而是近似计算而不是准确计算）。</p>
+		<p>在<span>MySQL 5.1</span>中，采用二进制格式保存<span><span>DECIMAL</span>列的值，将<span>9</span>个十进制数字打包在<span>4</span>字节中。对于每个值的整数部分和小数部分，其存储要求是分别确定的。每<span>9</span>个数字需要<span>4</span>字节，任何剩余的数字将占用<span>4</span>字节的一部分。例如，<span>DECIMAL(18,9)</span>列在小数点的每一侧均有<span>9</span>位数字，因此，整数部分和小数部分均需要<span>4</span>字节。<span>DECIMAL(20,10)</span>列在小数点的每一侧均有<span>10</span>位数字</span>。对于每一部分，<span>9</span>位数字需要<span>4</span>字节，剩余的<span>1</span>位数字需要<span>1</span>字节。</p>
+		<p>在下表中，给出了关于剩余数字的存储要求：</p>
+		<table border="1" cellpadding="0" id="table1">
+			<tr>
+				<td>
+				<p><strong><span>剩余的数字</span></strong></td>
+				<td>
+				<p><strong><span>字节数</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>0</span></td>
+				<td>
+				<p><span>0</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>1</span></td>
+				<td>
+				<p><span>1</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>2</span></td>
+				<td>
+				<p><span>1</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>3</span></td>
+				<td>
+				<p><span>2</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>4</span></td>
+				<td>
+				<p><span>2</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>5</span></td>
+				<td>
+				<p><span>3</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>6</span></td>
+				<td>
+				<p><span>3</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>7</span></td>
+				<td>
+				<p><span>4</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>8</span></td>
+				<td>
+				<p><span>4</span></td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>9</span></td>
+				<td>
+				<p><span>4</span></td>
+			</tr>
+		</table>
+		<p>与某些较早的<span>MySQL</span>版本不同，在<span>MySQL 5.1</span>中，<span>DECIMAL</span>列不保存前导“<span>+</span>”字符或前导“<span><span>0”</span>数字</span>。如果将<span><span>+0003.1</span>插入<span>DECIMAL(5,1)</span>列，</span>将保存为<span>3.1</span>。为了适应该变化，必须更改依赖于早期行为的应用程序。</p>
+		<p>在<span>MySQL 5.1</span>中，<span>DECIMAL</span>列不允许保存大于列定义中隐含范围的值。例如，<span><span>DECIMAL(3,0)</span>列支持的范围为<span>-999</span>～<span>999</span></span>。对于<span>DECIMAL(<i>M</i>,<i>D</i>)</span>列，小数点左侧最多允许<span><i><span>M</span></i></span><span>
+		</span>–<span><i><span>D</span></i></span>位数字（它与依赖于早期<span>MySQL</span>版本的应用程序不兼容，允许保存额外数字代替“<span>+</span>”号）。</p>
+		<p><span>SQL</span>标准要求，<span>NUMERIC(<i>M</i>,<i>D</i>)</span>的精度必须准确为<span><i><span>M</span></i></span>位数字。对于<span>DECIMAL(<i>M</i>,<i>D</i>)</span>，标准要求的精度至少为<span><i><span>M</span></i></span>位数字，但允许更多。在<span>MySQL</span>中，<span><span>DECIMAL(<i>M</i>,<i>D</i>)</span>和<span>NUMERIC(<i>M</i>,<i>D</i>)</span></span>是相同的，两者的精度均准确为<span><i><span>M</span></i></span>位数字。</p>
+		<p>对于依赖<span>DECIMAL</span>数据类型早期处理方式的应用程序，关于移植这类应用程序的更多信息，请参见<em><span>MySQL 
+		5.0</span><span>参考手册。</span></em></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="precision-math-expressions"></a>
+		24.3.&nbsp;表达式处理</h2></div></div></div>
+		<p>对于精度数学，只要可能，就会使用给定的准确值数值。例如，在比较中所用的数值与给定的值准确相同，无任何变化。在严格的<span>SQL</span>模式下，对于插入具有准确数据类型（<span>DECIMAL</span>或整数）的列的<span><span>INSERT</span>操作，如果值在列的允许范围内，将插入具有准确值的数值。检索时，所获得的值与插入的值应是相同（如果未采用严格模式，允许<span>INSERT</span>执行截短操作）。</span></p>
+		<p>对数值表达式的处理取决于表达式包含的值的类型：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果存在任何近似值，表达式也是近似的，并将使用浮点算法进行评估。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果不存在近似值，表达式仅包含准确值。如果任一准确值包含小数部分（小数点后面的值），将使用<span>DECIMAL</span>准确算法来计算表达式，其精度为<span>65</span>位数字。术语“准确”受二进制表述方面的限制。例如，<span><span>1.0/3.0</span>在十进制表述中可近似为<span>.333...</span>，但并不是准确数值，因此<span>(1.0/3.0)*3.0</span>不会被计算为准确的<span>1.0</span>。</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>另外，表达式仅包含整数值。表达式是准确的，并将使用整数算法进行计算，其精度与<span><span>BIGINT</span>的相同（<span>64</span>比特）。</span></p>
+		<p>如果数值表达式包含任何字符串，会将其转换为双精度浮点值，表达式是近似的。</p>
+		<p>数值列中的插入操作受<span>SQL</span>模式的影响，它是由<span>sql_mode</span>系统变量控制的（请参见<a href="introduction.html#sql-mode" title="1.8.2. Selecting SQL Modes">1.8.2节，“选择SQL模式”</a>）。下面介绍了严格模式（由<span>STRICT_ALL_TABLES</span>或<span><span>STRICT_TRANS_TABLES</span>模式值选择）</span>和<span>RROR_FOR_DIVISION_BY_ZERO</span>。要想打开所有限制，可简单地使用<span>TRADITIONAL</span>模式，它包含严格模式和<span>ERROR_FOR_DIVISION_BY_ZERO</span>：</p>
+		<pre><span>mysql&gt; <span><b>SET SQL_MODE=&#39;TRADITIONAL&#39;;</b></span></span></pre>
+		<p>如果将数值插入具有准确类型的列（<span><span>DECIMAL</span>或整数），如果值在列允许的范围内，将以准确值形式插入数值。</span></p>
+		<p>如果数值在其小数部分有过多位，将执行四舍五入操作并给出告警。关于四舍五入的具体介绍，请参见<em><span>四舍五入</span></em>一节。</p>
+		<p>如果数值在其整数部分有过多位，数值过大，并将按下述方式处理：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果未启用严格模式，该数值将被截短为最近的合法值，并发出警告。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果启用了严格模式，将给出溢出错误。</p>
+		<p>不检测下溢，因而下溢处理是不确定的。</p>
+		<p>默认情况下，除<span>0</span>操作会导致<span>NULL</span>结果，不产生告警。启用了<span>ERROR_FOR_DIVISION_BY_ZERO</span><span> 
+		SQL</span>模式后，<span>MySQL</span>会以不同方式处理除<span>0</span>问题：</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果未启用严格模式，发出警告。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>如果启用了严格模式，将禁止包含除<span>0</span>操作的插入和更新，并给出错误。</p>
+		<p>换句话讲，对于包含执行除<span>0</span>操作的表达式的插入和更新，将被当作错误对待，但除了严格模式外还需要<span><span>ERROR_FOR_DIVISION_BY_ZERO</span>。</span></p>
+		<p>假定下述语句：</p>
+		<pre><span>INSERT INTO t SET i = 1/0;</span></pre>
+		<p>对于严格模式和<span><span>ERROR_FOR_DIVISION_BY_ZERO</span>模式的组合，情况如下：</span></p>
+		<table border="1" cellpadding="0" id="table2">
+			<tr>
+				<td>
+				<p><span><b>
+				<span>sql_mode</span></b></span><strong><span>值</span></strong></td>
+				<td>
+				<p><strong><span>结果</span></strong></td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>&#39;&#39;</span><span> (Default)</span></td>
+				<td>
+				<p>无告警，无错误：<span><span>i</span>被设置为<span>NULL</span></span>。</td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>strict</span></td>
+				<td>
+				<p>无告警，无错误：<span><span>i</span>被设置为<span>NULL</span></span>。</td>
+			</tr>
+			<tr>
+				<td>
+				<p>
+				<span>ERROR_FOR_DIVISION_BY_ZERO</span></td>
+				<td>
+				<p>告警，无错误：<span><span>i</span>被设置为<span>NULL</span></span>。</td>
+			</tr>
+			<tr>
+				<td>
+				<p><span>strict,<span>ERROR_FOR_DIVISION_BY_ZERO</span></span></td>
+				<td>
+				<p>错误条件，不插入任何行。</td>
+			</tr>
+		</table>
+		<p>将字符串插入数值列时，如果字符串具有非数值内容，将按下述方式将字符串转换为数值：</p>
+		<p><em>
+		<span>
+		·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>
+		</span></em>对于未以数值开始的字符串，在严格模式下，不能将其作为数值使用，并会产生错误，在其他情况下，给出警告。<em><span>包括空字符串。</span></em></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于以数值开始的字符串，可以进行转换，但尾随的非数值部分将被截去。在严格模式下会导致错误，在其他情况下，给出警告。 </div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="precision-math-rounding"></a>
+		24.4.&nbsp;四舍五入</h2></div></div></div>
+		<p>本节讨论了精度数学的四舍五入特性，<span><span>ROUND()</span>函数，以及插入<span>DECIMAL</span>列时的四舍五入特性。</span></p>
+		<p><span><span>ROUND()</span>函数的行为取决于其参量是准确的还是近似的：</span></p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于准确值数值，<span><span>ROUND()</span>采用</span>“半值向上舍入”规则：如果小数部分的值为<span>.5</span>或更大，如果是正数，向上取下一个整数，如果是负数，向下取下一个整数（换句话讲，以<span>0</span>为界限执行舍入）。如果小数部分的值小于<span>.5</span>，如果是正数，向下取下一个整数，如果是负数，向上取下一个整数。</p>
+		<p>
+		<span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		</span></span>对于近似值数值，结果取决于<span>C</span>库函数。在很多系统上，它意味着<span><span>ROUND()</span>将使用<span>“</span>舍入至最近的偶数<span>”</span>规则：具有任何小数部分的值</span>均将被舍入为最近的偶数。</p>
+		<p>在下面的示例中，介绍了舍入操作对准确值和近似值的不同处理方式：</p>
+		<pre><span>mysql&gt; <span><b>SELECT ROUND(2.5), ROUND(25E-1);</b></span></span></pre>
+		<pre><span>+------------+--------------+</span></pre>
+		<pre><span>| ROUND(2.5) | ROUND(25E-1) |</span></pre>
+		<pre><span>+------------+--------------+</span></pre>
+		<pre><span>| 3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 |</span></pre>
+		<pre><span>+------------+--------------+</span></pre>
+		<p>对于向<span><span>DECIMAL</span>列的插入操作，目标是准确的数据类型，无论要插入的值是准确的还是近似的，将采用</span>“半值向上舍入”规则：</p>
+		<pre class="programlisting">mysql&gt; <strong class="userinput">CREATE TABLE t (d DECIMAL(10,0));</strong>
+Query OK, 0 rows affected (0.00 sec)
+
+mysql&gt; <strong class="userinput">INSERT INTO t VALUES(2.5),(2.5E0);</strong>
+Query OK, 2 rows affected, 2 warnings (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 2
+
+mysql&gt; <strong class="userinput">SELECT d FROM t;</strong>
++------+
+| d    |
++------+
+| 3    |
+| 3    |
++------+
+</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="precision-math-examples"></a>24.5. 精度数学示例</h2></div></div></div>
+		<p>本节给出了一些示例，介绍了<span>MySQL 5.1</span>中的精度数学查询结果。</p>
+		<p><strong><span>示例<span>1</span></span></strong>。可能时，将使用给定的准确值：</p>
+		<pre><span>mysql&gt; <span><b>SELECT .1 + .2 = .3;</b></span></span></pre>
+		<pre><span>+--------------+</span></pre>
+		<pre><span>| .1 + .2 = .3 |</span></pre>
+		<pre><span>+--------------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 |</span></pre>
+		<pre><span>+--------------+</span></pre>
+		<p>但是，对于浮点值，结果是不准确的：</p>
+		<pre><span>mysql&gt; <span><b>SELECT .1E0 + .2E0 = .3E0;</b></span></span></pre>
+		<pre><span>+--------------------+</span></pre>
+		<pre><span>| .1E0 + .2E0 = .3E0 |</span></pre>
+		<pre><span>+--------------------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 |</span></pre>
+		<pre><span>+--------------------+</span></pre>
+		<p>查看准确值和近似值处理差异的另一个方法是，增加<span>1</span>个小的数值，并多次累加。请考虑下述存储程序，它将<span><span>.0001</span>加到变量上<span>1000</span>次。</span></p>
+		<pre><span>CREATE PROCEDURE p ()</span></pre>
+		<pre><span>BEGIN</span></pre>
+		<pre><span> &nbsp;DECLARE i INT DEFAULT 0;</span></pre>
+		<pre><span>&nbsp; DECLARE d DECIMAL(10,4) DEFAULT 0;</span></pre>
+		<pre><span>&nbsp; DECLARE f FLOAT DEFAULT 0;</span></pre>
+		<pre><span>&nbsp; WHILE i &lt; 10000 DO</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; SET d = d + .0001;</span></pre>
+		<pre><span>&nbsp;&nbsp;&nbsp; SET f = f + .0001E0;</span></pre>
+		<pre><span>&nbsp; &nbsp;&nbsp;SET i = i + 1;</span></pre>
+		<pre><span>&nbsp; END WHILE;</span></pre>
+		<pre><span>&nbsp; SELECT d, f;</span></pre>
+		<pre><span>END;</span></pre>
+		<p>从逻辑上讲，<span>d</span>和<span>f</span>的合计应为<span>1</span>，但仅对<span>decimal</span>计算来说是这样。浮点计算会引入小的误差：</p>
+		<pre><span>+--------+------------------+</span></pre>
+		<pre><span>| d&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+--------+------------------+</span></pre>
+		<pre><span>| 1.0000 | 0.99999999999991 |</span></pre>
+		<pre><span>+--------+------------------+</span></pre>
+		<p><strong><span>示例<span>2</span></span></strong>。乘法是按照标准<span>SQL</span>所要求的标度执行。也就是说，对于具有标度<span>S1</span>和<span>S2</span>的两个数值<span><i><span>X1</span></i></span>和<span><i><span>X2</span></i></span>，结果的标度为<span><i><span>S1</span></i><span> 
+		+ <i>S2</i></span></span>：</p>
+		<pre><span>mysql&gt; <span><b>SELECT .01 * .01;</b></span></span></pre>
+		<pre><span>+-----------+</span></pre>
+		<pre><span>| .01 * .01 |</span></pre>
+		<pre><span>+-----------+</span></pre>
+		<pre><span>| 0.0001&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-----------+</span></pre>
+		<p><strong><span>示例<span>3</span></span></strong>：四舍五入定义良好：</p>
+		<p>在<span>MySQL 5.1</span>中，四舍五入操作（例如，使用<span><span>ROUND()</span>函数）独立于底层<span>C</span>库函数的实施，</span>这意味着，在不同平台上结果是一致的。</p>
+		<p>在<span>MySQL 5.1</span>中，对于<span><span>DECIMAL</span>列和准确值数值，采用了<span>“</span>半值向上舍入<span>”</span>规则。对于小数部分等于或大于<span>0.5</span>的值，以<span>0</span>为分界舍入至最近的整数，如下所示：</span></p>
+		<pre><span>mysql&gt; <span><b>SELECT ROUND(2.5), ROUND(-2.5);</b></span></span></pre>
+		<pre><span>+------------+-------------+</span></pre>
+		<pre><span>| ROUND(2.5) | ROUND(-2.5) |</span></pre>
+		<pre><span>+------------+-------------+</span></pre>
+		<pre><span>| 3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | -3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+------------+-------------+</span></pre>
+		<p>但是，对于浮点值的舍入采用<span>C</span>库，在很多系统上，<span>使用<span>“</span>舍入至最近的偶数<span>”</span>规则。在这类系统上，具有任何小数部分的值</span>均将被舍入为最近的偶数：</p>
+		<pre><span>mysql&gt; <span><b>SELECT ROUND(2.5E0), ROUND(-2.5E0);</b></span></span></pre>
+		<pre><span>+--------------+---------------+</span></pre>
+		<pre><span>| ROUND(2.5E0) | ROUND(-2.5E0) |</span></pre>
+		<pre><span>+--------------+---------------+</span></pre>
+		<pre><span>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -2 |</span></pre>
+		<pre><span>+--------------+---------------+</span></pre>
+		<p><strong><span>示例<span>4</span></span></strong>。在严格模式下，插入过大的值会导致溢出和错误，而不是截短至合法值。</p>
+		<p>当<span>MySQL</span>未运行在严格模式下时，将截短至合法值：</p>
+		<pre><span>mysql&gt; <span><b>SET SQL_MODE=&#39;&#39;;</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t (i TINYINT);</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO t SET i = 128;</b></span></span></pre>
+		<pre><span>Query OK, 1 row affected, 1 warning (0.01 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT i FROM t;</b></span></span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| i&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>|&nbsp; 127 |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<p>但是，如果严格模式起作用，将出现溢出状况：</p>
+		<pre><span>mysql&gt; <span><b>SET SQL_MODE=&#39;TRADITIONAL&#39;;</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t (i TINYINT);</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.01 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SET sql_mode=&#39;STRICT_ALL_TABLES&#39;;</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.10 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO t SET i = 128;</b></span></span></pre>
+		<pre><span>ERROR 1264 (22003): Out of range value adjusted for column &#39;i&#39; at row 1</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT i FROM t;</b></span></span></pre>
+		<pre><span>Empty set (0.00 sec)</span></pre>
+		<p><strong><span>示例<span>5</span></span></strong>。在严格模式下并具有<span><span>ERROR_FOR_DIVISION_BY_ZERO</span>设置时，除<span>0</span>会导致错误，而不是产生<span>NULL</span>结果。</span></p>
+		<p>在非严格模式下，除<span>0</span>将得出<span>NULL</span>结果：</p>
+		<pre><span>mysql&gt; <span><b>SET SQL_MODE=&#39;&#39;;</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t (i TINYINT);</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.01 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO t SET i = 1 / 0;</b></span></span></pre>
+		<pre><span>Query OK, 1 row affected (0.06 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT i FROM t;</b></span></span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| i&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>| NULL |</span></pre>
+		<pre><span>+------+</span></pre>
+		<pre><span>1 row in set (0.01 sec)</span></pre>
+		<p>但是，如果恰当的<span>SQL</span>模式处于有效状态，除<span>0</span>将导致错误：</p>
+		<pre><span>mysql&gt; SET SQL_MODE=&#39;TRADITIONAL&#39;;</span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t (i TINYINT);</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SET sql_mode=&#39;STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO&#39;;</b></span></span></pre>
+		<pre><span>Query OK, 0 rows affected (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO t SET i = 1 / 0;</b></span></span></pre>
+		<pre><span>ERROR 1365 (22012): Division by 0</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>SELECT i FROM t;</b></span></span></pre>
+		<pre><span>Empty set (0.01 sec)</span></pre>
+		<p><strong><span>示例<span>6</span></span></strong>。在<span>MySQL 
+		4</span>中（引入精度数学之前），准确值和近似值文字均会被转换为双精度浮点值：</p>
+		<pre><span>mysql&gt; <span><b>SELECT VERSION();</b></span></span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>| VERSION()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>| 4.0.25-standard |</span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t SELECT 2.5 AS a, 25E-1 AS b;</b></span></span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>DESCRIBE t;</b></span></span></pre>
+		<pre><span>+-------+-------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| Field | Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Null | Key | Default | Extra |</span></pre>
+		<pre><span>+-------+-------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| a&nbsp;&nbsp;&nbsp;&nbsp; | double(3,1) |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | 0.0&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| b&nbsp;&nbsp;&nbsp;&nbsp; | double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-------+-------------+------+-----+---------+-------+</span></pre>
+		<p>在<span>MySQL 5.1</span>中，近似值文字仍会被转换为浮点值，但准确值文字将被当作<span>DECIMAL</span>处理：</p>
+		<pre><span>mysql&gt; <span><b>SELECT VERSION();</b></span></span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>| VERSION()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>| 5.1.2-alpha-log |</span></pre>
+		<pre><span>+-----------------+</span></pre>
+		<pre><span>1 row in set (0.00 sec)</span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t SELECT 2.5 AS a, 25E-1 AS b;</b></span></span></pre>
+		<pre><span>&nbsp;</span></pre>
+		<pre><span>mysql&gt; <span><b>DESCRIBE t;</b></span></span></pre>
+		<pre><span>+-------+--------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| Field | Type &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Null | Key | Default | Extra |</span></pre>
+		<pre><span>+-------+--------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| a&nbsp;&nbsp;&nbsp;&nbsp; | decimal(2,1) | NO&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | 0.0&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| b&nbsp;&nbsp;&nbsp;&nbsp; | double&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;| NO&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+-------+--------------+------+-----+---------+-------+</span></pre>
+		<p><strong><span>示例<span>7</span></span></strong>。如果聚合函数的参量是准确的数值类型，其结果也是准确的数值类型，标度至少为参量的标度。</p>
+		<p>考虑下述语句：</p>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE t (i INT, d DECIMAL, f FLOAT);</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>INSERT INTO t VALUES(1,1,1);</b></span></span></pre>
+		<pre><span>mysql&gt; <span><b>CREATE TABLE y SELECT AVG(i), AVG(d), AVG(f) FROM t;</b></span></span></pre>
+		<p>在<span>MySQL 4.0</span>或<span>4.1</span>（在<span>MySQL</span>中引入精度数学之前）中的结果：</p>
+		<pre><span>mysql&gt; <span><b>DESCRIBE y;</b></span></span></pre>
+		<pre><span>+--------+--------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| Field&nbsp; | Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Null | Key | Default | Extra |</span></pre>
+		<pre><span>+--------+--------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| AVG(i) | double(17,4) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| AVG(d) | double(17,4) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| AVG(f) | double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+--------+--------------+------+-----+---------+-------+</span></pre>
+		<p>无论参量类型是什么，结果为<span>double</span>。</p>
+		<p>在<span>MySQL 5.1</span>中的结果：</p>
+		<pre><span>mysql&gt; <span><b>DESCRIBE y;</b></span></span></pre>
+		<pre><span>+--------+---------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| Field&nbsp; | Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Null | Key | Default | Extra |</span></pre>
+		<pre><span>+--------+---------------+------+-----+---------+-------+</span></pre>
+		<pre><span>| AVG(i) | decimal(14,4) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| AVG(d) | decimal(14,4) | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>| AVG(f) | double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | YES&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; | NULL&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |</span></pre>
+		<pre><span>+--------+---------------+------+-----+---------+-------+</span></pre>
+		<p>仅对浮点参量，其结果为<span>double</span>。<em><span>对于准确类型参量，结果也为准确类型。</span></em></p>
+		<div align="center">
+			<span><hr size="2" width="100%" align="center"></span>
+		</div>
+		<p>这是MySQL参考手册的翻译版本，关于MySQL参考手册，请访问<a target="_top"  href="http://dev.mysql.com/doc/mysql/en">dev.mysql.com</a>。原始参考手册为英文版，与英文版参考手册相比，本翻译版可能不是最新的。 </div>
+	</div>
+</body></html>

@@ -1,0 +1,67 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+		<title>
+			Bran的内核开发指南：介绍
+		</title>
+		<link href="layout.css" type="text/css" rel="stylesheet">
+	</head>
+
+	<body>
+		<h2><font face="Tahoma">介绍</font></h2>
+		
+		<p>
+			<font face="Tahoma">
+			内核开发不是一件简单的工作，它是对你编程技术的一次考验。所谓的内核开发，也就是你要开发一个直接管理硬件的软件。内核是一个操作系统的核心， 
+			它管理着硬件所能提供的资源。</font></p>
+			
+		<p id="cputime">
+			<font face="Tahoma">
+			内核所要管理的最重要的资源之一就是中央处理器(CPU)。它为特定的操作分配时间，在另一个事件需要发生时中断一项任务或进程。这就是“多任务”。多任务的内核是非常具有合作性的，在其中，每个程序自身都具有一种叫做“让步”的功能。在必要时，它能将自己的处理时间“慷慨”地让给下一个任务或进程。在抢占式多任务内核中，
+			系统定时器(system 
+			timer)被用来中断当前进程，并切换到新的进程——这是一种强制性切换，它很大程度地保证了重要的进程能有大量的时间去执行。现在有很多种分配CPU时间的调度算法。最简单的一种被叫做“时间片轮转”(Round 
+			Robin)。它让所有的进程都按照一个列表来运行。更加复杂的算法需要优先级(priorities)，这样高优先权的任务就能比低优先权的任务有更多的CPU时间去运行。比这还复杂的算法就是实时算法。它能保证特定的进程能拥有至少确定数目的时钟滴答(timer 
+			ticks)来运行。但最根本地，最重要的资源还是时间。</font></p>
+		
+		<p id="memory">
+			<font face="Tahoma">
+			下一个重要的资源似乎是显而易见的，那就是内存。曾经有段时间，内存资源比CPU时间更宝贵，因为内存是有限的，而CPU时间是无限的。你可以将内核设计成能内存高效型，但需要大量CPU时间。或者CPU高效型，但要使用大量的内存空间来做高速缓存。最好的方法还是将两钟算法综合：争取最好的内存使用率，同时节约CPU时间。</font></p>
+		
+		<p id="hardware">
+			<font face="Tahoma">
+			最后一个内核需要管理的资源就是硬件资源。这包括中断请求(IRQ)，它是硬件用来告诉CPU去执行特定任务或者操纵特定数据的特殊信号。另一个重要的硬件资源是直接存储器存取(DMA)通道。一个DMA通道允许设备锁定内存总线并将它的数据直接传输进系统内存，同时无需CPU参与。这是一个提高系统性能的好方法：一个支持DMA的设备能在不打扰CPU的情况下传输数据，然后用IRQ中断CPU，告诉它数据传输已经完成。声卡和网卡就同时使用IRQ和DMA通道。第三种硬件资源是地址，就像内存，但是它是以接口的形式出现在I/O总线上。通过I/O接口，设备能被配置、读取或给予数据。设备能使用很多I/0接口。举例来说，8到16就是典型的接口范围。</font></p>
+		
+		<h3><font face="Tahoma">总览</font></h3>
+		
+		<blockquote>
+			<p id="overview"><font face="Tahoma">
+			我写这篇指南的目的是要向你展示怎样去建立内核开发最基本的组件。包括：<br>1)建立内核开发环境<br>2)最基本的：设置引导器GRUB<br>
+			3)连接各个源文件并调用main()<br>4)在屏幕上显示信息<br>5)建立全局描述表(GDT)<br>6)建立中断描述符表(IDT)<br>
+			7)建立中断请求IRQ的中断服务例程(ISR)<br>8)重新映射可编程中断控制器(PIC)到新的中断描述符表(IDT)入口<br>
+			9)安装并管理IRQ<br>10)管理可编程记时器/系统定时器(PIT)<br>11)管理键盘IRQ和键盘数据<br>
+			12)…剩下的就看你自己的了！<br>
+			</font>
+			</p>
+		</blockquote>
+		
+		<table cols="150, *, 150" width="100%">
+			<tr>
+				<td align="left" width="150">
+					<font face="Tahoma">
+					<a href="title.htm">&lt;&lt; 封面</a>
+				</font>
+				</td>
+				<td align="center" width="*">
+					<font face="Tahoma">
+					<a href="mailto:friesenb@gmail.com">联系 Brandon F.</a>
+					</font>
+				</td>
+				<td align="right" width="150">
+					<font face="Tahoma">
+					<a href="gettingstarted.htm">开始 &gt;&gt;</a>
+					</font>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
